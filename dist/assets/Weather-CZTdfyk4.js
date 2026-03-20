@@ -1,0 +1,1 @@
+import{A as e,T as t,d as n,p as r}from"./ThemeControlsModal-BRo8GSss-BH9hZt8W.js";var i=e({ModalWeatherControls:()=>a,default:()=>a});function a({entity:e,...i}){return t(r,{fullWidth:!0,children:t(n,{entity:e,...i,disableScale:!0,disableRipples:!0,disableActiveState:!0,disableColumns:!0})})}export{i as t};

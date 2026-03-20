@@ -1,0 +1,1 @@
+import{A as e,T as t,l as n,p as r}from"./ThemeControlsModal-BRo8GSss-BH9hZt8W.js";var i=e({ModalCoverControls:()=>a,default:()=>a});function a(e){return t(r,{fullWidth:!0,children:t(n,{...e})})}export{i as t};
