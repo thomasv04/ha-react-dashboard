@@ -7,7 +7,7 @@
   "url": "https://github.com/thomasv04/ha-react-dashboard",
   "startup": "application",
   "boot": "auto",
-  "arch": ["aarch64", "amd64", "armv7"],
+  "arch": ["amd64", "aarch64"],
   "image": "ghcr.io/thomasv04/ha-react-dashboard/{arch}",
   "ports": {
     "5173/tcp": 5173

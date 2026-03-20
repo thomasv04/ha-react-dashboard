@@ -75,15 +75,6 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-amd64
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Build and push Docker image (armv7)
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/arm/v7
-          push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-armv7
-          labels: ${{ steps.meta.outputs.labels }}
-
       - name: Build and push Docker image (aarch64)
         uses: docker/build-push-action@v5
         with:
@@ -138,10 +129,12 @@ jobs:
             - Home Assistant 2026.1.0 or later
             - Admin access for dashboard creation
 
-            ## 🏗️ Architecture Support (Add-on mode)
-            - AMD64 (x86_64)
-            - ARMv7 (32-bit Raspberry Pi)
-            - ARM64 (64-bit Raspberry Pi, ODROID, etc.)
+            ## 🏗️ Architecture Support
+            - AMD64 (x86_64 / Intel / AMD)
+            - ARM64 (64-bit Raspberry Pi 4/5, ODROID, etc.)
+
+            *Note: ARMv7 (32-bit Raspberry Pi) is not supported due to Vite 8 / Rolldown build limitations.
+            Please use ARM64 images on Raspberry Pi 4+ or build locally on ARMv7 devices.*
 
             ## 📦 Release Contents
             - `ha-react-dashboard.zip` — Compiled frontend files for HACS

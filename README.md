@@ -245,7 +245,7 @@ npm run prettier:check    # Check formatting
 
 ### CI/CD
 - **GitHub Actions** runs tests, lint, type-check on every commit
-- Add-on release builds multi-arch Docker images (amd64, armv7, aarch64)
+- Add-on release builds multi-arch Docker images (amd64, aarch64)
 
 ---
 
