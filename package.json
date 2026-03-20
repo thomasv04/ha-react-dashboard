@@ -18,7 +18,9 @@
     "prebuild": "npm run prettier",
     "deploy": "npx tsx scripts/deploy.ts",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.8",
@@ -39,6 +41,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.58.2",
     "@storybook/react": "^10.3.0",
     "@storybook/react-vite": "^10.3.0",
     "@testing-library/jest-dom": "^6.9.1",

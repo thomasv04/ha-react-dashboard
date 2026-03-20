@@ -147,6 +147,32 @@ export function useHass<T>(selector?: (s: HassState) => T): HassState | T {
   return selector ? selector(state) : state;
 }
 
+// ─── useWeather ──────────────────────────────────────────────────────────────
+
+interface ForecastEntry {
+  datetime: string;
+  condition?: string;
+  temperature: number;
+  templow?: number;
+}
+
+interface WeatherEntity extends EntityState {
+  forecast?: { forecast: ForecastEntry[] };
+}
+
+export function useWeather(
+  entityId: EntityName,
+  _options?: { type?: 'daily' | 'hourly' }
+): WeatherEntity {
+  const e = ENTITIES[entityId] ?? DEFAULT_ENTITY;
+  return {
+    ...e,
+    forecast: {
+      forecast: (e.attributes.forecast as ForecastEntry[] | undefined) ?? [],
+    },
+  };
+}
+
 // ─── Re-exports expected by consumers ───────────────────────────────────────
 
 export function HassConnect({ children }: { children: React.ReactNode }) {
