@@ -1,0 +1,52 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1152 768" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#07071c"/>
+      <stop offset="30%" stop-color="#0e0c30"/>
+      <stop offset="65%" stop-color="#3530a8"/>
+      <stop offset="100%" stop-color="#5048d0"/>
+    </linearGradient>
+    <linearGradient id="wv1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4040c0"/>
+      <stop offset="50%" stop-color="#5c50d8"/>
+      <stop offset="100%" stop-color="#6a5ee8"/>
+    </linearGradient>
+    <linearGradient id="wv2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5548cc"/>
+      <stop offset="100%" stop-color="#6a5de0"/>
+    </linearGradient>
+    <linearGradient id="ridge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#b0a8ff" stop-opacity="0"/>
+      <stop offset="20%"  stop-color="#ccc8ff" stop-opacity="0.6"/>
+      <stop offset="45%"  stop-color="#e0dcff" stop-opacity="1"/>
+      <stop offset="60%"  stop-color="#d0caff" stop-opacity="0.9"/>
+      <stop offset="80%"  stop-color="#b8b0ff" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#a8a0ff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="teal" cx="92%" cy="92%" r="35%">
+      <stop offset="0%" stop-color="#00d4a0" stop-opacity="0.35"/>
+      <stop offset="60%" stop-color="#00c090" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#00a878" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowL" cx="15%" cy="58%" r="38%">
+      <stop offset="0%" stop-color="#7060f0" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#5040c0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="vignette" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#04040f" stop-opacity="0.7"/>
+      <stop offset="25%" stop-color="#04040f" stop-opacity="0.2"/>
+      <stop offset="50%" stop-color="#04040f" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="blur2"><feGaussianBlur stdDeviation="2"/></filter>
+    <filter id="blur5"><feGaussianBlur stdDeviation="5"/></filter>
+  </defs>
+  <rect width="1152" height="768" fill="url(#bg)"/>
+  <path d="M-20,540 C160,480 380,560 600,510 C780,470 940,530 1172,490 L1172,768 L-20,768 Z" fill="url(#wv2)" opacity="0.7"/>
+  <path d="M-20,400 C180,280 360,500 590,375 C790,265 970,415 1172,310 L1172,768 L-20,768 Z" fill="url(#wv1)" opacity="0.95"/>
+  <rect width="1152" height="768" fill="url(#glowL)"/>
+  <rect width="1152" height="768" fill="url(#teal)"/>
+  <path d="M-20,400 C180,280 360,500 590,375 C790,265 970,415 1172,310" fill="none" stroke="url(#ridge)" stroke-width="40" stroke-linecap="round" filter="url(#blur5)" opacity="0.6"/>
+  <path d="M-20,400 C180,280 360,500 590,375 C790,265 970,415 1172,310" fill="none" stroke="url(#ridge)" stroke-width="14" stroke-linecap="round" filter="url(#blur2)" opacity="0.95"/>
+  <path d="M-20,398 C180,278 360,498 590,373 C790,263 970,413 1172,308" fill="none" stroke="rgba(240,238,255,0.7)" stroke-width="3" stroke-linecap="round"/>
+  <rect width="1152" height="768" fill="url(#vignette)"/>
+</svg>
