@@ -27,6 +27,8 @@ RUN npm install -g serve
 COPY --from=builder /app/dist /app/dist
 
 # Set environment variables for HA integration
+# VITE_NO_AUTH: set to "true" when running as Home Assistant Add-on (default)
+# VITE_HA_URL: Home Assistant instance URL (default: http://homeassistant:8123)
 ENV VITE_HA_URL=http://homeassistant:8123
 ENV VITE_NO_AUTH=true
 ENV NODE_ENV=production
@@ -36,7 +38,7 @@ EXPOSE 5173
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:5173/index.html || exit 1
+  CMD wget --quiet --tries=1 --spider http://localhost:5173/index.html || exit 1
 
 # Run the app with serve
 CMD ["serve", "-s", "dist", "-l", "5173"]
