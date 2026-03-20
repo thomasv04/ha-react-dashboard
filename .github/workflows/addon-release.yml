@@ -35,6 +35,16 @@ jobs:
       - name: Run type-check
         run: npm run type-check
 
+      - name: Build React App
+        run: npm run build
+
+      - name: Create HACS-compatible ZIP
+        run: |
+          cd dist
+          zip -r ../ha-react-dashboard.zip .
+          cd ..
+          ls -lh ha-react-dashboard.zip
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -86,10 +96,27 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
+          files: |
+            ha-react-dashboard.zip
           body: |
-            ## Installation
+            ## Installation Methods
 
-            **Add as custom Add-on repository in Home Assistant:**
+            ### 🎨 **Option 1: HACS Frontend (Recommended for Dashboard)**
+            ```
+            1. HACS → Frontend → Explore & Download
+            2. Search: "HA React Dashboard"
+            3. Install and reload Home Assistant
+            4. Create new dashboard from UI
+            ```
+
+            **Or manually add Custom Repository:**
+            ```
+            HACS → Custom repositories
+            URL: https://github.com/${{ github.repository }}
+            Category: Frontend
+            ```
+
+            ### 🐳 **Option 2: Add-on (For auto-serve)**
             ```
             Settings → Add-ons → Create Add-on → Add custom repository
             Repository URL: https://github.com/${{ github.repository }}
@@ -97,14 +124,28 @@ jobs:
 
             Then install "HA React Dashboard" from the add-ons store.
 
-            **Features:**
+            ---
+
+            ## ✨ Features
             - ✅ No token required (uses local HA connection)
             - ✅ Auto session management
             - ✅ Drag-and-drop widget layout
             - ✅ Responsive CSS Grid design
             - ✅ Real-time entity updates
+            - ✅ Storybook documentation
 
-            **Supported architectures:** AMD64, ARMv7, ARM64 (Raspberry Pi)
+            ## 📋 Requirements
+            - Home Assistant 2026.1.0 or later
+            - Admin access for dashboard creation
+
+            ## 🏗️ Architecture Support (Add-on mode)
+            - AMD64 (x86_64)
+            - ARMv7 (32-bit Raspberry Pi)
+            - ARM64 (64-bit Raspberry Pi, ODROID, etc.)
+
+            ## 📦 Release Contents
+            - `ha-react-dashboard.zip` — Compiled frontend files for HACS
+            - Docker images at `ghcr.io/${{ github.repository }}:${{ github.ref_name }}-{arch}`
           draft: false
           prerelease: false
         env:
