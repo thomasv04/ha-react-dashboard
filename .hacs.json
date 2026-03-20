@@ -1,10 +1,7 @@
 {
   "name": "HA React Dashboard",
-  "homeassistant": "2024.1.0",
-  "content_in_root": false,
-  "documentation": "https://github.com/thomasv04/ha-react-dashboard",
-  "requirements": [],
   "render_readme": true,
-  "zip_release": false,
-  "root": "hacs"
+  "content_in_root": false,
+  "zip_release": true,
+  "filename": "index.html"
 }
