@@ -158,8 +158,16 @@ jobs:
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
 
-      - name: Commit dist files
+      - name: Copy dist files to root for HACS
+        run: |
+          # Copy built files to root (for HACS to find them)
+          cp -r dist/assets . 2>/dev/null || true
+          cp dist/index.html . 2>/dev/null || true
+          cp dist/bg.svg . 2>/dev/null || true
+
+      - name: Commit dist and root files
         run: |
           git add dist/
+          git add assets/ index.html bg.svg 2>/dev/null || true
           git commit -m "build: generate dist files [skip ci]" --allow-empty
           git push
