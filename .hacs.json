@@ -1,0 +1,7 @@
+{
+  "name": "HA React Dashboard",
+  "content_in_root": false,
+  "documentation": "https://github.com/thomasv04/ha-react-dashboard",
+  "render_readme": true,
+  "zip_release": false
+}
