@@ -1,0 +1,10 @@
+{
+  "name": "HA React Dashboard",
+  "country": ["FR", "US", "GB", "NL", "DE"],
+  "homeassistant": "2024.1.0",
+  "render_readme": true,
+  "documentation": "https://github.com/thomasv04/ha-react-dashboard/wiki",
+  "issues": "https://github.com/thomasv04/ha-react-dashboard/issues",
+  "repository": "https://github.com/thomasv04/ha-react-dashboard",
+  "category": "frontend"
+}

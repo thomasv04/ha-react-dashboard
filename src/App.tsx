@@ -11,9 +11,37 @@ function HAToastBridge() {
   return null;
 }
 
+/**
+ * Resolve HA URL based on environment
+ * - If VITE_NO_AUTH is true (add-on mode): use local URL without token
+ * - Otherwise: use configured URL with token
+ */
+function resolveHAConfig() {
+  const isAddonMode = import.meta.env.VITE_NO_AUTH === 'true';
+  
+  if (isAddonMode) {
+    // Add-on mode: use local connection without token
+    const url = import.meta.env.VITE_HA_URL || 'http://homeassistant:8123';
+    return { hassUrl: url, hassToken: undefined };
+  }
+
+  // Standard mode: require token from environment
+  const token = import.meta.env.VITE_HA_TOKEN;
+  if (!token) {
+    console.warn('VITE_HA_TOKEN is not set. Connection may fail.');
+  }
+
+  return {
+    hassUrl: import.meta.env.VITE_HA_URL || 'http://localhost:8123',
+    hassToken: token,
+  };
+}
+
 function App() {
+  const { hassUrl, hassToken } = resolveHAConfig();
+
   return (
-    <HassConnect hassUrl={import.meta.env.VITE_HA_URL} hassToken={import.meta.env.VITE_HA_TOKEN}>
+    <HassConnect hassUrl={hassUrl} hassToken={hassToken}>
       <ThemeProvider />
       <ToastProvider>
         <HAToastBridge />
