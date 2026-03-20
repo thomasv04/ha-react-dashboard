@@ -97,7 +97,7 @@ jobs:
       - name: Run e2e tests
         run: npm run test:e2e
 
-  # ── Job 4: Build ──────────────────────────────────────────────────────────
+  # ── Job 5: Build ──────────────────────────────────────────────────────────
   build:
     name: Build
     runs-on: ubuntu-latest
