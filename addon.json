@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "slug": "ha-react-dashboard",
   "description": "Responsive React-based dashboard for Home Assistant with drag-and-drop widgets",
+  "homeassistant": "2026.1.0",
   "url": "https://github.com/thomasv04/ha-react-dashboard",
   "startup": "application",
   "boot": "auto",
