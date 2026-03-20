@@ -18,7 +18,7 @@ function HAToastBridge() {
  */
 function resolveHAConfig() {
   const isAddonMode = import.meta.env.VITE_NO_AUTH === 'true';
-  
+
   if (isAddonMode) {
     // Add-on mode: use local connection without token
     const url = import.meta.env.VITE_HA_URL || 'http://homeassistant:8123';

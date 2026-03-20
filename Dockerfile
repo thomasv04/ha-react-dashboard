@@ -3,6 +3,13 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# hadolint ignore=DL3006
+# Set build environment variables (not secrets - just regular config)
+# These are used during the build process to configure Vite output
+ARG VITE_FOLDER_NAME=ha-dashboard
+ARG VITE_HA_URL=http://homeassistant:8123
+ARG VITE_NO_AUTH=true
+
 # Copy package files
 COPY package*.json ./
 
@@ -12,8 +19,11 @@ RUN npm ci
 # Copy source
 COPY . .
 
-# Build React app
-RUN npm run build
+# Build React app with environment variables
+RUN VITE_FOLDER_NAME=$VITE_FOLDER_NAME \
+    VITE_HA_URL=$VITE_HA_URL \
+    VITE_NO_AUTH=$VITE_NO_AUTH \
+    npm run build
 
 # Production stage
 FROM node:20-alpine
@@ -26,9 +36,7 @@ RUN npm install -g serve
 # Copy built app from builder
 COPY --from=builder /app/dist /app/dist
 
-# Set environment variables for HA integration
-# VITE_NO_AUTH: set to "true" when running as Home Assistant Add-on (default)
-# VITE_HA_URL: Home Assistant instance URL (default: http://homeassistant:8123)
+# Set environment variables for HA integration at runtime
 ENV VITE_HA_URL=http://homeassistant:8123
 ENV VITE_NO_AUTH=true
 ENV NODE_ENV=production
