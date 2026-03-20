@@ -35,6 +35,7 @@ jobs:
       - name: Build React app
         run: npm run build
         env:
+          VITE_HACS: 'true'
           VITE_FOLDER_NAME: community/ha-react-dashboard
           VITE_HA_URL: http://localhost:8123
           VITE_HA_TOKEN: placeholder-token-for-release

@@ -6,13 +6,15 @@ import path from 'path';
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Default to HACS path (community/ha-react-dashboard)
-// For Add-on, override with VITE_FOLDER_NAME=ha-dashboard during build
+// For HACS frontend, use relative paths (compatible with any URL)
+// For Add-on, use absolute paths (served from /local/ha-dashboard/)
+const useRelativePaths = process.env.VITE_HACS === 'true';
 const VITE_FOLDER_NAME = process.env.VITE_FOLDER_NAME || 'community/ha-react-dashboard';
+const basePath = useRelativePaths ? './' : `/local/${VITE_FOLDER_NAME}/`;
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: `/local/${VITE_FOLDER_NAME}/`,
+  base: basePath,
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
