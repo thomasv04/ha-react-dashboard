@@ -6,8 +6,9 @@ import path from 'path';
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Use env var or default value (important for CI/Docker where .env doesn't exist)
-const VITE_FOLDER_NAME = process.env.VITE_FOLDER_NAME || 'ha-dashboard';
+// Default to HACS path (community/ha-react-dashboard)
+// For Add-on, override with VITE_FOLDER_NAME=ha-dashboard during build
+const VITE_FOLDER_NAME = process.env.VITE_FOLDER_NAME || 'community/ha-react-dashboard';
 
 // https://vite.dev/config/
 export default defineConfig({

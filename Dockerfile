@@ -6,6 +6,8 @@ WORKDIR /app
 # hadolint ignore=DL3006
 # Set build environment variables (not secrets - just regular config)
 # These are used during the build process to configure Vite output
+# Note: For Add-on, VITE_FOLDER_NAME is set to 'ha-dashboard' (served from /local/ha-dashboard/)
+# Default (HACS) would be 'community/ha-react-dashboard' (served from /local/community/ha-react-dashboard/)
 ARG VITE_FOLDER_NAME=ha-dashboard
 ARG VITE_HA_URL=http://homeassistant:8123
 ARG VITE_NO_AUTH=true
