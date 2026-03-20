@@ -1,1 +1,0 @@
-import{A as e,T as t,n}from"./ThemeControlsModal-BRo8GSss-BH9hZt8W.js";var r=e({ModalClimateControls:()=>i,default:()=>i});function i(e){return t(n,{...e})}export{r as t};
