@@ -1,0 +1,1 @@
+import{A as e,T as t,i as n}from"./ThemeControlsModal-BRo8GSss--go5sDBz.js";var r=e({ModalLightControls:()=>i,default:()=>i});function i(e){return t(n,{...e})}export{r as t};
