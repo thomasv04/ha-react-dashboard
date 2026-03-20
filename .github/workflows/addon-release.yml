@@ -105,13 +105,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create HACS-compatible ZIP
-        run: |
-          cd dist
-          zip -r ../ha-react-dashboard.zip .
-          cd ..
-          ls -lh ha-react-dashboard.zip
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -154,8 +147,6 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            ha-react-dashboard.zip
           body: |
             ## Installation Methods
 
