@@ -1,0 +1,1 @@
+import{A as e,T as t,a as n}from"./ThemeControlsModal-BRo8GSss--go5sDBz.js";var r=e({ModalPersonControls:()=>i,default:()=>i});function i({entity:e,mapHeight:r,...i}){return t(n,{entity:e,mapHeight:r,...i})}export{r as t};
