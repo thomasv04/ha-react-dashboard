@@ -4,6 +4,5 @@
   "homeassistant": "2026.1.0",
   "zip_release": true,
   "filename": "ha-react-dashboard.zip",
-  "hacs": "2.0.5",
-  "category": "integration"
+  "hacs": "2.0.5"
 }
