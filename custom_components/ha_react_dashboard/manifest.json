@@ -1,20 +1,13 @@
 {
-    "domain":  "ha_react_dashboard",
-    "name":  "HA React Dashboard",
-    "codeowners":  [
-                       "@thomasv04"
-                   ],
-    "config_flow":  true,
-    "dependencies":  [
-                         "frontend",
-                         "http"
-                     ],
-    "documentation":  "https://github.com/thomasv04/ha-react-dashboard",
-    "integration_type":  "service",
-    "iot_class":  "local_push",
-    "issue_tracker":  "https://github.com/thomasv04/ha-react-dashboard/issues",
-    "requirements":  [
-
-                     ],
-    "version":  "1.0.21"
+  "domain": "ha_react_dashboard",
+  "name": "HA React Dashboard",
+  "codeowners": ["@thomasv04"],
+  "config_flow": false,
+  "dependencies": ["frontend", "http"],
+  "documentation": "https://github.com/thomasv04/ha-react-dashboard",
+  "integration_type": "service",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/thomasv04/ha-react-dashboard/issues",
+  "requirements": [],
+  "version": "1.0.22"
 }
