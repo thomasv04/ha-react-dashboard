@@ -148,55 +148,37 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           body: |
-            ## Installation Methods
+            ## Installation
 
-            ### 🎨 **Option 1: HACS Frontend (Recommended for Dashboard)**
+            ### 🐳 **Home Assistant Add-on**
             ```
-            1. HACS → Frontend → Explore & Download
-            2. Search: "HA React Dashboard"
-            3. Install and reload Home Assistant
-            4. Create new dashboard from UI
-            ```
-
-            **Or manually add Custom Repository:**
-            ```
-            HACS → Custom repositories
+            Settings → Add-ons → Add-on Store (⋮) → Repositories
             URL: https://github.com/${{ github.repository }}
-            Category: Frontend
             ```
-
-            ### 🐳 **Option 2: Add-on (For auto-serve)**
-            ```
-            Settings → Add-ons → Create Add-on → Add custom repository
-            Repository URL: https://github.com/${{ github.repository }}
-            ```
-
-            Then install "HA React Dashboard" from the add-ons store.
+            Then install **HA React Dashboard** from the add-ons store.
 
             ---
 
             ## ✨ Features
-            - ✅ No token required (uses local HA connection)
+            - ✅ Runtime config injection (no token baked into the image)
             - ✅ Auto session management
             - ✅ Drag-and-drop widget layout
             - ✅ Responsive CSS Grid design
             - ✅ Real-time entity updates
-            - ✅ Storybook documentation
 
             ## 📋 Requirements
             - Home Assistant 2026.1.0 or later
-            - Admin access for dashboard creation
+            - Admin access
 
             ## 🏗️ Architecture Support
             - AMD64 (x86_64 / Intel / AMD)
             - ARM64 (64-bit Raspberry Pi 4/5, ODROID, etc.)
 
-            *Note: ARMv7 (32-bit Raspberry Pi) is not supported due to Vite 8 / Rolldown build limitations.
-            Please use ARM64 images on Raspberry Pi 4+ or build locally on ARMv7 devices.*
-
-            ## 📦 Release Contents
-            - `ha-react-dashboard.zip` — Compiled frontend files for HACS
-            - Docker images at `ghcr.io/${{ github.repository }}:${{ github.ref_name }}-{arch}`
+            ## 🐳 Docker images
+            ```
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}-amd64
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}-aarch64
+            ```
           draft: false
           prerelease: false
         env:
