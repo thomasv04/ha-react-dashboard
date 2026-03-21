@@ -43,14 +43,19 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         return False
 
     # 1. Register a static path so HA serves our bundle files
-    hass.http.register_static_path(
-        STATIC_PATH,
-        str(www_path),
-        cache_headers=True,
-    )
+    # HA 2024.6+ uses async_register_static_paths; fall back for older installs
+    try:
+        from homeassistant.components.http import StaticPathConfig
 
-    # 2. Inject our JS into every HA frontend page — this registers the custom element
-    add_extra_js_url(hass, f"{STATIC_PATH}/{JS_FILE}", es5=False)
+        await hass.http.async_register_static_paths(
+            [StaticPathConfig(STATIC_PATH, str(www_path), True)]
+        )
+    except (ImportError, AttributeError):
+        hass.http.register_static_path(STATIC_PATH, str(www_path), cache_headers=True)
+
+    # 2. Inject our JS into every HA frontend page — registers the custom element
+    # Note: es5 parameter was removed in HA 2026.x
+    add_extra_js_url(hass, f"{STATIC_PATH}/{JS_FILE}")
 
     # 3. Register the built-in panel that points to our custom element
     async_register_built_in_panel(
