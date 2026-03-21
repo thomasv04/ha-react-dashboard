@@ -126,13 +126,18 @@ jobs:
             type=ref,event=branch
             type=sha
 
+      - name: Extract version (strip leading "v")
+        id: version
+        run: echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
       - name: Build and push Docker image (amd64)
         uses: docker/build-push-action@v5
         with:
           context: .
           platforms: linux/amd64
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-amd64
+          # Format expected by HA supervisor: image/{arch}:{version}  (no "v" prefix)
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/amd64:${{ steps.version.outputs.value }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Build and push Docker image (aarch64)
@@ -141,7 +146,7 @@ jobs:
           context: .
           platforms: linux/arm64
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-aarch64
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/aarch64:${{ steps.version.outputs.value }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Create Release
