@@ -13,6 +13,9 @@ dist-ssr
 *.local
 *.zip
 
+# Stale build artifacts accidentally placed at project root
+/assets/
+
 # Environment — never commit secrets
 .env
 .env.*
