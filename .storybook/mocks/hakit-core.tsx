@@ -160,10 +160,7 @@ interface WeatherEntity extends EntityState {
   forecast?: { forecast: ForecastEntry[] };
 }
 
-export function useWeather(
-  entityId: EntityName,
-  _options?: { type?: 'daily' | 'hourly' }
-): WeatherEntity {
+export function useWeather(entityId: EntityName, _options?: { type?: 'daily' | 'hourly' }): WeatherEntity {
   const e = ENTITIES[entityId] ?? DEFAULT_ENTITY;
   return {
     ...e,

@@ -72,9 +72,7 @@ class HaReactDashboardPanel extends HTMLElement {
 
   private _render() {
     if (!this._root) return;
-    this._root.render(
-      <PanelApp hassUrl={this._hassUrl} hassToken={this._hassToken} />,
-    );
+    this._root.render(<PanelApp hassUrl={this._hassUrl} hassToken={this._hassToken} />);
   }
 }
 
