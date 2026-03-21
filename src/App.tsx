@@ -12,29 +12,32 @@ function HAToastBridge() {
 }
 
 /**
- * Resolve HA URL based on environment
- * - If VITE_NO_AUTH is true (add-on mode): use local URL without token
- * - Otherwise: use configured URL with token
+ * Resolve HA connection config at runtime.
+ *
+ * Priority (highest → lowest):
+ *   1. window.ENV  — injected by run.sh at container startup from /data/options.json
+ *   2. import.meta.env.VITE_* — .env file used during local development
+ *   3. Hard-coded fallback URL (no token → HA login prompt)
  */
 function resolveHAConfig() {
-  const isAddonMode = import.meta.env.VITE_NO_AUTH === 'true';
+  // window.ENV is written by rootfs/run.sh; cast to avoid TS errors
+  const runtimeEnv = (window as { ENV?: { HA_URL?: string; HA_TOKEN?: string } }).ENV ?? {};
 
-  if (isAddonMode) {
-    // Add-on mode: use local connection without token
-    const url = import.meta.env.VITE_HA_URL || 'http://homeassistant:8123';
-    return { hassUrl: url, hassToken: undefined };
+  const hassUrl =
+    (runtimeEnv.HA_URL?.trim() || null) ??
+    import.meta.env.VITE_HA_URL ??
+    'http://homeassistant:8123';
+
+  const rawToken = runtimeEnv.HA_TOKEN?.trim() || import.meta.env.VITE_HA_TOKEN;
+  const hassToken = rawToken || undefined; // coerce empty string → undefined
+
+  if (!hassToken) {
+    console.info(
+      '[ha-dashboard] No token provided – HassConnect will open the HA login dialog.',
+    );
   }
 
-  // Standard mode: require token from environment
-  const token = import.meta.env.VITE_HA_TOKEN;
-  if (!token) {
-    console.warn('VITE_HA_TOKEN is not set. Connection may fail.');
-  }
-
-  return {
-    hassUrl: import.meta.env.VITE_HA_URL || 'http://localhost:8123',
-    hassToken: token,
-  };
+  return { hassUrl, hassToken };
 }
 
 interface AppProps {

@@ -1,54 +1,42 @@
-# Build stage
+# ────────────────────────────────────────────────────────────
+# Stage 1 — Build React app (no credentials baked in)
+# ────────────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# hadolint ignore=DL3006
-# Set build environment variables (not secrets - just regular config)
-# These are used during the build process to configure Vite output
-# Note: For Add-on, VITE_FOLDER_NAME is set to 'ha-dashboard' (served from /local/ha-dashboard/)
-# Default (HACS) would be 'community/ha-react-dashboard' (served from /local/community/ha-react-dashboard/)
-ARG VITE_FOLDER_NAME=ha-dashboard
-ARG VITE_HA_URL=http://homeassistant:8123
-ARG VITE_NO_AUTH=true
-
-# Copy package files
+# Copy manifests first to leverage Docker layer cache
 COPY package*.json ./
-
-# Install dependencies
 RUN npm ci
 
-# Copy source
+# Copy source (excluding files listed in .dockerignore if present)
 COPY . .
 
-# Build React app with environment variables
-RUN VITE_FOLDER_NAME=$VITE_FOLDER_NAME \
-    VITE_HA_URL=$VITE_HA_URL \
-    VITE_NO_AUTH=$VITE_NO_AUTH \
-    npm run build
+# Build as add-on SPA (base path = "/", output to dist/)
+RUN VITE_ADDON=true npm run build
 
-# Production stage
-FROM node:20-alpine
+# ────────────────────────────────────────────────────────────
+# Stage 2 — Production: nginx + jq for runtime config injection
+# ────────────────────────────────────────────────────────────
+FROM nginx:1.27-alpine
 
-WORKDIR /app
+# jq to parse /data/options.json; bash for run.sh
+RUN apk add --no-cache jq bash
 
-# Install serve to run the static build
-RUN npm install -g serve
+# Nginx configuration for SPA with HA add-on port
+COPY rootfs/etc/nginx/nginx.conf /etc/nginx/nginx.conf
 
-# Copy built app from builder
-COPY --from=builder /app/dist /app/dist
+# Startup script: reads /data/options.json and writes env-config.js
+COPY rootfs/run.sh /run.sh
+RUN chmod +x /run.sh
 
-# Set environment variables for HA integration at runtime
-ENV VITE_HA_URL=http://homeassistant:8123
-ENV VITE_NO_AUTH=true
-ENV NODE_ENV=production
+# React build output
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Expose port
-EXPOSE 5173
+# HA Add-on standard ingress port
+EXPOSE 8099
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost:5173/index.html || exit 1
+  CMD wget --quiet --tries=1 --spider http://localhost:8099/index.html || exit 1
 
-# Run the app with serve
-CMD ["serve", "-s", "dist", "-l", "5173"]
+CMD ["/run.sh"]
