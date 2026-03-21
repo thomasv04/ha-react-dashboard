@@ -1,0 +1,7 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "HA React Dashboard is already configured."
+    }
+  }
+}
