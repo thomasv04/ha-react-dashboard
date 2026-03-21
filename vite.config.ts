@@ -8,17 +8,19 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Build mode flags
+// VITE_ADDON=true      → SPA served by nginx at root "/" (pure HA Add-on)
 // VITE_HACS_PANEL=true → IIFE bundle for Python integration (Level 2, self-contained JS)
 // VITE_HACS=true       → SPA with relative paths for HACS frontend category (Level 1)
-// (default)            → SPA with absolute paths for SSH/add-on deployment
+// (default)            → SPA with absolute paths for SSH deployment
+const isAddon = process.env.VITE_ADDON === 'true';
 const isHACSPanel = process.env.VITE_HACS_PANEL === 'true';
 const useRelativePaths = process.env.VITE_HACS === 'true';
 const VITE_FOLDER_NAME = process.env.VITE_FOLDER_NAME || 'community/ha-react-dashboard';
-const basePath = useRelativePaths ? './' : `/local/${VITE_FOLDER_NAME}/`;
+const basePath = isAddon ? '/' : useRelativePaths ? './' : `/local/${VITE_FOLDER_NAME}/`;
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: isHACSPanel ? './' : basePath,
+  base: isHACSPanel ? './' : isAddon ? '/' : basePath,
   plugins: [
     react(),
     tailwindcss(),
