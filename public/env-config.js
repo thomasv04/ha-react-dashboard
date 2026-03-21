@@ -5,6 +5,6 @@
 // For local dev, leave HA_URL/HA_TOKEN empty here and use your .env file instead
 // (App.tsx falls back to import.meta.env.VITE_HA_URL / VITE_HA_TOKEN).
 window.ENV = {
-  HA_URL: "",
-  HA_TOKEN: ""
+  HA_URL: '',
+  HA_TOKEN: '',
 };
