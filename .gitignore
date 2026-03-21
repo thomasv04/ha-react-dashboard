@@ -34,3 +34,7 @@ coverage/
 
 # Storybook built output (rebuilt in CI)
 storybook-static/
+
+# Panel build output — generated during CI, distributed via GitHub Release
+custom_components/ha_react_dashboard/www/*
+!custom_components/ha_react_dashboard/www/.gitkeep

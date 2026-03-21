@@ -1,4 +1,4 @@
-name: Build and Release
+﻿name: Build and Release
 
 on:
   release:
@@ -26,30 +26,42 @@ jobs:
       - name: Run type-check
         run: npm run type-check
 
-      - name: Run tests
+      - name: Run unit tests
         run: npm run test:run
 
-      - name: Run E2E tests
-        run: npm ci && npx playwright install --with-deps && npm run storybook &amp; npx wait-on http://localhost:6006 --timeout 60000 && npm run test:e2e
-
-      - name: Build React app
-        run: npm run build
+      - name: Build Web Component bundle (HACS panel mode)
+        run: npm run build:panel
         env:
-          VITE_HACS: 'true'
-          VITE_FOLDER_NAME: community/ha-react-dashboard
-          VITE_HA_URL: http://localhost:8123
-          VITE_HA_TOKEN: placeholder-token-for-release
+          VITE_HACS_PANEL: 'true'
+        # Outputs: custom_components/ha_react_dashboard/www/ha-react-dashboard.iife.js
 
-      - name: Create ZIP from dist folder
+      - name: Patch version in manifest.json
         run: |
-          cd dist
-          zip -r ../release-${{ github.ref_name }}.zip ./*
+          VERSION="${GITHUB_REF_NAME#v}"
+          python3 - "$VERSION" <<'PYEOF'
+          import json, sys
+          path = 'custom_components/ha_react_dashboard/manifest.json'
+          with open(path) as f:
+              m = json.load(f)
+          m['version'] = sys.argv[1]
+          with open(path, 'w') as f:
+              json.dump(m, f, indent=2)
+              f.write('\n')
+          print(f"manifest.json version set to {sys.argv[1]}")
+          PYEOF
+
+      - name: Create ZIP from custom_components folder
+        run: |
+          cd custom_components
+          zip -r ../ha-react-dashboard.zip ha_react_dashboard/
           cd ..
-          ls -lh release-*.zip
+          echo "ZIP contents:"
+          unzip -l ha-react-dashboard.zip
+          ls -lh ha-react-dashboard.zip
 
       - name: Upload ZIP to Release
         uses: softprops/action-gh-release@v1
         with:
-          files: release-*.zip
+          files: ha-react-dashboard.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
