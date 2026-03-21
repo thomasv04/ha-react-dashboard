@@ -1,11 +1,10 @@
 name: "HA React Dashboard"
-version: "2.0.2"
+version: "2.0.3"
 slug: "ha-react-dashboard"
 description: "Responsive React-based dashboard for Home Assistant with drag-and-drop widgets"
 url: "https://github.com/thomasv04/ha-react-dashboard"
 
-# Pre-built Docker images — the supervisor pulls from here instead of building locally.
-# {arch} is replaced by the supervisor with: amd64 or aarch64
+# Pre-built Docker images pulled by the supervisor ({arch} → amd64 / aarch64)
 image: "ghcr.io/thomasv04/ha-react-dashboard/{arch}"
 
 arch:
@@ -14,27 +13,16 @@ arch:
 
 startup: application
 boot: auto
+init: false
 
-# Allows the add-on to call the HA REST API; injects $SUPERVISOR_TOKEN
 homeassistant_api: true
 
-# Serve the UI through HA's own reverse proxy
 ingress: true
 ingress_port: 8099
 panel_icon: "mdi:view-dashboard"
-panel_title: "React Dashboard"
 
-# Also expose port directly (useful without ingress)
-ports:
-  8099/tcp: 8099
-ports_description:
-  8099/tcp: "Web UI"
-
-# Options written to /data/options.json by the supervisor (read by run.sh)
+# Optional long-lived token; if empty run.sh falls back to $SUPERVISOR_TOKEN
 options:
-  ha_url: "http://supervisor/core"
   ha_token: ""
-
 schema:
-  ha_url: str
   ha_token: str?
