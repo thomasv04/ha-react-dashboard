@@ -1,0 +1,12 @@
+---
+# HA Add-on builder configuration
+# https://developers.home-assistant.io/docs/add-ons/configuration#add-on-build-configuration
+
+# The Dockerfile is a self-contained multi-stage build
+# (node:20-alpine → nginx:1.27-alpine) so we do not override BUILD_FROM per arch.
+
+labels:
+  org.opencontainers.image.title: "HA React Dashboard"
+  org.opencontainers.image.description: "Responsive React dashboard for Home Assistant"
+  org.opencontainers.image.source: "https://github.com/thomasv04/ha-react-dashboard"
+  org.opencontainers.image.licenses: "MIT"
