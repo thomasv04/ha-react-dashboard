@@ -23,18 +23,13 @@ function resolveHAConfig() {
   // window.ENV is written by rootfs/run.sh; cast to avoid TS errors
   const runtimeEnv = (window as { ENV?: { HA_URL?: string; HA_TOKEN?: string } }).ENV ?? {};
 
-  const hassUrl =
-    (runtimeEnv.HA_URL?.trim() || null) ??
-    import.meta.env.VITE_HA_URL ??
-    'http://homeassistant:8123';
+  const hassUrl = (runtimeEnv.HA_URL?.trim() || null) ?? import.meta.env.VITE_HA_URL ?? 'http://homeassistant:8123';
 
   const rawToken = runtimeEnv.HA_TOKEN?.trim() || import.meta.env.VITE_HA_TOKEN;
   const hassToken = rawToken || undefined; // coerce empty string → undefined
 
   if (!hassToken) {
-    console.info(
-      '[ha-dashboard] No token provided – HassConnect will open the HA login dialog.',
-    );
+    console.info('[ha-dashboard] No token provided – HassConnect will open the HA login dialog.');
   }
 
   return { hassUrl, hassToken };

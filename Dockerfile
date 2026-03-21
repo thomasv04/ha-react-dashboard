@@ -1,7 +1,9 @@
 # ────────────────────────────────────────────────────────────
 # Stage 1 — Build React app (no credentials baked in)
+# Always run on amd64: Node/V8 hits illegal-instruction under QEMU ARM emulation.
+# The output is platform-agnostic static files (HTML/JS/CSS).
 # ────────────────────────────────────────────────────────────
-FROM node:20-alpine AS builder
+FROM --platform=linux/amd64 node:20-alpine AS builder
 
 WORKDIR /app
 
