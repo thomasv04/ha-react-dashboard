@@ -1,11 +1,8 @@
 {
   "name": "HA React Dashboard",
-  "country": ["FR"],
-  "homeassistant": "2026.1.0",
   "render_readme": true,
-  "documentation": "https://github.com/thomasv04/ha-react-dashboard/wiki",
-  "issues": "https://github.com/thomasv04/ha-react-dashboard/issues",
-  "repository": "https://github.com/thomasv04/ha-react-dashboard",
-  "category": "frontend",
-  "filename": "ha-react-dashboard.zip"
+  "homeassistant": "2026.1.0",
+  "zip_release": true,
+  "filename": "ha-react-dashboard.zip",
+  "hacs": "2.0.5"
 }
