@@ -13,6 +13,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+import homeassistant.helpers.config_validation as cv
 from homeassistant.components.frontend import (
     add_extra_js_url,
     async_register_built_in_panel,
@@ -28,6 +29,8 @@ PANEL_TITLE = "React Dashboard"
 PANEL_ICON = "mdi:view-dashboard-variant"
 JS_FILE = "ha-react-dashboard.iife.js"
 STATIC_PATH = f"/hakit/{DOMAIN}"
+
+CONFIG_SCHEMA = cv.empty_config_schema(DOMAIN)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
