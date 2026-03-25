@@ -3,6 +3,7 @@ import { Power, Home, Moon, Sun } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { cn } from '@/lib/utils';
+import { useRef, useState } from 'react';
 
 // ─── SVG gauge constants ──────────────────────────────────────────────────────
 const CX = 135;
@@ -49,10 +50,36 @@ const PRESETS = [
   { value: 'sleep', Icon: Moon },
 ] as const;
 
+// ─── Helper: pointer position → clockwise-from-north angle ──────────────────
+function pointerToAngle(e: React.PointerEvent<SVGSVGElement>): number {
+  const svg = e.currentTarget;
+  const rect = svg.getBoundingClientRect();
+  const scaleX = 270 / rect.width;
+  const scaleY = 270 / rect.height;
+  const svgX = (e.clientX - rect.left) * scaleX;
+  const svgY = (e.clientY - rect.top) * scaleY;
+  const angleDeg = Math.atan2(svgX - CX, -(svgY - CY)) * (180 / Math.PI);
+  return angleDeg < 0 ? angleDeg + 360 : angleDeg;
+}
+
+/** Returns temp in 0.5°C steps, or null if angle is in the dead zone */
+function angleToTemp(angleDeg: number): number | null {
+  let normalized = angleDeg - START_DEG;
+  if (normalized < 0) normalized += 360;
+  if (normalized > SWEEP_DEG) return null;
+  const fraction = normalized / SWEEP_DEG;
+  const raw = MIN_T + fraction * (MAX_T - MIN_T);
+  return Math.round(raw * 2) / 2; // 0.5 °C steps
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 export function ThermostatCard() {
   const thermostat = useSafeEntity('climate.pellet');
   const { helpers } = useHass();
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [dragTemp, setDragTemp] = useState<number | null>(null);
+  const isDragging = dragTemp !== null;
+
   if (!thermostat) return null;
 
   const target = (thermostat.attributes.temperature as number | undefined) ?? 20;
@@ -61,8 +88,11 @@ export function ThermostatCard() {
   const activePreset = (thermostat.attributes.preset_mode as string | undefined) ?? 'none';
   const isOff = thermostat.state === 'off';
 
+  // Use drag temp for live visual, fall back to HA state
+  const displayTemp = dragTemp ?? target;
+
   // Arc geometry
-  const fraction = Math.max(0, Math.min(1, (target - MIN_T) / (MAX_T - MIN_T)));
+  const fraction = Math.max(0, Math.min(1, (displayTemp - MIN_T) / (MAX_T - MIN_T)));
   const endDeg = START_DEG + Math.max(1, fraction * SWEEP_DEG);
   const dot = gaugePoint(endDeg);
 
@@ -72,8 +102,36 @@ export function ThermostatCard() {
   const arcColor = isHeating ? '#fb923c' : isCooling ? '#60a5fa' : 'rgba(255,255,255,0.30)';
 
   // Temperature split for display
-  const tempInt = Math.floor(target);
-  const tempDec = Math.round((target - tempInt) * 10);
+  const tempInt = Math.floor(displayTemp);
+  const tempDec = Math.round((displayTemp - tempInt) * 10);
+
+  // ── Drag handlers ────────────────────────────────────────────────────────────
+  function handlePointerDown(e: React.PointerEvent<SVGSVGElement>) {
+    const temp = angleToTemp(pointerToAngle(e));
+    if (temp === null) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setDragTemp(temp);
+  }
+
+  function handlePointerMove(e: React.PointerEvent<SVGSVGElement>) {
+    if (!isDragging) return;
+    const temp = angleToTemp(pointerToAngle(e));
+    if (temp !== null) setDragTemp(temp);
+  }
+
+  function handlePointerUp(_e: React.PointerEvent<SVGSVGElement>) {
+    if (!isDragging) return;
+    const finalTemp = dragTemp;
+    setDragTemp(null);
+    if (finalTemp !== null && finalTemp !== target) {
+      helpers.callService({
+        domain: 'climate',
+        service: 'set_temperature',
+        target: { entity_id: 'climate.pellet' },
+        serviceData: { temperature: finalTemp },
+      });
+    }
+  }
 
   function selectPreset(option: string) {
     helpers.callService({
@@ -103,7 +161,17 @@ export function ThermostatCard() {
     >
       {/* ── Circular gauge ── */}
       <div className='w-full'>
-        <svg viewBox='0 0 270 270' className='w-full h-auto'>
+        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+        <svg
+          ref={svgRef}
+          viewBox='0 0 270 270'
+          className='w-full h-auto'
+          style={{ touchAction: 'none', userSelect: 'none', cursor: isDragging ? 'grabbing' : 'grab' }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+        >
           <defs>
             <linearGradient id='thermoArcGrad' x1='0%' y1='100%' x2='100%' y2='0%'>
               <stop offset='0%' stopColor='#f97316' />
@@ -130,7 +198,7 @@ export function ThermostatCard() {
           />
 
           {/* Dot at target position */}
-          <circle cx={dot.x} cy={dot.y} r='7' fill='white' />
+          <circle cx={dot.x} cy={dot.y} r={isDragging ? 9 : 7} fill='white' opacity={isDragging ? 1 : 0.9} />
 
           {/* HVAC action label */}
           <text x={CX} y={CY - 22} textAnchor='middle' fill='rgba(255,255,255,0.50)' fontSize='13' fontFamily='inherit'>

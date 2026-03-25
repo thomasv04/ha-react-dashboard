@@ -20,7 +20,7 @@ function entity(entity_id: string, state: string, attributes: Record<string, unk
 
 // ─── Mock entity registry ───────────────────────────────────────────────────
 
-const ENTITIES: Record<string, EntityState> = {
+export const ENTITIES: Record<string, EntityState> = {
   // Climate — pellet stove
   'climate.pellet': entity('climate.pellet', 'heat', {
     current_temperature: 19.5,
@@ -123,7 +123,7 @@ const DEFAULT_ENTITY = entity('unknown', 'unavailable', {});
 
 // ─── Mock helpers ───────────────────────────────────────────────────────────
 
-const mockHelpers = {
+export const mockHelpers = {
   callService: (_params: unknown) => {
     // no-op in Storybook
   },
