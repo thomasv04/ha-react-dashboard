@@ -35,6 +35,15 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    // AJOUTE CECI : Vite va rediriger toutes les requêtes /api vers ton serveur Node local
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8099',
+        changeOrigin: true,
+      }
+    }
+  },
   build: isHACSPanel
     ? {
         lib: {

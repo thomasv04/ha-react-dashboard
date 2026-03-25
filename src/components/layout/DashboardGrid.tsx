@@ -63,6 +63,52 @@ function resolveDropPos(mx: number, my: number, gridEl: HTMLElement, cols: numbe
   return { x, y };
 }
 
+// ── Fonctions de collision et compactage ──────────────────────────────────────
+function hasCollision(widget1: GridWidget, widget2: GridWidget): boolean {
+  return !(
+    widget1.x + widget1.w <= widget2.x ||
+    widget1.x >= widget2.x + widget2.w ||
+    widget1.y + widget1.h <= widget2.y ||
+    widget1.y >= widget2.y + widget2.h
+  );
+}
+
+function compactLayout(widgets: GridWidget[]): GridWidget[] {
+  const sorted = [...widgets].sort((a, b) => {
+    if (a.y !== b.y) return a.y - b.y;
+    return a.x - b.x;
+  });
+
+  const compacted: GridWidget[] = [];
+
+  sorted.forEach(widget => {
+    if (widget.static) {
+      compacted.push(widget);
+      return;
+    }
+
+    let newY = 0;
+    let hasCollisionAtY = true;
+
+    while (hasCollisionAtY) {
+      hasCollisionAtY = false;
+      const testWidget = { ...widget, y: newY };
+
+      for (const other of compacted) {
+        if (hasCollision(testWidget, other)) {
+          hasCollisionAtY = true;
+          newY = other.y + other.h;
+          break;
+        }
+      }
+    }
+
+    compacted.push({ ...widget, y: newY });
+  });
+
+  return compacted;
+}
+
 // ── Grid Context ──────────────────────────────────────────────────────────────
 interface GridCtxValue {
   breakpoint: Breakpoint;
@@ -80,7 +126,7 @@ function useGridCtx() {
 
 // ── DashboardGrid ─────────────────────────────────────────────────────────────
 export function DashboardGrid({ children }: { children: React.ReactNode }) {
-  const { layout, updateWidget } = useDashboardLayout();
+  const { layout, updateWidget, setLayout } = useDashboardLayout();
   const [bp, setBp] = useState<Breakpoint>(resolveBreakpoint(window.innerWidth));
   const [gridEl, setGridEl] = useState<HTMLDivElement | null>(null);
   const [drag, setDrag] = useState<DragInfo | null>(null);
@@ -108,31 +154,85 @@ export function DashboardGrid({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // Drag + mouse tracking (only wired when actively dragging)
+  // ✅ Fonction de gestion du drop avec collision et swap
+  const handleDropInternal = useCallback(
+    (draggedWidget: GridWidget, newX: number, newY: number) => {
+      const updatedWidget = { ...draggedWidget, x: newX, y: newY };
+
+      // Trouver le widget en collision
+      const collidingWidget = layout.widgets[bp].find(w => w.id !== draggedWidget.id && hasCollision(updatedWidget, w));
+
+      if (collidingWidget) {
+        // Swap : échanger les positions
+        const tempX = collidingWidget.x;
+        const tempY = collidingWidget.y;
+
+        updateWidget(
+          collidingWidget.id,
+          {
+            x: draggedWidget.x,
+            y: draggedWidget.y,
+          },
+          bp
+        );
+
+        updateWidget(
+          draggedWidget.id,
+          {
+            x: tempX,
+            y: tempY,
+          },
+          bp
+        );
+      } else {
+        // Pas de collision : mise à jour simple
+        updateWidget(draggedWidget.id, { x: newX, y: newY }, bp);
+      }
+
+      // Compacter le layout après un court délai
+      setTimeout(() => {
+        const currentWidgets = layout.widgets[bp];
+        const compacted = compactLayout(currentWidgets);
+        setLayout({
+          ...layout,
+          widgets: { ...layout.widgets, [bp]: compacted },
+        });
+      }, 50);
+    },
+    [layout, bp, updateWidget, setLayout]
+  );
+
+  // Drag + mouse tracking
   useEffect(() => {
     if (!drag) return;
+
     const onMove = (e: MouseEvent) => {
       setDrag(d => (d ? { ...d, mouseX: e.clientX, mouseY: e.clientY } : null));
       if (gridEl) {
         setDropPos(resolveDropPos(e.clientX, e.clientY, gridEl, layout.cols[bp]));
       }
     };
+
     const onUp = () => {
       if (drag && dropPos) {
         const cols = layout.cols[bp];
         const nx = Math.max(0, Math.min(dropPos.x, cols - Math.ceil(drag.widget.w)));
-        updateWidget(drag.id, { x: nx, y: dropPos.y }, bp);
+        const ny = dropPos.y;
+
+        // ✅ Appel de la fonction avec gestion des collisions
+        handleDropInternal(drag.widget, nx, ny);
       }
       setDrag(null);
       setDropPos(null);
     };
+
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
     return () => {
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
     };
-  }, [drag, dropPos, bp, layout.cols, updateWidget, gridEl]);
+  }, [drag, dropPos, bp, layout.cols, gridEl, handleDropInternal]);
 
   const cols = layout.cols[bp];
 
@@ -153,7 +253,7 @@ export function DashboardGrid({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Drop highlight */}
-      {drag && dropPos && gridEl && <DropHighlight gridEl={gridEl} pos={dropPos} w={drag.widget.w} cols={cols} />}
+      {drag && dropPos && gridEl && <DropHighlight gridEl={gridEl} pos={dropPos} w={drag.widget.w} h={drag.widget.h} cols={cols} />}
 
       {/* Drag ghost */}
       {drag && (
@@ -180,26 +280,60 @@ export function DashboardGrid({ children }: { children: React.ReactNode }) {
 }
 
 // ── Drop highlight ────────────────────────────────────────────────────────────
-function DropHighlight({ gridEl, pos, w, cols }: { gridEl: HTMLElement; pos: DropPos; w: number; cols: number }) {
+function DropHighlight({
+  gridEl,
+  pos,
+  w,
+  h, // ✅ AJOUT : hauteur du widget en lignes
+  cols,
+}: {
+  gridEl: HTMLElement;
+  pos: DropPos;
+  w: number;
+  h: number; // ✅ AJOUT
+  cols: number;
+}) {
   const rect = gridEl.getBoundingClientRect();
   const gap = 16;
   const colW = (rect.width - (cols - 1) * gap) / cols;
+
+  // Récupérer toutes les hauteurs de lignes
   const rows = getComputedStyle(gridEl)
     .gridTemplateRows.split(' ')
     .map(parseFloat)
     .filter(v => !isNaN(v));
 
+  // ✅ Calculer la position Y de départ
   let top = rect.top;
-  for (let i = 0; i < pos.y && i < rows.length; i++) top += rows[i] + gap;
-  const rowH = rows[pos.y] ?? 100;
-  const effectiveW = Math.min(w, cols - pos.x);
+  for (let i = 0; i < pos.y && i < rows.length; i++) {
+    top += rows[i] + gap;
+  }
+
+  // ✅ Calculer la hauteur totale (plusieurs lignes + gaps)
+  let totalHeight = 0;
+  const endRow = Math.min(pos.y + Math.ceil(h), rows.length);
+
+  for (let i = pos.y; i < endRow; i++) {
+    totalHeight += rows[i] ?? 100; // Hauteur par défaut si ligne inexistante
+    if (i < endRow - 1) {
+      totalHeight += gap; // Ajouter le gap entre les lignes
+    }
+  }
+
+  // ✅ Calculer la largeur (peut s'étendre sur plusieurs colonnes)
+  const effectiveW = Math.min(Math.ceil(w), cols - pos.x);
   const left = rect.left + pos.x * (colW + gap);
   const width = effectiveW * colW + (effectiveW - 1) * gap;
 
   return (
     <div
       className='fixed pointer-events-none z-40 rounded-2xl border-2 border-dashed border-purple-400/50 bg-purple-500/8 transition-all duration-100'
-      style={{ left, top, width, height: rowH }}
+      style={{
+        left,
+        top,
+        width,
+        height: totalHeight, // ✅ Hauteur correcte
+      }}
     />
   );
 }
@@ -236,7 +370,6 @@ export function GridItem({ id, children }: { id: string; children: React.ReactNo
       <AnimatePresence>
         {isEditMode &&
           (widget.static ? (
-            /* Widgets statiques (activity, greeting) : juste un badge crayon */
             <motion.div
               key={`badge-${id}`}
               initial={{ opacity: 0, scale: 0.7 }}
@@ -249,7 +382,6 @@ export function GridItem({ id, children }: { id: string; children: React.ReactNo
               <Pencil size={11} />
             </motion.div>
           ) : (
-            /* Widgets normaux : overlay léger avec poignée drag */
             <motion.div
               key={`overlay-${id}`}
               initial={{ opacity: 0 }}
@@ -259,7 +391,6 @@ export function GridItem({ id, children }: { id: string; children: React.ReactNo
               className='absolute inset-0 z-10 rounded-2xl overflow-hidden flex flex-col'
               style={{ backdropFilter: 'blur(2px)', background: 'rgba(8, 12, 35, 0.50)' }}
             >
-              {/* Top bar */}
               <div className='flex items-center justify-between px-3 pt-2.5'>
                 <span className='text-[11px] font-medium text-white/45'>{label}</span>
                 <button
@@ -271,7 +402,6 @@ export function GridItem({ id, children }: { id: string; children: React.ReactNo
                 </button>
               </div>
 
-              {/* Drag handle */}
               <div className='flex-1 flex items-center justify-center'>
                 <div
                   onMouseDown={e => startDrag(id, widget, e)}
@@ -281,7 +411,6 @@ export function GridItem({ id, children }: { id: string; children: React.ReactNo
                 </div>
               </div>
 
-              {/* Bottom */}
               <div className='px-3 pb-2'>
                 <span className='text-[10px] text-white/25'>
                   {widget.w}c × {widget.h}r
