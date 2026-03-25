@@ -6,7 +6,10 @@ import { DashboardGrid, GridItem } from '@/components/layout/DashboardGrid';
 import { useUser } from '@hakit/core';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PencilLine, Check, X, CloudUpload, Plus } from 'lucide-react';
+import { PencilLine, Check, X, CloudUpload, Plus, Loader2 } from 'lucide-react';
+
+// 👉 NOUVEAU : Import de notre hook backend !
+import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 
 // Cards
 import { ClockWidget } from '@/components/cards/GreetingCard';
@@ -31,11 +34,15 @@ import { CameraPanel } from '@/components/panels/CameraPanel';
 /**
  * Bouton flottant d'édition visible uniquement par les admins.
  * - Affiche/masque le mode édition (overlays sur chaque card)
- * - Propose de sauvegarder dans localStorage et/ou Home Assistant
+ * - Propose de sauvegarder dans Node.js (dossier /data HA)
  */
 function EditButton() {
   const user = useUser();
-  const { isEditMode, setEditMode, saveLayout, saveToHA, layout, addWidgetByType } = useDashboardLayout();
+  const { isEditMode, setEditMode, saveLayout, layout, addWidgetByType } = useDashboardLayout();
+  
+  // 👉 NOUVEAU : On récupère la fonction de sauvegarde de notre backend Node
+  const { saveConfig, isSaving } = useDashboardConfig();
+  
   const [showAddModal, setShowAddModal] = useState(false);
 
   if (!user?.is_admin) return null;
@@ -45,8 +52,11 @@ function EditButton() {
   const addable = WIDGET_CATALOG.filter(c => !presentTypes.has(c.type));
 
   const handleSave = async () => {
-    saveLayout();
-    await saveToHA();
+    saveLayout(); // Met à jour le state local
+    
+    // On envoie directement le layout brut (et pas un objet { layout: layout })
+    await saveConfig(layout); 
+    
     setEditMode(false);
   };
 
@@ -72,14 +82,18 @@ function EditButton() {
                 <Plus size={15} />
                 Ajouter
               </button>
+              
               {/* Bouton Sauvegarder */}
               <button
                 onClick={handleSave}
-                className='flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 text-green-300 hover:text-green-100 text-sm font-medium transition-colors backdrop-blur-sm'
+                disabled={isSaving}
+                className='flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 text-green-300 hover:text-green-100 text-sm font-medium transition-colors backdrop-blur-sm disabled:opacity-50'
               >
-                <CloudUpload size={15} />
-                Sauvegarder
+                {/* Petit spinner si ça sauvegarde */}
+                {isSaving ? <Loader2 size={15} className="animate-spin" /> : <CloudUpload size={15} />}
+                {isSaving ? 'Sauvegarde...' : 'Sauvegarder'}
               </button>
+              
               {/* Bouton Annuler */}
               <button
                 onClick={() => setEditMode(false)}
@@ -267,8 +281,22 @@ function DashboardContent() {
 }
 
 function Dashboard() {
+  // 👉 NOUVEAU : On empêche l'affichage tant que Node n'a pas répondu !
+  const { isLoading, config } = useDashboardConfig();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#0c1028] text-white">
+        <Loader2 size={32} className="animate-spin text-blue-500 mb-4" />
+        <p className="text-white/60">Chargement de la configuration...</p>
+      </div>
+    );
+  }
+
   return (
-    <DashboardLayoutProvider>
+    // Note: Idéalement, tu devrais passer "config" à ton DashboardLayoutProvider 
+    // pour qu'il initialise ses widgets avec ce qui vient du serveur !
+    <DashboardLayoutProvider initialLayout={config}>
       <PanelProvider>
         <DashboardContent />
       </PanelProvider>

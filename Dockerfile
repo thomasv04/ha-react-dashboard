@@ -18,27 +18,34 @@ COPY . .
 RUN VITE_ADDON=true npm run build
 
 # ────────────────────────────────────────────────────────────
-# Stage 2 — Production: nginx + jq for runtime config injection
+# Stage 2 — Production: Node.js server + jq
 # ────────────────────────────────────────────────────────────
-FROM nginx:1.27-alpine
+FROM node:20-alpine
 
-# jq to parse /data/options.json; bash for run.sh
+WORKDIR /app
+
+# Install jq for parsing /data/options.json and bash for run.sh
 RUN apk add --no-cache jq bash
 
-# Nginx configuration for SPA with HA add-on port
-COPY rootfs/etc/nginx/nginx.conf /etc/nginx/nginx.conf
+# Install ONLY production dependencies (Express)
+COPY package*.json ./
+RUN npm ci --omit=dev
 
-# Startup script: reads /data/options.json and writes env-config.js
+# Copy the Node.js backend server
+COPY server.js .
+
+# Copy the startup script
 COPY rootfs/run.sh /run.sh
 RUN chmod +x /run.sh
 
-# React build output
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Copy React build output from Stage 1
+COPY --from=builder /app/dist /app/dist
 
 # HA Add-on standard ingress port
 EXPOSE 8099
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost:8099/index.html || exit 1
+  CMD wget --quiet --tries=1 --spider http://localhost:8099/ || exit 1
 
-CMD ["/run.sh"]
+# Start the run script
+CMD [ "/run.sh" ]
