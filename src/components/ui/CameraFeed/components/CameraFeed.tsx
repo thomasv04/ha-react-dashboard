@@ -2,7 +2,10 @@ import { Camera } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { cn } from '@/lib/utils';
 
-const HA_URL = (import.meta.env.VITE_HA_URL as string | undefined) ?? '';
+// Read HA URL at render time so tests that modify `import.meta.env` pick it up
+// (some test runners mutate env between module loads).
+// Note: keep empty string as fallback so template paths begin with '/'.
+
 
 /**
  * Displays a HA camera entity as a live MJPEG stream.
@@ -11,6 +14,13 @@ const HA_URL = (import.meta.env.VITE_HA_URL as string | undefined) ?? '';
  */
 export function CameraFeed({ entityId, className }: { entityId: string; className?: string }) {
   const entityPicture = useHass(s => s.entities?.[entityId]?.attributes?.entity_picture as string | undefined);
+  const HA_URL = (import.meta.env.VITE_HA_URL as string | undefined) ?? '';
+
+  if (import.meta.env.TEST) {
+    // Helpful during local test debugging
+    // eslint-disable-next-line no-console
+    console.debug('[CameraFeed] entityId=', entityId, 'entityPicture=', entityPicture, 'HA_URL=', HA_URL);
+  }
 
   if (!entityPicture) {
     return (

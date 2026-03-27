@@ -7,20 +7,20 @@ import { useUser } from '@hakit/core';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PencilLine, Check, X, CloudUpload, Plus, Loader2 } from 'lucide-react';
-
+  
 // 👉 NOUVEAU : Import de notre hook backend !
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 
 // Cards
-import { ClockWidget } from '@/components/cards/GreetingCard';
-import { WeatherCard } from '@/components/cards/WeatherCard';
-import { EnergyCard } from '@/components/cards/EnergyCard';
-import { TempoCard } from '@/components/cards/TempoCard';
-import { ThermostatCard } from '@/components/cards/ThermostatCard';
-import { RoomsGrid } from '@/components/cards/RoomsGrid';
-import { ActivityBar } from '@/components/cards/ActivityBar';
-import { ShortcutsCard } from '@/components/cards/ShortcutsCard';
-import { CameraCard } from '@/components/cards/CameraCard';
+import { ClockWidget } from '@/components/cards/GreetingCard/GreetingCard';
+import { WeatherCard } from '@/components/cards/WeatherCard/WeatherCard';
+import { EnergyCard } from '@/components/cards/EnergyCard/EnergyCard';
+import { TempoCard } from '@/components/cards/TempoCard/TempoCard';
+import { ThermostatCard } from '@/components/cards/ThermostatCard/ThermostatCard';
+import { RoomsGrid } from '@/components/cards/RoomsGrid/RoomsGrid';
+import { ActivityBar } from '@/components/cards/ActivityBar/ActivityBar';
+import { ShortcutsCard } from '@/components/cards/ShortcutsCard/ShortcutsCard';
+import { CameraCard } from '@/components/cards/CameraCard/CameraCard';
 
 // Panels
 import { ShuttersPanel } from '@/components/panels/ShuttersPanel';

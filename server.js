@@ -59,8 +59,14 @@ app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-// Lancement du serveur
-app.listen(PORT, () => {
-  console.log(`[Backend] Serveur démarré sur le port ${PORT}`);
-  console.log(`[Backend] Fichier de sauvegarde utilisé : ${CONFIG_FILE}`);
-});
+/* c8 ignore next */
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`[Backend] Serveur démarré sur le port ${PORT}`);
+    console.log(`[Backend] Fichier de sauvegarde utilisé : ${CONFIG_FILE}`);
+  });
+}
+
+
+// Exporter l'application pour qu'elle puisse être importée par les tests
+export default app;

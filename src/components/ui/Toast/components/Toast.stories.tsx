@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { Bell, Mail, Package, AlertTriangle } from 'lucide-react';
 import { ToastProvider, useToast } from '@/context/ToastContext';
-import { ToastContainer } from '@/components/ui/Toast';
+import { ToastContainer } from '@/components/ui/Toast/components/Toast';
 
 // ── Storybook wrapper ─────────────────────────────────────────────────────────
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useHass } from '@hakit/core';
-import { CameraFeed } from '@/components/ui/CameraFeed';
+import { CameraFeed } from '@/components/ui/CameraFeed/components/CameraFeed';
 import { cn } from '@/lib/utils';
 
 interface Cam {

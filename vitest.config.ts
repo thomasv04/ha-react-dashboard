@@ -17,7 +17,10 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: [
+      'src/**/*.test.{ts,tsx,js,jsx}', 
+      '*.test.{ts,tsx,js,jsx}' // Ajout pour server.test.js
+    ],
     server: {
       deps: {
         // Force Vite à transformer les modules CJS (lodash, @hakit/*...)
@@ -27,12 +30,12 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
-      include: ['src/**/*.{ts,tsx}'],
+      include: ['src/**/*.{ts,tsx}', 'server.js'],
       exclude: ['src/**/*.stories.tsx', 'src/main.tsx', 'src/test/**'],
       thresholds: {
-        lines: 30,
-        functions: 30,
-        branches: 30,
+        lines: 80,
+        functions: 80,
+        branches: 80,
       },
     },
   },

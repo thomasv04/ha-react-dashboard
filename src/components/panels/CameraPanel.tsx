@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useHass } from '@hakit/core';
 import { Camera } from 'lucide-react';
 import { Panel } from '@/components/layout/Panel';
-import { CameraFeed } from '@/components/ui/CameraFeed';
+import { CameraFeed } from '@/components/ui/CameraFeed/components/CameraFeed';
 import { cn } from '@/lib/utils';
 
 interface Cam {

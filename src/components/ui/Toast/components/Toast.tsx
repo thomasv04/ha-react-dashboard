@@ -80,6 +80,7 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
 
 // ── Toast container ───────────────────────────────────────────────────────────
 
+export { ToastCard };
 export function ToastContainer() {
   const { toasts, removeToast } = useToast();
 

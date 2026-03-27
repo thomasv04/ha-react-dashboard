@@ -1,6 +1,6 @@
 import { ShieldHalf } from 'lucide-react';
 import { Panel } from '@/components/layout/Panel';
-import { AlarmCard } from '@/components/cards/AlarmCard';
+import { AlarmCard } from '@/components/cards/AlarmCard/AlarmCard';
 
 const CAMERAS = [
   { id: 'camera.sonnette_frigate', label: 'Sonnette' },

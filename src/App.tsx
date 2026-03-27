@@ -1,7 +1,7 @@
 import { ThemeProvider } from '@hakit/components';
 import { HassConnect } from '@hakit/core';
 import { ToastProvider } from '@/context/ToastContext';
-import { ToastContainer } from '@/components/ui/Toast';
+import { ToastContainer } from '@/components/ui/Toast/components/Toast';
 import { useHAToast } from '@/hooks/useHAToast';
 import Dashboard from './Dashboard';
 
