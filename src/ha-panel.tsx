@@ -12,6 +12,8 @@ import { ToastProvider } from '@/context/ToastContext';
 import { ToastContainer } from '@/components/ui/Toast/components/Toast';
 import { useHAToast } from '@/hooks/useHAToast';
 import Dashboard from './Dashboard';
+import { ThemeContextProvider } from '@/context/ThemeContext';
+import { BackgroundLayer } from '@/components/layout/BackgroundLayer';
 import './index.css';
 
 function HAToastBridge() {
@@ -28,11 +30,14 @@ function PanelApp({ hassUrl, hassToken }: PanelAppProps) {
   return (
     <HassConnect hassUrl={hassUrl} hassToken={hassToken}>
       <ThemeProvider />
-      <ToastProvider>
-        <HAToastBridge />
-        <Dashboard />
-        <ToastContainer />
-      </ToastProvider>
+      <ThemeContextProvider>
+        <BackgroundLayer />
+        <ToastProvider>
+          <HAToastBridge />
+          <Dashboard />
+          <ToastContainer />
+        </ToastProvider>
+      </ThemeContextProvider>
     </HassConnect>
   );
 }

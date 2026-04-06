@@ -2,6 +2,9 @@ import { motion } from 'framer-motion';
 import { Zap, Calendar } from 'lucide-react';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { cn } from '@/lib/utils';
+import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { useWidgetId } from '@/components/layout/DashboardGrid';
+import type { TempoCardConfig } from '@/types/widget-configs';
 
 type TempoColor = 'Bleu' | 'Blanc' | 'Rouge' | string;
 
@@ -18,12 +21,16 @@ function dotColor(color: TempoColor) {
 }
 
 export function TempoCard() {
-  const current = useSafeEntity('sensor.rte_tempo_couleur_actuelle');
-  const next = useSafeEntity('sensor.rte_tempo_prochaine_couleur');
-  const hc = useSafeEntity('binary_sensor.rte_tempo_heures_creuses');
-  const blue = useSafeEntity('sensor.rte_tempo_cycle_jours_restants_bleu');
-  const white = useSafeEntity('sensor.rte_tempo_cycle_jours_restants_blanc');
-  const red = useSafeEntity('sensor.rte_tempo_cycle_jours_restants_rouge');
+  const { getWidgetConfig } = useDashboardLayout();
+  const widgetId = useWidgetId();
+  const config = getWidgetConfig<TempoCardConfig>(widgetId || 'tempo');
+
+  const current = useSafeEntity(config?.currentColorEntity ?? 'sensor.rte_tempo_couleur_actuelle');
+  const next = useSafeEntity(config?.nextColorEntity ?? 'sensor.rte_tempo_prochaine_couleur');
+  const hc = useSafeEntity(config?.offPeakEntity ?? 'binary_sensor.rte_tempo_heures_creuses');
+  const blue = useSafeEntity(config?.remainingBlueEntity ?? 'sensor.rte_tempo_cycle_jours_restants_bleu');
+  const white = useSafeEntity(config?.remainingWhiteEntity ?? 'sensor.rte_tempo_cycle_jours_restants_blanc');
+  const red = useSafeEntity(config?.remainingRedEntity ?? 'sensor.rte_tempo_cycle_jours_restants_rouge');
 
   if (!current) return null;
 

@@ -1,6 +1,9 @@
 import { motion } from 'framer-motion';
 import { Wind, Cloud, Sun, CloudRain, CloudSnow, Cloudy, CloudDrizzle } from 'lucide-react';
 import { useWeather } from '@hakit/core';
+import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { useWidgetId } from '@/components/layout/DashboardGrid';
+import type { WeatherCardConfig } from '@/types/widget-configs';
 
 function WeatherIcon({ condition, size = 32 }: { condition: string; size?: number }) {
   const cn = condition.toLowerCase();
@@ -35,9 +38,12 @@ const CONDITION_FR: Record<string, string> = {
 };
 
 export function WeatherCard() {
-  // useWeather subscribes to HA's forecast events via WebSocket (weather.get_forecasts)
-  // — called once, updated automatically, no polling
-  const weather = useWeather('weather.menneville', { type: 'daily' });
+  const { getWidgetConfig } = useDashboardLayout();
+  const widgetId = useWidgetId();
+  const config = getWidgetConfig<WeatherCardConfig>(widgetId || 'weather');
+  const entityId = config?.entityId ?? 'weather.menneville';
+
+  const weather = useWeather(entityId as 'weather.menneville', { type: 'daily' });
 
   const temp = weather.attributes.temperature as number | undefined;
   const wind = weather.attributes.wind_speed as number | undefined;

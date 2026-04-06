@@ -1,9 +1,13 @@
 import { ThemeProvider } from '@hakit/components';
 import { HassConnect } from '@hakit/core';
 import { ToastProvider } from '@/context/ToastContext';
+import { ModalProvider } from '@/context/ModalContext';
 import { ToastContainer } from '@/components/ui/Toast/components/Toast';
 import { useHAToast } from '@/hooks/useHAToast';
 import Dashboard from './Dashboard';
+import { ModalContainer } from './components/ui/Modal/composents/Modal';
+import { ThemeContextProvider } from '@/context/ThemeContext';
+import { BackgroundLayer } from '@/components/layout/BackgroundLayer';
 
 /** Mounts the HA event subscription inside the providers */
 function HAToastBridge() {
@@ -48,11 +52,17 @@ function App({ hassUrl: propHassUrl, hassToken: propHassToken }: AppProps = {}) 
   return (
     <HassConnect hassUrl={hassUrl} hassToken={hassToken}>
       <ThemeProvider />
-      <ToastProvider>
-        <HAToastBridge />
-        <Dashboard />
-        <ToastContainer />
-      </ToastProvider>
+      <ThemeContextProvider>
+        <BackgroundLayer />
+        <ToastProvider>
+          <ModalProvider>
+            <HAToastBridge />
+            <Dashboard />
+            <ToastContainer />
+            <ModalContainer />
+          </ModalProvider>
+        </ToastProvider>
+      </ThemeContextProvider>
     </HassConnect>
   );
 }

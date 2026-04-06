@@ -3,6 +3,9 @@ import { Power, Home, Moon, Sun } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { cn } from '@/lib/utils';
+import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { useWidgetId } from '@/components/layout/DashboardGrid';
+import type { ThermostatCardConfig } from '@/types/widget-configs';
 
 // ─── SVG gauge constants ──────────────────────────────────────────────────────
 const CX = 135;
@@ -51,7 +54,14 @@ const PRESETS = [
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export function ThermostatCard() {
-  const thermostat = useSafeEntity('climate.pellet');
+  const { getWidgetConfig } = useDashboardLayout();
+  const widgetId = useWidgetId();
+  const config = getWidgetConfig<ThermostatCardConfig>(widgetId || 'thermostat');
+  const entityId = config?.entityId ?? 'climate.pellet';
+  const minT = config?.minTemp ?? MIN_T;
+  const maxT = config?.maxTemp ?? MAX_T;
+
+  const thermostat = useSafeEntity(entityId);
   const { helpers } = useHass();
   if (!thermostat) return null;
 
@@ -62,7 +72,7 @@ export function ThermostatCard() {
   const isOff = thermostat.state === 'off';
 
   // Arc geometry
-  const fraction = Math.max(0, Math.min(1, (target - MIN_T) / (MAX_T - MIN_T)));
+  const fraction = Math.max(0, Math.min(1, (target - minT) / (maxT - minT)));
   const endDeg = START_DEG + Math.max(1, fraction * SWEEP_DEG);
   const dot = gaugePoint(endDeg);
 

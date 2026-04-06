@@ -1,3 +1,8 @@
+import dotenv from 'dotenv';
+// Load .env first (base / production), then .env.development overrides for local dev
+dotenv.config();
+dotenv.config({ path: '.env.development', override: true });
+
 import express from 'express';
 import fs from 'fs';
 import path from 'path';

@@ -1,40 +1,101 @@
 import { useState, useEffect, useCallback } from 'react';
-import { DEFAULT_LAYOUT, type DashboardLayout } from '@/context/DashboardLayoutContext';
+import {
+  DEFAULT_LAYOUT,
+  type DashboardConfig,
+  type DashboardConfigV2,
+  type DashboardLayout,
+} from '@/context/DashboardLayoutContext';
+import { DEFAULT_WIDGET_CONFIGS, type WidgetConfigs } from '@/types/widget-configs';
+import { DEFAULT_PAGES, type Page } from '@/context/PageContext';
+import { DEFAULT_WALLPANEL_CONFIG, type WallPanelConfig } from '@/types/wallpanel';
+
+// ── Migration v1 → v2 ─────────────────────────────────────────────────────────
+function migrateConfig(data: unknown): DashboardConfigV2 {
+  // Already v2
+  if (
+    data &&
+    typeof data === 'object' &&
+    'version' in data &&
+    (data as { version: unknown }).version === 2
+  ) {
+    return data as DashboardConfigV2;
+  }
+
+  // v1 migration: put everything under the "home" page
+  let layout: DashboardLayout = DEFAULT_LAYOUT;
+  let widgetConfigs: WidgetConfigs = DEFAULT_WIDGET_CONFIGS;
+
+  if (data && typeof data === 'object') {
+    const d = data as Record<string, unknown>;
+    if (d.widgets) {
+      // Legacy: layout at root level
+      layout = data as DashboardLayout;
+    } else if (d.layout) {
+      layout = d.layout as DashboardLayout;
+      if (d.widgetConfigs) {
+        widgetConfigs = { ...DEFAULT_WIDGET_CONFIGS, ...(d.widgetConfigs as WidgetConfigs) };
+      }
+    }
+  }
+
+  return {
+    version: 2,
+    pages: [...DEFAULT_PAGES],
+    layouts: { home: layout },
+    widgetConfigs: { home: widgetConfigs },
+  };
+}
 
 export function useDashboardConfig() {
-  // On utilise directement ton type et ta configuration par défaut !
-  const [config, setConfig] = useState<DashboardLayout>(DEFAULT_LAYOUT);
+  const [pages, setPages] = useState<Page[]>(DEFAULT_PAGES);
+  const [allLayouts, setAllLayouts] = useState<Record<string, DashboardLayout>>({ home: DEFAULT_LAYOUT });
+  const [allWidgetConfigs, setAllWidgetConfigs] = useState<Record<string, WidgetConfigs>>({ home: DEFAULT_WIDGET_CONFIGS });
+  const [wallPanelConfig, setWallPanelConfig] = useState<WallPanelConfig>(DEFAULT_WALLPANEL_CONFIG);
+  const [wallPanelLayout, setWallPanelLayout] = useState<DashboardLayout>({
+    ...DEFAULT_LAYOUT,
+    widgets: { lg: [], md: [], sm: [] },
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // 1. Charger la configuration au démarrage
+  // Load config from server
   useEffect(() => {
     fetch('/api/config')
       .then(res => res.json())
-      .then(data => {
-        // Si le serveur renvoie un layout vide, on garde le DEFAULT_LAYOUT
-        if (data.message === "No config yet") {
-          setConfig(DEFAULT_LAYOUT);
+      .then((data: unknown) => {
+        if (data && typeof data === 'object' && 'message' in data) {
+          // No config yet — use defaults
+          setPages(DEFAULT_PAGES);
+          setAllLayouts({ home: DEFAULT_LAYOUT });
+          setAllWidgetConfigs({ home: DEFAULT_WIDGET_CONFIGS });
         } else {
-          setConfig(data);
+          const v2 = migrateConfig(data);
+          setPages(v2.pages);
+          setAllLayouts(v2.layouts);
+          setAllWidgetConfigs(v2.widgetConfigs);
+          if (v2.wallPanel) {
+            setWallPanelConfig(v2.wallPanel.config);
+            setWallPanelLayout(v2.wallPanel.layout);
+          }
         }
       })
       .catch(err => console.error("Erreur de chargement de la config:", err))
       .finally(() => setIsLoading(false));
   }, []);
 
-  // 2. Fonction pour sauvegarder
-  const saveConfig = useCallback(async (newConfig: DashboardLayout) => {
+  // Save full config v2 (pages + all layouts + all widget configs)
+  const saveConfig = useCallback(async (config: DashboardConfigV2) => {
     setIsSaving(true);
     try {
       const response = await fetch('/api/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newConfig)
+        body: JSON.stringify(config),
       });
-      
       if (response.ok) {
-        setConfig(newConfig);
+        setPages(config.pages);
+        setAllLayouts(config.layouts);
+        setAllWidgetConfigs(config.widgetConfigs);
         console.log("Configuration sauvegardée avec succès !");
       }
     } catch (err) {
@@ -44,5 +105,5 @@ export function useDashboardConfig() {
     }
   }, []);
 
-  return { config, isLoading, isSaving, saveConfig };
+  return { pages, allLayouts, allWidgetConfigs, wallPanelConfig, wallPanelLayout, isLoading, isSaving, saveConfig };
 }

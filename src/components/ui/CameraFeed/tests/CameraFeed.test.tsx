@@ -1,116 +1,65 @@
-import { render, waitFor } from '@testing-library/react';
-
+import { render } from '@testing-library/react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
+
+const mockUseCamera = vi.fn();
+
+vi.mock('@hakit/core', () => ({
+  useCamera: (entityId: string) => mockUseCamera(entityId),
+}));
+
+vi.mock('hls.js', () => ({
+  default: {
+    isSupported: () => false,
+  },
+}));
+
+// Import after mocks are set up
+const { CameraFeed } = await import('../components/CameraFeed');
 
 describe('CameraFeed', () => {
   afterEach(() => {
-    vi.resetModules();
+    vi.clearAllMocks();
   });
 
-  it('utilise HA_URL vide explicite', async () => {
-    const oldEnv = import.meta.env.VITE_HA_URL;
-    import.meta.env.VITE_HA_URL = '';
-    vi.resetModules();
-    await vi.doMock('@hakit/core', () => ({
-      useHass: (fn: any) =>
-        fn({
-          entities: {
-            'camera.empty': { attributes: { entity_picture: '/api/camera_proxy/camera.empty?token=abc' } },
-          },
-        }),
-    }));
-    const { CameraFeed } = await import('../components/CameraFeed');
-    const { container } = render(<CameraFeed entityId="camera.empty" />);
-    await waitFor(() => {
-      const img = container.querySelector('img');
-      expect(img).toBeInTheDocument();
-      expect(img).toHaveAttribute('src', expect.stringContaining('/api/camera_proxy_stream/camera.empty?token=abc'));
+  it('affiche une vidéo HLS quand stream.url est disponible', () => {
+    mockUseCamera.mockReturnValue({
+      stream: { url: 'https://ha/api/hls/token/master_playlist.m3u8', loading: false, error: undefined },
+      mjpeg: { url: undefined, shouldRenderMJPEG: false },
     });
-    import.meta.env.VITE_HA_URL = oldEnv;
+    const { container } = render(<CameraFeed entityId="camera.salon_frigate" />);
+    expect(container.querySelector('video')).toBeInTheDocument();
+    expect(container.querySelector('img')).not.toBeInTheDocument();
   });
 
-  it('utilise HA_URL custom si défini', async () => {
-    vi.resetModules();
-    const oldEnv = import.meta.env.VITE_HA_URL;
-    import.meta.env.VITE_HA_URL = 'https://custom-ha-url';
-    await vi.doMock('@hakit/core', () => ({
-      useHass: (fn: any) =>
-        fn({
-          entities: {
-            'camera.custom': { attributes: { entity_picture: '/api/camera_proxy/camera.custom?token=abc' } },
-          },
-        }),
-    }));
-    const { CameraFeed } = await import('../components/CameraFeed');
-    const { container } = render(<CameraFeed entityId="camera.custom" />);
-    await waitFor(() => {
-      const img = container.querySelector('img');
-      expect(img).toBeInTheDocument();
-      expect(img).toHaveAttribute('src', expect.stringContaining('https://custom-ha-url'));
+  it('affiche un flux MJPEG quand shouldRenderMJPEG est true', () => {
+    mockUseCamera.mockReturnValue({
+      stream: { url: undefined, loading: false, error: undefined },
+      mjpeg: { url: 'https://ha/api/camera_proxy_stream/camera.cuisine?token=abc', shouldRenderMJPEG: true },
     });
-    import.meta.env.VITE_HA_URL = oldEnv;
-  });
-
-  it('affiche le flux MJPEG si entity_picture existe', async () => {
-    vi.resetModules();
-    await vi.doMock('@hakit/core', () => ({
-      useHass: (fn: any) =>
-        fn({
-          entities: {
-            'camera.test': { attributes: { entity_picture: '/api/camera_proxy/camera.test?token=abc' } },
-          },
-        }),
-    }));
-    const { CameraFeed } = await import('../components/CameraFeed');
-    const { container } = render(<CameraFeed entityId="camera.test" />);
-    await waitFor(() => {
-      const img = container.querySelector('img');
-      expect(img).toBeInTheDocument();
-      expect(img).toHaveAttribute('src', expect.stringContaining('/api/camera_proxy_stream/camera.test?token=abc'));
-    });
-  });
-
-  it('affiche une icône si pas de entity_picture', async () => {
-    vi.resetModules();
-    await vi.doMock('@hakit/core', () => ({ useHass: () => undefined }));
-    const { CameraFeed } = await import('../components/CameraFeed');
-    render(<CameraFeed entityId="camera.unknown" />);
-    expect(document.querySelector('svg')).toBeInTheDocument();
-  });
-
-  it('affiche le flux proxy si pas de token', async () => {
-    vi.resetModules();
-    await vi.doMock('@hakit/core', () => ({
-      useHass: (fn: any) =>
-        fn({
-          entities: {
-            'camera.notoken': { attributes: { entity_picture: '/api/camera_proxy/camera.notoken' } },
-          },
-        }),
-    }));
-    const { CameraFeed } = await import('../components/CameraFeed');
-    const { container } = render(<CameraFeed entityId="camera.notoken" />);
+    const { container } = render(<CameraFeed entityId="camera.cuisine" />);
     const img = container.querySelector('img');
     expect(img).toBeInTheDocument();
-    expect(img).toHaveAttribute('src', expect.stringContaining('/api/camera_proxy/camera.notoken'));
+    expect(img).toHaveAttribute('src', 'https://ha/api/camera_proxy_stream/camera.cuisine?token=abc');
   });
 
-  it('utilise HA_URL vide si non défini', async () => {
-    vi.resetModules();
-    const oldEnv = import.meta.env.VITE_HA_URL;
-    import.meta.env.VITE_HA_URL = undefined;
-    await vi.doMock('@hakit/core', () => ({
-      useHass: (fn: any) =>
-        fn({
-          entities: {
-            'camera.env': { attributes: { entity_picture: '/api/camera_proxy/camera.env?token=abc' } },
-          },
-        }),
-    }));
-    const { CameraFeed } = await import('../components/CameraFeed');
-    const { container } = render(<CameraFeed entityId="camera.env" />);
-    const img = container.querySelector('img');
-    expect(img).toBeInTheDocument();
-    import.meta.env.VITE_HA_URL = oldEnv;
+  it('affiche une icône si ni stream ni mjpeg disponibles', () => {
+    mockUseCamera.mockReturnValue({
+      stream: { url: undefined, loading: false, error: undefined },
+      mjpeg: { url: undefined, shouldRenderMJPEG: false },
+    });
+    const { container } = render(<CameraFeed entityId="camera.unknown" />);
+    expect(container.querySelector('svg')).toBeInTheDocument();
+    expect(container.querySelector('video')).not.toBeInTheDocument();
+    expect(container.querySelector('img')).not.toBeInTheDocument();
+  });
+
+  it('préfère HLS sur MJPEG quand les deux sont disponibles', () => {
+    mockUseCamera.mockReturnValue({
+      stream: { url: 'https://ha/api/hls/token/master_playlist.m3u8', loading: false, error: undefined },
+      mjpeg: { url: 'https://ha/api/camera_proxy_stream/camera.test?token=abc', shouldRenderMJPEG: false },
+    });
+    const { container } = render(<CameraFeed entityId="camera.salon_frigate" />);
+    expect(container.querySelector('video')).toBeInTheDocument();
+    expect(container.querySelector('img')).not.toBeInTheDocument();
   });
 });

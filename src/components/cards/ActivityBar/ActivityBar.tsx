@@ -2,6 +2,9 @@ import { motion } from 'framer-motion';
 import { Lightbulb, Flame, Battery, Sun, ShieldOff, ShieldCheck } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useEffect, useState } from 'react';
+import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { useWidgetId } from '@/components/layout/DashboardGrid';
+import type { ActivityBarConfig } from '@/types/widget-configs';
 
 interface Pill {
   id: string;
@@ -24,6 +27,15 @@ export function ActivityBar() {
   const hassUrl = useHass(s => s.connection?.socket?.url);
   const [isMobile, setIsMobile] = useState(false);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+  const { getWidgetConfig } = useDashboardLayout();
+  const widgetId = useWidgetId();
+  const config = getWidgetConfig<ActivityBarConfig>(widgetId || 'activity');
+
+  // Helper to pick entity from config or fallback
+  const entityFor = (pillId: string, fallback: string) => {
+    const pill = config?.pills?.find(p => p.id === pillId);
+    return pill?.entityId ?? fallback;
+  };
 
   // Detect mobile
   useEffect(() => {

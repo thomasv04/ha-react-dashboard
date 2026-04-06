@@ -6,6 +6,31 @@
 
 /* shadcn/ui will append its CSS variables below this line after `npx shadcn init` */
 
+/* ── CSS Grid dashboard styles ──────────────────────────────────────────────── */
+
+/* Drop target placeholder - valid position */
+.grid-placeholder {
+  background: rgba(139, 92, 246, 0.15);
+  border: 2px dashed rgba(139, 92, 246, 0.5);
+  border-radius: 1rem;
+  z-index: 5;
+}
+
+/* Drop target placeholder - invalid position (overlap) */
+.grid-placeholder-invalid {
+  background: rgba(239, 68, 68, 0.10);
+  border: 2px dashed rgba(239, 68, 68, 0.4);
+  border-radius: 1rem;
+  z-index: 5;
+}
+
+/* Kill backdrop-filter on glass cards during edit mode for GPU perf */
+.dashboard-editing .gc,
+.dashboard-editing .gc-light {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
 #root {
   width: 100%;
   height: 100%;
@@ -129,6 +154,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-color: var(--dash-bg-primary, var(--background));
+    color: var(--dash-text-primary, var(--foreground));
     font-family: 'Google Sans Flex', sans-serif !important;
   }
   html {
@@ -148,13 +175,19 @@
 */
 .gc {
   position: relative;
-  /* Dark navy semi-opaque fill so cards stand out against the bg */
-  background: rgba(6, 6, 24, 0.72);
-  -webkit-backdrop-filter: blur(30px) saturate(160%) brightness(80%);
-  backdrop-filter: blur(30px) saturate(160%) brightness(80%);
+  /* Use theme CSS variables when set, fall back to original glass effect */
+  background: var(--dash-bg-card, rgba(6, 6, 24, 0.72));
+  -webkit-backdrop-filter: blur(var(--dash-glass-blur, 30px)) saturate(160%) brightness(80%);
+  backdrop-filter: blur(var(--dash-glass-blur, 30px)) saturate(160%) brightness(80%);
+  border-color: var(--dash-border, transparent);
+  color: var(--dash-text-primary, #ffffff);
   box-shadow:
     0 8px 40px rgba(0, 0, 0, 0.55),
     inset -8px 10px 15px rgba(0, 0, 0, 0.08);
+}
+
+.gc:hover {
+  background: var(--dash-bg-card-hover, rgba(6, 6, 24, 0.80));
 }
 
 /* Shiny gradient border via mask technique */

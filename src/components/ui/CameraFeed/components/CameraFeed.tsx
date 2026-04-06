@@ -1,28 +1,39 @@
+import { useRef, useEffect } from 'react';
+import Hls from 'hls.js';
 import { Camera } from 'lucide-react';
-import { useHass } from '@hakit/core';
+import { useCamera } from '@hakit/core';
+import type { FilterByDomain, EntityName } from '@hakit/core';
 import { cn } from '@/lib/utils';
 
-// Read HA URL at render time so tests that modify `import.meta.env` pick it up
-// (some test runners mutate env between module loads).
-// Note: keep empty string as fallback so template paths begin with '/'.
-
-
 /**
- * Displays a HA camera entity as a live MJPEG stream.
- * Extracts the camera token from entity_picture and uses the
- * /api/camera_proxy_stream/ endpoint for smooth continuous video.
+ * Displays a HA camera entity as a live stream.
+ * Uses HLS via hls.js for 30fps when the camera supports streaming (Frigate etc.),
+ * falls back to MJPEG for cameras that don't expose an HLS stream.
  */
 export function CameraFeed({ entityId, className }: { entityId: string; className?: string }) {
-  const entityPicture = useHass(s => s.entities?.[entityId]?.attributes?.entity_picture as string | undefined);
-  const HA_URL = (import.meta.env.VITE_HA_URL as string | undefined) ?? '';
+  const cam = useCamera(entityId as FilterByDomain<EntityName, 'camera'>);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-  if (import.meta.env.TEST) {
-    // Helpful during local test debugging
-    // eslint-disable-next-line no-console
-    console.debug('[CameraFeed] entityId=', entityId, 'entityPicture=', entityPicture, 'HA_URL=', HA_URL);
-  }
+  const streamUrl = cam.stream.url;
+  const mjpegUrl = cam.mjpeg.url;
+  const shouldMJPEG = cam.mjpeg.shouldRenderMJPEG;
 
-  if (!entityPicture) {
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !streamUrl || shouldMJPEG) return;
+
+    if (Hls.isSupported()) {
+      const hls = new Hls({ lowLatencyMode: true });
+      hls.loadSource(streamUrl);
+      hls.attachMedia(video);
+      return () => hls.destroy();
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      // Safari native HLS
+      video.src = streamUrl;
+    }
+  }, [streamUrl, shouldMJPEG]);
+
+  if (!streamUrl && !mjpegUrl) {
     return (
       <div className={cn('flex items-center justify-center text-white/20', className)}>
         <Camera size={28} />
@@ -30,11 +41,17 @@ export function CameraFeed({ entityId, className }: { entityId: string; classNam
     );
   }
 
-  // entity_picture looks like /api/camera_proxy/camera.xxx?token=YYY
-  // we swap proxy → proxy_stream for a continuous MJPEG feed (no polling needed)
-  const params = new URLSearchParams(entityPicture.split('?')[1] ?? '');
-  const token = params.get('token');
-  const src = token ? `${HA_URL}/api/camera_proxy_stream/${entityId}?token=${token}` : `${HA_URL}${entityPicture}`;
+  if (shouldMJPEG && mjpegUrl) {
+    return <img src={mjpegUrl} className={cn('object-cover', className)} alt='' />;
+  }
 
-  return <img src={src} className={cn('object-cover', className)} alt='' />;
+  return (
+    <video
+      ref={videoRef}
+      autoPlay
+      muted
+      playsInline
+      className={cn('object-cover', className)}
+    />
+  );
 }

@@ -35,6 +35,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  optimizeDeps: {
+    include: ['react-grid-layout'],
+  },
   server: {
     // AJOUTE CECI : Vite va rediriger toutes les requêtes /api vers ton serveur Node local
     proxy: {

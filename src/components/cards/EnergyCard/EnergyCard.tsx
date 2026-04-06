@@ -1,6 +1,9 @@
 import { motion } from 'framer-motion';
 import { BatteryChargingIcon, BatteryIcon, Zap, Sun } from 'lucide-react';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
+import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { useWidgetId } from '@/components/layout/DashboardGrid';
+import type { EnergyCardConfig } from '@/types/widget-configs';
 
 type PackState = 'charging' | 'discharging' | 'idle';
 
@@ -11,11 +14,15 @@ function normalizePackState(raw: string): PackState {
 }
 
 export function EnergyCard() {
-  const batteryLevel = useSafeEntity('sensor.solarflow_2400_ac_electric_level');
-  const packState = useSafeEntity('sensor.solarflow_2400_ac_pack_state');
-  const gridInput = useSafeEntity('sensor.solarflow_2400_ac_grid_input_power');
-  const homeOutput = useSafeEntity('sensor.solarflow_2400_ac_output_home_power');
-  const solarProd = useSafeEntity('sensor.din_panneaux_solaire_puissance');
+  const { getWidgetConfig } = useDashboardLayout();
+  const widgetId = useWidgetId();
+  const config = getWidgetConfig<EnergyCardConfig>(widgetId || 'energy');
+
+  const batteryLevel = useSafeEntity(config?.batteryLevelEntity ?? 'sensor.solarflow_2400_ac_electric_level');
+  const packState = useSafeEntity(config?.batteryStateEntity ?? 'sensor.solarflow_2400_ac_pack_state');
+  const gridInput = useSafeEntity(config?.gridInputPowerEntity ?? 'sensor.solarflow_2400_ac_grid_input_power');
+  const homeOutput = useSafeEntity(config?.homeOutputPowerEntity ?? 'sensor.solarflow_2400_ac_output_home_power');
+  const solarProd = useSafeEntity(config?.solarProductionEntity ?? 'sensor.din_panneaux_solaire_puissance');
 
   if (!batteryLevel) return null;
 

@@ -16,70 +16,48 @@ import {
 } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { usePanel, type PanelId } from '@/context/PanelContext';
+import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { useWidgetId } from '@/components/layout/DashboardGrid';
+import type { RoomsGridConfig } from '@/types/widget-configs';
+import { resolveIcon } from '@/lib/lucide-icon-map';
 
 interface RoomConfig {
   area: string;
   label: string;
   Icon: LucideIcon;
-  iconBg: string; // Tailwind bg gradient class
+  iconBg: string;
   tempEntity?: string;
   humidityEntity?: string;
   lightEntities?: string[];
   panelId?: PanelId;
 }
 
-const ROOMS: RoomConfig[] = [
-  {
-    area: 'cuisine',
-    label: 'Cuisine',
-    Icon: UtensilsCrossed,
-    iconBg: 'from-red-500 to-orange-400',
-    lightEntities: ['light.bandeau_led_cuisine'],
-    tempEntity: 'sensor.detecteur_chaleur_temperature',
-  },
-  {
-    area: 'celier',
-    label: 'Cellier',
-    Icon: Package,
-    iconBg: 'from-purple-500 to-violet-400',
-  },
-  {
-    area: 'salle_de_sejour',
-    label: 'Salle à manger',
-    Icon: Armchair,
-    iconBg: 'from-lime-500 to-green-400',
-    tempEntity: 'sensor.temperature_pellet_temperature',
-  },
-  {
-    area: 'chambre_invites',
-    label: 'Ch. invités',
-    Icon: BedDouble,
-    iconBg: 'from-teal-500 to-cyan-400',
-  },
-  {
-    area: 'chambre',
-    label: 'Chambre',
-    Icon: Moon,
-    iconBg: 'from-pink-500 to-rose-400',
-    tempEntity: 'sensor.temperature_chambre_temperature',
-    lightEntities: ['light.chambre'],
-  },
-  {
-    area: 'salon',
-    label: 'Salon',
-    Icon: Sofa,
-    iconBg: 'from-yellow-500 to-amber-400',
-    lightEntities: ['light.salon'],
-    panelId: 'lumieres',
-  },
-  {
-    area: 'bureau',
-    label: 'Bureau',
-    Icon: BriefcaseBusiness,
-    iconBg: 'from-indigo-500 to-blue-400',
-    tempEntity: 'sensor.ble_temperature_capteur_temperature_salon',
-  },
+const FALLBACK_ICON_MAP: Record<string, LucideIcon> = {
+  UtensilsCrossed, Package, Armchair, BedDouble, Moon, Sofa, BriefcaseBusiness,
+};
+
+const DEFAULT_ROOMS: RoomConfig[] = [
+  { area: 'cuisine', label: 'Cuisine', Icon: UtensilsCrossed, iconBg: 'from-red-500 to-orange-400', lightEntities: ['light.bandeau_led_cuisine'], tempEntity: 'sensor.detecteur_chaleur_temperature' },
+  { area: 'celier', label: 'Cellier', Icon: Package, iconBg: 'from-purple-500 to-violet-400' },
+  { area: 'salle_de_sejour', label: 'Salle à manger', Icon: Armchair, iconBg: 'from-lime-500 to-green-400', tempEntity: 'sensor.temperature_pellet_temperature' },
+  { area: 'chambre_invites', label: 'Ch. invités', Icon: BedDouble, iconBg: 'from-teal-500 to-cyan-400' },
+  { area: 'chambre', label: 'Chambre', Icon: Moon, iconBg: 'from-pink-500 to-rose-400', tempEntity: 'sensor.temperature_chambre_temperature', lightEntities: ['light.chambre'] },
+  { area: 'salon', label: 'Salon', Icon: Sofa, iconBg: 'from-yellow-500 to-amber-400', lightEntities: ['light.salon'], panelId: 'lumieres' },
+  { area: 'bureau', label: 'Bureau', Icon: BriefcaseBusiness, iconBg: 'from-indigo-500 to-blue-400', tempEntity: 'sensor.ble_temperature_capteur_temperature_salon' },
 ];
+
+function resolveRooms(config: RoomsGridConfig | undefined): RoomConfig[] {
+  if (!config?.rooms?.length) return DEFAULT_ROOMS;
+  return config.rooms.map(r => ({
+    area: r.area,
+    label: r.label,
+    Icon: resolveIcon(r.icon) ?? FALLBACK_ICON_MAP[r.icon] ?? Package,
+    iconBg: r.iconBg,
+    tempEntity: r.tempEntity,
+    lightEntities: r.lightEntities,
+    panelId: r.panelId as PanelId | undefined,
+  }));
+}
 
 // ── Room detail modal ──────────────────────────────────────────────────────────
 
@@ -249,13 +227,17 @@ function RoomRow({ room, index, onOpen }: { room: RoomConfig; index: number; onO
 
 export function RoomsGrid() {
   const [selectedRoom, setSelectedRoom] = useState<RoomConfig | null>(null);
+  const { getWidgetConfig } = useDashboardLayout();
+  const widgetId = useWidgetId();
+  const config = getWidgetConfig<RoomsGridConfig>(widgetId || 'rooms');
+  const rooms = resolveRooms(config);
 
   return (
     <>
       <div className='gc rounded-3xl p-4 h-full'>
         <div className='text-white/50 text-xs uppercase tracking-wider mb-3 px-2 font-medium'>Pièces</div>
         <div className='flex flex-col'>
-          {ROOMS.map((room, i) => (
+          {rooms.map((room, i) => (
             <RoomRow key={room.area} room={room} index={i} onOpen={() => setSelectedRoom(room)} />
           ))}
         </div>

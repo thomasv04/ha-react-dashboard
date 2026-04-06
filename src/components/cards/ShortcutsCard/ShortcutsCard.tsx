@@ -1,76 +1,70 @@
 import { motion } from 'framer-motion';
-import { Blinds, Lightbulb, Cpu, Flower2, Bell, ShieldHalf, Camera } from 'lucide-react';
+import { Blinds, Lightbulb, Cpu, Flower2, Bell, ShieldHalf, Camera, type LucideIcon } from 'lucide-react';
 import { usePanel, type PanelId } from '@/context/PanelContext';
 import { cn } from '@/lib/utils';
 import { useHass } from '@hakit/core';
+import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { useWidgetId } from '@/components/layout/DashboardGrid';
+import type { ShortcutsCardConfig } from '@/types/widget-configs';
+import { resolveIcon } from '@/lib/lucide-icon-map';
 
-interface Shortcut {
+const FALLBACK_ICON_MAP: Record<string, LucideIcon> = {
+  Blinds, Lightbulb, Cpu, Flower2, Bell, ShieldHalf, Camera,
+};
+
+/** Map gradient class prefix to accent colors for bg and text */
+function gradientToAccent(gradient: string): { bg: string; bgHover: string; text: string } {
+  // Extract the "from-xxx-500" part to derive the color family
+  const match = gradient.match(/from-(\w+)-/);
+  const color = match?.[1] ?? 'blue';
+  return {
+    bg: `bg-${color}-500/15`,
+    bgHover: `hover:bg-${color}-500/25`,
+    text: `text-${color}-400`,
+  };
+}
+
+interface ResolvedShortcut {
   id: PanelId | null;
-  icon: React.ReactNode;
+  Icon: LucideIcon;
   label: string;
   accentBg: string;
   accentText: string;
-  entityState?: string | null;
+  statusEntity?: string;
+}
+
+const DEFAULT_SHORTCUTS: ResolvedShortcut[] = [
+  { id: 'volets', Icon: Blinds, label: 'Volets', accentBg: 'bg-sky-500/15 hover:bg-sky-500/25', accentText: 'text-sky-400' },
+  { id: 'lumieres', Icon: Lightbulb, label: 'Lumières', accentBg: 'bg-yellow-500/15 hover:bg-yellow-500/25', accentText: 'text-yellow-400' },
+  { id: 'security', Icon: ShieldHalf, label: 'Sécurité', accentBg: 'bg-green-500/15 hover:bg-green-500/25', accentText: 'text-green-400', statusEntity: 'alarm_control_panel.alarmo' },
+  { id: 'aspirateur', Icon: Cpu, label: 'Aspirateur', accentBg: 'bg-blue-500/15 hover:bg-blue-500/25', accentText: 'text-blue-400' },
+  { id: 'flowers', Icon: Flower2, label: 'Plantes', accentBg: 'bg-emerald-500/15 hover:bg-emerald-500/25', accentText: 'text-emerald-400' },
+  { id: 'notifications', Icon: Bell, label: 'Notifs', accentBg: 'bg-purple-500/15 hover:bg-purple-500/25', accentText: 'text-purple-400' },
+  { id: 'cameras', Icon: Camera, label: 'Caméras', accentBg: 'bg-zinc-500/15 hover:bg-zinc-500/25', accentText: 'text-zinc-300' },
+];
+
+function resolveShortcuts(config: ShortcutsCardConfig | undefined): ResolvedShortcut[] {
+  if (!config?.shortcuts?.length) return DEFAULT_SHORTCUTS;
+  return config.shortcuts.map(s => {
+    const accent = gradientToAccent(s.color);
+    return {
+      id: (s.panelId as PanelId) ?? null,
+      Icon: resolveIcon(s.icon) ?? FALLBACK_ICON_MAP[s.icon] ?? Cpu,
+      label: s.label,
+      accentBg: `${accent.bg} ${accent.bgHover}`,
+      accentText: accent.text,
+      statusEntity: s.statusEntity,
+    };
+  });
 }
 
 export function ShortcutsCard() {
   const { openPanel } = usePanel();
   const entities = useHass(s => s.entities);
-
-  const alarmArmed = entities?.['alarm_control_panel.alarmo']?.state !== 'disarmed';
-
-  const shortcuts: Shortcut[] = [
-    {
-      id: 'volets',
-      icon: <Blinds size={22} />,
-      label: 'Volets',
-      accentBg: 'bg-sky-500/15 hover:bg-sky-500/25',
-      accentText: 'text-sky-400',
-    },
-    {
-      id: 'lumieres',
-      icon: <Lightbulb size={22} />,
-      label: 'Lumières',
-      accentBg: 'bg-yellow-500/15 hover:bg-yellow-500/25',
-      accentText: 'text-yellow-400',
-    },
-    {
-      id: 'security',
-      icon: <ShieldHalf size={22} />,
-      label: 'Sécurité',
-      accentBg: alarmArmed ? 'bg-red-500/20 hover:bg-red-500/30' : 'bg-green-500/15 hover:bg-green-500/25',
-      accentText: alarmArmed ? 'text-red-400' : 'text-green-400',
-      entityState: alarmArmed ? 'Armée' : 'Désarmée',
-    },
-    {
-      id: 'aspirateur',
-      icon: <Cpu size={22} />,
-      label: 'Aspirateur',
-      accentBg: 'bg-blue-500/15 hover:bg-blue-500/25',
-      accentText: 'text-blue-400',
-    },
-    {
-      id: 'flowers',
-      icon: <Flower2 size={22} />,
-      label: 'Plantes',
-      accentBg: 'bg-emerald-500/15 hover:bg-emerald-500/25',
-      accentText: 'text-emerald-400',
-    },
-    {
-      id: 'notifications',
-      icon: <Bell size={22} />,
-      label: 'Notifs',
-      accentBg: 'bg-purple-500/15 hover:bg-purple-500/25',
-      accentText: 'text-purple-400',
-    },
-    {
-      id: 'cameras',
-      icon: <Camera size={22} />,
-      label: 'Caméras',
-      accentBg: 'bg-zinc-500/15 hover:bg-zinc-500/25',
-      accentText: 'text-zinc-300',
-    },
-  ];
+  const { getWidgetConfig } = useDashboardLayout();
+  const widgetId = useWidgetId();
+  const config = getWidgetConfig<ShortcutsCardConfig>(widgetId || 'shortcuts');
+  const shortcuts = resolveShortcuts(config);
 
   return (
     <motion.div
@@ -81,24 +75,36 @@ export function ShortcutsCard() {
     >
       <div className='text-white/40 text-xs uppercase tracking-wider mb-4 font-medium'>Raccourcis</div>
       <div className='grid grid-cols-2 gap-2'>
-        {shortcuts.map((s, i) => (
-          <motion.button
-            key={i}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.96 }}
-            onClick={() => s.id !== null && openPanel(s.id)}
-            className={cn(
-              'rounded-2xl px-4 py-3 flex items-center gap-3 transition-colors text-left border border-transparent',
-              s.accentBg
-            )}
-          >
-            <span className={s.accentText}>{s.icon}</span>
-            <div className='flex flex-col min-w-0'>
-              <span className='text-white/90 text-sm font-medium leading-tight'>{s.label}</span>
-              {s.entityState && <span className={cn('text-[10px] leading-tight mt-0.5', s.accentText)}>{s.entityState}</span>}
-            </div>
-          </motion.button>
-        ))}
+        {shortcuts.map((s, i) => {
+          // Dynamic status from entity
+          let entityState: string | null = null;
+          if (s.statusEntity) {
+            const state = entities?.[s.statusEntity]?.state;
+            if (state) {
+              const isArmed = state !== 'disarmed';
+              entityState = isArmed ? 'Armée' : 'Désarmée';
+            }
+          }
+
+          return (
+            <motion.button
+              key={s.id ?? i}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => s.id !== null && openPanel(s.id)}
+              className={cn(
+                'rounded-2xl px-4 py-3 flex items-center gap-3 transition-colors text-left border border-transparent',
+                s.accentBg
+              )}
+            >
+              <span className={s.accentText}><s.Icon size={22} /></span>
+              <div className='flex flex-col min-w-0'>
+                <span className='text-white/90 text-sm font-medium leading-tight'>{s.label}</span>
+                {entityState && <span className={cn('text-[10px] leading-tight mt-0.5', s.accentText)}>{entityState}</span>}
+              </div>
+            </motion.button>
+          );
+        })}
       </div>
     </motion.div>
   );

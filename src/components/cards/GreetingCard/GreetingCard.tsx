@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { useWidgetId } from '@/components/layout/DashboardGrid';
+import type { GreetingCardConfig } from '@/types/widget-configs';
 
 function getGreeting(h: number): string {
   if (h >= 18) return 'Bonsoir';
@@ -10,6 +13,11 @@ function getGreeting(h: number): string {
 
 /** Full-width header bar: greeting on the left, big clock on the right. */
 export function GreetingCard() {
+  const { getWidgetConfig } = useDashboardLayout();
+  const widgetId = useWidgetId();
+  const config = getWidgetConfig<GreetingCardConfig>(widgetId || 'greeting');
+  const locale = config?.locale ?? 'fr-FR';
+
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -17,10 +25,10 @@ export function GreetingCard() {
     return () => clearInterval(t);
   }, []);
 
-  const hm = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  const hm = now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
   const sec = String(now.getSeconds()).padStart(2, '0');
   const greeting = getGreeting(now.getHours());
-  const date = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const date = now.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
 
   return (
     <motion.div
