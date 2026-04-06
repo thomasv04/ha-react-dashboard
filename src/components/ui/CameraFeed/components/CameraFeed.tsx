@@ -5,13 +5,21 @@ import { useCamera } from '@hakit/core';
 import type { FilterByDomain, EntityName } from '@hakit/core';
 import { cn } from '@/lib/utils';
 
+export type StreamProtocol = 'HLS' | 'MJPEG' | null;
+
+interface CameraFeedProps {
+  entityId: string;
+  className?: string;
+  onProtocol?: (protocol: StreamProtocol) => void;
+}
+
 /**
  * Displays a HA camera entity as a live stream.
- * Uses HLS via hls.js for 30fps when the camera supports streaming (Frigate etc.),
- * falls back to MJPEG for cameras that don't expose an HLS stream.
+ * HLS (via hls.js) when stream.url is available, MJPEG fallback.
+ * Calls onProtocol once the active protocol is determined.
  */
-export function CameraFeed({ entityId, className }: { entityId: string; className?: string }) {
-  const cam = useCamera(entityId as FilterByDomain<EntityName, 'camera'>);
+export function CameraFeed({ entityId, className, onProtocol }: CameraFeedProps) {
+  const cam = useCamera(entityId as FilterByDomain<EntityName, 'camera'>, { poster: false });
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const streamUrl = cam.stream.url;
@@ -22,8 +30,28 @@ export function CameraFeed({ entityId, className }: { entityId: string; classNam
     const video = videoRef.current;
     if (!video || !streamUrl || shouldMJPEG) return;
 
+    onProtocol?.('HLS');
+
     if (Hls.isSupported()) {
-      const hls = new Hls({ lowLatencyMode: true });
+      const hls = new Hls({
+        lowLatencyMode: false,
+        backBufferLength: 0,
+        maxBufferLength: 8,
+        maxMaxBufferLength: 15,
+        // Strip LL-HLS blocking params (_HLS_msn / _HLS_part) advertised by
+        // go2rtc via CAN-BLOCK-RELOAD=YES → server returns 400 when parts aren't ready.
+        // hls.js uses XHR: re-open with cleaned URL when params are present.
+        xhrSetup: (xhr, url) => {
+          try {
+            const u = new URL(url, window.location.href);
+            if (u.searchParams.has('_HLS_msn') || u.searchParams.has('_HLS_part')) {
+              u.searchParams.delete('_HLS_msn');
+              u.searchParams.delete('_HLS_part');
+              xhr.open('GET', u.toString(), true);
+            }
+          } catch { /* ignore */ }
+        },
+      });
       hls.loadSource(streamUrl);
       hls.attachMedia(video);
       return () => hls.destroy();
@@ -31,7 +59,7 @@ export function CameraFeed({ entityId, className }: { entityId: string; classNam
       // Safari native HLS
       video.src = streamUrl;
     }
-  }, [streamUrl, shouldMJPEG]);
+  }, [streamUrl, shouldMJPEG, onProtocol]);
 
   if (!streamUrl && !mjpegUrl) {
     return (
@@ -42,6 +70,7 @@ export function CameraFeed({ entityId, className }: { entityId: string; classNam
   }
 
   if (shouldMJPEG && mjpegUrl) {
+    onProtocol?.('MJPEG');
     return <img src={mjpegUrl} className={cn('object-cover', className)} alt='' />;
   }
 

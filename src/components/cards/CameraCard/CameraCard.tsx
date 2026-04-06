@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useHass } from '@hakit/core';
 import { CameraFeed } from '@/components/ui/CameraFeed/components/CameraFeed';
+import type { StreamProtocol } from '@/components/ui/CameraFeed/components/CameraFeed';
 import { cn } from '@/lib/utils';
 import { useDashboardLayout } from '@/context/DashboardLayoutContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
@@ -31,9 +32,11 @@ export function CameraCard() {
 
   const haSelected = entities?.[selectorEntity]?.state as string | undefined;
   const [localSelected, setLocalSelected] = useState<string>(cameras[0].name);
+  const [protocol, setProtocol] = useState<StreamProtocol>(null);
   const selected = haSelected ?? localSelected;
 
   function select(name: string) {
+    setProtocol(null);
     setLocalSelected(name);
     helpers.callService({
       domain: 'input_select',
@@ -52,24 +55,24 @@ export function CameraCard() {
       transition={{ duration: 0.4 }}
       className='gc rounded-3xl p-3 flex gap-3 h-full'
     >
-      {/* ── Camera feed with padding + rounded corners ── */}
+      {/* ── Single camera feed ── */}
       <div className='flex-1 min-w-0 relative rounded-2xl overflow-hidden bg-black/50'>
-        <AnimatePresence mode='wait'>
-          <motion.div
-            key={current.entityId}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className='w-full h-full'
-          >
-            <CameraFeed entityId={current.entityId} className='w-full h-full' />
-          </motion.div>
-        </AnimatePresence>
+        <CameraFeed
+          key={current.entityId}
+          entityId={current.entityId}
+          className='w-full h-full'
+          onProtocol={setProtocol}
+        />
 
         {/* Camera name overlay */}
-        <div className='absolute bottom-2 left-0 right-0 flex justify-center pointer-events-none'>
+        <div className='absolute bottom-2 left-0 right-0 flex justify-center gap-1.5 pointer-events-none'>
           <span className='text-xs text-white/60 bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full'>{current.name}</span>
+          {protocol && (
+            <span className={cn(
+              'text-xs font-medium backdrop-blur-sm px-2 py-1 rounded-full',
+              protocol === 'HLS' ? 'bg-blue-500/30 text-blue-200' : 'bg-amber-500/30 text-amber-200'
+            )}>{protocol}</span>
+          )}
         </div>
       </div>
 

@@ -27,12 +27,19 @@ WORKDIR /app
 # Install jq for parsing /data/options.json and bash for run.sh
 RUN apk add --no-cache jq bash
 
-# Install ONLY production dependencies (Express)
+# Install ONLY production dependencies (Express + SQLite)
 COPY package*.json ./
 RUN npm ci --omit=dev
 
 # Copy the Node.js backend server
 COPY server.js .
+COPY server/ ./server/
+
+# Créer le dossier data pour SQLite
+RUN mkdir -p /data
+
+# Variable d'environnement pour le chemin de la DB
+ENV DB_PATH=/data/dashboard.db
 
 # Copy the startup script
 COPY rootfs/run.sh /run.sh

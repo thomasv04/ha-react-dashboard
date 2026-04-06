@@ -1,110 +1,233 @@
 import request from 'supertest';
-import app from './server.js';
-import fs from 'fs';
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import express from 'express';
+import { describe, it, expect } from 'vitest';
+import { initDB } from './server/db.js';
+import { configRouter } from './server/routes/config.js';
+import { profilesRouter } from './server/routes/profiles.js';
+import { settingsRouter } from './server/routes/settings.js';
 
-describe("Tests de l'API du serveur Express", () => {
-  // On restaure le comportement normal de 'fs' après chaque test
-  afterEach(() => {
-    vi.restoreAllMocks();
+/**
+ * Crée une app Express avec une base SQLite en mémoire (:memory:)
+ * pour isoler chaque suite de tests.
+ */
+function createTestApp() {
+  const db = initDB(':memory:');
+  const app = express();
+  app.use(express.json());
+  app.use('/api/config', configRouter(db));
+  app.use('/api/profiles', profilesRouter(db));
+  app.use('/api/settings', settingsRouter(db));
+  return { app, db };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// /api/config
+// ─────────────────────────────────────────────────────────────────────────────
+describe('GET /api/config', () => {
+  it('renvoie le message par défaut si la DB est vide', async () => {
+    const { app } = createTestApp();
+    const res = await request(app).get('/api/config');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ message: 'No config yet', layout: [] });
   });
 
-  describe('GET /api/config', () => {
-    // --- HAPPY PATHS (Succès) ---
+  it('renvoie la config sauvegardée', async () => {
+    const { app } = createTestApp();
+    const config = { version: 2, pages: [{ id: 'home', label: 'Home', widgets: [] }] };
+    await request(app).post('/api/config').send(config);
 
-    it('doit renvoyer la configuration si le fichier existe', async () => {
-      vi.spyOn(fs, 'existsSync').mockReturnValue(true);
-      vi.spyOn(fs, 'readFileSync').mockReturnValue(JSON.stringify({ layout: ['item1'] }));
-
-      const response = await request(app).get('/api/config');
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual({ layout: ['item1'] });
-    });
-
-    it("doit renvoyer un message par défaut si le fichier n'existe pas", async () => {
-      vi.spyOn(fs, 'existsSync').mockReturnValue(false);
-
-      const response = await request(app).get('/api/config');
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual({ message: 'No config yet', layout: [] });
-    });
-
-    // --- SAD PATHS (Erreurs) ---
-
-    it('doit renvoyer une erreur 500 si la lecture du fichier échoue', async () => {
-      // On dit que le fichier existe...
-      vi.spyOn(fs, 'existsSync').mockReturnValue(true);
-
-      // ...mais on force la fonction de lecture à "planter" en jetant une erreur
-      vi.spyOn(fs, 'readFileSync').mockImplementation(() => {
-        throw new Error('Erreur simulée de lecture (ex: permission refusée)');
-      });
-
-      const response = await request(app).get('/api/config');
-
-      // On vérifie que le catch a bien intercepté l'erreur et renvoyé le bon statut/message
-      expect(response.status).toBe(500);
-      expect(response.body).toEqual({ error: 'Erreur de lecture du fichier' });
-    });
+    const res = await request(app).get('/api/config');
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject(config);
   });
 
-  describe('POST /api/config', () => {
-    // --- HAPPY PATHS (Succès) ---
+  it('préserve la clé wallPanel dans la config', async () => {
+    const { app } = createTestApp();
+    const config = { version: 2, wallPanel: { config: { enabled: true, idle_time: 60 }, layout: {} } };
+    await request(app).post('/api/config').send(config);
 
-    it('doit sauvegarder la configuration et renvoyer un succès', async () => {
-      const writeSpy = vi.spyOn(fs, 'writeFileSync').mockImplementation(() => {});
-      const newConfig = { layout: ['itemA', 'itemB'] };
-
-      const response = await request(app).post('/api/config').send(newConfig);
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual({ success: true });
-      expect(writeSpy).toHaveBeenCalled();
-    });
-
-    // --- SAD PATHS (Erreurs) ---
-
-    it('doit renvoyer une erreur 500 si la sauvegarde (écriture) échoue', async () => {
-      // On force la fonction d'écriture à "planter"
-      vi.spyOn(fs, 'writeFileSync').mockImplementation(() => {
-        throw new Error("Erreur simulée d'écriture (ex: disque plein)");
-      });
-
-      const newConfig = { layout: ['itemA'] };
-
-      const response = await request(app).post('/api/config').send(newConfig);
-
-      // On vérifie que ton bloc catch fait bien son travail
-      expect(response.status).toBe(500);
-      expect(response.body).toEqual({ error: 'Erreur lors de la sauvegarde' });
-    });
-  });
-
-  describe('Frontend SPA Fallback (Routes par défaut)', () => {
-    it("doit intercepter les routes inconnues pour servir l'application React", async () => {
-      // On fait une requête sur une route qui n'est pas dans l'API
-      const response = await request(app).get('/une-route-inventee');
-
-      // L'important ici est de vérifier que la route a bien été appelée.
-      // Le statut dépendra de si tu as déjà fait un "npm run build" (dossier dist présent) ou non,
-      // donc on vérifie juste qu'Express a bien traité la requête.
-      expect(response.status).toBeDefined();
-    });
+    const res = await request(app).get('/api/config');
+    expect(res.status).toBe(200);
+    expect(res.body.wallPanel).toMatchObject(config.wallPanel);
   });
 });
 
-describe('Frontend SPA Fallback', () => {
-    
-    it('doit intercepter les routes inconnues pour servir l\'application React', async () => {
-      // On fait une requête GET sur une route qui n'est pas dans l'API
-      const response = await request(app).get('/une-route-inventee');
-      
-      // Que le fichier 'dist/index.html' existe ou non sur ton disque pendant le test
-      // Express va essayer de le renvoyer (code 200) ou renverra une erreur (code 404).
-      // Dans les deux cas, la ligne de code aura été exécutée !
-      expect(response.status).toBeDefined();
-    });
-
+describe('POST /api/config', () => {
+  it('sauvegarde la config et renvoie success', async () => {
+    const { app } = createTestApp();
+    const config = { version: 2, layout: ['itemA', 'itemB'] };
+    const res = await request(app).post('/api/config').send(config);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ success: true });
   });
+
+  it('renvoie 400 si le body est invalide', async () => {
+    const { app } = createTestApp();
+    const res = await request(app)
+      .post('/api/config')
+      .send('not-json')
+      .set('Content-Type', 'text/plain');
+    expect(res.status).toBe(400);
+  });
+
+  it('met à jour la config existante (UPSERT)', async () => {
+    const { app } = createTestApp();
+    await request(app).post('/api/config').send({ version: 2, layout: ['v1'] });
+    await request(app).post('/api/config').send({ version: 2, layout: ['v2'] });
+
+    const res = await request(app).get('/api/config');
+    expect(res.body.layout).toEqual(['v2']);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// /api/profiles
+// ─────────────────────────────────────────────────────────────────────────────
+describe('GET /api/profiles', () => {
+  it('renvoie une liste vide au départ', async () => {
+    const { app } = createTestApp();
+    const res = await request(app).get('/api/profiles');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+
+  it('liste uniquement les profils du user HA si x-ha-user-id présent', async () => {
+    const { app } = createTestApp();
+    await request(app)
+      .post('/api/profiles')
+      .set('x-ha-user-id', 'user1')
+      .send({ label: 'Profil A', data: { foo: 1 } });
+    await request(app)
+      .post('/api/profiles')
+      .set('x-ha-user-id', 'user2')
+      .send({ label: 'Profil B', data: { foo: 2 } });
+
+    const res = await request(app).get('/api/profiles').set('x-ha-user-id', 'user1');
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].label).toBe('Profil A');
+  });
+});
+
+describe('POST /api/profiles', () => {
+  it('crée un profil et renvoie 201 avec id+label', async () => {
+    const { app } = createTestApp();
+    const res = await request(app)
+      .post('/api/profiles')
+      .send({ label: 'Mon profil', data: { theme: 'dark' } });
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ label: 'Mon profil' });
+    expect(res.body.id).toBeDefined();
+  });
+
+  it('renvoie 400 si label ou data manquant', async () => {
+    const { app } = createTestApp();
+    const r1 = await request(app).post('/api/profiles').send({ label: 'Test' });
+    expect(r1.status).toBe(400);
+    const r2 = await request(app).post('/api/profiles').send({ data: {} });
+    expect(r2.status).toBe(400);
+  });
+});
+
+describe('GET /api/profiles/:id', () => {
+  it('renvoie le profil avec ses données parsées', async () => {
+    const { app } = createTestApp();
+    const created = await request(app)
+      .post('/api/profiles')
+      .send({ label: 'Test', data: { key: 'value' } });
+    const { id } = created.body;
+
+    const res = await request(app).get(`/api/profiles/${id}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual({ key: 'value' });
+  });
+
+  it('renvoie 404 pour un id inconnu', async () => {
+    const { app } = createTestApp();
+    const res = await request(app).get('/api/profiles/unknown-id');
+    expect(res.status).toBe(404);
+  });
+});
+
+describe('PUT /api/profiles/:id', () => {
+  it('met à jour le label du profil', async () => {
+    const { app } = createTestApp();
+    const created = await request(app)
+      .post('/api/profiles')
+      .send({ label: 'Ancien label', data: {} });
+    const { id } = created.body;
+
+    const res = await request(app).put(`/api/profiles/${id}`).send({ label: 'Nouveau label' });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ success: true });
+  });
+
+  it('renvoie 404 pour un id inconnu', async () => {
+    const { app } = createTestApp();
+    const res = await request(app).put('/api/profiles/nope').send({ label: 'X' });
+    expect(res.status).toBe(404);
+  });
+});
+
+describe('DELETE /api/profiles/:id', () => {
+  it('supprime le profil existant', async () => {
+    const { app } = createTestApp();
+    const created = await request(app)
+      .post('/api/profiles')
+      .send({ label: 'À supprimer', data: {} });
+    const { id } = created.body;
+
+    const res = await request(app).delete(`/api/profiles/${id}`);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ success: true });
+  });
+
+  it('renvoie 404 pour un id inconnu', async () => {
+    const { app } = createTestApp();
+    const res = await request(app).delete('/api/profiles/ghost');
+    expect(res.status).toBe(404);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// /api/settings
+// ─────────────────────────────────────────────────────────────────────────────
+describe('GET /api/settings/current', () => {
+  it('renvoie revision:0 si aucun setting', async () => {
+    const { app } = createTestApp();
+    const res = await request(app).get('/api/settings/current?device_id=dev1');
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ revision: 0 });
+  });
+});
+
+describe('PUT /api/settings/current', () => {
+  it('sauvegarde les settings et incrémente la révision', async () => {
+    const { app } = createTestApp();
+    const r1 = await request(app)
+      .put('/api/settings/current')
+      .send({ device_id: 'dev1', data: { brightness: 80 } });
+    expect(r1.status).toBe(200);
+    expect(r1.body).toEqual({ success: true, revision: 1 });
+
+    const r2 = await request(app)
+      .put('/api/settings/current')
+      .send({ device_id: 'dev1', data: { brightness: 90 }, expected_revision: 1 });
+    expect(r2.status).toBe(200);
+    expect(r2.body.revision).toBe(2);
+  });
+
+  it('renvoie 409 en cas de conflit de révision', async () => {
+    const { app } = createTestApp();
+    await request(app)
+      .put('/api/settings/current')
+      .send({ device_id: 'dev2', data: { x: 1 } });
+
+    const res = await request(app)
+      .put('/api/settings/current')
+      .send({ device_id: 'dev2', data: { x: 2 }, expected_revision: 99 });
+    expect(res.status).toBe(409);
+    expect(res.body.error).toBe('Conflict');
+  });
+});
+

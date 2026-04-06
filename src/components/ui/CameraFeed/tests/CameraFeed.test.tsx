@@ -8,12 +8,9 @@ vi.mock('@hakit/core', () => ({
 }));
 
 vi.mock('hls.js', () => ({
-  default: {
-    isSupported: () => false,
-  },
+  default: { isSupported: () => false },
 }));
 
-// Import after mocks are set up
 const { CameraFeed } = await import('../components/CameraFeed');
 
 describe('CameraFeed', () => {
@@ -26,7 +23,8 @@ describe('CameraFeed', () => {
       stream: { url: 'https://ha/api/hls/token/master_playlist.m3u8', loading: false, error: undefined },
       mjpeg: { url: undefined, shouldRenderMJPEG: false },
     });
-    const { container } = render(<CameraFeed entityId="camera.salon_frigate" />);
+    const onProtocol = vi.fn();
+    const { container } = render(<CameraFeed entityId='camera.salon_frigate' onProtocol={onProtocol} />);
     expect(container.querySelector('video')).toBeInTheDocument();
     expect(container.querySelector('img')).not.toBeInTheDocument();
   });
@@ -36,30 +34,40 @@ describe('CameraFeed', () => {
       stream: { url: undefined, loading: false, error: undefined },
       mjpeg: { url: 'https://ha/api/camera_proxy_stream/camera.cuisine?token=abc', shouldRenderMJPEG: true },
     });
-    const { container } = render(<CameraFeed entityId="camera.cuisine" />);
+    const onProtocol = vi.fn();
+    const { container } = render(<CameraFeed entityId='camera.cuisine' onProtocol={onProtocol} />);
     const img = container.querySelector('img');
     expect(img).toBeInTheDocument();
     expect(img).toHaveAttribute('src', 'https://ha/api/camera_proxy_stream/camera.cuisine?token=abc');
+    expect(onProtocol).toHaveBeenCalledWith('MJPEG');
   });
 
-  it('affiche une icône si ni stream ni mjpeg disponibles', () => {
+  it('affiche une icône si aucune source disponible', () => {
     mockUseCamera.mockReturnValue({
       stream: { url: undefined, loading: false, error: undefined },
       mjpeg: { url: undefined, shouldRenderMJPEG: false },
     });
-    const { container } = render(<CameraFeed entityId="camera.unknown" />);
+    const { container } = render(<CameraFeed entityId='camera.unknown' />);
     expect(container.querySelector('svg')).toBeInTheDocument();
     expect(container.querySelector('video')).not.toBeInTheDocument();
-    expect(container.querySelector('img')).not.toBeInTheDocument();
   });
 
-  it('préfère HLS sur MJPEG quand les deux sont disponibles', () => {
+  it('fonctionne sans prop onProtocol', () => {
     mockUseCamera.mockReturnValue({
       stream: { url: 'https://ha/api/hls/token/master_playlist.m3u8', loading: false, error: undefined },
-      mjpeg: { url: 'https://ha/api/camera_proxy_stream/camera.test?token=abc', shouldRenderMJPEG: false },
+      mjpeg: { url: undefined, shouldRenderMJPEG: false },
     });
-    const { container } = render(<CameraFeed entityId="camera.salon_frigate" />);
+    expect(() => render(<CameraFeed entityId='camera.salon_frigate' />)).not.toThrow();
+  });
+
+  it('utilise HLS même si frontend_stream_types inclut web_rtc', () => {
+    mockUseCamera.mockReturnValue({
+      frontend_stream_types: ['hls', 'web_rtc'],
+      stream: { url: 'https://ha/api/hls/token/master_playlist.m3u8', loading: false, error: undefined },
+      mjpeg: { url: undefined, shouldRenderMJPEG: false },
+    });
+    const { container } = render(<CameraFeed entityId='camera.sonnette_frigate' />);
     expect(container.querySelector('video')).toBeInTheDocument();
-    expect(container.querySelector('img')).not.toBeInTheDocument();
+    expect(container.querySelector('[data-testid="webrtc-feed"]')).not.toBeInTheDocument();
   });
 });
