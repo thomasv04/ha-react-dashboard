@@ -11,10 +11,7 @@ export interface ModalAction {
   closeOnClick?: boolean;
 }
 
-export type ModalContent =
-  | string
-  | ReactNode
-  | { type: 'markdown' | 'html' | 'plain'; value: string };
+export type ModalContent = string | ReactNode | { type: 'markdown' | 'html' | 'plain'; value: string };
 
 export interface Modal {
   id: string;
@@ -47,36 +44,29 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     setModals(prev => prev.filter(m => m.id !== id));
   }, []);
 
-  const openModal = useCallback(
-    (modal: Omit<Modal, 'id'>): string => {
-      const id = `modal-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      const full: Modal = {
-        width: 'md',
-        dismissible: true,
-        sound: 'notification',
-        ...modal,
-        id,
-      };
-      
-      setModals(prev => [...prev, full]);
+  const openModal = useCallback((modal: Omit<Modal, 'id'>): string => {
+    const id = `modal-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const full: Modal = {
+      width: 'md',
+      dismissible: true,
+      sound: 'notification',
+      ...modal,
+      id,
+    };
 
-      // Play sound if specified
-      if (full.sound !== false && full.sound) {
-        playSound(full.sound);
-      }
+    setModals(prev => [...prev, full]);
 
-      return id;
-    },
-    []
-  );
+    // Play sound if specified
+    if (full.sound !== false && full.sound) {
+      playSound(full.sound);
+    }
+
+    return id;
+  }, []);
 
   const clearAll = useCallback(() => setModals([]), []);
 
-  return (
-    <ModalContext.Provider value={{ modals, openModal, closeModal, clearAll }}>
-      {children}
-    </ModalContext.Provider>
-  );
+  return <ModalContext.Provider value={{ modals, openModal, closeModal, clearAll }}>{children}</ModalContext.Provider>;
 }
 
 export function useModal() {

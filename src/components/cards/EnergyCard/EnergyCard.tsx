@@ -121,7 +121,9 @@ export function EnergyCard() {
                     </clipPath>
                   </defs>
                   <motion.rect
-                    x='5' width='30' height='120'
+                    x='5'
+                    width='30'
+                    height='120'
                     fill='url(#flowStripes)'
                     clipPath='url(#flowClip)'
                     animate={{ y: state === 'charging' ? [0, -10] : [0, 10] }}
@@ -141,7 +143,10 @@ export function EnergyCard() {
                 </clipPath>
               </defs>
               <motion.rect
-                x='5' width='30' height='12' rx='3'
+                x='5'
+                width='30'
+                height='12'
+                rx='3'
                 fill='url(#battShimmer)'
                 clipPath='url(#battClip)'
                 initial={{ y: 62 }}
@@ -173,20 +178,18 @@ export function EnergyCard() {
             animate={state !== 'idle' ? { scale: [1, 1.04, 1] } : undefined}
             transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
             className={`inline-flex items-center gap-1.5 text-sm rounded-xl px-3 py-1.5 border transition-all ${
-            state === 'charging'
-              ? 'bg-green-500/10 border-green-500/20'
-              : state === 'discharging'
-                ? 'bg-orange-500/10 border-orange-500/20'
-                : 'bg-white/5 border-white/10'
-          }`}>
+              state === 'charging'
+                ? 'bg-green-500/10 border-green-500/20'
+                : state === 'discharging'
+                  ? 'bg-orange-500/10 border-orange-500/20'
+                  : 'bg-white/5 border-white/10'
+            }`}
+          >
             <Zap size={14} className={stateColors[state]} />
             <span className={`font-semibold ${stateColors[state]}`}>{flowPower}</span>
           </motion.div>
           <div className='inline-flex items-center gap-1.5 text-sm bg-green-500/10 border border-green-500/20 rounded-xl px-3 py-1.5'>
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
-            >
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}>
               <Sun size={14} className='text-green-400' />
             </motion.div>
             <span className='font-semibold text-green-400'>{solarProd?.state ?? '—'} W</span>

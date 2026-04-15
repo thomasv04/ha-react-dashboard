@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { WidgetErrorBoundary } from './WidgetErrorBoundary';
 
@@ -7,7 +8,7 @@ beforeEach(() => {
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
-function ThrowingComponent({ message }: { message: string }): JSX.Element {
+function ThrowingComponent({ message }: { message: string }): ReactElement {
   throw new Error(message);
 }
 
@@ -20,7 +21,7 @@ describe('WidgetErrorBoundary', () => {
     render(
       <WidgetErrorBoundary>
         <GoodComponent />
-      </WidgetErrorBoundary>,
+      </WidgetErrorBoundary>
     );
     expect(screen.getByText('All good')).toBeInTheDocument();
   });
@@ -28,8 +29,8 @@ describe('WidgetErrorBoundary', () => {
   it('renders fallback when child throws', () => {
     render(
       <WidgetErrorBoundary>
-        <ThrowingComponent message="boom" />
-      </WidgetErrorBoundary>,
+        <ThrowingComponent message='boom' />
+      </WidgetErrorBoundary>
     );
     expect(screen.getByText('Widget indisponible')).toBeInTheDocument();
     expect(screen.queryByText('All good')).not.toBeInTheDocument();
@@ -37,9 +38,9 @@ describe('WidgetErrorBoundary', () => {
 
   it('displays label in fallback when provided', () => {
     render(
-      <WidgetErrorBoundary label="Météo">
-        <ThrowingComponent message="crash" />
-      </WidgetErrorBoundary>,
+      <WidgetErrorBoundary label='Météo'>
+        <ThrowingComponent message='crash' />
+      </WidgetErrorBoundary>
     );
     expect(screen.getByText('Météo')).toBeInTheDocument();
   });

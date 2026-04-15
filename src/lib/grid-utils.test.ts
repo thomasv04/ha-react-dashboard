@@ -1,15 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import {
-  buildOccupancyMap,
-  canPlace,
-  compactVertically,
-  placeWidgetAt,
-  pixelToGrid,
-} from './grid-utils';
+import { buildOccupancyMap, canPlace, compactVertically, placeWidgetAt, pixelToGrid } from './grid-utils';
 import type { GridWidget } from '@/context/DashboardLayoutContext';
 
 const w = (id: string, x: number, y: number, ww: number, h: number): GridWidget => ({
-  id, type: 'sensor', x, y, w: ww, h,
+  id,
+  type: 'sensor',
+  x,
+  y,
+  w: ww,
+  h,
 });
 
 describe('buildOccupancyMap', () => {

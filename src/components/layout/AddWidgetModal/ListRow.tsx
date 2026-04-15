@@ -8,9 +8,7 @@ export function ListRow({ meta, selected, onClick }: { meta: WidgetMeta; selecte
       onClick={onClick}
       className={cn(
         'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all',
-        selected
-          ? 'bg-white/8 border border-white/12'
-          : 'border border-transparent hover:bg-white/5 hover:border-white/6',
+        selected ? 'bg-white/8 border border-white/12' : 'border border-transparent hover:bg-white/5 hover:border-white/6'
       )}
     >
       <div

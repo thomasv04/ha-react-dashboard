@@ -21,12 +21,7 @@ export type TV<T> = T | TemplateValue;
 
 /** Type guard : vrai si la valeur est un template, pas une valeur brute */
 export function isTemplateValue(v: unknown): v is TemplateValue {
-  return (
-    typeof v === 'object' &&
-    v !== null &&
-    '_tv' in v &&
-    (v as TemplateValue)._tv === 'template'
-  );
+  return typeof v === 'object' && v !== null && '_tv' in v && (v as TemplateValue)._tv === 'template';
 }
 
 /** Crée un TemplateValue depuis une string de template */

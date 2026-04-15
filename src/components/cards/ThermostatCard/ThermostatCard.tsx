@@ -7,12 +7,13 @@ import { cn } from '@/lib/utils';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { ThermostatCardConfig } from '@/types/widget-configs';
+import { useI18n } from '@/i18n';
 
 // ─── SVG gauge constants ──────────────────────────────────────────────────────
 const CX = 135;
 const CY = 135;
-const STROKE = 25;           // épaisseur de la jauge
-const R = 130 - STROKE / 2;  // rayon: bord extérieur à 130 (marge de 5 dans le viewBox 270)
+const STROKE = 25; // épaisseur de la jauge
+const R = 130 - STROKE / 2; // rayon: bord extérieur à 130 (marge de 5 dans le viewBox 270)
 const START_DEG = 225;
 const SWEEP_DEG = 270;
 const MIN_T = 10;
@@ -31,34 +32,39 @@ function arcPath(startDeg: number, endDeg: number) {
   return `M ${s.x.toFixed(2)} ${s.y.toFixed(2)} A ${R} ${R} 0 ${largeArc} 1 ${e.x.toFixed(2)} ${e.y.toFixed(2)}`;
 }
 
-// ─── Action labels ────────────────────────────────────────────────────────────
-const ACTION_LABEL: Record<string, string> = {
-  heating:    'CHAUFFER À',
-  cooling:    'REFROIDIR À',
-  idle:       'EN VEILLE',
-  off:        'ÉTEINT', 
-  fan_only:   'VENTILATION',
-  drying:     'SÉCHAGE',
-  preheating: 'PRÉCHAUFFE',
+const ACTION_KEYS: Record<string, string> = {
+  heating: 'widgets.thermostat.heating',
+  cooling: 'widgets.thermostat.cooling',
+  idle: 'widgets.thermostat.idle',
+  off: 'widgets.thermostat.off',
+  fan_only: 'widgets.thermostat.fan_only',
+  drying: 'widgets.thermostat.drying',
+  preheating: 'widgets.thermostat.preheating',
 };
 
 // ─── Preset definitions ───────────────────────────────────────────────────────
 const PRESETS = [
-  { value: 'away',    Icon: Home },
-  { value: 'comfort', Icon: Sun  },
-  { value: 'sleep',   Icon: Moon },
+  { value: 'away', Icon: Home },
+  { value: 'comfort', Icon: Sun },
+  { value: 'sleep', Icon: Moon },
 ] as const;
 
 // ─── usePrevious ──────────────────────────────────────────────────────────────
 function usePrevious<T>(value: T): T | undefined {
   const ref = useRef<T | undefined>(undefined);
-  useEffect(() => { ref.current = value; });
-  return ref.current;
+  const [prev, setPrev] = React.useState<T | undefined>(undefined);
+  useEffect(() => {
+    setPrev(ref.current);
+    ref.current = value;
+  });
+  return prev;
 }
 
 // ─── Single digit with animation (per position) ──────────────────────────────
 function AnimatedDigit({
-  digit, x, y,
+  digit,
+  x,
+  y,
   fontSize = 64,
   fontWeight = '700',
   fill = 'white',
@@ -94,7 +100,9 @@ function AnimatedDigit({
 const DIGIT_W = 38; // approximate character width at fontSize=64 bold
 
 function AnimatedSvgDigits({
-  value, rightX, y,
+  value,
+  rightX,
+  y,
   fontSize = 64,
   fontWeight = '700',
   fill = 'white',
@@ -113,17 +121,7 @@ function AnimatedSvgDigits({
       {digits.map((d, i) => {
         const offset = count - 1 - i; // 0 = rightmost (units), 1 = tens, etc.
         const cx = rightX - DIGIT_W / 2 - offset * DIGIT_W;
-        return (
-          <AnimatedDigit
-            key={`pos-${offset}`}
-            digit={d}
-            x={cx}
-            y={y}
-            fontSize={fontSize}
-            fontWeight={fontWeight}
-            fill={fill}
-          />
-        );
+        return <AnimatedDigit key={`pos-${offset}`} digit={d} x={cx} y={y} fontSize={fontSize} fontWeight={fontWeight} fill={fill} />;
       })}
     </>
   );
@@ -131,6 +129,7 @@ function AnimatedSvgDigits({
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export function ThermostatCard() {
+  const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<ThermostatCardConfig>(widgetId || 'thermostat');
@@ -157,18 +156,18 @@ export function ThermostatCard() {
 
   if (!thermostat) return null;
 
-  const current      = (thermostat.attributes.current_temperature as number | undefined) ?? 20;
-  const action       = (thermostat.attributes.hvac_action as string | undefined) ?? thermostat.state;
+  const current = (thermostat.attributes.current_temperature as number | undefined) ?? 20;
+  const action = (thermostat.attributes.hvac_action as string | undefined) ?? thermostat.state;
   const activePreset = (thermostat.attributes.preset_mode as string | undefined) ?? 'none';
-  const isOff        = thermostat.state === 'off';
-  const actionLabel  = ACTION_LABEL[action] ?? action.toUpperCase();
+  const isOff = thermostat.state === 'off';
+  const actionLabel = ACTION_KEYS[action] ? t(ACTION_KEYS[action]) : action.toUpperCase();
 
-  const fraction    = Math.max(0, Math.min(1, (localTarget - minT) / (maxT - minT)));
-  const endDeg      = START_DEG + Math.max(1, fraction * SWEEP_DEG);
-  const dot         = gaugePoint(endDeg);
+  const fraction = Math.max(0, Math.min(1, (localTarget - minT) / (maxT - minT)));
+  const endDeg = START_DEG + Math.max(1, fraction * SWEEP_DEG);
+  const dot = gaugePoint(endDeg);
 
   const currentFraction = Math.max(0, Math.min(1, (current - minT) / (maxT - minT)));
-  const currentDeg  = START_DEG + Math.max(1, currentFraction * SWEEP_DEG);
+  const currentDeg = START_DEG + Math.max(1, currentFraction * SWEEP_DEG);
 
   const tempInt = Math.floor(localTarget);
   const tempDec = Math.round((localTarget - tempInt) * 10);
@@ -192,7 +191,7 @@ export function ThermostatCard() {
     }
 
     const frac = Math.max(0, Math.min(1, normalized / SWEEP_DEG));
-    const raw  = minT + frac * (maxT - minT);
+    const raw = minT + frac * (maxT - minT);
     return Math.round(raw / 0.5) * 0.5;
   }
 
@@ -221,7 +220,8 @@ export function ThermostatCard() {
     });
   }
 
-  function selectPreset(option: string) {
+  function selectPreset(e: React.MouseEvent, option: string) {
+    e.stopPropagation();
     helpers.callService({
       domain: 'climate',
       service: 'set_preset_mode',
@@ -229,7 +229,8 @@ export function ThermostatCard() {
       serviceData: { preset_mode: option },
     });
   }
-  function togglePower() {
+  function togglePower(e: React.MouseEvent) {
+    e.stopPropagation();
     helpers.callService({
       domain: 'climate',
       service: isOff ? 'turn_on' : 'turn_off',
@@ -256,9 +257,9 @@ export function ThermostatCard() {
         >
           <defs>
             <linearGradient id='tempGradient' gradientUnits='userSpaceOnUse' x1='17' y1='0' x2='253' y2='0'>
-              <stop offset='0%'   stopColor='#1a56ff' />
-              <stop offset='28%'  stopColor='#00c6ff' />
-              <stop offset='65%'  stopColor='#fbbf24' />
+              <stop offset='0%' stopColor='#1a56ff' />
+              <stop offset='28%' stopColor='#00c6ff' />
+              <stop offset='65%' stopColor='#fbbf24' />
               <stop offset='100%' stopColor='#ff7b00' />
             </linearGradient>
             <filter id='thumbShadow' x='-50%' y='-50%' width='200%' height='200%'>
@@ -279,25 +280,19 @@ export function ThermostatCard() {
             opacity='0.15'
           />
           {/* Arc actif — jusqu'à la cible (endDeg) */}
-          <path
-            d={arcPath(START_DEG, endDeg)}
-            fill='none'
-            stroke='url(#tempGradient)'
-            strokeWidth={STROKE}
-            strokeLinecap='round'
-          />
+          <path d={arcPath(START_DEG, endDeg)} fill='none' stroke='url(#tempGradient)' strokeWidth={STROKE} strokeLinecap='round' />
           {/* Ronds de rattrapage : entre current et target, seulement si target > current */}
-          {endDeg > currentDeg && endDeg - currentDeg > 5 && (() => {
-            const dots: React.ReactNode[] = [];
-            const step = 10;
-            for (let deg = currentDeg + step; deg < endDeg - step * 0.5; deg += step) {
-              const pt = gaugePoint(deg);
-              dots.push(
-                <circle key={deg} cx={pt.x.toFixed(2)} cy={pt.y.toFixed(2)} r='3.5' fill='white' opacity='0.65' />
-              );
-            }
-            return <>{dots}</>;
-          })()}
+          {endDeg > currentDeg &&
+            endDeg - currentDeg > 5 &&
+            (() => {
+              const dots: React.ReactNode[] = [];
+              const step = 10;
+              for (let deg = currentDeg + step; deg < endDeg - step * 0.5; deg += step) {
+                const pt = gaugePoint(deg);
+                dots.push(<circle key={deg} cx={pt.x.toFixed(2)} cy={pt.y.toFixed(2)} r='3.5' fill='white' opacity='0.65' />);
+              }
+              return <>{dots}</>;
+            })()}
           {/* Petit cercle blanc = marqueur de température actuelle */}
           <circle cx={gaugePoint(currentDeg).x} cy={gaugePoint(currentDeg).y} r='5' fill='white' opacity='0.8' />
           {/* Curseur cible */}
@@ -312,20 +307,25 @@ export function ThermostatCard() {
           />
           {/* Zone texte centrale */}
           <g clipPath='url(#centerClip)'>
-            <text
-              x={CX} y={CY - 28}
-              textAnchor='middle'
-              fill='rgba(255,255,255,0.55)'
-              fontSize='11'
-              letterSpacing='2'
-              fontFamily='inherit'
-            >
+            <text x={CX} y={CY - 28} textAnchor='middle' fill='rgba(255,255,255,0.55)' fontSize='11' letterSpacing='2' fontFamily='inherit'>
               {actionLabel}
             </text>
             <AnimatedSvgDigits value={tempInt} rightX={CX + 9} y={CY + 28} />
-            <text x={CX + 9} y={CY + 28} textAnchor='start' fill='rgba(255,255,255,0.85)' fontSize={64} fontWeight='700' fontFamily='inherit'>.</text>
+            <text
+              x={CX + 9}
+              y={CY + 28}
+              textAnchor='start'
+              fill='rgba(255,255,255,0.85)'
+              fontSize={64}
+              fontWeight='700'
+              fontFamily='inherit'
+            >
+              .
+            </text>
             <AnimatedDigit digit={tempDec} x={CX + 28 + DIGIT_W / 2} y={CY + 28} fill='rgba(255,255,255,0.85)' />
-            <text x={CX + 68} y={CY - 8} textAnchor='start' fill='white' fontSize='16' fontWeight='500' fontFamily='inherit'>°C</text>
+            <text x={CX + 68} y={CY - 8} textAnchor='start' fill='white' fontSize='16' fontWeight='500' fontFamily='inherit'>
+              °C
+            </text>
             <text x={CX} y={CY + 54} textAnchor='middle' fill='rgba(255,255,255,0.35)' fontSize='11' fontFamily='inherit'>
               ● {current.toFixed(1)} °C
             </text>
@@ -354,7 +354,7 @@ export function ThermostatCard() {
               key={value}
               whileHover={{ scale: 1.06 }}
               whileTap={{ scale: 0.94 }}
-              onClick={() => selectPreset(value)}
+              onClick={e => selectPreset(e, value)}
               className={cn(
                 'flex items-center justify-center h-[50px] rounded-[15px] transition-all duration-200',
                 isActive

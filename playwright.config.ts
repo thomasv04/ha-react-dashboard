@@ -6,7 +6,7 @@ import { defineConfig, devices } from '@playwright/test';
  * Requires Storybook running at http://localhost:6006 (npm run storybook)
  */
 export default defineConfig({
-  testDir: './tests',
+  testDir: './tests/storybook',
   fullyParallel: true,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 2 : undefined,
@@ -18,6 +18,7 @@ export default defineConfig({
     // which causes elements to appear hidden until animation completes.
     // reducedMotion: 'reduce' tells Framer Motion to skip all transitions.
     reducedMotion: 'reduce',
+    locale: 'fr-FR',
   },
   projects: [
     {

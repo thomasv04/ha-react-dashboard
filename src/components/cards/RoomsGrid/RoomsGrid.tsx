@@ -19,13 +19,14 @@ import { usePanel, type PanelId } from '@/context/PanelContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { RoomsGridConfig } from '@/types/widget-configs';
-import { resolveIcon } from '@/lib/lucide-icon-map';
+import { resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-map';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 
 interface RoomConfig {
   area: string;
   label: string;
-  Icon: LucideIcon;
+  Icon: LucideIcon | null;
+  customIconUrl?: string;
   iconBg: string;
   tempEntity?: string;
   humidityEntity?: string;
@@ -34,17 +35,56 @@ interface RoomConfig {
 }
 
 const FALLBACK_ICON_MAP: Record<string, LucideIcon> = {
-  UtensilsCrossed, Package, Armchair, BedDouble, Moon, Sofa, BriefcaseBusiness,
+  UtensilsCrossed,
+  Package,
+  Armchair,
+  BedDouble,
+  Moon,
+  Sofa,
+  BriefcaseBusiness,
 };
 
 const DEFAULT_ROOMS: RoomConfig[] = [
-  { area: 'kitchen', label: 'Cuisine', Icon: UtensilsCrossed, iconBg: 'from-red-500 to-orange-400', lightEntities: ['light.kitchen'], tempEntity: 'sensor.kitchen_temperature' },
+  {
+    area: 'kitchen',
+    label: 'Cuisine',
+    Icon: UtensilsCrossed,
+    iconBg: 'from-red-500 to-orange-400',
+    lightEntities: ['light.kitchen'],
+    tempEntity: 'sensor.kitchen_temperature',
+  },
   { area: 'storage', label: 'Cellier', Icon: Package, iconBg: 'from-purple-500 to-violet-400' },
-  { area: 'dining_room', label: 'Salle à manger', Icon: Armchair, iconBg: 'from-lime-500 to-green-400', tempEntity: 'sensor.dining_room_temperature' },
+  {
+    area: 'dining_room',
+    label: 'Salle à manger',
+    Icon: Armchair,
+    iconBg: 'from-lime-500 to-green-400',
+    tempEntity: 'sensor.dining_room_temperature',
+  },
   { area: 'guest_room', label: 'Ch. invités', Icon: BedDouble, iconBg: 'from-teal-500 to-cyan-400' },
-  { area: 'bedroom', label: 'Chambre', Icon: Moon, iconBg: 'from-pink-500 to-rose-400', tempEntity: 'sensor.bedroom_temperature', lightEntities: ['light.bedroom'] },
-  { area: 'living_room', label: 'Salon', Icon: Sofa, iconBg: 'from-yellow-500 to-amber-400', lightEntities: ['light.living_room'], panelId: 'lumieres' },
-  { area: 'office', label: 'Bureau', Icon: BriefcaseBusiness, iconBg: 'from-indigo-500 to-blue-400', tempEntity: 'sensor.office_temperature' },
+  {
+    area: 'bedroom',
+    label: 'Chambre',
+    Icon: Moon,
+    iconBg: 'from-pink-500 to-rose-400',
+    tempEntity: 'sensor.bedroom_temperature',
+    lightEntities: ['light.bedroom'],
+  },
+  {
+    area: 'living_room',
+    label: 'Salon',
+    Icon: Sofa,
+    iconBg: 'from-yellow-500 to-amber-400',
+    lightEntities: ['light.living_room'],
+    panelId: 'lumieres',
+  },
+  {
+    area: 'office',
+    label: 'Bureau',
+    Icon: BriefcaseBusiness,
+    iconBg: 'from-indigo-500 to-blue-400',
+    tempEntity: 'sensor.office_temperature',
+  },
 ];
 
 function resolveRooms(config: RoomsGridConfig | undefined): RoomConfig[] {
@@ -52,7 +92,8 @@ function resolveRooms(config: RoomsGridConfig | undefined): RoomConfig[] {
   return config.rooms.map(r => ({
     area: r.area,
     label: r.label,
-    Icon: resolveIcon(r.icon) ?? FALLBACK_ICON_MAP[r.icon] ?? Package,
+    Icon: isCustomIcon(r.icon) ? null : (resolveIcon(r.icon) ?? FALLBACK_ICON_MAP[r.icon] ?? Package),
+    customIconUrl: isCustomIcon(r.icon) ? getCustomIconUrl(r.icon) : undefined,
     iconBg: r.iconBg,
     tempEntity: r.tempEntity,
     lightEntities: r.lightEntities,
@@ -99,7 +140,11 @@ function RoomModal({ room, onClose }: { room: RoomConfig; onClose: () => void })
         <div className='flex items-center justify-between mb-5'>
           <div className='flex items-center gap-3'>
             <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${room.iconBg} flex items-center justify-center shadow-lg`}>
-              <room.Icon size={20} className='text-white' strokeWidth={1.8} />
+              {room.customIconUrl ? (
+                <img src={room.customIconUrl} alt='' className='w-5 h-5 object-contain' />
+              ) : room.Icon ? (
+                <room.Icon size={20} className='text-white' strokeWidth={1.8} />
+              ) : null}
             </div>
             <h2 className='text-white text-xl font-semibold'>{room.label}</h2>
           </div>
@@ -145,7 +190,10 @@ function RoomModal({ room, onClose }: { room: RoomConfig; onClose: () => void })
             <div className='text-white/40 text-[10px] uppercase tracking-[0.15em] mb-2 font-medium'>Lumières</div>
             <div className='flex flex-col gap-2'>
               {lights.map(light => (
-                <div key={light.id} className='rounded-2xl px-4 py-3 flex items-center justify-between bg-gradient-to-br from-white/[0.03] to-white/[0.07] border border-white/8'>
+                <div
+                  key={light.id}
+                  className='rounded-2xl px-4 py-3 flex items-center justify-between bg-gradient-to-br from-white/[0.03] to-white/[0.07] border border-white/8'
+                >
                   <span className='text-white/80 text-sm'>{light.name}</span>
                   <div
                     className={`w-3 h-3 rounded-full transition-all duration-300 ${light.on ? 'bg-yellow-400' : 'bg-white/15'}`}
@@ -203,7 +251,11 @@ function RoomRow({ room, index, onOpen }: { room: RoomConfig; index: number; onO
         transition={{ type: 'spring', stiffness: 400, damping: 15 }}
         className={`w-9 h-9 rounded-xl bg-gradient-to-br ${room.iconBg} flex items-center justify-center flex-shrink-0 shadow-md`}
       >
-        <room.Icon size={17} className='text-white' strokeWidth={1.8} />
+        {room.customIconUrl ? (
+          <img src={room.customIconUrl} alt='' className='w-[17px] h-[17px] object-contain' />
+        ) : room.Icon ? (
+          <room.Icon size={17} className='text-white' strokeWidth={1.8} />
+        ) : null}
       </motion.div>
 
       {/* Room name */}

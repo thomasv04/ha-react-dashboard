@@ -17,7 +17,18 @@ const config: StorybookConfig = {
   addons: ['@storybook/addon-docs'],
   async viteFinal(config) {
     return mergeConfig(config, {
-      plugins: [tailwindcss()],
+      plugins: [
+        tailwindcss(),
+        {
+          name: 'storybook-mock-api',
+          configureServer(server: { middlewares: { use(path: string, handler: (req: unknown, res: { setHeader(k: string, v: string): void; end(body: string): void }) => void): void } }) {
+            server.middlewares.use('/api/translations/overrides', (_req: unknown, res: { setHeader(k: string, v: string): void; end(body: string): void }) => {
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ overrides: {} }));
+            });
+          },
+        },
+      ],
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '../src'),

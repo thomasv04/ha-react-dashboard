@@ -38,10 +38,12 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       // When VITE_MOCK_HA=true, replace @hakit packages with local mocks
       // so the dashboard renders with fake entities (no real HA required).
-      ...(isMockHA ? {
-        '@hakit/core': path.resolve(__dirname, 'tests/mocks/hakit-core.tsx'),
-        '@hakit/components': path.resolve(__dirname, 'tests/mocks/hakit-components.tsx'),
-      } : {}),
+      ...(isMockHA
+        ? {
+            '@hakit/core': path.resolve(__dirname, 'tests/mocks/hakit-core.tsx'),
+            '@hakit/components': path.resolve(__dirname, 'tests/mocks/hakit-components.tsx'),
+          }
+        : {}),
     },
   },
   optimizeDeps: {
@@ -58,7 +60,7 @@ export default defineConfig({
         target: `http://localhost:${process.env.VITE_API_PORT || '8099'}`,
         changeOrigin: true,
       },
-    }
+    },
   },
   build: isHACSPanel
     ? {

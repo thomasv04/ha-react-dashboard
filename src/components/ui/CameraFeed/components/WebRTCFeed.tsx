@@ -7,11 +7,7 @@ interface WebRTCOfferResult {
   answer: string;
 }
 
-async function negotiate(
-  connection: Connection,
-  entityId: string,
-  pc: RTCPeerConnection,
-): Promise<void> {
+async function negotiate(connection: Connection, entityId: string, pc: RTCPeerConnection): Promise<void> {
   // Only receive, never send
   pc.addTransceiver('video', { direction: 'recvonly' });
   pc.addTransceiver('audio', { direction: 'recvonly' });
@@ -20,8 +16,11 @@ async function negotiate(
   await pc.setLocalDescription(offer);
 
   // Wait for ICE gathering (max 3s)
-  await new Promise<void>((resolve) => {
-    if (pc.iceGatheringState === 'complete') { resolve(); return; }
+  await new Promise<void>(resolve => {
+    if (pc.iceGatheringState === 'complete') {
+      resolve();
+      return;
+    }
     const timeout = setTimeout(resolve, 3000);
     pc.onicegatheringstatechange = () => {
       if (pc.iceGatheringState === 'complete') {
@@ -51,7 +50,7 @@ export function WebRTCFeed({ entityId, className }: { entityId: string; classNam
 
     const pc = new RTCPeerConnection();
 
-    pc.ontrack = (event) => {
+    pc.ontrack = event => {
       if (video.srcObject !== event.streams[0]) {
         video.srcObject = event.streams[0];
       }
@@ -67,13 +66,5 @@ export function WebRTCFeed({ entityId, className }: { entityId: string; classNam
     };
   }, [entityId, connection]);
 
-  return (
-    <video
-      ref={videoRef}
-      autoPlay
-      muted
-      playsInline
-      className={cn('object-cover', className)}
-    />
-  );
+  return <video ref={videoRef} autoPlay muted playsInline className={cn('object-cover', className)} />;
 }

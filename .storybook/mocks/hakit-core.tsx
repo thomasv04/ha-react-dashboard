@@ -75,16 +75,16 @@ const ENTITIES: Record<string, EntityState> = {
   'light.chambre': entity('light.chambre', 'on', { brightness: 100 }),
 
   // Covers
-  'cover.volet_cuisine': entity('cover.volet_cuisine', 'open', { current_position: 100 }),
-  'cover.volet_cellier': entity('cover.volet_cellier', 'closed', { current_position: 0 }),
-  'cover.volet_sam_1': entity('cover.volet_sam_1', 'open', { current_position: 75 }),
-  'cover.volet_sam_2': entity('cover.volet_sam_2', 'open', { current_position: 75 }),
-  'cover.volet_salon': entity('cover.volet_salon', 'closed', { current_position: 0 }),
-  'cover.volet_baie_salon': entity('cover.volet_baie_salon', 'open', { current_position: 50 }),
-  'cover.volet_chambre_invites': entity('cover.volet_chambre_invites', 'closed', { current_position: 0 }),
-  'cover.volet_chambre': entity('cover.volet_chambre', 'open', { current_position: 100 }),
-  'cover.volet_bureau': entity('cover.volet_bureau', 'closed', { current_position: 0 }),
-  'cover.volet_salle_de_bain': entity('cover.volet_salle_de_bain', 'open', { current_position: 60 }),
+  'cover.volet_cuisine': entity('cover.volet_cuisine', 'open', { current_position: 100, friendly_name: 'Cuisine' }),
+  'cover.volet_cellier': entity('cover.volet_cellier', 'closed', { current_position: 0, friendly_name: 'Cellier' }),
+  'cover.volet_sam_1': entity('cover.volet_sam_1', 'open', { current_position: 75, friendly_name: 'SAM 1' }),
+  'cover.volet_sam_2': entity('cover.volet_sam_2', 'open', { current_position: 75, friendly_name: 'SAM 2' }),
+  'cover.volet_salon': entity('cover.volet_salon', 'closed', { current_position: 0, friendly_name: 'Salon' }),
+  'cover.volet_baie_salon': entity('cover.volet_baie_salon', 'open', { current_position: 50, friendly_name: 'Baie salon' }),
+  'cover.volet_chambre_invites': entity('cover.volet_chambre_invites', 'closed', { current_position: 0, friendly_name: 'Chambre invités' }),
+  'cover.volet_chambre': entity('cover.volet_chambre', 'open', { current_position: 100, friendly_name: 'Chambre' }),
+  'cover.volet_bureau': entity('cover.volet_bureau', 'closed', { current_position: 0, friendly_name: 'Bureau' }),
+  'cover.volet_salle_de_bain': entity('cover.volet_salle_de_bain', 'open', { current_position: 60, friendly_name: 'Salle de bain' }),
 
   // Vacuum
   'vacuum.roborock': entity('vacuum.roborock', 'docked', { battery_level: 100 }),
@@ -117,6 +117,43 @@ const ENTITIES: Record<string, EntityState> = {
   'camera.cuisine': entity('camera.cuisine', 'idle', {}),
   'camera.salon_frigate': entity('camera.salon_frigate', 'idle', {}),
   'camera.couloir_frigate': entity('camera.couloir_frigate', 'idle', {}),
+
+  // ─── Aliases for default widget configs (fallback entity IDs) ─────────────
+  'alarm_control_panel.home_alarm': entity('alarm_control_panel.home_alarm', 'disarmed', {}),
+  'weather.home': entity('weather.home', 'partly-cloudy', {
+    temperature: 12,
+    wind_speed: 18,
+    wind_speed_unit: 'km/h',
+    forecast: [
+      { datetime: new Date().toISOString(), condition: 'partly-cloudy', temperature: 14, templow: 8 },
+      { datetime: new Date(Date.now() + 86400000).toISOString(), condition: 'sunny', temperature: 17, templow: 9 },
+      { datetime: new Date(Date.now() + 172800000).toISOString(), condition: 'cloudy', temperature: 13, templow: 7 },
+      { datetime: new Date(Date.now() + 259200000).toISOString(), condition: 'rainy', temperature: 11, templow: 6 },
+      { datetime: new Date(Date.now() + 345600000).toISOString(), condition: 'sunny', temperature: 16, templow: 8 },
+    ],
+  }),
+  'climate.living_room': entity('climate.living_room', 'heat', {
+    current_temperature: 19.5,
+    temperature: 21,
+    hvac_action: 'heating',
+    preset_mode: 'comfort',
+    hvac_modes: ['off', 'heat'],
+  }),
+  'sensor.battery_level': entity('sensor.battery_level', '78', { unit_of_measurement: '%' }),
+  'sensor.battery_state': entity('sensor.battery_state', 'charging', {}),
+  'sensor.grid_power': entity('sensor.grid_power', '320', { unit_of_measurement: 'W' }),
+  'sensor.home_power': entity('sensor.home_power', '185', { unit_of_measurement: 'W' }),
+  'sensor.solar_production': entity('sensor.solar_production', '420', { unit_of_measurement: 'W' }),
+  'sensor.tempo_current_color': entity('sensor.tempo_current_color', 'Bleu', {}),
+  'sensor.tempo_next_color': entity('sensor.tempo_next_color', 'Bleu', {}),
+  'binary_sensor.tempo_off_peak': entity('binary_sensor.tempo_off_peak', 'on', {}),
+  'sensor.tempo_remaining_blue': entity('sensor.tempo_remaining_blue', '142', {}),
+  'sensor.tempo_remaining_white': entity('sensor.tempo_remaining_white', '20', {}),
+  'sensor.tempo_remaining_red': entity('sensor.tempo_remaining_red', '0', {}),
+  'camera.front_door': entity('camera.front_door', 'idle', {}),
+  'camera.kitchen': entity('camera.kitchen', 'idle', {}),
+  'camera.living_room': entity('camera.living_room', 'idle', {}),
+  'camera.hallway': entity('camera.hallway', 'idle', {}),
 };
 
 const DEFAULT_ENTITY = entity('unknown', 'unavailable', {});
@@ -174,4 +211,23 @@ export function useWeather(entityId: EntityName, _options?: { type?: 'daily' | '
 
 export function HassConnect({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
+}
+
+// ─── Types used by CameraFeed ───────────────────────────────────────────────
+export type FilterByDomain<T, _D extends string> = T;
+
+// ─── useUser (EditButton checks is_admin) ───────────────────────────────────
+export function useUser() {
+  return { id: 'mock-user', name: 'Test User', is_admin: true, is_owner: true };
+}
+
+// ─── useCamera (CameraFeed component) ───────────────────────────────────────
+export function useCamera(_entityId: string, _options?: { poster?: boolean }) {
+  return {
+    entity_id: _entityId,
+    state: 'idle',
+    attributes: {},
+    stream: { url: '' },
+    mjpeg: { url: '', shouldRenderMJPEG: false },
+  };
 }

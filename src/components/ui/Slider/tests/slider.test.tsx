@@ -1,4 +1,3 @@
-
 import { render } from '@testing-library/react';
 
 import { describe, it, expect, vi } from 'vitest';
@@ -8,11 +7,31 @@ import { Slider } from '@/components/ui/Slider/components/slider';
 // Mock Radix Slider
 vi.mock('radix-ui', () => ({
   Slider: {
-    Root: (props: any) => <div data-slot="slider" {...props}>{props.children}</div>,
-    Track: (props: any) => <div data-slot="slider-track" {...props}>{props.children}</div>,
-    Range: (props: any) => <div data-slot="slider-range" {...props}>{props.children}</div>,
-    Thumb: (props: any) => <div data-slot="slider-thumb" {...props}>{props.children}</div>,
-  }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Root: (props: any) => (
+      <div data-slot='slider' {...props}>
+        {props.children}
+      </div>
+    ),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Track: (props: any) => (
+      <div data-slot='slider-track' {...props}>
+        {props.children}
+      </div>
+    ),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Range: (props: any) => (
+      <div data-slot='slider-range' {...props}>
+        {props.children}
+      </div>
+    ),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Thumb: (props: any) => (
+      <div data-slot='slider-thumb' {...props}>
+        {props.children}
+      </div>
+    ),
+  },
 }));
 
 describe('Slider', () => {

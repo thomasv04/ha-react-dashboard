@@ -76,7 +76,7 @@ describe('templateEngine.render', () => {
 
 describe('templateEngine.validate', () => {
   it('retourne null pour un template valide', () => {
-    expect(templateEngine.validate("{% if true %}ok{% endif %}")).toBeNull();
+    expect(templateEngine.validate('{% if true %}ok{% endif %}')).toBeNull();
   });
 
   it("retourne un message d'erreur pour une syntaxe invalide", () => {

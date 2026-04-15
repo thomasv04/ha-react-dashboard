@@ -38,9 +38,7 @@ export function settingsRouter(db) {
 
     try {
       // Vérifier la révision pour éviter les conflits
-      const current = db
-        .prepare('SELECT revision FROM device_settings WHERE device_id = ?')
-        .get(sanitizedDeviceId);
+      const current = db.prepare('SELECT revision FROM device_settings WHERE device_id = ?').get(sanitizedDeviceId);
 
       if (current && expected_revision !== undefined && current.revision !== expected_revision) {
         return res.status(409).json({
@@ -52,19 +50,16 @@ export function settingsRouter(db) {
 
       const newRevision = (current?.revision ?? 0) + 1;
 
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO device_settings (device_id, ha_user_id, data, revision, updated_at)
         VALUES (?, ?, ?, ?, datetime('now'))
         ON CONFLICT(device_id) DO UPDATE SET
           data = excluded.data,
           revision = excluded.revision,
           updated_at = datetime('now')
-      `).run(
-        sanitizedDeviceId,
-        req.headers['x-ha-user-id'] || null,
-        JSON.stringify(data),
-        newRevision,
-      );
+      `
+      ).run(sanitizedDeviceId, req.headers['x-ha-user-id'] || null, JSON.stringify(data), newRevision);
 
       res.json({ success: true, revision: newRevision });
     } catch (err) {

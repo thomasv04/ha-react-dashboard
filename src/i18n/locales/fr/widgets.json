@@ -1,0 +1,124 @@
+{
+  "weather": {
+    "label": "Météo",
+    "wind": "Vent",
+    "max": "MAX",
+    "min": "MIN",
+    "conditions": {
+      "clear-night": "Nuit claire",
+      "cloudy": "Nuageux",
+      "exceptional": "Conditions exceptionnelles",
+      "fog": "Brouillard",
+      "hail": "Grêle",
+      "lightning": "Orage",
+      "lightning-rainy": "Orage pluvieux",
+      "partlycloudy": "Partiellement nuageux",
+      "pouring": "Forte pluie",
+      "rainy": "Pluvieux",
+      "snowy": "Enneigé",
+      "snowy-rainy": "Neige et pluie",
+      "sunny": "Ensoleillé",
+      "windy": "Venteux",
+      "windy-variant": "Très venteux"
+    },
+    "days": ["dim", "lun", "mar", "mer", "jeu", "ven", "sam"]
+  },
+  "thermostat": {
+    "label": "Thermostat",
+    "heating": "CHAUFFER À",
+    "cooling": "REFROIDIR À",
+    "idle": "EN VEILLE",
+    "off": "ÉTEINT",
+    "fan_only": "VENTILATION",
+    "drying": "SÉCHAGE",
+    "preheating": "PRÉCHAUFFE"
+  },
+  "light": {
+    "label": "Lumière",
+    "brightness": "Luminosité",
+    "colorTemp": "Température",
+    "notFound": "Lumière introuvable"
+  },
+  "sensor": {
+    "label": "Capteur",
+    "notFound": "Entité introuvable",
+    "updatedAgo": "il y a {value}",
+    "justNow": "à l'instant",
+    "stale": "périmé"
+  },
+  "cover": {
+    "label": "Volet",
+    "open": "Ouvert",
+    "closed": "Fermé",
+    "opening": "Ouverture...",
+    "closing": "Fermeture...",
+    "notFound": "Volet introuvable"
+  },
+  "media_player": {
+    "label": "Média",
+    "playing": "Lecture",
+    "paused": "Pause",
+    "idle": "En attente",
+    "off": "Éteint",
+    "notFound": "Lecteur introuvable"
+  },
+  "person": {
+    "label": "Personnes",
+    "home": "MAISON",
+    "away": "ABSENT",
+    "noPeople": "Aucune personne configurée"
+  },
+  "alarm": {
+    "label": "Alarme",
+    "armed_home": "Armé — domicile",
+    "armed_away": "Armé — absent",
+    "armed_night": "Armé — nuit",
+    "disarmed": "Désarmé",
+    "triggered": "ALERTE !",
+    "arming": "Armement...",
+    "disarm": "Désarmer",
+    "pinPlaceholder": "Code PIN",
+    "modeHome": "Domicile",
+    "modeAway": "Absent",
+    "modeNight": "Nuit"
+  },
+  "camera": { "label": "Caméra" },
+  "energy": {
+    "label": "Énergie",
+    "solar": "Énergie solaire",
+    "charging": "En charge",
+    "discharging": "En décharge",
+    "standby": "Veille",
+    "flowIn": "W entrant",
+    "flowOut": "W sortant"
+  },
+  "tempo": {
+    "label": "Tempo EDF",
+    "offPeak": "Heures creuses",
+    "peak": "Heures pleines",
+    "rate": "Tarif ",
+    "tomorrow": "Demain",
+    "blue": "Bleu",
+    "white": "Blanc",
+    "red": "Rouge"
+  },
+  "rooms": { "label": "Pièces" },
+  "shortcuts": {
+    "label": "Raccourcis",
+    "header": "Raccourcis",
+    "armed": "Armée",
+    "disarmed": "Désarmée"
+  },
+  "pellet": {
+    "label": "Feu à pellet",
+    "current": "Actuel : "
+  },
+  "greeting": {
+    "goodMorning": "Bonjour",
+    "goodAfternoon": "Bon après-midi",
+    "goodEvening": "Bonsoir",
+    "goodNight": "Bonne nuit"
+  },
+  "automation": { "label": "Automatisation" },
+  "template": { "label": "Template" }
+}

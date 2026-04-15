@@ -5,7 +5,7 @@ export type PageType = 'grid' | 'media' | 'settings';
 export interface Page {
   id: string;
   label: string;
-  icon?: string;     // nom d'icône lucide
+  icon?: string; // nom d'icône lucide
   type: PageType;
   /** Ordre d'affichage dans les onglets */
   order: number;
@@ -29,7 +29,7 @@ function generateSlug(label: string, existingIds: string[]): string {
   const base = label
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')  // supprime les accents
+    .replace(/[\u0300-\u036f]/g, '') // supprime les accents
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 
@@ -46,9 +46,7 @@ function generateSlug(label: string, existingIds: string[]): string {
 }
 
 // ── Default pages ──────────────────────────────────────────────────────────────
-export const DEFAULT_PAGES: Page[] = [
-  { id: 'home', label: 'Accueil', icon: 'LayoutGrid', type: 'grid', order: 0 },
-];
+export const DEFAULT_PAGES: Page[] = [{ id: 'home', label: 'Accueil', icon: 'LayoutGrid', type: 'grid', order: 0 }];
 
 interface PageProviderProps {
   children: ReactNode;
@@ -56,56 +54,69 @@ interface PageProviderProps {
 }
 
 export function PageProvider({ children, initialPages }: PageProviderProps) {
-  const [pages, setPages] = useState<Page[]>(
-    initialPages && initialPages.length > 0 ? initialPages : DEFAULT_PAGES
-  );
+  const [pages, setPages] = useState<Page[]>(initialPages && initialPages.length > 0 ? initialPages : DEFAULT_PAGES);
   const [currentPageId, setCurrentPageId] = useState<string>(
     initialPages && initialPages.length > 0 ? (initialPages[0]?.id ?? 'home') : 'home'
   );
 
   const currentPage = pages.find(p => p.id === currentPageId);
 
-  const setCurrentPage = useCallback((id: string) => {
-    const exists = pages.some(p => p.id === id);
-    if (exists) setCurrentPageId(id);
-  }, [pages]);
+  const setCurrentPage = useCallback(
+    (id: string) => {
+      const exists = pages.some(p => p.id === id);
+      if (exists) setCurrentPageId(id);
+    },
+    [pages]
+  );
 
-  const addPage = useCallback((page: Omit<Page, 'id' | 'order'>) => {
-    const existingIds = pages.map(p => p.id);
-    const id = generateSlug(page.label, existingIds);
-    const order = Math.max(...pages.map(p => p.order), -1) + 1;
-    setPages(prev => [...prev, { ...page, id, order }]);
-    return id;
-  }, [pages]);
+  const addPage = useCallback(
+    (page: Omit<Page, 'id' | 'order'>) => {
+      const existingIds = pages.map(p => p.id);
+      const id = generateSlug(page.label, existingIds);
+      const order = Math.max(...pages.map(p => p.order), -1) + 1;
+      setPages(prev => [...prev, { ...page, id, order }]);
+      return id;
+    },
+    [pages]
+  );
 
-  const deletePage = useCallback((id: string) => {
-    if (id === 'home') return; // On ne supprime jamais l'accueil
-    setPages(prev => prev.filter(p => p.id !== id));
-    if (currentPageId === id) setCurrentPageId('home');
-  }, [currentPageId]);
+  const deletePage = useCallback(
+    (id: string) => {
+      if (id === 'home') return; // On ne supprime jamais l'accueil
+      setPages(prev => prev.filter(p => p.id !== id));
+      if (currentPageId === id) setCurrentPageId('home');
+    },
+    [currentPageId]
+  );
 
   const updatePage = useCallback((id: string, updates: Partial<Page>) => {
-    setPages(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+    setPages(prev => prev.map(p => (p.id === id ? { ...p, ...updates } : p)));
   }, []);
 
   const reorderPages = useCallback((ids: string[]) => {
-    setPages(prev => ids.map((id, i) => {
-      const page = prev.find(p => p.id === id);
-      return page ? { ...page, order: i } : null;
-    }).filter((p): p is Page => p !== null));
+    setPages(prev =>
+      ids
+        .map((id, i) => {
+          const page = prev.find(p => p.id === id);
+          return page ? { ...page, order: i } : null;
+        })
+        .filter((p): p is Page => p !== null)
+    );
   }, []);
 
   return (
-    <PageContext.Provider value={{
-      pages,
-      currentPageId,
-      currentPage,
-      setCurrentPage,
-      addPage,
-      deletePage,
-      updatePage,
-      reorderPages,
-    }}>
+    <PageContext.Provider
+      value={{
+        pages,
+        currentPageId,
+        currentPage,
+        setCurrentPage,
+        addPage,
+        deletePage,
+        updatePage,
+        reorderPages,
+      }}
+    >
       {children}
     </PageContext.Provider>
   );

@@ -49,29 +49,21 @@ function PersonPill({ entry, haBaseUrl }: { entry: PersonEntry; haBaseUrl: strin
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      className={cn(
-        'flex items-center gap-3 px-3 py-2 rounded-2xl transition-all',
-        isHome ? 'bg-white/5' : 'bg-white/[0.02]',
-      )}
+      className={cn('flex items-center gap-3 px-3 py-2 rounded-2xl transition-all', isHome ? 'bg-white/5' : 'bg-white/[0.02]')}
     >
       {/* Avatar */}
-      <div className="relative">
+      <div className='relative'>
         {picture ? (
           <img
             src={picture}
             alt={name}
-            className={cn(
-              'w-9 h-9 rounded-full object-cover border-2',
-              isHome ? 'border-green-400' : 'border-white/10 grayscale',
-            )}
+            className={cn('w-9 h-9 rounded-full object-cover border-2', isHome ? 'border-green-400' : 'border-white/10 grayscale')}
           />
         ) : (
           <div
             className={cn(
               'w-9 h-9 rounded-full flex items-center justify-center',
-              isHome
-                ? 'bg-green-500/20 border-2 border-green-400'
-                : 'bg-white/5 border-2 border-white/10',
+              isHome ? 'bg-green-500/20 border-2 border-green-400' : 'bg-white/5 border-2 border-white/10'
             )}
           >
             <User size={16} className={isHome ? 'text-green-400' : 'text-white/30'} />
@@ -82,27 +74,15 @@ function PersonPill({ entry, haBaseUrl }: { entry: PersonEntry; haBaseUrl: strin
         <div
           className={cn(
             'absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0a0a14]',
-            isHome ? 'bg-green-400' : 'bg-white/20',
+            isHome ? 'bg-green-400' : 'bg-white/20'
           )}
         />
       </div>
 
       {/* Texte */}
-      <div className="flex flex-col min-w-0">
-        <span
-          className={cn(
-            'text-sm font-medium truncate',
-            isHome ? 'text-white' : 'text-white/40',
-          )}
-        >
-          {name}
-        </span>
-        <span
-          className={cn(
-            'text-[10px] font-bold uppercase tracking-wider',
-            isHome ? 'text-green-400' : 'text-white/20',
-          )}
-        >
+      <div className='flex flex-col min-w-0'>
+        <span className={cn('text-sm font-medium truncate', isHome ? 'text-white' : 'text-white/40')}>{name}</span>
+        <span className={cn('text-[10px] font-bold uppercase tracking-wider', isHome ? 'text-green-400' : 'text-white/20')}>
           {zoneLabel}
         </span>
       </div>
@@ -119,22 +99,16 @@ export function PersonStatusCard() {
 
   const wsUrl = useHass(s => s.connection?.socket?.url as string | undefined);
   const haBaseUrl = wsUrl
-    ? wsUrl
-        .replace(/^wss?:\/\//, 'http' + (wsUrl.startsWith('wss') ? 's' : '') + '://')
-        .replace(/\/api\/websocket$/, '')
+    ? wsUrl.replace(/^wss?:\/\//, 'http' + (wsUrl.startsWith('wss') ? 's' : '') + '://').replace(/\/api\/websocket$/, '')
     : undefined;
 
   if (persons.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-full text-white/30 text-sm">
-        Aucune personne configurée
-      </div>
-    );
+    return <div className='flex items-center justify-center h-full text-white/30 text-sm'>Aucune personne configurée</div>;
   }
 
   return (
-    <div className="flex items-center gap-2 h-full overflow-x-auto scrollbar-none px-1">
-      {persons.map((entry) => (
+    <div className='flex items-center gap-2 h-full overflow-x-auto scrollbar-none px-1'>
+      {persons.map(entry => (
         <PersonPill key={entry.entityId} entry={entry} haBaseUrl={haBaseUrl} />
       ))}
     </div>

@@ -30,12 +30,10 @@ export class WidgetErrorBoundary extends React.Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="h-full flex flex-col items-center justify-center gap-2 rounded-2xl bg-white/5 border border-white/10 p-4 text-center">
-          <AlertTriangle size={24} className="text-red-400/60" />
-          <p className="text-white/40 text-xs font-medium">Widget indisponible</p>
-          {this.props.label && (
-            <p className="text-white/20 text-[10px]">{this.props.label}</p>
-          )}
+        <div className='h-full flex flex-col items-center justify-center gap-2 rounded-2xl bg-white/5 border border-white/10 p-4 text-center'>
+          <AlertTriangle size={24} className='text-red-400/60' />
+          <p className='text-white/40 text-xs font-medium'>Widget indisponible</p>
+          {this.props.label && <p className='text-white/20 text-[10px]'>{this.props.label}</p>}
         </div>
       );
     }

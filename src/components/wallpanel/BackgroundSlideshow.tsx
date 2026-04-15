@@ -15,6 +15,23 @@ function shuffleArray<T>(arr: T[]): T[] {
   return a;
 }
 
+function BlurBg({ src, opacity }: { src: string; opacity: number }) {
+  return (
+    <div
+      className='absolute inset-0'
+      style={{
+        backgroundImage: `url(${src})`,
+        backgroundPosition: 'center',
+        backgroundSize: 'fill',
+        filter: 'blur(15px)',
+        transform: 'scale(1.08)',
+        opacity,
+        transition: 'opacity 1000ms',
+      }}
+    />
+  );
+}
+
 export function BackgroundSlideshow({ config }: BackgroundSlideshowProps) {
   const resolvedUrls = useResolvedMediaUrls(config.image_urls);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -26,10 +43,7 @@ export function BackgroundSlideshow({ config }: BackgroundSlideshowProps) {
   // (Re)construire la liste ordonnée quand les URLs résolues ou l'ordre changent
   useEffect(() => {
     if (resolvedUrls.length === 0) return;
-    const urls =
-      config.media_order === 'random'
-        ? shuffleArray(resolvedUrls)
-        : [...resolvedUrls];
+    const urls = config.media_order === 'random' ? shuffleArray(resolvedUrls) : [...resolvedUrls];
     setOrderedUrls(urls);
     setCurrentIdx(0);
     setNextIdx(Math.min(1, urls.length - 1));
@@ -52,34 +66,11 @@ export function BackgroundSlideshow({ config }: BackgroundSlideshowProps) {
   }, [orderedUrls, config.image_duration]);
 
   if (orderedUrls.length === 0) {
-    return (
-      <div
-        className='absolute inset-0'
-        style={{ background: 'linear-gradient(135deg, #0c1028 0%, #1a2550 100%)' }}
-      />
-    );
+    return <div className='absolute inset-0' style={{ background: 'linear-gradient(135deg, #0c1028 0%, #1a2550 100%)' }} />;
   }
 
   const blurPx = config.style.backgroundBlur ?? 0;
   const containBg = config.image_fit === 'contain' && (config.style.containBlurBackground ?? false);
-
-  /** Renders the blurred fill background for a given image URL */
-  function BlurBg({ src, opacity }: { src: string; opacity: number }) {
-    return (
-      <div
-        className='absolute inset-0'
-        style={{
-          backgroundImage: `url(${src})`,
-          backgroundPosition: 'center',
-          backgroundSize: 'fill',
-          filter: 'blur(15px)',
-          transform: 'scale(1.08)', // hide blur edges
-          opacity,
-          transition: 'opacity 1000ms',
-        }}
-      />
-    );
-  }
 
   return (
     <div className='absolute inset-0 overflow-hidden'>
@@ -87,9 +78,7 @@ export function BackgroundSlideshow({ config }: BackgroundSlideshowProps) {
       {containBg && (
         <>
           <BlurBg src={orderedUrls[currentIdx]} opacity={transitioning ? 0 : 1} />
-          {orderedUrls.length > 1 && (
-            <BlurBg src={orderedUrls[nextIdx]} opacity={transitioning ? 1 : 0} />
-          )}
+          {orderedUrls.length > 1 && <BlurBg src={orderedUrls[nextIdx]} opacity={transitioning ? 1 : 0} />}
         </>
       )}
       {/* Image courante */}
@@ -124,8 +113,7 @@ export function BackgroundSlideshow({ config }: BackgroundSlideshowProps) {
       <div
         className='absolute inset-0 pointer-events-none'
         style={{
-          background:
-            'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.4) 100%)',
+          background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.4) 100%)',
         }}
       />
     </div>

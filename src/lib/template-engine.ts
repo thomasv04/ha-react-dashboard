@@ -29,7 +29,6 @@ type GetEntities = () => EntitiesMap;
 class HATemplateEngine {
   private env: nunjucks.Environment;
   private getEntities: GetEntities = () => ({});
-  private userName = '';
 
   constructor() {
     this.env = new nunjucks.Environment(null, { autoescape: false });
@@ -44,47 +43,40 @@ class HATemplateEngine {
 
   /** Définit le nom de l'utilisateur HA connecté (disponible via {{ user }}) */
   setUser(name: string): void {
-    this.userName = name;
     this.env.addGlobal('user', name);
   }
 
   // ── Fonctions HA ────────────────────────────────────────────────────────────
 
   private registerHAGlobals(): void {
-    const self = this;
-
     this.env.addGlobal('states', (entityId: string): string => {
-      const entity = self.getEntities()[entityId];
+      const entity = this.getEntities()[entityId];
       return entity?.state ?? 'unknown';
     });
 
     this.env.addGlobal('state_attr', (entityId: string, attr: string): unknown => {
-      const entity = self.getEntities()[entityId];
+      const entity = this.getEntities()[entityId];
       return entity?.attributes?.[attr] ?? null;
     });
 
     // Alias courant dans Mushroom
     this.env.addGlobal('states_attr', (entityId: string, attr: string): unknown => {
-      const entity = self.getEntities()[entityId];
+      const entity = this.getEntities()[entityId];
       return entity?.attributes?.[attr] ?? null;
     });
 
     this.env.addGlobal('is_state', (entityId: string, value: string): boolean => {
-      const entity = self.getEntities()[entityId];
+      const entity = this.getEntities()[entityId];
       return entity?.state === String(value);
     });
 
     this.env.addGlobal('has_value', (entityId: string): boolean => {
-      const state = self.getEntities()[entityId]?.state ?? 'unavailable';
+      const state = this.getEntities()[entityId]?.state ?? 'unavailable';
       return state !== 'unknown' && state !== 'unavailable';
     });
 
     // Ternaire dans un appel de fonction (plus lisible que ?: dans Nunjucks)
-    this.env.addGlobal(
-      'iif',
-      (condition: unknown, ifTrue: unknown, ifFalse: unknown): unknown =>
-        condition ? ifTrue : ifFalse,
-    );
+    this.env.addGlobal('iif', (condition: unknown, ifTrue: unknown, ifFalse: unknown): unknown => (condition ? ifTrue : ifFalse));
   }
 
   // ── Filtres supplémentaires ──────────────────────────────────────────────────

@@ -20,6 +20,8 @@ export type {
   PersonStatusConfig,
   CoverCardConfig,
   TemplateCardConfig,
+  AutomationCardConfig,
+  MediaPlayerCardConfig,
   WidgetConfig,
   WidgetConfigs,
 } from './widget-types';

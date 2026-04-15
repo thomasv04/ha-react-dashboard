@@ -4,9 +4,32 @@ import { useWeather } from '@hakit/core';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { WeatherCardConfig } from '@/types/widget-configs';
+import type { WeatherCondition } from '@/types/widget-types';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
+import { resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-map';
+import { useI18n } from '@/i18n';
 
-function WeatherIcon({ condition, size = 32 }: { condition: string; size?: number }) {
+function WeatherIcon({
+  condition,
+  size = 32,
+  customIcons,
+}: {
+  condition: string;
+  size?: number;
+  customIcons?: Partial<Record<WeatherCondition, string>>;
+}) {
+  // Check for custom icon override
+  const customValue = customIcons?.[condition as WeatherCondition];
+  if (customValue) {
+    if (isCustomIcon(customValue)) {
+      return <img src={getCustomIconUrl(customValue)} alt={condition} style={{ width: size, height: size }} className='object-contain' />;
+    }
+    const CustomLucide = resolveIcon(customValue);
+    // eslint-disable-next-line react-hooks/static-components
+    if (CustomLucide) return <CustomLucide size={size} className='text-white/80' />;
+  }
+
+  // Default icons
   const cn = condition.toLowerCase();
   if (cn.includes('sunny') || cn.includes('clear')) return <Sun size={size} className='text-yellow-300' />;
   if (cn.includes('drizzle')) return <CloudDrizzle size={size} className='text-blue-300' />;
@@ -18,39 +41,22 @@ function WeatherIcon({ condition, size = 32 }: { condition: string; size?: numbe
   return <Sun size={size} className='text-yellow-300' />;
 }
 
-const DAYS_FR = ['dim', 'lun', 'mar', 'mer', 'jeu', 'ven', 'sam'];
-
-const CONDITION_FR: Record<string, string> = {
-  'clear-night': 'Nuit claire',
-  cloudy: 'Nuageux',
-  exceptional: 'Conditions exceptionnelles',
-  fog: 'Brouillard',
-  hail: 'Grêle',
-  lightning: 'Orage',
-  'lightning-rainy': 'Orage pluvieux',
-  partlycloudy: 'Partiellement nuageux',
-  pouring: 'Forte pluie',
-  rainy: 'Pluvieux',
-  snowy: 'Enneigé',
-  'snowy-rainy': 'Neige et pluie',
-  sunny: 'Ensoleillé',
-  windy: 'Venteux',
-  'windy-variant': 'Très venteux',
-};
-
 export function WeatherCard() {
+  const { t, tArray } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<WeatherCardConfig>(widgetId || 'weather');
   const entityId = config?.entityId ?? 'weather.home';
 
-  const weather = useWeather(entityId as 'weather.home', { type: 'daily' });
+  const weather = useWeather(entityId as never, { type: 'daily' });
 
   const temp = weather.attributes.temperature as number | undefined;
   const wind = weather.attributes.wind_speed as number | undefined;
   const windUnit = (weather.attributes.wind_speed_unit as string | undefined) ?? 'km/h';
   const forecastDays = weather.forecast?.forecast ?? [];
-  const label = CONDITION_FR[weather.state] ?? weather.state.replace(/_/g, ' ');
+  const days = tArray('widgets.weather.days');
+  const conditionKey = `widgets.weather.conditions.${weather.state}`;
+  const label = t(conditionKey) !== conditionKey ? t(conditionKey) : weather.state.replace(/_/g, ' ');
 
   const todayHigh = forecastDays[0]?.temperature;
   const todayLow = forecastDays[0]?.templow;
@@ -72,8 +78,16 @@ export function WeatherCard() {
           <div className='text-white/70 text-base mt-1 capitalize font-medium'>{label}.</div>
           {(todayHigh !== undefined || todayLow !== undefined) && (
             <div className='text-white/40 text-xs mt-1'>
-              {todayHigh !== undefined && <span>MAX {todayHigh}° </span>}
-              {todayLow !== undefined && <span>MIN {todayLow}°</span>}
+              {todayHigh !== undefined && (
+                <span>
+                  {t('widgets.weather.max')} {todayHigh}°{' '}
+                </span>
+              )}
+              {todayLow !== undefined && (
+                <span>
+                  {t('widgets.weather.min')} {todayLow}°
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -84,11 +98,8 @@ export function WeatherCard() {
           transition={{ type: 'spring', stiffness: 300, damping: 20 }}
           className='w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center'
         >
-          <motion.div
-            animate={{ y: [0, -3, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <WeatherIcon condition={weather.state} size={32} />
+          <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
+            <WeatherIcon condition={weather.state} size={32} customIcons={config?.customIcons} />
           </motion.div>
         </motion.div>
       </div>
@@ -113,17 +124,17 @@ export function WeatherCard() {
       {next4.length > 0 && (
         <>
           <div className='h-px bg-gradient-to-r from-transparent via-white/15 to-transparent' />
-          <div className='grid grid-cols-4 gap-1'>
+          <div className='flex gap-1 overflow-x-auto scrollbar-none' style={{ scrollbarWidth: 'none' }}>
             {next4.map((day, i) => {
               const d = new Date(day.datetime);
-              const dayName = DAYS_FR[d.getDay()];
+              const dayName = days[d.getDay()];
               return (
                 <motion.div
                   key={day.datetime}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: 0.1 + i * 0.06 }}
-                  className='flex flex-col items-center gap-1.5 py-1.5'
+                  className='flex flex-col items-center gap-1.5 py-1.5 flex-1 min-w-[52px]'
                 >
                   <span className='text-[11px] text-white/40 uppercase tracking-wider font-medium'>{dayName}</span>
                   <motion.div
@@ -131,7 +142,7 @@ export function WeatherCard() {
                     transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                     className='w-8 h-8 rounded-full bg-white/5 flex items-center justify-center'
                   >
-                    <WeatherIcon condition={day.condition ?? ''} size={16} />
+                    <WeatherIcon condition={day.condition ?? ''} size={16} customIcons={config?.customIcons} />
                   </motion.div>
                   <span className='text-[11px] text-white/70 font-semibold'>{day.temperature}°</span>
                   {day.templow !== undefined && <span className='text-[10px] text-white/30'>{day.templow}°</span>}

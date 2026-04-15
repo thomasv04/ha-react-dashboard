@@ -6,14 +6,7 @@ import { BackgroundSlideshow } from './BackgroundSlideshow';
 import { WallPanelEditShell, WallPanelReadonlyShell } from './WallPanelEditShell';
 
 export function WallPanelOverlay() {
-  const {
-    isActive,
-    deactivate,
-    wallPanelLayout,
-    config,
-    isWallPanelEditMode,
-    enterWallPanelEditMode,
-  } = useWallPanel();
+  const { isActive, deactivate, wallPanelLayout, config, isWallPanelEditMode, enterWallPanelEditMode } = useWallPanel();
   const hasWidgets = wallPanelLayout.widgets.lg.length > 0;
 
   // Désactiver avec Echap (sauf en mode édition)
@@ -54,19 +47,14 @@ export function WallPanelOverlay() {
             <BackgroundSlideshow config={config} />
 
             {/* ── Widgets ── */}
-            <div
-              className='absolute inset-0 z-10 pointer-events-none'
-              onClick={e => e.stopPropagation()}
-            >
+            <div className='absolute inset-0 z-10 pointer-events-none' onClick={e => e.stopPropagation()}>
               {isWallPanelEditMode ? (
                 // Mode édition – layout provider isolé avec drag/resize/add
                 <WallPanelEditShell />
               ) : (
                 // Mode lecture seule – also needs its own provider so GridItem
                 // can look up widget positions from the wallpanel layout
-                hasWidgets && (
-                  <WallPanelReadonlyShell />
-                )
+                hasWidgets && <WallPanelReadonlyShell />
               )}
             </div>
 

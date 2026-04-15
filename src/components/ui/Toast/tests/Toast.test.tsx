@@ -88,7 +88,7 @@ describe('ToastCard', () => {
   const toast = {
     title: 'Test',
     description: 'Desc',
-    icon: <span data-testid="icon">icon</span>,
+    icon: <span data-testid='icon'>icon</span>,
     persistent: false,
     durationMs: 1000,
     actions: [
@@ -98,6 +98,7 @@ describe('ToastCard', () => {
         variant: 'default',
       },
     ],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any;
 
   it('affiche le titre, la description et l’icône', () => {

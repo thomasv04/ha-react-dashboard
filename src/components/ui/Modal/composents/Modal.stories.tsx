@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { AlertTriangle, Info, CheckCircle } from 'lucide-react';
 import { ModalProvider, useModal } from '@/context/ModalContext';
 import { ModalContainer } from '@/components/ui/Modal/composents/Modal';
 
@@ -39,8 +38,7 @@ const meta = {
       description: {
         component:
           'Vous pouvez déclencher cette modal depuis Home Assistant en émettant l\'événement `ha_dashboard_modal` avec `event_data` suivant :\n\n```yaml\nevent: ha_dashboard_modal\nevent_data:\n  title: "Mise à jour disponible"\n  content: "Une nouvelle version de Home Assistant est disponible. Voulez-vous l\'installer maintenant?"\n  width: "md"\n  dismissible: false\n  persistent: true\n  actions:\n    - label: "Installer"\n      variant: "primary"\n      service: "hassio.addon_update"\n    - label: "Plus tard"\n      variant: "default"\n```',
-        story:
-          'Exemple d\'événement Home Assistant (utilisez l\'onglet Docs pour voir le YAML complet).',
+        story: "Exemple d'événement Home Assistant (utilisez l'onglet Docs pour voir le YAML complet).",
       },
     },
   },
@@ -141,8 +139,7 @@ export const FromHAEvent: Story = {
   name: 'Déclenchée depuis HA (docs)',
   parameters: {
     docs: {
-      story:
-        'Cette story montre l\'exemple d\'événement Home Assistant `ha_dashboard_modal` — voir le composant pour le YAML complet.',
+      story: "Cette story montre l'exemple d'événement Home Assistant `ha_dashboard_modal` — voir le composant pour le YAML complet.",
     },
   },
   render: () => (
@@ -150,7 +147,7 @@ export const FromHAEvent: Story = {
       setup={open =>
         open({
           title: 'Mise à jour disponible',
-          content: 'Une nouvelle version de Home Assistant est disponible. Voulez-vous l\'installer maintenant?',
+          content: "Une nouvelle version de Home Assistant est disponible. Voulez-vous l'installer maintenant?",
           width: 'md',
           dismissible: false,
           persistent: true,

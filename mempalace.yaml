@@ -1,0 +1,98 @@
+wing: ha_dashboard
+exclude:
+  - assets/**
+  - storybook-static/**
+  - playwright-report/**
+  - playwright-report-dashboard/**
+  - coverage/**
+  - test-results/**
+  - node_modules/**
+  - data/uploads/**
+  - '**/*.min.js'
+  - '**/*.map'
+  - '**/*.whl'
+  - package-lock.json
+rooms:
+  - name: design
+    description: Files from assets/
+    keywords:
+      - design
+      - assets
+  - name: data
+    description: Files from data/
+    keywords:
+      - data
+      - data
+  - name: documentation
+    description: Files from docs/
+    keywords:
+      - documentation
+      - docs
+  - name: ha_react_dashboard
+    description: Files from ha-react-dashboard/
+    keywords:
+      - ha_react_dashboard
+      - ha-react-dashboard
+  - name: ideas
+    description: Files from ideas/
+    keywords:
+      - ideas
+      - ideas
+  - name: playwright_report
+    description: Files from playwright-report/
+    keywords:
+      - playwright_report
+      - playwright-report
+  - name: playwright_report_dashboard
+    description: Files from playwright-report-dashboard/
+    keywords:
+      - playwright_report_dashboard
+      - playwright-report-dashboard
+  - name: public
+    description: Files from public/
+    keywords:
+      - public
+      - public
+  - name: scripts
+    description: Files from scripts/
+    keywords:
+      - scripts
+      - scripts
+  - name: backend
+    description: Files from server/
+    keywords:
+      - backend
+      - server
+  - name: src
+    description: Files from src/
+    keywords:
+      - src
+      - src
+  - name: storybook_static
+    description: Files from storybook-static/
+    keywords:
+      - storybook_static
+      - storybook-static
+  - name: test_results
+    description: Files from test-results/
+    keywords:
+      - test_results
+      - test-results
+  - name: testing
+    description: Files from tests/
+    keywords:
+      - testing
+      - tests
+  - name: frontend
+    description: Files from components/
+    keywords:
+      - frontend
+      - components
+  - name: configuration
+    description: Files from config/
+    keywords:
+      - configuration
+      - config
+  - name: general
+    description: Files that don't fit other rooms
+    keywords: []

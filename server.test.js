@@ -63,17 +63,18 @@ describe('POST /api/config', () => {
 
   it('renvoie 400 si le body est invalide', async () => {
     const { app } = createTestApp();
-    const res = await request(app)
-      .post('/api/config')
-      .send('not-json')
-      .set('Content-Type', 'text/plain');
+    const res = await request(app).post('/api/config').send('not-json').set('Content-Type', 'text/plain');
     expect(res.status).toBe(400);
   });
 
   it('met à jour la config existante (UPSERT)', async () => {
     const { app } = createTestApp();
-    await request(app).post('/api/config').send({ version: 2, layout: ['v1'] });
-    await request(app).post('/api/config').send({ version: 2, layout: ['v2'] });
+    await request(app)
+      .post('/api/config')
+      .send({ version: 2, layout: ['v1'] });
+    await request(app)
+      .post('/api/config')
+      .send({ version: 2, layout: ['v2'] });
 
     const res = await request(app).get('/api/config');
     expect(res.body.layout).toEqual(['v2']);
@@ -152,9 +153,7 @@ describe('GET /api/profiles/:id', () => {
 describe('PUT /api/profiles/:id', () => {
   it('met à jour le label du profil', async () => {
     const { app } = createTestApp();
-    const created = await request(app)
-      .post('/api/profiles')
-      .send({ label: 'Ancien label', data: {} });
+    const created = await request(app).post('/api/profiles').send({ label: 'Ancien label', data: {} });
     const { id } = created.body;
 
     const res = await request(app).put(`/api/profiles/${id}`).send({ label: 'Nouveau label' });
@@ -172,9 +171,7 @@ describe('PUT /api/profiles/:id', () => {
 describe('DELETE /api/profiles/:id', () => {
   it('supprime le profil existant', async () => {
     const { app } = createTestApp();
-    const created = await request(app)
-      .post('/api/profiles')
-      .send({ label: 'À supprimer', data: {} });
+    const created = await request(app).post('/api/profiles').send({ label: 'À supprimer', data: {} });
     const { id } = created.body;
 
     const res = await request(app).delete(`/api/profiles/${id}`);
@@ -286,4 +283,3 @@ describe('haAuthMiddleware', () => {
     process.env.NODE_ENV = originalEnv;
   });
 });
-

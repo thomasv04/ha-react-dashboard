@@ -1,6 +1,5 @@
-import React from 'react';
 import { renderHook, act } from '@testing-library/react';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect } from 'vitest';
 
 // Mock dependencies before importing
 vi.mock('@hakit/core', () => ({ useHass: vi.fn() }));
@@ -11,13 +10,7 @@ vi.mock('@/context/WidgetConfigContext', () => ({
   }),
 }));
 
-import {
-  DashboardLayoutProvider,
-  useDashboardLayout,
-  useEditMode,
-  DEFAULT_LAYOUT,
-  type GridWidget,
-} from './DashboardLayoutContext';
+import { DashboardLayoutProvider, useDashboardLayout, useEditMode, type GridWidget } from './DashboardLayoutContext';
 
 import { PageProvider } from './PageContext';
 
@@ -25,9 +18,7 @@ function createWrapper() {
   return function Wrapper({ children }: { children: React.ReactNode }) {
     return (
       <PageProvider>
-        <DashboardLayoutProvider>
-          {children}
-        </DashboardLayoutProvider>
+        <DashboardLayoutProvider>{children}</DashboardLayoutProvider>
       </PageProvider>
     );
   };

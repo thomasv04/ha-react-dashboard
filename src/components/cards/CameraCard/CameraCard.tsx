@@ -57,21 +57,20 @@ export function CameraCard() {
     >
       {/* ── Single camera feed ── */}
       <div className='flex-1 min-w-0 relative rounded-2xl overflow-hidden bg-black/50'>
-        <CameraFeed
-          key={current.entityId}
-          entityId={current.entityId}
-          className='w-full h-full'
-          onProtocol={setProtocol}
-        />
+        <CameraFeed key={current.entityId} entityId={current.entityId} className='w-full h-full' onProtocol={setProtocol} />
 
         {/* Camera name overlay */}
         <div className='absolute bottom-2 left-0 right-0 flex justify-center gap-1.5 pointer-events-none'>
           <span className='text-xs text-white/60 bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full'>{current.name}</span>
           {protocol && (
-            <span className={cn(
-              'text-xs font-medium backdrop-blur-sm px-2 py-1 rounded-full',
-              protocol === 'HLS' ? 'bg-blue-500/30 text-blue-200' : 'bg-amber-500/30 text-amber-200'
-            )}>{protocol}</span>
+            <span
+              className={cn(
+                'text-xs font-medium backdrop-blur-sm px-2 py-1 rounded-full',
+                protocol === 'HLS' ? 'bg-blue-500/30 text-blue-200' : 'bg-amber-500/30 text-amber-200'
+              )}
+            >
+              {protocol}
+            </span>
           )}
         </div>
       </div>

@@ -24,6 +24,7 @@ export default defineConfig({
     trace: 'on-first-retry',
     reducedMotion: 'reduce',
     viewport: { width: 1440, height: 900 },
+    locale: 'fr-FR',
   },
   projects: [
     {

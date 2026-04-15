@@ -18,8 +18,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     include: [
-      'src/**/*.test.{ts,tsx,js,jsx}', 
-      '*.test.{ts,tsx,js,jsx}' // Ajout pour server.test.js
+      'src/**/*.test.{ts,tsx,js,jsx}',
+      '*.test.{ts,tsx,js,jsx}', // Ajout pour server.test.js
     ],
     server: {
       deps: {

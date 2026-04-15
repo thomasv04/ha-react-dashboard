@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { vi, test, expect } from 'vitest';
 
@@ -7,6 +6,7 @@ vi.mock('@/context/WidgetConfigContext', () => ({
 }));
 
 vi.mock('@hakit/core', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   useHass: (selector?: any) => {
     const state = {
       entities: {

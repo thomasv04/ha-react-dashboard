@@ -45,20 +45,11 @@ export function useHAModal() {
 
     connection
       .subscribeEvents((event: { data: HAModalEvent }) => {
-        const {
-          title,
-          content,
-          content_type,
-          persistent,
-          width,
-          sound,
-          dismissible,
-          actions,
-        } = event.data;
+        const { title, content, content_type, persistent, width, sound, dismissible, actions } = event.data;
 
         // Process content based on type
         let processedContent: string | { type: 'markdown' | 'html' | 'plain'; value: string } | undefined;
-        
+
         if (content) {
           if (content_type && content_type !== 'plain') {
             processedContent = { type: content_type, value: content };

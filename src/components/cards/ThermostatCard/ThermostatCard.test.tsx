@@ -1,6 +1,9 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, test, expect } from 'vitest';
+
+vi.mock('@/i18n', () => ({
+  useI18n: () => ({ t: (k: string) => k, tArray: () => [] }),
+}));
 
 vi.mock('@/context/WidgetConfigContext', () => ({
   useWidgetConfig: vi.fn(() => ({ getWidgetConfig: () => undefined })),

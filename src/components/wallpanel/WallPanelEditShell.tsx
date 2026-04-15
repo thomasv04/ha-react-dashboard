@@ -3,11 +3,7 @@ import { AnimatePresence } from 'framer-motion';
 import { Plus, CloudUpload, X } from 'lucide-react';
 import { useWallPanel } from '@/context/WallPanelContext';
 import { PageProvider, type Page } from '@/context/PageContext';
-import {
-  DashboardLayoutProvider,
-  useDashboardLayout,
-  useEditMode,
-} from '@/context/DashboardLayoutContext';
+import { DashboardLayoutProvider, useDashboardLayout, useEditMode } from '@/context/DashboardLayoutContext';
 import { DashboardGrid, GridItem } from '@/components/layout/DashboardGrid';
 import { AddWidgetModal } from '@/components/layout/AddWidgetModal';
 import { WidgetEditModal } from '@/components/layout/WidgetEditModal';
@@ -40,9 +36,7 @@ const WP_WIDGET_COMPONENTS: Partial<Record<GridWidget['type'], React.ComponentTy
 };
 
 // Single fake page used by the nested DashboardLayoutProvider
-const WALLPANEL_PAGES: Page[] = [
-  { id: 'wallpanel', label: 'WallPanel', type: 'grid', order: 0 },
-];
+const WALLPANEL_PAGES: Page[] = [{ id: 'wallpanel', label: 'WallPanel', type: 'grid', order: 0 }];
 
 /**
  * Toolbar + modals for the wallpanel edit session.
@@ -101,9 +95,7 @@ function WallPanelEditActions() {
       <WidgetEditModal />
 
       {/* Add widget modal */}
-      <AnimatePresence>
-        {showAddModal && <AddWidgetModal onClose={() => setShowAddModal(false)} />}
-      </AnimatePresence>
+      <AnimatePresence>{showAddModal && <AddWidgetModal onClose={() => setShowAddModal(false)} />}</AnimatePresence>
     </div>
   );
 }
@@ -141,19 +133,13 @@ export function WallPanelReadonlyShell() {
   const initialLayouts = useMemo(
     () => ({ wallpanel: wallPanelLayout }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    []
   );
-  const initialAllWidgetConfigs = useMemo(
-    () => ({ wallpanel: DEFAULT_WIDGET_CONFIGS }),
-    [],
-  );
+  const initialAllWidgetConfigs = useMemo(() => ({ wallpanel: DEFAULT_WIDGET_CONFIGS }), []);
 
   return (
     <PageProvider initialPages={WALLPANEL_PAGES}>
-      <DashboardLayoutProvider
-        initialLayouts={initialLayouts}
-        initialAllWidgetConfigs={initialAllWidgetConfigs}
-      >
+      <DashboardLayoutProvider initialLayouts={initialLayouts} initialAllWidgetConfigs={initialAllWidgetConfigs}>
         <div className='pointer-events-auto max-w-[1440px] mx-auto px-5 pt-8'>
           <DashboardGrid readonly>
             <WallPanelGridWidgets />
@@ -175,19 +161,13 @@ export function WallPanelEditShell() {
   const initialLayouts = useMemo(
     () => ({ wallpanel: wallPanelLayout }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [], // only on mount — changes are saved back via setWallPanelLayout
+    [] // only on mount — changes are saved back via setWallPanelLayout
   );
-  const initialAllWidgetConfigs = useMemo(
-    () => ({ wallpanel: DEFAULT_WIDGET_CONFIGS }),
-    [],
-  );
+  const initialAllWidgetConfigs = useMemo(() => ({ wallpanel: DEFAULT_WIDGET_CONFIGS }), []);
 
   return (
     <PageProvider initialPages={WALLPANEL_PAGES}>
-      <DashboardLayoutProvider
-        initialLayouts={initialLayouts}
-        initialAllWidgetConfigs={initialAllWidgetConfigs}
-      >
+      <DashboardLayoutProvider initialLayouts={initialLayouts} initialAllWidgetConfigs={initialAllWidgetConfigs}>
         <WallPanelEditActions />
         <div className='pointer-events-auto max-w-[1440px] mx-auto px-5 pt-8'>
           <DashboardGrid>

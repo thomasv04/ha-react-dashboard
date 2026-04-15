@@ -1,16 +1,24 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { THEMES, type ThemeId, type ThemeTokens, type BackgroundConfig } from '@/config/themes';
 
+export interface AutoThemeConfig {
+  enabled: boolean;
+  lightTheme: ThemeId;
+  darkTheme: ThemeId;
+}
+
 export interface PerfSettings {
   reduceBlur: boolean;
   reduceAnimations: boolean;
   disableShadows: boolean;
+  disableModalAnimation: boolean;
 }
 
 const DEFAULT_PERF_SETTINGS: PerfSettings = {
   reduceBlur: false,
   reduceAnimations: false,
   disableShadows: false,
+  disableModalAnimation: false,
 };
 
 interface ThemeContextValue {
@@ -25,17 +33,27 @@ interface ThemeContextValue {
   /** Performance settings */
   perfSettings: PerfSettings;
   setPerfSettings: (s: PerfSettings) => void;
+  /** Auto day/night theme */
+  autoTheme: AutoThemeConfig;
+  setAutoTheme: (cfg: AutoThemeConfig) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 const STORAGE_KEY = 'ha-dashboard-theme';
 
+const DEFAULT_AUTO_THEME: AutoThemeConfig = {
+  enabled: false,
+  lightTheme: 'light',
+  darkTheme: 'dark',
+};
+
 function loadSettings(): {
   themeId: ThemeId;
   background: BackgroundConfig;
   cardOpacity: number;
   perfSettings: PerfSettings;
+  autoTheme: AutoThemeConfig;
 } {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -45,20 +63,25 @@ function loadSettings(): {
         background?: BackgroundConfig;
         cardOpacity?: number;
         perfSettings?: Partial<PerfSettings>;
+        autoTheme?: Partial<AutoThemeConfig>;
       };
       return {
         themeId: parsed.themeId ?? 'dark',
         background: parsed.background ?? { mode: 'solid' },
         cardOpacity: parsed.cardOpacity ?? THEMES.dark.tokens.glassOpacity,
         perfSettings: { ...DEFAULT_PERF_SETTINGS, ...(parsed.perfSettings ?? {}) },
+        autoTheme: { ...DEFAULT_AUTO_THEME, ...(parsed.autoTheme ?? {}) },
       };
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return {
     themeId: 'dark',
     background: { mode: 'solid' },
     cardOpacity: THEMES.dark.tokens.glassOpacity,
     perfSettings: DEFAULT_PERF_SETTINGS,
+    autoTheme: DEFAULT_AUTO_THEME,
   };
 }
 
@@ -68,6 +91,7 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
   const [background, setBackgroundState] = useState<BackgroundConfig>(saved.background);
   const [cardOpacity, setCardOpacityState] = useState(saved.cardOpacity);
   const [perfSettings, setPerfSettingsState] = useState<PerfSettings>(saved.perfSettings);
+  const [autoTheme, setAutoThemeState] = useState<AutoThemeConfig>(saved.autoTheme);
 
   const tokens = THEMES[themeId].tokens;
 
@@ -88,7 +112,15 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--dash-status-warning', tokens.statusWarning);
     root.style.setProperty('--dash-status-error', tokens.statusError);
     root.style.setProperty('--dash-status-info', tokens.statusInfo);
-  }, [tokens, cardOpacity]);
+
+    // Clay-specific variables & class
+    const isClay = tokens.mode === 'clay';
+    root.classList.toggle('theme-clay', isClay);
+    root.classList.toggle('theme-clay-light', isClay && themeId === 'clay');
+    root.classList.toggle('theme-clay-dark', isClay && themeId === 'clay-dark');
+    root.style.setProperty('--dash-shadow-color', tokens.shadowColor ?? '');
+    root.style.setProperty('--dash-shadow-highlight', tokens.shadowHighlight ?? '');
+  }, [tokens, cardOpacity, themeId]);
 
   // Performance CSS classes on <html>
   useEffect(() => {
@@ -100,8 +132,8 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
 
   // Persistance
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ themeId, background, cardOpacity, perfSettings }));
-  }, [themeId, background, cardOpacity, perfSettings]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ themeId, background, cardOpacity, perfSettings, autoTheme }));
+  }, [themeId, background, cardOpacity, perfSettings, autoTheme]);
 
   const setTheme = useCallback((id: ThemeId) => {
     setThemeId(id);
@@ -111,14 +143,24 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
   const setBackground = useCallback((bg: BackgroundConfig) => setBackgroundState(bg), []);
   const setCardOpacity = useCallback((v: number) => setCardOpacityState(v), []);
   const setPerfSettings = useCallback((s: PerfSettings) => setPerfSettingsState(s), []);
+  const setAutoTheme = useCallback((cfg: AutoThemeConfig) => setAutoThemeState(cfg), []);
 
   return (
-    <ThemeContext.Provider value={{
-      themeId, tokens, setTheme,
-      background, setBackground,
-      cardOpacity, setCardOpacity,
-      perfSettings, setPerfSettings,
-    }}>
+    <ThemeContext.Provider
+      value={{
+        themeId,
+        tokens,
+        setTheme,
+        background,
+        setBackground,
+        cardOpacity,
+        setCardOpacity,
+        perfSettings,
+        setPerfSettings,
+        autoTheme,
+        setAutoTheme,
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );

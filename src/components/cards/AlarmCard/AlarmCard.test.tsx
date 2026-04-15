@@ -1,20 +1,45 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, test, expect } from 'vitest';
 
+vi.mock('@/i18n', () => ({
+  useI18n: () => ({
+    t: (k: string) => {
+      const map: Record<string, string> = {
+        'widgets.alarm.disarmed': 'Désarmé',
+        'widgets.alarm.disarm': 'Désarmer',
+        'widgets.alarm.arm_home': 'Armé domicile',
+        'widgets.alarm.arm_away': 'Armé absent',
+        'widgets.alarm.arm_night': 'Armé nuit',
+        'widgets.alarm.pending': 'En attente',
+        'widgets.alarm.triggered': 'Alarme déclenchée',
+      };
+      return map[k] ?? k;
+    },
+    tArray: () => [],
+  }),
+}));
+
 vi.mock('framer-motion', () => ({
   motion: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     div: (props: any) => <div {...props} />,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     button: (props: any) => <button {...props} />,
   },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   AnimatePresence: ({ children }: any) => <>{children}</>,
 }));
 
 vi.mock('lucide-react', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ShieldCheck: (p: any) => <span {...p} />,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ShieldAlert: (p: any) => <span {...p} />,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ShieldOff: (p: any) => <span {...p} />,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Delete: (p: any) => <span {...p} />,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ChevronDown: (p: any) => <span {...p} />,
 }));
 
@@ -31,6 +56,7 @@ import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { AlarmCard } from './AlarmCard';
 
 test('renders null when no alarm entity', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (useSafeEntity as any).mockImplementationOnce(() => null);
   const { container } = render(<AlarmCard />);
   expect(container.firstChild).toBeNull();
@@ -65,4 +91,3 @@ test('shows state label and numpad, handles code input and disarm', () => {
   expect(mockCallService).toHaveBeenCalled();
   expect(mockCallService).toHaveBeenCalledWith(expect.objectContaining({ service: 'alarm_disarm', serviceData: { code: '12' } }));
 });
-

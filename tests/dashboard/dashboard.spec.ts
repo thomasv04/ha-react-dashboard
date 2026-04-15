@@ -33,9 +33,11 @@ test.describe('Dashboard smoke', () => {
   });
 
   test('shows the clock / greeting area', async ({ page }) => {
-    // The GreetingCard or ClockWidget should be visible at top-right
-    // The mock user is "Test User" — the greeting says "Hello, <name>"
-    await expect(page.getByText(/Hello/i)).toBeVisible();
+    // The GreetingCard widget should be present and show a time display
+    const greetingWidget = page.locator('[data-widget-id="greeting"]');
+    await expect(greetingWidget).toBeVisible();
+    // Clock shows HH:MM format
+    await expect(greetingWidget.getByText(/\d{2}[:\u202f]\d{2}/)).toBeVisible();
   });
 
   test('shows the bottom navigation', async ({ page }) => {
@@ -124,8 +126,6 @@ test.describe('Add widget modal', () => {
     const searchInput = page.getByPlaceholder('Rechercher un widget...');
     await expect(searchInput).toBeVisible();
 
-    // Close modal via the X close button (modal does not handle Escape)
-    const closeBtn = page.locator('button').filter({ has: page.locator('svg') }).and(page.locator('.fixed >> button')).first();
     // Click the backdrop to close
     await page.locator('.fixed.inset-0.bg-black\\/60').click({ position: { x: 10, y: 10 } });
     await expect(page.getByText('Ajouter un widget')).not.toBeVisible();
@@ -182,6 +182,13 @@ test.describe('Remove widget', () => {
     const removeBtn = page.getByRole('button', { name: 'Retirer du dashboard' }).first();
     await removeBtn.click();
 
+    // Confirm deletion in the popover
+    const confirmBtn = page.getByRole('button', { name: 'Supprimer' }).first();
+    await expect(confirmBtn).toBeVisible();
+    await confirmBtn.click();
+
+    // Wait for the widget to be removed from the DOM
+    await page.waitForTimeout(500);
     const newCount = await page.locator('[data-widget-id]').count();
     expect(newCount).toBe(initialCount - 1);
 
@@ -200,13 +207,19 @@ test.describe('Bottom nav panels', () => {
 
   test('opens lights panel from bottom nav', async ({ page }) => {
     // Scope to nav to avoid matching the shortcut card button
-    await page.locator('nav').getByRole('button', { name: /Lumières/ }).click();
+    await page
+      .locator('nav')
+      .getByRole('button', { name: /Lumières/ })
+      .click();
     // Panel should slide in with light controls
     await expect(page.getByText(/bandeau|cuisine|salon|chambre/i).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('opens shutters panel from bottom nav', async ({ page }) => {
-    await page.locator('nav').getByRole('button', { name: /Volets/ }).click();
+    await page
+      .locator('nav')
+      .getByRole('button', { name: /Volets/ })
+      .click();
     await expect(page.getByText(/volet|cuisine|salon/i).first()).toBeVisible({ timeout: 5000 });
   });
 });

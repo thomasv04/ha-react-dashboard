@@ -5,21 +5,6 @@ import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { Panel } from '@/components/layout/Panel';
 import { cn } from '@/lib/utils';
 
-const COVERS = [
-  { id: 'cover.kitchen', label: 'Cuisine' },
-  { id: 'cover.storage', label: 'Cellier' },
-  { id: 'cover.dining_room_1', label: 'Salle à manger 1' },
-  { id: 'cover.dining_room_2', label: 'Salle à manger 2' },
-  { id: 'cover.living_room', label: 'Salon' },
-  { id: 'cover.living_room_bay', label: 'Baie salon' },
-  { id: 'cover.guest_room', label: 'Ch. invités' },
-  { id: 'cover.bedroom', label: 'Chambre' },
-  { id: 'cover.office', label: 'Bureau' },
-  { id: 'cover.bathroom', label: 'Salle de bain' },
-];
-
-const ALL_COVERS = COVERS.map(c => c.id);
-
 function CoverRow({ entityId, label }: { entityId: string; label: string }) {
   const cover = useSafeEntity(entityId);
   const { helpers } = useHass();
@@ -78,9 +63,21 @@ function CoverRow({ entityId, label }: { entityId: string; label: string }) {
 
 export function ShuttersPanel() {
   const { helpers } = useHass();
+  const allEntities = useHass(s => s.entities);
+
+  const covers = Object.entries(allEntities ?? {})
+    .filter(([id, entity]) => id.startsWith('cover.') && entity.state !== 'unavailable')
+    .map(([id, entity]) => ({
+      id,
+      label: ((entity.attributes as Record<string, unknown>)?.friendly_name as string) ?? id,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  const allCoverIds = covers.map(c => c.id);
 
   function callAll(service: string) {
-    helpers.callService({ domain: 'cover', service: service as never, target: { entity_id: ALL_COVERS } });
+    if (allCoverIds.length === 0) return;
+    helpers.callService({ domain: 'cover', service: service as never, target: { entity_id: allCoverIds } });
   }
 
   return (
@@ -105,7 +102,8 @@ export function ShuttersPanel() {
 
       {/* Individual covers */}
       <div className='flex flex-col gap-2'>
-        {COVERS.map(cover => (
+        {covers.length === 0 && <div className='text-white/40 text-sm text-center py-4'>Aucun volet trouvé</div>}
+        {covers.map(cover => (
           <CoverRow key={cover.id} entityId={cover.id} label={cover.label} />
         ))}
       </div>

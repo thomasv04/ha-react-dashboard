@@ -4,13 +4,11 @@ import { ModalProvider, useModal } from '@/context/ModalContext';
 import { ModalContainer } from '@/components/ui/Modal/composents/Modal';
 
 function TestComponent() {
-  const { openModal, closeModal } = useModal();
+  const { openModal } = useModal();
 
   return (
     <div>
-      <button onClick={() => openModal({ title: 'Test Modal', content: 'Test content' })}>
-        Open Modal
-      </button>
+      <button onClick={() => openModal({ title: 'Test Modal', content: 'Test content' })}>Open Modal</button>
       <ModalContainer />
     </div>
   );

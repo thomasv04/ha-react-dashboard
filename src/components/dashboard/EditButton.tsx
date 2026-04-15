@@ -6,6 +6,7 @@ import { useDashboardLayout, useEditMode } from '@/context/DashboardLayoutContex
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { usePages } from '@/context/PageContext';
 import { useWallPanel } from '@/context/WallPanelContext';
+import { useCustomPanels } from '@/context/CustomPanelContext';
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 import { AddWidgetModal } from '@/components/layout/AddWidgetModal';
 
@@ -16,6 +17,7 @@ export function EditButton() {
   const { allWidgetConfigsByPage } = useWidgetConfig();
   const { pages } = usePages();
   const { config: wpConfig, wallPanelLayout } = useWallPanel();
+  const { panels: customPanels } = useCustomPanels();
 
   const { saveConfig, isSaving } = useDashboardConfig();
 
@@ -35,6 +37,7 @@ export function EditButton() {
         layout: wallPanelLayout,
         widgetConfigs: {},
       },
+      customPanels,
     });
     setEditMode(false);
   };
@@ -60,17 +63,17 @@ export function EditButton() {
                 <Plus size={15} />
                 Ajouter
               </button>
-              
+
               {/* Bouton Sauvegarder */}
               <button
                 onClick={handleSave}
                 disabled={isSaving}
                 className='flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 text-green-300 hover:text-green-100 text-sm font-medium transition-colors backdrop-blur-sm disabled:opacity-50'
               >
-                {isSaving ? <Loader2 size={15} className="animate-spin" /> : <CloudUpload size={15} />}
+                {isSaving ? <Loader2 size={15} className='animate-spin' /> : <CloudUpload size={15} />}
                 {isSaving ? 'Sauvegarde...' : 'Sauvegarder'}
               </button>
-              
+
               {/* Bouton Annuler */}
               <button
                 onClick={() => setEditMode(false)}
@@ -99,9 +102,7 @@ export function EditButton() {
       </div>
 
       {/* Modal ajout de widget */}
-      <AnimatePresence>
-        {showAddModal && <AddWidgetModal onClose={() => setShowAddModal(false)} />}
-      </AnimatePresence>
+      <AnimatePresence>{showAddModal && <AddWidgetModal onClose={() => setShowAddModal(false)} />}</AnimatePresence>
     </>
   );
 }

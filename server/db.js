@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import fs from 'fs';
+import path from 'path';
 
 /**
  * Initialise la DB SQLite avec WAL mode pour de meilleures performances.
@@ -8,6 +9,12 @@ import fs from 'fs';
  * @returns {import('better-sqlite3').Database}
  */
 export function initDB(dbPath) {
+  // Ensure the parent directory exists (e.g. data/ may not exist in CI)
+  const dir = path.dirname(dbPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
   const db = new Database(dbPath);
 
   // WAL mode = lectures parallèles + écritures non-bloquantes
@@ -59,6 +66,17 @@ export function initDB(dbPath) {
     )
   `);
 
+  // ── Table : icônes custom uploadées ─────────────────────────────────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS uploaded_icons (
+      filename TEXT PRIMARY KEY,
+      original_name TEXT NOT NULL,
+      mime_type TEXT NOT NULL,
+      size INTEGER NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
   // ── Migration depuis fichier JSON (si le fichier existe et la DB est vide) ──
   // Pas de migration pour les DB en mémoire (tests)
   if (dbPath !== ':memory:') {
@@ -74,8 +92,8 @@ export function initDB(dbPath) {
  * @param {import('better-sqlite3').Database} db
  */
 function migrateFromJSON(db) {
-  const configPath = process.env.OPTIONS_FILE
-    || (fs.existsSync('./dashboard_config.json') ? './dashboard_config.json' : './dashboard_config.example.json');
+  const configPath =
+    process.env.OPTIONS_FILE || (fs.existsSync('./dashboard_config.json') ? './dashboard_config.json' : './dashboard_config.example.json');
   if (!fs.existsSync(configPath)) return;
 
   const existing = db.prepare('SELECT COUNT(*) as count FROM dashboard_config').get();
@@ -85,9 +103,11 @@ function migrateFromJSON(db) {
     const raw = fs.readFileSync(configPath, 'utf-8');
     const data = JSON.parse(raw);
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO dashboard_config (id, version, data) VALUES (1, ?, ?)
-    `).run(data.version ?? 1, JSON.stringify(data));
+    `
+    ).run(data.version ?? 1, JSON.stringify(data));
 
     console.log('[db] Migrated dashboard_config.json → SQLite');
   } catch (err) {

@@ -70,20 +70,26 @@ export function WidgetConfigProvider({ children, initialAllWidgetConfigs }: Widg
 
   const widgetConfigs = allWidgetConfigs[currentPageId] ?? DEFAULT_WIDGET_CONFIGS;
 
-  const getWidgetConfig = useCallback(<T extends WidgetConfig>(id: string): T | undefined => {
-    if (previewConfigEntry && previewConfigEntry.id === id) {
-      return previewConfigEntry.config as T;
-    }
-    const currentConfigs = allWidgetConfigs[currentPageId] ?? DEFAULT_WIDGET_CONFIGS;
-    return currentConfigs[id] as T | undefined;
-  }, [allWidgetConfigs, previewConfigEntry, currentPageId]);
+  const getWidgetConfig = useCallback(
+    <T extends WidgetConfig>(id: string): T | undefined => {
+      if (previewConfigEntry && previewConfigEntry.id === id) {
+        return previewConfigEntry.config as T;
+      }
+      const currentConfigs = allWidgetConfigs[currentPageId] ?? DEFAULT_WIDGET_CONFIGS;
+      return currentConfigs[id] as T | undefined;
+    },
+    [allWidgetConfigs, previewConfigEntry, currentPageId]
+  );
 
-  const updateWidgetConfig = useCallback((id: string, config: WidgetConfig) => {
-    setAllWidgetConfigs(prev => {
-      const current = prev[currentPageId] ?? DEFAULT_WIDGET_CONFIGS;
-      return { ...prev, [currentPageId]: { ...current, [id]: config } };
-    });
-  }, [currentPageId]);
+  const updateWidgetConfig = useCallback(
+    (id: string, config: WidgetConfig) => {
+      setAllWidgetConfigs(prev => {
+        const current = prev[currentPageId] ?? DEFAULT_WIDGET_CONFIGS;
+        return { ...prev, [currentPageId]: { ...current, [id]: config } };
+      });
+    },
+    [currentPageId]
+  );
 
   const setPreviewConfig = useCallback((id: string, config: WidgetConfig) => {
     setPreviewConfigEntry({ id, config });
@@ -94,16 +100,18 @@ export function WidgetConfigProvider({ children, initialAllWidgetConfigs }: Widg
   }, []);
 
   return (
-    <WidgetConfigContext.Provider value={{
-      widgetConfigs,
-      getWidgetConfig,
-      updateWidgetConfig,
-      setPreviewConfig,
-      clearPreviewConfig,
-      editingWidgetId,
-      setEditingWidgetId,
-      allWidgetConfigsByPage: allWidgetConfigs,
-    }}>
+    <WidgetConfigContext.Provider
+      value={{
+        widgetConfigs,
+        getWidgetConfig,
+        updateWidgetConfig,
+        setPreviewConfig,
+        clearPreviewConfig,
+        editingWidgetId,
+        setEditingWidgetId,
+        allWidgetConfigsByPage: allWidgetConfigs,
+      }}
+    >
       {children}
     </WidgetConfigContext.Provider>
   );

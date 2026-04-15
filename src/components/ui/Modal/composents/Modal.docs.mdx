@@ -2,7 +2,7 @@ import { Meta, Canvas, Story, ArgsTable } from '@storybook/addon-docs/blocks';
 import React from 'react';
 import { FromHAEvent } from './Modal.stories';
 
-<Meta title="UI/Modal" />
+<Meta title='UI/Modal' />
 
 # Modal — Documentation
 
@@ -15,23 +15,23 @@ Ce document montre comment utiliser la modal et donne un exemple d\'événement 
 ```yaml
 event: ha_dashboard_modal
 event_data:
-  title: "Mise à jour disponible"
+  title: 'Mise à jour disponible'
   content: "Une nouvelle version de Home Assistant est disponible. Voulez-vous l'installer maintenant?"
-  width: "md"
+  width: 'md'
   dismissible: false
   persistent: true
   actions:
-    - label: "Installer"
-      variant: "primary"
-      service: "hassio.addon_update"
-    - label: "Plus tard"
-      variant: "default"
+    - label: 'Installer'
+      variant: 'primary'
+      service: 'hassio.addon_update'
+    - label: 'Plus tard'
+      variant: 'default'
 ```
 
 ## Aperçu interactif
 
 <Canvas>
-  <Story name="Déclenchée depuis HA (docs)" />
+  <Story name='Déclenchée depuis HA (docs)' />
 </Canvas>
 
 ## Props / Actions

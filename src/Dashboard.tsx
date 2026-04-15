@@ -1,15 +1,18 @@
 import { PanelProvider } from '@/context/PanelContext';
+import { CustomPanelProvider } from '@/context/CustomPanelContext';
 import { DashboardLayoutProvider, useDashboardLayout } from '@/context/DashboardLayoutContext';
 import { WidgetConfigProvider } from '@/context/WidgetConfigContext';
 import { PageProvider } from '@/context/PageContext';
+import { MoreInfoProvider } from '@/context/MoreInfoContext';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { PanelOverlay } from '@/components/layout/Panel';
 import { DashboardGrid, GridItem } from '@/components/layout/DashboardGrid';
 import { WidgetEditModal } from '@/components/layout/WidgetEditModal';
 import { ThemeControlsModal } from '@/components/layout/ThemeControlsModal';
 import { PageTabs } from '@/components/layout/PageTabs';
-import React, { useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { MoreInfoModal } from '@/components/modals/MoreInfoModal';
+import { useEffect } from 'react';
+import { AnimatePresence, LayoutGroup } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
@@ -62,59 +65,64 @@ function DashboardContent() {
   const widgets = layout.widgets.lg;
 
   return (
-    <div className='min-h-screen w-full text-white overflow-x-hidden'>
-      <div className='max-w-[1440px] mx-auto px-5 pt-5 pb-24'>
-        {/* Onglets de navigation entre pages */}
-        <PageTabs />
+    <LayoutGroup>
+      <div className='min-h-screen w-full text-white overflow-x-hidden'>
+        <div className='max-w-[1440px] mx-auto px-5 pt-5 pb-36'>
+          {/* Onglets de navigation entre pages */}
+          <PageTabs />
 
-        <DashboardGrid>
-          {widgets.map(widget => {
-            const Component = WIDGET_COMPONENTS[widget.type];
-            if (!Component) return null;
-            return (
-              <GridItem key={widget.id} id={widget.id}>
-                <Component />
-              </GridItem>
-            );
-          })}
-        </DashboardGrid>
+          <DashboardGrid>
+            {widgets.map(widget => {
+              const Component = WIDGET_COMPONENTS[widget.type];
+              if (!Component) return null;
+              return (
+                <GridItem key={widget.id} id={widget.id}>
+                  <Component />
+                </GridItem>
+              );
+            })}
+          </DashboardGrid>
+        </div>
+
+        {/* Bouton d'édition admin (fixe, top-right) */}
+        <EditButton />
+
+        {/* Bouton apparence / thèmes (fixe, top-left) */}
+        <ThemeControlsModal />
+
+        {/* Widget edit modal */}
+        <AnimatePresence>
+          <WidgetEditModal />
+        </AnimatePresence>
+
+        {/* Bottom nav */}
+        <BottomNav />
+
+        {/* Panel overlay */}
+        <PanelOverlay>
+          <ActivePanel />
+        </PanelOverlay>
+
+        {/* Idle detector + WallPanel overlay */}
+        <IdleWatcher />
+        <ScreensaverEntityWatcher />
+        <WallPanelOverlay />
+
+        {/* More Info modal */}
+        <MoreInfoModal />
       </div>
-
-      {/* Bouton d'édition admin (fixe, top-right) */}
-      <EditButton />
-
-      {/* Bouton apparence / thèmes (fixe, top-left) */}
-      <ThemeControlsModal />
-
-      {/* Widget edit modal */}
-      <AnimatePresence>
-        <WidgetEditModal />
-      </AnimatePresence>
-
-      {/* Bottom nav */}
-      <BottomNav />
-
-      {/* Panel overlay */}
-      <PanelOverlay>
-        <ActivePanel />
-      </PanelOverlay>
-
-      {/* Idle detector + WallPanel overlay */}
-      <IdleWatcher />
-      <ScreensaverEntityWatcher />
-      <WallPanelOverlay />
-    </div>
+    </LayoutGroup>
   );
 }
 
 function Dashboard() {
-  const { isLoading, pages, allLayouts, allWidgetConfigs, wallPanelConfig, wallPanelLayout } = useDashboardConfig();
+  const { isLoading, pages, allLayouts, allWidgetConfigs, wallPanelConfig, wallPanelLayout, customPanels } = useDashboardConfig();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#0c1028] text-white">
-        <Loader2 size={32} className="animate-spin text-blue-500 mb-4" />
-        <p className="text-white/60">Chargement de la configuration...</p>
+      <div className='min-h-screen w-full flex flex-col items-center justify-center bg-[#0c1028] text-white'>
+        <Loader2 size={32} className='animate-spin text-blue-500 mb-4' />
+        <p className='text-white/60'>Loading configuration...</p>
       </div>
     );
   }
@@ -124,9 +132,13 @@ function Dashboard() {
       <WidgetConfigProvider initialAllWidgetConfigs={allWidgetConfigs}>
         <DashboardLayoutProvider initialLayouts={allLayouts}>
           <WallPanelProvider initialConfig={wallPanelConfig} initialLayout={wallPanelLayout}>
-            <PanelProvider>
-              <DashboardContent />
-            </PanelProvider>
+            <CustomPanelProvider initialPanels={customPanels}>
+              <MoreInfoProvider>
+                <PanelProvider>
+                  <DashboardContent />
+                </PanelProvider>
+              </MoreInfoProvider>
+            </CustomPanelProvider>
           </WallPanelProvider>
         </DashboardLayoutProvider>
       </WidgetConfigProvider>

@@ -34,13 +34,11 @@ export function AnimatedNumber({
           );
         }
         return (
-          <span
-            key={`pos-${i}`}
-            className='relative inline-block overflow-hidden'
-            style={{ width: '0.62em' }}
-          >
+          <span key={`pos-${i}`} className='relative inline-block overflow-hidden' style={{ width: '0.62em' }}>
             {/* Invisible baseline anchor — normal flow sets correct height & baseline */}
-            <span className='invisible' aria-hidden='true'>0</span>
+            <span className='invisible' aria-hidden='true'>
+              0
+            </span>
             <AnimatePresence mode='popLayout' initial={false}>
               <motion.span
                 key={`${i}-${char}`}

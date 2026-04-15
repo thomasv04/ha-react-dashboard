@@ -17,6 +17,7 @@ export interface ActivityPill {
 export interface ActivityBarConfig {
   type: 'activity';
   pills: ActivityPill[];
+  persons?: PersonEntry[];
 }
 
 // ── Camera ────────────────────────────────────────────────────────────────────
@@ -29,12 +30,36 @@ export interface CameraCardConfig {
   type: 'camera';
   cameras: CameraEntry[];
   selectorEntity?: string; // input_select for remembering selection
+  showInfoPanel?: boolean;
 }
 
 // ── Weather ───────────────────────────────────────────────────────────────────
+
+/** All HA weather conditions that can have custom icons */
+export type WeatherCondition =
+  | 'clear-night'
+  | 'cloudy'
+  | 'exceptional'
+  | 'fog'
+  | 'hail'
+  | 'lightning'
+  | 'lightning-rainy'
+  | 'partlycloudy'
+  | 'pouring'
+  | 'rainy'
+  | 'snowy'
+  | 'snowy-rainy'
+  | 'sunny'
+  | 'windy'
+  | 'windy-variant';
+
 export interface WeatherCardConfig {
   type: 'weather';
   entityId: string; // weather.xxx
+  showInfoPanel?: boolean;
+  /** Advanced: override default icons per weather condition.
+   *  Value is a Lucide icon name or "custom:/uploads/icons/{file}" */
+  customIcons?: Partial<Record<WeatherCondition, string>>;
 }
 
 // ── Energy ────────────────────────────────────────────────────────────────────
@@ -45,6 +70,7 @@ export interface EnergyCardConfig {
   gridInputPowerEntity: string;
   homeOutputPowerEntity: string;
   solarProductionEntity: string;
+  showInfoPanel?: boolean;
 }
 
 // ── Tempo EDF ─────────────────────────────────────────────────────────────────
@@ -64,6 +90,7 @@ export interface ThermostatCardConfig {
   entityId: string; // climate.xxx
   minTemp?: number;
   maxTemp?: number;
+  showInfoPanel?: boolean;
 }
 
 // ── Rooms ─────────────────────────────────────────────────────────────────────
@@ -104,7 +131,7 @@ export interface GreetingCardConfig {
 }
 
 // ── Sensor ────────────────────────────────────────────────────────────────────
-export type SensorVariant = 'default' | 'gauge' | 'sparkline';
+export type SensorVariant = 'default' | 'gauge' | 'sparkline' | 'bar';
 
 export interface SensorCardConfig {
   type: 'sensor';
@@ -117,50 +144,80 @@ export interface SensorCardConfig {
   thresholds?: { value: number; color: string }[];
   onText?: string;
   offText?: string;
+  showInfoPanel?: boolean;
+  staleBadge?: boolean;
+  staleThresholdMinutes?: number;
 }
 
 // ── Light ─────────────────────────────────────────────────────────────────────
 export interface LightCardConfig {
   type: 'light';
-  entityId: string;          // light.xxx ou light.group_xxx
-  name?: string;             // Nom affiché (sinon friendly_name)
-  icon?: string;             // Icône lucide custom
+  entityId: string; // light.xxx ou light.group_xxx
+  name?: string; // Nom affiché (sinon friendly_name)
+  icon?: string; // Icône lucide custom
   /** Si true, c'est un groupe : affiche "X/Y allumées" */
   isGroup?: boolean;
   /** Entity IDs des sous-lumières du groupe (pour compter les actives) */
   groupEntities?: string[];
+  showInfoPanel?: boolean;
 }
 
 // ── Person Status ─────────────────────────────────────────────────────────────
 export interface PersonEntry {
-  entityId: string;       // person.user_1, person.user_2
-  name?: string;          // Nom custom (sinon friendly_name)
+  entityId: string; // person.user_1, person.user_2
+  name?: string; // Nom custom (sinon friendly_name)
 }
 
 export interface PersonStatusConfig {
   type: 'person';
   persons: PersonEntry[];
+  showInfoPanel?: boolean;
 }
 
 // ── Cover (volets/stores) ─────────────────────────────────────────────────────
 export interface CoverCardConfig {
   type: 'cover';
-  entityId: string;        // cover.living_room
-  name?: string;           // Nom custom
-  icon?: string;           // Icône lucide (sinon Blinds par défaut)
+  entityId: string; // cover.living_room
+  name?: string; // Nom custom
+  icon?: string; // Icône lucide (sinon Blinds par défaut)
   /** Afficher le contrôle de tilt (inclinaison) si supporté */
   showTilt?: boolean;
+  showInfoPanel?: boolean;
+}
+
+// ── Automation ───────────────────────────────────────────────────────────────
+export interface AutomationCardConfig {
+  type: 'automation';
+  /** Entity ID de l'automatisation (domain: automation) */
+  entityId: string;
+  /** Nom affiché (override du friendly_name) */
+  name?: string;
+  /** Icône Lucide personnalisée */
+  icon?: string;
+  showInfoPanel?: boolean;
+}
+
+// ── Media Player ──────────────────────────────────────────────────────────────
+export interface MediaPlayerCardConfig {
+  type: 'media_player';
+  entityId: string; // media_player.xxx
+  name?: string;
+  /** Layout variant: 'horizontal' (default), 'vertical', 'compact' */
+  disposition?: 'horizontal' | 'vertical' | 'compact';
+  /** Force compact single-row layout regardless of disposition */
+  compact?: boolean;
 }
 
 // ── Template (Mushroom-style) ─────────────────────────────────────────────────
 export interface TemplateCardConfig {
   type: 'template';
-  entityId?: string;         // Entité contextuelle (optionnelle)
-  primaryInfo: string;       // Template Nunjucks — info principale
-  secondaryInfo?: string;    // Template Nunjucks — info secondaire
-  icon?: string;             // Template Nunjucks — icône (mdi:xxx ou lucide)
-  iconColor?: string;        // Template Nunjucks — couleur icône
-  image?: string;            // Template Nunjucks — URL image
+  entityId?: string; // Entité contextuelle (optionnelle)
+  primaryInfo: string; // Template Nunjucks — info principale
+  secondaryInfo?: string; // Template Nunjucks — info secondaire
+  icon?: string; // Template Nunjucks — icône (mdi:xxx ou lucide)
+  iconColor?: string; // Template Nunjucks — couleur icône
+  image?: string; // Template Nunjucks — URL image
+  showInfoPanel?: boolean;
 }
 
 // ── Union type ────────────────────────────────────────────────────────────────
@@ -178,7 +235,9 @@ export type WidgetConfig =
   | LightCardConfig
   | PersonStatusConfig
   | CoverCardConfig
-  | TemplateCardConfig;
+  | TemplateCardConfig
+  | AutomationCardConfig
+  | MediaPlayerCardConfig;
 
 /** Map of widget id → its config */
 export type WidgetConfigs = Record<string, WidgetConfig>;

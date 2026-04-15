@@ -1,6 +1,5 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { vi, describe, it, expect } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 const callServiceMock = vi.fn();
 
@@ -14,6 +13,7 @@ const mockEntity = {
 };
 
 vi.mock('@hakit/core', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   useHass: (selector?: any) => {
     const state = { helpers: { callService: callServiceMock } };
     return typeof selector === 'function' ? selector(state) : state;
@@ -64,8 +64,6 @@ describe('LightCard', () => {
     render(<LightCard />);
     const toggleBtn = screen.getAllByRole('button')[0];
     fireEvent.click(toggleBtn);
-    expect(callServiceMock).toHaveBeenCalledWith(
-      expect.objectContaining({ service: 'toggle' }),
-    );
+    expect(callServiceMock).toHaveBeenCalledWith(expect.objectContaining({ service: 'toggle' }));
   });
 });

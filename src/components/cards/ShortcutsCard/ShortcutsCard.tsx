@@ -6,10 +6,16 @@ import { useHass } from '@hakit/core';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { ShortcutsCardConfig } from '@/types/widget-configs';
-import { resolveIcon } from '@/lib/lucide-icon-map';
+import { resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-map';
 
 const FALLBACK_ICON_MAP: Record<string, LucideIcon> = {
-  Blinds, Lightbulb, Cpu, Flower2, Bell, ShieldHalf, Camera,
+  Blinds,
+  Lightbulb,
+  Cpu,
+  Flower2,
+  Bell,
+  ShieldHalf,
+  Camera,
 };
 
 /** Map gradient class prefix to accent colors for bg and text */
@@ -26,7 +32,8 @@ function gradientToAccent(gradient: string): { bg: string; bgHover: string; text
 
 interface ResolvedShortcut {
   id: PanelId | null;
-  Icon: LucideIcon;
+  Icon: LucideIcon | null;
+  customIconUrl?: string;
   label: string;
   accentBg: string;
   accentText: string;
@@ -35,8 +42,21 @@ interface ResolvedShortcut {
 
 const DEFAULT_SHORTCUTS: ResolvedShortcut[] = [
   { id: 'volets', Icon: Blinds, label: 'Volets', accentBg: 'bg-sky-500/15 hover:bg-sky-500/25', accentText: 'text-sky-400' },
-  { id: 'lumieres', Icon: Lightbulb, label: 'Lumières', accentBg: 'bg-yellow-500/15 hover:bg-yellow-500/25', accentText: 'text-yellow-400' },
-  { id: 'security', Icon: ShieldHalf, label: 'Sécurité', accentBg: 'bg-green-500/15 hover:bg-green-500/25', accentText: 'text-green-400', statusEntity: 'alarm_control_panel.home_alarm' },
+  {
+    id: 'lumieres',
+    Icon: Lightbulb,
+    label: 'Lumières',
+    accentBg: 'bg-yellow-500/15 hover:bg-yellow-500/25',
+    accentText: 'text-yellow-400',
+  },
+  {
+    id: 'security',
+    Icon: ShieldHalf,
+    label: 'Sécurité',
+    accentBg: 'bg-green-500/15 hover:bg-green-500/25',
+    accentText: 'text-green-400',
+    statusEntity: 'alarm_control_panel.home_alarm',
+  },
   { id: 'aspirateur', Icon: Cpu, label: 'Aspirateur', accentBg: 'bg-blue-500/15 hover:bg-blue-500/25', accentText: 'text-blue-400' },
   { id: 'flowers', Icon: Flower2, label: 'Plantes', accentBg: 'bg-emerald-500/15 hover:bg-emerald-500/25', accentText: 'text-emerald-400' },
   { id: 'notifications', Icon: Bell, label: 'Notifs', accentBg: 'bg-purple-500/15 hover:bg-purple-500/25', accentText: 'text-purple-400' },
@@ -49,7 +69,8 @@ function resolveShortcuts(config: ShortcutsCardConfig | undefined): ResolvedShor
     const accent = gradientToAccent(s.color);
     return {
       id: (s.panelId as PanelId) ?? null,
-      Icon: resolveIcon(s.icon) ?? FALLBACK_ICON_MAP[s.icon] ?? Cpu,
+      Icon: isCustomIcon(s.icon) ? null : (resolveIcon(s.icon) ?? FALLBACK_ICON_MAP[s.icon] ?? Cpu),
+      customIconUrl: isCustomIcon(s.icon) ? getCustomIconUrl(s.icon) : undefined,
       label: s.label,
       accentBg: `${accent.bg} ${accent.bgHover}`,
       accentText: accent.text,
@@ -107,7 +128,11 @@ export function ShortcutsCard() {
                 whileTap={{ scale: 0.9, rotate: 0 }}
                 transition={{ duration: 0.4 }}
               >
-                <s.Icon size={18} className={s.accentText} />
+                {s.customIconUrl ? (
+                  <img src={s.customIconUrl} alt='' className='w-[18px] h-[18px] object-contain' />
+                ) : s.Icon ? (
+                  <s.Icon size={18} className={s.accentText} />
+                ) : null}
               </motion.div>
               <div className='flex flex-col min-w-0'>
                 <span className='text-white/90 text-sm font-medium leading-tight'>{s.label}</span>

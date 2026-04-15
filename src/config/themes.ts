@@ -1,4 +1,6 @@
-export type ThemeId = 'dark' | 'light' | 'glass' | 'midnight' | 'emerald';
+export type ThemeId = 'dark' | 'light' | 'glass' | 'midnight' | 'emerald' | 'clay' | 'clay-dark';
+
+export type ThemeMode = 'glass' | 'clay';
 
 export interface ThemeTokens {
   /** Fond principal du dashboard */
@@ -31,6 +33,12 @@ export interface ThemeTokens {
   statusError: string;
   /** Statut : bleu */
   statusInfo: string;
+  /** Mode de rendu : glass (défaut) ou clay */
+  mode?: ThemeMode;
+  /** Couleur de l'ombre externe douce (clay) */
+  shadowColor?: string;
+  /** Couleur de la surbrillance interne (clay) */
+  shadowHighlight?: string;
 }
 
 export const THEMES: Record<ThemeId, { label: string; tokens: ThemeTokens }> = {
@@ -132,6 +140,52 @@ export const THEMES: Record<ThemeId, { label: string; tokens: ThemeTokens }> = {
       statusWarning: '#fbbf24',
       statusError: '#f87171',
       statusInfo: '#67e8f9',
+    },
+  },
+  clay: {
+    label: 'Clay Clair',
+    tokens: {
+      mode: 'clay',
+      bgPrimary: '#e8e4df',
+      bgCard: '#f0ece7',
+      bgCardHover: '#f5f1ed',
+      textPrimary: '#2d2a26',
+      textSecondary: 'rgba(45, 42, 38, 0.65)',
+      textMuted: 'rgba(45, 42, 38, 0.4)',
+      accent: '#7c6bf5',
+      accentHover: '#9688f7',
+      border: 'rgba(0, 0, 0, 0.06)',
+      glassBlur: 0,
+      glassOpacity: 1,
+      shadowColor: 'rgba(0, 0, 0, 0.12)',
+      shadowHighlight: 'rgba(255, 255, 255, 0.7)',
+      statusSuccess: '#34d399',
+      statusWarning: '#fbbf24',
+      statusError: '#f87171',
+      statusInfo: '#818cf8',
+    },
+  },
+  'clay-dark': {
+    label: 'Clay Sombre',
+    tokens: {
+      mode: 'clay',
+      bgPrimary: '#1e1b2e',
+      bgCard: '#2a2740',
+      bgCardHover: '#322f4a',
+      textPrimary: '#f0ecf9',
+      textSecondary: 'rgba(240, 236, 249, 0.7)',
+      textMuted: 'rgba(240, 236, 249, 0.4)',
+      accent: '#9688f7',
+      accentHover: '#b0a4fa',
+      border: 'rgba(255, 255, 255, 0.08)',
+      glassBlur: 0,
+      glassOpacity: 1,
+      shadowColor: 'rgba(0, 0, 0, 0.6)',
+      shadowHighlight: 'rgba(255, 255, 255, 0.08)',
+      statusSuccess: '#34d399',
+      statusWarning: '#fbbf24',
+      statusError: '#f87171',
+      statusInfo: '#818cf8',
     },
   },
 };

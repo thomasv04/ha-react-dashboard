@@ -4,6 +4,7 @@ import type { WidgetFieldDef } from '@/types/widget-configs';
 import { IconPicker, GradientPicker } from '@/components/layout/WidgetPickers';
 import { EntityPicker } from './EntityPicker';
 import { FieldInput } from './FieldInput';
+import { PanelSelectField } from './PanelSelectField';
 
 export function ListEditor({
   items,
@@ -62,7 +63,10 @@ export function ListEditor({
               >
                 <span className='text-sm text-white/60 flex-1 truncate'>{itemLabel}</span>
                 <button
-                  onClick={e => { e.stopPropagation(); removeItem(idx); }}
+                  onClick={e => {
+                    e.stopPropagation();
+                    removeItem(idx);
+                  }}
                   className='p-1 rounded hover:bg-red-500/20 text-red-400/50 hover:text-red-400'
                 >
                   <Trash2 size={12} />
@@ -101,7 +105,13 @@ export function ListEditor({
                                 label=''
                               />
                               <button
-                                onClick={() => updateItem(idx, field.key, list.filter((_, i) => i !== eidx))}
+                                onClick={() =>
+                                  updateItem(
+                                    idx,
+                                    field.key,
+                                    list.filter((_, i) => i !== eidx)
+                                  )
+                                }
                                 className='p-1 text-red-400/50 hover:text-red-400'
                               >
                                 <Trash2 size={11} />
@@ -130,6 +140,16 @@ export function ListEditor({
                     if (field.fieldType === 'gradient') {
                       return (
                         <GradientPicker
+                          key={field.key}
+                          value={(item[field.key] as string) ?? ''}
+                          onChange={v => updateItem(idx, field.key, v)}
+                          label={field.label}
+                        />
+                      );
+                    }
+                    if (field.fieldType === 'panel-select') {
+                      return (
+                        <PanelSelectField
                           key={field.key}
                           value={(item[field.key] as string) ?? ''}
                           onChange={v => updateItem(idx, field.key, v)}

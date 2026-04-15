@@ -7,7 +7,7 @@ const meta: Meta<typeof ThermostatCard> = {
   title: 'Cards/ThermostatCard',
   component: ThermostatCard,
   decorators: [
-    (Story) => (
+    Story => (
       <PageProvider>
         <WidgetConfigProvider>
           <Story />

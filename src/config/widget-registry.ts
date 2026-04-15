@@ -14,39 +14,45 @@ import { LightCard } from '@/components/cards/LightCard/LightCard';
 import { PersonStatusCard } from '@/components/cards/PersonStatus/PersonStatusCard';
 import { CoverCard } from '@/components/cards/CoverCard/CoverCard';
 import { TemplateCard } from '@/components/cards/TemplateCard/TemplateCard';
+import { AutomationCard } from '@/components/cards/AutomationCard/AutomationCard';
+import { MediaPlayerCard } from '@/components/cards/MediaPlayerCard/MediaPlayerCard';
 
 /** Registry used for live previews in AddWidgetModal and WidgetEditModal */
 export const PREVIEW_COMPONENTS: Partial<Record<GridWidget['type'], React.ComponentType>> = {
-  weather:    WeatherCard,
-  camera:     CameraCard,
+  weather: WeatherCard,
+  camera: CameraCard,
   thermostat: ThermostatCard,
-  rooms:      RoomsGrid,
-  shortcuts:  ShortcutsCard,
-  tempo:      TempoCard,
-  energy:     EnergyCard,
-  greeting:   GreetingCard,
-  activity:   ActivityBar,
-  sensor:     SensorCard,
-  light:      LightCard,
-  person:     PersonStatusCard,
-  cover:      CoverCard,
-  template:   TemplateCard,
+  rooms: RoomsGrid,
+  shortcuts: ShortcutsCard,
+  tempo: TempoCard,
+  energy: EnergyCard,
+  greeting: GreetingCard,
+  activity: ActivityBar,
+  sensor: SensorCard,
+  light: LightCard,
+  person: PersonStatusCard,
+  cover: CoverCard,
+  template: TemplateCard,
+  automation: AutomationCard,
+  media_player: MediaPlayerCard,
 };
 
 /** Registry used by the dashboard grid to render widgets (memoized to prevent unnecessary re-renders) */
 export const WIDGET_COMPONENTS: Record<GridWidget['type'], React.ComponentType> = {
-  weather:    memo(WeatherCard),
-  camera:     memo(CameraCard),
+  weather: memo(WeatherCard),
+  camera: memo(CameraCard),
   thermostat: memo(ThermostatCard),
-  rooms:      memo(RoomsGrid),
-  shortcuts:  memo(ShortcutsCard),
-  tempo:      memo(TempoCard),
-  energy:     memo(EnergyCard),
-  greeting:   memo(ClockWidget),
-  activity:   memo(ActivityBar),
-  sensor:     memo(SensorCard),
-  light:      memo(LightCard),
-  person:     memo(PersonStatusCard),
-  cover:      memo(CoverCard),
-  template:   memo(TemplateCard),
+  rooms: memo(RoomsGrid),
+  shortcuts: memo(ShortcutsCard),
+  tempo: memo(TempoCard),
+  energy: memo(EnergyCard),
+  greeting: memo(ClockWidget),
+  activity: memo(ActivityBar),
+  sensor: memo(SensorCard),
+  light: memo(LightCard),
+  person: memo(PersonStatusCard),
+  cover: memo(CoverCard),
+  template: memo(TemplateCard),
+  automation: memo(AutomationCard),
+  media_player: memo(MediaPlayerCard),
 };

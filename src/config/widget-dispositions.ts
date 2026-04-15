@@ -133,51 +133,79 @@ export const WIDGET_DISPOSITIONS: WidgetDispositions = {
   ],
 
   // ── Rooms, Shortcuts, etc. — disposition unique ────────
-  rooms: [{
-    id: 'default', label: 'Standard',
-    minSize: { lg: { w: 3, h: 3 }, md: { w: 4, h: 3 }, sm: { w: 4, h: 2 } },
-    defaultSize: { lg: { w: 4, h: 5 }, md: { w: 8, h: 4 }, sm: { w: 4, h: 4 } },
-  }],
-  shortcuts: [{
-    id: 'default', label: 'Standard',
-    minSize: { lg: { w: 2, h: 2 }, md: { w: 4, h: 2 }, sm: { w: 4, h: 2 } },
-    defaultSize: { lg: { w: 4, h: 3 }, md: { w: 8, h: 3 }, sm: { w: 4, h: 3 } },
-  }],
-  tempo: [{
-    id: 'default', label: 'Standard',
-    minSize: { lg: { w: 2, h: 1 }, md: { w: 4, h: 1 }, sm: { w: 4, h: 1 } },
-    defaultSize: { lg: { w: 4, h: 2 }, md: { w: 8, h: 2 }, sm: { w: 4, h: 2 } },
-  }],
-  energy: [{
-    id: 'default', label: 'Standard',
-    minSize: { lg: { w: 2, h: 1 }, md: { w: 4, h: 1 }, sm: { w: 4, h: 1 } },
-    defaultSize: { lg: { w: 4, h: 2 }, md: { w: 8, h: 2 }, sm: { w: 4, h: 2 } },
-  }],
-  activity: [{
-    id: 'default', label: 'Standard',
-    minSize: { lg: { w: 6, h: 1 }, md: { w: 4, h: 1 }, sm: { w: 3, h: 1 } },
-    defaultSize: { lg: { w: 11, h: 1 }, md: { w: 7, h: 1 }, sm: { w: 3, h: 1 } },
-  }],
-  greeting: [{
-    id: 'default', label: 'Standard',
-    minSize: { lg: { w: 1, h: 1 }, md: { w: 1, h: 1 }, sm: { w: 1, h: 1 } },
-    defaultSize: { lg: { w: 1, h: 1 }, md: { w: 1, h: 1 }, sm: { w: 1, h: 1 } },
-  }],
-  template: [{
-    id: 'default', label: 'Standard',
-    minSize: { lg: { w: 2, h: 1 }, md: { w: 2, h: 1 }, sm: { w: 2, h: 1 } },
-    defaultSize: { lg: { w: 3, h: 1 }, md: { w: 3, h: 1 }, sm: { w: 4, h: 1 } },
-  }],
+  rooms: [
+    {
+      id: 'default',
+      label: 'Standard',
+      minSize: { lg: { w: 3, h: 3 }, md: { w: 4, h: 3 }, sm: { w: 4, h: 2 } },
+      defaultSize: { lg: { w: 4, h: 5 }, md: { w: 8, h: 4 }, sm: { w: 4, h: 4 } },
+    },
+  ],
+  shortcuts: [
+    {
+      id: 'default',
+      label: 'Standard',
+      minSize: { lg: { w: 2, h: 2 }, md: { w: 4, h: 2 }, sm: { w: 4, h: 2 } },
+      defaultSize: { lg: { w: 4, h: 3 }, md: { w: 8, h: 3 }, sm: { w: 4, h: 3 } },
+    },
+  ],
+  tempo: [
+    {
+      id: 'default',
+      label: 'Standard',
+      minSize: { lg: { w: 2, h: 1 }, md: { w: 4, h: 1 }, sm: { w: 4, h: 1 } },
+      defaultSize: { lg: { w: 4, h: 2 }, md: { w: 8, h: 2 }, sm: { w: 4, h: 2 } },
+    },
+  ],
+  energy: [
+    {
+      id: 'default',
+      label: 'Standard',
+      minSize: { lg: { w: 2, h: 1 }, md: { w: 4, h: 1 }, sm: { w: 4, h: 1 } },
+      defaultSize: { lg: { w: 4, h: 2 }, md: { w: 8, h: 2 }, sm: { w: 4, h: 2 } },
+    },
+  ],
+  activity: [
+    {
+      id: 'default',
+      label: 'Standard',
+      minSize: { lg: { w: 6, h: 1 }, md: { w: 4, h: 1 }, sm: { w: 3, h: 1 } },
+      defaultSize: { lg: { w: 11, h: 1 }, md: { w: 7, h: 1 }, sm: { w: 3, h: 1 } },
+    },
+  ],
+  greeting: [
+    {
+      id: 'default',
+      label: 'Standard',
+      minSize: { lg: { w: 1, h: 1 }, md: { w: 1, h: 1 }, sm: { w: 1, h: 1 } },
+      defaultSize: { lg: { w: 1, h: 1 }, md: { w: 1, h: 1 }, sm: { w: 1, h: 1 } },
+    },
+  ],
+  template: [
+    {
+      id: 'default',
+      label: 'Standard',
+      minSize: { lg: { w: 2, h: 1 }, md: { w: 2, h: 1 }, sm: { w: 2, h: 1 } },
+      defaultSize: { lg: { w: 3, h: 1 }, md: { w: 3, h: 1 }, sm: { w: 4, h: 1 } },
+    },
+  ],
+
+  // ── Automation ─────────────────────────────────
+  automation: [
+    {
+      id: 'horizontal',
+      label: 'Horizontale',
+      minSize: { lg: { w: 2, h: 1 }, md: { w: 2, h: 1 }, sm: { w: 2, h: 1 } },
+      defaultSize: { lg: { w: 3, h: 1 }, md: { w: 4, h: 1 }, sm: { w: 4, h: 1 } },
+    },
+  ],
 };
 
 /**
  * Récupère la disposition active d'un widget.
  * Fallback sur la première disposition du type.
  */
-export function getDisposition(
-  widgetType: string,
-  dispositionId?: string,
-): WidgetDisposition | undefined {
+export function getDisposition(widgetType: string, dispositionId?: string): WidgetDisposition | undefined {
   const dispositions = WIDGET_DISPOSITIONS[widgetType];
   if (!dispositions?.length) return undefined;
   if (dispositionId) {
@@ -189,11 +217,7 @@ export function getDisposition(
 /**
  * Retourne la taille minimum pour un widget à un breakpoint donné.
  */
-export function getMinSize(
-  widgetType: string,
-  breakpoint: 'lg' | 'md' | 'sm',
-  dispositionId?: string,
-): { w: number; h: number } {
+export function getMinSize(widgetType: string, breakpoint: 'lg' | 'md' | 'sm', dispositionId?: string): { w: number; h: number } {
   const disposition = getDisposition(widgetType, dispositionId);
   return disposition?.minSize[breakpoint] ?? { w: 1, h: 1 };
 }

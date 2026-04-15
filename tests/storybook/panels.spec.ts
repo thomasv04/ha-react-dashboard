@@ -28,7 +28,7 @@ test.describe('LightsPanel', () => {
   });
 
   test('brightness slider is visible when light is on', async ({ page }) => {
-    const slider = page.getByRole('slider');
+    const slider = page.getByRole('slider').first();
     await expect(slider).toBeVisible();
     await expect(slider).toHaveAttribute('aria-valuemin', '1');
     await expect(slider).toHaveAttribute('aria-valuemax', '100');
@@ -70,7 +70,7 @@ test.describe('ShuttersPanel', () => {
   test('shows all 10 shutter rooms from mock', async ({ page }) => {
     await expect(page.getByText('Cuisine')).toBeVisible();
     await expect(page.getByText('Cellier')).toBeVisible();
-    await expect(page.getByText('Chambre')).toBeVisible();
+    await expect(page.getByText('Chambre').first()).toBeVisible();
     await expect(page.getByText('Bureau')).toBeVisible();
     await expect(page.getByText('Salle de bain')).toBeVisible();
   });

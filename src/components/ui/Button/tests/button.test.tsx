@@ -9,17 +9,21 @@ describe('Button', () => {
   });
 
   it('accepte la prop variant', () => {
-    const { getByRole } = render(<Button variant="outline">Outline</Button>);
+    const { getByRole } = render(<Button variant='outline'>Outline</Button>);
     expect(getByRole('button')).toHaveTextContent('Outline');
   });
 
   it('accepte la prop size', () => {
-    const { getByRole } = render(<Button size="lg">Large</Button>);
+    const { getByRole } = render(<Button size='lg'>Large</Button>);
     expect(getByRole('button')).toHaveTextContent('Large');
   });
 
   it('accepte la prop asChild', () => {
-    const { getByText } = render(<Button asChild><a href="#">Link</a></Button>);
+    const { getByText } = render(
+      <Button asChild>
+        <a href='#'>Link</a>
+      </Button>
+    );
     expect(getByText('Link').tagName).toBe('A');
   });
 });

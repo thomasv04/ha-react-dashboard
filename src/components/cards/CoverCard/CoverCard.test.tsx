@@ -1,6 +1,15 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+
+vi.mock('@/i18n', () => ({
+  useI18n: () => ({
+    t: (k: string) => {
+      const map: Record<string, string> = { 'widgets.cover.notFound': 'Entité introuvable' };
+      return map[k] ?? k;
+    },
+    tArray: () => [],
+  }),
+}));
 
 const callServiceMock = vi.fn();
 
@@ -13,6 +22,7 @@ const mockEntity = {
 };
 
 vi.mock('@hakit/core', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   useHass: (selector?: any) => {
     const state = { helpers: { callService: callServiceMock } };
     return typeof selector === 'function' ? selector(state) : state;
@@ -64,8 +74,6 @@ describe('CoverCard', () => {
     // Find the open button (ChevronUp)
     const openBtn = buttons.find(b => b.getAttribute('title')?.toLowerCase().includes('ouvrir')) ?? buttons[0];
     fireEvent.click(openBtn);
-    expect(callServiceMock).toHaveBeenCalledWith(
-      expect.objectContaining({ service: 'open_cover' }),
-    );
+    expect(callServiceMock).toHaveBeenCalledWith(expect.objectContaining({ service: 'open_cover' }));
   });
 });

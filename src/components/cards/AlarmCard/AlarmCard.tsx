@@ -4,14 +4,15 @@ import { ShieldCheck, ShieldAlert, ShieldOff, Delete, ChevronDown } from 'lucide
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 
 type AlarmState = 'disarmed' | 'armed_home' | 'armed_away' | 'armed_night' | 'pending' | 'triggered' | string;
 
-function alarmConfig(state: AlarmState) {
+function alarmConfig(state: AlarmState, t: (key: string) => string) {
   switch (state) {
     case 'armed_home':
       return {
-        label: 'Armé — domicile',
+        label: t('widgets.alarm.armed_home'),
         color: 'text-yellow-400',
         bg: 'bg-yellow-400/10',
         border: 'border-yellow-400/20',
@@ -19,7 +20,7 @@ function alarmConfig(state: AlarmState) {
       };
     case 'armed_away':
       return {
-        label: 'Armé — absent',
+        label: t('widgets.alarm.armed_away'),
         color: 'text-red-400',
         bg: 'bg-red-400/10',
         border: 'border-red-400/20',
@@ -27,7 +28,7 @@ function alarmConfig(state: AlarmState) {
       };
     case 'armed_night':
       return {
-        label: 'Armé — nuit',
+        label: t('widgets.alarm.armed_night'),
         color: 'text-purple-400',
         bg: 'bg-purple-400/10',
         border: 'border-purple-400/20',
@@ -35,7 +36,7 @@ function alarmConfig(state: AlarmState) {
       };
     case 'triggered':
       return {
-        label: 'ALERTE !',
+        label: t('widgets.alarm.triggered'),
         color: 'text-red-400 animate-pulse',
         bg: 'bg-red-400/20',
         border: 'border-red-400/30',
@@ -43,7 +44,7 @@ function alarmConfig(state: AlarmState) {
       };
     case 'disarmed':
       return {
-        label: 'Désarmé',
+        label: t('widgets.alarm.disarmed'),
         color: 'text-green-400',
         bg: 'bg-green-400/10',
         border: 'border-green-400/20',
@@ -55,17 +56,18 @@ function alarmConfig(state: AlarmState) {
 }
 
 export function AlarmCard() {
+  const { t } = useI18n();
   const alarm = useSafeEntity('alarm_control_panel.home_alarm');
   const { helpers } = useHass();
   const [code, setCode] = useState('');
   const [expanded, setExpanded] = useState(false);
   if (!alarm) return null;
-  const cfg = alarmConfig(alarm.state);
+  const cfg = alarmConfig(alarm.state, t);
 
   const MODES = [
-    { label: 'Domicile', service: 'alarm_arm_home', color: 'text-yellow-400 bg-yellow-400/10 hover:bg-yellow-400/20' },
-    { label: 'Absent', service: 'alarm_arm_away', color: 'text-red-400 bg-red-400/10 hover:bg-red-400/20' },
-    { label: 'Nuit', service: 'alarm_arm_night', color: 'text-purple-400 bg-purple-400/10 hover:bg-purple-400/20' },
+    { label: t('widgets.alarm.modeHome'), service: 'alarm_arm_home', color: 'text-yellow-400 bg-yellow-400/10 hover:bg-yellow-400/20' },
+    { label: t('widgets.alarm.modeAway'), service: 'alarm_arm_away', color: 'text-red-400 bg-red-400/10 hover:bg-red-400/20' },
+    { label: t('widgets.alarm.modeNight'), service: 'alarm_arm_night', color: 'text-purple-400 bg-purple-400/10 hover:bg-purple-400/20' },
   ];
 
   function arm(service: string) {
@@ -128,7 +130,7 @@ export function AlarmCard() {
               {/* Code input */}
               <div className='gc-inner rounded-2xl px-4 py-2 flex items-center justify-between'>
                 <span className='text-white font-mono tracking-[0.3em] text-lg'>
-                  {code ? '•'.repeat(code.length) : <span className='text-white/20 text-sm'>Code PIN</span>}
+                  {code ? '•'.repeat(code.length) : <span className='text-white/20 text-sm'>{t('widgets.alarm.pinPlaceholder')}</span>}
                 </span>
                 {code && (
                   <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCode(c => c.slice(0, -1))}>
@@ -161,7 +163,7 @@ export function AlarmCard() {
                   onClick={disarm}
                   className='py-2 rounded-2xl bg-green-500/15 text-green-400 text-sm font-semibold hover:bg-green-500/25 transition-colors border border-green-500/20'
                 >
-                  Désarmer
+                  {t('widgets.alarm.disarm')}
                 </motion.button>
                 {MODES.map(({ label, service, color }) => (
                   <motion.button

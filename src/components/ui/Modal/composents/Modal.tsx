@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -39,9 +39,7 @@ function ModalContentRenderer({ content }: { content: Modal['content'] }) {
       // For now, fallback to plain text with a note
       return (
         <div className='text-white/80 text-sm leading-relaxed'>
-          <p className='text-yellow-400/80 text-xs mb-2'>
-            ⚠️ Markdown rendering requires 'marked' + 'dompurify' libraries
-          </p>
+          <p className='text-yellow-400/80 text-xs mb-2'>⚠️ Markdown rendering requires 'marked' + 'dompurify' libraries</p>
           <pre className='whitespace-pre-wrap font-sans'>{value}</pre>
         </div>
       );
@@ -49,7 +47,7 @@ function ModalContentRenderer({ content }: { content: Modal['content'] }) {
   }
 
   // ReactNode
-  return <div className='text-white/80 text-sm'>{content}</div>;
+  return <div className='text-white/80 text-sm'>{content as React.ReactNode}</div>;
 }
 
 // Single modal card
@@ -120,8 +118,8 @@ function ModalCard({ modal, onClose }: ModalCardProps) {
       }
     };
 
-    modalElement.addEventListener('keydown', handleTabKey as any);
-    return () => modalElement.removeEventListener('keydown', handleTabKey as any);
+    modalElement.addEventListener('keydown', handleTabKey as EventListener);
+    return () => modalElement.removeEventListener('keydown', handleTabKey as EventListener);
   }, []);
 
   return (
@@ -153,14 +151,14 @@ function ModalCard({ modal, onClose }: ModalCardProps) {
             </h2>
           )}
           {modal.dismissible && (
-          <button
-            ref={firstFocusableRef}
-            onClick={onClose}
-            className='flex-shrink-0 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/40 hover:text-white transition-colors ml-auto'
-            aria-label='Fermer'
-          >
-            <X size={16} />
-          </button>
+            <button
+              ref={firstFocusableRef}
+              onClick={onClose}
+              className='flex-shrink-0 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/40 hover:text-white transition-colors ml-auto'
+              aria-label='Fermer'
+            >
+              <X size={16} />
+            </button>
           )}
         </div>
 
@@ -185,10 +183,7 @@ function ModalCard({ modal, onClose }: ModalCardProps) {
                     onClose();
                   }
                 }}
-                className={cn(
-                  'px-4 py-2 rounded-xl text-sm font-medium transition-all',
-                  variantClass[action.variant ?? 'default']
-                )}
+                className={cn('px-4 py-2 rounded-xl text-sm font-medium transition-all', variantClass[action.variant ?? 'default'])}
               >
                 {action.label}
               </button>

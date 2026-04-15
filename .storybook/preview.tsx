@@ -1,5 +1,9 @@
 import type { Preview, Decorator } from '@storybook/react';
 import { PanelProvider } from '@/context/PanelContext';
+import { PageProvider } from '@/context/PageContext';
+import { WidgetConfigProvider } from '@/context/WidgetConfigContext';
+import { DashboardLayoutProvider } from '@/context/DashboardLayoutContext';
+import { I18nProvider } from '@/i18n';
 import '../src/index.css';
 import React, { useEffect } from 'react';
 
@@ -14,11 +18,19 @@ const withDarkTheme: Decorator = Story => {
   }, []);
 
   return (
-    <PanelProvider>
-      <div className='p-6 min-w-[320px] max-w-[480px]'>
-        <Story />
-      </div>
-    </PanelProvider>
+    <I18nProvider>
+      <PageProvider>
+        <WidgetConfigProvider>
+          <DashboardLayoutProvider>
+            <PanelProvider>
+              <div className='p-6 min-w-[320px] max-w-[480px]'>
+                <Story />
+              </div>
+            </PanelProvider>
+          </DashboardLayoutProvider>
+        </WidgetConfigProvider>
+      </PageProvider>
+    </I18nProvider>
   );
 };
 

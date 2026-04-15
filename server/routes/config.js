@@ -40,14 +40,16 @@ export function configRouter(db) {
       const version = typeof config.version === 'number' ? config.version : 2;
       const data = JSON.stringify(config);
 
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO dashboard_config (id, version, data, updated_at)
         VALUES (1, ?, ?, datetime('now'))
         ON CONFLICT(id) DO UPDATE SET
           version = excluded.version,
           data = excluded.data,
           updated_at = datetime('now')
-      `).run(version, data);
+      `
+      ).run(version, data);
 
       res.json({ success: true });
     } catch (err) {

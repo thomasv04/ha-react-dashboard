@@ -49,7 +49,9 @@ export function CameraFeed({ entityId, className, onProtocol }: CameraFeedProps)
               u.searchParams.delete('_HLS_part');
               xhr.open('GET', u.toString(), true);
             }
-          } catch { /* ignore */ }
+          } catch {
+            /* ignore */
+          }
         },
       });
       hls.loadSource(streamUrl);
@@ -74,13 +76,5 @@ export function CameraFeed({ entityId, className, onProtocol }: CameraFeedProps)
     return <img src={mjpegUrl} className={cn('object-cover', className)} alt='' />;
   }
 
-  return (
-    <video
-      ref={videoRef}
-      autoPlay
-      muted
-      playsInline
-      className={cn('object-cover', className)}
-    />
-  );
+  return <video ref={videoRef} autoPlay muted playsInline className={cn('object-cover', className)} />;
 }

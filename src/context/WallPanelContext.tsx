@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useEffect,
-  type ReactNode,
-} from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import type { WallPanelConfig } from '@/types/wallpanel';
 import { DEFAULT_WALLPANEL_CONFIG } from '@/types/wallpanel';
 import type { DashboardLayout } from '@/context/DashboardLayoutContext';
@@ -43,13 +36,11 @@ interface WallPanelProviderProps {
 }
 
 export function WallPanelProvider({ children, initialConfig, initialLayout }: WallPanelProviderProps) {
-  const [config, setConfig] = useState<WallPanelConfig>(
-    initialConfig ?? DEFAULT_WALLPANEL_CONFIG,
-  );
+  const [config, setConfig] = useState<WallPanelConfig>(initialConfig ?? DEFAULT_WALLPANEL_CONFIG);
   const [isActive, setIsActive] = useState(false);
   const [isWallPanelEditMode, setIsWallPanelEditMode] = useState(false);
   const [wallPanelLayout, setWallPanelLayout] = useState<DashboardLayout>(
-    initialLayout ?? { ...DEFAULT_LAYOUT, widgets: { lg: [], md: [], sm: [] } },
+    initialLayout ?? { ...DEFAULT_LAYOUT, widgets: { lg: [], md: [], sm: [] } }
   );
 
   // ?wp_enabled=true in the URL forces the screensaver on regardless of config.enabled
@@ -75,7 +66,7 @@ export function WallPanelProvider({ children, initialConfig, initialLayout }: Wa
   // Activation forcée via URL param (?wp_enabled=true)
   useEffect(() => {
     if (urlForced) setIsActive(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

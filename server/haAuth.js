@@ -57,7 +57,7 @@ export function haAuthMiddleware(req, res, next) {
     if (!isLocal) {
       console.warn(
         `[haAuth] WARNING: HA_URL (${parsed.hostname}) does not appear to be a local address. ` +
-        'Bearer tokens will be forwarded to this host. Verify your configuration.',
+          'Bearer tokens will be forwarded to this host. Verify your configuration.'
       );
     }
   } catch {

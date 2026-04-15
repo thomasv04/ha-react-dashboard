@@ -112,11 +112,7 @@ export function useResolvedMediaUrls(urls: string[]): string[] {
 
     const resolveAll = async () => {
       const groups = await Promise.all(
-        urls.map(url =>
-          url.startsWith('media-source://')
-            ? resolveMediaSourceId(connection, url)
-            : Promise.resolve([url]),
-        ),
+        urls.map(url => (url.startsWith('media-source://') ? resolveMediaSourceId(connection, url) : Promise.resolve([url])))
       );
       setResolved(groups.flat());
     };

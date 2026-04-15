@@ -3,12 +3,14 @@ import { Activity } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import type { PerfSettings } from '@/context/ThemeContext';
 import { PerfToggle } from './PerfToggle';
+import { useI18n } from '@/i18n';
 
 // ── FPS meter hook ────────────────────────────────────────────────────────────
 function useFPS(active: boolean) {
   const [fps, setFps] = useState<number | null>(null);
   const rafRef = useRef<number>(0);
   const framesRef = useRef(0);
+  // eslint-disable-next-line react-hooks/purity
   const lastTimeRef = useRef<number>(performance.now());
 
   useEffect(() => {
@@ -40,27 +42,26 @@ function useFPS(active: boolean) {
 }
 
 function FPSMeter() {
+  const { t } = useI18n();
   const [measuring, setMeasuring] = useState(false);
   const fps = useFPS(measuring);
 
-  const color =
-    fps === null ? 'text-white/30'
-    : fps >= 55  ? 'text-green-400'
-    : fps >= 30  ? 'text-yellow-400'
-    : 'text-red-400';
-
+  const color = fps === null ? 'text-white/30' : fps >= 55 ? 'text-green-400' : fps >= 30 ? 'text-yellow-400' : 'text-red-400';
   const label =
-    fps === null ? '—'
-    : fps >= 55  ? 'Excellent'
-    : fps >= 30  ? 'Correct'
-    : 'Faible';
+    fps === null
+      ? '—'
+      : fps >= 55
+        ? t('settings.performance_section.fpsExcellent')
+        : fps >= 30
+          ? t('settings.performance_section.fpsFair')
+          : t('settings.performance_section.fpsLow');
 
   return (
-    <div className="flex flex-col gap-3 p-4 rounded-xl bg-white/4 border border-white/8">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Activity size={14} className="text-white/40" />
-          <span className="text-white/60 text-xs font-medium">Images par seconde (FPS)</span>
+    <div className='flex flex-col gap-3 p-4 rounded-xl bg-white/4 border border-white/8'>
+      <div className='flex items-center justify-between'>
+        <div className='flex items-center gap-2'>
+          <Activity size={14} className='text-white/40' />
+          <span className='text-white/60 text-xs font-medium'>{t('settings.performance_section.fps')}</span>
         </div>
         <button
           onClick={() => setMeasuring(v => !v)}
@@ -70,22 +71,18 @@ function FPSMeter() {
               : 'bg-white/8 border-white/15 text-white/50 hover:bg-white/12 hover:text-white/70'
           }`}
         >
-          {measuring ? 'Arrêter' : 'Mesurer'}
+          {measuring ? t('settings.performance_section.fpsStop') : t('settings.performance_section.fpsMeasure')}
         </button>
       </div>
 
-      <div className="flex items-end gap-3">
-        <span className={`text-4xl font-bold tabular-nums leading-none transition-colors ${color}`}>
-          {fps ?? '··'}
-        </span>
-        <div className="flex flex-col pb-0.5">
-          <span className="text-white/30 text-xs leading-tight">fps</span>
-          {measuring && fps !== null && (
-            <span className={`text-xs font-medium leading-tight ${color}`}>{label}</span>
-          )}
+      <div className='flex items-end gap-3'>
+        <span className={`text-4xl font-bold tabular-nums leading-none transition-colors ${color}`}>{fps ?? '··'}</span>
+        <div className='flex flex-col pb-0.5'>
+          <span className='text-white/30 text-xs leading-tight'>fps</span>
+          {measuring && fps !== null && <span className={`text-xs font-medium leading-tight ${color}`}>{label}</span>}
         </div>
         {measuring && fps !== null && (
-          <div className="flex items-end gap-0.5 self-end pb-1 ml-auto">
+          <div className='flex items-end gap-0.5 self-end pb-1 ml-auto'>
             {[55, 45, 35, 25, 15].map((threshold, i) => (
               <div
                 key={i}
@@ -99,16 +96,13 @@ function FPSMeter() {
         )}
       </div>
 
-      {!measuring && (
-        <p className="text-white/25 text-[10px] leading-relaxed">
-          Mesure les FPS du rendu navigateur en temps réel pour diagnostiquer les ralentissements.
-        </p>
-      )}
+      {!measuring && <p className='text-white/25 text-[10px] leading-relaxed'>{t('settings.performance_section.fpsDescription')}</p>}
     </div>
   );
 }
 
 export function PerformanceSection() {
+  const { t } = useI18n();
   const { perfSettings, setPerfSettings } = useTheme();
 
   function toggle(key: keyof PerfSettings) {
@@ -116,31 +110,35 @@ export function PerformanceSection() {
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className='flex flex-col gap-5'>
       <FPSMeter />
 
-      <div className="flex flex-col">
-      <p className="text-white/35 text-xs mb-5 leading-relaxed">
-        Désactive les effets visuels coûteux pour améliorer les performances sur tablettes et petits appareils.
-      </p>
-      <PerfToggle
-        checked={perfSettings.reduceBlur}
-        onChange={() => toggle('reduceBlur')}
-        label="Réduire les flous"
-        description="Réduit le backdrop-filter de 20–40 px à 4 px sur toutes les cards."
-      />
-      <PerfToggle
-        checked={perfSettings.reduceAnimations}
-        onChange={() => toggle('reduceAnimations')}
-        label="Désactiver les animations"
-        description="Supprime les transitions et animations de l'interface."
-      />
-      <PerfToggle
-        checked={perfSettings.disableShadows}
-        onChange={() => toggle('disableShadows')}
-        label="Désactiver les ombres"
-        description="Supprime les box-shadow GPU des cards."
-      />
+      <div className='flex flex-col'>
+        <p className='text-white/35 text-xs mb-5 leading-relaxed'>{t('settings.performance_section.intro')}</p>
+        <PerfToggle
+          checked={perfSettings.reduceBlur}
+          onChange={() => toggle('reduceBlur')}
+          label={t('settings.performance_section.reduceBlur')}
+          description={t('settings.performance_section.reduceBlurDesc')}
+        />
+        <PerfToggle
+          checked={perfSettings.reduceAnimations}
+          onChange={() => toggle('reduceAnimations')}
+          label={t('settings.performance_section.reduceAnimations')}
+          description={t('settings.performance_section.reduceAnimationsDesc')}
+        />
+        <PerfToggle
+          checked={perfSettings.disableShadows}
+          onChange={() => toggle('disableShadows')}
+          label={t('settings.performance_section.disableShadows')}
+          description={t('settings.performance_section.disableShadowsDesc')}
+        />
+        <PerfToggle
+          checked={perfSettings.disableModalAnimation}
+          onChange={() => toggle('disableModalAnimation')}
+          label={t('settings.performance_section.disableModalAnimation')}
+          description={t('settings.performance_section.disableModalAnimationDesc')}
+        />
       </div>
     </div>
   );

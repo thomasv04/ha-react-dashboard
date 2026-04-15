@@ -45,10 +45,12 @@ export function profilesRouter(db) {
       const id = randomUUID();
       const userId = req.headers['x-ha-user-id'] || null;
 
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO profiles (id, ha_user_id, label, data)
         VALUES (?, ?, ?, ?)
-      `).run(id, userId, label, JSON.stringify(data));
+      `
+      ).run(id, userId, label, JSON.stringify(data));
 
       res.status(201).json({ id, label });
     } catch (err) {
@@ -62,13 +64,17 @@ export function profilesRouter(db) {
     try {
       const { label, data } = req.body;
 
-      const result = db.prepare(`
+      const result = db
+        .prepare(
+          `
         UPDATE profiles SET
           label = COALESCE(?, label),
           data = COALESCE(?, data),
           updated_at = datetime('now')
         WHERE id = ?
-      `).run(label ?? null, data ? JSON.stringify(data) : null, req.params.id);
+      `
+        )
+        .run(label ?? null, data ? JSON.stringify(data) : null, req.params.id);
 
       if (result.changes === 0) return res.status(404).json({ error: 'Profile not found' });
       res.json({ success: true });

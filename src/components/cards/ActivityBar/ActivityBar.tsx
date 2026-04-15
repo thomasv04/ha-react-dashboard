@@ -50,7 +50,7 @@ export function ActivityBar() {
   const pills: Pill[] = [];
 
   // Alarm
-  const alarmState = entities?.['alarm_control_panel.home_alarm']?.state;
+  const alarmState = entities?.[entityFor('alarm', 'alarm_control_panel.home_alarm')]?.state;
   if (alarmState) {
     const isArmed = alarmState !== 'disarmed';
     pills.push({
@@ -63,7 +63,7 @@ export function ActivityBar() {
   }
 
   // Heater
-  const heaterState = entities?.['climate.living_room']?.state;
+  const heaterState = entities?.[entityFor('heater', 'climate.living_room')]?.state;
   if (heaterState) {
     const isOn = heaterState !== 'off';
     pills.push({
@@ -76,7 +76,7 @@ export function ActivityBar() {
   }
 
   // Battery solar
-  const battLevel = entities?.['sensor.battery_level']?.state;
+  const battLevel = entities?.[entityFor('solar', 'sensor.battery_level')]?.state;
   if (battLevel) {
     const lvl = Number(battLevel);
     let color = 'text-green-400';
@@ -99,7 +99,7 @@ export function ActivityBar() {
   }
 
   // Tempo couleur
-  const tempoCouleur = entities?.['sensor.tempo_current_color']?.state;
+  const tempoCouleur = entities?.[entityFor('tempo', 'sensor.tempo_current_color')]?.state;
   if (tempoCouleur) {
     const colorMap: Record<string, { color: string; bgColor: string }> = {
       Rouge: { color: 'text-red-400', bgColor: 'bg-red-400/10' },
@@ -118,7 +118,7 @@ export function ActivityBar() {
   }
 
   // Chambre temp
-  const chambreTemp = entities?.['sensor.bedroom_temperature']?.state;
+  const chambreTemp = entities?.[entityFor('temp', 'sensor.bedroom_temperature')]?.state;
   if (chambreTemp) {
     pills.push({
       id: 'chambre',
@@ -151,19 +151,34 @@ export function ActivityBar() {
     return avatarPath;
   };
 
-  // Persons (avatars)
+  // Persons (avatars) — filtered by config.persons when configured, else show all
+  const configPersons = config?.persons;
   const persons: Person[] = [];
-  Object.entries(entities ?? {}).forEach(([id, entity]) => {
-    if (id.startsWith('person.')) {
+  if (configPersons && configPersons.length > 0) {
+    configPersons.forEach(({ entityId, name }) => {
+      const entity = entities?.[entityId];
+      if (!entity) return;
       const avatarPath = entity.attributes?.entity_picture || entity.attributes?.avatar;
       persons.push({
-        id,
-        name: entity.attributes?.friendly_name ?? id.replace('person.', ''),
+        id: entityId,
+        name: name || entity.attributes?.friendly_name || entityId.replace('person.', ''),
         avatar: getAvatarUrl(avatarPath),
         state: entity.state,
       });
-    }
-  });
+    });
+  } else {
+    Object.entries(entities ?? {}).forEach(([id, entity]) => {
+      if (id.startsWith('person.')) {
+        const avatarPath = entity.attributes?.entity_picture || entity.attributes?.avatar;
+        persons.push({
+          id,
+          name: entity.attributes?.friendly_name ?? id.replace('person.', ''),
+          avatar: getAvatarUrl(avatarPath),
+          state: entity.state,
+        });
+      }
+    });
+  }
 
   const visiblePills = pills.filter(p => !(isMobile && p.hideOnMobile));
 
