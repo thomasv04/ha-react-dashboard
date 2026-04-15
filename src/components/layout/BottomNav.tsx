@@ -22,7 +22,7 @@ export function BottomNav() {
     ([id, e]) => id.startsWith('light.') && !id.includes('group') && e.state === 'on'
   ).length;
 
-  const alarmArmed = entities?.['alarm_control_panel.alarmo']?.state !== 'disarmed';
+  const alarmArmed = entities?.['alarm_control_panel.home_alarm']?.state !== 'disarmed';
 
   const launchers: Launcher[] = [
     {

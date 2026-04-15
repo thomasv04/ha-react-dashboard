@@ -1,10 +1,11 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import type { WidgetConfig, WidgetConfigs } from '@/types/widget-configs';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
+import type { WidgetConfigs } from '@/types/widget-configs';
 import { DEFAULT_WIDGET_CONFIGS } from '@/types/widget-configs';
 import { compactVertically } from '@/lib/grid-utils';
 import { WIDGET_DISPOSITIONS } from '@/config/widget-dispositions';
 import { usePages, type Page } from '@/context/PageContext';
 import type { WallPanelConfig } from '@/types/wallpanel';
+import { useWidgetConfig } from '@/context/WidgetConfigContext';
 
 /**
  * Configuration d'un widget sur la grille
@@ -98,52 +99,35 @@ export interface DashboardConfigV2 {
   };
 }
 
-interface DashboardLayoutContextValue {
+// ── Context value types ────────────────────────────────────────────────────────
+
+interface LayoutContextValue {
   layout: DashboardLayout;
   setLayout: (layout: DashboardLayout) => void;
   addWidget: (widget: GridWidget) => void;
   removeWidget: (id: string) => void;
   updateWidget: (id: string, updates: Partial<GridWidget>, breakpoint?: 'lg' | 'md' | 'sm') => void;
-  
-  /** Cycle au preset de taille suivant (Compact → Normal → Large → Compact) */
-  cycleSize: (id: string, breakpoint: 'lg' | 'md' | 'sm') => void;
-  
-  /** Retourne le nom du preset actuel pour un widget/breakpoint donné */
-  getCurrentPresetName: (id: string, breakpoint: 'lg' | 'md' | 'sm') => SizePresetName | null;
-
-  /** * On garde une fonction "saveLayout" pour que tes composants puissent forcer 
-   * la synchronisation du state local avec le composant parent, mais 
-   * la vraie sauvegarde serveur se fera via le hook useDashboardConfig
-   */
   saveLayout: () => void;
-  
-  /** Mode édition pour les admins : affiche les overlays sur chaque card */
-  isEditMode: boolean;
-  setEditMode: (v: boolean) => void;
-  
-  /** Ajoute un widget par son type (tous breakpoints) avec sa position par défaut */
   addWidgetByType: (type: GridWidget['type']) => void;
-
-  /** Per-widget configuration (entities, labels, etc.) */
-  widgetConfigs: WidgetConfigs;
-  getWidgetConfig: <T extends WidgetConfig>(id: string) => T | undefined;
-  updateWidgetConfig: (id: string, config: WidgetConfig) => void;
-
-  /** Preview config: when set, getWidgetConfig returns this for the given widget */
-  setPreviewConfig: (id: string, config: WidgetConfig) => void;
-  clearPreviewConfig: () => void;
-
-  /** Widget currently being edited (for modal) */
-  editingWidgetId: string | null;
-  setEditingWidgetId: (id: string | null) => void;
-
-  /** All pages' layouts — used for saving */
   allLayouts: Record<string, DashboardLayout>;
-  /** All pages' widget configs — used for saving */
-  allWidgetConfigsByPage: Record<string, WidgetConfigs>;
 }
 
-const DashboardLayoutContext = createContext<DashboardLayoutContextValue | null>(null);
+interface EditModeContextValue {
+  isEditMode: boolean;
+  setEditMode: (v: boolean) => void;
+}
+
+interface SizePresetsContextValue {
+  cycleSize: (id: string, breakpoint: 'lg' | 'md' | 'sm') => void;
+  getCurrentPresetName: (id: string, breakpoint: 'lg' | 'md' | 'sm') => SizePresetName | null;
+}
+
+/** Combined type for the facade hook — backwards compatible */
+type DashboardLayoutContextValue = LayoutContextValue & EditModeContextValue & SizePresetsContextValue;
+
+const LayoutContext = createContext<LayoutContextValue | null>(null);
+const EditModeContext = createContext<EditModeContextValue | null>(null);
+const SizePresetsContext = createContext<SizePresetsContextValue | null>(null);
 
 // Configuration par défaut (layouts différents par breakpoint)
 // On la garde ici au cas où l'API Node renvoie un fichier vide
@@ -196,32 +180,18 @@ export const EMPTY_PAGE_LAYOUT: DashboardLayout = {
 interface ProviderProps {
   children: ReactNode;
   initialLayouts?: Record<string, DashboardLayout>;
-  initialAllWidgetConfigs?: Record<string, WidgetConfigs>;
 }
 
-export function DashboardLayoutProvider({ children, initialLayouts, initialAllWidgetConfigs }: ProviderProps) {
+export function DashboardLayoutProvider({ children, initialLayouts }: ProviderProps) {
   const { currentPageId, pages } = usePages();
+  const { updateWidgetConfig: widgetCfgUpdate } = useWidgetConfig();
 
   const [layouts, setLayouts] = useState<Record<string, DashboardLayout>>(
     () => initialLayouts && Object.keys(initialLayouts).length > 0
       ? initialLayouts
       : { home: DEFAULT_LAYOUT }
   );
-  const [allWidgetConfigs, setAllWidgetConfigs] = useState<Record<string, WidgetConfigs>>(
-    () => {
-      if (initialAllWidgetConfigs && Object.keys(initialAllWidgetConfigs).length > 0) {
-        const merged: Record<string, WidgetConfigs> = {};
-        for (const [pageId, configs] of Object.entries(initialAllWidgetConfigs)) {
-          merged[pageId] = { ...DEFAULT_WIDGET_CONFIGS, ...configs };
-        }
-        return merged;
-      }
-      return { home: { ...DEFAULT_WIDGET_CONFIGS } };
-    }
-  );
   const [isEditMode, setEditMode] = useState(false);
-  const [editingWidgetId, setEditingWidgetId] = useState<string | null>(null);
-  const [previewConfigEntry, setPreviewConfigEntry] = useState<{ id: string; config: WidgetConfig } | null>(null);
 
   // Sync when server data loads (runs once after initial fetch completes)
   useEffect(() => {
@@ -240,18 +210,7 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
     setLayouts(compacted);
   }, [initialLayouts]);
 
-  useEffect(() => {
-    if (!initialAllWidgetConfigs || Object.keys(initialAllWidgetConfigs).length === 0) return;
-    setAllWidgetConfigs(() => {
-      const merged: Record<string, WidgetConfigs> = {};
-      for (const [pageId, configs] of Object.entries(initialAllWidgetConfigs)) {
-        merged[pageId] = { ...DEFAULT_WIDGET_CONFIGS, ...configs };
-      }
-      return merged;
-    });
-  }, [initialAllWidgetConfigs]);
-
-  // Sync new/deleted pages: ensure every current page has layout & config entries
+  // Sync new/deleted pages: ensure every current page has a layout entry
   useEffect(() => {
     const pageIds = new Set(pages.map(p => p.id));
 
@@ -267,24 +226,10 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
       }
       return updated;
     });
-
-    setAllWidgetConfigs(prev => {
-      const updated: Record<string, WidgetConfigs> = {};
-      for (const [id, configs] of Object.entries(prev)) {
-        if (pageIds.has(id)) updated[id] = configs;
-      }
-      for (const page of pages) {
-        if (!(page.id in updated)) {
-          updated[page.id] = { ...DEFAULT_WIDGET_CONFIGS };
-        }
-      }
-      return updated;
-    });
   }, [pages]);
 
-  // Current page's layout and widgetConfigs (derived)
+  // Current page's layout (derived)
   const layout = layouts[currentPageId] ?? DEFAULT_LAYOUT;
-  const widgetConfigs = allWidgetConfigs[currentPageId] ?? DEFAULT_WIDGET_CONFIGS;
 
   const saveLayout = () => {
     // Cette fonction ne fait plus d'appel réseau.
@@ -383,13 +328,11 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
       };
     });
     // Initialize widget config using the type's default (if one exists)
-    setAllWidgetConfigs(prev => {
-      const current = prev[currentPageId] ?? DEFAULT_WIDGET_CONFIGS;
-      const defaultCfg = DEFAULT_WIDGET_CONFIGS[type];
-      if (!defaultCfg) return prev;
-      return { ...prev, [currentPageId]: { ...current, [id]: { ...defaultCfg } } };
-    });
-  }, [currentPageId]);
+    const defaultCfg = DEFAULT_WIDGET_CONFIGS[type];
+    if (defaultCfg) {
+      widgetCfgUpdate(id, { ...defaultCfg });
+    }
+  }, [currentPageId, widgetCfgUpdate]);
 
   const cycleSize = useCallback((id: string, breakpoint: 'lg' | 'md' | 'sm') => {
     setLayouts(prev => {
@@ -425,64 +368,63 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
     return match?.name ?? 'Normal';
   }, [layouts, currentPageId]);
 
-  const getWidgetConfig = useCallback(<T extends WidgetConfig>(id: string): T | undefined => {
-    // If there's a preview config for this widget, return it instead
-    if (previewConfigEntry && previewConfigEntry.id === id) {
-      return previewConfigEntry.config as T;
-    }
-    const currentConfigs = allWidgetConfigs[currentPageId] ?? DEFAULT_WIDGET_CONFIGS;
-    return currentConfigs[id] as T | undefined;
-  }, [allWidgetConfigs, previewConfigEntry, currentPageId]);
+  const editModeValue = useMemo<EditModeContextValue>(
+    () => ({ isEditMode, setEditMode }),
+    [isEditMode],
+  );
 
-  const updateWidgetConfig = useCallback((id: string, config: WidgetConfig) => {
-    setAllWidgetConfigs(prev => {
-      const current = prev[currentPageId] ?? DEFAULT_WIDGET_CONFIGS;
-      return { ...prev, [currentPageId]: { ...current, [id]: config } };
-    });
-  }, [currentPageId]);
+  const sizePresetsValue = useMemo<SizePresetsContextValue>(
+    () => ({ cycleSize, getCurrentPresetName }),
+    [cycleSize, getCurrentPresetName],
+  );
 
-  const setPreviewConfig = useCallback((id: string, config: WidgetConfig) => {
-    setPreviewConfigEntry({ id, config });
-  }, []);
-
-  const clearPreviewConfig = useCallback(() => {
-    setPreviewConfigEntry(null);
-  }, []);
+  const layoutValue = useMemo<LayoutContextValue>(
+    () => ({
+      layout,
+      setLayout,
+      addWidget,
+      removeWidget,
+      updateWidget,
+      saveLayout,
+      addWidgetByType,
+      allLayouts: layouts,
+    }),
+    [layout, setLayout, addWidget, removeWidget, updateWidget, saveLayout, addWidgetByType, layouts],
+  );
 
   return (
-    <DashboardLayoutContext.Provider
-      value={{
-        layout,
-        setLayout,
-        addWidget,
-        removeWidget,
-        updateWidget,
-        cycleSize,
-        getCurrentPresetName,
-        saveLayout,
-        isEditMode,
-        setEditMode,
-        addWidgetByType,
-        widgetConfigs,
-        getWidgetConfig,
-        updateWidgetConfig,
-        setPreviewConfig,
-        clearPreviewConfig,
-        editingWidgetId,
-        setEditingWidgetId,
-        allLayouts: layouts,
-        allWidgetConfigsByPage: allWidgetConfigs,
-      }}
-    >
-      {children}
-    </DashboardLayoutContext.Provider>
+    <EditModeContext.Provider value={editModeValue}>
+      <SizePresetsContext.Provider value={sizePresetsValue}>
+        <LayoutContext.Provider value={layoutValue}>
+          {children}
+        </LayoutContext.Provider>
+      </SizePresetsContext.Provider>
+    </EditModeContext.Provider>
   );
 }
 
-export function useDashboardLayout() {
-  const ctx = useContext(DashboardLayoutContext);
-  if (!ctx) {
+// ── Granular hooks (prefer these for performance) ──────────────────────────────
+
+export function useEditMode() {
+  const ctx = useContext(EditModeContext);
+  if (!ctx) throw new Error('useEditMode must be used within DashboardLayoutProvider');
+  return ctx;
+}
+
+export function useSizePresets() {
+  const ctx = useContext(SizePresetsContext);
+  if (!ctx) throw new Error('useSizePresets must be used within DashboardLayoutProvider');
+  return ctx;
+}
+
+// ── Facade hook (backwards compatible) ─────────────────────────────────────────
+
+export function useDashboardLayout(): DashboardLayoutContextValue {
+  const layout = useContext(LayoutContext);
+  const editMode = useContext(EditModeContext);
+  const sizePresets = useContext(SizePresetsContext);
+  if (!layout || !editMode || !sizePresets) {
     throw new Error('useDashboardLayout must be used within DashboardLayoutProvider');
   }
-  return ctx;
+  return { ...layout, ...editMode, ...sizePresets };
 }

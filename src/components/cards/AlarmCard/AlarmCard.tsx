@@ -55,7 +55,7 @@ function alarmConfig(state: AlarmState) {
 }
 
 export function AlarmCard() {
-  const alarm = useSafeEntity('alarm_control_panel.alarmo');
+  const alarm = useSafeEntity('alarm_control_panel.home_alarm');
   const { helpers } = useHass();
   const [code, setCode] = useState('');
   const [expanded, setExpanded] = useState(false);
@@ -73,7 +73,7 @@ export function AlarmCard() {
     (helpers.callService as any)({
       domain: 'alarm_control_panel',
       service,
-      target: { entity_id: 'alarm_control_panel.alarmo' },
+      target: { entity_id: 'alarm_control_panel.home_alarm' },
       serviceData: { code },
     });
     setCode('');
@@ -83,7 +83,7 @@ export function AlarmCard() {
     helpers.callService({
       domain: 'alarm_control_panel',
       service: 'alarm_disarm',
-      target: { entity_id: 'alarm_control_panel.alarmo' },
+      target: { entity_id: 'alarm_control_panel.home_alarm' },
       serviceData: { code },
     });
     setCode('');

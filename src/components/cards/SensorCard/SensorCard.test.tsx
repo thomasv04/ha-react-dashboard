@@ -21,14 +21,25 @@ vi.mock('@/hooks/useSafeEntity', () => ({
   useSafeEntity: vi.fn(() => mockEntity),
 }));
 
-vi.mock('@/context/DashboardLayoutContext', () => ({
-  useDashboardLayout: vi.fn(() => ({
+vi.mock('@/context/WidgetConfigContext', () => ({
+  useWidgetConfig: vi.fn(() => ({
     getWidgetConfig: () => ({
       type: 'sensor',
-      entityId: 'sensor.temperature_chambre_temperature',
+      entityId: 'sensor.bedroom_temperature',
       name: 'Chambre',
     }),
   })),
+}));
+
+vi.mock('@/components/layout/DashboardGrid', () => ({
+  useWidgetId: () => 'sensor',
+}));
+
+vi.mock('@/components/ui/AnimatedNumber', () => ({
+  AnimatedNumber: ({ value, decimals = 0, suffix = '' }: { value: number; decimals?: number; suffix?: string }) => {
+    const display = decimals > 0 ? value.toFixed(decimals) : Math.round(value).toString();
+    return <span>{display}{suffix}</span>;
+  },
 }));
 
 import { SensorCard } from './SensorCard';
@@ -36,7 +47,7 @@ import { SensorCard } from './SensorCard';
 describe('SensorCard', () => {
   it('renders numeric sensor value', () => {
     render(<SensorCard />);
-    expect(screen.getByText('22.5')).toBeDefined();
+    expect(screen.getByText(/22\.5/)).toBeDefined();
     expect(screen.getByText(/chambre/i)).toBeDefined();
   });
 

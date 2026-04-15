@@ -38,7 +38,7 @@ export function ActivityBar() {
   const pills: Pill[] = [];
 
   // Alarm
-  const alarmState = entities?.['alarm_control_panel.alarmo']?.state;
+  const alarmState = entities?.['alarm_control_panel.home_alarm']?.state;
   if (alarmState) {
     const isArmed = alarmState !== 'disarmed';
     pills.push({
@@ -50,12 +50,12 @@ export function ActivityBar() {
     });
   }
 
-  // Pellet
-  const pelletState = entities?.['climate.pellet']?.state;
-  if (pelletState) {
-    const isOn = pelletState !== 'off';
+  // Heater
+  const heaterState = entities?.['climate.living_room']?.state;
+  if (heaterState) {
+    const isOn = heaterState !== 'off';
     pills.push({
-      id: 'pellet',
+      id: 'heater',
       icon: <Flame size={14} />,
       label: isOn ? 'Poêle allumé' : 'Poêle éteint',
       color: isOn ? 'text-orange-400' : 'text-white/40',
@@ -64,7 +64,7 @@ export function ActivityBar() {
   }
 
   // Battery solar
-  const battLevel = entities?.['sensor.solarflow_2400_ac_electric_level']?.state;
+  const battLevel = entities?.['sensor.battery_level']?.state;
   if (battLevel) {
     const lvl = Number(battLevel);
     let color = 'text-green-400';
@@ -87,7 +87,7 @@ export function ActivityBar() {
   }
 
   // Tempo couleur
-  const tempoCouleur = entities?.['sensor.rte_tempo_couleur_actuelle']?.state;
+  const tempoCouleur = entities?.['sensor.tempo_current_color']?.state;
   if (tempoCouleur) {
     const colorMap: Record<string, { color: string; bgColor: string }> = {
       Rouge: { color: 'text-red-400', bgColor: 'bg-red-400/10' },
@@ -106,7 +106,7 @@ export function ActivityBar() {
   }
 
   // Chambre temp
-  const chambreTemp = entities?.['sensor.temperature_chambre_temperature']?.state;
+  const chambreTemp = entities?.['sensor.bedroom_temperature']?.state;
   if (chambreTemp) {
     pills.push({
       id: 'chambre',

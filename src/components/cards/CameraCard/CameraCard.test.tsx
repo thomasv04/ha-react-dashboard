@@ -2,11 +2,15 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, test, expect } from 'vitest';
 
+vi.mock('@/context/WidgetConfigContext', () => ({
+  useWidgetConfig: vi.fn(() => ({ getWidgetConfig: () => undefined })),
+}));
+
 const callServiceMock = vi.fn();
 
 vi.mock('@hakit/core', () => ({
   useHass: (selector?: any) => {
-    const state = { entities: { 'input_select.camera_selecter': { state: undefined } }, helpers: { callService: callServiceMock } };
+    const state = { entities: { 'input_select.camera_selector': { state: undefined } }, helpers: { callService: callServiceMock } };
     return typeof selector === 'function' ? selector(state) : state;
   },
 }));

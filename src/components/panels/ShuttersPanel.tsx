@@ -6,16 +6,16 @@ import { Panel } from '@/components/layout/Panel';
 import { cn } from '@/lib/utils';
 
 const COVERS = [
-  { id: 'cover.volet_cuisine', label: 'Cuisine' },
-  { id: 'cover.volet_cellier', label: 'Cellier' },
-  { id: 'cover.volet_sam_1', label: 'Salle à manger 1' },
-  { id: 'cover.volet_sam_2', label: 'Salle à manger 2' },
-  { id: 'cover.volet_salon', label: 'Salon' },
-  { id: 'cover.volet_baie_salon', label: 'Baie salon' },
-  { id: 'cover.volet_chambre_invites', label: 'Ch. invités' },
-  { id: 'cover.volet_chambre', label: 'Chambre' },
-  { id: 'cover.volet_bureau', label: 'Bureau' },
-  { id: 'cover.volet_salle_de_bain', label: 'Salle de bain' },
+  { id: 'cover.kitchen', label: 'Cuisine' },
+  { id: 'cover.storage', label: 'Cellier' },
+  { id: 'cover.dining_room_1', label: 'Salle à manger 1' },
+  { id: 'cover.dining_room_2', label: 'Salle à manger 2' },
+  { id: 'cover.living_room', label: 'Salon' },
+  { id: 'cover.living_room_bay', label: 'Baie salon' },
+  { id: 'cover.guest_room', label: 'Ch. invités' },
+  { id: 'cover.bedroom', label: 'Chambre' },
+  { id: 'cover.office', label: 'Bureau' },
+  { id: 'cover.bathroom', label: 'Salle de bain' },
 ];
 
 const ALL_COVERS = COVERS.map(c => c.id);

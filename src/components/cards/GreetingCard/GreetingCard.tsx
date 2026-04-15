@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { GreetingCardConfig } from '@/types/widget-configs';
 
@@ -13,7 +13,7 @@ function getGreeting(h: number): string {
 
 /** Full-width header bar: greeting on the left, big clock on the right. */
 export function GreetingCard() {
-  const { getWidgetConfig } = useDashboardLayout();
+  const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<GreetingCardConfig>(widgetId || 'greeting');
   const locale = config?.locale ?? 'fr-FR';

@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion';
 import { Wind, Cloud, Sun, CloudRain, CloudSnow, Cloudy, CloudDrizzle } from 'lucide-react';
 import { useWeather } from '@hakit/core';
-import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { WeatherCardConfig } from '@/types/widget-configs';
+import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 
 function WeatherIcon({ condition, size = 32 }: { condition: string; size?: number }) {
   const cn = condition.toLowerCase();
@@ -38,12 +39,12 @@ const CONDITION_FR: Record<string, string> = {
 };
 
 export function WeatherCard() {
-  const { getWidgetConfig } = useDashboardLayout();
+  const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<WeatherCardConfig>(widgetId || 'weather');
-  const entityId = config?.entityId ?? 'weather.menneville';
+  const entityId = config?.entityId ?? 'weather.home';
 
-  const weather = useWeather(entityId as 'weather.menneville', { type: 'daily' });
+  const weather = useWeather(entityId as 'weather.home', { type: 'daily' });
 
   const temp = weather.attributes.temperature as number | undefined;
   const wind = weather.attributes.wind_speed as number | undefined;
@@ -65,7 +66,9 @@ export function WeatherCard() {
       {/* Main row */}
       <div className='flex items-start justify-between'>
         <div>
-          <div className='text-5xl font-light text-white tracking-tight'>{temp !== undefined ? `${temp}°` : '—'}</div>
+          <div className='text-5xl font-light tracking-tight text-white'>
+            {temp !== undefined ? <AnimatedNumber value={temp} decimals={1} suffix='°' /> : '—'}
+          </div>
           <div className='text-white/70 text-base mt-1 capitalize font-medium'>{label}.</div>
           {(todayHigh !== undefined || todayLow !== undefined) && (
             <div className='text-white/40 text-xs mt-1'>
@@ -74,34 +77,65 @@ export function WeatherCard() {
             </div>
           )}
         </div>
-        <WeatherIcon condition={weather.state} size={44} />
+        <motion.div
+          key={weather.state}
+          initial={{ scale: 0.8, opacity: 0, rotate: -20 }}
+          animate={{ scale: 1, opacity: 1, rotate: 0 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+          className='w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center'
+        >
+          <motion.div
+            animate={{ y: [0, -3, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <WeatherIcon condition={weather.state} size={32} />
+          </motion.div>
+        </motion.div>
       </div>
 
       {/* Wind */}
       {wind !== undefined && (
-        <div className='flex items-center gap-1.5 text-xs text-white/40'>
-          <Wind size={12} />
+        <motion.div
+          animate={{ scale: [1, 1.03, 1] }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          className='inline-flex items-center gap-1.5 text-xs text-white/40 bg-white/5 rounded-full px-3 py-1 w-fit'
+        >
+          <motion.div animate={{ rotate: [0, 15, -10, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}>
+            <Wind size={12} />
+          </motion.div>
           <span>
             {wind} {windUnit}
           </span>
-        </div>
+        </motion.div>
       )}
 
       {/* 4-day forecast */}
       {next4.length > 0 && (
         <>
-          <div className='h-px bg-white/6' />
+          <div className='h-px bg-gradient-to-r from-transparent via-white/15 to-transparent' />
           <div className='grid grid-cols-4 gap-1'>
-            {next4.map(day => {
+            {next4.map((day, i) => {
               const d = new Date(day.datetime);
               const dayName = DAYS_FR[d.getDay()];
               return (
-                <div key={day.datetime} className='flex flex-col items-center gap-1.5 py-1'>
-                  <span className='text-[11px] text-white/40 capitalize'>{dayName}</span>
-                  <WeatherIcon condition={day.condition ?? ''} size={16} />
-                  <span className='text-[11px] text-white/70 font-medium'>{day.temperature}°</span>
+                <motion.div
+                  key={day.datetime}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.1 + i * 0.06 }}
+                  className='flex flex-col items-center gap-1.5 py-1.5'
+                >
+                  <span className='text-[11px] text-white/40 uppercase tracking-wider font-medium'>{dayName}</span>
+                  <motion.div
+                    whileHover={{ scale: 1.15, backgroundColor: 'rgba(255,255,255,0.1)' }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                    className='w-8 h-8 rounded-full bg-white/5 flex items-center justify-center'
+                  >
+                    <WeatherIcon condition={day.condition ?? ''} size={16} />
+                  </motion.div>
+                  <span className='text-[11px] text-white/70 font-semibold'>{day.temperature}°</span>
                   {day.templow !== undefined && <span className='text-[10px] text-white/30'>{day.templow}°</span>}
-                </div>
+                </motion.div>
               );
             })}
           </div>

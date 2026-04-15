@@ -25,11 +25,19 @@ export function configRouter(db) {
   router.post('/', (req, res) => {
     try {
       const config = req.body;
-      if (!config || typeof config !== 'object') {
-        return res.status(400).json({ error: 'Invalid config' });
+      if (!config || typeof config !== 'object' || Array.isArray(config)) {
+        return res.status(400).json({ error: 'Invalid config: must be an object' });
       }
 
-      const version = config.version ?? 2;
+      // Basic structure validation
+      if (config.version !== undefined && typeof config.version !== 'number') {
+        return res.status(400).json({ error: 'Invalid config: version must be a number' });
+      }
+      if (config.pages !== undefined && !Array.isArray(config.pages)) {
+        return res.status(400).json({ error: 'Invalid config: pages must be an array' });
+      }
+
+      const version = typeof config.version === 'number' ? config.version : 2;
       const data = JSON.stringify(config);
 
       db.prepare(`

@@ -1,7 +1,7 @@
 import { LayoutGrid, Music, Settings, Plus, X, Monitor } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { usePages, type PageType } from '@/context/PageContext';
-import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { useEditMode } from '@/context/DashboardLayoutContext';
 import { useWallPanel } from '@/context/WallPanelContext';
 import { cn } from '@/lib/utils';
 import { resolveIcon } from '@/lib/lucide-icon-map';
@@ -17,7 +17,7 @@ const DEFAULT_ICONS: Record<PageType, LucideIcon> = {
 
 export function PageTabs() {
   const { pages, currentPageId, setCurrentPage, addPage, deletePage } = usePages();
-  const { isEditMode } = useDashboardLayout();
+  const { isEditMode } = useEditMode();
   const { isConfigured } = useWallPanel();
   const [showWpConfig, setShowWpConfig] = useState(false);
 

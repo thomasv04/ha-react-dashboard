@@ -3,7 +3,7 @@ import { Blinds, Lightbulb, Cpu, Flower2, Bell, ShieldHalf, Camera, type LucideI
 import { usePanel, type PanelId } from '@/context/PanelContext';
 import { cn } from '@/lib/utils';
 import { useHass } from '@hakit/core';
-import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { ShortcutsCardConfig } from '@/types/widget-configs';
 import { resolveIcon } from '@/lib/lucide-icon-map';
@@ -36,7 +36,7 @@ interface ResolvedShortcut {
 const DEFAULT_SHORTCUTS: ResolvedShortcut[] = [
   { id: 'volets', Icon: Blinds, label: 'Volets', accentBg: 'bg-sky-500/15 hover:bg-sky-500/25', accentText: 'text-sky-400' },
   { id: 'lumieres', Icon: Lightbulb, label: 'Lumières', accentBg: 'bg-yellow-500/15 hover:bg-yellow-500/25', accentText: 'text-yellow-400' },
-  { id: 'security', Icon: ShieldHalf, label: 'Sécurité', accentBg: 'bg-green-500/15 hover:bg-green-500/25', accentText: 'text-green-400', statusEntity: 'alarm_control_panel.alarmo' },
+  { id: 'security', Icon: ShieldHalf, label: 'Sécurité', accentBg: 'bg-green-500/15 hover:bg-green-500/25', accentText: 'text-green-400', statusEntity: 'alarm_control_panel.home_alarm' },
   { id: 'aspirateur', Icon: Cpu, label: 'Aspirateur', accentBg: 'bg-blue-500/15 hover:bg-blue-500/25', accentText: 'text-blue-400' },
   { id: 'flowers', Icon: Flower2, label: 'Plantes', accentBg: 'bg-emerald-500/15 hover:bg-emerald-500/25', accentText: 'text-emerald-400' },
   { id: 'notifications', Icon: Bell, label: 'Notifs', accentBg: 'bg-purple-500/15 hover:bg-purple-500/25', accentText: 'text-purple-400' },
@@ -61,7 +61,7 @@ function resolveShortcuts(config: ShortcutsCardConfig | undefined): ResolvedShor
 export function ShortcutsCard() {
   const { openPanel } = usePanel();
   const entities = useHass(s => s.entities);
-  const { getWidgetConfig } = useDashboardLayout();
+  const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<ShortcutsCardConfig>(widgetId || 'shortcuts');
   const shortcuts = resolveShortcuts(config);
@@ -89,18 +89,38 @@ export function ShortcutsCard() {
           return (
             <motion.button
               key={s.id ?? i}
-              whileHover={{ scale: 1.03 }}
+              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ type: 'spring', stiffness: 350, damping: 25, delay: i * 0.05 }}
+              whileHover={{ scale: 1.03, y: -1 }}
               whileTap={{ scale: 0.96 }}
               onClick={() => s.id !== null && openPanel(s.id)}
               className={cn(
-                'rounded-2xl px-4 py-3 flex items-center gap-3 transition-colors text-left border border-transparent',
+                'rounded-2xl px-4 py-3 flex items-center gap-3 text-left transition-all duration-200',
+                'border border-white/8 hover:border-white/15',
                 s.accentBg
               )}
             >
-              <span className={s.accentText}><s.Icon size={22} /></span>
+              <motion.div
+                className={cn('w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/10')}
+                whileHover={{ rotate: [0, -8, 8, 0], scale: 1.1 }}
+                whileTap={{ scale: 0.9, rotate: 0 }}
+                transition={{ duration: 0.4 }}
+              >
+                <s.Icon size={18} className={s.accentText} />
+              </motion.div>
               <div className='flex flex-col min-w-0'>
                 <span className='text-white/90 text-sm font-medium leading-tight'>{s.label}</span>
-                {entityState && <span className={cn('text-[10px] leading-tight mt-0.5', s.accentText)}>{entityState}</span>}
+                {entityState && (
+                  <motion.span
+                    initial={{ opacity: 0, x: -4 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                    className={cn('text-[10px] leading-tight mt-0.5', s.accentText)}
+                  >
+                    {entityState}
+                  </motion.span>
+                )}
               </div>
             </motion.button>
           );

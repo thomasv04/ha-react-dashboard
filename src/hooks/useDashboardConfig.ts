@@ -8,6 +8,7 @@ import {
 import { DEFAULT_WIDGET_CONFIGS, type WidgetConfigs } from '@/types/widget-configs';
 import { DEFAULT_PAGES, type Page } from '@/context/PageContext';
 import { DEFAULT_WALLPANEL_CONFIG, type WallPanelConfig } from '@/types/wallpanel';
+import { useToast } from '@/context/ToastContext';
 
 // ── Migration v1 → v2 ─────────────────────────────────────────────────────────
 function migrateConfig(data: unknown): DashboardConfigV2 {
@@ -57,6 +58,8 @@ export function useDashboardConfig() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const { addToast } = useToast();
 
   // Load config from server
   useEffect(() => {
@@ -79,7 +82,11 @@ export function useDashboardConfig() {
           }
         }
       })
-      .catch(err => console.error("Erreur de chargement de la config:", err))
+      .catch(err => {
+        console.error("Erreur de chargement de la config:", err);
+        setError(err instanceof Error ? err : new Error(String(err)));
+        addToast({ title: 'Erreur', description: 'Impossible de charger la configuration', sound: false });
+      })
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -100,10 +107,11 @@ export function useDashboardConfig() {
       }
     } catch (err) {
       console.error("Erreur lors de la sauvegarde:", err);
+      addToast({ title: 'Erreur', description: 'Impossible de sauvegarder la configuration', sound: false });
     } finally {
       setIsSaving(false);
     }
   }, []);
 
-  return { pages, allLayouts, allWidgetConfigs, wallPanelConfig, wallPanelLayout, isLoading, isSaving, saveConfig };
+  return { pages, allLayouts, allWidgetConfigs, wallPanelConfig, wallPanelLayout, isLoading, isSaving, error, saveConfig };
 }

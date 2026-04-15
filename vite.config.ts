@@ -21,6 +21,9 @@ const VITE_FOLDER_NAME = process.env.VITE_FOLDER_NAME || 'community/ha-react-das
 // would point to HA itself instead of the add-on container.
 const basePath = isAddon ? './' : useRelativePaths ? './' : `/local/${VITE_FOLDER_NAME}/`;
 
+// Mock-HA mode: replace @hakit/* with local mocks for E2E testing
+const isMockHA = process.env.VITE_MOCK_HA === 'true';
+
 // https://vite.dev/config/
 export default defineConfig({
   base: isHACSPanel ? './' : basePath,
@@ -33,18 +36,28 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // When VITE_MOCK_HA=true, replace @hakit packages with local mocks
+      // so the dashboard renders with fake entities (no real HA required).
+      ...(isMockHA ? {
+        '@hakit/core': path.resolve(__dirname, 'tests/mocks/hakit-core.tsx'),
+        '@hakit/components': path.resolve(__dirname, 'tests/mocks/hakit-components.tsx'),
+      } : {}),
     },
   },
   optimizeDeps: {
     include: ['react-grid-layout'],
   },
   server: {
-    // AJOUTE CECI : Vite va rediriger toutes les requêtes /api vers ton serveur Node local
+    // Proxy API requests to the Express server (configurable port for E2E tests)
     proxy: {
       '/api': {
-        target: 'http://localhost:8099',
+        target: `http://localhost:${process.env.VITE_API_PORT || '8099'}`,
         changeOrigin: true,
-      }
+      },
+      '/uploads': {
+        target: `http://localhost:${process.env.VITE_API_PORT || '8099'}`,
+        changeOrigin: true,
+      },
     }
   },
   build: isHACSPanel

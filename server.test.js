@@ -231,3 +231,59 @@ describe('PUT /api/settings/current', () => {
   });
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// haAuthMiddleware
+// ─────────────────────────────────────────────────────────────────────────────
+describe('haAuthMiddleware', () => {
+  it('mode ingress : refuse si le header x-ingress-path est absent', async () => {
+    const originalMode = process.env.HA_AUTH_MODE;
+    process.env.HA_AUTH_MODE = 'ingress';
+
+    const { haAuthMiddleware } = await import('./server/haAuth.js');
+    const app = express();
+    app.use(haAuthMiddleware);
+    app.get('/test', (_req, res) => res.json({ ok: true }));
+
+    const res = await request(app).get('/test');
+    expect(res.status).toBe(401);
+    expect(res.body.error).toBe('Missing ingress header');
+
+    process.env.HA_AUTH_MODE = originalMode;
+  });
+
+  it('mode ingress : accepte si le header x-ingress-path est présent', async () => {
+    const originalMode = process.env.HA_AUTH_MODE;
+    process.env.HA_AUTH_MODE = 'ingress';
+
+    const { haAuthMiddleware } = await import('./server/haAuth.js');
+    const app = express();
+    app.use(haAuthMiddleware);
+    app.get('/test', (_req, res) => res.json({ ok: true }));
+
+    const res = await request(app).get('/test').set('x-ingress-path', '/ingress/abc');
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+
+    process.env.HA_AUTH_MODE = originalMode;
+  });
+
+  it('mode disabled en production : renvoie 500', async () => {
+    const originalMode = process.env.HA_AUTH_MODE;
+    const originalEnv = process.env.NODE_ENV;
+    process.env.HA_AUTH_MODE = 'disabled';
+    process.env.NODE_ENV = 'production';
+
+    const { haAuthMiddleware } = await import('./server/haAuth.js');
+    const app = express();
+    app.use(haAuthMiddleware);
+    app.get('/test', (_req, res) => res.json({ ok: true }));
+
+    const res = await request(app).get('/test');
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('Auth disabled in production is not allowed');
+
+    process.env.HA_AUTH_MODE = originalMode;
+    process.env.NODE_ENV = originalEnv;
+  });
+});
+

@@ -4,25 +4,25 @@ import { vi, describe, it, expect } from 'vitest';
 
 vi.mock('@/hooks/useSafeEntity', () => ({
   useSafeEntity: vi.fn((id: string) => {
-    if (id === 'person.thomas') return {
+    if (id === 'person.user_1') return {
       state: 'home',
-      attributes: { friendly_name: 'Thomas', entity_picture: null },
+      attributes: { friendly_name: 'User 1', entity_picture: null },
     };
-    if (id === 'person.marie') return {
+    if (id === 'person.user_2') return {
       state: 'not_home',
-      attributes: { friendly_name: 'Marie', entity_picture: null },
+      attributes: { friendly_name: 'User 2', entity_picture: null },
     };
     return null;
   }),
 }));
 
-vi.mock('@/context/DashboardLayoutContext', () => ({
-  useDashboardLayout: vi.fn(() => ({
+vi.mock('@/context/WidgetConfigContext', () => ({
+  useWidgetConfig: vi.fn(() => ({
     getWidgetConfig: () => ({
       type: 'person',
       persons: [
-        { entityId: 'person.thomas' },
-        { entityId: 'person.marie' },
+        { entityId: 'person.user_1' },
+        { entityId: 'person.user_2' },
       ],
     }),
   })),
@@ -33,8 +33,8 @@ import { PersonStatusCard } from './PersonStatusCard';
 describe('PersonStatusCard', () => {
   it('renders person names', () => {
     render(<PersonStatusCard />);
-    expect(screen.getByText('Thomas')).toBeDefined();
-    expect(screen.getByText('Marie')).toBeDefined();
+    expect(screen.getByText('User 1')).toBeDefined();
+    expect(screen.getByText('User 2')).toBeDefined();
   });
 
   it('shows MAISON for home state', () => {
@@ -48,8 +48,8 @@ describe('PersonStatusCard', () => {
   });
 
   it('renders empty state when no persons configured', async () => {
-    const { useDashboardLayout } = await import('@/context/DashboardLayoutContext');
-    vi.mocked(useDashboardLayout).mockReturnValueOnce({
+    const { useWidgetConfig } = await import('@/context/WidgetConfigContext');
+    vi.mocked(useWidgetConfig).mockReturnValueOnce({
       getWidgetConfig: () => ({ type: 'person', persons: [] }),
     } as any);
     render(<PersonStatusCard />);

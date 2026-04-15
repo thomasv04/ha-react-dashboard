@@ -48,6 +48,17 @@ export function initDB(dbPath) {
     )
   `);
 
+  // ── Table : images uploadées (fond d'écran) ──────────────────────────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS uploaded_images (
+      filename TEXT PRIMARY KEY,
+      original_name TEXT NOT NULL,
+      mime_type TEXT NOT NULL,
+      size INTEGER NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
   // ── Migration depuis fichier JSON (si le fichier existe et la DB est vide) ──
   // Pas de migration pour les DB en mémoire (tests)
   if (dbPath !== ':memory:') {
@@ -63,7 +74,8 @@ export function initDB(dbPath) {
  * @param {import('better-sqlite3').Database} db
  */
 function migrateFromJSON(db) {
-  const configPath = process.env.OPTIONS_FILE || './dashboard_config.json';
+  const configPath = process.env.OPTIONS_FILE
+    || (fs.existsSync('./dashboard_config.json') ? './dashboard_config.json' : './dashboard_config.example.json');
   if (!fs.existsSync(configPath)) return;
 
   const existing = db.prepare('SELECT COUNT(*) as count FROM dashboard_config').get();

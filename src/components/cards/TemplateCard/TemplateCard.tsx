@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useTemplate } from '@/hooks/useTemplate';
 import type { TemplateCardConfig } from '@/types/widget-configs';
@@ -27,7 +27,7 @@ function resolveIconName(raw: string): string {
 }
 
 export function TemplateCard() {
-  const { getWidgetConfig } = useDashboardLayout();
+  const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<TemplateCardConfig>(widgetId || 'template');
 

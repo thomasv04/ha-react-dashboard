@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { User } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
-import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { PersonStatusConfig, PersonEntry } from '@/types/widget-configs';
 import { cn } from '@/lib/utils';
@@ -112,7 +112,7 @@ function PersonPill({ entry, haBaseUrl }: { entry: PersonEntry; haBaseUrl: strin
 
 // ── Main widget ────────────────────────────────────────────────────────────────
 export function PersonStatusCard() {
-  const { getWidgetConfig } = useDashboardLayout();
+  const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<PersonStatusConfig>(widgetId || 'person');
   const persons = config?.persons ?? [];

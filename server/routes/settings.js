@@ -6,9 +6,15 @@ import { Router } from 'express';
 export function settingsRouter(db) {
   const router = Router();
 
+  // Sanitize device_id: alphanumeric + dash/underscore, max 128 chars
+  function sanitizeDeviceId(raw) {
+    if (typeof raw === 'string' && /^[\w\-]{1,128}$/.test(raw)) return raw;
+    return 'default';
+  }
+
   // GET /api/settings/current?device_id=xxx
   router.get('/current', (req, res) => {
-    const deviceId = req.query.device_id || 'default';
+    const deviceId = sanitizeDeviceId(req.query.device_id);
 
     try {
       const row = db.prepare('SELECT * FROM device_settings WHERE device_id = ?').get(deviceId);
@@ -22,13 +28,19 @@ export function settingsRouter(db) {
 
   // PUT /api/settings/current — Sauvegarder (avec revision tracking)
   router.put('/current', (req, res) => {
-    const { device_id = 'default', data, expected_revision } = req.body;
+    const rawDeviceId = req.body?.device_id;
+    const sanitizedDeviceId = sanitizeDeviceId(rawDeviceId);
+    const { data, expected_revision } = req.body ?? {};
+
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      return res.status(400).json({ error: 'Invalid settings data' });
+    }
 
     try {
       // Vérifier la révision pour éviter les conflits
       const current = db
         .prepare('SELECT revision FROM device_settings WHERE device_id = ?')
-        .get(device_id);
+        .get(sanitizedDeviceId);
 
       if (current && expected_revision !== undefined && current.revision !== expected_revision) {
         return res.status(409).json({
@@ -48,7 +60,7 @@ export function settingsRouter(db) {
           revision = excluded.revision,
           updated_at = datetime('now')
       `).run(
-        device_id,
+        sanitizedDeviceId,
         req.headers['x-ha-user-id'] || null,
         JSON.stringify(data),
         newRevision,

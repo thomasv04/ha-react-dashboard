@@ -3,10 +3,10 @@ import { Panel } from '@/components/layout/Panel';
 import { AlarmCard } from '@/components/cards/AlarmCard/AlarmCard';
 
 const CAMERAS = [
-  { id: 'camera.sonnette_frigate', label: 'Sonnette' },
-  { id: 'camera.cuisine', label: 'Cuisine' },
-  { id: 'camera.salon_frigate', label: 'Salon' },
-  { id: 'camera.couloir_frigate', label: 'Couloir' },
+  { id: 'camera.front_door', label: 'Entrée' },
+  { id: 'camera.kitchen', label: 'Cuisine' },
+  { id: 'camera.living_room', label: 'Salon' },
+  { id: 'camera.hallway', label: 'Couloir' },
 ];
 
 export function SecurityPanel() {

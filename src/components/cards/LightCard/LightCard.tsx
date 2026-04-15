@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Lightbulb } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
-import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { LightCardConfig } from '@/types/widget-configs';
 import { cn } from '@/lib/utils';
@@ -24,7 +24,7 @@ function useDebouncedCallback<T extends (...args: never[]) => void>(
 }
 
 export function LightCard() {
-  const { getWidgetConfig } = useDashboardLayout();
+  const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<LightCardConfig>(widgetId || 'light');
   const entityId = config?.entityId ?? 'light.salon';

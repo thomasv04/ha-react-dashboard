@@ -5,7 +5,7 @@ import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { cn } from '@/lib/utils';
 
 export function PelletCard() {
-  const pellet = useSafeEntity('climate.pellet');
+  const pellet = useSafeEntity('climate.living_room');
   const { helpers } = useHass();
   if (!pellet) return null;
 
@@ -19,7 +19,7 @@ export function PelletCard() {
     helpers.callService({
       domain: 'climate',
       service: 'set_temperature',
-      target: { entity_id: 'climate.pellet' },
+      target: { entity_id: 'climate.living_room' },
       serviceData: { temperature: targetTemp + delta },
     });
   }
@@ -28,7 +28,7 @@ export function PelletCard() {
     helpers.callService({
       domain: 'climate',
       service: isOn ? 'turn_off' : 'turn_on',
-      target: { entity_id: 'climate.pellet' },
+      target: { entity_id: 'climate.living_room' },
     });
   }
 

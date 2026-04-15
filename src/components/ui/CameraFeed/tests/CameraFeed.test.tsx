@@ -24,7 +24,7 @@ describe('CameraFeed', () => {
       mjpeg: { url: undefined, shouldRenderMJPEG: false },
     });
     const onProtocol = vi.fn();
-    const { container } = render(<CameraFeed entityId='camera.salon_frigate' onProtocol={onProtocol} />);
+    const { container } = render(<CameraFeed entityId='camera.living_room' onProtocol={onProtocol} />);
     expect(container.querySelector('video')).toBeInTheDocument();
     expect(container.querySelector('img')).not.toBeInTheDocument();
   });
@@ -32,13 +32,13 @@ describe('CameraFeed', () => {
   it('affiche un flux MJPEG quand shouldRenderMJPEG est true', () => {
     mockUseCamera.mockReturnValue({
       stream: { url: undefined, loading: false, error: undefined },
-      mjpeg: { url: 'https://ha/api/camera_proxy_stream/camera.cuisine?token=abc', shouldRenderMJPEG: true },
+      mjpeg: { url: 'https://ha/api/camera_proxy_stream/camera.kitchen?token=abc', shouldRenderMJPEG: true },
     });
     const onProtocol = vi.fn();
-    const { container } = render(<CameraFeed entityId='camera.cuisine' onProtocol={onProtocol} />);
+    const { container } = render(<CameraFeed entityId='camera.kitchen' onProtocol={onProtocol} />);
     const img = container.querySelector('img');
     expect(img).toBeInTheDocument();
-    expect(img).toHaveAttribute('src', 'https://ha/api/camera_proxy_stream/camera.cuisine?token=abc');
+    expect(img).toHaveAttribute('src', 'https://ha/api/camera_proxy_stream/camera.kitchen?token=abc');
     expect(onProtocol).toHaveBeenCalledWith('MJPEG');
   });
 
@@ -57,7 +57,7 @@ describe('CameraFeed', () => {
       stream: { url: 'https://ha/api/hls/token/master_playlist.m3u8', loading: false, error: undefined },
       mjpeg: { url: undefined, shouldRenderMJPEG: false },
     });
-    expect(() => render(<CameraFeed entityId='camera.salon_frigate' />)).not.toThrow();
+    expect(() => render(<CameraFeed entityId='camera.living_room' />)).not.toThrow();
   });
 
   it('utilise HLS même si frontend_stream_types inclut web_rtc', () => {
@@ -66,7 +66,7 @@ describe('CameraFeed', () => {
       stream: { url: 'https://ha/api/hls/token/master_playlist.m3u8', loading: false, error: undefined },
       mjpeg: { url: undefined, shouldRenderMJPEG: false },
     });
-    const { container } = render(<CameraFeed entityId='camera.sonnette_frigate' />);
+    const { container } = render(<CameraFeed entityId='camera.front_door' />);
     expect(container.querySelector('video')).toBeInTheDocument();
     expect(container.querySelector('[data-testid="webrtc-feed"]')).not.toBeInTheDocument();
   });

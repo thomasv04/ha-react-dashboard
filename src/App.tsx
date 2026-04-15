@@ -6,8 +6,19 @@ import { ToastContainer } from '@/components/ui/Toast/components/Toast';
 import { useHAToast } from '@/hooks/useHAToast';
 import Dashboard from './Dashboard';
 import { ModalContainer } from './components/ui/Modal/composents/Modal';
-import { ThemeContextProvider } from '@/context/ThemeContext';
+import { ThemeContextProvider, useTheme } from '@/context/ThemeContext';
 import { BackgroundLayer } from '@/components/layout/BackgroundLayer';
+import { MotionConfig } from 'framer-motion';
+import type { ReactNode } from 'react';
+
+function MotionConfigBridge({ children }: { children: ReactNode }) {
+  const { perfSettings } = useTheme();
+  return (
+    <MotionConfig reducedMotion={perfSettings.reduceAnimations ? 'always' : 'user'}>
+      {children}
+    </MotionConfig>
+  );
+}
 
 /** Mounts the HA event subscription inside the providers */
 function HAToastBridge() {
@@ -54,6 +65,7 @@ function App({ hassUrl: propHassUrl, hassToken: propHassToken }: AppProps = {}) 
       <ThemeProvider />
       <ThemeContextProvider>
         <BackgroundLayer />
+        <MotionConfigBridge>
         <ToastProvider>
           <ModalProvider>
             <HAToastBridge />
@@ -62,6 +74,7 @@ function App({ hassUrl: propHassUrl, hassToken: propHassToken }: AppProps = {}) 
             <ModalContainer />
           </ModalProvider>
         </ToastProvider>
+        </MotionConfigBridge>
       </ThemeContextProvider>
     </HassConnect>
   );

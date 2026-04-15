@@ -31,6 +31,21 @@
   backdrop-filter: none !important;
 }
 
+/* ── Performance modes ──────────────────────────────────────────────────────── */
+
+/* Reduce blur: drop backdrop-filter to minimal value on all glass elements */
+.perf-reduce-blur .gc,
+.perf-reduce-blur .gc-light {
+  -webkit-backdrop-filter: blur(4px) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* Disable shadows: remove box-shadow GPU compositing */
+.perf-no-shadows .gc,
+.perf-no-shadows .gc-light {
+  box-shadow: none !important;
+}
+
 #root {
   width: 100%;
   height: 100%;

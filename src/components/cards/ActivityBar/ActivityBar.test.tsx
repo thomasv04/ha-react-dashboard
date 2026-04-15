@@ -2,16 +2,20 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { vi, test, expect } from 'vitest';
 
+vi.mock('@/context/WidgetConfigContext', () => ({
+  useWidgetConfig: vi.fn(() => ({ getWidgetConfig: () => undefined })),
+}));
+
 vi.mock('@hakit/core', () => ({
   useHass: (selector?: any) => {
     const state = {
       entities: {
-        'alarm_control_panel.alarmo': { state: 'armed' },
-        'climate.pellet': { state: 'on' },
-        'sensor.solarflow_2400_ac_electric_level': { state: '50' },
-        'sensor.rte_tempo_couleur_actuelle': { state: 'Rouge' },
-        'sensor.temperature_chambre_temperature': { state: '19.5' },
-        'person.thomas': { attributes: { friendly_name: 'Thomas', entity_picture: '/local/avatar.jpg' }, state: 'home' },
+        'alarm_control_panel.home_alarm': { state: 'armed' },
+        'climate.living_room': { state: 'on' },
+        'sensor.battery_level': { state: '50' },
+        'sensor.tempo_current_color': { state: 'Rouge' },
+        'sensor.bedroom_temperature': { state: '19.5' },
+        'person.user_1': { attributes: { friendly_name: 'User 1', entity_picture: '/local/avatar.jpg' }, state: 'home' },
       },
       connection: { socket: { url: 'ws://localhost:8123/api/websocket' } },
     };

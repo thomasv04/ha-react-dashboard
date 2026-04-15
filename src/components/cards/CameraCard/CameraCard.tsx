@@ -4,7 +4,7 @@ import { useHass } from '@hakit/core';
 import { CameraFeed } from '@/components/ui/CameraFeed/components/CameraFeed';
 import type { StreamProtocol } from '@/components/ui/CameraFeed/components/CameraFeed';
 import { cn } from '@/lib/utils';
-import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { CameraCardConfig } from '@/types/widget-configs';
 
@@ -14,18 +14,18 @@ interface Cam {
 }
 
 const DEFAULT_CAMERAS: Cam[] = [
-  { entityId: 'camera.sonnette_frigate', name: 'Sonnette' },
-  { entityId: 'camera.cuisine', name: 'Cuisine' },
-  { entityId: 'camera.salon_frigate', name: 'Salon' },
-  { entityId: 'camera.couloir_frigate', name: 'Couloir' },
+  { entityId: 'camera.front_door', name: 'Entrée' },
+  { entityId: 'camera.kitchen', name: 'Cuisine' },
+  { entityId: 'camera.living_room', name: 'Salon' },
+  { entityId: 'camera.hallway', name: 'Couloir' },
 ];
 
 export function CameraCard() {
-  const { getWidgetConfig } = useDashboardLayout();
+  const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<CameraCardConfig>(widgetId || 'camera');
   const cameras: Cam[] = config?.cameras?.length ? config.cameras : DEFAULT_CAMERAS;
-  const selectorEntity = config?.selectorEntity ?? 'input_select.camera_selecter';
+  const selectorEntity = config?.selectorEntity ?? 'input_select.camera_selector';
 
   const { helpers } = useHass();
   const entities = useHass(s => s.entities);

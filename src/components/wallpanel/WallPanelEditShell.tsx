@@ -6,6 +6,7 @@ import { PageProvider, type Page } from '@/context/PageContext';
 import {
   DashboardLayoutProvider,
   useDashboardLayout,
+  useEditMode,
 } from '@/context/DashboardLayoutContext';
 import { DashboardGrid, GridItem } from '@/components/layout/DashboardGrid';
 import { AddWidgetModal } from '@/components/layout/AddWidgetModal';
@@ -50,7 +51,8 @@ const WALLPANEL_PAGES: Page[] = [
  *   - useWallPanel()       → outer context to persist the result
  */
 function WallPanelEditActions() {
-  const { allLayouts, setEditMode } = useDashboardLayout();
+  const { allLayouts } = useDashboardLayout();
+  const { setEditMode } = useEditMode();
   const { exitWallPanelEditMode, setWallPanelLayout } = useWallPanel();
   const [showAddModal, setShowAddModal] = useState(false);
 

@@ -3,21 +3,22 @@ import { motion } from 'framer-motion';
 import { Blinds, ChevronUp, ChevronDown, Square } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
-import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { CoverCardConfig } from '@/types/widget-configs';
 import { cn } from '@/lib/utils';
 
 export function CoverCard() {
-  const { getWidgetConfig } = useDashboardLayout();
+  const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<CoverCardConfig>(widgetId || 'cover');
-  const entityId = config?.entityId ?? 'cover.volet_salon';
+  const entityId = config?.entityId ?? 'cover.living_room';
 
   const entity = useSafeEntity(entityId);
   const { helpers } = useHass();
   const sliderRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [dragPosition, setDragPosition] = useState<number | null>(null);
 
   if (!entity) {
     return (
@@ -78,17 +79,21 @@ export function CoverCard() {
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!isDragging || !sliderRef.current) return;
     const rect = sliderRef.current.getBoundingClientRect();
-    // Top = 100% (open), bottom = 0% (closed)
     const pct = Math.max(0, Math.min(100, ((rect.bottom - e.clientY) / rect.height) * 100));
-    setPosition(pct);
+    setDragPosition(pct);
   }, [isDragging]);
 
   const handlePointerUp = useCallback(() => {
+    if (dragPosition !== null) {
+      setPosition(dragPosition);
+      setDragPosition(null);
+    }
     setIsDragging(false);
-  }, []);
+  }, [dragPosition]);
 
   // HA: position 100 = open, 0 = closed — bar shows the "closed" portion from top
-  const closedPercent = 100 - position;
+  const displayPosition = dragPosition ?? position;
+  const closedPercent = 100 - displayPosition;
 
   const stateLabel =
     state === 'open' ? 'Ouvert' :
@@ -139,7 +144,7 @@ export function CoverCard() {
         {/* Position label */}
         <div className="absolute inset-0 flex items-center justify-center">
           <span className="text-white font-bold text-lg drop-shadow-lg">
-            {position}%
+            {Math.round(displayPosition)}%
           </span>
         </div>
       </div>

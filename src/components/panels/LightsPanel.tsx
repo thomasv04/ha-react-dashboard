@@ -7,7 +7,7 @@ import { Slider } from '@/components/ui/Slider/components/slider';
 import { cn } from '@/lib/utils';
 
 const LIGHTS = [
-  { id: 'light.bandeau_led_cuisine', label: 'Bandeau LEDs Cuisine' },
+  { id: 'light.kitchen', label: 'Cuisine' },
   // Ajouter d'autres lumières ici
 ];
 
