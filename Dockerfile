@@ -18,14 +18,11 @@ COPY . .
 RUN VITE_ADDON=true npm run build
 
 # ────────────────────────────────────────────────────────────
-# Stage 2 — Production: Node.js server + jq
+# Stage 2 — Production: Node.js + Express + SQLite
 # ────────────────────────────────────────────────────────────
 FROM node:20-alpine
 
 WORKDIR /app
-
-# Install jq for parsing /data/options.json and bash for run.sh
-RUN apk add --no-cache jq bash
 
 # Install ONLY production dependencies (Express + SQLite)
 COPY package*.json ./
@@ -38,12 +35,12 @@ COPY server/ ./server/
 # Créer le dossier data pour SQLite
 RUN mkdir -p /data
 
-# Variable d'environnement pour le chemin de la DB
+# Environment variables
 ENV DB_PATH=/data/dashboard.db
-
-# Copy the startup script
-COPY rootfs/run.sh /run.sh
-RUN chmod +x /run.sh
+ENV NODE_ENV=production
+# Enable HA auth middleware in ingress mode (SUPERVISOR_TOKEN injected by HA)
+ENV HA_AUTH=true
+ENV HA_AUTH_MODE=ingress
 
 # Copy React build output from Stage 1
 COPY --from=builder /app/dist /app/dist
@@ -54,5 +51,4 @@ EXPOSE 8099
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget --quiet --tries=1 --spider http://localhost:8099/ || exit 1
 
-# Start the run script
-CMD [ "/run.sh" ]
+CMD [ "node", "server.js" ]
