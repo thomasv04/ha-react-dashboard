@@ -25,6 +25,7 @@ import { WIDGET_COMPONENTS } from '@/config/widget-registry';
 
 import { EditButton } from '@/components/dashboard/EditButton';
 import { ActivePanel } from '@/components/dashboard/ActivePanel';
+import { DashboardEmptyState } from '@/components/dashboard/DashboardEmptyState';
 
 /**
  * Watcher d'inactivité — doit être monté à l'intérieur du WallPanelProvider
@@ -82,6 +83,8 @@ function DashboardContent() {
               );
             })}
           </DashboardGrid>
+
+          {widgets.length === 0 && <DashboardEmptyState />}
         </div>
 
         {/* Bouton d'édition admin (fixe, top-right) */}

@@ -2,6 +2,9 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { X, Search } from 'lucide-react';
 import { useDashboardLayout, type GridWidget } from '@/context/DashboardLayoutContext';
+import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import type { WidgetConfig } from '@/types/widget-configs';
+import { DEFAULT_WIDGET_CONFIGS } from '@/types/widget-configs';
 import { cn } from '@/lib/utils';
 import { WIDGET_META, CATEGORIES, type Category } from './widget-meta';
 import { useI18n } from '@/i18n';
@@ -15,6 +18,7 @@ interface AddWidgetModalProps {
 export function AddWidgetModal({ onClose }: AddWidgetModalProps) {
   const { t } = useI18n();
   const { addWidgetByType } = useDashboardLayout();
+  const { setEditingWidgetId, updateWidgetConfig } = useWidgetConfig();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<Category>('all');
   const [selected, setSelected] = useState<GridWidget['type'] | null>(null);
@@ -30,9 +34,14 @@ export function AddWidgetModal({ onClose }: AddWidgetModalProps) {
 
   const selectedMeta = selected ? (WIDGET_META.find(m => m.type === selected) ?? null) : null;
 
-  const handleAdd = (type: GridWidget['type']) => {
-    addWidgetByType(type);
+  const handleAdd = (type: GridWidget['type'], entityId?: string, entityConfigKey?: string) => {
+    const id = addWidgetByType(type);
+    if (id && entityId && entityConfigKey) {
+      const defaultCfg = (DEFAULT_WIDGET_CONFIGS as Record<string, WidgetConfig>)[type] ?? {};
+      updateWidgetConfig(id, { ...defaultCfg, [entityConfigKey]: entityId } as WidgetConfig);
+    }
     onClose();
+    if (id) setEditingWidgetId(id);
   };
 
   return (

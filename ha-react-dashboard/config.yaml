@@ -1,5 +1,5 @@
 name: 'HA React Dashboard'
-version: '2.0.11'
+version: '2.0.12'
 slug: 'ha-react-dashboard'
 description: 'Responsive React-based dashboard for Home Assistant with drag-and-drop widgets'
 url: 'https://github.com/thomasv04/ha-react-dashboard'

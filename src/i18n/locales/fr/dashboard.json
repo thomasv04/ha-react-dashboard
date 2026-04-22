@@ -4,6 +4,10 @@
   "saved": "Sauvegardé !",
   "addWidget": "Ajouter un widget",
   "noWidgets": "Aucun widget sur cette page",
+  "emptyState": {
+    "title": "Votre tableau de bord est prêt",
+    "subtitle": "Personnalisez votre espace en ajoutant vos premiers widgets."
+  },
   "loading": "Chargement de la configuration...",
   "pages": {
     "home": "Accueil",

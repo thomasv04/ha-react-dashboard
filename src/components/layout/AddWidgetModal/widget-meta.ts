@@ -67,6 +67,10 @@ export interface WidgetMeta {
   category: Category;
   icon: React.ComponentType<{ size?: number; className?: string; color?: string }>;
   color: string;
+  /** If set, show entity picker step before adding (filters HA entities by this domain) */
+  entityDomain?: string;
+  /** Config key to set with the chosen entity id (default: 'entityId') */
+  entityConfigKey?: string;
 }
 
 export const WIDGET_META: WidgetMeta[] = [
@@ -77,6 +81,7 @@ export const WIDGET_META: WidgetMeta[] = [
     category: 'sensors',
     icon: Gauge,
     color: '#3b82f6',
+    entityDomain: 'sensor',
   },
   {
     type: 'light',
@@ -85,6 +90,7 @@ export const WIDGET_META: WidgetMeta[] = [
     category: 'lights',
     icon: Lightbulb,
     color: '#eab308',
+    entityDomain: 'light',
   },
   {
     type: 'weather',
@@ -93,6 +99,7 @@ export const WIDGET_META: WidgetMeta[] = [
     category: 'climate',
     icon: Cloud,
     color: '#0ea5e9',
+    entityDomain: 'weather',
   },
   {
     type: 'thermostat',
@@ -101,6 +108,7 @@ export const WIDGET_META: WidgetMeta[] = [
     category: 'climate',
     icon: Thermometer,
     color: '#f97316',
+    entityDomain: 'climate',
   },
   {
     type: 'energy',
@@ -149,6 +157,7 @@ export const WIDGET_META: WidgetMeta[] = [
     category: 'home',
     icon: ArrowUpDown,
     color: '#64748b',
+    entityDomain: 'cover',
   },
   {
     type: 'person',
@@ -189,6 +198,7 @@ export const WIDGET_META: WidgetMeta[] = [
     category: 'home',
     icon: Workflow,
     color: '#10b981',
+    entityDomain: 'automation',
   },
   {
     type: 'media_player',
@@ -197,6 +207,7 @@ export const WIDGET_META: WidgetMeta[] = [
     category: 'home',
     icon: Music,
     color: '#8b5cf6',
+    entityDomain: 'media_player',
   },
 ];
 
