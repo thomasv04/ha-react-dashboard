@@ -6,6 +6,46 @@
 
 /* shadcn/ui will append its CSS variables below this line after `npx shadcn init` */
 
+/* ── CSS Grid dashboard styles ──────────────────────────────────────────────── */
+
+/* Drop target placeholder - valid position */
+.grid-placeholder {
+  background: rgba(139, 92, 246, 0.15);
+  border: 2px dashed rgba(139, 92, 246, 0.5);
+  border-radius: 1rem;
+  z-index: 5;
+}
+
+/* Drop target placeholder - invalid position (overlap) */
+.grid-placeholder-invalid {
+  background: rgba(239, 68, 68, 0.10);
+  border: 2px dashed rgba(239, 68, 68, 0.4);
+  border-radius: 1rem;
+  z-index: 5;
+}
+
+/* Kill backdrop-filter on glass cards during edit mode for GPU perf */
+.dashboard-editing .gc,
+.dashboard-editing .gc-light {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* ── Performance modes ──────────────────────────────────────────────────────── */
+
+/* Reduce blur: drop backdrop-filter to minimal value on all glass elements */
+.perf-reduce-blur .gc,
+.perf-reduce-blur .gc-light {
+  -webkit-backdrop-filter: blur(4px) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* Disable shadows: remove box-shadow GPU compositing */
+.perf-no-shadows .gc,
+.perf-no-shadows .gc-light {
+  box-shadow: none !important;
+}
+
 #root {
   width: 100%;
   height: 100%;
@@ -129,6 +169,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-color: var(--dash-bg-primary, var(--background));
+    color: var(--dash-text-primary, var(--foreground));
     font-family: 'Google Sans Flex', sans-serif !important;
   }
   html {
@@ -148,13 +190,19 @@
 */
 .gc {
   position: relative;
-  /* Dark navy semi-opaque fill so cards stand out against the bg */
-  background: rgba(6, 6, 24, 0.72);
-  -webkit-backdrop-filter: blur(30px) saturate(160%) brightness(80%);
-  backdrop-filter: blur(30px) saturate(160%) brightness(80%);
+  /* Use theme CSS variables when set, fall back to original glass effect */
+  background: var(--dash-bg-card, rgba(6, 6, 24, 0.72));
+  -webkit-backdrop-filter: blur(var(--dash-glass-blur, 30px)) saturate(160%) brightness(80%);
+  backdrop-filter: blur(var(--dash-glass-blur, 30px)) saturate(160%) brightness(80%);
+  border-color: var(--dash-border, transparent);
+  color: var(--dash-text-primary, #ffffff);
   box-shadow:
     0 8px 40px rgba(0, 0, 0, 0.55),
     inset -8px 10px 15px rgba(0, 0, 0, 0.08);
+}
+
+.gc:hover {
+  background: var(--dash-bg-card-hover, rgba(6, 6, 24, 0.80));
 }
 
 /* Shiny gradient border via mask technique */
@@ -240,4 +288,183 @@
 
 .gc-btn:hover {
   background: rgba(255, 255, 255, 0.13);
+}
+
+/* ── Claymorphism overrides (theme-clay on <html>) ─────────────────────────── */
+
+.theme-clay .gc {
+  background: var(--dash-bg-card) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border-color: transparent !important;
+  border-radius: 2rem;
+  box-shadow:
+    4px 4px 16px var(--dash-shadow-color, rgba(0, 0, 0, 0.08)),
+    inset 2px 2px 4px var(--dash-shadow-highlight, rgba(255, 255, 255, 0.5)),
+    inset -1px -1px 3px var(--dash-shadow-color, rgba(0, 0, 0, 0.04));
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.theme-clay .gc:hover {
+  background: var(--dash-bg-card-hover) !important;
+  transform: translateY(-2px);
+  box-shadow:
+    6px 6px 24px var(--dash-shadow-color, rgba(0, 0, 0, 0.12)),
+    inset 2px 2px 4px var(--dash-shadow-highlight, rgba(255, 255, 255, 0.5)),
+    inset -1px -1px 3px var(--dash-shadow-color, rgba(0, 0, 0, 0.04));
+}
+
+/* Remove glass shimmer border */
+.theme-clay .gc::before {
+  display: none !important;
+}
+
+/* Replace glass top-glow with clay convex highlight */
+.theme-clay .gc::after {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.35) 0%,
+    rgba(255, 255, 255, 0.08) 40%,
+    rgba(0, 0, 0, 0.00) 100%
+  ) !important;
+}
+
+/* Lighter variant (modals, nested cards) */
+.theme-clay .gc-light {
+  background: var(--dash-bg-card) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border: none !important;
+  border-radius: 1.5rem;
+  box-shadow:
+    3px 3px 12px var(--dash-shadow-color, rgba(0, 0, 0, 0.07)),
+    inset 1px 1px 3px var(--dash-shadow-highlight, rgba(255, 255, 255, 0.4)),
+    inset -1px -1px 2px var(--dash-shadow-color, rgba(0, 0, 0, 0.03));
+}
+
+/* Bottom nav bar */
+.theme-clay .gc-pill {
+  background: var(--dash-bg-card) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border-top: none !important;
+  box-shadow:
+    0 -3px 14px var(--dash-shadow-color, rgba(0, 0, 0, 0.08));
+}
+
+/* Chips / badges */
+.theme-clay .gc-inner {
+  background: var(--dash-bg-card-hover) !important;
+  border: none !important;
+  border-radius: 1rem;
+  box-shadow:
+    2px 2px 6px var(--dash-shadow-color, rgba(0, 0, 0, 0.06)),
+    inset 1px 1px 2px var(--dash-shadow-highlight, rgba(255, 255, 255, 0.3));
+}
+
+/* Button style */
+.theme-clay .gc-btn {
+  background: var(--dash-bg-card-hover) !important;
+  border: none !important;
+  border-radius: 1rem;
+  box-shadow:
+    2px 2px 8px var(--dash-shadow-color, rgba(0, 0, 0, 0.07)),
+    inset 1px 1px 2px var(--dash-shadow-highlight, rgba(255, 255, 255, 0.3));
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s;
+}
+
+.theme-clay .gc-btn:hover {
+  background: var(--dash-bg-card) !important;
+  transform: translateY(-1px);
+  box-shadow:
+    3px 3px 10px var(--dash-shadow-color, rgba(0, 0, 0, 0.10)),
+    inset 1px 1px 2px var(--dash-shadow-highlight, rgba(255, 255, 255, 0.3));
+}
+
+/* ── Light clay: remap hardcoded white text to dark ───────────────────────── */
+
+/* Full white → primary dark text */
+.theme-clay-light [class*="text-white"] {
+  color: var(--dash-text-primary) !important;
+}
+
+/* White with opacity → secondary text */
+.theme-clay-light [class*="text-white\/"] {
+  color: var(--dash-text-secondary) !important;
+}
+
+/* Very faint white (20-39% opacity) → muted text */
+.theme-clay-light [class*="text-white\/2"],
+.theme-clay-light [class*="text-white\/3"] {
+  color: var(--dash-text-muted) !important;
+}
+
+/* Remap white backgrounds to clay surface colors */
+.theme-clay-light [class*="bg-white\/"] {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Remap white borders */
+.theme-clay-light [class*="border-white"] {
+  border-color: var(--dash-border) !important;
+}
+
+/* ── Dark clay: stronger depth + border edge ─────────────────────────────── */
+
+.theme-clay-dark .gc {
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  box-shadow:
+    4px 4px 18px rgba(0, 0, 0, 0.4),
+    inset 1px 1px 3px rgba(255, 255, 255, 0.06),
+    inset -1px -1px 3px rgba(0, 0, 0, 0.2) !important;
+}
+
+.theme-clay-dark .gc:hover {
+  box-shadow:
+    6px 6px 26px rgba(0, 0, 0, 0.5),
+    inset 1px 1px 3px rgba(255, 255, 255, 0.07),
+    inset -1px -1px 3px rgba(0, 0, 0, 0.2) !important;
+}
+
+.theme-clay-dark .gc::after {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.07) 0%,
+    rgba(255, 255, 255, 0.02) 35%,
+    rgba(0, 0, 0, 0.00) 100%
+  ) !important;
+}
+
+.theme-clay-dark .gc-light {
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  box-shadow:
+    3px 3px 14px rgba(0, 0, 0, 0.35),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.05) !important;
+}
+
+.theme-clay-dark .gc-pill {
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+  box-shadow:
+    0 -3px 14px rgba(0, 0, 0, 0.35) !important;
+}
+
+.theme-clay-dark .gc-inner {
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  box-shadow:
+    2px 2px 6px rgba(0, 0, 0, 0.25),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.04) !important;
+}
+
+.theme-clay-dark .gc-btn {
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  box-shadow:
+    2px 2px 8px rgba(0, 0, 0, 0.3),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.04) !important;
+}
+
+.theme-clay-dark .gc-btn:hover {
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow:
+    4px 4px 14px rgba(0, 0, 0, 0.45),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.06) !important;
 }

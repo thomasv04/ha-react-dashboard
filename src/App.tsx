@@ -1,13 +1,31 @@
 import { ThemeProvider } from '@hakit/components';
 import { HassConnect } from '@hakit/core';
 import { ToastProvider } from '@/context/ToastContext';
-import { ToastContainer } from '@/components/ui/Toast';
+import { ModalProvider } from '@/context/ModalContext';
+import { ToastContainer } from '@/components/ui/Toast/components/Toast';
 import { useHAToast } from '@/hooks/useHAToast';
 import Dashboard from './Dashboard';
+import { ModalContainer } from './components/ui/Modal/composents/Modal';
+import { ThemeContextProvider, useTheme } from '@/context/ThemeContext';
+import { I18nProvider } from '@/i18n';
+import { BackgroundLayer } from '@/components/layout/BackgroundLayer';
+import { MotionConfig } from 'framer-motion';
+import type { ReactNode } from 'react';
+import { useAutoTheme } from '@/hooks/useAutoTheme';
+
+function MotionConfigBridge({ children }: { children: ReactNode }) {
+  const { perfSettings } = useTheme();
+  return <MotionConfig reducedMotion={perfSettings.reduceAnimations ? 'always' : 'user'}>{children}</MotionConfig>;
+}
 
 /** Mounts the HA event subscription inside the providers */
 function HAToastBridge() {
   useHAToast();
+  return null;
+}
+
+function AutoThemeBridge() {
+  useAutoTheme();
   return null;
 }
 
@@ -48,11 +66,22 @@ function App({ hassUrl: propHassUrl, hassToken: propHassToken }: AppProps = {}) 
   return (
     <HassConnect hassUrl={hassUrl} hassToken={hassToken}>
       <ThemeProvider />
-      <ToastProvider>
-        <HAToastBridge />
-        <Dashboard />
-        <ToastContainer />
-      </ToastProvider>
+      <I18nProvider>
+        <ThemeContextProvider>
+          <BackgroundLayer />
+          <MotionConfigBridge>
+            <ToastProvider>
+              <ModalProvider>
+                <HAToastBridge />
+                <AutoThemeBridge />
+                <Dashboard />
+                <ToastContainer />
+                <ModalContainer />
+              </ModalProvider>
+            </ToastProvider>
+          </MotionConfigBridge>
+        </ThemeContextProvider>
+      </I18nProvider>
     </HassConnect>
   );
 }

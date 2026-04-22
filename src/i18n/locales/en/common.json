@@ -1,0 +1,20 @@
+{
+  "on": "On",
+  "off": "Off",
+  "active": "Active",
+  "inactive": "Inactive",
+  "unavailable": "Unavailable",
+  "unknown": "Unknown",
+  "loading": "Loading...",
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "edit": "Edit",
+  "add": "Add",
+  "close": "Close",
+  "confirm": "Confirm",
+  "yes": "Yes",
+  "no": "No",
+  "search": "Search",
+  "noResults": "No results"
+}

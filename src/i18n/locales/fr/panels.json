@@ -1,0 +1,51 @@
+{
+  "lights": "Lumières",
+  "shutters": "Volets",
+  "vacuum": "Aspirateur",
+  "security": "Sécurité",
+  "notifications": "Notifications",
+  "flowers": "Plantes",
+  "camera": "Caméra",
+  "lights_panel": {
+    "title": "Lumières",
+    "off": "Éteint"
+  },
+  "shutters_panel": {
+    "title": "Volets"
+  },
+  "vacuum_panel": {
+    "title": "Aspirateur",
+    "cleaning": "Nettoyage en cours",
+    "segmented": "Nettoyage segmenté",
+    "returning": "Retour à la base",
+    "charging": "En charge",
+    "idle": "En veille",
+    "paused": "En pause",
+    "error": "Erreur",
+    "unavailable": "Indisponible",
+    "start": "Démarrer",
+    "stop": "Arrêter",
+    "locate": "Localiser",
+    "dock": "Base",
+    "rooms": "Pièces à nettoyer",
+    "launch": "Lancer le lavage sélectionné",
+    "battery": "Batterie : {value}%"
+  },
+  "notifications_panel": {
+    "title": "Notifications",
+    "empty": "Aucune notification active"
+  },
+  "flowers_panel": {
+    "title": "Plantes",
+    "soilMoisture": "Humidité sol",
+    "temperature": "Température",
+    "brightness": "Luminosité",
+    "humidity": "Humidité air",
+    "tooLow": "⚠️ Trop bas",
+    "tooHigh": "⚠️ Trop haut"
+  },
+  "security_panel": {
+    "title": "Sécurité",
+    "cameras": "Caméras"
+  }
+}

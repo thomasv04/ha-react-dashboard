@@ -1,11 +1,11 @@
-name: "HA React Dashboard"
-version: "2.0.6"
-slug: "ha-react-dashboard"
-description: "Responsive React-based dashboard for Home Assistant with drag-and-drop widgets"
-url: "https://github.com/thomasv04/ha-react-dashboard"
+name: 'HA React Dashboard'
+version: '2.0.6'
+slug: 'ha-react-dashboard'
+description: 'Responsive React-based dashboard for Home Assistant with drag-and-drop widgets'
+url: 'https://github.com/thomasv04/ha-react-dashboard'
 
 # Pre-built Docker images pulled by the supervisor ({arch} → amd64 / aarch64)
-image: "ghcr.io/thomasv04/ha-react-dashboard/{arch}"
+image: 'ghcr.io/thomasv04/ha-react-dashboard/{arch}'
 
 arch:
   - amd64
@@ -19,10 +19,10 @@ homeassistant_api: true
 
 ingress: true
 ingress_port: 8099
-panel_icon: "mdi:view-dashboard"
+panel_icon: 'mdi:view-dashboard'
 
 # Optional long-lived token; if empty run.sh falls back to $SUPERVISOR_TOKEN
 options:
-  ha_token: ""
+  ha_token: ''
 schema:
   ha_token: str?

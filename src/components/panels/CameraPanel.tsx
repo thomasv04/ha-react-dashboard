@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useHass } from '@hakit/core';
 import { Camera } from 'lucide-react';
 import { Panel } from '@/components/layout/Panel';
-import { CameraFeed } from '@/components/ui/CameraFeed';
+import { CameraFeed } from '@/components/ui/CameraFeed/components/CameraFeed';
 import { cn } from '@/lib/utils';
 
 interface Cam {
@@ -12,17 +12,17 @@ interface Cam {
 }
 
 const CAMERAS: Cam[] = [
-  { entityId: 'camera.sonnette_frigate', name: 'Sonnette' },
-  { entityId: 'camera.cuisine', name: 'Cuisine' },
-  { entityId: 'camera.salon_frigate', name: 'Salon' },
-  { entityId: 'camera.couloir_frigate', name: 'Couloir' },
+  { entityId: 'camera.front_door', name: 'Entrée' },
+  { entityId: 'camera.kitchen', name: 'Cuisine' },
+  { entityId: 'camera.living_room', name: 'Salon' },
+  { entityId: 'camera.hallway', name: 'Couloir' },
 ];
 
 export function CameraPanel() {
   const { helpers } = useHass();
   const entities = useHass(s => s.entities);
 
-  const haSelected = entities?.['input_select.camera_selecter']?.state as string | undefined;
+  const haSelected = entities?.['input_select.camera_selector']?.state as string | undefined;
   const [localSelected, setLocalSelected] = useState<string>(CAMERAS[0].name);
   const selected = haSelected ?? localSelected;
 
@@ -31,7 +31,7 @@ export function CameraPanel() {
     helpers.callService({
       domain: 'input_select',
       service: 'select_option',
-      target: { entity_id: 'input_select.camera_selecter' },
+      target: { entity_id: 'input_select.camera_selector' },
       serviceData: { option: name },
     });
   }

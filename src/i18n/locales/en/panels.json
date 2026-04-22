@@ -1,0 +1,51 @@
+{
+  "lights": "Lights",
+  "shutters": "Shutters",
+  "vacuum": "Vacuum",
+  "security": "Security",
+  "notifications": "Notifications",
+  "flowers": "Plants",
+  "camera": "Camera",
+  "lights_panel": {
+    "title": "Lights",
+    "off": "Off"
+  },
+  "shutters_panel": {
+    "title": "Shutters"
+  },
+  "vacuum_panel": {
+    "title": "Vacuum",
+    "cleaning": "Cleaning",
+    "segmented": "Segmented cleaning",
+    "returning": "Returning to base",
+    "charging": "Charging",
+    "idle": "Idle",
+    "paused": "Paused",
+    "error": "Error",
+    "unavailable": "Unavailable",
+    "start": "Start",
+    "stop": "Stop",
+    "locate": "Locate",
+    "dock": "Dock",
+    "rooms": "Rooms to clean",
+    "launch": "Start selected cleaning",
+    "battery": "Battery: {value}%"
+  },
+  "notifications_panel": {
+    "title": "Notifications",
+    "empty": "No active notifications"
+  },
+  "flowers_panel": {
+    "title": "Plants",
+    "soilMoisture": "Soil moisture",
+    "temperature": "Temperature",
+    "brightness": "Brightness",
+    "humidity": "Air humidity",
+    "tooLow": "⚠️ Too low",
+    "tooHigh": "⚠️ Too high"
+  },
+  "security_panel": {
+    "title": "Security",
+    "cameras": "Cameras"
+  }
+}

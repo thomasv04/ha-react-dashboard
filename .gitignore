@@ -13,6 +13,17 @@ dist-ssr
 *.local
 *.zip
 
+# Dashboard config — contient des données personnelles (entités HA, config maison)
+dashboard_config.json
+
+# SQLite databases (production & test)
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# User uploads
+data/uploads/
+
 # Stale build artifacts accidentally placed at project root
 /assets/
 
@@ -24,6 +35,11 @@ dist-ssr
 # Coverage reports
 coverage/
 
+# Playwright reports
+playwright-report/
+playwright-report-dashboard/
+test-results/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -34,6 +50,10 @@ coverage/
 *.njsproj
 *.sln
 *.sw?
+
+#ai
+.claude/*
+.playwright-mcp/*
 
 # Storybook built output (rebuilt in CI)
 storybook-static/

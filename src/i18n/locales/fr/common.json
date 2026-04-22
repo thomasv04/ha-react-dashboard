@@ -1,0 +1,20 @@
+{
+  "on": "Allumé",
+  "off": "Éteint",
+  "active": "Actif",
+  "inactive": "Inactif",
+  "unavailable": "Indisponible",
+  "unknown": "Inconnu",
+  "loading": "Chargement...",
+  "save": "Sauvegarder",
+  "cancel": "Annuler",
+  "delete": "Supprimer",
+  "edit": "Modifier",
+  "add": "Ajouter",
+  "close": "Fermer",
+  "confirm": "Confirmer",
+  "yes": "Oui",
+  "no": "Non",
+  "search": "Rechercher",
+  "noResults": "Aucun résultat"
+}

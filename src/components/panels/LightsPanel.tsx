@@ -3,12 +3,13 @@ import { Lightbulb, Sun } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { Panel } from '@/components/layout/Panel';
-import { Slider } from '@/components/ui/slider';
+import { Slider } from '@/components/ui/Slider/components/slider';
 import { cn } from '@/lib/utils';
 
 const LIGHTS = [
   { id: 'light.bandeau_led_cuisine', label: 'Bandeau LEDs Cuisine' },
-  // Ajouter d'autres lumières ici
+  { id: 'light.salon', label: 'Salon' },
+  { id: 'light.chambre', label: 'Chambre' },
 ];
 
 function LightRow({ entityId, label }: { entityId: string; label: string }) {

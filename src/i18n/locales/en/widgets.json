@@ -1,0 +1,124 @@
+{
+  "weather": {
+    "label": "Weather",
+    "wind": "Wind",
+    "max": "MAX",
+    "min": "MIN",
+    "conditions": {
+      "clear-night": "Clear night",
+      "cloudy": "Cloudy",
+      "exceptional": "Exceptional conditions",
+      "fog": "Fog",
+      "hail": "Hail",
+      "lightning": "Thunderstorm",
+      "lightning-rainy": "Thunderstorm with rain",
+      "partlycloudy": "Partly cloudy",
+      "pouring": "Heavy rain",
+      "rainy": "Rainy",
+      "snowy": "Snowy",
+      "snowy-rainy": "Sleet",
+      "sunny": "Sunny",
+      "windy": "Windy",
+      "windy-variant": "Very windy"
+    },
+    "days": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+  },
+  "thermostat": {
+    "label": "Thermostat",
+    "heating": "HEATING TO",
+    "cooling": "COOLING TO",
+    "idle": "IDLE",
+    "off": "OFF",
+    "fan_only": "FAN ONLY",
+    "drying": "DRYING",
+    "preheating": "PREHEATING"
+  },
+  "light": {
+    "label": "Light",
+    "brightness": "Brightness",
+    "colorTemp": "Color temperature",
+    "notFound": "Light not found"
+  },
+  "sensor": {
+    "label": "Sensor",
+    "notFound": "Entity not found",
+    "updatedAgo": "{value} ago",
+    "justNow": "just now",
+    "stale": "stale"
+  },
+  "cover": {
+    "label": "Cover",
+    "open": "Open",
+    "closed": "Closed",
+    "opening": "Opening...",
+    "closing": "Closing...",
+    "notFound": "Cover not found"
+  },
+  "media_player": {
+    "label": "Media",
+    "playing": "Playing",
+    "paused": "Paused",
+    "idle": "Idle",
+    "off": "Off",
+    "notFound": "Player not found"
+  },
+  "person": {
+    "label": "People",
+    "home": "HOME",
+    "away": "AWAY",
+    "noPeople": "No people configured"
+  },
+  "alarm": {
+    "label": "Alarm",
+    "armed_home": "Armed — home",
+    "armed_away": "Armed — away",
+    "armed_night": "Armed — night",
+    "disarmed": "Disarmed",
+    "triggered": "ALERT!",
+    "arming": "Arming...",
+    "disarm": "Disarm",
+    "pinPlaceholder": "PIN code",
+    "modeHome": "Home",
+    "modeAway": "Away",
+    "modeNight": "Night"
+  },
+  "camera": { "label": "Camera" },
+  "energy": {
+    "label": "Energy",
+    "solar": "Solar energy",
+    "charging": "Charging",
+    "discharging": "Discharging",
+    "standby": "Standby",
+    "flowIn": "W in",
+    "flowOut": "W out"
+  },
+  "tempo": {
+    "label": "Tempo EDF",
+    "offPeak": "Off-peak hours",
+    "peak": "Peak hours",
+    "rate": "Rate ",
+    "tomorrow": "Tomorrow",
+    "blue": "Blue",
+    "white": "White",
+    "red": "Red"
+  },
+  "rooms": { "label": "Rooms" },
+  "shortcuts": {
+    "label": "Shortcuts",
+    "header": "Shortcuts",
+    "armed": "Armed",
+    "disarmed": "Disarmed"
+  },
+  "pellet": {
+    "label": "Pellet stove",
+    "current": "Current: "
+  },
+  "greeting": {
+    "goodMorning": "Good morning",
+    "goodAfternoon": "Good afternoon",
+    "goodEvening": "Good evening",
+    "goodNight": "Good night"
+  },
+  "automation": { "label": "Automation" },
+  "template": { "label": "Template" }
+}

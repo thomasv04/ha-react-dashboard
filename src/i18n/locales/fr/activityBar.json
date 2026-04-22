@@ -1,0 +1,9 @@
+{
+  "alarmArmed": "Alarme armée",
+  "alarmDisarmed": "Alarme désarmée",
+  "pelletOn": "Poêle allumé",
+  "pelletOff": "Poêle éteint",
+  "battery": "Batterie solaire {value}%",
+  "tempo": "Tempo {value}",
+  "temperature": "Chambre {value}°C"
+}

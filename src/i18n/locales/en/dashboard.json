@@ -1,0 +1,13 @@
+{
+  "editMode": "Edit mode",
+  "saving": "Saving...",
+  "saved": "Saved!",
+  "addWidget": "Add widget",
+  "noWidgets": "No widgets on this page",
+  "loading": "Loading configuration...",
+  "pages": {
+    "home": "Home",
+    "addPage": "New page",
+    "deletePage": "Delete page"
+  }
+}
