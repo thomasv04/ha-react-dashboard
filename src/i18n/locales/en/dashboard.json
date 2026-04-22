@@ -4,6 +4,10 @@
   "saved": "Saved!",
   "addWidget": "Add widget",
   "noWidgets": "No widgets on this page",
+  "emptyState": {
+    "title": "Your dashboard is ready",
+    "subtitle": "Customize your space by adding your first widgets."
+  },
   "loading": "Loading configuration...",
   "pages": {
     "home": "Home",

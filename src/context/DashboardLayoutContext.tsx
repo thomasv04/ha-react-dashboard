@@ -391,7 +391,7 @@ interface LayoutContextValue {
   removeWidget: (id: string) => void;
   updateWidget: (id: string, updates: Partial<GridWidget>, breakpoint?: 'lg' | 'md' | 'sm') => void;
   saveLayout: () => void;
-  addWidgetByType: (type: GridWidget['type']) => void;
+  addWidgetByType: (type: GridWidget['type']) => string;
   allLayouts: Record<string, DashboardLayout>;
 }
 
@@ -562,7 +562,7 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
       const dispositions = WIDGET_DISPOSITIONS[type];
       const disposition = dispositions?.[0];
       const def = WIDGET_CATALOG.find(d => d.type === type);
-      if (!disposition && !def) return;
+      if (!disposition && !def) return '';
       // Generate a unique id so the same type can be added multiple times
       const id = `${type}-${Date.now()}`;
       setLayouts(prev => {
@@ -597,6 +597,7 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
       if (defaultCfg) {
         widgetCfgUpdate(id, { ...defaultCfg });
       }
+      return id;
     },
     [currentPageId, widgetCfgUpdate]
   );

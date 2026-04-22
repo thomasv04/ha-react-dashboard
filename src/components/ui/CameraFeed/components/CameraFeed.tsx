@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 import Hls from 'hls.js';
 import { Camera } from 'lucide-react';
-import { useCamera } from '@hakit/core';
+import { useCamera, useHass } from '@hakit/core';
 import type { FilterByDomain, EntityName } from '@hakit/core';
 import { cn } from '@/lib/utils';
 
@@ -14,11 +14,9 @@ interface CameraFeedProps {
 }
 
 /**
- * Displays a HA camera entity as a live stream.
- * HLS (via hls.js) when stream.url is available, MJPEG fallback.
- * Calls onProtocol once the active protocol is determined.
+ * Inner component — only mounted when entityId is confirmed to exist in HA.
  */
-export function CameraFeed({ entityId, className, onProtocol }: CameraFeedProps) {
+function CameraFeedInner({ entityId, className, onProtocol }: CameraFeedProps) {
   const cam = useCamera(entityId as FilterByDomain<EntityName, 'camera'>, { poster: false });
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -77,4 +75,25 @@ export function CameraFeed({ entityId, className, onProtocol }: CameraFeedProps)
   }
 
   return <video ref={videoRef} autoPlay muted playsInline className={cn('object-cover', className)} />;
+}
+
+/**
+ * Displays a HA camera entity as a live stream.
+ * HLS (via hls.js) when stream.url is available, MJPEG fallback.
+ * Calls onProtocol once the active protocol is determined.
+ * Shows a placeholder if the entity doesn't exist in HA.
+ */
+export function CameraFeed({ entityId, className, onProtocol }: CameraFeedProps) {
+  const entities = useHass(s => s.entities);
+  const exists = !!entities?.[entityId];
+
+  if (!exists) {
+    return (
+      <div className={cn('flex items-center justify-center text-white/20', className)}>
+        <Camera size={28} />
+      </div>
+    );
+  }
+
+  return <CameraFeedInner entityId={entityId} className={className} onProtocol={onProtocol} />;
 }

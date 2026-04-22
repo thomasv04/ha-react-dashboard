@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Wind, Cloud, Sun, CloudRain, CloudSnow, Cloudy, CloudDrizzle } from 'lucide-react';
-import { useWeather } from '@hakit/core';
+import { useWeather, useHass } from '@hakit/core';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { WeatherCardConfig } from '@/types/widget-configs';
@@ -42,12 +42,30 @@ function WeatherIcon({
 }
 
 export function WeatherCard() {
-  const { t, tArray } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<WeatherCardConfig>(widgetId || 'weather');
   const entityId = config?.entityId ?? 'weather.home';
 
+  const entities = useHass(s => s.entities);
+  if (!entities?.[entityId]) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+        className='gc rounded-3xl p-5 flex flex-col gap-4 h-full items-center justify-center'
+      >
+        <Sun size={36} className='text-yellow-300/30' />
+      </motion.div>
+    );
+  }
+
+  return <WeatherCardInner entityId={entityId} config={config} />;
+}
+
+function WeatherCardInner({ entityId, config }: { entityId: string; config: WeatherCardConfig | null }) {
+  const { t, tArray } = useI18n();
   const weather = useWeather(entityId as never, { type: 'daily' });
 
   const temp = weather.attributes.temperature as number | undefined;
