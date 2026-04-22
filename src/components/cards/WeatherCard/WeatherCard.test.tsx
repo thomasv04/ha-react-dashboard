@@ -32,6 +32,7 @@ vi.mock('@/components/ui/AnimatedNumber', () => ({
 }));
 
 vi.mock('@hakit/core', () => ({
+  useHass: (selector: (s: { entities: Record<string, unknown> }) => unknown) => selector({ entities: { 'weather.home': {} } }),
   useWeather: () => ({
     attributes: { temperature: 21, wind_speed: 5, wind_speed_unit: 'km/h' },
     forecast: {

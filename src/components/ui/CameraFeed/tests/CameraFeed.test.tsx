@@ -5,6 +5,8 @@ const mockUseCamera = vi.fn();
 
 vi.mock('@hakit/core', () => ({
   useCamera: (entityId: string) => mockUseCamera(entityId),
+  useHass: (selector: (s: { entities: Record<string, unknown> }) => unknown) =>
+    selector({ entities: { 'camera.living_room': {}, 'camera.kitchen': {}, 'camera.unknown': {}, 'camera.front_door': {} } }),
 }));
 
 vi.mock('hls.js', () => ({

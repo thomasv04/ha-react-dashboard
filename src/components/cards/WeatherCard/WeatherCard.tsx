@@ -61,7 +61,7 @@ export function WeatherCard() {
     );
   }
 
-  return <WeatherCardInner entityId={entityId} config={config} />;
+  return <WeatherCardInner entityId={entityId} config={config ?? null} />;
 }
 
 function WeatherCardInner({ entityId, config }: { entityId: string; config: WeatherCardConfig | null }) {
