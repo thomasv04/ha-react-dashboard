@@ -5,6 +5,7 @@ import { DEFAULT_PAGES, type Page } from '@/context/PageContext';
 import { DEFAULT_WALLPANEL_CONFIG, type WallPanelConfig } from '@/types/wallpanel';
 import type { CustomPanel } from '@/types/custom-panel';
 import { useToast } from '@/context/ToastContext';
+import { apiUrl } from '@/lib/api-base';
 
 // ── Migration v1 → v2 ─────────────────────────────────────────────────────────
 function migrateConfig(data: unknown): DashboardConfigV2 {
@@ -55,7 +56,7 @@ export function useDashboardConfig() {
 
   // Load config from server
   useEffect(() => {
-    fetch('/api/config')
+    fetch(apiUrl('/api/config'))
       .then(res => res.json())
       .then((data: unknown) => {
         if (data && typeof data === 'object' && 'message' in data) {
@@ -89,7 +90,7 @@ export function useDashboardConfig() {
   const saveConfig = useCallback(async (config: DashboardConfigV2) => {
     setIsSaving(true);
     try {
-      const response = await fetch('/api/config', {
+      const response = await fetch(apiUrl('/api/config'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { apiUrl } from '@/lib/api-base';
 
 // EN
 import enCommon from './locales/en/common.json';
@@ -86,7 +87,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    fetch('/api/translations/overrides')
+    fetch(apiUrl('/api/translations/overrides'))
       .then(r => r.json())
       .then((data: { overrides?: Record<string, string> }) => {
         if (data.overrides && typeof data.overrides === 'object') {
@@ -141,7 +142,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   );
 
   const persistOverrides = useCallback((next: Record<string, string>) => {
-    fetch('/api/translations/overrides', {
+    fetch(apiUrl('/api/translations/overrides'), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ overrides: next }),

@@ -4,6 +4,7 @@ dotenv.config({ path: '.env.development', override: true });
 
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
@@ -67,6 +68,30 @@ app.use('/api/uploads', uploadsRouter(db, UPLOADS_DIR));
 app.use('/api/translations', translationsRouter(db));
 
 // ── System info ──────────────────────────────────────────────────────────────
+
+/**
+ * Returns the HA connection config the frontend needs to bootstrap HassConnect.
+ * hassUrl is not returned (derived from window.location.origin on the browser side).
+ * hassToken comes from /data/options.json ha_token (user-configured long-lived token).
+ * In ingress mode this endpoint is protected by haAuthMiddleware.
+ */
+app.get('/api/system/ha-config', (_req, res) => {
+  let hassToken = null;
+
+  // Read ha_token from /data/options.json if present (set via HA add-on options)
+  try {
+    const optionsPath = process.env.OPTIONS_PATH || '/data/options.json';
+    const options = JSON.parse(fs.readFileSync(optionsPath, 'utf8'));
+    if (options.ha_token && typeof options.ha_token === 'string' && options.ha_token.trim()) {
+      hassToken = options.ha_token.trim();
+    }
+  } catch {
+    // /data/options.json absent (dev or standalone) — no token
+  }
+
+  res.json({ hassToken });
+});
+
 app.get('/api/system/ingress-url', async (_req, res) => {
   const supervisorToken = process.env.SUPERVISOR_TOKEN;
   if (!supervisorToken) {

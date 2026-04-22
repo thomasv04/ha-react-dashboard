@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Image, Upload, Trash2, Link } from 'lucide-react';
 import type { BackgroundConfig } from '@/config/themes';
 import { useI18n } from '@/i18n';
+import { apiUrl } from '@/lib/api-base';
 
 type ImageInputMode = 'url' | 'file';
 
@@ -29,7 +30,7 @@ export function ImageBackgroundPicker({
     try {
       const formData = new FormData();
       formData.append('image', file);
-      const res = await fetch('/api/uploads/background', { method: 'POST', body: formData });
+      const res = await fetch(apiUrl('/api/uploads/background'), { method: 'POST', body: formData });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Erreur upload');
       setBackground({ ...background, imageUrl: json.url });
@@ -45,7 +46,7 @@ export function ImageBackgroundPicker({
   async function handleDeleteUpload() {
     if (!currentFilename) return;
     try {
-      await fetch(`/api/uploads/background/${encodeURIComponent(currentFilename)}`, { method: 'DELETE' });
+      await fetch(apiUrl(`/api/uploads/background/${encodeURIComponent(currentFilename)}`), { method: 'DELETE' });
     } catch {
       // Ignore — on nettoie l'URL quand même
     }

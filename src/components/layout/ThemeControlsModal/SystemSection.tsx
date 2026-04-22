@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Copy, Check, Server } from 'lucide-react';
 import { useI18n } from '@/i18n';
+import { apiUrl } from '@/lib/api-base';
 
 export function SystemSection() {
   const { t } = useI18n();
@@ -9,7 +10,7 @@ export function SystemSection() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    fetch('/api/system/ingress-url')
+    fetch(apiUrl('/api/system/ingress-url'))
       .then(r => r.json())
       .then(data => setIngressPath(data.url ?? null))
       .catch(() => setIngressPath(null))
