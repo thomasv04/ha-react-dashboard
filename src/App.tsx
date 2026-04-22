@@ -51,9 +51,7 @@ interface AppProps {
 }
 
 function App({ hassUrl: propHassUrl, hassToken: propHassToken }: AppProps = {}) {
-  const [hassToken, setHassToken] = useState<string | undefined>(
-    propHassToken ?? import.meta.env.VITE_HA_TOKEN ?? undefined
-  );
+  const [hassToken, setHassToken] = useState<string | undefined>(propHassToken ?? import.meta.env.VITE_HA_TOKEN ?? undefined);
   const hassUrl = propHassUrl ?? resolveHassUrl();
 
   // Fetch the HA token from the add-on server (reads /data/options.json ha_token).

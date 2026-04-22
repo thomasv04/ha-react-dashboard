@@ -418,8 +418,7 @@ export const DEFAULT_LAYOUT: DashboardLayout = {
   widgets: {
     lg: [],
     md: [],
-    sm: [
-    ],
+    sm: [],
   },
   cols: { lg: 12, md: 8, sm: 4 },
 };

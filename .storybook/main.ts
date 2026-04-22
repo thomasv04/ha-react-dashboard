@@ -21,11 +21,21 @@ const config: StorybookConfig = {
         tailwindcss(),
         {
           name: 'storybook-mock-api',
-          configureServer(server: { middlewares: { use(path: string, handler: (req: unknown, res: { setHeader(k: string, v: string): void; end(body: string): void }) => void): void } }) {
-            server.middlewares.use('/api/translations/overrides', (_req: unknown, res: { setHeader(k: string, v: string): void; end(body: string): void }) => {
-              res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ overrides: {} }));
-            });
+          configureServer(server: {
+            middlewares: {
+              use(
+                path: string,
+                handler: (req: unknown, res: { setHeader(k: string, v: string): void; end(body: string): void }) => void
+              ): void;
+            };
+          }) {
+            server.middlewares.use(
+              '/api/translations/overrides',
+              (_req: unknown, res: { setHeader(k: string, v: string): void; end(body: string): void }) => {
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ overrides: {} }));
+              }
+            );
           },
         },
       ],
