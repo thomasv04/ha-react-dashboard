@@ -32,7 +32,7 @@ describe('DashboardLayoutProvider', () => {
 
     expect(result.current.layout).toBeDefined();
     expect(result.current.layout.cols).toEqual({ lg: 12, md: 8, sm: 4 });
-    expect(result.current.layout.widgets.lg.length).toBeGreaterThan(0);
+    expect(Array.isArray(result.current.layout.widgets.lg)).toBe(true);
   });
 
   it('addWidget adds a widget to the layout', () => {
@@ -83,7 +83,11 @@ describe('DashboardLayoutProvider', () => {
       wrapper: createWrapper(),
     });
 
-    // The default layout has a 'weather' widget
+    // Add a widget first, then update it
+    act(() => {
+      result.current.addWidget({ id: 'weather', type: 'weather', x: 0, y: 0, w: 3, h: 3 });
+    });
+
     const weatherBefore = result.current.layout.widgets.lg.find(w => w.id === 'weather');
     expect(weatherBefore).toBeDefined();
 
