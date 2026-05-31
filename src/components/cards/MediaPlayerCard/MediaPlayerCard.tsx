@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Music } from 'lucide-react';
 import { useRipple, RippleLayer } from '@/components/ui/Ripple';
 import { useHass } from '@hakit/core';
@@ -8,6 +9,7 @@ import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { MediaPlayerCardConfig } from '@/types/widget-configs';
 import { useI18n } from '@/i18n';
+import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { cn } from '@/lib/utils';
 
 function useDebouncedCallback<T extends (...args: never[]) => void>(fn: T, delay: number): T {
@@ -296,6 +298,7 @@ export function MediaPlayerCard() {
   const entity = useSafeEntity(entityId);
   const { helpers } = useHass();
   const { ripples, trigger: triggerRipple } = useRipple();
+  const playFeedback = useSoundFeedback();
 
   const haVolume = (entity?.attributes.volume_level as number | undefined) ?? 0;
   const [localVolume, setLocalVolume] = useState<number | null>(null);
@@ -341,12 +344,15 @@ export function MediaPlayerCard() {
 
   const handleToggle = () => {
     helpers.callService({ domain: 'media_player', service: 'media_play_pause', target: { entity_id: entityId } });
+    playFeedback(isPlaying ? 'media_pause' : 'media_play');
   };
   const handleNext = () => {
     helpers.callService({ domain: 'media_player', service: 'media_next_track', target: { entity_id: entityId } });
+    playFeedback('media_next');
   };
   const handlePrev = () => {
     helpers.callService({ domain: 'media_player', service: 'media_previous_track', target: { entity_id: entityId } });
+    playFeedback('media_next');
   };
   const handleVolume = (v: number) => {
     setLocalVolume(v);
@@ -374,7 +380,7 @@ export function MediaPlayerCard() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: DURATION_ENTRANCE }}
       onPointerDown={triggerRipple}
       className={cn('gc rounded-3xl p-4 h-full relative overflow-hidden', isPlaying && 'ring-1 ring-white/10')}
     >

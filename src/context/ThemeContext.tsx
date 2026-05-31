@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { THEMES, type ThemeId, type ThemeTokens, type BackgroundConfig } from '@/config/themes';
+import { useSettingsSync } from '@/hooks/useSettingsSync';
 
 export interface AutoThemeConfig {
   enabled: boolean;
@@ -21,11 +22,29 @@ const DEFAULT_PERF_SETTINGS: PerfSettings = {
   disableModalAnimation: false,
 };
 
+export interface LayoutSettings {
+  /** Grid gap between cards in px (4–40) */
+  gridGap: number;
+  /** Card border radius in px (0–32) */
+  cardRadius: number;
+  /** Row height in px (60–160) */
+  rowHeight: number;
+}
+
+const DEFAULT_LAYOUT_SETTINGS: LayoutSettings = {
+  gridGap: 16,
+  cardRadius: 24,
+  rowHeight: 80,
+};
+
 export interface SoundSettings {
+  /** Enable sound feedback on user actions */
   enabled: boolean;
 }
 
-const DEFAULT_SOUND_SETTINGS: SoundSettings = { enabled: false };
+const DEFAULT_SOUND_SETTINGS: SoundSettings = {
+  enabled: false,
+};
 
 interface ThemeContextValue {
   themeId: ThemeId;
@@ -42,12 +61,15 @@ interface ThemeContextValue {
   /** Auto day/night theme */
   autoTheme: AutoThemeConfig;
   setAutoTheme: (cfg: AutoThemeConfig) => void;
+  /** Layout settings (gap, radius, row height) */
+  layoutSettings: LayoutSettings;
+  setLayoutSettings: (s: LayoutSettings) => void;
   /** Sound feedback settings */
   soundSettings: SoundSettings;
   setSoundSettings: (s: SoundSettings) => void;
 }
 
-const ThemeContext = createContext<ThemeContextValue | null>(null);
+export const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 const STORAGE_KEY = 'ha-dashboard-theme';
 
@@ -59,7 +81,9 @@ export function isSoundEnabled(): boolean {
       const parsed = JSON.parse(stored);
       return parsed.soundSettings?.enabled ?? false;
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return false;
 }
 
@@ -75,6 +99,7 @@ function loadSettings(): {
   cardOpacity: number;
   perfSettings: PerfSettings;
   autoTheme: AutoThemeConfig;
+  layoutSettings: LayoutSettings;
   soundSettings: SoundSettings;
 } {
   try {
@@ -86,6 +111,8 @@ function loadSettings(): {
         cardOpacity?: number;
         perfSettings?: Partial<PerfSettings>;
         autoTheme?: Partial<AutoThemeConfig>;
+        layoutSettings?: Partial<LayoutSettings>;
+        soundSettings?: Partial<SoundSettings>;
       };
       return {
         themeId: parsed.themeId ?? 'dark',
@@ -93,6 +120,7 @@ function loadSettings(): {
         cardOpacity: parsed.cardOpacity ?? THEMES.dark.tokens.glassOpacity,
         perfSettings: { ...DEFAULT_PERF_SETTINGS, ...(parsed.perfSettings ?? {}) },
         autoTheme: { ...DEFAULT_AUTO_THEME, ...(parsed.autoTheme ?? {}) },
+        layoutSettings: { ...DEFAULT_LAYOUT_SETTINGS, ...(parsed.layoutSettings ?? {}) },
         soundSettings: { ...DEFAULT_SOUND_SETTINGS, ...(parsed.soundSettings ?? {}) },
       };
     }
@@ -105,6 +133,7 @@ function loadSettings(): {
     cardOpacity: THEMES.dark.tokens.glassOpacity,
     perfSettings: DEFAULT_PERF_SETTINGS,
     autoTheme: DEFAULT_AUTO_THEME,
+    layoutSettings: DEFAULT_LAYOUT_SETTINGS,
     soundSettings: DEFAULT_SOUND_SETTINGS,
   };
 }
@@ -116,9 +145,28 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
   const [cardOpacity, setCardOpacityState] = useState(saved.cardOpacity);
   const [perfSettings, setPerfSettingsState] = useState<PerfSettings>(saved.perfSettings);
   const [autoTheme, setAutoThemeState] = useState<AutoThemeConfig>(saved.autoTheme);
+  const [layoutSettings, setLayoutSettingsState] = useState<LayoutSettings>(saved.layoutSettings);
   const [soundSettings, setSoundSettingsState] = useState<SoundSettings>(saved.soundSettings);
 
   const tokens = THEMES[themeId].tokens;
+
+  // Sync settings with server (multi-device)
+  const syncedSettings = useMemo(
+    () => ({ themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings }),
+    [themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings]
+  );
+  const handleRemoteUpdate = useCallback((remote: typeof syncedSettings) => {
+    if (remote.themeId && THEMES[remote.themeId]) {
+      setThemeId(remote.themeId);
+      setCardOpacityState(remote.cardOpacity ?? THEMES[remote.themeId].tokens.glassOpacity);
+    }
+    if (remote.background) setBackgroundState(remote.background);
+    if (remote.perfSettings) setPerfSettingsState({ ...DEFAULT_PERF_SETTINGS, ...remote.perfSettings });
+    if (remote.autoTheme) setAutoThemeState({ ...DEFAULT_AUTO_THEME, ...remote.autoTheme });
+    if (remote.layoutSettings) setLayoutSettingsState({ ...DEFAULT_LAYOUT_SETTINGS, ...remote.layoutSettings });
+    if (remote.soundSettings) setSoundSettingsState({ ...DEFAULT_SOUND_SETTINGS, ...remote.soundSettings });
+  }, []);
+  useSettingsSync(syncedSettings, handleRemoteUpdate);
 
   // Injection CSS variables sur :root
   useEffect(() => {
@@ -147,6 +195,14 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--dash-shadow-highlight', tokens.shadowHighlight ?? '');
   }, [tokens, cardOpacity, themeId]);
 
+  // Layout CSS variables
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--dash-grid-gap', `${layoutSettings.gridGap}px`);
+    root.style.setProperty('--dash-card-radius', `${layoutSettings.cardRadius}px`);
+    root.style.setProperty('--dash-row-height', `${layoutSettings.rowHeight}px`);
+  }, [layoutSettings]);
+
   // Performance CSS classes on <html>
   useEffect(() => {
     const root = document.documentElement;
@@ -157,8 +213,11 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
 
   // Persistance
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ themeId, background, cardOpacity, perfSettings, autoTheme, soundSettings }));
-  }, [themeId, background, cardOpacity, perfSettings, autoTheme, soundSettings]);
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings })
+    );
+  }, [themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings]);
 
   const setTheme = useCallback((id: ThemeId) => {
     setThemeId(id);
@@ -169,29 +228,47 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
   const setCardOpacity = useCallback((v: number) => setCardOpacityState(v), []);
   const setPerfSettings = useCallback((s: PerfSettings) => setPerfSettingsState(s), []);
   const setAutoTheme = useCallback((cfg: AutoThemeConfig) => setAutoThemeState(cfg), []);
+  const setLayoutSettings = useCallback((s: LayoutSettings) => setLayoutSettingsState(s), []);
   const setSoundSettings = useCallback((s: SoundSettings) => setSoundSettingsState(s), []);
 
-  return (
-    <ThemeContext.Provider
-      value={{
-        themeId,
-        tokens,
-        setTheme,
-        background,
-        setBackground,
-        cardOpacity,
-        setCardOpacity,
-        perfSettings,
-        setPerfSettings,
-        autoTheme,
-        setAutoTheme,
-        soundSettings,
-        setSoundSettings,
-      }}
-    >
-      {children}
-    </ThemeContext.Provider>
+  const value = useMemo(
+    () => ({
+      themeId,
+      tokens,
+      setTheme,
+      background,
+      setBackground,
+      cardOpacity,
+      setCardOpacity,
+      perfSettings,
+      setPerfSettings,
+      autoTheme,
+      setAutoTheme,
+      layoutSettings,
+      setLayoutSettings,
+      soundSettings,
+      setSoundSettings,
+    }),
+    [
+      themeId,
+      tokens,
+      background,
+      cardOpacity,
+      perfSettings,
+      autoTheme,
+      layoutSettings,
+      soundSettings,
+      setTheme,
+      setBackground,
+      setCardOpacity,
+      setPerfSettings,
+      setAutoTheme,
+      setLayoutSettings,
+      setSoundSettings,
+    ]
   );
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {

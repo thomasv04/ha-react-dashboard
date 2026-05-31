@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp, Layers, LayoutGrid } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 
 const BUILTIN_PANELS = [
   { value: 'volets', label: 'Volets', emoji: '🪟' },
@@ -25,6 +26,7 @@ function getLabel(value: string, customPanels: { id: string; name: string }[]): 
 }
 
 export function PanelSelectField({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
+  const { t } = useI18n();
   const { panels } = useCustomPanels();
   const [open, setOpen] = useState(false);
   const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
@@ -83,13 +85,13 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
             )}
           >
             <span className='text-base leading-none'>—</span>
-            <span>Aucun panneau</span>
+            <span>{t('layout.panelNone')}</span>
           </button>
 
           {/* Separator + built-in label */}
           <div className='flex items-center gap-2 px-3 pt-2 pb-1'>
             <LayoutGrid size={11} className='text-white/25' />
-            <span className='text-[10px] font-semibold text-white/25 uppercase tracking-wider'>Panneaux intégrés</span>
+            <span className='text-[10px] font-semibold text-white/25 uppercase tracking-wider'>{t('layout.panelBuiltin')}</span>
           </div>
 
           {BUILTIN_PANELS.map(opt => (
@@ -113,7 +115,7 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
             <>
               <div className='flex items-center gap-2 px-3 pt-2 pb-1'>
                 <Layers size={11} className='text-white/25' />
-                <span className='text-[10px] font-semibold text-white/25 uppercase tracking-wider'>Panneaux personnalisés</span>
+                <span className='text-[10px] font-semibold text-white/25 uppercase tracking-wider'>{t('layout.panelCustom')}</span>
               </div>
               {panels.map(p => {
                 const ref = `custom:${p.id}`;
@@ -159,7 +161,7 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
           )
         ) : null}
         <span className={cn('text-sm flex-1 truncate', value ? 'text-white/80' : 'text-white/30')}>
-          {displayLabel || '— Aucun panneau —'}
+          {displayLabel || t('layout.panelNoneDisplay')}
         </span>
         {open ? (
           <ChevronUp size={14} className='text-white/30 flex-shrink-0' />

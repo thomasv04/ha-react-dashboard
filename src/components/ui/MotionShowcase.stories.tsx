@@ -71,11 +71,7 @@ function DemoBox({ children, className = '' }: { children: React.ReactNode; clas
 }
 
 function Card({ label }: { label: string }) {
-  return (
-    <div className='rounded-lg bg-white/10 border border-white/10 px-4 py-3 text-sm text-white/80'>
-      {label}
-    </div>
-  );
+  return <div className='rounded-lg bg-white/10 border border-white/10 px-4 py-3 text-sm text-white/80'>{label}</div>;
 }
 
 /* ─── Meta ─── */
@@ -443,7 +439,10 @@ export const MicroInteractions: Story = {
         <DemoBox>
           <div className='flex items-center gap-3'>
             <button
-              onClick={() => { setDirection(-1); setQuantity(q => Math.max(0, q - 1)); }}
+              onClick={() => {
+                setDirection(-1);
+                setQuantity(q => Math.max(0, q - 1));
+              }}
               className='w-8 h-8 rounded-lg bg-white/10 text-white/80 hover:bg-white/20 transition-colors'
             >
               −
@@ -463,7 +462,10 @@ export const MicroInteractions: Story = {
               </AnimatePresence>
             </div>
             <button
-              onClick={() => { setDirection(1); setQuantity(q => q + 1); }}
+              onClick={() => {
+                setDirection(1);
+                setQuantity(q => q + 1);
+              }}
               className='w-8 h-8 rounded-lg bg-white/10 text-white/80 hover:bg-white/20 transition-colors'
             >
               +
@@ -517,14 +519,8 @@ export const Feedback: Story = {
 
         <SectionTitle>Erreur — Shake</SectionTitle>
         <DemoBox>
-          <motion.div
-            variants={errorShake}
-            animate={hasError ? 'shake' : 'idle'}
-            onAnimationComplete={() => setHasError(false)}
-          >
-            <div className='rounded-lg border-2 border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400'>
-              Champ invalide
-            </div>
+          <motion.div variants={errorShake} animate={hasError ? 'shake' : 'idle'} onAnimationComplete={() => setHasError(false)}>
+            <div className='rounded-lg border-2 border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400'>Champ invalide</div>
           </motion.div>
           <button
             onClick={() => setHasError(true)}
@@ -549,10 +545,7 @@ export const Feedback: Story = {
               </motion.button>
             ))}
           </div>
-          <button
-            onClick={() => setRating(0)}
-            className='mt-2 text-xs text-white/30 hover:text-white/60 transition-colors'
-          >
+          <button onClick={() => setRating(0)} className='mt-2 text-xs text-white/30 hover:text-white/60 transition-colors'>
             Reset
           </button>
         </DemoBox>
@@ -680,9 +673,7 @@ export const Notifications: Story = {
         <DemoBox>
           <div className='flex items-center gap-3'>
             <div className='relative'>
-              <div className='w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-lg'>
-                🔔
-              </div>
+              <div className='w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-lg'>🔔</div>
               <motion.span
                 key={`badge-${badge.key}`}
                 variants={badgePop}

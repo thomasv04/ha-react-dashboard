@@ -9,10 +9,12 @@ import { HistoryGraph } from '@/components/charts/HistoryGraph';
 import { BinaryTimeline } from '@/components/charts/BinaryTimeline';
 import { resolveIcon } from '@/lib/lucide-icon-map';
 import type { SensorCardConfig } from '@/types/widget-types';
+import { useI18n } from '@/i18n';
 
 const BINARY_DOMAINS = ['binary_sensor', 'switch', 'automation', 'cover', 'light'];
 
 export default function SensorMoreInfo({ entityId, widgetId }: { entityId: string; widgetId: string }) {
+  const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
   const config = getWidgetConfig<SensorCardConfig>(widgetId);
   const showInfoPanel = config?.showInfoPanel !== false;
@@ -20,7 +22,7 @@ export default function SensorMoreInfo({ entityId, widgetId }: { entityId: strin
   const entity = useSafeEntity(entityId);
   const { data } = useEntityHistory(entityId, historyHours);
 
-  if (!entity) return <div className='p-12 text-white/40 text-center'>Entité introuvable</div>;
+  if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
 
   const domain = entityId.split('.')[0];
   const isNumeric = !isNaN(parseFloat(entity.state)) && !BINARY_DOMAINS.includes(domain);

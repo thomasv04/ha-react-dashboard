@@ -20,13 +20,15 @@
     "sync": "npx tsx scripts/sync-types.ts",
     "prebuild": "npm run prettier",
     "deploy": "npx tsx scripts/deploy.ts",
+    "create-tag": "npx tsx scripts/create-tag.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:dashboard": "playwright test --config playwright.dashboard.config.ts",
     "test:e2e:dashboard:ui": "playwright test --config playwright.dashboard.config.ts --ui",
-    "build:panel": "tsc -b && vite build"
+    "build:panel": "tsc -b && vite build",
+    "check:widgets": "tsx scripts/check-widget-registry.ts"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.8",
@@ -37,6 +39,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "concurrently": "^9.2.1",
+    "dompurify": "^3.4.7",
     "express-rate-limit": "^8.3.2",
     "framer-motion": "^12.38.0",
     "helmet": "^8.1.0",
@@ -75,7 +78,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
-    "jsdom": "^29.0.1",
+    "jsdom": "^29.1.1",
     "node-scp": "^0.0.25",
     "prettier": "^3.8.1",
     "prompts": "^2.4.2",

@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useTemplate } from '@/hooks/useTemplate';
@@ -59,7 +60,7 @@ export function TemplateCard() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: DURATION_ENTRANCE }}
       className='gc rounded-3xl p-5 flex items-center gap-4 h-full'
     >
       {/* Icon / Image */}

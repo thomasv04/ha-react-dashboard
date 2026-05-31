@@ -7,6 +7,7 @@ import { MoreInfoHeader } from './MoreInfoHeader';
 import { InfoSidebar, type SidebarModule } from './sidebar';
 import { HistoryGraph } from '@/components/charts/HistoryGraph';
 import type { EnergyCardConfig } from '@/types/widget-types';
+import { useI18n } from '@/i18n';
 
 type HistoryTab = 'battery' | 'solar' | 'grid' | 'home';
 
@@ -126,6 +127,7 @@ function FlowCard({
 }
 
 export default function EnergyMoreInfo({ entityId, widgetId }: { entityId: string; widgetId: string }) {
+  const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
   const config = getWidgetConfig<EnergyCardConfig>(widgetId);
   const showInfoPanel = config?.showInfoPanel !== false;
@@ -158,9 +160,9 @@ export default function EnergyMoreInfo({ entityId, widgetId }: { entityId: strin
 
   const { data } = useEntityHistory(historyEntityId, historyHours);
 
-  if (!entity) return <div className='p-12 text-white/40 text-center'>Entité introuvable</div>;
+  if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
 
-  const name = (entity.attributes.friendly_name as string) ?? 'Énergie Solaire';
+  const name = (entity.attributes.friendly_name as string) ?? t('widgets.energy.defaultName');
   const level = Number(entity.state) || 0;
   const packState = normalizePackState(batteryStateEntity?.state ?? 'idle');
 

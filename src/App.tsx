@@ -5,7 +5,7 @@ import { ModalProvider } from '@/context/ModalContext';
 import { ToastContainer } from '@/components/ui/Toast/components/Toast';
 import { useHAToast } from '@/hooks/useHAToast';
 import Dashboard from './Dashboard';
-import { ModalContainer } from './components/ui/Modal/composents/Modal';
+import { ModalContainer } from './components/ui/Modal/components/Modal';
 import { ThemeContextProvider, useTheme } from '@/context/ThemeContext';
 import { I18nProvider } from '@/i18n';
 import { BackgroundLayer } from '@/components/layout/BackgroundLayer';
@@ -13,6 +13,7 @@ import { MotionConfig } from 'framer-motion';
 import { useState, useEffect, type ReactNode } from 'react';
 import { useAutoTheme } from '@/hooks/useAutoTheme';
 import { apiUrl } from '@/lib/api-base';
+import { HAThrottlePatch } from '@/components/HAThrottlePatch';
 
 function MotionConfigBridge({ children }: { children: ReactNode }) {
   const { perfSettings } = useTheme();
@@ -51,7 +52,10 @@ interface AppProps {
 }
 
 function App({ hassUrl: propHassUrl, hassToken: propHassToken }: AppProps = {}) {
-  const [hassToken, setHassToken] = useState<string | undefined>(propHassToken ?? import.meta.env.VITE_HA_TOKEN ?? undefined);
+  // VITE_HA_TOKEN is only used in dev mode — never bake it into production builds
+  const [hassToken, setHassToken] = useState<string | undefined>(
+    propHassToken ?? (import.meta.env.DEV ? import.meta.env.VITE_HA_TOKEN : undefined) ?? undefined
+  );
   const hassUrl = propHassUrl ?? resolveHassUrl();
 
   // Fetch the HA token from the add-on server (reads /data/options.json ha_token).
@@ -74,6 +78,7 @@ function App({ hassUrl: propHassUrl, hassToken: propHassToken }: AppProps = {}) 
 
   return (
     <HassConnect hassUrl={hassUrl} hassToken={hassToken}>
+      <HAThrottlePatch />
       <ThemeProvider />
       <I18nProvider>
         <ThemeContextProvider>

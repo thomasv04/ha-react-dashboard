@@ -191,7 +191,29 @@ export const THEMES: Record<ThemeId, { label: string; tokens: ThemeTokens }> = {
 };
 
 // ── Background modes ──────────────────────────────────────────────────────────
-export type BackgroundMode = 'solid' | 'gradient' | 'image';
+export type BackgroundMode = 'solid' | 'gradient' | 'image' | 'aurora' | 'lavaLamp';
+
+export type EffectPalette = 'default' | 'warm' | 'cool' | 'nature' | 'mono';
+
+export interface AuroraConfig {
+  palette?: EffectPalette;
+  orbCount?: number;
+  speed?: number;
+  size?: number;
+  opacity?: number;
+  /** Amplitude of sinusoidal sway (0 = straight lines, 1 = default, 3 = very wavy) */
+  sway?: number;
+}
+
+export interface LavaConfig {
+  palette?: EffectPalette;
+  blobCount?: number;
+  speed?: number;
+  size?: number;
+  opacity?: number;
+  /** Amplitude of sinusoidal sway (0 = straight lines, 1 = default, 3 = very wavy) */
+  sway?: number;
+}
 
 export interface BackgroundConfig {
   mode: BackgroundMode;
@@ -204,4 +226,8 @@ export interface BackgroundConfig {
   imageUrl?: string;
   /** Opacité de l'overlay sombre (0-1) */
   overlayOpacity?: number;
+  /** Config pour aurora */
+  aurora?: AuroraConfig;
+  /** Config pour lava lamp */
+  lava?: LavaConfig;
 }

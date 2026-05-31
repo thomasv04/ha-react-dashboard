@@ -8,6 +8,7 @@ import { DashboardGrid, GridItem } from '@/components/layout/DashboardGrid';
 import { AddWidgetModal } from '@/components/layout/AddWidgetModal';
 import { WidgetEditModal } from '@/components/layout/WidgetEditModal';
 import { DEFAULT_WIDGET_CONFIGS } from '@/types/widget-configs';
+import { useI18n } from '@/i18n';
 import type { GridWidget } from '@/context/DashboardLayoutContext';
 
 // Widget components available on the overlay
@@ -45,6 +46,7 @@ const WALLPANEL_PAGES: Page[] = [{ id: 'wallpanel', label: 'WallPanel', type: 'g
  *   - useWallPanel()       → outer context to persist the result
  */
 function WallPanelEditActions() {
+  const { t } = useI18n();
   const { allLayouts } = useDashboardLayout();
   const { setEditMode } = useEditMode();
   const { exitWallPanelEditMode, setWallPanelLayout } = useWallPanel();
@@ -73,14 +75,14 @@ function WallPanelEditActions() {
           className='flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 text-blue-300 text-sm font-medium transition-colors backdrop-blur-sm'
         >
           <Plus size={15} />
-          Ajouter
+          {t('common.add')}
         </button>
         <button
           onClick={handleSave}
           className='flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 text-green-300 text-sm font-medium transition-colors backdrop-blur-sm'
         >
           <CloudUpload size={15} />
-          Sauvegarder
+          {t('common.save')}
         </button>
         <button
           onClick={exitWallPanelEditMode}

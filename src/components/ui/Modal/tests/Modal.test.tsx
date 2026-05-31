@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ModalProvider, useModal } from '@/context/ModalContext';
-import { ModalContainer } from '@/components/ui/Modal/composents/Modal';
+import { ThemeContextProvider } from '@/context/ThemeContext';
+import { ModalContainer } from '@/components/ui/Modal/components/Modal';
 
 function TestComponent() {
   const { openModal } = useModal();
@@ -17,9 +18,11 @@ function TestComponent() {
 describe('Modal', () => {
   it('opens and displays modal content', async () => {
     render(
-      <ModalProvider>
-        <TestComponent />
-      </ModalProvider>
+      <ThemeContextProvider>
+        <ModalProvider>
+          <TestComponent />
+        </ModalProvider>
+      </ThemeContextProvider>
     );
 
     fireEvent.click(screen.getByText('Open Modal'));
@@ -32,15 +35,17 @@ describe('Modal', () => {
 
   it('closes modal on close button click', async () => {
     render(
-      <ModalProvider>
-        <TestComponent />
-      </ModalProvider>
+      <ThemeContextProvider>
+        <ModalProvider>
+          <TestComponent />
+        </ModalProvider>
+      </ThemeContextProvider>
     );
 
     fireEvent.click(screen.getByText('Open Modal'));
     await waitFor(() => expect(screen.getByText('Test Modal')).toBeInTheDocument());
 
-    fireEvent.click(screen.getByLabelText('Fermer'));
+    fireEvent.click(screen.getByLabelText('Close'));
     await waitFor(() => expect(screen.queryByText('Test Modal')).not.toBeInTheDocument());
   });
 
@@ -68,9 +73,11 @@ describe('Modal', () => {
     }
 
     render(
-      <ModalProvider>
-        <TestWithAction />
-      </ModalProvider>
+      <ThemeContextProvider>
+        <ModalProvider>
+          <TestWithAction />
+        </ModalProvider>
+      </ThemeContextProvider>
     );
 
     fireEvent.click(screen.getByText('Open'));
@@ -106,9 +113,11 @@ describe('Modal', () => {
     }
 
     render(
-      <ModalProvider>
-        <TestPersistent />
-      </ModalProvider>
+      <ThemeContextProvider>
+        <ModalProvider>
+          <TestPersistent />
+        </ModalProvider>
+      </ThemeContextProvider>
     );
 
     fireEvent.click(screen.getByText('OpenPersistent'));
@@ -146,9 +155,11 @@ describe('Modal', () => {
     }
 
     render(
-      <ModalProvider>
-        <TestPersistentNoClose />
-      </ModalProvider>
+      <ThemeContextProvider>
+        <ModalProvider>
+          <TestPersistentNoClose />
+        </ModalProvider>
+      </ThemeContextProvider>
     );
 
     fireEvent.click(screen.getByText('OpenNoClose'));

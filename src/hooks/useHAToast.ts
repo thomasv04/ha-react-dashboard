@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useHass } from '@hakit/core';
 import { useToast } from '@/context/ToastContext';
+import { callHAService } from '@/lib/ha-service';
 
 /**
  * Subscribes to the custom HA event `ha_dashboard_toast` over the existing
@@ -80,12 +81,7 @@ export function useHAToast() {
               if (a.service) {
                 const parts = a.service.split('.');
                 if (parts.length === 2) {
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  (helpersRef.current.callService as any)({
-                    domain: parts[0],
-                    service: parts[1],
-                    serviceData: a.service_data,
-                  });
+                  callHAService(helpersRef.current, parts[0], parts[1], {}, a.service_data);
                 }
               }
             },
@@ -93,11 +89,12 @@ export function useHAToast() {
         });
       }, 'ha_dashboard_toast')
       .then(unsub => {
+        const unsubscribe = unsub as unknown as () => void;
         if (cancelled) {
           // Already cleaned up — unsubscribe immediately
-          (unsub as unknown as () => void)();
+          unsubscribe();
         } else {
-          unsubscribeFn = unsub as unknown as () => void;
+          unsubscribeFn = unsubscribe;
         }
       });
 

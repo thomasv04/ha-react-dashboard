@@ -27,9 +27,23 @@ const isProduction = process.env.NODE_ENV === 'production';
 // Security headers (XSS, clickjacking, MIME-sniffing, etc.)
 app.use(
   helmet({
-    // CSP disabled for now — the SPA needs inline scripts/styles from Vite
-    // Enable and tune once assets are stable
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        // Tailwind / CSS-in-JS generate inline styles at runtime
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        // Camera streams, weather icons, uploaded backgrounds from any origin
+        imgSrc: ["'self'", 'data:', 'blob:', 'http:', 'https:'],
+        // HA WebSocket (ws/wss) can be on any user-configured host
+        connectSrc: ["'self'", 'ws:', 'wss:', 'http:', 'https:'],
+        // Media player artwork / streams
+        mediaSrc: ["'self'", 'blob:', 'http:', 'https:'],
+        fontSrc: ["'self'", 'data:'],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'self'"],
+      },
+    },
   })
 );
 

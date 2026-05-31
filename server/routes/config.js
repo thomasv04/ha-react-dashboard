@@ -21,8 +21,8 @@ export function configRouter(db) {
     }
   });
 
-  // POST /api/config — Sauvegarder la config
-  router.post('/', (req, res) => {
+  // PUT /api/config — Sauvegarder la config
+  router.put('/', (req, res) => {
     try {
       const config = req.body;
       if (!config || typeof config !== 'object' || Array.isArray(config)) {

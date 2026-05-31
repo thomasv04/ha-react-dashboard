@@ -1,4 +1,5 @@
 ﻿import { motion, AnimatePresence } from 'framer-motion';
+import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import React, { useState, useRef, useEffect } from 'react';
 import { Power, Home, Moon, Sun } from 'lucide-react';
 import { useHass } from '@hakit/core';
@@ -8,6 +9,7 @@ import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { ThermostatCardConfig } from '@/types/widget-configs';
 import { useI18n } from '@/i18n';
+import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 
 // ─── SVG gauge constants ──────────────────────────────────────────────────────
 const CX = 135;
@@ -139,6 +141,7 @@ export function ThermostatCard() {
 
   const thermostat = useSafeEntity(entityId);
   const { helpers } = useHass();
+  const playFeedback = useSoundFeedback();
 
   const svgRef = useRef<SVGSVGElement>(null);
   const isDraggingRef = useRef(false);
@@ -218,6 +221,7 @@ export function ThermostatCard() {
       target: { entity_id: entityId },
       serviceData: { temperature: localTargetRef.current },
     });
+    playFeedback('slider_tick');
   }
 
   function selectPreset(e: React.MouseEvent, option: string) {
@@ -228,6 +232,7 @@ export function ThermostatCard() {
       target: { entity_id: entityId },
       serviceData: { preset_mode: option },
     });
+    playFeedback('click');
   }
   function togglePower(e: React.MouseEvent) {
     e.stopPropagation();
@@ -236,13 +241,14 @@ export function ThermostatCard() {
       service: isOff ? 'turn_on' : 'turn_off',
       target: { entity_id: entityId },
     });
+    playFeedback(isOff ? 'toggle_on' : 'toggle_off');
   }
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.25 }}
+      transition={{ duration: DURATION_ENTRANCE, delay: 0.25 }}
       className='gc rounded-3xl p-4 flex flex-col h-full'
     >
       <div className='flex-1 min-h-0 overflow-hidden'>

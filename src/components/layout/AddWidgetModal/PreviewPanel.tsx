@@ -1,12 +1,29 @@
-import { Component, useState, useMemo, type ReactNode } from 'react';
+import { Component, useEffect, useState, useMemo, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, MousePointerClick, ArrowLeft, Search, Check } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useI18n } from '@/i18n';
+import { MOCK_ENTITIES } from '@/mocks/hassEntities';
 import { WIDGET_CATALOG, type GridWidget } from '@/context/DashboardLayoutContext';
 import { WidgetIdProvider } from '@/components/layout/DashboardGrid';
 import { PREVIEW_COMPONENTS } from '@/config/widget-registry';
 import { type WidgetMeta, getPreviewDims } from './widget-meta';
+
+// ── Mock HA wrapper ──────────────────────────────────────────────────────────
+// Temporarily merges mock entities into the Zustand store so widget previews
+// render with sample data instead of showing "entity not found" errors.
+// Real HA entities are preserved and take precedence; restored on unmount.
+
+function MockHassWrapper({ children }: { children: ReactNode }) {
+  useEffect(() => {
+    const real = (useHass.getState() as { entities?: Record<string, unknown> }).entities ?? {};
+    useHass.setState({ entities: { ...MOCK_ENTITIES, ...real } as never });
+    return () => {
+      useHass.setState({ entities: real as never });
+    };
+  }, []);
+  return <>{children}</>;
+}
 
 // ── Error boundary ────────────────────────────────────────────────────────────
 
@@ -30,6 +47,7 @@ class PreviewErrorBoundary extends Component<{ children: ReactNode }, { error: b
 // ── Entity picker step ────────────────────────────────────────────────────────
 
 function EntityPickerStep({ meta, onBack, onConfirm }: { meta: WidgetMeta; onBack: () => void; onConfirm: (entityId: string) => void }) {
+  const { t } = useI18n();
   const allEntities = useHass(s => s.entities);
   const [search, setSearch] = useState('');
   const [picked, setPicked] = useState('');
@@ -60,7 +78,7 @@ function EntityPickerStep({ meta, onBack, onConfirm }: { meta: WidgetMeta; onBac
           <ArrowLeft size={14} />
         </button>
         <div>
-          <p className='text-white/80 text-sm font-semibold'>Choisir une entité</p>
+          <p className='text-white/80 text-sm font-semibold'>{t('layout.chooseEntity')}</p>
           <p className='text-white/28 text-[10px] font-mono'>{meta.entityDomain}.*</p>
         </div>
       </div>
@@ -84,7 +102,7 @@ function EntityPickerStep({ meta, onBack, onConfirm }: { meta: WidgetMeta; onBac
         {entities.length === 0 ? (
           <div className='flex flex-col items-center justify-center h-full gap-2'>
             <Search size={20} className='text-white/10' />
-            <p className='text-white/20 text-xs'>Aucune entité {meta.entityDomain} trouvée</p>
+            <p className='text-white/20 text-xs'>{t('layout.noEntityFound', { domain: meta.entityDomain })}</p>
           </div>
         ) : (
           entities.map(e => (
@@ -129,7 +147,7 @@ function EntityPickerStep({ meta, onBack, onConfirm }: { meta: WidgetMeta; onBac
           }}
         >
           <Plus size={14} strokeWidth={2.5} />
-          Ajouter au dashboard
+          {t('layout.addToDashboard')}
         </button>
       </div>
     </motion.div>
@@ -223,18 +241,20 @@ export function PreviewPanel({
                         pointerEvents: 'none',
                       }}
                     >
-                      <WidgetIdProvider id={meta.type}>
-                        <PreviewErrorBoundary>
-                          <Component />
-                        </PreviewErrorBoundary>
-                      </WidgetIdProvider>
+                      <MockHassWrapper>
+                        <WidgetIdProvider id={meta.type}>
+                          <PreviewErrorBoundary>
+                            <Component />
+                          </PreviewErrorBoundary>
+                        </WidgetIdProvider>
+                      </MockHassWrapper>
                     </div>
                   ) : (
                     <div className='h-full flex items-center justify-center'>
                       <span className='text-white/15 text-xs'>{t('layout.noPreview')}</span>
                     </div>
                   )}
-                  {/* En direct badge */}
+                  {/* Aperçu badge */}
                   <div
                     className='absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-medium'
                     style={{
@@ -244,7 +264,7 @@ export function PreviewPanel({
                       backdropFilter: 'blur(8px)',
                     }}
                   >
-                    {t('layout.live')}
+                    {t('layout.preview')}
                   </div>
                 </div>
               </div>
@@ -257,7 +277,7 @@ export function PreviewPanel({
                   <meta.icon size={18} color={meta.color} />
                 </div>
                 <div>
-                  <h3 className='text-white font-semibold text-sm'>{meta.label}</h3>
+                  <h3 className='text-white font-semibold text-sm'>{t(meta.label)}</h3>
                   {catalogEntry && (
                     <span className='text-white/22 text-[10px] font-mono'>
                       {catalogEntry.lg.w} col × {catalogEntry.lg.h} row{catalogEntry.lg.h > 1 ? 's' : ''}
@@ -265,7 +285,7 @@ export function PreviewPanel({
                   )}
                 </div>
               </div>
-              <p className='text-white/35 text-[12px] leading-relaxed'>{meta.description}</p>
+              <p className='text-white/35 text-[12px] leading-relaxed'>{t(meta.description)}</p>
             </div>
 
             {/* ── Add button ──────────────────────────────────────── */}
@@ -286,7 +306,7 @@ export function PreviewPanel({
                 }}
               >
                 <Plus size={14} strokeWidth={2.5} />
-                {meta.entityDomain ? 'Choisir une entité →' : t('layout.addToDashboard')}
+                {meta.entityDomain ? t('layout.chooseEntityArrow') : t('layout.addToDashboard')}
               </button>
             </div>
           </motion.div>

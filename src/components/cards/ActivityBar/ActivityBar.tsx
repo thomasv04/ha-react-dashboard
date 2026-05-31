@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
+import { DURATION_ENTRANCE, DURATION_MEDIUM } from '@/lib/motion-tokens';
 import { Lightbulb, Flame, Battery, Sun, ShieldOff, ShieldCheck } from 'lucide-react';
 import { useHass } from '@hakit/core';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { ActivityBarConfig } from '@/types/widget-configs';
@@ -25,6 +26,7 @@ interface Person {
 export function ActivityBar() {
   const entities = useHass(s => s.entities);
   const hassUrl = useHass(s => s.connection?.socket?.url);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const { getWidgetConfig } = useWidgetConfig();
@@ -37,14 +39,15 @@ export function ActivityBar() {
     return pill?.entityId ?? fallback;
   };
 
-  // Detect mobile
+  // Detect mobile via container width (not viewport)
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    const el = containerRef.current;
+    if (!el) return;
+    const obs = new ResizeObserver(([entry]) => {
+      setIsMobile(entry.contentRect.width < 480);
+    });
+    obs.observe(el);
+    return () => obs.disconnect();
   }, []);
 
   const pills: Pill[] = [];
@@ -183,13 +186,13 @@ export function ActivityBar() {
   const visiblePills = pills.filter(p => !(isMobile && p.hideOnMobile));
 
   return (
-    <div className='flex items-center justify-between w-full gap-4'>
+    <div ref={containerRef} className='flex items-center justify-between w-full gap-4'>
       {/* Pills left */}
       {visiblePills.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: DURATION_ENTRANCE }}
           className='flex gap-2 flex-wrap items-center'
         >
           {visiblePills.map((pill, i) => (
@@ -197,7 +200,7 @@ export function ActivityBar() {
               key={pill.id}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, delay: i * 0.05 }}
+              transition={{ duration: DURATION_MEDIUM, delay: i * 0.05 }}
               className={`${pill.bgColor} rounded-full px-3 py-1.5 flex items-center gap-2 text-xs border border-white/10 backdrop-blur-sm`}
             >
               <span className={pill.color}>{pill.icon}</span>
@@ -215,7 +218,7 @@ export function ActivityBar() {
               key={person.id}
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: DURATION_MEDIUM }}
               className='relative'
               title={person.name}
             >

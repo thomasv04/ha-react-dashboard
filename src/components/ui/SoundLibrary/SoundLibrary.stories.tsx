@@ -136,9 +136,7 @@ function PlayAllButton({ sounds }: { sounds: SoundInfo[] }) {
       onClick={handlePlayAll}
       disabled={playing}
       className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-        playing
-          ? 'bg-blue-500/40 text-white/60 cursor-wait'
-          : 'bg-blue-500/80 hover:bg-blue-500 text-white cursor-pointer'
+        playing ? 'bg-blue-500/40 text-white/60 cursor-wait' : 'bg-blue-500/80 hover:bg-blue-500 text-white cursor-pointer'
       }`}
     >
       <Volume2 size={14} className={playing ? 'animate-pulse' : ''} />
@@ -157,9 +155,7 @@ function SoundLibrary() {
       <div className='flex items-center justify-between'>
         <div>
           <h2 className='text-white text-lg font-semibold'>Sound Library</h2>
-          <p className='text-white/40 text-xs mt-1'>
-            {totalPresets} presets synthétisés — Web Audio API, aucun fichier externe
-          </p>
+          <p className='text-white/40 text-xs mt-1'>{totalPresets} presets synthétisés — Web Audio API, aucun fichier externe</p>
         </div>
         <PlayAllButton sounds={SOUND_CATALOG} />
       </div>

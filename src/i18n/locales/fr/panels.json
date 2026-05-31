@@ -8,10 +8,14 @@
   "camera": "Caméra",
   "lights_panel": {
     "title": "Lumières",
-    "off": "Éteint"
+    "off": "Éteint",
+    "configHint": "Ajouter d'autres entités dans LightsPanel.tsx"
   },
   "shutters_panel": {
-    "title": "Volets"
+    "title": "Volets",
+    "openAll": "Tout ouvrir",
+    "closeAll": "Tout fermer",
+    "noCover": "Aucun volet trouv\u00e9"
   },
   "vacuum_panel": {
     "title": "Aspirateur",
@@ -33,16 +37,20 @@
   },
   "notifications_panel": {
     "title": "Notifications",
-    "empty": "Aucune notification active"
+    "empty": "Aucune notification active",
+    "trash": "Sortir les poubelles",
+    "washingMachine": "Machine \u00e0 laver termin\u00e9e"
   },
   "flowers_panel": {
     "title": "Plantes",
+    "plantName": "Orchidée",
     "soilMoisture": "Humidité sol",
     "temperature": "Température",
     "brightness": "Luminosité",
     "humidity": "Humidité air",
     "tooLow": "⚠️ Trop bas",
-    "tooHigh": "⚠️ Trop haut"
+    "tooHigh": "⚠️ Trop haut",
+    "configHint": "Adapte les entity IDs dans FlowersPanel.tsx selon ton capteur Xiaomi/BT"
   },
   "security_panel": {
     "title": "Sécurité",

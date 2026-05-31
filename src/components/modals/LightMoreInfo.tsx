@@ -6,10 +6,12 @@ import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { MoreInfoHeader } from './MoreInfoHeader';
 import { InfoSidebar, type SidebarModule } from './sidebar';
 import type { LightCardConfig } from '@/types/widget-types';
+import { useI18n } from '@/i18n';
 
 type LightTab = 'brightness' | 'color_temp' | 'color';
 
 export default function LightMoreInfo({ entityId, widgetId }: { entityId: string; widgetId: string }) {
+  const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
   const config = getWidgetConfig<LightCardConfig>(widgetId);
   const showInfoPanel = config?.showInfoPanel !== false;
@@ -62,7 +64,7 @@ export default function LightMoreInfo({ entityId, widgetId }: { entityId: string
     [helpers, entityId]
   );
 
-  if (!entity) return <div className='p-12 text-white/40 text-center'>Entité introuvable</div>;
+  if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
 
   const isOn = entity.state === 'on';
   const name = config?.name ?? (entity.attributes.friendly_name as string) ?? entityId;

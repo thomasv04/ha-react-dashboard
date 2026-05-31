@@ -132,15 +132,6 @@ export const WIDGET_DISPOSITIONS: WidgetDispositions = {
     },
   ],
 
-  // ── Rooms, Shortcuts, etc. — disposition unique ────────
-  rooms: [
-    {
-      id: 'default',
-      label: 'Standard',
-      minSize: { lg: { w: 3, h: 3 }, md: { w: 4, h: 3 }, sm: { w: 4, h: 2 } },
-      defaultSize: { lg: { w: 4, h: 5 }, md: { w: 8, h: 4 }, sm: { w: 4, h: 4 } },
-    },
-  ],
   shortcuts: [
     {
       id: 'default',
@@ -197,6 +188,65 @@ export const WIDGET_DISPOSITIONS: WidgetDispositions = {
       label: 'Horizontale',
       minSize: { lg: { w: 2, h: 1 }, md: { w: 2, h: 1 }, sm: { w: 2, h: 1 } },
       defaultSize: { lg: { w: 3, h: 1 }, md: { w: 4, h: 1 }, sm: { w: 4, h: 1 } },
+    },
+  ],
+
+  // ── Group ──────────────────────────────────────
+  group: [
+    {
+      id: 'default',
+      label: 'Groupe',
+      minSize: { lg: { w: 2, h: 2 }, md: { w: 2, h: 2 }, sm: { w: 2, h: 2 } },
+      defaultSize: { lg: { w: 4, h: 4 }, md: { w: 6, h: 4 }, sm: { w: 4, h: 4 } },
+    },
+  ],
+
+  // ── Room ───────────────────────────────────────
+  room: [
+    {
+      id: 'default',
+      label: 'Pièce',
+      minSize: { lg: { w: 2, h: 1 }, md: { w: 2, h: 1 }, sm: { w: 2, h: 1 } },
+      defaultSize: { lg: { w: 2, h: 2 }, md: { w: 3, h: 2 }, sm: { w: 4, h: 2 } },
+    },
+  ],
+
+  // ── Button ─────────────────────────────────────
+  button: [
+    {
+      id: 'default',
+      label: 'Standard',
+      minSize: { lg: { w: 1, h: 1 }, md: { w: 1, h: 1 }, sm: { w: 1, h: 1 } },
+      defaultSize: { lg: { w: 2, h: 2 }, md: { w: 2, h: 2 }, sm: { w: 2, h: 2 } },
+    },
+  ],
+
+  // ── Alarm ──────────────────────────────────────
+  alarm: [
+    {
+      id: 'default',
+      label: 'Standard',
+      minSize: { lg: { w: 2, h: 2 }, md: { w: 2, h: 2 }, sm: { w: 2, h: 2 } },
+      defaultSize: { lg: { w: 3, h: 3 }, md: { w: 4, h: 3 }, sm: { w: 4, h: 3 } },
+    },
+  ],
+
+  // ── Vacuum ─────────────────────────────────────
+  vacuum: [
+    {
+      id: 'default',
+      label: 'Standard',
+      minSize: { lg: { w: 2, h: 3 }, md: { w: 3, h: 3 }, sm: { w: 4, h: 3 } },
+      defaultSize: { lg: { w: 3, h: 4 }, md: { w: 4, h: 4 }, sm: { w: 4, h: 4 } },
+    },
+  ],
+  // ── Pellet stove ───────────────────────────────────────────────────────────
+  pellet: [
+    {
+      id: 'default',
+      label: 'Standard',
+      minSize: { lg: { w: 2, h: 2 }, md: { w: 2, h: 2 }, sm: { w: 2, h: 2 } },
+      defaultSize: { lg: { w: 2, h: 3 }, md: { w: 3, h: 3 }, sm: { w: 4, h: 3 } },
     },
   ],
 };

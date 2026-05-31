@@ -4,10 +4,11 @@ import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { Panel } from '@/components/layout/Panel';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 
 interface NotifConfig {
   entityId: string;
-  label: string;
+  labelKey: string;
   icon: React.ReactNode;
   color: string;
 }
@@ -15,19 +16,20 @@ interface NotifConfig {
 const NOTIFICATIONS: NotifConfig[] = [
   {
     entityId: 'input_boolean.display_notification_trash',
-    label: 'Sortir les poubelles',
+    labelKey: 'panels.notifications_panel.trash',
     icon: <Trash2 size={18} />,
     color: 'text-green-400 bg-green-400/10 border-green-400/20',
   },
   {
     entityId: 'input_boolean.display_notification_washing_machine',
-    label: 'Machine à laver terminée',
+    labelKey: 'panels.notifications_panel.washingMachine',
     icon: <WashingMachine size={18} />,
     color: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
   },
 ];
 
 function NotifCard({ config }: { config: NotifConfig }) {
+  const { t } = useI18n();
   const entity = useSafeEntity(config.entityId);
   const { helpers } = useHass();
   if (!entity || entity.state !== 'on') return null;
@@ -42,7 +44,7 @@ function NotifCard({ config }: { config: NotifConfig }) {
     >
       <div className='flex items-center gap-3'>
         {config.icon}
-        <span className='text-white font-medium text-sm'>{config.label}</span>
+        <span className='text-white font-medium text-sm'>{t(config.labelKey)}</span>
       </div>
       <motion.button
         whileTap={{ scale: 0.9 }}
@@ -56,10 +58,11 @@ function NotifCard({ config }: { config: NotifConfig }) {
 }
 
 export function NotificationsPanel() {
+  const { t } = useI18n();
   const hasAny = NOTIFICATIONS.some(() => true); // always render panel
 
   return (
-    <Panel title='Notifications' icon={<Bell size={18} />}>
+    <Panel title={t('panels.notifications_panel.title')} icon={<Bell size={18} />}>
       <AnimatePresence>
         {NOTIFICATIONS.map(n => (
           <NotifCard key={n.entityId} config={n} />
@@ -69,7 +72,7 @@ export function NotificationsPanel() {
       {!hasAny && (
         <div className='text-center text-white/30 py-8'>
           <Bell size={32} className='mx-auto mb-2 opacity-30' />
-          <p>Aucune notification active</p>
+          <p>{t('panels.notifications_panel.empty')}</p>
         </div>
       )}
     </Panel>

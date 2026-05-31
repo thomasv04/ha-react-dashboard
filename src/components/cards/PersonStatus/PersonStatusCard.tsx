@@ -6,6 +6,7 @@ import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { PersonStatusConfig, PersonEntry } from '@/types/widget-configs';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 
 // ── Zone normalization ────────────────────────────────────────────────────────
 function normalizeZone(zone: string | undefined): string {
@@ -16,16 +17,17 @@ function normalizeZone(zone: string | undefined): string {
   return zone;
 }
 
-function getZoneLabel(zone: string): string {
+function getZoneLabel(zone: string, t: (key: string) => string): string {
   const normalized = normalizeZone(zone);
-  if (normalized === 'home') return 'MAISON';
-  if (normalized === 'away') return 'ABSENT';
+  if (normalized === 'home') return t('widgets.person.home');
+  if (normalized === 'away') return t('widgets.person.away');
   if (normalized === 'unknown') return '—';
   return zone.toUpperCase();
 }
 
 // ── Single person pill ────────────────────────────────────────────────────────
 function PersonPill({ entry, haBaseUrl }: { entry: PersonEntry; haBaseUrl: string | undefined }) {
+  const { t } = useI18n();
   const entity = useSafeEntity(entry.entityId);
 
   if (!entity) return null;
@@ -34,7 +36,7 @@ function PersonPill({ entry, haBaseUrl }: { entry: PersonEntry; haBaseUrl: strin
   const zone = entity.state;
   const isHome = normalizeZone(zone) === 'home';
   const rawPicture = entity.attributes.entity_picture as string | undefined;
-  const zoneLabel = getZoneLabel(zone);
+  const zoneLabel = getZoneLabel(zone, t);
 
   // Resolve relative HA picture URLs to absolute (e.g. /api/image/person.xxx/...)
   const picture = rawPicture
@@ -92,6 +94,7 @@ function PersonPill({ entry, haBaseUrl }: { entry: PersonEntry; haBaseUrl: strin
 
 // ── Main widget ────────────────────────────────────────────────────────────────
 export function PersonStatusCard() {
+  const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<PersonStatusConfig>(widgetId || 'person');
@@ -103,7 +106,7 @@ export function PersonStatusCard() {
     : undefined;
 
   if (persons.length === 0) {
-    return <div className='flex items-center justify-center h-full text-white/30 text-sm'>Aucune personne configurée</div>;
+    return <div className='flex items-center justify-center h-full text-white/30 text-sm'>{t('widgets.person.noPeople')}</div>;
   }
 
   return (

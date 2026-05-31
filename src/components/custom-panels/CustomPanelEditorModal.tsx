@@ -1,12 +1,14 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DURATION_FAST, DURATION_MICRO } from '@/lib/motion-tokens';
 import { X, Plus, Trash2, ChevronUp, ChevronDown, Zap, Blinds, Minus, Layers, Copy, Check, LayoutTemplate, Search } from 'lucide-react';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { IconPicker } from '@/components/layout/WidgetPickers';
 import { resolveIcon } from '@/lib/lucide-icon-map';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 import type {
   CustomPanel,
   CustomBlock,
@@ -27,16 +29,28 @@ function genId(): string {
 // ── Block type meta ───────────────────────────────────────────────────────────
 
 const BLOCK_META = {
-  button: { label: 'Bouton', color: 'bg-blue-500/20 text-blue-400 border border-blue-500/30', Icon: Zap },
-  'button-row': { label: 'Rangée boutons', color: 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30', Icon: LayoutTemplate },
-  'cover-row': { label: 'Volet', color: 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30', Icon: Blinds },
-  'section-header': { label: 'Séparateur', color: 'bg-white/8 text-white/40 border border-white/12', Icon: Minus },
+  button: { labelKey: 'layout.customPanel.blockTypeButton', color: 'bg-blue-500/20 text-blue-400 border border-blue-500/30', Icon: Zap },
+  'button-row': {
+    labelKey: 'layout.customPanel.blockTypeButtonRow',
+    color: 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30',
+    Icon: LayoutTemplate,
+  },
+  'cover-row': {
+    labelKey: 'layout.customPanel.blockTypeCoverRow',
+    color: 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30',
+    Icon: Blinds,
+  },
+  'section-header': {
+    labelKey: 'layout.customPanel.blockTypeSectionHeader',
+    color: 'bg-white/8 text-white/40 border border-white/12',
+    Icon: Minus,
+  },
 } as const;
 
 const BLOCK_TYPE_PICKER: Array<{
   type: CustomBlock['type'];
-  label: string;
-  description: string;
+  labelKey: string;
+  descriptionKey: string;
   Icon: typeof Zap;
   iconBg: string;
   iconColor: string;
@@ -45,8 +59,8 @@ const BLOCK_TYPE_PICKER: Array<{
 }> = [
   {
     type: 'button',
-    label: 'Bouton action',
-    description: 'Appelle un service HA',
+    labelKey: 'layout.customPanel.blockTypeButton',
+    descriptionKey: 'layout.customPanel.blockTypeButtonDesc',
     Icon: Zap,
     iconBg: 'bg-blue-500/15',
     iconColor: 'text-blue-400',
@@ -55,8 +69,8 @@ const BLOCK_TYPE_PICKER: Array<{
   },
   {
     type: 'button-row',
-    label: 'Rangée boutons',
-    description: 'Plusieurs boutons côte à côte',
+    labelKey: 'layout.customPanel.blockTypeButtonRow',
+    descriptionKey: 'layout.customPanel.blockTypeButtonRowDesc',
     Icon: LayoutTemplate,
     iconBg: 'bg-cyan-500/15',
     iconColor: 'text-cyan-400',
@@ -65,8 +79,8 @@ const BLOCK_TYPE_PICKER: Array<{
   },
   {
     type: 'cover-row',
-    label: 'Volet individuel',
-    description: 'Contrôle position et état',
+    labelKey: 'layout.customPanel.blockTypeCoverRow',
+    descriptionKey: 'layout.customPanel.blockTypeCoverRowDesc',
     Icon: Blinds,
     iconBg: 'bg-indigo-500/15',
     iconColor: 'text-indigo-400',
@@ -75,8 +89,8 @@ const BLOCK_TYPE_PICKER: Array<{
   },
   {
     type: 'section-header',
-    label: 'Séparateur',
-    description: 'Divise en sections visuelles',
+    labelKey: 'layout.customPanel.blockTypeSectionHeader',
+    descriptionKey: 'layout.customPanel.blockTypeSectionHeaderDesc',
     Icon: Minus,
     iconBg: 'bg-white/8',
     iconColor: 'text-white/50',
@@ -85,16 +99,18 @@ const BLOCK_TYPE_PICKER: Array<{
   },
 ];
 
-function blockSummary(block: CustomBlock): string {
+type TFn = (key: string) => string;
+
+function blockSummary(block: CustomBlock, t: TFn): string {
   switch (block.type) {
     case 'button':
-      return block.label || '(sans nom)';
+      return block.label || t('layout.customPanel.blockNoName');
     case 'button-row':
-      return block.buttons.length ? block.buttons.map(b => b.label || '…').join(' · ') : '(aucun bouton)';
+      return block.buttons.length ? block.buttons.map(b => b.label || '…').join(' · ') : t('layout.customPanel.blockNoButtons');
     case 'cover-row':
-      return block.label || block.entityId || '(entité non définie)';
+      return block.label || block.entityId || t('layout.customPanel.blockNoEntity');
     case 'section-header':
-      return block.title || '(sans titre)';
+      return block.title || t('layout.customPanel.blockNoName');
     default:
       return '';
   }
@@ -102,33 +118,33 @@ function blockSummary(block: CustomBlock): string {
 
 // ── Service picker ────────────────────────────────────────────────────────────
 
-const SERVICE_PRESETS: Array<{ domain: string; service: string; label: string }> = [
-  { domain: 'cover', service: 'open_cover', label: 'Ouvrir volet' },
-  { domain: 'cover', service: 'close_cover', label: 'Fermer volet' },
-  { domain: 'cover', service: 'stop_cover', label: 'Stopper volet' },
-  { domain: 'cover', service: 'toggle', label: 'Basculer volet' },
-  { domain: 'cover', service: 'set_cover_position', label: 'Définir position volet' },
-  { domain: 'light', service: 'turn_on', label: 'Allumer lumière' },
-  { domain: 'light', service: 'turn_off', label: 'Éteindre lumière' },
-  { domain: 'light', service: 'toggle', label: 'Basculer lumière' },
-  { domain: 'switch', service: 'turn_on', label: 'Activer switch' },
-  { domain: 'switch', service: 'turn_off', label: 'Désactiver switch' },
-  { domain: 'switch', service: 'toggle', label: 'Basculer switch' },
-  { domain: 'input_boolean', service: 'turn_on', label: 'Activer booléen' },
-  { domain: 'input_boolean', service: 'turn_off', label: 'Désactiver booléen' },
-  { domain: 'input_boolean', service: 'toggle', label: 'Basculer booléen' },
-  { domain: 'scene', service: 'turn_on', label: 'Activer scène' },
-  { domain: 'script', service: 'turn_on', label: 'Exécuter script' },
-  { domain: 'automation', service: 'trigger', label: 'Déclencher automation' },
-  { domain: 'automation', service: 'turn_on', label: 'Activer automation' },
-  { domain: 'automation', service: 'turn_off', label: 'Désactiver automation' },
-  { domain: 'climate', service: 'set_hvac_mode', label: 'Mode climatisation' },
-  { domain: 'climate', service: 'set_temperature', label: 'Température thermostat' },
-  { domain: 'media_player', service: 'media_play', label: 'Lecture média' },
-  { domain: 'media_player', service: 'media_pause', label: 'Pause média' },
-  { domain: 'media_player', service: 'media_stop', label: 'Stop média' },
-  { domain: 'vacuum', service: 'start', label: 'Démarrer aspirateur' },
-  { domain: 'vacuum', service: 'return_to_base', label: 'Retour base aspirateur' },
+const SERVICE_PRESETS: Array<{ domain: string; service: string; labelKey: string }> = [
+  { domain: 'cover', service: 'open_cover', labelKey: 'layout.customPanel.servicePresets.cover.open_cover' },
+  { domain: 'cover', service: 'close_cover', labelKey: 'layout.customPanel.servicePresets.cover.close_cover' },
+  { domain: 'cover', service: 'stop_cover', labelKey: 'layout.customPanel.servicePresets.cover.stop_cover' },
+  { domain: 'cover', service: 'toggle', labelKey: 'layout.customPanel.servicePresets.cover.toggle' },
+  { domain: 'cover', service: 'set_cover_position', labelKey: 'layout.customPanel.servicePresets.cover.set_cover_position' },
+  { domain: 'light', service: 'turn_on', labelKey: 'layout.customPanel.servicePresets.light.turn_on' },
+  { domain: 'light', service: 'turn_off', labelKey: 'layout.customPanel.servicePresets.light.turn_off' },
+  { domain: 'light', service: 'toggle', labelKey: 'layout.customPanel.servicePresets.light.toggle' },
+  { domain: 'switch', service: 'turn_on', labelKey: 'layout.customPanel.servicePresets.switch.turn_on' },
+  { domain: 'switch', service: 'turn_off', labelKey: 'layout.customPanel.servicePresets.switch.turn_off' },
+  { domain: 'switch', service: 'toggle', labelKey: 'layout.customPanel.servicePresets.switch.toggle' },
+  { domain: 'input_boolean', service: 'turn_on', labelKey: 'layout.customPanel.servicePresets.input_boolean.turn_on' },
+  { domain: 'input_boolean', service: 'turn_off', labelKey: 'layout.customPanel.servicePresets.input_boolean.turn_off' },
+  { domain: 'input_boolean', service: 'toggle', labelKey: 'layout.customPanel.servicePresets.input_boolean.toggle' },
+  { domain: 'scene', service: 'turn_on', labelKey: 'layout.customPanel.servicePresets.scene.turn_on' },
+  { domain: 'script', service: 'turn_on', labelKey: 'layout.customPanel.servicePresets.script.turn_on' },
+  { domain: 'automation', service: 'trigger', labelKey: 'layout.customPanel.servicePresets.automation.trigger' },
+  { domain: 'automation', service: 'turn_on', labelKey: 'layout.customPanel.servicePresets.automation.turn_on' },
+  { domain: 'automation', service: 'turn_off', labelKey: 'layout.customPanel.servicePresets.automation.turn_off' },
+  { domain: 'climate', service: 'set_hvac_mode', labelKey: 'layout.customPanel.servicePresets.climate.set_hvac_mode' },
+  { domain: 'climate', service: 'set_temperature', labelKey: 'layout.customPanel.servicePresets.climate.set_temperature' },
+  { domain: 'media_player', service: 'media_play', labelKey: 'layout.customPanel.servicePresets.media_player.media_play' },
+  { domain: 'media_player', service: 'media_pause', labelKey: 'layout.customPanel.servicePresets.media_player.media_pause' },
+  { domain: 'media_player', service: 'media_stop', labelKey: 'layout.customPanel.servicePresets.media_player.media_stop' },
+  { domain: 'vacuum', service: 'start', labelKey: 'layout.customPanel.servicePresets.vacuum.start' },
+  { domain: 'vacuum', service: 'return_to_base', labelKey: 'layout.customPanel.servicePresets.vacuum.return_to_base' },
 ];
 
 function ServicePicker({
@@ -140,6 +156,7 @@ function ServicePicker({
   service: string;
   onChange: (domain: string, service: string) => void;
 }) {
+  const { t } = useI18n();
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
@@ -147,11 +164,12 @@ function ServicePicker({
   const dropRef = useRef<HTMLDivElement>(null);
 
   const current = domain && service ? `${domain}.${service}` : '';
-  const currentLabel = SERVICE_PRESETS.find(p => p.domain === domain && p.service === service)?.label;
+  const currentPreset = SERVICE_PRESETS.find(p => p.domain === domain && p.service === service);
+  const currentLabel = currentPreset ? t(currentPreset.labelKey) : undefined;
 
   const filtered = search
     ? SERVICE_PRESETS.filter(
-        p => p.label.toLowerCase().includes(search.toLowerCase()) || `${p.domain}.${p.service}`.includes(search.toLowerCase())
+        p => t(p.labelKey).toLowerCase().includes(search.toLowerCase()) || `${p.domain}.${p.service}`.includes(search.toLowerCase())
       )
     : SERVICE_PRESETS;
 
@@ -194,7 +212,7 @@ function ServicePicker({
             autoFocus
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder='Rechercher un service…'
+            placeholder={t('layout.customPanel.searchService')}
             className='flex-1 bg-transparent text-sm text-white/80 outline-none placeholder:text-white/25'
           />
         </div>
@@ -214,17 +232,17 @@ function ServicePicker({
                   isActive ? 'bg-blue-500/15 border border-blue-500/30' : 'border border-transparent hover:bg-white/6'
                 )}
               >
-                <span className={isActive ? 'text-blue-300' : 'text-white/70'}>{p.label}</span>
+                <span className={isActive ? 'text-blue-300' : 'text-white/70'}>{t(p.labelKey)}</span>
                 <span className='text-white/25 text-xs font-mono flex-shrink-0'>
                   {p.domain}.{p.service}
                 </span>
               </button>
             );
           })}
-          {filtered.length === 0 && <p className='text-white/25 text-xs text-center py-3'>Aucun résultat</p>}
+          {filtered.length === 0 && <p className='text-white/25 text-xs text-center py-3'>{t('layout.customPanel.noServiceResult')}</p>}
         </div>
         <div className='border-t border-white/8 px-3 py-2'>
-          <p className='text-[10px] text-white/25 mb-1.5'>Ou saisir manuellement :</p>
+          <p className='text-[10px] text-white/25 mb-1.5'>{t('layout.customPanel.manualEntry')}</p>
           <div className='flex gap-2'>
             <input
               value={domain}
@@ -246,7 +264,7 @@ function ServicePicker({
 
   return (
     <div>
-      <label className='text-[11px] text-white/40 block mb-1'>Service</label>
+      <label className='text-[11px] text-white/40 block mb-1'>{t('layout.customPanel.serviceLabel')}</label>
       <button
         ref={triggerRef}
         type='button'
@@ -264,7 +282,7 @@ function ServicePicker({
           ) : current ? (
             <span className='text-white/60 font-mono text-xs'>{current}</span>
           ) : (
-            <span className='text-white/25'>Choisir un service…</span>
+            <span className='text-white/25'>{t('layout.customPanel.chooseService')}</span>
           )}
         </span>
         {open ? (
@@ -283,6 +301,7 @@ function ServicePicker({
 // ── Panel ref badge (copy ID) ─────────────────────────────────────────────────
 
 function PanelRefBadge({ panelId }: { panelId: string }) {
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const ref = `custom:${panelId}`;
 
@@ -296,12 +315,13 @@ function PanelRefBadge({ panelId }: { panelId: string }) {
   return (
     <div className='flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/8'>
       <div className='flex-1 min-w-0'>
-        <p className='text-[10px] text-white/30 font-medium uppercase tracking-wider mb-0.5'>Référence raccourci</p>
+        <p className='text-[10px] text-white/30 font-medium uppercase tracking-wider mb-0.5'>{t('layout.customPanel.refBadgeTitle')}</p>
         <p className='text-xs text-white/50 font-mono truncate'>{ref}</p>
       </div>
       <button
         onClick={copy}
-        title='Copier la référence'
+        title={t('common.copy')}
+        aria-label={t('common.copy')}
         className='flex-shrink-0 p-1.5 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/8 transition-colors'
       >
         {copied ? <Check size={13} className='text-green-400' /> : <Copy size={13} />}
@@ -338,11 +358,12 @@ function ButtonFields({
     }>
   ) => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className='space-y-3'>
       <div className='grid grid-cols-2 gap-3'>
         <div>
-          <label className='text-[11px] text-white/40 block mb-1'>Label</label>
+          <label className='text-[11px] text-white/40 block mb-1'>{t('layout.customPanel.blockLabel')}</label>
           <input
             value={label}
             onChange={e => onChange({ label: e.target.value })}
@@ -351,13 +372,13 @@ function ButtonFields({
           />
         </div>
         <div>
-          <label className='text-[11px] text-white/40 block mb-1'>Icône</label>
+          <label className='text-[11px] text-white/40 block mb-1'>{t('layout.customPanel.blockIcon')}</label>
           <IconPicker value={icon ?? ''} onChange={v => onChange({ icon: v || undefined })} label='' />
         </div>
       </div>
 
       <div>
-        <label className='text-[11px] text-white/40 block mb-1'>Variante</label>
+        <label className='text-[11px] text-white/40 block mb-1'>{t('layout.customPanel.blockVariant')}</label>
         <div className='flex gap-2'>
           {(['primary', 'secondary'] as const).map(v => (
             <button
@@ -372,7 +393,7 @@ function ButtonFields({
                   : 'bg-transparent border-white/10 text-white/30 hover:border-white/20 hover:text-white/50'
               )}
             >
-              {v === 'primary' ? 'Primaire (bleu)' : 'Secondaire (sombre)'}
+              {v === 'primary' ? t('layout.customPanel.blockPrimary') : t('layout.customPanel.blockSecondary')}
             </button>
           ))}
         </div>
@@ -381,7 +402,7 @@ function ButtonFields({
       <ServicePicker domain={domain} service={service} onChange={(d, s) => onChange({ domain: d, service: s })} />
 
       <div>
-        <label className='text-[11px] text-white/40 block mb-1.5'>Entités cibles</label>
+        <label className='text-[11px] text-white/40 block mb-1.5'>{t('layout.customPanel.blockTargetEntities')}</label>
         <div className='space-y-2'>
           {targetEntityIds.map((eid, i) => (
             <div key={i} className='flex items-center gap-2'>
@@ -398,6 +419,7 @@ function ButtonFields({
               </div>
               <button
                 onClick={() => onChange({ targetEntityIds: targetEntityIds.filter((_, j) => j !== i) })}
+                aria-label={t('layout.customPanel.removeEntity')}
                 className='p-1.5 rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0'
               >
                 <X size={14} />
@@ -409,7 +431,7 @@ function ButtonFields({
             className='flex items-center gap-1.5 text-xs text-blue-400/70 hover:text-blue-400 transition-colors py-1'
           >
             <Plus size={13} />
-            Ajouter une entité
+            {t('layout.customPanel.addEntityToBlock')}
           </button>
         </div>
       </div>
@@ -434,6 +456,7 @@ function ButtonBlockForm({ block, onChange }: { block: ButtonBlock; onChange: (b
 }
 
 function ButtonRowBlockForm({ block, onChange }: { block: ButtonRowBlock; onChange: (b: ButtonRowBlock) => void }) {
+  const { t } = useI18n();
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
 
   const addButton = () => {
@@ -455,19 +478,23 @@ function ButtonRowBlockForm({ block, onChange }: { block: ButtonRowBlock; onChan
 
   return (
     <div className='pt-3 border-t border-white/8 space-y-2'>
-      {block.buttons.length === 0 && <p className='text-white/25 text-xs text-center py-2'>Aucun bouton. Ajoutez-en un ci-dessous.</p>}
+      {block.buttons.length === 0 && <p className='text-white/25 text-xs text-center py-2'>{t('layout.customPanel.noButtonInRow')}</p>}
       {block.buttons.map((btn, i) => (
         <div key={btn.id} className='rounded-lg border border-white/10 overflow-hidden'>
           <div
             className='flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-white/5 transition-colors'
             onClick={() => setExpandedIdx(expandedIdx === i ? null : i)}
+            onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && setExpandedIdx(expandedIdx === i ? null : i)}
+            role='button'
+            tabIndex={0}
           >
-            <span className='flex-1 text-sm text-white/60 truncate'>{btn.label || `Bouton ${i + 1}`}</span>
+            <span className='flex-1 text-sm text-white/60 truncate'>{btn.label || `${t('layout.customPanel.blockBtnN')} ${i + 1}`}</span>
             <button
               onClick={e => {
                 e.stopPropagation();
                 removeButton(i);
               }}
+              aria-label={t('layout.customPanel.removeButton')}
               className='p-1 rounded hover:bg-red-500/20 text-red-400/50 hover:text-red-400'
             >
               <Trash2 size={12} />
@@ -504,22 +531,28 @@ function ButtonRowBlockForm({ block, onChange }: { block: ButtonRowBlock; onChan
         className='w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-white/15 text-xs text-white/35 hover:text-white/60 hover:border-white/25 transition-colors'
       >
         <Plus size={12} />
-        Ajouter un bouton
+        {t('layout.customPanel.addButtonToRow')}
       </button>
     </div>
   );
 }
 
 function CoverRowBlockForm({ block, onChange }: { block: CoverRowBlock; onChange: (b: CoverRowBlock) => void }) {
+  const { t } = useI18n();
   return (
     <div className='space-y-3 pt-3 border-t border-white/8'>
-      <EntityPicker value={block.entityId} onChange={v => onChange({ ...block, entityId: v })} domain='cover' label='Entité volet' />
+      <EntityPicker
+        value={block.entityId}
+        onChange={v => onChange({ ...block, entityId: v })}
+        domain='cover'
+        label={t('layout.customPanel.coverEntity')}
+      />
       <div>
-        <label className='text-[11px] text-white/40 block mb-1'>Label (optionnel)</label>
+        <label className='text-[11px] text-white/40 block mb-1'>{t('layout.customPanel.coverLabelOptional')}</label>
         <input
           value={block.label ?? ''}
           onChange={e => onChange({ ...block, label: e.target.value || undefined })}
-          placeholder="Utilise le nom de l'entité par défaut"
+          placeholder={t('layout.customPanel.coverLabelPlaceholder')}
           className='w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 outline-none focus:border-blue-500/50 placeholder:text-white/20'
         />
       </div>
@@ -528,13 +561,14 @@ function CoverRowBlockForm({ block, onChange }: { block: CoverRowBlock; onChange
 }
 
 function SectionHeaderBlockForm({ block, onChange }: { block: SectionHeaderBlock; onChange: (b: SectionHeaderBlock) => void }) {
+  const { t } = useI18n();
   return (
     <div className='pt-3 border-t border-white/8'>
-      <label className='text-[11px] text-white/40 block mb-1'>Titre</label>
+      <label className='text-[11px] text-white/40 block mb-1'>{t('layout.customPanel.sectionTitle')}</label>
       <input
         value={block.title}
         onChange={e => onChange({ ...block, title: e.target.value })}
-        placeholder='ex: Contrôles individuels'
+        placeholder={t('layout.customPanel.sectionTitlePlaceholder')}
         className='w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 outline-none focus:border-blue-500/50 placeholder:text-white/20'
       />
     </div>
@@ -562,17 +596,25 @@ function BlockItem({
   onMove: (dir: -1 | 1) => void;
   onDelete: () => void;
 }) {
+  const { t } = useI18n();
   const meta = BLOCK_META[block.type];
   const MetaIcon = meta.Icon;
 
   return (
     <div className='rounded-xl border border-white/8 bg-white/[0.02] overflow-hidden'>
-      <div className='flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none hover:bg-white/5 transition-colors' onClick={onToggle}>
+      <div
+        className='flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none hover:bg-white/5 transition-colors'
+        onClick={onToggle}
+        onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onToggle()}
+        role='button'
+        tabIndex={0}
+      >
         {/* Move buttons */}
         <div className='flex flex-col gap-0.5 flex-shrink-0' onClick={e => e.stopPropagation()}>
           <button
             disabled={index === 0}
             onClick={() => onMove(-1)}
+            aria-label={t('layout.customPanel.moveBlockUp')}
             className='p-0.5 text-white/30 hover:text-white/60 disabled:opacity-20 transition-colors'
           >
             <ChevronUp size={12} />
@@ -580,6 +622,7 @@ function BlockItem({
           <button
             disabled={index === total - 1}
             onClick={() => onMove(1)}
+            aria-label={t('layout.customPanel.moveBlockDown')}
             className='p-0.5 text-white/30 hover:text-white/60 disabled:opacity-20 transition-colors'
           >
             <ChevronDown size={12} />
@@ -589,15 +632,19 @@ function BlockItem({
         {/* Type badge */}
         <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium flex-shrink-0', meta.color)}>
           <MetaIcon size={11} />
-          {meta.label}
+          {t(meta.labelKey)}
         </span>
 
         {/* Summary */}
-        <span className='flex-1 text-sm text-white/60 truncate min-w-0'>{blockSummary(block)}</span>
+        <span className='flex-1 text-sm text-white/60 truncate min-w-0'>{blockSummary(block, t)}</span>
 
         {/* Delete */}
         <div className='flex items-center gap-1 flex-shrink-0' onClick={e => e.stopPropagation()}>
-          <button onClick={onDelete} className='p-1.5 rounded-lg text-red-400/50 hover:text-red-400 hover:bg-red-500/10 transition-colors'>
+          <button
+            onClick={onDelete}
+            aria-label={t('layout.customPanel.deleteBlock')}
+            className='p-1.5 rounded-lg text-red-400/50 hover:text-red-400 hover:bg-red-500/10 transition-colors'
+          >
             <Trash2 size={13} />
           </button>
         </div>
@@ -633,6 +680,7 @@ function BlockItem({
 // ── Panel editor (right pane) ─────────────────────────────────────────────────
 
 function PanelEditor({ panel, onChange }: { panel: CustomPanel; onChange: (p: CustomPanel) => void }) {
+  const { t } = useI18n();
   const [expandedBlockId, setExpandedBlockId] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
 
@@ -679,7 +727,7 @@ function PanelEditor({ panel, onChange }: { panel: CustomPanel; onChange: (p: Cu
         <input
           value={panel.name}
           onChange={e => onChange({ ...panel, name: e.target.value })}
-          placeholder='Nom du panneau'
+          placeholder={t('layout.customPanel.panelPlaceholder')}
           className='flex-1 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-sm text-white/80 outline-none focus:border-blue-500/50 placeholder:text-white/30'
         />
         <div className='w-44 flex-shrink-0'>
@@ -695,7 +743,7 @@ function PanelEditor({ panel, onChange }: { panel: CustomPanel; onChange: (p: Cu
       {/* Blocks header */}
       <div className='flex items-center justify-between px-4 py-2 border-b border-white/8 flex-shrink-0'>
         <div className='flex items-center gap-2'>
-          <span className='text-[11px] font-semibold text-white/40 uppercase tracking-wider'>Blocs</span>
+          <span className='text-[11px] font-semibold text-white/40 uppercase tracking-wider'>{t('layout.customPanel.blocks')}</span>
           <span className='text-[11px] text-white/20'>({panel.blocks.length})</span>
         </div>
       </div>
@@ -707,8 +755,8 @@ function PanelEditor({ panel, onChange }: { panel: CustomPanel; onChange: (p: Cu
             <div className='w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center'>
               <Plus size={18} className='text-white/20' />
             </div>
-            <p className='text-white/25 text-sm'>Aucun bloc</p>
-            <p className='text-white/15 text-xs'>Cliquez sur "Ajouter un bloc" ci-dessous</p>
+            <p className='text-white/25 text-sm'>{t('layout.customPanel.noBlock')}</p>
+            <p className='text-white/15 text-xs'>{t('layout.customPanel.noBlockHint')}</p>
           </div>
         )}
         {panel.blocks.map((block, i) => (
@@ -738,7 +786,7 @@ function PanelEditor({ panel, onChange }: { panel: CustomPanel; onChange: (p: Cu
           )}
         >
           <Plus size={14} className={showPicker ? 'rotate-45 transition-transform' : 'transition-transform'} />
-          Ajouter un bloc
+          {t('layout.customPanel.addBlock')}
         </button>
       </div>
 
@@ -754,9 +802,12 @@ function PanelEditor({ panel, onChange }: { panel: CustomPanel; onChange: (p: Cu
             style={{ background: 'rgba(10, 14, 36, 0.98)', backdropFilter: 'blur(20px)' }}
           >
             <div className='flex items-center justify-between px-4 py-2.5 border-b border-white/8'>
-              <span className='text-[11px] font-semibold text-white/40 uppercase tracking-wider'>Choisir un type de bloc</span>
+              <span className='text-[11px] font-semibold text-white/40 uppercase tracking-wider'>
+                {t('layout.customPanel.chooseBlockType')}
+              </span>
               <button
                 onClick={() => setShowPicker(false)}
+                aria-label={t('common.close')}
                 className='p-1 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/8 transition-colors'
               >
                 <X size={13} />
@@ -781,8 +832,8 @@ function PanelEditor({ panel, onChange }: { panel: CustomPanel; onChange: (p: Cu
                     <bt.Icon size={17} className={bt.iconColor} />
                   </div>
                   <div>
-                    <div className={cn('text-xs font-semibold leading-tight', bt.iconColor)}>{bt.label}</div>
-                    <div className='text-[10px] text-white/30 mt-0.5 leading-tight'>{bt.description}</div>
+                    <div className={cn('text-xs font-semibold leading-tight', bt.iconColor)}>{t(bt.labelKey)}</div>
+                    <div className='text-[10px] text-white/30 mt-0.5 leading-tight'>{t(bt.descriptionKey)}</div>
                   </div>
                 </button>
               ))}
@@ -807,12 +858,16 @@ function PanelListItem({
   onSelect: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useI18n();
   // eslint-disable-next-line react-hooks/static-components
   const Icon = panel.icon ? resolveIcon(panel.icon) : null;
 
   return (
     <div
       onClick={onSelect}
+      onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onSelect()}
+      role='button'
+      tabIndex={0}
       className={cn(
         'group flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer transition-all',
         active ? 'bg-white/10 border border-white/15' : 'hover:bg-white/5 border border-transparent'
@@ -832,6 +887,7 @@ function PanelListItem({
           e.stopPropagation();
           onDelete();
         }}
+        aria-label={t('layout.customPanel.deletePanel')}
         className='opacity-0 group-hover:opacity-100 p-1 rounded-lg text-red-400/50 hover:text-red-400 hover:bg-red-500/10 transition-all'
       >
         <Trash2 size={12} />
@@ -843,6 +899,7 @@ function PanelListItem({
 // ── Main modal ────────────────────────────────────────────────────────────────
 
 export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n();
   const { panels, upsertPanel, deletePanel } = useCustomPanels();
 
   // Local copy — synced to context on close
@@ -870,7 +927,7 @@ export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
 
   const createPanel = () => {
     const id = genId();
-    const panel: CustomPanel = { id, name: 'Nouveau panneau', blocks: [] };
+    const panel: CustomPanel = { id, name: t('layout.customPanel.newPanelDefault'), blocks: [] };
     const next = [...localPanels, panel];
     setLocalPanels(next);
     setSelectedId(id);
@@ -903,7 +960,7 @@ export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
         initial={{ opacity: 0, scale: 0.96, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 12 }}
-        transition={{ duration: 0.2 }}
+        transition={{ duration: DURATION_FAST }}
         className='fixed inset-0 z-[81] flex items-center justify-center p-4 pointer-events-none'
       >
         <div
@@ -917,11 +974,12 @@ export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
               <Layers size={16} className='text-white' />
             </div>
             <div>
-              <h2 className='text-white font-semibold text-base'>Panneaux personnalisés</h2>
-              <p className='text-white/30 text-[11px]'>Créez et configurez des panneaux avec des blocs personnalisés</p>
+              <h2 className='text-white font-semibold text-base'>{t('layout.customPanel.title')}</h2>
+              <p className='text-white/30 text-[11px]'>{t('layout.customPanel.subtitle')}</p>
             </div>
             <button
               onClick={handleClose}
+              aria-label={t('common.close')}
               className='ml-auto p-1.5 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/10 transition-colors'
             >
               <X size={16} />
@@ -933,7 +991,7 @@ export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
             {/* Left sidebar — panel list */}
             <div className='w-52 border-r border-white/8 flex flex-col flex-shrink-0'>
               <div className='flex-1 overflow-y-auto p-3 space-y-1 min-h-0'>
-                {localPanels.length === 0 && <p className='text-white/25 text-xs text-center py-6'>Aucun panneau</p>}
+                {localPanels.length === 0 && <p className='text-white/25 text-xs text-center py-6'>{t('layout.customPanel.noPanel')}</p>}
                 {localPanels.map(panel => (
                   <PanelListItem
                     key={panel.id}
@@ -950,7 +1008,7 @@ export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
                   className='w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-400 text-xs font-medium transition-colors'
                 >
                   <Plus size={13} />
-                  Nouveau panneau
+                  {t('layout.customPanel.newPanel')}
                 </button>
               </div>
             </div>
@@ -965,8 +1023,8 @@ export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
                     <Layers size={24} className='text-white/20' />
                   </div>
                   <div>
-                    <p className='text-white/35 text-sm font-medium'>Sélectionnez un panneau</p>
-                    <p className='text-white/20 text-xs mt-1'>ou créez-en un nouveau</p>
+                    <p className='text-white/35 text-sm font-medium'>{t('layout.customPanel.selectPanel')}</p>
+                    <p className='text-white/20 text-xs mt-1'>{t('layout.customPanel.selectPanelPromptSub')}</p>
                   </div>
                 </div>
               )}
@@ -975,16 +1033,12 @@ export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
 
           {/* Footer */}
           <div className='flex items-center justify-between px-5 py-3 border-t border-white/8 flex-shrink-0'>
-            <p className='text-[11px] text-white/25'>
-              Les modifications sont sauvegardées via le bouton&nbsp;
-              <span className='text-white/40 font-medium'>Sauvegarder</span>
-              &nbsp;du tableau de bord.
-            </p>
+            <p className='text-[11px] text-white/25'>{t('layout.customPanel.footerNote')}</p>
             <button
               onClick={handleClose}
               className='px-4 py-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 text-blue-300 text-sm font-medium transition-colors'
             >
-              Fermer
+              {t('layout.customPanel.close')}
             </button>
           </div>
         </div>

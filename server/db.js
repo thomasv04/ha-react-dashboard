@@ -109,7 +109,7 @@ function migrateFromJSON(db) {
     `
     ).run(data.version ?? 1, JSON.stringify(data));
 
-    console.log('[db] Migrated dashboard_config.json → SQLite');
+    console.info('[db] Migrated dashboard_config.json → SQLite');
   } catch (err) {
     console.error('[db] Migration error:', err.message);
   }

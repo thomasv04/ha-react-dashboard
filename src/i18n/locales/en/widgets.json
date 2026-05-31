@@ -4,6 +4,13 @@
     "wind": "Wind",
     "max": "MAX",
     "min": "MIN",
+    "notFound": "Entity not found",
+    "humidity": "Humidity",
+    "pressure": "Pressure",
+    "gusts": "Gusts",
+    "dewPoint": "Dew point",
+    "precipitation": "Precip.",
+    "description": "Current weather conditions and multi-day forecasts.",
     "conditions": {
       "clear-night": "Clear night",
       "cloudy": "Cloudy",
@@ -25,6 +32,9 @@
   },
   "thermostat": {
     "label": "Thermostat",
+    "notFound": "Entity not found",
+    "currentTemp": "Current temperature",
+    "description": "Controls a climate.xxx thermostat with target temperature.",
     "heating": "HEATING TO",
     "cooling": "COOLING TO",
     "idle": "IDLE",
@@ -35,27 +45,46 @@
   },
   "light": {
     "label": "Light",
+    "description": "Controls a light or group with brightness dimmer.",
     "brightness": "Brightness",
-    "colorTemp": "Color temperature",
-    "notFound": "Light not found"
+    "colorTemp": "Color temp",
+    "color": "Color",
+    "notFound": "Light not found",
+    "on": "On",
+    "off": "Off"
   },
   "sensor": {
     "label": "Sensor",
     "notFound": "Entity not found",
+    "description": "Any HA sensor: temperature, humidity, power, binary...",
     "updatedAgo": "{value} ago",
     "justNow": "just now",
-    "stale": "stale"
+    "stale": "stale",
+    "active": "Active",
+    "inactive": "Inactive"
   },
   "cover": {
     "label": "Cover",
+    "description": "Controls a cover or blind with position slider and buttons.",
     "open": "Open",
     "closed": "Closed",
     "opening": "Opening...",
     "closing": "Closing...",
-    "notFound": "Cover not found"
+    "notFound": "Cover not found",
+    "openAction": "OPEN",
+    "closeAction": "CLOSE",
+    "presetClosed": "CLOSED",
+    "presetOpen": "OPEN",
+    "percentOpen": "{value}% open",
+    "presets": "Presets",
+    "info": "Information",
+    "state": "STATE",
+    "position": "POSITION",
+    "deviceClass": "CLASS"
   },
   "media_player": {
     "label": "Media",
+    "description": "Controls Spotify, Sonos, Chromecast — cover art, title, play/pause, volume.",
     "playing": "Playing",
     "paused": "Paused",
     "idle": "Idle",
@@ -64,27 +93,42 @@
   },
   "person": {
     "label": "People",
+    "notFound": "Entity not found",
+    "description": "Shows the presence and location of household members.",
     "home": "HOME",
     "away": "AWAY",
     "noPeople": "No people configured"
   },
   "alarm": {
     "label": "Alarm",
+    "description": "Alarm panel with PIN keypad, home/away/night arming.",
     "armed_home": "Armed — home",
     "armed_away": "Armed — away",
     "armed_night": "Armed — night",
+    "armed_vacation": "Armed — vacation",
     "disarmed": "Disarmed",
     "triggered": "ALERT!",
     "arming": "Arming...",
     "disarm": "Disarm",
+    "arm": "Arm",
     "pinPlaceholder": "PIN code",
     "modeHome": "Home",
     "modeAway": "Away",
-    "modeNight": "Night"
+    "modeNight": "Night",
+    "modeVacation": "Vacation",
+    "selectMode": "Select mode"
   },
-  "camera": { "label": "Camera" },
+  "camera": {
+    "label": "Camera",
+    "description": "Live video stream from one or more Frigate/RTSP cameras.",
+    "streamMode": "Stream mode",
+    "mjpeg": "MJPEG (low latency)",
+    "hls": "HLS (better compression)"
+  },
   "energy": {
     "label": "Energy",
+    "defaultName": "Solar energy",
+    "description": "Solar production overview, battery, home consumption.",
     "solar": "Solar energy",
     "charging": "Charging",
     "discharging": "Discharging",
@@ -94,6 +138,7 @@
   },
   "tempo": {
     "label": "Tempo EDF",
+    "description": "EDF Tempo day color and off-peak/peak hours.",
     "offPeak": "Off-peak hours",
     "peak": "Peak hours",
     "rate": "Rate ",
@@ -102,23 +147,90 @@
     "white": "White",
     "red": "Red"
   },
-  "rooms": { "label": "Rooms" },
   "shortcuts": {
     "label": "Shortcuts",
+    "description": "Quick buttons to open lights, covers, security panels...",
     "header": "Shortcuts",
     "armed": "Armed",
     "disarmed": "Disarmed"
   },
   "pellet": {
     "label": "Pellet stove",
+    "title": "Pellet stove",
+    "description": "Controls a pellet stove (climate): target temperature, on/off.",
     "current": "Current: "
   },
   "greeting": {
+    "label": "Clock",
     "goodMorning": "Good morning",
     "goodAfternoon": "Good afternoon",
     "goodEvening": "Good evening",
     "goodNight": "Good night"
   },
-  "automation": { "label": "Automation" },
-  "template": { "label": "Template" }
+  "activity": {
+    "label": "Activity bar",
+    "description": "Quick status strip: alarm, stove, battery, Tempo..."
+  },
+  "automation": {
+    "label": "Automation",
+    "notFound": "Automation not found",
+    "description": "Enables or disables a Home Assistant automation."
+  },
+  "group": {
+    "label": "Group",
+    "description": "Container displaying multiple widgets in a mini-grid.",
+    "groupTitle": "Title",
+    "titlePlaceholder": "Group name...",
+    "columns": "Columns",
+    "widgets": "Widgets",
+    "noWidgets": "No widgets added yet",
+    "addHint": "Use the Widgets tab to add some",
+    "addWidget": "Add a widget",
+    "dragToReorder": "Drag to reorder",
+    "empty": "Empty group",
+    "clickToAdd": "Open settings to add widgets"
+  },
+  "room": {
+    "label": "Room",
+    "description": "Room card with icon, temperature, humidity and controls."
+  },
+  "button": {
+    "label": "Button",
+    "description": "Tap to call any HA service or script with visual feedback.",
+    "done": "Done!",
+    "error": "Error",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "confirmDefault": "Are you sure you want to run this action?"
+  },
+  "template": { "label": "Template", "description": "Fully customizable widget with Jinja2/Nunjucks templates." },
+  "vacuum": {
+    "label": "Vacuum",
+    "description": "Robot vacuum control with room-by-room cleaning (Roborock, etc.).",
+    "states": {
+      "cleaning": "Cleaning",
+      "segment_cleaning": "Segment cleaning",
+      "docked": "Docked",
+      "idle": "Idle",
+      "paused": "Paused",
+      "returning": "Returning to dock",
+      "returning_home": "Returning to dock",
+      "error": "Error"
+    },
+    "start": "Start",
+    "pause": "Pause",
+    "resume": "Resume",
+    "stop": "Stop",
+    "dock": "Dock",
+    "locate": "Locate",
+    "cleaning": "Cleaning",
+    "byArea": "By area",
+    "cleanAreas": "Clean areas",
+    "startCleaning": "Start cleaning ({count})",
+    "orderNote": "Cleaning order may not be supported by your vacuum.",
+    "sequentialMode": "Sequential cleaning",
+    "sequentialDesc": "Clean rooms one at a time",
+    "sequentialNote": "Rooms will be cleaned one by one in the selected order.",
+    "queueProgress": "Room {current}/{total}"
+  }
 }

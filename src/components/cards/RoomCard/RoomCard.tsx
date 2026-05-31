@@ -17,7 +17,15 @@ import type { SoundPreset } from '@/lib/sounds';
 
 // ── Control button ─────────────────────────────────────────────────────────────
 
-function ControlButton({ ctrl, embedded, soundOverrides }: { ctrl: RoomControl; embedded?: boolean; soundOverrides?: Record<string, SoundPreset> }) {
+function ControlButton({
+  ctrl,
+  embedded,
+  soundOverrides,
+}: {
+  ctrl: RoomControl;
+  embedded?: boolean;
+  soundOverrides?: Record<string, SoundPreset>;
+}) {
   const { helpers } = useHass();
   const playFeedback = useSoundFeedback('rooms', soundOverrides);
   const stateEntity = useSafeEntity(ctrl.stateEntity ?? '');
@@ -51,17 +59,15 @@ function ControlButton({ ctrl, embedded, soundOverrides }: { ctrl: RoomControl; 
         padding: embedded ? '6px 4px' : '8px 4px',
         ...(active
           ? { background: `${color}18`, borderColor: `${color}30` }
-          : { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }
-        ),
+          : { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }),
       }}
     >
-      {customIconUrl
-        ? <img src={customIconUrl} alt='' className='w-4 h-4 object-contain' />
-        : IconComp
-          // eslint-disable-next-line react-hooks/static-components
-          ? <IconComp size={embedded ? 14 : 16} style={active ? { color } : { color: 'rgba(255,255,255,0.35)' }} />
-          : null
-      }
+      {customIconUrl ? (
+        <img src={customIconUrl} alt='' className='w-4 h-4 object-contain' />
+      ) : IconComp ? (
+        // eslint-disable-next-line react-hooks/static-components
+        <IconComp size={embedded ? 14 : 16} style={active ? { color } : { color: 'rgba(255,255,255,0.35)' }} />
+      ) : null}
       <span
         className='text-[9px] font-medium leading-none truncate max-w-full px-1'
         style={active ? { color } : { color: 'rgba(255,255,255,0.35)' }}
@@ -74,7 +80,15 @@ function ControlButton({ ctrl, embedded, soundOverrides }: { ctrl: RoomControl; 
 
 // ── Default light toggle ───────────────────────────────────────────────────────
 
-function LightToggle({ entityIds, embedded, soundOverrides }: { entityIds: string[]; embedded?: boolean; soundOverrides?: Record<string, SoundPreset> }) {
+function LightToggle({
+  entityIds,
+  embedded,
+  soundOverrides,
+}: {
+  entityIds: string[];
+  embedded?: boolean;
+  soundOverrides?: Record<string, SoundPreset>;
+}) {
   const { t } = useI18n();
   const { helpers } = useHass();
   const playFeedback = useSoundFeedback('rooms', soundOverrides);
@@ -98,15 +112,11 @@ function LightToggle({ entityIds, embedded, soundOverrides }: { entityIds: strin
         padding: embedded ? '6px 4px' : '8px 4px',
         ...(anyOn
           ? { background: 'rgba(251,191,36,0.14)', borderColor: 'rgba(251,191,36,0.28)' }
-          : { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }
-        ),
+          : { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }),
       }}
     >
       <Lightbulb size={embedded ? 14 : 16} style={anyOn ? { color: '#fbbf24' } : { color: 'rgba(255,255,255,0.35)' }} />
-      <span
-        className='text-[9px] font-medium leading-none'
-        style={anyOn ? { color: '#fbbf24' } : { color: 'rgba(255,255,255,0.35)' }}
-      >
+      <span className='text-[9px] font-medium leading-none' style={anyOn ? { color: '#fbbf24' } : { color: 'rgba(255,255,255,0.35)' }}>
         {anyOn ? t('widgets.light.on') : t('widgets.light.off')}
       </span>
     </motion.button>
@@ -149,37 +159,34 @@ export function RoomCard() {
   };
 
   // When embedded inside a GroupCard, we strip the gc class (no double glassmorphism)
-  const baseClass = embedded
-    ? 'rounded-2xl flex flex-col overflow-hidden h-full'
-    : 'gc rounded-2xl flex flex-col overflow-hidden h-full';
+  const baseClass = embedded ? 'rounded-2xl flex flex-col overflow-hidden h-full' : 'gc rounded-2xl flex flex-col overflow-hidden h-full';
 
-  const bgStyle = embedded
-    ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }
-    : undefined;
+  const bgStyle = embedded ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' } : undefined;
 
   return (
     <div className={baseClass} style={bgStyle}>
       {/* Header */}
       <div className={cn('flex items-start gap-2.5', embedded ? 'p-2.5' : 'p-3')}>
         {/* Icon */}
-        <div className={cn(
-          'rounded-xl flex items-center justify-center shrink-0 shadow-md bg-gradient-to-br',
-          iconBg,
-          embedded ? 'w-8 h-8' : 'w-9 h-9'
-        )}>
-          {customIconUrl
-            ? <img src={customIconUrl} alt='' className='w-4 h-4 object-contain' />
-            // eslint-disable-next-line react-hooks/static-components
-            : IconComp ? <IconComp size={embedded ? 15 : 17} className='text-white' strokeWidth={1.8} /> : null
-          }
+        <div
+          className={cn(
+            'rounded-xl flex items-center justify-center shrink-0 shadow-md bg-gradient-to-br',
+            iconBg,
+            embedded ? 'w-8 h-8' : 'w-9 h-9'
+          )}
+        >
+          {customIconUrl ? (
+            <img src={customIconUrl} alt='' className='w-4 h-4 object-contain' />
+          ) : // eslint-disable-next-line react-hooks/static-components
+          IconComp ? (
+            <IconComp size={embedded ? 15 : 17} className='text-white' strokeWidth={1.8} />
+          ) : null}
         </div>
 
         {/* Name + sensors */}
         <div className='flex flex-col min-w-0 flex-1'>
           <div className='flex items-center justify-between gap-1'>
-            <span className={cn('text-white/90 font-semibold leading-tight truncate', embedded ? 'text-xs' : 'text-sm')}>
-              {label}
-            </span>
+            <span className={cn('text-white/90 font-semibold leading-tight truncate', embedded ? 'text-xs' : 'text-sm')}>{label}</span>
             {panelId && (
               <motion.button
                 whileTap={{ scale: 0.88 }}

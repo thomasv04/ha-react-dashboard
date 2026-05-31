@@ -1,15 +1,18 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { ToastContainer, ToastCard } from '../components/Toast';
 import { ToastProvider, useToast } from '@/context/ToastContext';
+import { ThemeContextProvider } from '@/context/ThemeContext';
 
 import { describe, it, expect, vi } from 'vitest';
 
 describe('ToastContainer', () => {
   it('rend sans crash même sans toast', () => {
     render(
-      <ToastProvider>
-        <ToastContainer />
-      </ToastProvider>
+      <ThemeContextProvider>
+        <ToastProvider>
+          <ToastContainer />
+        </ToastProvider>
+      </ThemeContextProvider>
     );
     expect(document.body).toBeDefined();
   });
@@ -20,10 +23,12 @@ describe('ToastContainer', () => {
       return <button onClick={() => addToast({ title: 'Hello', description: 'World' })}>Show Toast</button>;
     };
     render(
-      <ToastProvider>
-        <Test />
-        <ToastContainer />
-      </ToastProvider>
+      <ThemeContextProvider>
+        <ToastProvider>
+          <Test />
+          <ToastContainer />
+        </ToastProvider>
+      </ThemeContextProvider>
     );
     await act(async () => {
       screen.getByText('Show Toast').click();
@@ -44,10 +49,12 @@ describe('ToastContainer', () => {
       );
     };
     render(
-      <ToastProvider>
-        <Test />
-        <ToastContainer />
-      </ToastProvider>
+      <ThemeContextProvider>
+        <ToastProvider>
+          <Test />
+          <ToastContainer />
+        </ToastProvider>
+      </ThemeContextProvider>
     );
     await act(async () => {
       screen.getByText('Show Action Toast').click();
@@ -68,10 +75,12 @@ describe('ToastContainer', () => {
       );
     };
     render(
-      <ToastProvider>
-        <Test />
-        <ToastContainer />
-      </ToastProvider>
+      <ThemeContextProvider>
+        <ToastProvider>
+          <Test />
+          <ToastContainer />
+        </ToastProvider>
+      </ThemeContextProvider>
     );
     await act(async () => {
       screen.getByText('Toast 1').click();

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { DURATION_FAST } from '@/lib/motion-tokens';
 import { X } from 'lucide-react';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { WIDGET_FIELD_DEFS, type WidgetConfig } from '@/types/widget-configs';
@@ -19,6 +20,7 @@ import { PanelSelectField } from './PanelSelectField';
 import { SoundTab } from './SoundTab';
 import { WIDGET_SOUND_ACTIONS } from '@/config/widget-sound-actions';
 import type { SoundPreset } from '@/lib/sounds';
+import { GroupWidgetsTab } from './GroupWidgetsTab';
 import { useI18n } from '@/i18n';
 
 export function WidgetEditModal() {
@@ -32,19 +34,34 @@ export function WidgetEditModal() {
   const hasDispositions = config ? !!WIDGET_DISPOSITIONS[config.type]?.length : false;
   const hasAdvanced = fields ? fields.some(f => f.fieldType === 'weather-icons') : false;
   const hasSounds = config ? !!WIDGET_SOUND_ACTIONS[config.type]?.length : false;
-  const breakpoint = resolveBreakpoint(window.innerWidth);
 
-  // Tabs: config vs advanced vs layout
-  const [activeTab, setActiveTab] = useState<'config' | 'advanced' | 'layout' | 'sound'>('config');
+  const [breakpoint, setBreakpoint] = useState(() => resolveBreakpoint(window.innerWidth));
+
+  useEffect(() => {
+    const handler = () => setBreakpoint(resolveBreakpoint(window.innerWidth));
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+
+  const isGroup = config?.type === 'group';
+
+  // Tabs: config vs widgets (group) vs advanced vs layout vs sound
+  const [activeTab, setActiveTab] = useState<'config' | 'widgets' | 'advanced' | 'layout' | 'sound'>('config');
 
   // Local draft so we can cancel
   const [draft, setDraft] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
-    if (config) setDraft({ ...config } as Record<string, unknown>);
-    else setDraft(null);
-    setActiveTab('config');
-  }, [config]);
+    if (config) {
+      const d = { ...config } as Record<string, unknown>;
+      setDraft(d);
+      // Prime preview immediately so the left panel shows on open
+      if (editingWidgetId) setPreviewConfig(editingWidgetId, d as unknown as WidgetConfig);
+    } else {
+      setDraft(null);
+    }
+    setActiveTab(config?.type === 'group' ? 'widgets' : 'config');
+  }, [config]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Push draft into preview config whenever it changes → live preview
   useEffect(() => {
@@ -96,18 +113,26 @@ export function WidgetEditModal() {
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        transition={{ duration: 0.2 }}
+        transition={{ duration: DURATION_FAST }}
       >
         <div
-          className='pointer-events-auto w-full max-w-4xl mx-4 rounded-2xl border border-white/12 shadow-2xl flex flex-col md:flex-row overflow-hidden'
-          style={{ background: 'rgba(12, 16, 40, 0.97)', backdropFilter: 'blur(20px)', maxHeight: '85vh' }}
+          className={cn(
+            'pointer-events-auto w-full mx-4 rounded-2xl border border-white/12 shadow-2xl overflow-hidden flex flex-col md:flex-row',
+            isGroup ? 'max-w-5xl' : 'max-w-4xl'
+          )}
+          style={{ background: 'rgba(12, 16, 40, 0.97)', backdropFilter: 'blur(20px)', maxHeight: '90vh' }}
         >
           {/* ── Left: Live preview ── */}
-          <div className='md:w-1/2 flex flex-col border-b md:border-b-0 md:border-r border-white/8'>
-            {/* Preview header */}
+          <div className={cn('flex flex-col border-b md:border-b-0 md:border-r border-white/8', isGroup ? 'md:w-2/5' : 'md:w-1/2')}>
+            {/* Header */}
             <div className='flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/8'>
               <div className='flex items-center gap-3'>
-                <div className='w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center'>
+                <div
+                  className={cn(
+                    'w-8 h-8 rounded-xl flex items-center justify-center bg-gradient-to-br',
+                    isGroup ? 'from-indigo-500 to-blue-400' : 'from-blue-500 to-cyan-400'
+                  )}
+                >
                   <span className='text-white text-xs font-bold'>{label.charAt(0)}</span>
                 </div>
                 <div>
@@ -122,7 +147,6 @@ export function WidgetEditModal() {
                 <X size={16} />
               </button>
             </div>
-
             {/* Preview area */}
             <div className='flex-1 flex items-center justify-center p-6 min-h-[200px] overflow-hidden'>
               {PreviewComponent && editingWidgetId ? (
@@ -138,9 +162,20 @@ export function WidgetEditModal() {
           </div>
 
           {/* ── Right: Settings form ── */}
-          <div className='md:w-1/2 flex flex-col'>
+          <div className={cn('flex flex-col', isGroup ? 'md:w-3/5' : 'md:w-1/2')}>
             {/* Tab bar */}
             <div className='flex border-b border-white/10'>
+              {isGroup && (
+                <button
+                  onClick={() => setActiveTab('widgets')}
+                  className={cn(
+                    'px-4 py-3 text-sm font-medium transition-colors cursor-pointer',
+                    activeTab === 'widgets' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-white/40 hover:text-white/60'
+                  )}
+                >
+                  {t('layout.tabs.widgets')}
+                </button>
+              )}
               <button
                 onClick={() => setActiveTab('config')}
                 className={cn(
@@ -275,6 +310,38 @@ export function WidgetEditModal() {
                         />
                       );
                     }
+                    if (field.fieldType === 'multiselect' && field.options) {
+                      const current: string[] = (draft[field.key] as string[]) ?? field.options.map(o => o.value);
+                      return (
+                        <div key={field.key}>
+                          <label className='text-[11px] text-white/40 mb-2 block'>{field.label}</label>
+                          <div className='flex flex-wrap gap-1.5'>
+                            {field.options.map(opt => {
+                              const active = current.includes(opt.value);
+                              return (
+                                <button
+                                  key={opt.value}
+                                  type='button'
+                                  onClick={() => {
+                                    const next = active ? current.filter(v => v !== opt.value) : [...current, opt.value];
+                                    updateField(field.key, next);
+                                  }}
+                                  className={cn(
+                                    'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all',
+                                    active
+                                      ? 'bg-blue-500/20 border-blue-500/40 text-blue-300'
+                                      : 'bg-white/5 border-white/10 text-white/40 hover:border-white/20 hover:text-white/60'
+                                  )}
+                                >
+                                  {opt.icon && <span>{opt.icon}</span>}
+                                  {opt.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    }
                     if (field.fieldType === 'select' && field.options) {
                       return (
                         <div key={field.key}>
@@ -304,6 +371,7 @@ export function WidgetEditModal() {
                       />
                     );
                   })}
+              {activeTab === 'widgets' && isGroup && <GroupWidgetsTab groupId={editingWidgetId} draft={draft} updateField={updateField} />}
               {activeTab === 'advanced' &&
                 hasAdvanced &&
                 fields

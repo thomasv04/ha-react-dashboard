@@ -41,10 +41,7 @@ function VacuumSelectControl({ entityId, label }: VacuumSelectEntity) {
     if (!open) return;
     function handleClick(e: MouseEvent) {
       const target = e.target as Node;
-      if (
-        triggerRef.current?.contains(target) ||
-        portalRef.current?.contains(target)
-      ) return;
+      if (triggerRef.current?.contains(target) || portalRef.current?.contains(target)) return;
       setOpen(false);
     }
     document.addEventListener('mousedown', handleClick);
@@ -101,9 +98,7 @@ function VacuumSelectControl({ entityId, label }: VacuumSelectEntity) {
                     onClick={() => selectOption(option)}
                     className={cn(
                       'w-full text-left px-3 py-2.5 text-xs transition-colors hover:bg-white/8',
-                      option === currentValue
-                        ? 'text-blue-400 font-semibold bg-blue-500/10'
-                        : 'text-white/70'
+                      option === currentValue ? 'text-blue-400 font-semibold bg-blue-500/10' : 'text-white/70'
                     )}
                   >
                     {humanizeOption(option)}
@@ -244,10 +239,7 @@ function RoomSelect({ rooms, selectedRooms, sequentialMode, onToggle, onToggleSe
           <div className={sequentialMode ? 'text-orange-300' : 'text-white/60'}>{t('widgets.vacuum.sequentialMode')}</div>
           <div className='text-[10px] text-white/30 mt-0.5'>{t('widgets.vacuum.sequentialDesc')}</div>
         </div>
-        <div className={cn(
-          'w-8 h-5 rounded-full relative transition-colors',
-          sequentialMode ? 'bg-orange-500' : 'bg-white/10'
-        )}>
+        <div className={cn('w-8 h-5 rounded-full relative transition-colors', sequentialMode ? 'bg-orange-500' : 'bg-white/10')}>
           <motion.div
             animate={{ x: sequentialMode ? 14 : 2 }}
             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
@@ -268,9 +260,7 @@ function RoomSelect({ rooms, selectedRooms, sequentialMode, onToggle, onToggleSe
         disabled={selectedRooms.length === 0}
         className={cn(
           'w-full py-3 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors',
-          selectedRooms.length > 0
-            ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400'
-            : 'bg-white/5 text-white/20 cursor-not-allowed'
+          selectedRooms.length > 0 ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400' : 'bg-white/5 text-white/20 cursor-not-allowed'
         )}
       >
         <Play size={16} />
@@ -316,13 +306,19 @@ export function VacuumCard() {
   const playFeedback = useSoundFeedback('vacuum', config?.soundOverrides);
 
   // ── Sequential cleaning: watch state changes ──
-  const callVacuumSvc = useCallback((service: string, serviceData?: Record<string, unknown>) => {
-    callHAService(helpers, 'vacuum', service, { entity_id: entityId }, serviceData);
-  }, [helpers, entityId]);
+  const callVacuumSvc = useCallback(
+    (service: string, serviceData?: Record<string, unknown>) => {
+      callHAService(helpers, 'vacuum', service, { entity_id: entityId }, serviceData);
+    },
+    [helpers, entityId]
+  );
 
-  const sendSegment = useCallback((segmentId: number) => {
-    callVacuumSvc('send_command', { command: 'app_segment_clean', params: [segmentId] });
-  }, [callVacuumSvc]);
+  const sendSegment = useCallback(
+    (segmentId: number) => {
+      callVacuumSvc('send_command', { command: 'app_segment_clean', params: [segmentId] });
+    },
+    [callVacuumSvc]
+  );
 
   useEffect(() => {
     if (!queueActive || queueRef.current.length === 0) return;
@@ -332,7 +328,8 @@ export function VacuumCard() {
     prevStateRef.current = currentState;
 
     // Robot just came back to base or went idle/docked after cleaning → send next
-    const wasCleaningOrReturning = prevState === 'cleaning' || prevState === 'segment_cleaning' || prevState === 'returning' || prevState === 'returning_home';
+    const wasCleaningOrReturning =
+      prevState === 'cleaning' || prevState === 'segment_cleaning' || prevState === 'returning' || prevState === 'returning_home';
     const isNowReady = currentState === 'docked' || currentState === 'idle';
 
     if (wasCleaningOrReturning && isNowReady) {
@@ -370,17 +367,13 @@ export function VacuumCard() {
   }
 
   function toggleRoom(roomId: string) {
-    setSelectedRooms(prev =>
-      prev.includes(roomId) ? prev.filter(id => id !== roomId) : [...prev, roomId]
-    );
+    setSelectedRooms(prev => (prev.includes(roomId) ? prev.filter(id => id !== roomId) : [...prev, roomId]));
   }
 
   function startRoomCleaning() {
     if (selectedRooms.length === 0) return;
     // Map room IDs to their segment numbers for Roborock
-    const segmentIds = selectedRooms
-      .map(id => rooms.find(r => r.id === id)?.segmentId)
-      .filter((s): s is number => s !== undefined);
+    const segmentIds = selectedRooms.map(id => rooms.find(r => r.id === id)?.segmentId).filter((s): s is number => s !== undefined);
 
     if (segmentIds.length === 0) {
       call('start');
@@ -409,14 +402,49 @@ export function VacuumCard() {
 
   const CONTROLS = [
     ...(isPaused
-      ? [{ icon: <Play size={16} />, action: 'start', label: t('widgets.vacuum.resume'), color: 'bg-teal-500/20 text-teal-400 hover:bg-teal-500/30' }]
+      ? [
+          {
+            icon: <Play size={16} />,
+            action: 'start',
+            label: t('widgets.vacuum.resume'),
+            color: 'bg-teal-500/20 text-teal-400 hover:bg-teal-500/30',
+          },
+        ]
       : isCleaning
-        ? [{ icon: <Pause size={16} />, action: 'pause', label: t('widgets.vacuum.pause'), color: 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30' }]
-        : [{ icon: <Play size={16} />, action: 'start', label: t('widgets.vacuum.start'), color: 'bg-teal-500/20 text-teal-400 hover:bg-teal-500/30' }]
-    ),
-    { icon: <Square size={14} />, action: 'stop', label: t('widgets.vacuum.stop'), color: 'bg-red-500/15 text-red-400 hover:bg-red-500/25' },
-    { icon: <Home size={14} />, action: 'return_to_base', label: t('widgets.vacuum.dock'), color: 'gc-btn text-white/60 hover:text-white/80' },
-    { icon: <LocateFixed size={14} />, action: 'locate', label: t('widgets.vacuum.locate'), color: 'bg-blue-500/15 text-blue-400 hover:bg-blue-500/25' },
+        ? [
+            {
+              icon: <Pause size={16} />,
+              action: 'pause',
+              label: t('widgets.vacuum.pause'),
+              color: 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30',
+            },
+          ]
+        : [
+            {
+              icon: <Play size={16} />,
+              action: 'start',
+              label: t('widgets.vacuum.start'),
+              color: 'bg-teal-500/20 text-teal-400 hover:bg-teal-500/30',
+            },
+          ]),
+    {
+      icon: <Square size={14} />,
+      action: 'stop',
+      label: t('widgets.vacuum.stop'),
+      color: 'bg-red-500/15 text-red-400 hover:bg-red-500/25',
+    },
+    {
+      icon: <Home size={14} />,
+      action: 'return_to_base',
+      label: t('widgets.vacuum.dock'),
+      color: 'gc-btn text-white/60 hover:text-white/80',
+    },
+    {
+      icon: <LocateFixed size={14} />,
+      action: 'locate',
+      label: t('widgets.vacuum.locate'),
+      color: 'bg-blue-500/15 text-blue-400 hover:bg-blue-500/25',
+    },
   ];
 
   return (
@@ -457,12 +485,7 @@ export function VacuumCard() {
               {battery !== undefined && (
                 <div className='flex items-center gap-1.5 text-white/50 text-xs'>
                   <span>{battery}%</span>
-                  <Battery
-                    size={16}
-                    className={cn(
-                      battery > 50 ? 'text-green-400' : battery > 20 ? 'text-yellow-400' : 'text-red-400'
-                    )}
-                  />
+                  <Battery size={16} className={cn(battery > 50 ? 'text-green-400' : battery > 20 ? 'text-yellow-400' : 'text-red-400')} />
                 </div>
               )}
             </div>
@@ -489,10 +512,7 @@ export function VacuumCard() {
                   key={action}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => call(action)}
-                  className={cn(
-                    'w-11 h-11 rounded-full flex items-center justify-center transition-colors',
-                    color
-                  )}
+                  className={cn('w-11 h-11 rounded-full flex items-center justify-center transition-colors', color)}
                   title={label}
                 >
                   {icon}

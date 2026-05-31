@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { EASE_OUT } from '@/lib/motion-tokens';
 import { X, Search } from 'lucide-react';
 import { useDashboardLayout, type GridWidget } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -64,7 +65,7 @@ export function AddWidgetModal({ onClose }: AddWidgetModalProps) {
         initial={{ opacity: 0, scale: 0.96, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 12 }}
-        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.22, ease: EASE_OUT }}
       >
         <div
           className='pointer-events-auto w-full flex overflow-hidden rounded-3xl border border-white/10 shadow-2xl'
@@ -119,7 +120,7 @@ export function AddWidgetModal({ onClose }: AddWidgetModalProps) {
                       : 'bg-white/4 text-white/30 border border-transparent hover:text-white/55 hover:bg-white/6'
                   )}
                 >
-                  {cat.label}
+                  {t(cat.label)}
                 </button>
               ))}
             </div>

@@ -15,6 +15,7 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
+      'no-console': ['error', { allow: ['error', 'warn', 'info'] }],
       // Ignore _-prefixed parameters and variables (intentionally unused)
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       // Allow constant and hook exports alongside components (context files, utility modules)

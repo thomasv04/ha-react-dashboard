@@ -4,18 +4,35 @@
  */
 
 export type SoundPreset =
-  | 'notification' | 'alert' | 'success' | 'warning' | 'error'
-  | 'click' | 'pop'
-  | 'toggle_on' | 'toggle_off'
-  | 'arm' | 'disarm'
+  | 'notification'
+  | 'alert'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'click'
+  | 'pop'
+  | 'toggle_on'
+  | 'toggle_off'
+  | 'arm'
+  | 'disarm'
   | 'slider_tick'
-  | 'door_open' | 'door_close' | 'lock' | 'unlock'
+  | 'door_open'
+  | 'door_close'
+  | 'lock'
+  | 'unlock'
   | 'motion'
-  | 'media_play' | 'media_pause' | 'media_next'
-  | 'vacuum_start' | 'vacuum_dock'
-  | 'temperature_up' | 'temperature_down'
-  | 'brightness_up' | 'brightness_down'
-  | 'water' | 'battery_low' | 'chime'
+  | 'media_play'
+  | 'media_pause'
+  | 'media_next'
+  | 'vacuum_start'
+  | 'vacuum_dock'
+  | 'temperature_up'
+  | 'temperature_down'
+  | 'brightness_up'
+  | 'brightness_down'
+  | 'water'
+  | 'battery_low'
+  | 'chime'
   | 'none';
 
 interface Note {
@@ -50,9 +67,7 @@ export const PRESETS: Record<Exclude<SoundPreset, 'none'>, Note[]> = {
     { freq: 300, start: 0, duration: 0.12, gain: 0.3, type: 'square' },
     { freq: 250, start: 0.12, duration: 0.18, gain: 0.25, type: 'square' },
   ],
-  click: [
-    { freq: 1800, start: 0, duration: 0.03, gain: 0.15 },
-  ],
+  click: [{ freq: 1800, start: 0, duration: 0.03, gain: 0.15 }],
   pop: [
     { freq: 600, start: 0, duration: 0.06, gain: 0.2 },
     { freq: 900, start: 0.01, duration: 0.04, gain: 0.15 },
@@ -82,9 +97,7 @@ export const PRESETS: Record<Exclude<SoundPreset, 'none'>, Note[]> = {
   ],
 
   // ── Slider ──
-  slider_tick: [
-    { freq: 2200, start: 0, duration: 0.015, gain: 0.08 },
-  ],
+  slider_tick: [{ freq: 2200, start: 0, duration: 0.015, gain: 0.08 }],
 
   // ── Porte / Serrure ──
   door_open: [

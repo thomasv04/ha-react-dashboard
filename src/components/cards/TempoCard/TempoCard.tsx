@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { DURATION_ENTRANCE, DURATION_MEDIUM } from '@/lib/motion-tokens';
 import { Zap, Calendar } from 'lucide-react';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { cn } from '@/lib/utils';
@@ -41,7 +42,7 @@ export function TempoCard() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.2 }}
+      transition={{ duration: DURATION_ENTRANCE, delay: 0.2 }}
       className='gc rounded-3xl p-5 h-full'
     >
       <div className='text-white/50 text-xs uppercase tracking-wider mb-3 font-medium'>Tempo EDF</div>
@@ -97,7 +98,7 @@ export function TempoCard() {
             key={label}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.2 + i * 0.08 }}
+            transition={{ duration: DURATION_MEDIUM, delay: 0.2 + i * 0.08 }}
             className='flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full px-3 py-1.5 text-xs'
           >
             <motion.span

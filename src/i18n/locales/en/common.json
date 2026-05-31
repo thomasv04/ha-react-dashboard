@@ -16,5 +16,11 @@
   "yes": "Yes",
   "no": "No",
   "search": "Search",
-  "noResults": "No results"
+  "copy": "Copy",
+  "noResults": "No results",
+  "entityNotFound": "Entity not found",
+  "noData": "No data",
+  "select": "Select...",
+  "searchPlaceholder": "Search...",
+  "stop": "STOP"
 }

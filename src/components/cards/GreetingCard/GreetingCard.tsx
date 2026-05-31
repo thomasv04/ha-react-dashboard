@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { GreetingCardConfig } from '@/types/widget-configs';
@@ -34,7 +35,7 @@ export function GreetingCard() {
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: DURATION_ENTRANCE }}
       className='flex items-center justify-between px-1'
     >
       {/* Greeting + date */}

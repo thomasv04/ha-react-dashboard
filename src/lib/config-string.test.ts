@@ -71,9 +71,7 @@ const LARGE_SNAPSHOT: ConfigSnapshot = {
             { id: 'w1', type: 'weather', x: 0, y: 0, w: 4, h: 3 },
             { id: 'w2', type: 'light', x: 4, y: 0, w: 2, h: 2 },
           ],
-          sm: [
-            { id: 'w1', type: 'weather', x: 0, y: 0, w: 4, h: 3 },
-          ],
+          sm: [{ id: 'w1', type: 'weather', x: 0, y: 0, w: 4, h: 3 }],
         },
         cols: { lg: 12, md: 8, sm: 4 },
       },
@@ -96,9 +94,7 @@ const LARGE_SNAPSHOT: ConfigSnapshot = {
       media: {},
       security: {},
     },
-    customPanels: [
-      { id: 'custom:test', label: 'Test Panel', icon: '🧪' },
-    ],
+    customPanels: [{ id: 'custom:test', label: 'Test Panel', icon: '🧪' }],
   },
 };
 
@@ -205,7 +201,10 @@ describe('config-string', () => {
       const totalLen = chunks.reduce((s, c) => s + c.length, 0);
       const compressed = new Uint8Array(totalLen);
       let offset = 0;
-      for (const c of chunks) { compressed.set(c, offset); offset += c.length; }
+      for (const c of chunks) {
+        compressed.set(c, offset);
+        offset += c.length;
+      }
       let binary = '';
       for (let i = 0; i < compressed.length; i++) binary += String.fromCharCode(compressed[i]);
       const b64 = btoa(binary);
@@ -230,7 +229,10 @@ describe('config-string', () => {
       const totalLen = chunks.reduce((s, c) => s + c.length, 0);
       const compressed = new Uint8Array(totalLen);
       let offset = 0;
-      for (const c of chunks) { compressed.set(c, offset); offset += c.length; }
+      for (const c of chunks) {
+        compressed.set(c, offset);
+        offset += c.length;
+      }
       let binary = '';
       for (let i = 0; i < compressed.length; i++) binary += String.fromCharCode(compressed[i]);
       const b64 = btoa(binary);
@@ -255,7 +257,10 @@ describe('config-string', () => {
       const totalLen = chunks.reduce((s, c) => s + c.length, 0);
       const compressed = new Uint8Array(totalLen);
       let offset = 0;
-      for (const c of chunks) { compressed.set(c, offset); offset += c.length; }
+      for (const c of chunks) {
+        compressed.set(c, offset);
+        offset += c.length;
+      }
       let binary = '';
       for (let i = 0; i < compressed.length; i++) binary += String.fromCharCode(compressed[i]);
       const b64 = btoa(binary);

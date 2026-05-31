@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { Blinds, ChevronUp, ChevronDown, Square } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
@@ -8,6 +9,8 @@ import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { CoverCardConfig } from '@/types/widget-configs';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
+import { useWidgetSize } from '@/hooks/useWidgetSize';
+import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 
 export function CoverCard() {
   const { t } = useI18n();
@@ -19,31 +22,38 @@ export function CoverCard() {
   const entity = useSafeEntity(entityId);
   const { helpers } = useHass();
   const sliderRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const widgetSize = useWidgetSize(cardRef);
+  const isCompact = widgetSize === 'xs' || widgetSize === 'sm';
   const [isDragging, setIsDragging] = useState(false);
   const [dragPosition, setDragPosition] = useState<number | null>(null);
+  const playFeedback = useSoundFeedback();
 
   const openCover = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
       helpers.callService({ domain: 'cover', service: 'open_cover', target: { entity_id: entityId } });
+      playFeedback('door_open');
     },
-    [helpers, entityId]
+    [helpers, entityId, playFeedback]
   );
 
   const closeCover = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
       helpers.callService({ domain: 'cover', service: 'close_cover', target: { entity_id: entityId } });
+      playFeedback('door_close');
     },
-    [helpers, entityId]
+    [helpers, entityId, playFeedback]
   );
 
   const stopCover = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
       helpers.callService({ domain: 'cover', service: 'stop_cover', target: { entity_id: entityId } });
+      playFeedback('warning');
     },
-    [helpers, entityId]
+    [helpers, entityId, playFeedback]
   );
 
   const setPosition = useCallback(
@@ -84,13 +94,9 @@ export function CoverCard() {
 
   if (!entity) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className='gc rounded-3xl p-5 flex items-center justify-center h-full'
-      >
+      <div className='gc rounded-3xl p-4 flex items-center justify-center h-full'>
         <span className='text-white/30 text-sm'>{t('widgets.cover.notFound')}</span>
-      </motion.div>
+      </div>
     );
   }
 
@@ -100,8 +106,8 @@ export function CoverCard() {
   const isOpen = state === 'open' || position > 0;
   const isMoving = state === 'opening' || state === 'closing';
 
-  // HA: position 100 = open, 0 = closed — bar shows the "closed" portion from top
   const displayPosition = dragPosition ?? position;
+  // closed portion from top: 0% open = full bar, 100% open = empty bar
   const closedPercent = 100 - displayPosition;
 
   const stateLabel =
@@ -116,67 +122,116 @@ export function CoverCard() {
             : state;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className='gc rounded-3xl p-5 flex flex-col h-full'
-    >
+    <div ref={cardRef} className={cn('gc rounded-3xl flex flex-col h-full', isCompact ? 'p-2.5' : 'p-3.5')}>
       {/* Header */}
-      <div className='flex items-center justify-between mb-3'>
-        <Blinds size={20} className={cn(isOpen ? 'text-blue-400' : 'text-white/40', isMoving && 'animate-pulse')} />
-        <span className='text-[10px] font-bold uppercase tracking-wider text-white/40'>{stateLabel}</span>
+      <div className={cn('flex items-center justify-between', isCompact ? 'mb-1' : 'mb-2')}>
+        <span className={cn('text-white/40 font-medium truncate', isCompact ? 'text-[10px]' : 'text-xs')}>{name}</span>
+        <motion.span
+          key={stateLabel}
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+          className={cn(
+            'text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full border shrink-0 ml-2',
+            isMoving
+              ? 'bg-sky-500/15 text-sky-300 border-sky-500/25 animate-pulse'
+              : isOpen
+                ? 'bg-sky-500/12 text-sky-300 border-sky-500/22'
+                : 'bg-white/5 text-white/25 border-white/8'
+          )}
+        >
+          {stateLabel}
+        </motion.span>
       </div>
 
-      {/* Vertical slider — visual representation of the cover */}
-      <div
-        ref={sliderRef}
-        className='flex-1 relative mx-auto w-16 rounded-xl bg-white/5 overflow-hidden cursor-ns-resize min-h-[80px]'
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-      >
-        {/* "Closed" portion — from top */}
+      {/* Icon */}
+      <div className={cn('flex items-center', isCompact ? 'mb-1.5' : 'mb-3')}>
         <div
-          className='absolute top-0 left-0 right-0 bg-blue-500/30 transition-all duration-300 rounded-t-xl'
-          style={{ height: `${closedPercent}%` }}
+          className={cn(
+            'rounded-xl flex items-center justify-center border transition-all duration-300',
+            isCompact ? 'w-7 h-7' : 'w-9 h-9'
+          )}
+          style={
+            isOpen
+              ? { background: 'rgba(56,189,248,0.12)', borderColor: 'rgba(56,189,248,0.26)' }
+              : { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }
+          }
         >
-          {/* Horizontal slats */}
-          {Array.from({ length: Math.max(1, Math.floor(closedPercent / 12)) }, (_, i) => (
-            <div key={i} className='w-full h-px bg-blue-400/30 mt-3 first:mt-0' />
-          ))}
-        </div>
-
-        {/* Position label */}
-        <div className='absolute inset-0 flex items-center justify-center'>
-          <span className='text-white font-bold text-lg drop-shadow-lg'>{Math.round(displayPosition)}%</span>
+          <Blinds
+            size={isCompact ? 13 : 17}
+            className={cn('transition-colors duration-300', isMoving && 'animate-pulse', isOpen ? 'text-sky-400' : 'text-white/35')}
+          />
         </div>
       </div>
 
-      {/* Open / Stop / Close buttons */}
-      <div className='flex items-center justify-center gap-2 mt-3'>
-        <button
-          onClick={openCover}
-          className='w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors'
+      {/* Vertical slider */}
+      <div className={cn('flex-1 flex items-stretch min-h-0', isCompact ? 'gap-1.5' : 'gap-3')}>
+        <div
+          ref={sliderRef}
+          className='flex-1 relative rounded-2xl overflow-hidden cursor-ns-resize select-none'
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
         >
-          <ChevronUp size={18} className='text-white/60' />
-        </button>
-        <button
-          onClick={stopCover}
-          className='w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors'
-        >
-          <Square size={14} className='text-white/60' />
-        </button>
-        <button
-          onClick={closeCover}
-          className='w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors'
-        >
-          <ChevronDown size={18} className='text-white/60' />
-        </button>
-      </div>
+          {/* Closed portion from top */}
+          <motion.div
+            className='absolute top-0 left-0 right-0 rounded-t-2xl overflow-hidden'
+            animate={{ height: `${closedPercent}%` }}
+            transition={isDragging ? { duration: 0 } : { duration: DURATION_ENTRANCE, ease: 'easeOut' }}
+            style={{ background: 'rgba(56,189,248,0.22)', borderBottom: '1px solid rgba(56,189,248,0.30)' }}
+          >
+            {/* Slat lines */}
+            {Array.from({ length: 10 }, (_, i) => (
+              <div key={i} className='w-full border-b border-sky-400/20' style={{ height: '10%' }} />
+            ))}
+          </motion.div>
 
-      {/* Name */}
-      <div className='text-white/40 text-xs uppercase tracking-wider text-center mt-2'>{name}</div>
-    </motion.div>
+          {/* Position label */}
+          <div className='absolute inset-0 flex items-center justify-center pointer-events-none'>
+            <span className={cn('text-white font-semibold drop-shadow-lg tabular-nums', isCompact ? 'text-sm' : 'text-base')}>
+              {Math.round(displayPosition)}%
+            </span>
+          </div>
+        </div>
+
+        {/* Action buttons column */}
+        <div className='flex flex-col justify-center gap-2'>
+          <motion.button
+            whileTap={{ scale: 0.88 }}
+            onClick={openCover}
+            className={cn(
+              'rounded-xl flex items-center justify-center border transition-all duration-200',
+              isCompact ? 'w-7 h-7' : 'w-9 h-9'
+            )}
+            style={{ background: 'rgba(56,189,248,0.08)', borderColor: 'rgba(56,189,248,0.18)' }}
+          >
+            <ChevronUp size={isCompact ? 13 : 17} className='text-sky-400' />
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.88 }}
+            onClick={stopCover}
+            className={cn(
+              'rounded-xl flex items-center justify-center border transition-all duration-200',
+              isCompact ? 'w-7 h-7' : 'w-9 h-9'
+            )}
+            style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }}
+          >
+            <Square size={isCompact ? 10 : 13} className='text-white/45' />
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.88 }}
+            onClick={closeCover}
+            className={cn(
+              'rounded-xl flex items-center justify-center border transition-all duration-200',
+              isCompact ? 'w-7 h-7' : 'w-9 h-9'
+            )}
+            style={{ background: 'rgba(56,189,248,0.08)', borderColor: 'rgba(56,189,248,0.18)' }}
+          >
+            <ChevronDown size={isCompact ? 13 : 17} className='text-sky-400' />
+          </motion.button>
+        </div>
+      </div>
+    </div>
   );
 }

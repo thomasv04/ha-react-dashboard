@@ -1,6 +1,7 @@
 import { memo, useState } from 'react';
 import { MoveDiagonal, Pencil, Trash2, Settings } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { DURATION_MICRO } from '@/lib/motion-tokens';
 import { useDashboardLayout, useSizePresets, type GridWidget, type SizePresetName } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { WIDGET_DISPOSITIONS } from '@/config/widget-dispositions';
@@ -73,7 +74,7 @@ function GridItemOverlayInner({ id, label, widget, breakpoint, onResizeStart }: 
                   initial={{ opacity: 0, scale: 0.9, y: -4 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.9, y: -4 }}
-                  transition={{ duration: 0.15 }}
+                  transition={{ duration: DURATION_MICRO }}
                   onMouseDown={e => e.stopPropagation()}
                   className='absolute right-0 top-8 z-50 flex flex-col gap-1.5 p-2.5 rounded-xl bg-[#1a1a2e] border border-red-500/30 shadow-xl min-w-[140px]'
                 >

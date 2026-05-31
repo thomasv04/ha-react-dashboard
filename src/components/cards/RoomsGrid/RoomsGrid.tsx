@@ -1,9 +1,8 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { DURATION_MEDIUM } from '@/lib/motion-tokens';
 import {
   Thermometer,
   Lightbulb,
-  X,
   Droplets,
   UtensilsCrossed,
   Package,
@@ -12,29 +11,22 @@ import {
   Moon,
   Sofa,
   BriefcaseBusiness,
+  ChevronRight,
   type LucideIcon,
 } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { usePanel, type PanelId } from '@/context/PanelContext';
+import { useEntities } from '@/hooks/useEntities';
+import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
-import type { RoomsGridConfig } from '@/types/widget-configs';
+import type { RoomsGridConfig, RoomEntry, RoomControl } from '@/types/widget-configs';
 import { resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-map';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
+import { cn } from '@/lib/utils';
+import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 
-interface RoomConfig {
-  area: string;
-  label: string;
-  Icon: LucideIcon | null;
-  customIconUrl?: string;
-  iconBg: string;
-  tempEntity?: string;
-  humidityEntity?: string;
-  lightEntities?: string[];
-  panelId?: PanelId;
-}
-
-const FALLBACK_ICON_MAP: Record<string, LucideIcon> = {
+const FALLBACK_ICONS: Record<string, LucideIcon> = {
   UtensilsCrossed,
   Package,
   Armchair,
@@ -44,28 +36,28 @@ const FALLBACK_ICON_MAP: Record<string, LucideIcon> = {
   BriefcaseBusiness,
 };
 
-const DEFAULT_ROOMS: RoomConfig[] = [
+const DEFAULT_ROOMS: RoomEntry[] = [
   {
     area: 'kitchen',
     label: 'Cuisine',
-    Icon: UtensilsCrossed,
+    icon: 'UtensilsCrossed',
     iconBg: 'from-red-500 to-orange-400',
-    lightEntities: ['light.kitchen'],
     tempEntity: 'sensor.kitchen_temperature',
+    lightEntities: ['light.kitchen'],
   },
-  { area: 'storage', label: 'Cellier', Icon: Package, iconBg: 'from-purple-500 to-violet-400' },
+  { area: 'storage', label: 'Cellier', icon: 'Package', iconBg: 'from-purple-500 to-violet-400' },
   {
     area: 'dining_room',
     label: 'Salle à manger',
-    Icon: Armchair,
+    icon: 'Armchair',
     iconBg: 'from-lime-500 to-green-400',
     tempEntity: 'sensor.dining_room_temperature',
   },
-  { area: 'guest_room', label: 'Ch. invités', Icon: BedDouble, iconBg: 'from-teal-500 to-cyan-400' },
+  { area: 'guest_room', label: 'Ch. invités', icon: 'BedDouble', iconBg: 'from-teal-500 to-cyan-400' },
   {
     area: 'bedroom',
     label: 'Chambre',
-    Icon: Moon,
+    icon: 'Moon',
     iconBg: 'from-pink-500 to-rose-400',
     tempEntity: 'sensor.bedroom_temperature',
     lightEntities: ['light.bedroom'],
@@ -73,7 +65,7 @@ const DEFAULT_ROOMS: RoomConfig[] = [
   {
     area: 'living_room',
     label: 'Salon',
-    Icon: Sofa,
+    icon: 'Sofa',
     iconBg: 'from-yellow-500 to-amber-400',
     lightEntities: ['light.living_room'],
     panelId: 'lumieres',
@@ -81,212 +73,193 @@ const DEFAULT_ROOMS: RoomConfig[] = [
   {
     area: 'office',
     label: 'Bureau',
-    Icon: BriefcaseBusiness,
+    icon: 'BriefcaseBusiness',
     iconBg: 'from-indigo-500 to-blue-400',
     tempEntity: 'sensor.office_temperature',
   },
 ];
 
-function resolveRooms(config: RoomsGridConfig | undefined): RoomConfig[] {
-  if (!config?.rooms?.length) return DEFAULT_ROOMS;
-  return config.rooms.map(r => ({
-    area: r.area,
-    label: r.label,
-    Icon: isCustomIcon(r.icon) ? null : (resolveIcon(r.icon) ?? FALLBACK_ICON_MAP[r.icon] ?? Package),
-    customIconUrl: isCustomIcon(r.icon) ? getCustomIconUrl(r.icon) : undefined,
-    iconBg: r.iconBg,
-    tempEntity: r.tempEntity,
-    lightEntities: r.lightEntities,
-    panelId: r.panelId as PanelId | undefined,
-  }));
-}
+// ── Control button ─────────────────────────────────────────────────────────────
 
-// ── Room detail modal ──────────────────────────────────────────────────────────
+function ControlButton({ ctrl }: { ctrl: RoomControl }) {
+  const { helpers } = useHass();
+  const playFeedback = useSoundFeedback();
+  const stateEntity = useSafeEntity(ctrl.stateEntity ?? '');
+  const isOn = stateEntity ? stateEntity.state === 'on' : false;
 
-function RoomModal({ room, onClose }: { room: RoomConfig; onClose: () => void }) {
-  const entities = useHass(s => s.entities);
-  const { openPanel } = usePanel();
+  const iconName = ctrl.icon;
+  const customIconUrl = iconName && isCustomIcon(iconName) ? getCustomIconUrl(iconName) : undefined;
+  // eslint-disable-next-line react-hooks/static-components
+  const IconComp = !customIconUrl ? (resolveIcon(iconName) ?? FALLBACK_ICONS[iconName] ?? Lightbulb) : null;
 
-  const rawTemp = room.tempEntity ? entities?.[room.tempEntity]?.state : undefined;
-  const temp = rawTemp && rawTemp !== 'unavailable' ? Number(rawTemp) : null;
+  const color = ctrl.color ?? '#60a5fa';
+  const active = ctrl.stateEntity ? isOn : false;
 
-  const rawHumidity = room.humidityEntity ? entities?.[room.humidityEntity]?.state : undefined;
-  const humidity = rawHumidity && rawHumidity !== 'unavailable' ? Number(rawHumidity) : null;
-
-  const lights = (room.lightEntities ?? []).map(id => ({
-    id,
-    name: (entities?.[id]?.attributes?.friendly_name as string) ?? id,
-    on: entities?.[id]?.state === 'on',
-  }));
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    helpers.callService({
+      domain: ctrl.domain as never,
+      service: ctrl.service as never,
+      target: ctrl.entityId ? { entity_id: ctrl.entityId } : undefined,
+    });
+    playFeedback('click');
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className='fixed inset-0 z-50 flex items-center justify-center p-4'
-      style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)' }}
-      onClick={onClose}
+    <motion.button
+      whileTap={{ scale: 0.88 }}
+      onClick={handleClick}
+      title={ctrl.label}
+      className='flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-2xl border transition-all duration-300'
+      style={
+        active
+          ? { background: `${color}18`, borderColor: `${color}30` }
+          : { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }
+      }
     >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.92, y: 16 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.92, y: 16 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-        className='gc rounded-3xl p-6 w-full max-w-sm'
-        onClick={e => e.stopPropagation()}
+      {customIconUrl ? (
+        <img src={customIconUrl} alt='' className='w-4 h-4 object-contain' />
+      ) : IconComp ? (
+        // eslint-disable-next-line react-hooks/static-components
+        <IconComp size={16} style={active ? { color } : { color: 'rgba(255,255,255,0.35)' }} />
+      ) : null}
+      <span
+        className='text-[9px] font-medium leading-none truncate max-w-full px-1'
+        style={active ? { color } : { color: 'rgba(255,255,255,0.35)' }}
       >
-        {/* Header */}
-        <div className='flex items-center justify-between mb-5'>
-          <div className='flex items-center gap-3'>
-            <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${room.iconBg} flex items-center justify-center shadow-lg`}>
-              {room.customIconUrl ? (
-                <img src={room.customIconUrl} alt='' className='w-5 h-5 object-contain' />
-              ) : room.Icon ? (
-                <room.Icon size={20} className='text-white' strokeWidth={1.8} />
-              ) : null}
-            </div>
-            <h2 className='text-white text-xl font-semibold'>{room.label}</h2>
-          </div>
-          <button
-            onClick={onClose}
-            className='w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/20 transition-all'
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        {/* Stats row */}
-        {(temp !== null || humidity !== null) && (
-          <div className='flex gap-3 mb-5'>
-            {temp !== null && !isNaN(temp) && (
-              <div className='flex-1 rounded-2xl p-3 flex items-center gap-3 bg-gradient-to-br from-white/5 to-white/10 border border-white/10'>
-                <div className='w-8 h-8 rounded-xl bg-blue-500/15 flex items-center justify-center'>
-                  <Thermometer size={16} className='text-blue-400' />
-                </div>
-                <div>
-                  <div className='text-[10px] text-white/40 uppercase tracking-wider'>Température</div>
-                  <div className='text-white font-semibold'>{temp.toFixed(1)}°C</div>
-                </div>
-              </div>
-            )}
-            {humidity !== null && !isNaN(humidity) && (
-              <div className='flex-1 rounded-2xl p-3 flex items-center gap-3 bg-gradient-to-br from-white/5 to-white/10 border border-white/10'>
-                <div className='w-8 h-8 rounded-xl bg-cyan-500/15 flex items-center justify-center'>
-                  <Droplets size={16} className='text-cyan-400' />
-                </div>
-                <div>
-                  <div className='text-[10px] text-white/40 uppercase tracking-wider'>Humidité</div>
-                  <div className='text-white font-semibold'>{humidity.toFixed(0)}%</div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Lights */}
-        {lights.length > 0 && (
-          <div>
-            <div className='text-white/40 text-[10px] uppercase tracking-[0.15em] mb-2 font-medium'>Lumières</div>
-            <div className='flex flex-col gap-2'>
-              {lights.map(light => (
-                <div
-                  key={light.id}
-                  className='rounded-2xl px-4 py-3 flex items-center justify-between bg-gradient-to-br from-white/[0.03] to-white/[0.07] border border-white/8'
-                >
-                  <span className='text-white/80 text-sm'>{light.name}</span>
-                  <div
-                    className={`w-3 h-3 rounded-full transition-all duration-300 ${light.on ? 'bg-yellow-400' : 'bg-white/15'}`}
-                    style={light.on ? { boxShadow: '0 0 8px 3px rgba(250,204,21,0.5)' } : undefined}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Open panel link */}
-        {room.panelId && (
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => {
-              openPanel(room.panelId!);
-              onClose();
-            }}
-            className='mt-4 w-full rounded-2xl px-4 py-3 text-sm text-white/70 hover:text-white transition-all duration-200 text-center bg-gradient-to-br from-white/5 to-white/10 border border-white/10 hover:border-white/20'
-          >
-            Voir tous les détails →
-          </motion.button>
-        )}
-      </motion.div>
-    </motion.div>
+        {ctrl.label}
+      </span>
+    </motion.button>
   );
 }
 
-// ── Room row ──────────────────────────────────────────────────────────────────
+// ── Default light controls derived from lightEntities ─────────────────────────
 
-function RoomRow({ room, index, onOpen }: { room: RoomConfig; index: number; onOpen: () => void }) {
-  const entities = useHass(s => s.entities);
+function DefaultLightControls({ entityIds }: { entityIds: string[] }) {
+  const { helpers } = useHass();
+  const playFeedback = useSoundFeedback();
+  const entities = useEntities(entityIds);
 
-  const rawTemp = room.tempEntity ? entities?.[room.tempEntity]?.state : undefined;
+  if (!entityIds.length) return null;
+
+  // Aggregate: if any is on
+  const anyOn = entityIds.some(id => entities?.[id]?.state === 'on');
+
+  const handleToggleAll = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    entityIds.forEach(id => {
+      helpers.callService({ domain: 'light', service: 'toggle', target: { entity_id: id } });
+    });
+    playFeedback(anyOn ? 'toggle_off' : 'toggle_on');
+  };
+
+  return (
+    <motion.button
+      whileTap={{ scale: 0.88 }}
+      onClick={handleToggleAll}
+      className='flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-2xl border transition-all duration-300'
+      style={
+        anyOn
+          ? { background: 'rgba(251,191,36,0.14)', borderColor: 'rgba(251,191,36,0.28)' }
+          : { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }
+      }
+    >
+      <Lightbulb size={16} style={anyOn ? { color: '#fbbf24' } : { color: 'rgba(255,255,255,0.35)' }} />
+      <span className='text-[9px] font-medium leading-none' style={anyOn ? { color: '#fbbf24' } : { color: 'rgba(255,255,255,0.35)' }}>
+        {anyOn ? 'Allumé' : 'Éteint'}
+      </span>
+    </motion.button>
+  );
+}
+
+// ── Room card ─────────────────────────────────────────────────────────────────
+
+function RoomCard({ room, index }: { room: RoomEntry; index: number }) {
+  const { openPanel } = usePanel();
+
+  const sensorIds = [room.tempEntity, room.humidityEntity].filter(Boolean) as string[];
+  const sensors = useEntities(sensorIds);
+
+  const rawTemp = room.tempEntity ? sensors?.[room.tempEntity]?.state : undefined;
   const temp = rawTemp && rawTemp !== 'unavailable' ? Number(rawTemp) : null;
 
-  const lightsOn = (room.lightEntities ?? []).filter(id => entities?.[id]?.state === 'on').length;
-  const lightsTotal = room.lightEntities?.length ?? 0;
+  const rawHumidity = room.humidityEntity ? sensors?.[room.humidityEntity]?.state : undefined;
+  const humidity = rawHumidity && rawHumidity !== 'unavailable' ? Number(rawHumidity) : null;
+
+  const iconName = room.icon;
+  const customIconUrl = iconName && isCustomIcon(iconName) ? getCustomIconUrl(iconName) : undefined;
+  const IconComp = !customIconUrl ? (resolveIcon(iconName) ?? FALLBACK_ICONS[iconName] ?? Package) : null;
+
+  const hasControls = (room.controls?.length ?? 0) > 0 || (room.lightEntities?.length ?? 0) > 0;
+  const hasPanel = Boolean(room.panelId);
+
+  const handlePanelClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (room.panelId) openPanel(room.panelId as PanelId);
+  };
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -8 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ type: 'spring', stiffness: 350, damping: 25, delay: index * 0.04 }}
-      whileHover={{ x: 3, backgroundColor: 'rgba(255,255,255,0.04)' }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onOpen}
-      className='flex items-center gap-3 py-2.5 px-2 rounded-2xl cursor-pointer transition-colors border-b border-white/[0.04] last:border-0'
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: DURATION_MEDIUM, delay: index * 0.04 }}
+      className='gc rounded-2xl p-3 flex flex-col gap-2 overflow-hidden'
     >
-      {/* Colored icon square */}
-      <motion.div
-        whileHover={{ scale: 1.1, rotate: [-2, 2, 0] }}
-        transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-        className={`w-9 h-9 rounded-xl bg-gradient-to-br ${room.iconBg} flex items-center justify-center flex-shrink-0 shadow-md`}
-      >
-        {room.customIconUrl ? (
-          <img src={room.customIconUrl} alt='' className='w-[17px] h-[17px] object-contain' />
-        ) : room.Icon ? (
-          <room.Icon size={17} className='text-white' strokeWidth={1.8} />
-        ) : null}
-      </motion.div>
-
-      {/* Room name */}
-      <span className='text-white/90 text-sm font-medium flex-1 leading-none'>{room.label}</span>
-
-      {/* Thermometer icon if temp exists */}
-      {temp !== null && !isNaN(temp) && <Thermometer size={13} className='text-white/20 flex-shrink-0' />}
-
-      {/* Lights badge */}
-      {lightsTotal > 0 && lightsOn > 0 && (
-        <motion.div
-          animate={{ scale: [1, 1.08, 1] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          className='flex items-center gap-1 bg-amber-500/90 rounded-full px-2 py-0.5 flex-shrink-0 shadow-[0_0_8px_rgba(245,158,11,0.3)]'
-        >
-          <Lightbulb size={10} className='text-white' fill='white' />
-          <span className='text-[10px] font-bold text-white leading-none'>{lightsOn}</span>
-        </motion.div>
-      )}
-      {lightsTotal > 0 && lightsOn === 0 && (
-        <div className='flex items-center gap-1 bg-white/8 border border-white/10 rounded-full px-2 py-0.5 flex-shrink-0'>
-          <Lightbulb size={10} className='text-white/30' />
-          <span className='text-[10px] font-semibold text-white/30 leading-none'>{lightsTotal}</span>
+      {/* Header: icon + name + temp */}
+      <div className='flex items-start gap-2.5'>
+        {/* Colored icon */}
+        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${room.iconBg} flex items-center justify-center shrink-0 shadow-md`}>
+          {customIconUrl ? (
+            <img src={customIconUrl} alt='' className='w-4.5 h-4.5 object-contain' />
+          ) : IconComp ? (
+            // eslint-disable-next-line react-hooks/static-components
+            <IconComp size={17} className='text-white' strokeWidth={1.8} />
+          ) : null}
         </div>
-      )}
 
-      {/* Temperature */}
-      {temp !== null && !isNaN(temp) && (
-        <span className='text-white/55 text-xs font-semibold tabular-nums flex-shrink-0 min-w-[34px] text-right'>
-          <AnimatedNumber value={temp} decimals={1} suffix='°' />
-        </span>
+        {/* Name + sensors */}
+        <div className='flex flex-col min-w-0 flex-1'>
+          <div className='flex items-center justify-between gap-1'>
+            <span className='text-white/90 text-sm font-semibold leading-tight truncate'>{room.label}</span>
+            {hasPanel && (
+              <motion.button
+                whileTap={{ scale: 0.88 }}
+                onClick={handlePanelClick}
+                className='shrink-0 w-5 h-5 rounded-lg flex items-center justify-center border transition-colors'
+                style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }}
+              >
+                <ChevronRight size={11} className='text-white/40' />
+              </motion.button>
+            )}
+          </div>
+          <div className='flex items-center gap-2 mt-0.5'>
+            {temp !== null && !isNaN(temp) && (
+              <span className='text-[11px] text-white/50 font-medium flex items-center gap-0.5'>
+                <Thermometer size={10} className='text-white/30' />
+                <AnimatedNumber value={temp} decimals={1} suffix='°C' />
+              </span>
+            )}
+            {humidity !== null && !isNaN(humidity) && (
+              <span className='text-[11px] text-white/50 font-medium flex items-center gap-0.5'>
+                <Droplets size={10} className='text-sky-400/60' />
+                {humidity.toFixed(0)}%
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Controls row */}
+      {hasControls && (
+        <div className='flex gap-1.5'>
+          {/* Default light toggle */}
+          {(room.lightEntities?.length ?? 0) > 0 && !room.controls?.length && <DefaultLightControls entityIds={room.lightEntities!} />}
+
+          {/* Custom controls */}
+          {room.controls?.map((ctrl, i) => (
+            <ControlButton key={i} ctrl={ctrl} />
+          ))}
+        </div>
       )}
     </motion.div>
   );
@@ -295,24 +268,32 @@ function RoomRow({ room, index, onOpen }: { room: RoomConfig; index: number; onO
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export function RoomsGrid() {
-  const [selectedRoom, setSelectedRoom] = useState<RoomConfig | null>(null);
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<RoomsGridConfig>(widgetId || 'rooms');
-  const rooms = resolveRooms(config);
+
+  const rooms = config?.rooms?.length ? config.rooms : DEFAULT_ROOMS;
+  const cols = config?.columns ?? 2;
+
+  const gridCols = cols === 1 ? 'grid-cols-1' : cols === 3 ? 'grid-cols-3' : 'grid-cols-2';
 
   return (
-    <>
-      <div className='gc rounded-3xl p-4 h-full'>
-        <div className='text-white/50 text-xs uppercase tracking-[0.15em] mb-3 px-2 font-medium'>Pièces</div>
-        <div className='flex flex-col'>
-          {rooms.map((room, i) => (
-            <RoomRow key={room.area} room={room} index={i} onOpen={() => setSelectedRoom(room)} />
-          ))}
-        </div>
+    <div className='gc rounded-3xl p-3 h-full flex flex-col overflow-hidden'>
+      {/* Title */}
+      <div className='flex items-center gap-1 mb-2.5 px-0.5 shrink-0'>
+        <span className='text-white/50 text-xs font-semibold uppercase tracking-wider'>Pièces</span>
+        <ChevronRight size={12} className='text-white/20' />
       </div>
 
-      <AnimatePresence>{selectedRoom && <RoomModal room={selectedRoom} onClose={() => setSelectedRoom(null)} />}</AnimatePresence>
-    </>
+      {/* Grid */}
+      <div
+        className={cn('grid gap-2 overflow-y-auto scrollbar-none flex-1', gridCols)}
+        style={{ scrollbarWidth: 'none', alignContent: 'start' }}
+      >
+        {rooms.map((room, i) => (
+          <RoomCard key={room.area} room={room} index={i} />
+        ))}
+      </div>
+    </div>
   );
 }

@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { DURATION_HERO } from '@/lib/motion-tokens';
 import { ChevronsUp, ChevronsDown, Square } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
@@ -29,7 +30,7 @@ export function CoverRowBlockRenderer({ block }: { block: CoverRowBlock }) {
         <div className='w-16 h-1.5 bg-white/8 rounded-full overflow-hidden'>
           <motion.div
             animate={{ width: `${pos ?? 0}%` }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: DURATION_HERO }}
             className={cn('h-full rounded-full', isOpen ? 'bg-blue-400' : 'bg-zinc-600')}
           />
         </div>

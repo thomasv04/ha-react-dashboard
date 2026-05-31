@@ -57,8 +57,8 @@ export function HAThrottlePatch() {
 
     // Subscribe to entity changes and debounce cache writes
     const unsubscribe = useHass.subscribe(
-      (state) => state.entities,
-      (entities) => {
+      state => state.entities,
+      entities => {
         if (!entities || Object.keys(entities).length === 0) return;
         if (saveTimerRef.current != null) clearTimeout(saveTimerRef.current);
         saveTimerRef.current = setTimeout(() => {

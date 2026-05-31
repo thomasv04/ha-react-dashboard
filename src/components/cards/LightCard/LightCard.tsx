@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Lightbulb } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
+import { Lightbulb, Palette, Thermometer } from 'lucide-react';
 import { useRipple, RippleLayer } from '@/components/ui/Ripple';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
@@ -8,8 +9,11 @@ import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { LightCardConfig } from '@/types/widget-configs';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
+import { useSoundFeedback } from '@/hooks/useSoundFeedback';
+import { resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-map';
+import { useWidgetSize } from '@/hooks/useWidgetSize';
 
-// ── Debounce helper (200ms) ───────────────────────────────────────────────────
 function useDebouncedCallback<T extends (...args: never[]) => void>(fn: T, delay: number): T {
   const timer = useRef<ReturnType<typeof setTimeout>>(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -22,7 +26,38 @@ function useDebouncedCallback<T extends (...args: never[]) => void>(fn: T, delay
   );
 }
 
+/** Convert HA color_temp (mireds) to a 0-100 slider value (warm=0, cool=100) */
+function miredsToSlider(mireds: number, min: number, max: number): number {
+  return Math.round(((max - mireds) / (max - min)) * 100);
+}
+function sliderToKelvin(pct: number, minMireds: number, maxMireds: number): number {
+  // pct=0 → warmest (maxMireds), pct=100 → coolest (minMireds)
+  const mireds = Math.round(maxMireds - (pct / 100) * (maxMireds - minMireds));
+  return Math.round(1_000_000 / mireds);
+}
+
+/** Convert [r,g,b] 0-255 to hsl */
+function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b),
+    min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h = 0;
+  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+  else if (max === g) h = ((b - r) / d + 2) / 6;
+  else h = ((r - g) / d + 4) / 6;
+  return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+}
+
+type Tab = 'brightness' | 'colortemp' | 'color';
+
 export function LightCard() {
+  const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<LightCardConfig>(widgetId || 'light');
@@ -31,48 +66,83 @@ export function LightCard() {
   const entity = useSafeEntity(entityId);
   const { helpers } = useHass();
 
-  // Brightness : état local optimiste + sync depuis HA
+  // Local state for sliders
   const haBrightness = entity?.attributes.brightness as number | undefined;
-  const [localBrightness, setLocalBrightness] = useState<number | null>(null);
+  const haColorTemp = entity?.attributes.color_temp as number | undefined;
+  const haRgb = entity?.attributes.rgb_color as [number, number, number] | undefined;
+  const minMireds = (entity?.attributes.min_mireds as number | undefined) ?? 153;
+  const maxMireds = (entity?.attributes.max_mireds as number | undefined) ?? 500;
 
-  // Sync quand HA met à jour (reset le local)
+  const [localBrightness, setLocalBrightness] = useState<number | null>(null);
+  const [localColorTemp, setLocalColorTemp] = useState<number | null>(null); // 0-100 slider
+  const [localHue, setLocalHue] = useState<number | null>(null); // 0-360
+
   useEffect(() => {
     setLocalBrightness(null);
   }, [haBrightness]);
+  useEffect(() => {
+    setLocalColorTemp(null);
+  }, [haColorTemp]);
+  useEffect(() => {
+    setLocalHue(null);
+  }, [haRgb]);
 
-  // Brightness change (debounced → service call)
+  const [activeTab, setActiveTab] = useState<Tab>('brightness');
+
   const sendBrightness = useDebouncedCallback((pct: number) => {
     helpers.callService({ domain: 'light', service: 'turn_on', target: { entity_id: entityId }, serviceData: { brightness_pct: pct } });
-  }, 200);
+  }, 150);
+
+  const sendColorTemp = useDebouncedCallback((kelvin: number) => {
+    helpers.callService({
+      domain: 'light',
+      service: 'turn_on',
+      target: { entity_id: entityId },
+      serviceData: { color_temp_kelvin: kelvin },
+    });
+  }, 150);
+
+  const sendColor = useDebouncedCallback((hue: number) => {
+    helpers.callService({ domain: 'light', service: 'turn_on', target: { entity_id: entityId }, serviceData: { hs_color: [hue, 100] } });
+  }, 150);
 
   const { ripples, trigger: triggerRipple } = useRipple();
+  const playFeedback = useSoundFeedback();
 
   if (!entity) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className='gc rounded-3xl p-5 flex items-center justify-center h-full'
+        className='gc rounded-3xl p-4 flex items-center justify-center h-full'
       >
-        <span className='text-white/30 text-sm'>Lumière introuvable</span>
+        <span className='text-white/30 text-sm'>{t('widgets.light.notFound')}</span>
       </motion.div>
     );
   }
 
   const isOn = entity.state === 'on';
   const name = config?.name ?? (entity.attributes.friendly_name as string) ?? entityId;
-
-  // Brightness : 0-255 en HA → 0-100% pour l'affichage
   const currentBrightness = localBrightness ?? (haBrightness != null ? Math.round((haBrightness / 255) * 100) : 0);
-
-  // Détection si la lumière supporte le dimming
   const colorModes = entity.attributes.supported_color_modes as string[] | undefined;
-  const isDimmable = colorModes ? colorModes.some(m => m !== 'onoff') : haBrightness !== undefined;
+  const isDimmable = colorModes ? colorModes.some(m => !['onoff'].includes(m)) : haBrightness !== undefined;
+  const supportsColorTemp = colorModes?.some(m => ['color_temp', 'xy', 'hs', 'rgbw', 'rgbww'].includes(m)) ?? haColorTemp !== undefined;
+  const supportsColor = colorModes?.some(m => ['hs', 'xy', 'rgb', 'rgbw', 'rgbww'].includes(m)) ?? haRgb !== undefined;
 
-  // Toggle on/off
+  // Which controls to show based on config flags
+  const showBrightness = (config?.showBrightness ?? true) && isDimmable;
+  const showColorTemp = (config?.showColorTemp ?? true) && supportsColorTemp;
+  const showColor = (config?.showColor ?? true) && supportsColor;
+
+  const hasTabs = (showBrightness ? 1 : 0) + (showColorTemp ? 1 : 0) + (showColor ? 1 : 0) > 1;
+
+  const colorTempSlider = localColorTemp ?? (haColorTemp != null ? miredsToSlider(haColorTemp, minMireds, maxMireds) : 50);
+  const currentHue = localHue ?? (haRgb != null ? rgbToHsl(...haRgb)[0] : 0);
+
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     helpers.callService({ domain: 'light', service: 'toggle', target: { entity_id: entityId } });
+    playFeedback(isOn ? 'toggle_off' : 'toggle_on');
   };
 
   const handleBrightnessChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,68 +152,249 @@ export function LightCard() {
     sendBrightness(pct);
   };
 
+  const handleColorTempChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    const pct = parseInt(e.target.value, 10);
+    setLocalColorTemp(pct);
+    sendColorTemp(sliderToKelvin(pct, minMireds, maxMireds));
+  };
+
+  const handleHueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    const h = parseInt(e.target.value, 10);
+    setLocalHue(h);
+    sendColor(h);
+  };
+
+  // Accent color: use current hue if in color mode, else amber
+  const accentColor = isOn ? (showColor && haRgb ? `hsl(${currentHue},80%,60%)` : '#fbbf24') : undefined;
+
+  // Custom icon
+  const iconName = config?.icon;
+  const customIconUrl = iconName && isCustomIcon(iconName) ? getCustomIconUrl(iconName) : undefined;
+  // eslint-disable-next-line react-hooks/static-components
+  const CustomIcon = iconName && !isCustomIcon(iconName) ? resolveIcon(iconName) : undefined;
+
+  const cardRef = useRef<HTMLDivElement>(null);
+  const widgetSize = useWidgetSize(cardRef);
+  const isCompact = widgetSize === 'xs' || widgetSize === 'sm';
+
+  const visibleTabs: Tab[] = [
+    ...(showBrightness ? ['brightness' as Tab] : []),
+    ...(showColorTemp ? ['colortemp' as Tab] : []),
+    ...(showColor ? ['color' as Tab] : []),
+  ];
+  const currentTab = visibleTabs.includes(activeTab) ? activeTab : (visibleTabs[0] ?? 'brightness');
+
+  // Responsive sizes
+  const iconBtnClass = isCompact ? 'w-10 h-10 rounded-xl' : 'w-16 h-16 rounded-2xl';
+  const iconSize = isCompact ? 18 : 28;
+
   return (
     <motion.div
+      ref={cardRef}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: DURATION_ENTRANCE }}
       onPointerDown={triggerRipple}
-      className={cn('gc rounded-3xl p-5 flex flex-col justify-between h-full relative overflow-hidden', isOn && 'ring-1 ring-amber-400/20')}
+      className={cn('gc rounded-3xl flex flex-col h-full relative overflow-hidden select-none', isCompact ? 'p-2.5' : 'p-3.5')}
     >
-      <RippleLayer ripples={ripples} color='rgba(251,191,36,0.2)' />
-      {/* Header : icône + toggle */}
-      <div className='flex items-start justify-between'>
-        <button
-          onClick={handleToggle}
-          className={cn(
-            'w-10 h-10 rounded-xl flex items-center justify-center transition-colors',
-            isOn ? 'bg-amber-400/20' : 'bg-white/5 hover:bg-white/10'
-          )}
-        >
-          <Lightbulb
-            size={20}
-            className={cn('transition-colors', isOn ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]' : 'text-white/40')}
-          />
-        </button>
+      <RippleLayer ripples={ripples} color={accentColor ? `${accentColor}22` : 'rgba(251,191,36,0.12)'} />
 
-        {/* Badge ON/OFF */}
-        <span
+      {/* Header */}
+      <div className='flex items-center justify-between mb-1 shrink-0'>
+        <span className='text-white/40 text-xs font-medium truncate'>{name}</span>
+        <motion.span
+          key={isOn ? 'on' : 'off'}
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 22 }}
           className={cn(
-            'text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full',
-            isOn ? 'bg-amber-400/20 text-amber-400' : 'bg-white/5 text-white/30'
+            'text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full border shrink-0 ml-2',
+            isOn ? 'text-amber-300 border-amber-400/20' : 'bg-white/5 text-white/25 border-white/8'
           )}
+          style={
+            isOn
+              ? {
+                  background: accentColor ? `${accentColor}18` : 'rgba(251,191,36,0.14)',
+                  borderColor: accentColor ? `${accentColor}35` : 'rgba(251,191,36,0.28)',
+                }
+              : undefined
+          }
         >
           {isOn ? `${currentBrightness}%` : 'OFF'}
-        </span>
+        </motion.span>
       </div>
 
-      {/* Slider de luminosité */}
-      {isDimmable && isOn && (
-        <div className='mt-3'>
-          <input
-            type='range'
-            min={1}
-            max={100}
-            value={currentBrightness}
-            onChange={handleBrightnessChange}
-            className='w-full h-1.5 rounded-full appearance-none cursor-pointer
-              bg-white/10
-              [&::-webkit-slider-thumb]:appearance-none
-              [&::-webkit-slider-thumb]:w-4
-              [&::-webkit-slider-thumb]:h-4
-              [&::-webkit-slider-thumb]:rounded-full
-              [&::-webkit-slider-thumb]:bg-amber-400
-              [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(251,191,36,0.4)]'
-            style={{
-              background: `linear-gradient(to right, rgba(251,191,36,0.5) 0%, rgba(251,191,36,0.5) ${currentBrightness}%, rgba(255,255,255,0.1) ${currentBrightness}%, rgba(255,255,255,0.1) 100%)`,
-            }}
-          />
-        </div>
-      )}
+      {/* Icon toggle */}
+      <div className='flex items-center justify-center flex-1 min-h-0'>
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={handleToggle}
+          className={cn('relative border flex items-center justify-center transition-all duration-300', iconBtnClass)}
+          style={
+            isOn
+              ? {
+                  background: accentColor ? `${accentColor}18` : 'rgba(251,191,36,0.14)',
+                  borderColor: accentColor ? `${accentColor}35` : 'rgba(251,191,36,0.25)',
+                }
+              : { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }
+          }
+        >
+          {isOn && (
+            <div
+              className={cn('absolute inset-0 blur-xl opacity-20 pointer-events-none', isCompact ? 'rounded-xl' : 'rounded-2xl')}
+              style={{ background: accentColor ?? '#fbbf24' }}
+            />
+          )}
+          {customIconUrl ? (
+            <img src={customIconUrl} alt='' className={cn('relative object-contain', isCompact ? 'w-5 h-5' : 'w-7 h-7')} />
+          ) : CustomIcon ? (
+            <CustomIcon
+              size={iconSize}
+              className={cn('relative transition-all duration-300', isOn ? '' : 'text-white/25')}
+              style={isOn ? { color: accentColor ?? '#fbbf24', filter: `drop-shadow(0 0 10px ${accentColor ?? '#fbbf24'}99)` } : undefined}
+            />
+          ) : (
+            <Lightbulb
+              size={iconSize}
+              className={cn('relative transition-all duration-300', isOn ? '' : 'text-white/25')}
+              style={isOn ? { color: accentColor ?? '#fbbf24', filter: `drop-shadow(0 0 10px ${accentColor ?? '#fbbf24'}99)` } : undefined}
+            />
+          )}
+        </motion.button>
+      </div>
 
-      {/* Nom */}
-      <div className='mt-auto pt-3'>
-        <div className='text-white/40 text-xs uppercase tracking-wider'>{name}</div>
+      {/* Controls — only shown when on, at least one enabled, and card is large enough */}
+      <AnimatePresence>
+        {isOn && visibleTabs.length > 0 && !isCompact && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+            className='shrink-0 overflow-hidden'
+          >
+            <div className='mt-2'>
+              {/* Tab pills — only if multiple controls */}
+              {hasTabs && (
+                <div className='flex gap-1 mb-2'>
+                  {visibleTabs.map(tab => (
+                    <button
+                      key={tab}
+                      onClick={e => {
+                        e.stopPropagation();
+                        setActiveTab(tab);
+                      }}
+                      className={cn(
+                        'flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold border transition-all',
+                        currentTab === tab
+                          ? 'text-amber-300 border-amber-400/25'
+                          : 'bg-white/5 text-white/30 border-white/8 hover:bg-white/8'
+                      )}
+                      style={currentTab === tab ? { background: 'rgba(251,191,36,0.12)', borderColor: 'rgba(251,191,36,0.25)' } : undefined}
+                    >
+                      {tab === 'brightness' && <Lightbulb size={10} />}
+                      {tab === 'colortemp' && <Thermometer size={10} />}
+                      {tab === 'color' && <Palette size={10} />}
+                      {tab === 'brightness' && t('widgets.light.brightness')}
+                      {tab === 'colortemp' && t('widgets.light.colorTemp')}
+                      {tab === 'color' && t('widgets.light.color')}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Brightness slider */}
+              {currentTab === 'brightness' && (
+                <input
+                  type='range'
+                  min={1}
+                  max={100}
+                  value={currentBrightness}
+                  onChange={handleBrightnessChange}
+                  onClick={e => e.stopPropagation()}
+                  className='w-full h-1 rounded-full appearance-none cursor-pointer
+                    [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5
+                    [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-grab
+                    [&::-webkit-slider-thumb]:active:cursor-grabbing [&::-webkit-slider-thumb]:shadow-md'
+                  style={
+                    {
+                      background: `linear-gradient(to right, ${accentColor ?? 'rgba(251,191,36,0.55)'} 0%, ${accentColor ?? 'rgba(251,191,36,0.55)'} ${currentBrightness}%, rgba(255,255,255,0.08) ${currentBrightness}%, rgba(255,255,255,0.08) 100%)`,
+                      '--thumb-color': accentColor ?? '#fbbf24',
+                    } as React.CSSProperties & Record<string, string>
+                  }
+                />
+              )}
+
+              {/* Color temperature slider */}
+              {currentTab === 'colortemp' && (
+                <div>
+                  <input
+                    type='range'
+                    min={0}
+                    max={100}
+                    value={colorTempSlider}
+                    onChange={handleColorTempChange}
+                    onClick={e => e.stopPropagation()}
+                    className='w-full h-1 rounded-full appearance-none cursor-pointer
+                      [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5
+                      [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:cursor-grab
+                      [&::-webkit-slider-thumb]:active:cursor-grabbing [&::-webkit-slider-thumb]:shadow-md'
+                    style={{
+                      background: `linear-gradient(to right, #ff9d4d, #ffe4b5 40%, #ffffff 65%, #cce8ff)`,
+                    }}
+                  />
+                  <div className='flex justify-between mt-1'>
+                    <span className='text-[9px] text-orange-300/60'>Chaud</span>
+                    <span className='text-[9px] text-blue-200/60'>Froid</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Hue color slider */}
+              {currentTab === 'color' && (
+                <div>
+                  <input
+                    type='range'
+                    min={0}
+                    max={359}
+                    value={currentHue}
+                    onChange={handleHueChange}
+                    onClick={e => e.stopPropagation()}
+                    className='w-full h-1 rounded-full appearance-none cursor-pointer
+                      [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5
+                      [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:cursor-grab
+                      [&::-webkit-slider-thumb]:active:cursor-grabbing [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-white/30'
+                    style={{
+                      background:
+                        'linear-gradient(to right, hsl(0,90%,55%), hsl(30,90%,55%), hsl(60,90%,55%), hsl(90,90%,55%), hsl(120,90%,55%), hsl(150,90%,55%), hsl(180,90%,55%), hsl(210,90%,55%), hsl(240,90%,55%), hsl(270,90%,55%), hsl(300,90%,55%), hsl(330,90%,55%), hsl(360,90%,55%))',
+                    }}
+                  />
+                  <div className='flex justify-center mt-1'>
+                    <div
+                      className='w-4 h-4 rounded-full border border-white/20 shadow'
+                      style={{ background: `hsl(${currentHue}, 80%, 55%)` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* State label */}
+      <div className={cn('text-center shrink-0', isCompact ? 'mt-0.5' : 'mt-1.5')}>
+        <span
+          className={cn(
+            'font-semibold transition-colors duration-300',
+            isCompact ? 'text-[10px]' : 'text-xs',
+            isOn ? 'text-amber-400/70' : 'text-white/20'
+          )}
+        >
+          {isOn ? t('widgets.light.on') : t('widgets.light.off')}
+        </span>
       </div>
     </motion.div>
   );

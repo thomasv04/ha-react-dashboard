@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { WallPanelConfigModal } from '@/components/wallpanel/WallPanelConfigModal';
 import { CustomPanelEditorModal } from '@/components/custom-panels';
 import { AnimatePresence } from 'framer-motion';
+import { useI18n } from '@/i18n';
 
 const DEFAULT_ICONS: Record<PageType, LucideIcon> = {
   grid: LayoutGrid,
@@ -18,6 +19,7 @@ const DEFAULT_ICONS: Record<PageType, LucideIcon> = {
 };
 
 export function PageTabs() {
+  const { t } = useI18n();
   const { pages, currentPageId, setCurrentPage, addPage, deletePage } = usePages();
   const { isEditMode } = useEditMode();
   const { isConfigured } = useWallPanel();
@@ -99,11 +101,11 @@ export function PageTabs() {
         {/* Bouton ajouter une page en mode édition */}
         {isEditMode && (
           <button
-            onClick={() => addPage({ label: 'Nouvelle page', type: 'grid' })}
+            onClick={() => addPage({ label: t('layout.newPage'), type: 'grid' })}
             className='flex items-center gap-1 px-3 py-2 rounded-xl text-white/30 hover:text-white/60 hover:bg-white/5 transition-colors'
           >
             <Plus size={14} />
-            <span className='text-xs'>Page</span>
+            <span className='text-xs'>{t('layout.addPage')}</span>
           </button>
         )}
       </div>

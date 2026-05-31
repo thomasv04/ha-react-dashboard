@@ -4,6 +4,7 @@ import { useHass } from '@hakit/core';
 import { templateEngine } from '@/lib/template-engine';
 import { isTemplateValue, tv, type TV, type TemplateValue } from '@/types/template';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 
 // ── Snippets rapides ──────────────────────────────────────────────────────────
 
@@ -18,6 +19,7 @@ const SNIPPETS = [
 // ── Éditeur de template ───────────────────────────────────────────────────────
 
 export function TemplateEditor({ value, onChange, entityId }: { value: string; onChange: (v: string) => void; entityId?: string }) {
+  const { t } = useI18n();
   const allEntities = useHass(s => s.entities);
   const entities = useHass(s => s.entities);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -174,7 +176,7 @@ export function TemplateEditor({ value, onChange, entityId }: { value: string; o
       ) : preview ? (
         <div className='flex items-center gap-2 px-2 py-1.5 rounded-md bg-green-500/8 border border-green-500/15'>
           <Check size={11} className='text-green-400 shrink-0' />
-          <span className='text-[11px] text-green-300/70'>Aperçu : </span>
+          <span className='text-[11px] text-green-300/70'>{t('layout.previewLabel')} </span>
           <span className='text-[11px] text-green-200/90 font-mono truncate'>{preview}</span>
         </div>
       ) : null}

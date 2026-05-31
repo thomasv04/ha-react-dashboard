@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { EASE_OUT } from '@/lib/motion-tokens';
 import { X, Play, Plus, Trash2, Clock, Image, Layers, Settings2 } from 'lucide-react';
 import { useWallPanel } from '@/context/WallPanelContext';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 import type { ImageFit, MediaOrder } from '@/types/wallpanel';
 
 type Tab = 'activation' | 'background' | 'widgets' | 'style';
@@ -12,6 +14,7 @@ interface WallPanelConfigModalProps {
 }
 
 export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
+  const { t } = useI18n();
   const { config, updateConfig, activate, wallPanelLayout } = useWallPanel();
   const [tab, setTab] = useState<Tab>('activation');
   const [newUrl, setNewUrl] = useState('');
@@ -34,10 +37,10 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
 
   type TabEntry = { id: Tab; label: string; icon: React.ComponentType<{ size?: number }> };
   const TABS: TabEntry[] = [
-    { id: 'activation', label: 'Activation', icon: Clock },
-    { id: 'background', label: 'Fond', icon: Image },
-    { id: 'widgets', label: 'Widgets', icon: Layers },
-    { id: 'style', label: 'Style', icon: Settings2 },
+    { id: 'activation', label: t('layout.wallPanel.tabActivation'), icon: Clock },
+    { id: 'background', label: t('layout.wallPanel.tabBackground'), icon: Image },
+    { id: 'widgets', label: t('layout.wallPanel.tabWidgets'), icon: Layers },
+    { id: 'style', label: t('layout.wallPanel.tabStyle'), icon: Settings2 },
   ];
 
   return (
@@ -55,7 +58,7 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
         initial={{ opacity: 0, scale: 0.96, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 8 }}
-        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.22, ease: EASE_OUT }}
       >
         <div
           className='pointer-events-auto w-full max-w-lg rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col'
@@ -68,8 +71,8 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
           {/* Header */}
           <div className='flex items-center justify-between px-5 pt-5 pb-4 border-b border-white/[0.08] shrink-0'>
             <div>
-              <h2 className='text-white font-semibold text-base'>WallPanel</h2>
-              <p className='text-white/25 text-[11px] mt-0.5'>Écran de veille avec widgets</p>
+              <h2 className='text-white font-semibold text-base'>{t('layout.wallPanel.subtitle')}</h2>
+              <p className='text-white/25 text-[11px] mt-0.5'>{t('layout.wallPanel.demo')}</p>
             </div>
             <div className='flex items-center gap-2'>
               <button
@@ -82,7 +85,7 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                 }}
               >
                 <Play size={12} />
-                Démo
+                {t('layout.wallPanel.demo')}
               </button>
               <button
                 onClick={onClose}
@@ -119,8 +122,8 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
               <>
                 <label className='flex items-center justify-between'>
                   <div>
-                    <p className='text-white/80 text-sm font-medium'>Activer l'écran de veille</p>
-                    <p className='text-white/28 text-xs mt-0.5'>Activation automatique après inactivité</p>
+                    <p className='text-white/80 text-sm font-medium'>{t('layout.wallPanel.enableScreensaver')}</p>
+                    <p className='text-white/28 text-xs mt-0.5'>{t('layout.wallPanel.enableScreensaverDesc')}</p>
                   </div>
                   <input
                     type='checkbox'
@@ -132,7 +135,7 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
 
                 <div>
                   <label className='text-white/55 text-xs font-medium block mb-1.5'>
-                    Délai d'inactivité : <span className='text-white/80'>{config.idle_time}s</span>
+                    {t('layout.wallPanel.idleDelay')} : <span className='text-white/80'>{config.idle_time}s</span>
                   </label>
                   <input
                     type='range'
@@ -153,7 +156,7 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                 </div>
 
                 <div>
-                  <label className='text-white/55 text-xs font-medium block mb-1'>Entité HA (optionnelle)</label>
+                  <label className='text-white/55 text-xs font-medium block mb-1'>{t('layout.wallPanel.haEntity')}</label>
                   <input
                     type='text'
                     value={config.screensaver_entity ?? ''}
@@ -161,12 +164,12 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                     placeholder='input_boolean.wallpanel_screensaver'
                     className='w-full px-3 py-2 rounded-xl bg-white/5 border border-white/[0.08] text-white/70 text-sm outline-none focus:border-white/20'
                   />
-                  <p className='text-white/20 text-[10px] mt-1'>Si définie, HA peut déclencher l'écran de veille via cette entité</p>
+                  <p className='text-white/20 text-[10px] mt-1'>{t('layout.wallPanel.haEntityDesc')}</p>
                 </div>
 
                 <div className='p-3 rounded-xl border border-purple-500/15 bg-purple-500/5'>
                   <p className='text-white/40 text-xs leading-relaxed'>
-                    <span className='text-purple-300/70 font-medium'>Activation forcée</span> — ajoutez
+                    <span className='text-purple-300/70 font-medium'>{t('layout.wallPanel.forcedActivation')}</span> — ajoutez
                     <code className='mx-1 px-1.5 py-0.5 rounded bg-white/[0.08] text-purple-200/70 text-[10px]'>?wp_enabled=true</code>à
                     l'URL pour activer immédiatement (utile pour tablette murale).
                   </p>
@@ -178,7 +181,7 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
             {tab === 'background' && (
               <>
                 <div>
-                  <p className='text-white/55 text-xs font-medium mb-2'>Images de fond</p>
+                  <p className='text-white/55 text-xs font-medium mb-2'>{t('layout.wallPanel.backgroundImages')}</p>
                   <div className='space-y-1.5 mb-2'>
                     {config.image_urls.map((url, i) => (
                       <div key={i} className='flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/[0.07] group'>
@@ -192,7 +195,7 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                       </div>
                     ))}
                     {config.image_urls.length === 0 && (
-                      <p className='text-white/18 text-xs text-center py-3'>Aucune image — fond dégradé utilisé</p>
+                      <p className='text-white/18 text-xs text-center py-3'>{t('layout.wallPanel.noImages')}</p>
                     )}
                   </div>
                   <div className='flex gap-2'>
@@ -215,15 +218,15 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
 
                 <div className='grid grid-cols-2 gap-3'>
                   <div>
-                    <label className='text-white/55 text-xs font-medium block mb-1'>Ajustement</label>
+                    <label className='text-white/55 text-xs font-medium block mb-1'>{t('layout.wallPanel.imageFit')}</label>
                     <select
                       value={config.image_fit}
                       onChange={e => updateConfig({ image_fit: e.target.value as ImageFit })}
                       className='w-full px-3 py-2 rounded-xl bg-white/5 border border-white/[0.08] text-white/70 text-xs outline-none'
                     >
-                      <option value='cover'>Cover (recadré)</option>
-                      <option value='contain'>Contain (entier)</option>
-                      <option value='fill'>Fill (étiré)</option>
+                      <option value='cover'>{t('layout.wallPanel.fitCover')}</option>
+                      <option value='contain'>{t('layout.wallPanel.fitContain')}</option>
+                      <option value='fill'>{t('layout.wallPanel.fitFill')}</option>
                     </select>
                     {config.image_fit === 'contain' && (
                       <label className='flex items-center gap-2 mt-2 cursor-pointer select-none'>
@@ -237,26 +240,26 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                           }
                           className='accent-purple-500 w-3.5 h-3.5'
                         />
-                        <span className='text-white/50 text-xs'>Fond flou (remplir les bandes)</span>
+                        <span className='text-white/50 text-xs'>{t('layout.wallPanel.blurBackground')}</span>
                       </label>
                     )}
                   </div>
                   <div>
-                    <label className='text-white/55 text-xs font-medium block mb-1'>Ordre</label>
+                    <label className='text-white/55 text-xs font-medium block mb-1'>{t('layout.wallPanel.imageOrder')}</label>
                     <select
                       value={config.media_order}
                       onChange={e => updateConfig({ media_order: e.target.value as MediaOrder })}
                       className='w-full px-3 py-2 rounded-xl bg-white/5 border border-white/[0.08] text-white/70 text-xs outline-none'
                     >
-                      <option value='random'>Aléatoire</option>
-                      <option value='sequential'>Séquentiel</option>
+                      <option value='random'>{t('layout.wallPanel.orderRandom')}</option>
+                      <option value='sequential'>{t('layout.wallPanel.orderSequential')}</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
                   <label className='text-white/55 text-xs font-medium block mb-1.5'>
-                    Durée par image : <span className='text-white/80'>{config.image_duration}s</span>
+                    {t('layout.wallPanel.imageDuration')} : <span className='text-white/80'>{config.image_duration}s</span>
                   </label>
                   <input
                     type='range'
@@ -274,21 +277,19 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
             {/* ── WIDGETS ── */}
             {tab === 'widgets' && (
               <div className='space-y-3'>
-                <p className='text-white/35 text-xs leading-relaxed'>
-                  Les widgets sont disposés librement sur l'écran de veille via le même système de grille que le dashboard principal.
-                  Cliquez sur <strong className='text-white/55'>Démo</strong> pour prévisualiser l'overlay et ajouter des widgets.
-                </p>
+                <p className='text-white/35 text-xs leading-relaxed'>{t('layout.wallPanel.widgetsInfo')}</p>
                 <div className='p-3 rounded-xl border border-white/[0.08] bg-white/[0.03] text-center'>
                   <p className='text-white/22 text-xs mb-2'>
-                    {wallPanelLayout.widgets.lg.length} widget
-                    {wallPanelLayout.widgets.lg.length !== 1 ? 's' : ''} configuré
-                    {wallPanelLayout.widgets.lg.length !== 1 ? 's' : ''}
+                    {wallPanelLayout.widgets.lg.length}{' '}
+                    {wallPanelLayout.widgets.lg.length !== 1
+                      ? t('layout.wallPanel.widgetCount_other')
+                      : t('layout.wallPanel.widgetCount_one')}
                   </p>
                   <button
                     onClick={handleDemo}
                     className='text-xs px-4 py-2 rounded-xl border border-purple-500/30 text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 transition-colors'
                   >
-                    Ouvrir l'aperçu
+                    {t('layout.wallPanel.openPreview')}
                   </button>
                 </div>
               </div>
@@ -299,7 +300,7 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
               <>
                 <div>
                   <label className='text-white/55 text-xs font-medium block mb-1.5'>
-                    Flou de fond : <span className='text-white/80'>{config.style.backgroundBlur ?? 0}px</span>
+                    {t('layout.wallPanel.backgroundBlur')} : <span className='text-white/80'>{config.style.backgroundBlur ?? 0}px</span>
                   </label>
                   <input
                     type='range'
@@ -317,7 +318,7 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                 </div>
                 <div>
                   <label className='text-white/55 text-xs font-medium block mb-1.5'>
-                    Largeur boîte info : <span className='text-white/80'>{config.style.infoBoxWidth ?? 380}px</span>
+                    {t('layout.wallPanel.infoBoxWidth')} : <span className='text-white/80'>{config.style.infoBoxWidth ?? 380}px</span>
                   </label>
                   <input
                     type='range'

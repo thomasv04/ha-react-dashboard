@@ -12,7 +12,15 @@ import { useI18n } from '@/i18n';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import type { SoundPreset } from '@/lib/sounds';
 
-function AutomationRow({ item, helpers, soundOverrides }: { item: AutomationItem; helpers: ReturnType<typeof useHass>['helpers']; soundOverrides?: Record<string, SoundPreset> }) {
+function AutomationRow({
+  item,
+  helpers,
+  soundOverrides,
+}: {
+  item: AutomationItem;
+  helpers: ReturnType<typeof useHass>['helpers'];
+  soundOverrides?: Record<string, SoundPreset>;
+}) {
   const entity = useSafeEntity(item.entityId);
   const isOn = entity?.state === 'on';
   const playFeedback = useSoundFeedback('automation', soundOverrides);
@@ -38,9 +46,7 @@ function AutomationRow({ item, helpers, soundOverrides }: { item: AutomationItem
       exit={{ opacity: 0, y: -4 }}
       className={cn(
         'flex items-center gap-2.5 px-3 py-2.5 rounded-2xl border transition-all duration-300 cursor-pointer select-none',
-        isOn
-          ? 'border-emerald-500/20'
-          : 'border-white/6'
+        isOn ? 'border-emerald-500/20' : 'border-white/6'
       )}
       style={isOn ? { background: 'rgba(74,222,128,0.07)' } : { background: 'rgba(255,255,255,0.03)' }}
       onClick={handleToggle}
@@ -48,16 +54,18 @@ function AutomationRow({ item, helpers, soundOverrides }: { item: AutomationItem
       {/* Icon bubble */}
       <div
         className='w-8 h-8 rounded-xl flex items-center justify-center border shrink-0 transition-all duration-300'
-        style={isOn
-          ? { background: 'rgba(74,222,128,0.14)', borderColor: 'rgba(74,222,128,0.28)' }
-          : { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }
+        style={
+          isOn
+            ? { background: 'rgba(74,222,128,0.14)', borderColor: 'rgba(74,222,128,0.28)' }
+            : { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }
         }
       >
-        {customIconUrl
-          ? <img src={customIconUrl} alt='' className='w-4 h-4 object-contain' />
+        {customIconUrl ? (
+          <img src={customIconUrl} alt='' className='w-4 h-4 object-contain' />
+        ) : (
           // eslint-disable-next-line react-hooks/static-components
-          : <IconComponent size={15} className={cn('transition-colors', isOn ? 'text-emerald-400' : 'text-white/30')} />
-        }
+          <IconComponent size={15} className={cn('transition-colors', isOn ? 'text-emerald-400' : 'text-white/30')} />
+        )}
       </div>
 
       {/* Name + status */}
@@ -65,7 +73,9 @@ function AutomationRow({ item, helpers, soundOverrides }: { item: AutomationItem
         <span className={cn('text-sm font-medium truncate transition-colors', isOn ? 'text-white/90' : 'text-white/50')}>
           {name as string}
         </span>
-        <span className={cn('text-[10px] font-bold uppercase tracking-widest leading-none mt-0.5', isOn ? 'text-emerald-400' : 'text-white/25')}>
+        <span
+          className={cn('text-[10px] font-bold uppercase tracking-widest leading-none mt-0.5', isOn ? 'text-emerald-400' : 'text-white/25')}
+        >
           {isOn ? 'Actif' : 'Inactif'}
         </span>
       </div>
@@ -129,7 +139,7 @@ export function AutomationListCard() {
       {/* List */}
       <div className='flex flex-col gap-1.5 flex-1 overflow-y-auto scrollbar-none' style={{ scrollbarWidth: 'none' }}>
         <AnimatePresence>
-          {items.map((item) => (
+          {items.map(item => (
             <AutomationRow key={item.entityId} item={item} helpers={helpers} soundOverrides={config?.soundOverrides} />
           ))}
         </AnimatePresence>

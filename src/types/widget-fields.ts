@@ -14,14 +14,15 @@ export interface WidgetFieldDef {
     | 'gradient'
     | 'template'
     | 'select'
+    | 'multiselect'
     | 'weather-icons'
     | 'panel-select';
   /** For entity fields: filter by domain (e.g. 'sensor', 'climate') */
   domain?: string;
   /** For list fields: sub-fields of each item */
   itemFields?: WidgetFieldDef[];
-  /** For select fields: available options */
-  options?: { value: string; label: string }[];
+  /** For select / multiselect fields: available options */
+  options?: { value: string; label: string; icon?: string }[];
 }
 
 // â”€â”€ Default configs (mirrors current hardcoded values) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -46,6 +47,7 @@ export const DEFAULT_WIDGET_CONFIGS: WidgetConfigs = {
       { entityId: 'camera.hallway', name: 'Couloir' },
     ],
     selectorEntity: 'input_select.camera_selector',
+    streamMode: 'mjpeg',
   },
   weather: {
     type: 'weather',
@@ -73,51 +75,6 @@ export const DEFAULT_WIDGET_CONFIGS: WidgetConfigs = {
     entityId: 'climate.living_room',
     minTemp: 10,
     maxTemp: 30,
-  },
-  rooms: {
-    type: 'rooms',
-    rooms: [
-      {
-        area: 'kitchen',
-        label: 'Cuisine',
-        icon: 'UtensilsCrossed',
-        iconBg: 'from-red-500 to-orange-400',
-        tempEntity: 'sensor.kitchen_temperature',
-        lightEntities: ['light.kitchen'],
-      },
-      { area: 'storage', label: 'Cellier', icon: 'Package', iconBg: 'from-purple-500 to-violet-400' },
-      {
-        area: 'dining_room',
-        label: 'Salle Ã  manger',
-        icon: 'Armchair',
-        iconBg: 'from-lime-500 to-green-400',
-        tempEntity: 'sensor.dining_room_temperature',
-      },
-      { area: 'guest_room', label: 'Ch. invitÃ©s', icon: 'BedDouble', iconBg: 'from-teal-500 to-cyan-400' },
-      {
-        area: 'bedroom',
-        label: 'Chambre',
-        icon: 'Moon',
-        iconBg: 'from-pink-500 to-rose-400',
-        tempEntity: 'sensor.bedroom_temperature',
-        lightEntities: ['light.bedroom'],
-      },
-      {
-        area: 'living_room',
-        label: 'Salon',
-        icon: 'Sofa',
-        iconBg: 'from-yellow-500 to-amber-400',
-        lightEntities: ['light.living_room'],
-        panelId: 'lumieres',
-      },
-      {
-        area: 'office',
-        label: 'Bureau',
-        icon: 'BriefcaseBusiness',
-        iconBg: 'from-indigo-500 to-blue-400',
-        tempEntity: 'sensor.office_temperature',
-      },
-    ],
   },
   shortcuts: {
     type: 'shortcuts',
@@ -173,10 +130,43 @@ export const DEFAULT_WIDGET_CONFIGS: WidgetConfigs = {
     type: 'automation',
     entityId: 'automation.example',
   },
+  group: {
+    type: 'group',
+    title: '',
+    columns: 2,
+    children: [],
+  },
+  room: {
+    type: 'room',
+    label: 'Pièce',
+    icon: 'Home',
+    iconBg: 'from-blue-500 to-sky-400',
+  },
+  button: {
+    type: 'button',
+    label: 'Mon bouton',
+    domain: 'script',
+    service: 'turn_on',
+    color: '#3b82f6',
+  },
   media_player: {
     type: 'media_player',
     entityId: 'media_player.salon',
     disposition: 'horizontal',
+  },
+  alarm: {
+    type: 'alarm',
+    entityId: 'alarm_control_panel.home_alarm',
+    requireCode: true,
+  },
+  vacuum: {
+    type: 'vacuum',
+    entityId: 'vacuum.robot',
+    rooms: [],
+  },
+  pellet: {
+    type: 'pellet',
+    entityId: 'climate.pellet_stove',
   },
 };
 
@@ -219,23 +209,16 @@ export const WIDGET_FIELD_DEFS: Record<string, WidgetFieldDef[]> = {
         { key: 'name', label: 'Nom', fieldType: 'text' },
       ],
     },
-    { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
-  ],
-  rooms: [
     {
-      key: 'rooms',
-      label: 'PiÃ¨ces',
-      fieldType: 'list',
-      itemFields: [
-        { key: 'area', label: 'Zone (area)', fieldType: 'text' },
-        { key: 'label', label: 'Nom affichÃ©', fieldType: 'text' },
-        { key: 'icon', label: 'IcÃ´ne', fieldType: 'icon' },
-        { key: 'iconBg', label: 'DÃ©gradÃ© icÃ´ne', fieldType: 'gradient' },
-        { key: 'tempEntity', label: 'Capteur tempÃ©rature', fieldType: 'entity', domain: 'sensor' },
-        { key: 'lightEntities', label: 'LumiÃ¨res', fieldType: 'entity-list', domain: 'light' },
-        { key: 'panelId', label: 'Panneau lié', fieldType: 'panel-select' },
+      key: 'streamMode',
+      label: 'Mode de streaming',
+      fieldType: 'select',
+      options: [
+        { value: 'mjpeg', label: 'MJPEG (faible latence)' },
+        { value: 'hls', label: 'HLS (meilleure compression)' },
       ],
     },
+    { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
   ],
   shortcuts: [
     {
@@ -297,10 +280,13 @@ export const WIDGET_FIELD_DEFS: Record<string, WidgetFieldDef[]> = {
     { key: 'staleThresholdMinutes', label: 'Seuil périmé (minutes)', fieldType: 'number' },
   ],
   light: [
-    { key: 'entityId', label: 'EntitÃ© lumiÃ¨re', fieldType: 'entity', domain: 'light' },
-    { key: 'name', label: 'Nom affichÃ©', fieldType: 'text' },
-    { key: 'icon', label: 'IcÃ´ne', fieldType: 'icon' },
-    { key: 'isGroup', label: 'Groupe de lumiÃ¨res', fieldType: 'text' },
+    { key: 'entityId', label: 'Entité lumière', fieldType: 'entity', domain: 'light' },
+    { key: 'name', label: 'Nom affiché', fieldType: 'text' },
+    { key: 'icon', label: 'Icône', fieldType: 'icon' },
+    { key: 'isGroup', label: 'Groupe de lumières', fieldType: 'boolean' },
+    { key: 'showBrightness', label: 'Contrôle luminosité', fieldType: 'boolean' },
+    { key: 'showColorTemp', label: 'Contrôle température couleur', fieldType: 'boolean' },
+    { key: 'showColor', label: 'Contrôle teinte (RGB)', fieldType: 'boolean' },
     { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
   ],
   person: [
@@ -332,9 +318,57 @@ export const WIDGET_FIELD_DEFS: Record<string, WidgetFieldDef[]> = {
   ],
   automation: [
     { key: 'entityId', label: 'Automatisation', fieldType: 'entity', domain: 'automation' },
-    { key: 'name', label: 'Nom affichÃ©', fieldType: 'text' },
-    { key: 'icon', label: 'IcÃ´ne', fieldType: 'icon' },
+    { key: 'name', label: 'Nom affiché', fieldType: 'text' },
+    { key: 'icon', label: 'Icône', fieldType: 'icon' },
     { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
+  ],
+  group: [
+    { key: 'title', label: 'Titre du groupe', fieldType: 'text' },
+    {
+      key: 'columns',
+      label: 'Colonnes',
+      fieldType: 'select',
+      options: [
+        { value: '1', label: '1 colonne' },
+        { value: '2', label: '2 colonnes' },
+        { value: '3', label: '3 colonnes' },
+      ],
+    },
+  ],
+  room: [
+    { key: 'label', label: 'Nom de la pièce', fieldType: 'text' },
+    { key: 'icon', label: 'Icône', fieldType: 'icon' },
+    { key: 'iconBg', label: 'Dégradé icône', fieldType: 'gradient' },
+    { key: 'tempEntity', label: 'Capteur température', fieldType: 'entity', domain: 'sensor' },
+    { key: 'humidityEntity', label: 'Capteur humidité', fieldType: 'entity', domain: 'sensor' },
+    { key: 'lightEntities', label: 'Lumières (toggle auto)', fieldType: 'entity-list', domain: 'light' },
+    { key: 'panelId', label: 'Panneau lié (→)', fieldType: 'panel-select' },
+    {
+      key: 'controls',
+      label: 'Boutons personnalisés',
+      fieldType: 'list',
+      itemFields: [
+        { key: 'label', label: 'Libellé', fieldType: 'text' },
+        { key: 'icon', label: 'Icône', fieldType: 'icon' },
+        { key: 'domain', label: 'Domaine (ex: light)', fieldType: 'text' },
+        { key: 'service', label: 'Service (ex: toggle)', fieldType: 'text' },
+        { key: 'entityId', label: 'Entité cible', fieldType: 'entity' },
+        { key: 'stateEntity', label: 'Entité état (couleur)', fieldType: 'entity' },
+        { key: 'color', label: 'Couleur active (hex)', fieldType: 'text' },
+      ],
+    },
+  ],
+  button: [
+    { key: 'label', label: 'Libellé du bouton', fieldType: 'text' },
+    { key: 'subtitle', label: 'Sous-titre (optionnel)', fieldType: 'text' },
+    { key: 'icon', label: 'Icône', fieldType: 'icon' },
+    { key: 'color', label: 'Couleur accent (hex)', fieldType: 'text' },
+    { key: 'domain', label: 'Domaine HA (ex: script, light)', fieldType: 'text' },
+    { key: 'service', label: 'Service (ex: turn_on, toggle)', fieldType: 'text' },
+    { key: 'entityId', label: 'Entité cible (optionnel)', fieldType: 'entity' },
+    { key: 'serviceData', label: 'Données service (JSON)', fieldType: 'text' },
+    { key: 'requireConfirm', label: 'Demander confirmation', fieldType: 'boolean' },
+    { key: 'confirmText', label: 'Message de confirmation', fieldType: 'text' },
   ],
   media_player: [
     { key: 'entityId', label: 'Lecteur multimédia', fieldType: 'entity', domain: 'media_player' },
@@ -349,5 +383,52 @@ export const WIDGET_FIELD_DEFS: Record<string, WidgetFieldDef[]> = {
         { value: 'compact', label: 'Compacte (1 ligne)' },
       ],
     },
+  ],
+  alarm: [
+    { key: 'entityId', label: 'Alarme', fieldType: 'entity', domain: 'alarm_control_panel' },
+    { key: 'name', label: 'Nom affiché', fieldType: 'text' },
+    { key: 'requireCode', label: 'Code PIN requis', fieldType: 'boolean' },
+    {
+      key: 'armModes',
+      label: 'Boutons affichés',
+      fieldType: 'multiselect',
+      options: [
+        { value: 'disarm', label: 'Désarmer', icon: '🔓' },
+        { value: 'home', label: 'Domicile', icon: '🏠' },
+        { value: 'away', label: 'Absent', icon: '🔴' },
+        { value: 'night', label: 'Nuit', icon: '🌙' },
+        { value: 'vacation', label: 'Vacances', icon: '✈️' },
+      ],
+    },
+    { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
+  ],
+  vacuum: [
+    { key: 'entityId', label: 'Aspirateur', fieldType: 'entity', domain: 'vacuum' },
+    { key: 'name', label: 'Nom affiché', fieldType: 'text' },
+    {
+      key: 'rooms',
+      label: 'Pièces (map Roborock)',
+      fieldType: 'list',
+      itemFields: [
+        { key: 'id', label: 'ID segment', fieldType: 'text' },
+        { key: 'name', label: 'Nom de la pièce', fieldType: 'text' },
+        { key: 'segmentId', label: 'Segment ID (numérique)', fieldType: 'number' },
+        { key: 'icon', label: 'Icône', fieldType: 'icon' },
+      ],
+    },
+    {
+      key: 'selects',
+      label: 'Contrôles select (vitesse ventilateur, intensité lavage…)',
+      fieldType: 'list',
+      itemFields: [
+        { key: 'entityId', label: 'Entité select', fieldType: 'entity', domain: 'select' },
+        { key: 'label', label: 'Libellé personnalisé', fieldType: 'text' },
+      ],
+    },
+    { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
+  ],
+  pellet: [
+    { key: 'entityId', label: 'Entité climate', fieldType: 'entity', domain: 'climate' },
+    { key: 'name', label: 'Nom affiché', fieldType: 'text' },
   ],
 };

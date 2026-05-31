@@ -34,7 +34,7 @@ describe('GET /api/config', () => {
   it('renvoie la config sauvegardée', async () => {
     const { app } = createTestApp();
     const config = { version: 2, pages: [{ id: 'home', label: 'Home', widgets: [] }] };
-    await request(app).post('/api/config').send(config);
+    await request(app).put('/api/config').send(config);
 
     const res = await request(app).get('/api/config');
     expect(res.status).toBe(200);
@@ -44,7 +44,7 @@ describe('GET /api/config', () => {
   it('préserve la clé wallPanel dans la config', async () => {
     const { app } = createTestApp();
     const config = { version: 2, wallPanel: { config: { enabled: true, idle_time: 60 }, layout: {} } };
-    await request(app).post('/api/config').send(config);
+    await request(app).put('/api/config').send(config);
 
     const res = await request(app).get('/api/config');
     expect(res.status).toBe(200);
@@ -52,28 +52,28 @@ describe('GET /api/config', () => {
   });
 });
 
-describe('POST /api/config', () => {
+describe('PUT /api/config', () => {
   it('sauvegarde la config et renvoie success', async () => {
     const { app } = createTestApp();
     const config = { version: 2, layout: ['itemA', 'itemB'] };
-    const res = await request(app).post('/api/config').send(config);
+    const res = await request(app).put('/api/config').send(config);
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ success: true });
   });
 
   it('renvoie 400 si le body est invalide', async () => {
     const { app } = createTestApp();
-    const res = await request(app).post('/api/config').send('not-json').set('Content-Type', 'text/plain');
+    const res = await request(app).put('/api/config').send('not-json').set('Content-Type', 'text/plain');
     expect(res.status).toBe(400);
   });
 
   it('met à jour la config existante (UPSERT)', async () => {
     const { app } = createTestApp();
     await request(app)
-      .post('/api/config')
+      .put('/api/config')
       .send({ version: 2, layout: ['v1'] });
     await request(app)
-      .post('/api/config')
+      .put('/api/config')
       .send({ version: 2, layout: ['v2'] });
 
     const res = await request(app).get('/api/config');

@@ -15,7 +15,6 @@ vi.mock('@/context/DashboardLayoutContext', () => ({
     camera: 'Caméra',
     weather: 'Météo',
     thermostat: 'Thermostat',
-    rooms: 'Pièces',
     shortcuts: 'Raccourcis',
     tempo: 'Tempo EDF',
     energy: 'Énergie',
@@ -50,7 +49,7 @@ describe('resolveBreakpoint()', () => {
 });
 
 describe('WIDGET_LABELS', () => {
-  const KNOWN_TYPES = ['activity', 'greeting', 'camera', 'weather', 'thermostat', 'rooms', 'shortcuts', 'tempo', 'energy'];
+  const KNOWN_TYPES = ['activity', 'greeting', 'camera', 'weather', 'thermostat', 'shortcuts', 'tempo', 'energy'];
 
   it('a une entrée pour chaque type de widget connu', () => {
     for (const type of KNOWN_TYPES) {

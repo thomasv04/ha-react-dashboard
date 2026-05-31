@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { Wind, Cloud, Sun, CloudRain, CloudSnow, Cloudy, CloudDrizzle } from 'lucide-react';
+import { DURATION_ENTRANCE, DURATION_MEDIUM } from '@/lib/motion-tokens';
+import { Wind, Droplets, Gauge, Snowflake, Cloud, Sun, CloudRain, CloudSnow, Cloudy, CloudDrizzle, Zap } from 'lucide-react';
 import { useWeather, useHass } from '@hakit/core';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
@@ -8,37 +9,42 @@ import type { WeatherCondition } from '@/types/widget-types';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import { resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-map';
 import { useI18n } from '@/i18n';
+import WeatherEffects from '@/components/effects/WeatherEffects';
 
-function WeatherIcon({
-  condition,
-  size = 32,
-  customIcons,
-}: {
-  condition: string;
-  size?: number;
-  customIcons?: Partial<Record<WeatherCondition, string>>;
-}) {
-  // Check for custom icon override
+type IconColor = { icon: React.ReactNode; bg: string; border: string };
+
+function getConditionStyle(condition: string, size = 32, customIcons?: Partial<Record<WeatherCondition, string>>): IconColor {
   const customValue = customIcons?.[condition as WeatherCondition];
   if (customValue) {
+    let iconNode: React.ReactNode;
     if (isCustomIcon(customValue)) {
-      return <img src={getCustomIconUrl(customValue)} alt={condition} style={{ width: size, height: size }} className='object-contain' />;
+      iconNode = (
+        <img src={getCustomIconUrl(customValue)} alt={condition} style={{ width: size, height: size }} className='object-contain' />
+      );
+    } else {
+      const CustomLucide = resolveIcon(customValue);
+      // eslint-disable-next-line react-hooks/static-components
+      iconNode = CustomLucide ? <CustomLucide size={size} className='text-white/80' /> : <Sun size={size} className='text-yellow-300' />;
     }
-    const CustomLucide = resolveIcon(customValue);
-    // eslint-disable-next-line react-hooks/static-components
-    if (CustomLucide) return <CustomLucide size={size} className='text-white/80' />;
+    return { icon: iconNode, bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.10)' };
   }
 
-  // Default icons
   const cn = condition.toLowerCase();
-  if (cn.includes('sunny') || cn.includes('clear')) return <Sun size={size} className='text-yellow-300' />;
-  if (cn.includes('drizzle')) return <CloudDrizzle size={size} className='text-blue-300' />;
-  if (cn.includes('rain') || cn.includes('shower') || cn.includes('storm')) return <CloudRain size={size} className='text-blue-400' />;
-  if (cn.includes('snow') || cn.includes('hail')) return <CloudSnow size={size} className='text-blue-200' />;
-  if (cn.includes('mostly') || cn.includes('partly')) return <Cloudy size={size} className='text-slate-300' />;
+  if (cn.includes('sunny') || cn === 'clear-night' || cn.includes('clear'))
+    return { icon: <Sun size={size} className='text-yellow-300' />, bg: 'rgba(253,224,71,0.10)', border: 'rgba(253,224,71,0.20)' };
+  if (cn.includes('lightning') || cn.includes('storm'))
+    return { icon: <Zap size={size} className='text-yellow-400' />, bg: 'rgba(250,204,21,0.10)', border: 'rgba(250,204,21,0.20)' };
+  if (cn.includes('drizzle'))
+    return { icon: <CloudDrizzle size={size} className='text-sky-300' />, bg: 'rgba(125,211,252,0.10)', border: 'rgba(125,211,252,0.20)' };
+  if (cn.includes('rain') || cn.includes('shower') || cn.includes('pouring'))
+    return { icon: <CloudRain size={size} className='text-blue-400' />, bg: 'rgba(96,165,250,0.10)', border: 'rgba(96,165,250,0.20)' };
+  if (cn.includes('snow') || cn.includes('hail') || cn.includes('snowy'))
+    return { icon: <CloudSnow size={size} className='text-blue-200' />, bg: 'rgba(191,219,254,0.10)', border: 'rgba(191,219,254,0.18)' };
+  if (cn.includes('partly') || cn.includes('mostly'))
+    return { icon: <Cloudy size={size} className='text-slate-300' />, bg: 'rgba(203,213,225,0.08)', border: 'rgba(203,213,225,0.15)' };
   if (cn.includes('cloud') || cn.includes('overcast') || cn.includes('fog') || cn.includes('mist'))
-    return <Cloud size={size} className='text-slate-400' />;
-  return <Sun size={size} className='text-yellow-300' />;
+    return { icon: <Cloud size={size} className='text-slate-400' />, bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.14)' };
+  return { icon: <Sun size={size} className='text-yellow-300' />, bg: 'rgba(253,224,71,0.10)', border: 'rgba(253,224,71,0.20)' };
 }
 
 export function WeatherCard() {
@@ -53,8 +59,8 @@ export function WeatherCard() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        className='gc rounded-3xl p-5 flex flex-col gap-4 h-full items-center justify-center'
+        transition={{ duration: DURATION_ENTRANCE, delay: 0.1 }}
+        className='gc rounded-3xl p-4 flex flex-col gap-4 h-full items-center justify-center'
       >
         <Sun size={36} className='text-yellow-300/30' />
       </motion.div>
@@ -71,6 +77,8 @@ function WeatherCardInner({ entityId, config }: { entityId: string; config: Weat
   const temp = weather.attributes.temperature as number | undefined;
   const wind = weather.attributes.wind_speed as number | undefined;
   const windUnit = (weather.attributes.wind_speed_unit as string | undefined) ?? 'km/h';
+  const humidity = weather.attributes.humidity as number | undefined;
+  const pressure = weather.attributes.pressure as number | undefined;
   const forecastDays = weather.forecast?.forecast ?? [];
   const days = tArray('widgets.weather.days');
   const conditionKey = `widgets.weather.conditions.${weather.state}`;
@@ -80,95 +88,117 @@ function WeatherCardInner({ entityId, config }: { entityId: string; config: Weat
   const todayLow = forecastDays[0]?.templow;
   const next4 = forecastDays.slice(1, 5);
 
+  const mainStyle = getConditionStyle(weather.state, 36, config?.customIcons);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.1 }}
-      className='gc rounded-3xl p-5 flex flex-col gap-4 h-full'
+      transition={{ duration: DURATION_ENTRANCE, delay: 0.1 }}
+      className='gc rounded-3xl p-3.5 flex flex-col h-full relative overflow-hidden'
     >
-      {/* Main row */}
-      <div className='flex items-start justify-between'>
-        <div>
-          <div className='text-5xl font-light tracking-tight text-white'>
-            {temp !== undefined ? <AnimatedNumber value={temp} decimals={1} suffix='°' /> : '—'}
-          </div>
-          <div className='text-white/70 text-base mt-1 capitalize font-medium'>{label}.</div>
-          {(todayHigh !== undefined || todayLow !== undefined) && (
-            <div className='text-white/40 text-xs mt-1'>
-              {todayHigh !== undefined && (
-                <span>
-                  {t('widgets.weather.max')} {todayHigh}°{' '}
-                </span>
-              )}
-              {todayLow !== undefined && (
-                <span>
-                  {t('widgets.weather.min')} {todayLow}°
-                </span>
-              )}
-            </div>
+      <WeatherEffects condition={weather.state} />
+
+      {/* Header: condition label */}
+      <div className='flex items-center justify-between mb-2'>
+        <span className='text-white/40 text-xs font-medium capitalize'>{label}</span>
+        <div className='flex items-center gap-1.5'>
+          {todayHigh !== undefined && (
+            <span className='text-[10px] text-white/50 font-medium'>
+              ↑{todayHigh}° ↓{todayLow ?? '—'}°
+            </span>
           )}
         </div>
+      </div>
+
+      {/* Main section: temp + icon */}
+      <div className='flex items-center justify-between mb-2'>
+        <div className='flex flex-col'>
+          <div className='text-5xl font-light tracking-tight text-white leading-none'>
+            {temp !== undefined ? <AnimatedNumber value={temp} decimals={1} suffix='°' /> : '—'}
+          </div>
+        </div>
+
         <motion.div
           key={weather.state}
-          initial={{ scale: 0.8, opacity: 0, rotate: -20 }}
+          initial={{ scale: 0.8, opacity: 0, rotate: -15 }}
           animate={{ scale: 1, opacity: 1, rotate: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-          className='w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center'
+          transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+          className='w-16 h-16 rounded-2xl flex items-center justify-center border'
+          style={{ background: mainStyle.bg, borderColor: mainStyle.border }}
         >
           <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
-            <WeatherIcon condition={weather.state} size={32} customIcons={config?.customIcons} />
+            {mainStyle.icon}
           </motion.div>
         </motion.div>
       </div>
 
-      {/* Wind */}
-      {wind !== undefined && (
-        <motion.div
-          animate={{ scale: [1, 1.03, 1] }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-          className='inline-flex items-center gap-1.5 text-xs text-white/40 bg-white/5 rounded-full px-3 py-1 w-fit'
-        >
-          <motion.div animate={{ rotate: [0, 15, -10, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}>
-            <Wind size={12} />
-          </motion.div>
-          <span>
-            {wind} {windUnit}
-          </span>
-        </motion.div>
-      )}
+      {/* Stats row */}
+      <div className='flex gap-2 mb-2'>
+        {wind !== undefined && (
+          <div className='flex items-center gap-1 px-2 py-1 rounded-xl bg-white/5 border border-white/8'>
+            <Wind size={11} className='text-white/40' />
+            <span className='text-[11px] text-white/50 font-medium'>
+              {wind} {windUnit}
+            </span>
+          </div>
+        )}
+        {humidity !== undefined && (
+          <div className='flex items-center gap-1 px-2 py-1 rounded-xl bg-white/5 border border-white/8'>
+            <Droplets size={11} className='text-sky-400/60' />
+            <span className='text-[11px] text-white/50 font-medium'>{humidity}%</span>
+          </div>
+        )}
+        {pressure !== undefined && (
+          <div className='flex items-center gap-1 px-2 py-1 rounded-xl bg-white/5 border border-white/8'>
+            <Gauge size={11} className='text-white/40' />
+            <span className='text-[11px] text-white/50 font-medium'>{pressure} hPa</span>
+          </div>
+        )}
+      </div>
 
       {/* 4-day forecast */}
       {next4.length > 0 && (
         <>
-          <div className='h-px bg-gradient-to-r from-transparent via-white/15 to-transparent' />
-          <div className='flex gap-1 overflow-x-auto scrollbar-none' style={{ scrollbarWidth: 'none' }}>
+          <div className='h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-2' />
+          <div className='flex gap-1 flex-1'>
             {next4.map((day, i) => {
               const d = new Date(day.datetime);
               const dayName = days[d.getDay()];
+              const dayStyle = getConditionStyle(day.condition ?? '', 14, config?.customIcons);
               return (
                 <motion.div
                   key={day.datetime}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.1 + i * 0.06 }}
-                  className='flex flex-col items-center gap-1.5 py-1.5 flex-1 min-w-[52px]'
+                  transition={{ duration: DURATION_MEDIUM, delay: 0.1 + i * 0.06 }}
+                  className='flex flex-col items-center gap-1 flex-1 py-1.5 px-1 rounded-2xl bg-white/3 border border-white/6'
                 >
-                  <span className='text-[11px] text-white/40 uppercase tracking-wider font-medium'>{dayName}</span>
-                  <motion.div
-                    whileHover={{ scale: 1.15, backgroundColor: 'rgba(255,255,255,0.1)' }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-                    className='w-8 h-8 rounded-full bg-white/5 flex items-center justify-center'
+                  <span className='text-[10px] text-white/35 uppercase tracking-wider font-medium'>{dayName}</span>
+                  <div
+                    className='w-7 h-7 rounded-xl flex items-center justify-center border'
+                    style={{ background: dayStyle.bg, borderColor: dayStyle.border }}
                   >
-                    <WeatherIcon condition={day.condition ?? ''} size={16} customIcons={config?.customIcons} />
-                  </motion.div>
-                  <span className='text-[11px] text-white/70 font-semibold'>{day.temperature}°</span>
-                  {day.templow !== undefined && <span className='text-[10px] text-white/30'>{day.templow}°</span>}
+                    {dayStyle.icon}
+                  </div>
+                  <span className='text-[11px] text-white/70 font-semibold leading-none'>{day.temperature}°</span>
+                  {day.templow !== undefined && <span className='text-[10px] text-white/30 leading-none'>{day.templow}°</span>}
                 </motion.div>
               );
             })}
           </div>
         </>
+      )}
+
+      {/* Snowflake accent for cold conditions */}
+      {(weather.state.includes('snowy') || weather.state.includes('hail')) && (
+        <motion.div
+          animate={{ opacity: [0.04, 0.09, 0.04], rotate: [0, 360] }}
+          transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+          className='absolute -bottom-8 -right-8 pointer-events-none'
+        >
+          <Snowflake size={96} className='text-blue-200' />
+        </motion.div>
       )}
     </motion.div>
   );

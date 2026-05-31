@@ -1,10 +1,12 @@
 import { useTheme } from '@/context/ThemeContext';
+import { AuroraBackground } from '@/components/effects/AuroraBackground';
+import { LavaLampBackground } from '@/components/effects/LavaLampBackground';
 
 export function BackgroundLayer() {
   const { background, tokens } = useTheme();
 
   if (background.mode === 'solid') {
-    return null; // Le body background-color suffit
+    return null;
   }
 
   if (background.mode === 'gradient') {
@@ -25,6 +27,14 @@ export function BackgroundLayer() {
         <div className='fixed inset-0 -z-10' style={{ backgroundColor: `rgba(0,0,0,${background.overlayOpacity ?? 0.5})` }} />
       </>
     );
+  }
+
+  if (background.mode === 'aurora') {
+    return <AuroraBackground config={background.aurora} />;
+  }
+
+  if (background.mode === 'lavaLamp') {
+    return <LavaLampBackground config={background.lava} />;
   }
 
   return null;

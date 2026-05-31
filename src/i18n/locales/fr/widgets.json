@@ -4,6 +4,13 @@
     "wind": "Vent",
     "max": "MAX",
     "min": "MIN",
+    "notFound": "Entité introuvable",
+    "humidity": "Humidité",
+    "pressure": "Pression",
+    "gusts": "Rafales",
+    "dewPoint": "Point rosée",
+    "precipitation": "Précip.",
+    "description": "Conditions météo actuelles et prévisions sur plusieurs jours.",
     "conditions": {
       "clear-night": "Nuit claire",
       "cloudy": "Nuageux",
@@ -25,6 +32,9 @@
   },
   "thermostat": {
     "label": "Thermostat",
+    "notFound": "Entité introuvable",
+    "currentTemp": "Température actuelle",
+    "description": "Contrôle un thermostat climate.xxx avec la température cible.",
     "heating": "CHAUFFER À",
     "cooling": "REFROIDIR À",
     "idle": "EN VEILLE",
@@ -35,27 +45,46 @@
   },
   "light": {
     "label": "Lumière",
+    "description": "Contrôle une lumière ou un groupe avec variateur de luminosité.",
     "brightness": "Luminosité",
     "colorTemp": "Température",
-    "notFound": "Lumière introuvable"
+    "color": "Couleur",
+    "notFound": "Lumière introuvable",
+    "on": "Allumé",
+    "off": "Éteint"
   },
   "sensor": {
     "label": "Capteur",
     "notFound": "Entité introuvable",
+    "description": "N'importe quel capteur HA : température, humidité, puissance, binaire...",
     "updatedAgo": "il y a {value}",
     "justNow": "à l'instant",
-    "stale": "périmé"
+    "stale": "périmé",
+    "active": "Actif",
+    "inactive": "Inactif"
   },
   "cover": {
     "label": "Volet",
+    "description": "Contrôle un volet ou store avec slider de position et boutons.",
     "open": "Ouvert",
     "closed": "Fermé",
     "opening": "Ouverture...",
     "closing": "Fermeture...",
-    "notFound": "Volet introuvable"
+    "notFound": "Volet introuvable",
+    "openAction": "OUVRIR",
+    "closeAction": "FERMER",
+    "presetClosed": "FERM\u00c9",
+    "presetOpen": "OUVERT",
+    "percentOpen": "{value}% ouvert",
+    "presets": "Pr\u00e9r\u00e9glages",
+    "info": "Informations",
+    "state": "\u00c9TAT",
+    "position": "POSITION",
+    "deviceClass": "CLASSE"
   },
   "media_player": {
     "label": "Média",
+    "description": "Contrôle Spotify, Sonos, Chromecast — pochette, titre, play/pause, volume.",
     "playing": "Lecture",
     "paused": "Pause",
     "idle": "En attente",
@@ -64,27 +93,42 @@
   },
   "person": {
     "label": "Personnes",
+    "notFound": "Entité introuvable",
+    "description": "Affiche la présence et localisation des personnes du foyer.",
     "home": "MAISON",
     "away": "ABSENT",
     "noPeople": "Aucune personne configurée"
   },
   "alarm": {
     "label": "Alarme",
+    "description": "Panneau d'alarme avec clavier PIN, armement domicile / absent / nuit.",
     "armed_home": "Armé — domicile",
     "armed_away": "Armé — absent",
     "armed_night": "Armé — nuit",
+    "armed_vacation": "Armé — vacances",
     "disarmed": "Désarmé",
     "triggered": "ALERTE !",
     "arming": "Armement...",
     "disarm": "Désarmer",
+    "arm": "Armer",
     "pinPlaceholder": "Code PIN",
     "modeHome": "Domicile",
     "modeAway": "Absent",
-    "modeNight": "Nuit"
+    "modeNight": "Nuit",
+    "modeVacation": "Vacances",
+    "selectMode": "Choisir un mode"
   },
-  "camera": { "label": "Caméra" },
+  "camera": {
+    "label": "Caméra",
+    "description": "Flux vidéo en direct d'une ou plusieurs caméras Frigate/RTSP.",
+    "streamMode": "Mode de streaming",
+    "mjpeg": "MJPEG (faible latence)",
+    "hls": "HLS (meilleure compression)"
+  },
   "energy": {
     "label": "Énergie",
+    "defaultName": "Énergie Solaire",
+    "description": "Vue d'ensemble production solaire, batterie, consommation maison.",
     "solar": "Énergie solaire",
     "charging": "En charge",
     "discharging": "En décharge",
@@ -94,6 +138,7 @@
   },
   "tempo": {
     "label": "Tempo EDF",
+    "description": "Couleur du jour Tempo RTE et heures pleines/creuses.",
     "offPeak": "Heures creuses",
     "peak": "Heures pleines",
     "rate": "Tarif ",
@@ -102,23 +147,90 @@
     "white": "Blanc",
     "red": "Rouge"
   },
-  "rooms": { "label": "Pièces" },
   "shortcuts": {
     "label": "Raccourcis",
+    "description": "Boutons rapides pour ouvrir les panneaux lumières, volets, sécurité...",
     "header": "Raccourcis",
     "armed": "Armée",
     "disarmed": "Désarmée"
   },
   "pellet": {
     "label": "Feu à pellet",
+    "title": "Feu à pellet",
+    "description": "Contrôle un poêle à pellets (climate) : température cible, allumage/extinction.",
     "current": "Actuel : "
   },
   "greeting": {
+    "label": "Horloge",
     "goodMorning": "Bonjour",
     "goodAfternoon": "Bon après-midi",
     "goodEvening": "Bonsoir",
     "goodNight": "Bonne nuit"
   },
-  "automation": { "label": "Automatisation" },
-  "template": { "label": "Template" }
+  "activity": {
+    "label": "Barre d'activité",
+    "description": "Bandeau d'états rapides : alarme, poêle, batterie, Tempo..."
+  },
+  "automation": {
+    "label": "Automatisation",
+    "notFound": "Automatisation introuvable",
+    "description": "Active ou désactive une automatisation Home Assistant."
+  },
+  "group": {
+    "label": "Groupe",
+    "description": "Conteneur affichant plusieurs widgets dans une mini-grille.",
+    "groupTitle": "Titre",
+    "titlePlaceholder": "Nom du groupe...",
+    "columns": "Colonnes",
+    "widgets": "Widgets",
+    "noWidgets": "Aucun widget ajouté",
+    "addHint": "Utilisez l'onglet Widgets pour en ajouter",
+    "addWidget": "Ajouter un widget",
+    "dragToReorder": "Glisser pour réordonner",
+    "empty": "Groupe vide",
+    "clickToAdd": "Ouvrez les réglages pour ajouter des widgets"
+  },
+  "room": {
+    "label": "Pièce",
+    "description": "Carte pièce avec icône, température, humidité et contrôles."
+  },
+  "button": {
+    "label": "Bouton",
+    "description": "Appuyer pour déclencher n'importe quel service ou script HA.",
+    "done": "Exécuté !",
+    "error": "Erreur",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "confirmDefault": "Confirmer l'exécution de cette action ?"
+  },
+  "template": { "label": "Template", "description": "Widget entièrement personnalisable avec templates Jinja2/Nunjucks." },
+  "vacuum": {
+    "label": "Aspirateur",
+    "description": "Contrôle aspirateur robot avec nettoyage par pièce (Roborock, etc.).",
+    "states": {
+      "cleaning": "Nettoyage en cours",
+      "segment_cleaning": "Nettoyage segmenté",
+      "docked": "En charge",
+      "idle": "En veille",
+      "paused": "En pause",
+      "returning": "Retour à la base",
+      "returning_home": "Retour à la base",
+      "error": "Erreur"
+    },
+    "start": "Démarrer",
+    "pause": "Pause",
+    "resume": "Reprendre",
+    "stop": "Arrêter",
+    "dock": "Base",
+    "locate": "Localiser",
+    "cleaning": "Nettoyage",
+    "byArea": "Par zone",
+    "cleanAreas": "Zones à nettoyer",
+    "startCleaning": "Lancer le nettoyage ({count})",
+    "orderNote": "L'ordre de nettoyage peut ne pas être supporté par votre aspirateur.",
+    "sequentialMode": "Nettoyage séquentiel",
+    "sequentialDesc": "Nettoyer les pièces une par une",
+    "sequentialNote": "Les pièces seront nettoyées une par une dans l'ordre sélectionné.",
+    "queueProgress": "Pièce {current}/{total}"
+  }
 }

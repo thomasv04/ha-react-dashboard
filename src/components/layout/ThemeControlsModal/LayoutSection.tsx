@@ -59,8 +59,7 @@ export function LayoutSection() {
   const { t } = useI18n();
   const { layoutSettings, setLayoutSettings } = useTheme();
 
-  const update = (patch: Partial<LayoutSettings>) =>
-    setLayoutSettings({ ...layoutSettings, ...patch });
+  const update = (patch: Partial<LayoutSettings>) => setLayoutSettings({ ...layoutSettings, ...patch });
 
   const isDefault =
     layoutSettings.gridGap === DEFAULT_LAYOUT.gridGap &&
@@ -120,11 +119,7 @@ export function LayoutSection() {
           style={{ gap: `${layoutSettings.gridGap}px`, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}
         >
           {Array.from({ length: 6 }, (_, i) => (
-            <div
-              key={i}
-              className='gc h-10'
-              style={{ borderRadius: `${layoutSettings.cardRadius}px` }}
-            />
+            <div key={i} className='gc h-10' style={{ borderRadius: `${layoutSettings.cardRadius}px` }} />
           ))}
         </div>
       </div>

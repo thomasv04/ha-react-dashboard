@@ -4,11 +4,47 @@ import { PRESETS } from './sounds';
 // sounds.ts is tested at the data/structure level; AudioContext is browser-only
 
 describe('PRESETS', () => {
-  it('contient les 4 presets', () => {
-    const expected = ['notification', 'alert', 'success', 'warning'];
-    for (const name of expected) {
-      expect(PRESETS[name as keyof typeof PRESETS]).toBeDefined();
+  const expectedPresets = [
+    'notification',
+    'alert',
+    'success',
+    'warning',
+    'click',
+    'toggle_on',
+    'toggle_off',
+    'error',
+    'pop',
+    'arm',
+    'disarm',
+    'slider_tick',
+    'door_open',
+    'door_close',
+    'lock',
+    'unlock',
+    'motion',
+    'media_play',
+    'media_pause',
+    'media_next',
+    'vacuum_start',
+    'vacuum_dock',
+    'temperature_up',
+    'temperature_down',
+    'brightness_up',
+    'brightness_down',
+    'water',
+    'battery_low',
+    'chime',
+  ];
+
+  it('contient tous les presets attendus', () => {
+    for (const name of expectedPresets) {
+      expect(PRESETS[name as keyof typeof PRESETS], `preset "${name}" manquant`).toBeDefined();
     }
+  });
+
+  it("n'a pas de preset non documenté", () => {
+    const actual = Object.keys(PRESETS).sort();
+    expect(actual).toEqual([...expectedPresets].sort());
   });
 
   it('chaque preset a au moins une note', () => {
@@ -69,7 +105,7 @@ describe('playSound()', () => {
         }
         createGain() {
           return {
-            gain: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
+            gain: { setValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
             connect: vi.fn(),
           };
         }
@@ -82,10 +118,9 @@ describe('playSound()', () => {
 
   it('ne jette pas sur un preset connu', async () => {
     const { playSound } = await import('./sounds');
-    expect(() => playSound('notification')).not.toThrow();
-    expect(() => playSound('alert')).not.toThrow();
-    expect(() => playSound('success')).not.toThrow();
-    expect(() => playSound('warning')).not.toThrow();
+    for (const name of Object.keys(PRESETS)) {
+      expect(() => playSound(name)).not.toThrow();
+    }
   });
 
   it('ne jette pas sur un preset inconnu', async () => {

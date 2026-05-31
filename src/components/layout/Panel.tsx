@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
+import { bottomSheet, modalScrim } from '@/lib/motion-variants';
 import { X } from 'lucide-react';
 import { useEffect, useRef, useCallback } from 'react';
 import { usePanel } from '@/context/PanelContext';
@@ -31,10 +32,10 @@ export function Panel({ children, title, icon, wide = false }: PanelProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 40, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 40, scale: 0.97 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+      variants={bottomSheet}
+      initial='hidden'
+      animate='visible'
+      exit='exit'
       onClick={e => {
         e.stopPropagation();
         resetTimer();
@@ -87,10 +88,11 @@ export function PanelOverlay({ children }: { children: ReactNode }) {
           {/* Backdrop — visual only */}
           <motion.div
             key='backdrop'
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className='fixed inset-0 z-40 bg-black/60 backdrop-blur-sm'
+            variants={modalScrim}
+            initial='hidden'
+            animate='visible'
+            exit='exit'
+            className='fixed inset-0 z-40 bg-black/45 backdrop-blur-sm'
           />
           {/* Wrapper — clicking here (outside panel card) closes it */}
           <div className='fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 pb-24 sm:pb-4' onClick={closePanel}>

@@ -95,7 +95,9 @@ function ChildFieldRenderer({
           style={{ colorScheme: 'dark' }}
         >
           {field.options.map(opt => (
-            <option key={opt.value} value={opt.value} className='bg-[#0c1028]'>{opt.label}</option>
+            <option key={opt.value} value={opt.value} className='bg-[#0c1028]'>
+              {opt.label}
+            </option>
           ))}
         </select>
       </div>
@@ -123,24 +125,27 @@ function ChildFieldRenderer({
             <EntityPicker
               value={eid}
               onChange={v => {
-                const nl = [...list]; nl[eidx] = v;
+                const nl = [...list];
+                nl[eidx] = v;
                 updateField(field.key, nl);
               }}
               domain={field.domain}
               label=''
             />
             <button
-              onClick={() => updateField(field.key, list.filter((_, i) => i !== eidx))}
+              onClick={() =>
+                updateField(
+                  field.key,
+                  list.filter((_, i) => i !== eidx)
+                )
+              }
               className='p-1 text-red-400/50 hover:text-red-400'
             >
               <Trash2 size={11} />
             </button>
           </div>
         ))}
-        <button
-          onClick={() => updateField(field.key, [...list, ''])}
-          className='text-[11px] text-blue-400/60 hover:text-blue-400'
-        >
+        <button onClick={() => updateField(field.key, [...list, ''])} className='text-[11px] text-blue-400/60 hover:text-blue-400'>
           + Ajouter entité
         </button>
       </div>
@@ -160,25 +165,17 @@ function ChildFieldRenderer({
 
 // ── Child row with expandable config ──────────────────────────────────────────
 
-function ChildRow({
-  child,
-  onRemove,
-}: {
-  child: GroupChild;
-  onRemove: () => void;
-}) {
+function ChildRow({ child, onRemove }: { child: GroupChild; onRemove: () => void }) {
   const { t } = useI18n();
   const { getWidgetConfig, updateWidgetConfig } = useWidgetConfig();
   const [expanded, setExpanded] = useState(false);
 
   const meta = WIDGET_META.find(m => m.type === child.type);
-  const fields = (WIDGET_FIELD_DEFS[child.type] ?? []).filter(
-    f => f.fieldType !== 'weather-icons'
-  );
+  const fields = (WIDGET_FIELD_DEFS[child.type] ?? []).filter(f => f.fieldType !== 'weather-icons');
 
   // Read child's own config from context
   const childConfig = getWidgetConfig(child.id) ?? ({} as Record<string, unknown>);
-  const [draft, setDraft] = useState<Record<string, unknown>>({ ...childConfig as Record<string, unknown> });
+  const [draft, setDraft] = useState<Record<string, unknown>>({ ...(childConfig as Record<string, unknown>) });
 
   const updateField = (key: string, val: unknown) => {
     const next = { ...draft, [key]: val };
@@ -213,13 +210,9 @@ function ChildRow({
 
         {/* Name */}
         <div className='flex flex-col min-w-0 flex-1'>
-          <span className='text-white/75 text-sm font-medium leading-tight'>
-            {meta ? t(meta.label) : child.type}
-          </span>
+          <span className='text-white/75 text-sm font-medium leading-tight'>{meta ? t(meta.label) : child.type}</span>
           {(draft.name as string) || (draft.label as string) ? (
-            <span className='text-white/30 text-[10px] truncate'>
-              {(draft.name as string) || (draft.label as string)}
-            </span>
+            <span className='text-white/30 text-[10px] truncate'>{(draft.name as string) || (draft.label as string)}</span>
           ) : null}
         </div>
 
@@ -229,9 +222,7 @@ function ChildRow({
             onClick={() => setExpanded(v => !v)}
             className={cn(
               'p-1.5 rounded-lg transition-colors shrink-0',
-              expanded
-                ? 'bg-indigo-500/20 text-indigo-400'
-                : 'hover:bg-white/8 text-white/25 hover:text-white/60'
+              expanded ? 'bg-indigo-500/20 text-indigo-400' : 'hover:bg-white/8 text-white/25 hover:text-white/60'
             )}
           >
             {expanded ? <ChevronUp size={13} /> : <Pencil size={13} />}
@@ -300,7 +291,10 @@ export function GroupWidgetsTab({ groupId: _groupId, draft, updateField }: Group
   };
 
   const removeChild = (id: string) => {
-    updateField('children', children.filter(c => c.id !== id));
+    updateField(
+      'children',
+      children.filter(c => c.id !== id)
+    );
   };
 
   const reorder = (newOrder: GroupChild[]) => {
@@ -329,18 +323,12 @@ export function GroupWidgetsTab({ groupId: _groupId, draft, updateField }: Group
       {children.length > 0 && (
         <Reorder.Group axis='y' values={children} onReorder={reorder} className='flex flex-col gap-1.5'>
           {children.map(child => (
-            <ChildRow
-              key={child.id}
-              child={child}
-              onRemove={() => removeChild(child.id)}
-            />
+            <ChildRow key={child.id} child={child} onRemove={() => removeChild(child.id)} />
           ))}
         </Reorder.Group>
       )}
 
-      {children.length > 0 && (
-        <p className='text-white/18 text-[11px] text-center'>{t('widgets.group.dragToReorder')}</p>
-      )}
+      {children.length > 0 && <p className='text-white/18 text-[11px] text-center'>{t('widgets.group.dragToReorder')}</p>}
 
       {/* Add toggle */}
       <button

@@ -1,9 +1,11 @@
 import { motion } from 'framer-motion';
+import { DURATION_HERO } from '@/lib/motion-tokens';
 import { ChevronsUp, ChevronsDown, Square, Blinds } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { Panel } from '@/components/layout/Panel';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 
 function CoverRow({ entityId, label }: { entityId: string; label: string }) {
   const cover = useSafeEntity(entityId);
@@ -29,7 +31,7 @@ function CoverRow({ entityId, label }: { entityId: string; label: string }) {
         <div className='w-16 h-1.5 bg-white/8 rounded-full overflow-hidden'>
           <motion.div
             animate={{ width: `${pos ?? 0}%` }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: DURATION_HERO }}
             className={cn('h-full rounded-full', isOpen ? 'bg-blue-400' : 'bg-zinc-600')}
           />
         </div>
@@ -62,6 +64,7 @@ function CoverRow({ entityId, label }: { entityId: string; label: string }) {
 }
 
 export function ShuttersPanel() {
+  const { t } = useI18n();
   const { helpers } = useHass();
   const allEntities = useHass(s => s.entities);
 
@@ -81,7 +84,7 @@ export function ShuttersPanel() {
   }
 
   return (
-    <Panel title='Volets' icon={<Blinds size={18} />}>
+    <Panel title={t('panels.shutters_panel.title')} icon={<Blinds size={18} />}>
       {/* Global controls */}
       <div className='flex gap-2 mb-2'>
         <motion.button
@@ -89,20 +92,20 @@ export function ShuttersPanel() {
           onClick={() => callAll('open_cover')}
           className='flex-1 py-2.5 rounded-2xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 text-sm font-semibold flex items-center justify-center gap-2'
         >
-          <ChevronsUp size={16} /> Tout ouvrir
+          <ChevronsUp size={16} /> {t('panels.shutters_panel.openAll')}
         </motion.button>
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={() => callAll('close_cover')}
           className='flex-1 py-2.5 rounded-2xl gc-btn text-white/60 text-sm font-semibold flex items-center justify-center gap-2'
         >
-          <ChevronsDown size={16} /> Tout fermer
+          <ChevronsDown size={16} /> {t('panels.shutters_panel.closeAll')}
         </motion.button>
       </div>
 
       {/* Individual covers */}
       <div className='flex flex-col gap-2'>
-        {covers.length === 0 && <div className='text-white/40 text-sm text-center py-4'>Aucun volet trouvé</div>}
+        {covers.length === 0 && <div className='text-white/40 text-sm text-center py-4'>{t('panels.shutters_panel.noCover')}</div>}
         {covers.map(cover => (
           <CoverRow key={cover.id} entityId={cover.id} label={cover.label} />
         ))}

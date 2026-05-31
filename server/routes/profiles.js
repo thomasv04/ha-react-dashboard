@@ -25,7 +25,10 @@ export function profilesRouter(db) {
   // GET /api/profiles/:id — Récupérer un profil
   router.get('/:id', (req, res) => {
     try {
-      const row = db.prepare('SELECT * FROM profiles WHERE id = ?').get(req.params.id);
+      const userId = req.headers['x-ha-user-id'] || null;
+      const row = userId
+        ? db.prepare('SELECT * FROM profiles WHERE id = ? AND (ha_user_id = ? OR ha_user_id IS NULL)').get(req.params.id, userId)
+        : db.prepare('SELECT * FROM profiles WHERE id = ?').get(req.params.id);
       if (!row) return res.status(404).json({ error: 'Profile not found' });
       res.json({ ...row, data: JSON.parse(row.data) });
     } catch (err) {
@@ -40,6 +43,12 @@ export function profilesRouter(db) {
       const { label, data } = req.body;
       if (!label || !data) {
         return res.status(400).json({ error: 'Missing label or data' });
+      }
+
+      // Limit payload size to prevent abuse
+      const dataStr = JSON.stringify(data);
+      if (dataStr.length > 512 * 1024) {
+        return res.status(413).json({ error: 'Profile data too large (max 512 KB)' });
       }
 
       const id = randomUUID();
@@ -63,6 +72,7 @@ export function profilesRouter(db) {
   router.put('/:id', (req, res) => {
     try {
       const { label, data } = req.body;
+      const userId = req.headers['x-ha-user-id'] || null;
 
       const result = db
         .prepare(
@@ -71,10 +81,10 @@ export function profilesRouter(db) {
           label = COALESCE(?, label),
           data = COALESCE(?, data),
           updated_at = datetime('now')
-        WHERE id = ?
+        WHERE id = ? AND (ha_user_id = ? OR ha_user_id IS NULL)
       `
         )
-        .run(label ?? null, data ? JSON.stringify(data) : null, req.params.id);
+        .run(label ?? null, data ? JSON.stringify(data) : null, req.params.id, userId);
 
       if (result.changes === 0) return res.status(404).json({ error: 'Profile not found' });
       res.json({ success: true });
@@ -87,7 +97,8 @@ export function profilesRouter(db) {
   // DELETE /api/profiles/:id — Supprimer un profil
   router.delete('/:id', (req, res) => {
     try {
-      const result = db.prepare('DELETE FROM profiles WHERE id = ?').run(req.params.id);
+      const userId = req.headers['x-ha-user-id'] || null;
+      const result = db.prepare('DELETE FROM profiles WHERE id = ? AND (ha_user_id = ? OR ha_user_id IS NULL)').run(req.params.id, userId);
       if (result.changes === 0) return res.status(404).json({ error: 'Profile not found' });
       res.json({ success: true });
     } catch (err) {

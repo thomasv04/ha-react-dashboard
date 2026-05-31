@@ -6,6 +6,7 @@ import { ButtonBlockRenderer } from './ButtonBlock';
 import { ButtonRowBlockRenderer } from './ButtonRowBlock';
 import { SectionHeaderBlockRenderer } from './SectionHeaderBlock';
 import type { CustomBlock } from '@/types/custom-panel';
+import { useI18n } from '@/i18n';
 
 function BlockRenderer({ block }: { block: CustomBlock }) {
   switch (block.type) {
@@ -33,15 +34,14 @@ export function CustomPanelRenderer({ panelId }: { panelId: string }) {
 
   // eslint-disable-next-line react-hooks/static-components
   const panelIcon = IconComponent ? <IconComponent size={18} /> : undefined;
+  const { t } = useI18n();
   return (
     <Panel title={panel.name} icon={panelIcon}>
       <div className='flex flex-col gap-2'>
         {panel.blocks.map(block => (
           <BlockRenderer key={block.id} block={block} />
         ))}
-        {panel.blocks.length === 0 && (
-          <div className='text-white/30 text-sm text-center py-6'>Ce panneau est vide. Configurez-le dans l'éditeur de panneaux.</div>
-        )}
+        {panel.blocks.length === 0 && <div className='text-white/30 text-sm text-center py-6'>{t('layout.customPanel.emptyPanel')}</div>}
       </div>
     </Panel>
   );

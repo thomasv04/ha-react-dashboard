@@ -32,6 +32,9 @@ jobs:
       - name: ESLint
         run: npm run lint
 
+      - name: Widget registry sync check
+        run: npm run check:widgets
+
   # ── Job 2: TypeScript ──────────────────────────────────────────────────────
   typecheck:
     name: TypeScript

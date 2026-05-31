@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import type { WidgetFieldDef } from '@/types/widget-configs';
 import { IconPicker, GradientPicker } from '@/components/layout/WidgetPickers';
@@ -11,11 +11,13 @@ export function ListEditor({
   onChange,
   itemFields,
   label,
+  twoCol = false,
 }: {
   items: Record<string, unknown>[];
   onChange: (items: Record<string, unknown>[]) => void;
   itemFields: WidgetFieldDef[];
   label: string;
+  twoCol?: boolean;
 }) {
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
 
@@ -74,32 +76,39 @@ export function ListEditor({
                 {isExpanded ? <ChevronUp size={13} className='text-white/25' /> : <ChevronDown size={13} className='text-white/25' />}
               </div>
               {isExpanded && (
-                <div className='px-3 pb-3 space-y-2 border-t border-white/6'>
+                <div
+                  className={
+                    twoCol
+                      ? 'px-3 pb-3 pt-2 border-t border-white/6 grid grid-cols-2 gap-x-3 gap-y-2'
+                      : 'px-3 pb-3 space-y-2 border-t border-white/6'
+                  }
+                >
                   {itemFields.map(field => {
+                    const wide = twoCol && ['list', 'entity-list', 'multiselect', 'template'].includes(field.fieldType);
+                    let content: React.ReactNode;
+
                     if (field.fieldType === 'entity') {
-                      return (
+                      content = (
                         <EntityPicker
-                          key={field.key}
                           value={(item[field.key] as string) ?? ''}
                           onChange={v => updateItem(idx, field.key, v)}
                           domain={field.domain}
                           label={field.label}
                         />
                       );
-                    }
-                    if (field.fieldType === 'entity-list') {
+                    } else if (field.fieldType === 'entity-list') {
                       const list = (item[field.key] as string[]) ?? [];
-                      return (
-                        <div key={field.key}>
+                      content = (
+                        <div>
                           <label className='text-[11px] text-white/40 mb-1 block'>{field.label}</label>
                           {list.map((eid, eidx) => (
                             <div key={eidx} className='flex items-center gap-1 mb-1'>
                               <EntityPicker
                                 value={eid}
                                 onChange={v => {
-                                  const newList = [...list];
-                                  newList[eidx] = v;
-                                  updateItem(idx, field.key, newList);
+                                  const nl = [...list];
+                                  nl[eidx] = v;
+                                  updateItem(idx, field.key, nl);
                                 }}
                                 domain={field.domain}
                                 label=''
@@ -126,45 +135,47 @@ export function ListEditor({
                           </button>
                         </div>
                       );
-                    }
-                    if (field.fieldType === 'icon') {
-                      return (
+                    } else if (field.fieldType === 'icon') {
+                      content = (
                         <IconPicker
-                          key={field.key}
                           value={(item[field.key] as string) ?? ''}
                           onChange={v => updateItem(idx, field.key, v)}
                           label={field.label}
                         />
                       );
-                    }
-                    if (field.fieldType === 'gradient') {
-                      return (
+                    } else if (field.fieldType === 'gradient') {
+                      content = (
                         <GradientPicker
-                          key={field.key}
                           value={(item[field.key] as string) ?? ''}
                           onChange={v => updateItem(idx, field.key, v)}
                           label={field.label}
                         />
                       );
-                    }
-                    if (field.fieldType === 'panel-select') {
-                      return (
+                    } else if (field.fieldType === 'panel-select') {
+                      content = (
                         <PanelSelectField
-                          key={field.key}
                           value={(item[field.key] as string) ?? ''}
                           onChange={v => updateItem(idx, field.key, v)}
                           label={field.label}
                         />
                       );
+                    } else {
+                      content = (
+                        <FieldInput
+                          value={(item[field.key] as string | number) ?? ''}
+                          onChange={v => updateItem(idx, field.key, v)}
+                          label={field.label}
+                          type={field.fieldType === 'number' ? 'number' : 'text'}
+                        />
+                      );
                     }
-                    return (
-                      <FieldInput
-                        key={field.key}
-                        value={(item[field.key] as string | number) ?? ''}
-                        onChange={v => updateItem(idx, field.key, v)}
-                        label={field.label}
-                        type={field.fieldType === 'number' ? 'number' : 'text'}
-                      />
+
+                    return twoCol ? (
+                      <div key={field.key} className={wide ? 'col-span-2' : 'col-span-1'}>
+                        {content}
+                      </div>
+                    ) : (
+                      <React.Fragment key={field.key}>{content}</React.Fragment>
                     );
                   })}
                 </div>

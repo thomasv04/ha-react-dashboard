@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { useHass } from '@hakit/core';
+import { useI18n } from '@/i18n';
 
 export function EntityPicker({
   value,
@@ -15,6 +16,7 @@ export function EntityPicker({
   label: string;
 }) {
   const allEntities = useHass(s => s.entities);
+  const { t } = useI18n();
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
@@ -77,7 +79,7 @@ export function EntityPicker({
         className='flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:border-white/20 transition-colors'
         onClick={handleToggle}
       >
-        <span className={`text-sm flex-1 truncate ${value ? 'text-white/80' : 'text-white/30'}`}>{value || 'Sélectionner...'}</span>
+        <span className={`text-sm flex-1 truncate ${value ? 'text-white/80' : 'text-white/30'}`}>{value || t('layout.entitySelect')}</span>
         {open ? <ChevronUp size={14} className='text-white/30' /> : <ChevronDown size={14} className='text-white/30' />}
       </div>
 
@@ -108,7 +110,7 @@ export function EntityPicker({
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   className='bg-transparent text-sm text-white/80 outline-none flex-1 placeholder:text-white/20'
-                  placeholder='Rechercher...'
+                  placeholder={t('layout.entitySearch')}
                 />
               </div>
             </div>
@@ -128,7 +130,7 @@ export function EntityPicker({
                   {id}
                 </button>
               ))}
-              {filtered.length === 0 && <p className='px-3 py-2 text-white/25 text-xs'>Aucune entité trouvée</p>}
+              {filtered.length === 0 && <p className='px-3 py-2 text-white/25 text-xs'>{t('layout.entityNoResult')}</p>}
             </div>
           </div>,
           document.body

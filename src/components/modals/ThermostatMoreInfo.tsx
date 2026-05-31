@@ -6,6 +6,7 @@ import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { MoreInfoHeader } from './MoreInfoHeader';
 import { InfoSidebar, type SidebarModule } from './sidebar';
 import type { ThermostatCardConfig } from '@/types/widget-types';
+import { useI18n } from '@/i18n';
 
 const HVAC_COLORS: Record<string, string> = {
   heating: '#f97316',
@@ -16,6 +17,7 @@ const HVAC_COLORS: Record<string, string> = {
 };
 
 export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: string; widgetId: string }) {
+  const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
   const config = getWidgetConfig<ThermostatCardConfig>(widgetId);
   const showInfoPanel = config?.showInfoPanel !== false;
@@ -75,7 +77,7 @@ export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: s
     [helpers, entityId]
   );
 
-  if (!entity) return <div className='p-12 text-white/40 text-center'>Entité introuvable</div>;
+  if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
 
   const name = (entity.attributes.friendly_name as string) ?? entityId;
   const currentTemp = entity.attributes.current_temperature as number | undefined;
@@ -97,7 +99,7 @@ export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: s
         {/* Current temperature */}
         {currentTemp != null && (
           <p className='text-sm text-white/50 text-center mt-6'>
-            Température actuelle: <span className='text-white font-medium'>{currentTemp}°C</span>
+            {t('widgets.thermostat.currentTemp')}: <span className='text-white font-medium'>{currentTemp}°C</span>
           </p>
         )}
 

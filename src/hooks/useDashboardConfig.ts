@@ -91,7 +91,7 @@ export function useDashboardConfig() {
     setIsSaving(true);
     try {
       const response = await fetch(apiUrl('/api/config'), {
-        method: 'POST',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),
       });
@@ -99,7 +99,6 @@ export function useDashboardConfig() {
         setPages(config.pages);
         setAllLayouts(config.layouts);
         setAllWidgetConfigs(config.widgetConfigs);
-        console.log('Configuration sauvegardée avec succès !');
       }
     } catch (err) {
       console.error('Erreur lors de la sauvegarde:', err);

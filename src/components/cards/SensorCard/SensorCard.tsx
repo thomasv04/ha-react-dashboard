@@ -1,4 +1,6 @@
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
@@ -13,8 +15,9 @@ import { SensorGauge } from '@/components/charts/SensorGauge';
 import { BarChart } from '@/components/charts/BarChart';
 import { useSensorHistory } from '@/hooks/useSensorHistory';
 import { useI18n } from '@/i18n';
-import { useState, useEffect } from 'react';
+import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useRipple, RippleLayer } from '@/components/ui/Ripple';
+import { useWidgetSize } from '@/hooks/useWidgetSize';
 
 function useRelativeTime(isoTimestamp: string | undefined): string {
   const [, setTick] = useState(0);
@@ -33,7 +36,6 @@ function useRelativeTime(isoTimestamp: string | undefined): string {
   return `${Math.floor(diffH / 24)}j`;
 }
 
-// ── Domaine → icône par défaut ────────────────────────────────────────────────
 const DOMAIN_ICONS: Record<string, string> = {
   sensor: 'Activity',
   binary_sensor: 'CircleDot',
@@ -45,10 +47,8 @@ const DOMAIN_ICONS: Record<string, string> = {
   automation: 'Zap',
 };
 
-// ── Domaines "actionnables" (toggle) ──────────────────────────────────────────
 const TOGGLEABLE = new Set(['switch', 'input_boolean', 'light', 'script', 'scene', 'automation']);
 
-// ── Formattage de l'état numérique ────────────────────────────────────────────
 function formatState(state: string, unit?: string): string {
   const num = parseFloat(state);
   if (isNaN(num)) return state;
@@ -56,7 +56,6 @@ function formatState(state: string, unit?: string): string {
   return unit ? `${formatted} ${unit}` : formatted;
 }
 
-// ── Couleur basée sur les seuils ──────────────────────────────────────────────
 function getThresholdColor(value: number, thresholds?: { value: number; color: string }[]): string | undefined {
   if (!thresholds?.length) return undefined;
   const sorted = [...thresholds].sort((a, b) => a.value - b.value);
@@ -77,6 +76,7 @@ export function SensorCard() {
 
   const entity = useSafeEntity(entityId);
   const { helpers } = useHass();
+  const playFeedback = useSoundFeedback();
   const { data: historyData, loading: historyLoading } = useSensorHistory(variant === 'sparkline' || variant === 'bar' ? entityId : '', 24);
 
   const showStaleBadge = config?.staleBadge ?? false;
@@ -86,15 +86,18 @@ export function SensorCard() {
     ((entity?.attributes as Record<string, unknown> | undefined)?.last_updated as string | undefined);
   const relativeTime = useRelativeTime(showStaleBadge ? lastUpdated : undefined);
   const { ripples, trigger: triggerRipple } = useRipple();
+  const cardRef = useRef<HTMLDivElement>(null);
+  const widgetSize = useWidgetSize(cardRef);
+  const isCompact = widgetSize === 'xs' || widgetSize === 'sm';
 
   if (!entity) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className='gc rounded-3xl p-5 flex items-center justify-center h-full'
+        className='gc rounded-3xl p-4 flex items-center justify-center h-full'
       >
-        <span className='text-white/30 text-sm'>Entité introuvable</span>
+        <span className='text-white/30 text-sm'>{t('widgets.sensor.notFound')}</span>
       </motion.div>
     );
   }
@@ -114,6 +117,7 @@ export function SensorCard() {
   const IconComponent = customIconUrl ? undefined : resolveIcon(iconName);
 
   const thresholdColor = isNumeric ? getThresholdColor(numericValue, config?.thresholds) : undefined;
+  const accentColor = thresholdColor ?? (isOn ? '#fbbf24' : '#60a5fa');
 
   // eslint-disable-next-line react-hooks/purity
   const isStale = showStaleBadge && lastUpdated ? Date.now() - new Date(lastUpdated).getTime() > staleThreshold : false;
@@ -133,156 +137,170 @@ export function SensorCard() {
     } else {
       helpers.callService({ domain: domain as never, service: 'toggle', target: { entity_id: entityId } });
     }
+    playFeedback(domain === 'script' || domain === 'scene' ? 'click' : isOn ? 'toggle_off' : 'toggle_on');
   };
 
   const displayState = (() => {
-    if (domain === 'binary_sensor') {
-      return isOn ? (config?.onText ?? 'Actif') : (config?.offText ?? 'Inactif');
-    }
-    if (isToggleable) {
-      return isOn ? 'Allumé' : 'Éteint';
-    }
+    if (domain === 'binary_sensor')
+      return isOn ? (config?.onText ?? t('widgets.sensor.active')) : (config?.offText ?? t('widgets.sensor.inactive'));
+    if (isToggleable) return isOn ? t('widgets.light.on') : t('widgets.light.off');
     return formatState(state, unit);
   })();
 
   return (
     <motion.div
+      ref={cardRef}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: DURATION_ENTRANCE }}
       onPointerDown={isToggleable ? triggerRipple : undefined}
-      className={cn(
-        'gc rounded-3xl p-5 flex flex-col justify-between h-full relative overflow-hidden cursor-default',
-        isToggleable && 'cursor-pointer'
-      )}
       onClick={isToggleable ? handleToggle : undefined}
+      className={cn(
+        'gc rounded-3xl flex flex-col h-full relative overflow-hidden select-none',
+        isCompact ? 'p-2.5' : 'p-3.5',
+        isToggleable ? 'cursor-pointer' : 'cursor-default'
+      )}
     >
-      {isToggleable && <RippleLayer ripples={ripples} />}
-      {/* Header: icône + badge */}
-      <div className='flex items-start justify-between'>
-        <motion.div
-          animate={isOn ? { scale: [1, 1.08, 1] } : undefined}
-          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-          className={cn(
-            'w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300',
-            isOn
-              ? 'bg-gradient-to-br from-amber-400/15 to-amber-400/25 border border-amber-400/20 shadow-[0_0_12px_rgba(251,191,36,0.15)]'
-              : 'bg-white/5 border border-white/8'
-          )}
-          style={
-            thresholdColor
-              ? { backgroundColor: `${thresholdColor}15`, borderColor: `${thresholdColor}30`, boxShadow: `0 0 12px ${thresholdColor}20` }
-              : undefined
-          }
-        >
-          {customIconUrl ? (
-            <img src={customIconUrl} alt='' className='w-5 h-5 object-contain' />
-          ) : IconComponent ? (
-            <IconComponent
-              size={20}
-              className={cn(isOn ? 'text-amber-400' : 'text-white/60', 'transition-colors')}
-              style={thresholdColor ? { color: thresholdColor } : undefined}
-            />
-          ) : (
-            <Power size={20} className='text-white/60' />
-          )}
-        </motion.div>
+      {isToggleable && <RippleLayer ripples={ripples} color={`${accentColor}25`} />}
 
-        {isToggleable && (
+      {/* ── Header : nom + badge toggle ── */}
+      <div className='flex items-center justify-between mb-1'>
+        <span className='text-white/40 text-xs font-medium truncate'>{name}</span>
+
+        {isToggleable ? (
           <motion.span
             key={isOn ? 'on' : 'off'}
             initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: isOn ? 1 : 0.95, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 22 }}
             className={cn(
-              'text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border transition-all duration-300',
-              isOn
-                ? 'bg-green-500/15 text-green-400 border-green-500/20 shadow-[0_0_8px_rgba(34,197,94,0.15)]'
-                : 'bg-white/5 text-white/30 border-white/8'
+              'text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full border shrink-0 ml-2',
+              isOn ? 'bg-green-500/15 text-green-300 border-green-500/20' : 'bg-white/5 text-white/25 border-white/8'
             )}
           >
             {isOn ? 'ON' : 'OFF'}
           </motion.span>
+        ) : showStaleBadge && staleBadgeLabel ? (
+          <span
+            className={cn(
+              'text-[10px] px-2 py-0.5 rounded-full border shrink-0 ml-2',
+              isStale ? 'bg-red-500/15 text-red-400 border-red-500/20' : 'bg-white/5 text-white/20 border-white/8'
+            )}
+          >
+            {staleBadgeLabel}
+          </span>
+        ) : null}
+      </div>
+
+      {/* ── Icône ── */}
+      <div className={cn('flex items-center justify-between', isCompact ? 'mb-1' : 'mb-2')}>
+        <motion.div
+          animate={isOn ? { scale: [1, 1.07, 1] } : undefined}
+          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+          className={cn(
+            'rounded-xl flex items-center justify-center border transition-all duration-300',
+            isCompact ? 'w-7 h-7' : 'w-9 h-9',
+            isOn || (!isToggleable && !thresholdColor) ? 'bg-white/8 border-white/12' : 'bg-white/5 border-white/8'
+          )}
+          style={
+            thresholdColor
+              ? { backgroundColor: `${thresholdColor}14`, borderColor: `${thresholdColor}30` }
+              : isOn
+                ? { backgroundColor: `${accentColor}14`, borderColor: `${accentColor}28` }
+                : undefined
+          }
+        >
+          {customIconUrl ? (
+            <img src={customIconUrl} alt='' className={cn('object-contain', isCompact ? 'w-3.5 h-3.5' : 'w-4 h-4')} />
+          ) : IconComponent ? (
+            <IconComponent
+              size={isCompact ? 14 : 17}
+              className='text-white/55 transition-colors'
+              style={thresholdColor || isOn ? { color: accentColor } : undefined}
+            />
+          ) : (
+            <Power size={isCompact ? 14 : 17} className='text-white/55' />
+          )}
+        </motion.div>
+
+        {/* Stale badge inline si pas de toggle */}
+        {!isToggleable && showStaleBadge && isStale && (
+          <span className='text-[9px] px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/20'>
+            ⚠ {t('widgets.sensor.stale')}
+          </span>
         )}
       </div>
 
-      {/* Body: valeur principale */}
-      {variant === 'gauge' && isNumeric ? (
-        <div className='mt-auto flex justify-center'>
-          <SensorGauge
-            value={numericValue}
-            min={config?.min ?? 0}
-            max={config?.max ?? 100}
-            unit={unit}
-            color={thresholdColor ?? '#60a5fa'}
-            size={100}
-            label={name}
-          />
-        </div>
-      ) : (
-        <div className='mt-auto'>
-          {isNumeric && (
-            <div className='mb-2'>
-              {variant === 'sparkline' && historyData.length > 1 ? (
-                <SparkLine data={historyData} height={40} color={thresholdColor ?? '#60a5fa'} id={`spark-${widgetId}`} />
-              ) : variant === 'bar' && historyData.length > 1 ? (
-                <BarChart data={historyData} height={40} color={thresholdColor ?? '#60a5fa'} />
-              ) : (variant === 'sparkline' || variant === 'bar') && historyLoading ? (
-                <div className='h-10 w-full rounded bg-white/5 animate-pulse' />
-              ) : (
-                <svg viewBox='0 0 120 8' className='w-full h-2'>
-                  <defs>
-                    <linearGradient id={`sensorGrad-${widgetId}`} x1='0' y1='0' x2='1' y2='0'>
-                      <stop offset='0%' stopColor={thresholdColor ?? 'rgba(255,255,255,0.4)'} stopOpacity='0.2' />
-                      <stop offset='100%' stopColor={thresholdColor ?? 'rgba(255,255,255,0.6)'} />
-                    </linearGradient>
-                  </defs>
-                  <rect x='0' y='2' width='120' height='4' rx='2' fill='white' opacity='0.06' />
+      {/* ── Corps : valeur / gauge / chart ── */}
+      <div className='flex-1 flex flex-col justify-end min-h-0'>
+        {variant === 'gauge' && isNumeric ? (
+          <div className='flex-1 flex items-center justify-center'>
+            <SensorGauge
+              value={numericValue}
+              min={config?.min ?? 0}
+              max={config?.max ?? 100}
+              unit={unit}
+              color={accentColor}
+              size={90}
+              label={name}
+            />
+          </div>
+        ) : (
+          <>
+            {/* Graphique mini */}
+            {isNumeric && (variant === 'sparkline' || variant === 'bar') && (
+              <div className='mb-2'>
+                {historyLoading ? (
+                  <div className='h-8 w-full rounded bg-white/5 animate-pulse' />
+                ) : historyData.length > 1 ? (
+                  variant === 'sparkline' ? (
+                    <SparkLine data={historyData} height={32} color={accentColor} id={`spark-${widgetId}`} />
+                  ) : (
+                    <BarChart data={historyData} height={32} color={accentColor} />
+                  )
+                ) : null}
+              </div>
+            )}
+
+            {/* Barre de progression (variant default numérique) */}
+            {isNumeric && variant === 'default' && !isCompact && (
+              <div className='mb-2'>
+                <svg viewBox='0 0 120 6' className='w-full h-1.5' style={{ overflow: 'visible' }}>
+                  <rect x='0' y='1' width='120' height='4' rx='2' fill='rgba(255,255,255,0.06)' />
                   <motion.rect
                     x='0'
-                    y='2'
+                    y='1'
                     height='4'
                     rx='2'
                     initial={{ width: 0 }}
                     animate={{
                       width: Math.max(
                         4,
-                        Math.min(120, ((numericValue - (config?.min ?? 0)) / ((config?.max ?? 50) - (config?.min ?? 0))) * 120)
+                        Math.min(120, ((numericValue - (config?.min ?? 0)) / ((config?.max ?? 100) - (config?.min ?? 0))) * 120)
                       ),
                     }}
                     transition={{ duration: 0.8, ease: 'easeOut' }}
-                    fill={`url(#sensorGrad-${widgetId})`}
+                    fill={accentColor}
+                    opacity={0.55}
                   />
                 </svg>
+              </div>
+            )}
+
+            {/* Valeur principale */}
+            <div
+              className={cn('font-light tracking-tight leading-none', isCompact ? 'text-xl' : 'text-3xl')}
+              style={thresholdColor ? { color: thresholdColor } : undefined}
+            >
+              {isNumeric ? (
+                <AnimatedNumber value={numericValue} decimals={Number.isInteger(numericValue) ? 0 : 1} suffix={unit ? ` ${unit}` : ''} />
+              ) : (
+                <span className='text-white'>{displayState}</span>
               )}
             </div>
-          )}
-          <div className='text-3xl font-light tracking-tight text-white' style={thresholdColor ? { color: thresholdColor } : undefined}>
-            {isNumeric ? (
-              <AnimatedNumber value={numericValue} decimals={Number.isInteger(numericValue) ? 0 : 1} suffix={unit ? ` ${unit}` : ''} />
-            ) : (
-              displayState
-            )}
-          </div>
-          <div className='text-white/40 text-xs mt-1 uppercase tracking-wider font-medium'>
-            {name}
-            {isNumeric && unit && <span className='text-white/25 ml-1'>{unit}</span>}
-          </div>
-          {showStaleBadge && staleBadgeLabel && (
-            <motion.div
-              key={staleBadgeLabel}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className={cn(
-                'text-[10px] mt-1.5 px-2 py-0.5 rounded-full w-fit border transition-colors duration-500',
-                isStale ? 'bg-red-500/15 text-red-400 border-red-500/20' : 'bg-white/5 text-white/25 border-white/8'
-              )}
-            >
-              {isStale ? `⚠ ${t('widgets.sensor.stale')} · ${staleBadgeLabel}` : staleBadgeLabel}
-            </motion.div>
-          )}
-        </div>
-      )}
+          </>
+        )}
+      </div>
     </motion.div>
   );
 }

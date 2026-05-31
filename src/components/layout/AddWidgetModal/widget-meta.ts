@@ -15,9 +15,14 @@ import {
   Gauge,
   Workflow,
   Music,
+  Shield,
+  Bot,
+  Flame,
+  Play,
+  Layers,
+  Home,
 } from 'lucide-react';
 import type { GridWidget } from '@/context/DashboardLayoutContext';
-import { WIDGET_CATALOG } from '@/context/DashboardLayoutContext';
 
 // ── Preview dimension engine ──────────────────────────────────────────────────
 
@@ -27,7 +32,26 @@ const PREVIEW_MAX_W = 390;
 const PREVIEW_MAX_H = 265;
 const MAX_SCALE = 1.5;
 
-const CATALOG_HINTS: Partial<Record<GridWidget['type'], { w: number; h: number }>> = {
+const PREVIEW_LG_SIZES: Partial<Record<GridWidget['type'], { w: number; h: number }>> = {
+  camera: { w: 6, h: 3 },
+  weather: { w: 3, h: 3 },
+  thermostat: { w: 3, h: 3 },
+  shortcuts: { w: 4, h: 3 },
+  tempo: { w: 4, h: 2 },
+  energy: { w: 4, h: 2 },
+  sensor: { w: 3, h: 2 },
+  light: { w: 3, h: 2 },
+  person: { w: 6, h: 1 },
+  cover: { w: 2, h: 3 },
+  template: { w: 3, h: 1 },
+  automation: { w: 3, h: 1 },
+  button: { w: 2, h: 2 },
+  group: { w: 4, h: 4 },
+  room: { w: 2, h: 2 },
+  media_player: { w: 4, h: 3 },
+  alarm: { w: 3, h: 3 },
+  vacuum: { w: 3, h: 4 },
+  pellet: { w: 2, h: 3 },
   greeting: { w: 4, h: 1 },
   activity: { w: 8, h: 1 },
 };
@@ -41,9 +65,7 @@ export interface PreviewDims {
 }
 
 export function getPreviewDims(type: GridWidget['type']): PreviewDims {
-  const catalogEntry = WIDGET_CATALOG.find(c => c.type === type);
-  const hint = CATALOG_HINTS[type];
-  const lgSize = catalogEntry?.lg ?? hint ?? { w: 3, h: 2 };
+  const lgSize = PREVIEW_LG_SIZES[type] ?? { w: 3, h: 2 };
   const naturalW = lgSize.w * COL_PX;
   const naturalH = lgSize.h * ROW_PX;
   const scale = Math.min(PREVIEW_MAX_W / naturalW, PREVIEW_MAX_H / naturalH, MAX_SCALE);
@@ -76,8 +98,8 @@ export interface WidgetMeta {
 export const WIDGET_META: WidgetMeta[] = [
   {
     type: 'sensor',
-    label: 'Capteur',
-    description: "N'importe quel capteur HA : température, humidité, puissance, binaire...",
+    label: 'widgets.sensor.label',
+    description: 'widgets.sensor.description',
     category: 'sensors',
     icon: Gauge,
     color: '#3b82f6',
@@ -85,8 +107,8 @@ export const WIDGET_META: WidgetMeta[] = [
   },
   {
     type: 'light',
-    label: 'Lumière',
-    description: 'Contrôle une lumière ou un groupe avec variateur de luminosité.',
+    label: 'widgets.light.label',
+    description: 'widgets.light.description',
     category: 'lights',
     icon: Lightbulb,
     color: '#eab308',
@@ -94,8 +116,8 @@ export const WIDGET_META: WidgetMeta[] = [
   },
   {
     type: 'weather',
-    label: 'Météo',
-    description: 'Conditions météo actuelles et prévisions sur plusieurs jours.',
+    label: 'widgets.weather.label',
+    description: 'widgets.weather.description',
     category: 'climate',
     icon: Cloud,
     color: '#0ea5e9',
@@ -103,8 +125,8 @@ export const WIDGET_META: WidgetMeta[] = [
   },
   {
     type: 'thermostat',
-    label: 'Thermostat',
-    description: 'Contrôle un thermostat climate.xxx avec la température cible.',
+    label: 'widgets.thermostat.label',
+    description: 'widgets.thermostat.description',
     category: 'climate',
     icon: Thermometer,
     color: '#f97316',
@@ -112,48 +134,40 @@ export const WIDGET_META: WidgetMeta[] = [
   },
   {
     type: 'energy',
-    label: 'Énergie',
-    description: "Vue d'ensemble production solaire, batterie, consommation maison.",
+    label: 'widgets.energy.label',
+    description: 'widgets.energy.description',
     category: 'energy',
     icon: Zap,
     color: '#22c55e',
   },
   {
     type: 'tempo',
-    label: 'Tempo EDF',
-    description: 'Couleur du jour Tempo RTE et heures pleines/creuses.',
+    label: 'widgets.tempo.label',
+    description: 'widgets.tempo.description',
     category: 'energy',
     icon: Activity,
     color: '#ef4444',
   },
   {
     type: 'camera',
-    label: 'Caméra',
-    description: "Flux vidéo en direct d'une ou plusieurs caméras Frigate/RTSP.",
+    label: 'widgets.camera.label',
+    description: 'widgets.camera.description',
     category: 'cameras',
     icon: Video,
     color: '#a855f7',
   },
   {
-    type: 'rooms',
-    label: 'Pièces',
-    description: 'Grille de pièces avec température, lumières et accès rapide aux panneaux.',
-    category: 'home',
-    icon: LayoutGrid,
-    color: '#6366f1',
-  },
-  {
     type: 'shortcuts',
-    label: 'Raccourcis',
-    description: 'Boutons rapides pour ouvrir les panneaux lumières, volets, sécurité...',
+    label: 'widgets.shortcuts.label',
+    description: 'widgets.shortcuts.description',
     category: 'home',
     icon: Grip,
     color: '#14b8a6',
   },
   {
     type: 'cover',
-    label: 'Volet',
-    description: 'Contrôle un volet ou store avec slider de position et boutons.',
+    label: 'widgets.cover.label',
+    description: 'widgets.cover.description',
     category: 'home',
     icon: ArrowUpDown,
     color: '#64748b',
@@ -161,63 +175,114 @@ export const WIDGET_META: WidgetMeta[] = [
   },
   {
     type: 'person',
-    label: 'Personnes',
-    description: 'Affiche la présence et localisation des personnes du foyer.',
+    label: 'widgets.person.label',
+    description: 'widgets.person.description',
     category: 'home',
     icon: Users,
     color: '#ec4899',
   },
   {
     type: 'greeting',
-    label: 'Horloge',
-    description: 'Horloge et message de bienvenue personnalisé.',
+    label: 'widgets.greeting.label',
+    description: 'widgets.greeting.description',
     category: 'system',
     icon: Clock,
     color: '#f59e0b',
   },
   {
     type: 'activity',
-    label: "Barre d'activité",
-    description: "Bandeau d'états rapides : alarme, poêle, batterie, Tempo...",
+    label: 'widgets.activity.label',
+    description: 'widgets.activity.description',
     category: 'system',
     icon: Activity,
     color: '#8b5cf6',
   },
   {
     type: 'template',
-    label: 'Template',
-    description: 'Widget entièrement personnalisable avec templates Jinja2/Nunjucks.',
+    label: 'widgets.template.label',
+    description: 'widgets.template.description',
     category: 'sensors',
     icon: Code2,
     color: '#06b6d4',
   },
   {
     type: 'automation',
-    label: 'Automatisation',
-    description: 'Active ou désactive une automatisation Home Assistant.',
+    label: 'widgets.automation.label',
+    description: 'widgets.automation.description',
     category: 'home',
     icon: Workflow,
     color: '#10b981',
     entityDomain: 'automation',
   },
   {
+    type: 'button',
+    label: 'widgets.button.label',
+    description: 'widgets.button.description',
+    category: 'home',
+    icon: Play,
+    color: '#3b82f6',
+  },
+  {
+    type: 'group',
+    label: 'widgets.group.label',
+    description: 'widgets.group.description',
+    category: 'home',
+    icon: Layers,
+    color: '#6366f1',
+  },
+  {
+    type: 'room',
+    label: 'widgets.room.label',
+    description: 'widgets.room.description',
+    category: 'home',
+    icon: Home,
+    color: '#0ea5e9',
+  },
+  {
     type: 'media_player',
-    label: 'Lecteur média',
-    description: 'Contrôle Spotify, Sonos, Chromecast — pochette, titre, play/pause, volume.',
+    label: 'widgets.media_player.label',
+    description: 'widgets.media_player.description',
     category: 'home',
     icon: Music,
     color: '#8b5cf6',
     entityDomain: 'media_player',
   },
+  {
+    type: 'alarm',
+    label: 'widgets.alarm.label',
+    description: 'widgets.alarm.description',
+    category: 'home',
+    icon: Shield,
+    color: '#ef4444',
+    entityDomain: 'alarm_control_panel',
+  },
+  {
+    type: 'vacuum',
+    label: 'widgets.vacuum.label',
+    description: 'widgets.vacuum.description',
+    category: 'home',
+    icon: Bot,
+    color: '#14b8a6',
+    entityDomain: 'vacuum',
+  },
+  {
+    type: 'pellet',
+    label: 'widgets.pellet.label',
+    description: 'widgets.pellet.description',
+    category: 'climate',
+    icon: Flame,
+    color: '#f97316',
+    entityDomain: 'climate',
+  },
 ];
 
 export const CATEGORIES: { id: Category; label: string }[] = [
-  { id: 'all', label: 'Tous' },
-  { id: 'sensors', label: 'Capteurs' },
-  { id: 'lights', label: 'Lumières' },
-  { id: 'climate', label: 'Climat' },
-  { id: 'energy', label: 'Énergie' },
-  { id: 'cameras', label: 'Caméras' },
-  { id: 'home', label: 'Maison' },
-  { id: 'system', label: 'Système' },
+  { id: 'all', label: 'layout.widgetCategories.all' },
+  { id: 'sensors', label: 'layout.widgetCategories.sensors' },
+  { id: 'lights', label: 'layout.widgetCategories.lights' },
+  { id: 'climate', label: 'layout.widgetCategories.climate' },
+  { id: 'energy', label: 'layout.widgetCategories.energy' },
+  { id: 'cameras', label: 'layout.widgetCategories.cameras' },
+  { id: 'home', label: 'layout.widgetCategories.home' },
+  { id: 'system', label: 'layout.widgetCategories.system' },
 ];

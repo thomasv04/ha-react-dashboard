@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useHass } from '@hakit/core';
 import { useModal } from '@/context/ModalContext';
+import { callHAService } from '@/lib/ha-service';
 
 interface HAModalAction {
   label: string;
@@ -72,12 +73,7 @@ export function useHAModal() {
               if (a.service) {
                 const parts = a.service.split('.');
                 if (parts.length === 2) {
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  (helpersRef.current.callService as any)({
-                    domain: parts[0],
-                    service: parts[1],
-                    serviceData: a.service_data,
-                  });
+                  callHAService(helpersRef.current, parts[0], parts[1], {}, a.service_data);
                 }
               }
             },
@@ -85,10 +81,11 @@ export function useHAModal() {
         });
       }, 'ha_dashboard_modal')
       .then(unsub => {
+        const unsubscribe = unsub as unknown as () => void;
         if (cancelled) {
-          (unsub as unknown as () => void)();
+          unsubscribe();
         } else {
-          unsubscribeFn = unsub as unknown as () => void;
+          unsubscribeFn = unsubscribe;
         }
       });
 

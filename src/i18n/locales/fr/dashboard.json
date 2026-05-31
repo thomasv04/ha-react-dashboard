@@ -13,5 +13,8 @@
     "home": "Accueil",
     "addPage": "Nouvelle page",
     "deletePage": "Supprimer la page"
-  }
+  },
+  "editTooltipExit": "Quitter le mode \u00e9dition",
+  "editTooltipEnter": "Modifier le dashboard",
+  "cancelTooltip": "Annuler"
 }

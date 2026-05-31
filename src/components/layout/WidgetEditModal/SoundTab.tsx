@@ -8,18 +8,35 @@ import { cn } from '@/lib/utils';
 /** All available presets for the selector */
 const ALL_PRESETS: SoundPreset[] = [
   'none',
-  'notification', 'alert', 'success', 'warning', 'error',
-  'click', 'pop',
-  'toggle_on', 'toggle_off',
-  'arm', 'disarm',
+  'notification',
+  'alert',
+  'success',
+  'warning',
+  'error',
+  'click',
+  'pop',
+  'toggle_on',
+  'toggle_off',
+  'arm',
+  'disarm',
   'slider_tick',
-  'door_open', 'door_close', 'lock', 'unlock',
+  'door_open',
+  'door_close',
+  'lock',
+  'unlock',
   'motion',
-  'media_play', 'media_pause', 'media_next',
-  'vacuum_start', 'vacuum_dock',
-  'temperature_up', 'temperature_down',
-  'brightness_up', 'brightness_down',
-  'water', 'battery_low', 'chime',
+  'media_play',
+  'media_pause',
+  'media_next',
+  'vacuum_start',
+  'vacuum_dock',
+  'temperature_up',
+  'temperature_down',
+  'brightness_up',
+  'brightness_down',
+  'water',
+  'battery_low',
+  'chime',
 ];
 
 interface SoundTabProps {
@@ -91,14 +108,8 @@ function SoundActionRow({
     <div className='flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-colors'>
       {/* Action label */}
       <div className='flex-1 min-w-0'>
-        <span className='text-xs text-white/70 font-medium'>
-          {t(`layout.soundTab.actions.${action.action}`)}
-        </span>
-        {isDefault && (
-          <span className='ml-1.5 text-[10px] text-white/25'>
-            ({t('layout.soundTab.default')})
-          </span>
-        )}
+        <span className='text-xs text-white/70 font-medium'>{t(`layout.soundTab.actions.${action.action}`)}</span>
+        {isDefault && <span className='ml-1.5 text-[10px] text-white/25'>({t('layout.soundTab.default')})</span>}
       </div>
 
       {/* Sound selector */}

@@ -1,8 +1,10 @@
 import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 import type { WidgetMeta } from './widget-meta';
 
 export function ListRow({ meta, selected, onClick }: { meta: WidgetMeta; selected: boolean; onClick: () => void }) {
+  const { t } = useI18n();
   return (
     <button
       onClick={onClick}
@@ -21,7 +23,7 @@ export function ListRow({ meta, selected, onClick }: { meta: WidgetMeta; selecte
         <meta.icon size={15} color={meta.color} />
       </div>
       <span className={cn('text-sm font-medium flex-1 truncate transition-colors', selected ? 'text-white' : 'text-white/55')}>
-        {meta.label}
+        {t(meta.label)}
       </span>
       <ChevronRight size={14} className={cn('shrink-0 transition-colors', selected ? 'text-white/40' : 'text-white/12')} />
     </button>

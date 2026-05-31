@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { Workflow } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -7,15 +8,21 @@ import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { cn } from '@/lib/utils';
 import { resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-map';
 import type { AutomationCardConfig } from '@/types/widget-configs';
+import { useI18n } from '@/i18n';
+import { useGroupEmbedded } from '@/components/cards/GroupCard/GroupCard';
+import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 
 export function AutomationCard() {
+  const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<AutomationCardConfig>(widgetId || 'automation');
   const entityId = config?.entityId ?? 'automation.example';
+  const embedded = useGroupEmbedded();
 
   const entity = useSafeEntity(entityId);
   const { helpers } = useHass();
+  const playFeedback = useSoundFeedback();
 
   if (!entity) {
     return (
@@ -24,7 +31,7 @@ export function AutomationCard() {
         animate={{ opacity: 1, y: 0 }}
         className='gc rounded-3xl p-4 flex items-center justify-center h-full'
       >
-        <span className='text-white/30 text-sm'>Automatisation introuvable</span>
+        <span className='text-white/30 text-sm'>{t('widgets.automation.notFound')}</span>
       </motion.div>
     );
   }
@@ -43,19 +50,29 @@ export function AutomationCard() {
       service: 'toggle',
       target: { entity_id: entityId },
     });
+    playFeedback(isOn ? 'toggle_off' : 'toggle_on');
   };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: DURATION_ENTRANCE }}
       onClick={handleToggle}
       className={cn(
-        'gc rounded-3xl p-4 h-full flex items-center justify-between gap-4 cursor-pointer',
-        'transition-all duration-300',
-        isOn ? 'border border-emerald-500/20 bg-emerald-500/5' : 'border border-white/5'
+        'h-full flex items-center justify-between gap-3 cursor-pointer transition-all duration-300',
+        embedded ? 'rounded-2xl p-3' : 'gc rounded-3xl p-4',
+        isOn ? 'border border-emerald-500/20' : 'border border-white/5',
+        isOn && !embedded ? 'bg-emerald-500/5' : '',
+        embedded && isOn ? '' : ''
       )}
+      style={
+        embedded && isOn
+          ? { background: 'rgba(74,222,128,0.07)', borderColor: 'rgba(74,222,128,0.20)' }
+          : embedded
+            ? { background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.07)' }
+            : undefined
+      }
     >
       {/* Icône + infos */}
       <div className='flex items-center gap-3 min-w-0'>

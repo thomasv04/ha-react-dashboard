@@ -5,7 +5,7 @@ import { WIDGET_CATALOG, type GridWidget } from './DashboardLayoutContext';
 vi.mock('@hakit/core', () => ({ useHass: vi.fn() }));
 
 describe('WIDGET_CATALOG', () => {
-  const EXPECTED_TYPES: GridWidget['type'][] = ['camera', 'weather', 'thermostat', 'rooms', 'shortcuts', 'tempo', 'energy'];
+  const EXPECTED_TYPES: GridWidget['type'][] = ['camera', 'weather', 'thermostat', 'shortcuts', 'tempo', 'energy'];
 
   it('contient toutes les entrées attendues', () => {
     const types = WIDGET_CATALOG.map(w => w.type);

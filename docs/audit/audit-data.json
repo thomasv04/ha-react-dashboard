@@ -51,9 +51,7 @@
       "impact": "Critique",
       "effort": "Faible",
       "category": "Sécurité",
-      "files": [
-        "server/routes/profiles.js"
-      ],
+      "files": ["server/routes/profiles.js"],
       "prompt": "Dans le fichier `server/routes/profiles.js`, les routes PUT et DELETE ne vérifient pas que le profil appartient à l'utilisateur courant. Ajoute une clause `AND (ha_user_id = ? OR ha_user_id IS NULL)` aux requêtes UPDATE et DELETE, en récupérant `req.headers['x-ha-user-id']` comme userId. Applique le même pattern que le GET qui filtre déjà par userId.\n\nUne fois terminé, mets à jour docs/audit/audit-data.json : passe le champ done de cette entrée (id: \"p0-ownership\") à true."
     },
     {
@@ -64,10 +62,7 @@
       "impact": "Critique",
       "effort": "Faible",
       "category": "Performance",
-      "files": [
-        "src/context/ThemeContext.tsx",
-        "src/context/WidgetConfigContext.tsx"
-      ],
+      "files": ["src/context/ThemeContext.tsx", "src/context/WidgetConfigContext.tsx"],
       "prompt": "Dans `ThemeContext.tsx` et `WidgetConfigContext.tsx`, la valeur passée au Provider est un nouvel objet à chaque render, ce qui force tous les consommateurs à re-render inutilement. Wrappe la valeur de chaque Provider dans un `useMemo()` avec les dépendances appropriées. Par exemple pour ThemeContext :\n```tsx\nconst value = useMemo(() => ({\n  themeId, tokens, setTheme, background, setBackground,\n  cardOpacity, setCardOpacity, perfSettings, setPerfSettings,\n  autoTheme, setAutoTheme, layoutSettings, setLayoutSettings,\n}), [themeId, tokens, background, cardOpacity, perfSettings, autoTheme, layoutSettings]);\n\nreturn <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;\n```\nFais pareil pour WidgetConfigContext.\n\nUne fois terminé, mets à jour docs/audit/audit-data.json : passe le champ done de cette entrée (id: \"p0-usememo-contexts\") à true."
     },
     {
@@ -121,9 +116,7 @@
       "impact": "Haut",
       "effort": "Faible",
       "category": "Sécurité",
-      "files": [
-        "server/routes/uploads.js"
-      ],
+      "files": ["server/routes/uploads.js"],
       "prompt": "Les fichiers SVG uploadés via `/api/uploads` ne sont pas sanitisés. Un SVG malveillant peut contenir du JavaScript (`<script>`, `onload=`, etc.) qui s'exécuterait si le SVG est rendu dans un `<img>` avec un mauvais Content-Type.\n\nOption A (recommandée) — Installer `dompurify` + `jsdom` côté serveur :\n```javascript\nimport createDOMPurify from 'dompurify';\nimport { JSDOM } from 'jsdom';\nconst DOMPurify = createDOMPurify(new JSDOM('').window);\n\n// Dans le handler d'upload SVG :\nconst clean = DOMPurify.sanitize(svgContent, { USE_PROFILES: { svg: true } });\nfs.writeFileSync(destPath, clean);\n```\n\nOption B (plus simple) — Interdire les SVG dans la whitelist MIME et ne garder que les formats raster (PNG, JPG, WebP).\n\nUne fois terminé, mets à jour docs/audit/audit-data.json : passe le champ done de cette entrée (id: \"p1-svg-sanitize\") à true."
     },
     {
@@ -150,9 +143,7 @@
       "impact": "Moyen",
       "effort": "Faible",
       "category": "Performance",
-      "files": [
-        "src/config/widget-registry.ts"
-      ],
+      "files": ["src/config/widget-registry.ts"],
       "prompt": "Les 20 widgets sont importés statiquement dans `widget-registry.ts`, ce qui inclut tout dans le bundle principal. Convertis les imports en `React.lazy()` pour le code-splitting :\n\n```typescript\nimport { lazy, memo, Suspense, type ComponentType } from 'react';\n\nfunction lazyMemo(factory: () => Promise<{ default: ComponentType }>) {\n  const Lazy = lazy(factory);\n  return memo(function LazyWidget() {\n    return <Suspense fallback={null}><Lazy /></Suspense>;\n  });\n}\n\nexport const WIDGET_COMPONENTS: Record<GridWidget['type'], ComponentType> = {\n  weather: lazyMemo(() => import('@/components/cards/WeatherCard/WeatherCard')),\n  camera: lazyMemo(() => import('@/components/cards/CameraCard/CameraCard')),\n  // ... etc\n  group: lazy(() => import('@/components/cards/GroupCard/GroupCard')), // pas de memo\n};\n```\n\nNote : PREVIEW_COMPONENTS peut rester en import statique (utilisé uniquement dans l'éditeur).\n\nUne fois terminé, mets à jour docs/audit/audit-data.json : passe le champ done de cette entrée (id: \"p2-lazy-widgets\") à true."
     },
     {
@@ -163,11 +154,7 @@
       "impact": "Moyen",
       "effort": "Faible",
       "category": "Maintenabilité",
-      "files": [
-        "src/hooks/useDashboardConfig.ts",
-        "src/context/DashboardLayoutContext.tsx",
-        "eslint.config.js"
-      ],
+      "files": ["src/hooks/useDashboardConfig.ts", "src/context/DashboardLayoutContext.tsx", "eslint.config.js"],
       "prompt": "Il reste 2 `console.log` dans le code de production :\n\n1. `src/hooks/useDashboardConfig.ts:102` → `console.log('Configuration sauvegardée avec succès !')` — Supprimer cette ligne.\n2. `src/context/DashboardLayoutContext.tsx:227` → `console.log(\"Layout préparé pour l'envoi au backend\")` — Supprimer cette ligne.\n\nPuis ajoute la règle ESLint dans `eslint.config.js` pour empêcher les futurs oublis :\n```javascript\nrules: {\n  'no-console': ['error', { allow: ['error', 'warn', 'info'] }],\n  // ... règles existantes\n}\n```\n\nUne fois terminé, mets à jour docs/audit/audit-data.json : passe le champ done de cette entrée (id: \"p2-console-log\") à true."
     },
     {
@@ -201,10 +188,7 @@
       "impact": "Faible",
       "effort": "Moyen",
       "category": "Tests",
-      "files": [
-        "src/hooks/useSafeEntity.test.ts",
-        "src/hooks/useDashboardConfig.test.ts"
-      ],
+      "files": ["src/hooks/useSafeEntity.test.ts", "src/hooks/useDashboardConfig.test.ts"],
       "prompt": "Crée des tests unitaires pour les 2 hooks critiques :\n\n**useSafeEntity.test.ts** :\n- Retourne `null` quand l'entité n'existe pas\n- Retourne `{ state, attributes }` quand l'entité existe\n- Ne re-render pas quand les attributs sont identiques (shallow equal)\n- Met à jour quand `state` change\n- Met à jour quand un attribut change\n\n**useDashboardConfig.test.ts** :\n- Charge la config depuis `/api/config` au mount\n- Migre une config v1 vers v2\n- Gère le cas \"pas de config\" (message response)\n- `saveConfig()` envoie un POST et met à jour l'état local\n- Gère les erreurs réseau (affiche un toast)\n\nUtilise `vi.mock('@hakit/core')` et `vi.mock('@/context/ToastContext')` pour les dépendances.\n\nUne fois terminé, mets à jour docs/audit/audit-data.json : passe le champ done de cette entrée (id: \"p3-tests-hooks\") à true."
     },
     {
@@ -215,9 +199,7 @@
       "impact": "Faible",
       "effort": "Moyen",
       "category": "Maintenabilité",
-      "files": [
-        "scripts/check-widget-registry.ts"
-      ],
+      "files": ["scripts/check-widget-registry.ts"],
       "prompt": "Crée un script TypeScript `scripts/check-widget-registry.ts` qui vérifie que chaque type de widget défini dans `WidgetConfig` (union dans `widget-types.ts`) a bien une entrée dans :\n- `WIDGET_COMPONENTS` (widget-registry.ts)\n- `PREVIEW_COMPONENTS` (widget-registry.ts)\n- `WIDGET_DISPOSITIONS` (widget-dispositions.ts)\n- `WIDGET_META` (widget-meta.ts)\n- `WIDGET_FIELD_DEFS` (widget-fields.ts)\n- `DEFAULT_WIDGET_CONFIGS` (widget-fields.ts)\n- `WIDGET_CATALOG` (DashboardLayoutContext.tsx)\n\nLe script doit :\n1. Importer les registres\n2. Comparer les clés\n3. Afficher les types manquants par registre\n4. Exit code 1 si des manques sont détectés\n\nAjoute `\"check:widgets\": \"tsx scripts/check-widget-registry.ts\"` dans package.json scripts.\n\nUne fois terminé, mets à jour docs/audit/audit-data.json : passe le champ done de cette entrée (id: \"p3-widget-registry-script\") à true."
     },
     {
@@ -228,9 +210,7 @@
       "impact": "Faible",
       "effort": "Faible",
       "category": "Maintenabilité",
-      "files": [
-        "src/components/ui/Modal/composents/"
-      ],
+      "files": ["src/components/ui/Modal/composents/"],
       "prompt": "Le dossier `src/components/ui/Modal/composents/` contient une faute de frappe (composents → components). Renomme le dossier en `components/` et mets à jour tous les imports qui y font référence. Cherche dans tout le projet les imports contenant `composents` et corrige-les.\n\nUne fois terminé, mets à jour docs/audit/audit-data.json : passe le champ done de cette entrée (id: \"p3-rename-composents\") à true."
     },
     {
@@ -241,10 +221,7 @@
       "impact": "Faible",
       "effort": "Faible",
       "category": "API REST",
-      "files": [
-        "server/routes/config.js",
-        "src/hooks/useDashboardConfig.ts"
-      ],
+      "files": ["server/routes/config.js", "src/hooks/useDashboardConfig.ts"],
       "prompt": "La sauvegarde de la config dashboard utilise `POST /api/config` alors que c'est un upsert idempotent (toujours id=1). Change en `PUT` :\n\n1. Dans `server/routes/config.js` : `router.post('/', ...)` → `router.put('/', ...)`\n2. Dans `src/hooks/useDashboardConfig.ts` : `method: 'POST'` → `method: 'PUT'`\n3. Mets à jour les tests correspondants dans `server.test.js` si nécessaire.\n\nUne fois terminé, mets à jour docs/audit/audit-data.json : passe le champ done de cette entrée (id: \"p3-rest-post-to-put\") à true."
     },
     {
@@ -255,9 +232,7 @@
       "impact": "Moyen",
       "effort": "Faible",
       "category": "TypeScript",
-      "files": [
-        "src/components/cards/LightCard/LightCard.tsx"
-      ],
+      "files": ["src/components/cards/LightCard/LightCard.tsx"],
       "prompt": "Dans `LightCard.tsx:283`, la CSS custom property utilise `['--thumb-color' as any]`. Remplace par un cast propre :\n\n```tsx\n// ❌ Avant\nstyle={{\n  background: `linear-gradient(...)`,\n  ['--thumb-color' as any]: accentColor ?? '#fbbf24',\n}}\n\n// ✅ Après\nstyle={{\n  background: `linear-gradient(...)`,\n  '--thumb-color': accentColor ?? '#fbbf24',\n} as React.CSSProperties & Record<string, string>}\n```\n\nOu mieux, utilise l'attribut `style` avec un cast global sur tout l'objet style plutôt que sur la clé individuelle.\n\nUne fois terminé, mets à jour docs/audit/audit-data.json : passe le champ done de cette entrée (id: \"p2-lightcard-css-var\") à true."
     }
   ],

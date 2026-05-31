@@ -120,7 +120,7 @@ describe('useDashboardConfig', () => {
     expect(result.current.error).toBeInstanceOf(Error);
     expect(result.current.error?.message).toBe('Network error');
     expect(mockAddToast).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Erreur', description: 'Impossible de charger la configuration' }),
+      expect.objectContaining({ title: 'Erreur', description: 'Impossible de charger la configuration' })
     );
   });
 });

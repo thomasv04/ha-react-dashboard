@@ -10,7 +10,9 @@ import { useI18n } from '@/i18n';
 
 /** Context that child widgets can read to know they're inside a GroupCard */
 export const GroupEmbeddedCtx = createContext(false);
-export function useGroupEmbedded() { return useContext(GroupEmbeddedCtx); }
+export function useGroupEmbedded() {
+  return useContext(GroupEmbeddedCtx);
+}
 
 // ── Child renderer ─────────────────────────────────────────────────────────────
 

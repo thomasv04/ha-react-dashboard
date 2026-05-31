@@ -44,7 +44,11 @@ export function ButtonCard() {
     try {
       let serviceData: Record<string, unknown> = {};
       if (config?.serviceData) {
-        try { serviceData = JSON.parse(config.serviceData); } catch { /* ignore invalid JSON */ }
+        try {
+          serviceData = JSON.parse(config.serviceData);
+        } catch {
+          /* ignore invalid JSON */
+        }
       }
       await helpers.callService({
         domain: domain as never,
@@ -60,16 +64,19 @@ export function ButtonCard() {
     }
   }, [helpers, domain, service, config]);
 
-  const handlePress = useCallback((e: React.MouseEvent | React.PointerEvent) => {
-    e.stopPropagation();
-    if (feedback === 'running') return;
-    if (requireConfirm && feedback !== 'confirming') {
-      setFeedback('confirming');
-      return;
-    }
-    setFeedback('idle');
-    callService();
-  }, [feedback, requireConfirm, callService]);
+  const handlePress = useCallback(
+    (e: React.MouseEvent | React.PointerEvent) => {
+      e.stopPropagation();
+      if (feedback === 'running') return;
+      if (requireConfirm && feedback !== 'confirming') {
+        setFeedback('confirming');
+        return;
+      }
+      setFeedback('idle');
+      callService();
+    },
+    [feedback, requireConfirm, callService]
+  );
 
   const cancelConfirm = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -188,10 +195,11 @@ export function ButtonCard() {
               className='w-12 h-12 rounded-2xl flex items-center justify-center border transition-all duration-300'
               style={{ background: bgActive, borderColor: borderActive }}
             >
-              {customIconUrl
-                ? <img src={customIconUrl} alt='' className='w-6 h-6 object-contain' />
-                : <IconComponent size={24} style={{ color }} />
-              }
+              {customIconUrl ? (
+                <img src={customIconUrl} alt='' className='w-6 h-6 object-contain' />
+              ) : (
+                <IconComponent size={24} style={{ color }} />
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -199,19 +207,14 @@ export function ButtonCard() {
         {/* Label */}
         <div className='flex flex-col items-center gap-0.5 px-2'>
           <span
-            className={cn('text-sm font-semibold text-center leading-tight transition-colors duration-300',
-              feedback === 'success' ? 'text-green-400'
-              : feedback === 'error' ? 'text-red-400'
-              : 'text-white/80'
+            className={cn(
+              'text-sm font-semibold text-center leading-tight transition-colors duration-300',
+              feedback === 'success' ? 'text-green-400' : feedback === 'error' ? 'text-red-400' : 'text-white/80'
             )}
           >
-            {feedback === 'success' ? t('widgets.button.done')
-             : feedback === 'error' ? t('widgets.button.error')
-             : label}
+            {feedback === 'success' ? t('widgets.button.done') : feedback === 'error' ? t('widgets.button.error') : label}
           </span>
-          {subtitle && feedback === 'idle' && (
-            <span className='text-[10px] text-white/30 text-center leading-tight'>{subtitle}</span>
-          )}
+          {subtitle && feedback === 'idle' && <span className='text-[10px] text-white/30 text-center leading-tight'>{subtitle}</span>}
         </div>
       </motion.button>
     </motion.div>

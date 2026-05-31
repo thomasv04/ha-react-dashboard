@@ -1,6 +1,9 @@
 ﻿import { useDashboardLayout, useEditMode } from '@/context/DashboardLayoutContext';
 import { useState, useLayoutEffect, useRef, createContext, useContext, memo, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
+import { motion } from 'framer-motion';
+import { staggerGridContainer, staggerGridItem } from '@/lib/motion-variants';
+import { useLowPowerMotion } from '@/hooks/useLowPowerMotion';
 import { placeWidgetAt } from '@/lib/grid-utils';
 import { getMinSize } from '@/config/widget-dispositions';
 import { useGridDragDrop } from '@/hooks/useGridDragDrop';
@@ -10,6 +13,7 @@ import { useMoreInfo } from '@/context/MoreInfoContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { MORE_INFO_WIDGET_TYPES } from '@/components/modals/more-info-registry';
 import { useLongPress } from '@/hooks/useLongPress';
+import { useTheme } from '@/context/ThemeContext';
 
 export type Breakpoint = 'lg' | 'md' | 'sm';
 
@@ -47,6 +51,7 @@ interface GridCtxValue {
   ghostPosition: GhostPosition | null;
   drag: DragHandlers;
   startResize: (widgetId: string, clientX: number, clientY: number) => void;
+  motionAllowed: boolean;
 }
 
 const GridCtx = createContext<GridCtxValue | null>(null);
@@ -66,18 +71,19 @@ export function WidgetIdProvider({ id, children }: { id: string; children: React
   return <WidgetIdCtx.Provider value={id}>{children}</WidgetIdCtx.Provider>;
 }
 
-const ROW_HEIGHT = 80;
-const GAP = 16;
-
 // DashboardGrid - Pure CSS Grid + HTML5 Drag API (a la Tunet)
 // ZERO per-pixel JS during drag. Browser handles ghost image natively.
 
-export function DashboardGrid({ children, readonly }: { children: ReactNode; readonly?: boolean }) {
+export function DashboardGrid({ children, readonly, className }: { children: ReactNode; readonly?: boolean; className?: string }) {
+  const { layoutSettings } = useTheme();
+  const GAP = layoutSettings.gridGap;
+  const ROW_HEIGHT_VAL = layoutSettings.rowHeight;
   const { layout, setLayout } = useDashboardLayout();
   const { isEditMode: ctxEditMode } = useEditMode();
   const isEditMode = ctxEditMode && !readonly;
   const outerRef = useRef<HTMLDivElement>(null);
   const [bp, setBp] = useState<Breakpoint>('lg');
+  const motionAllowed = useLowPowerMotion();
 
   useLayoutEffect(() => {
     const el = outerRef.current;
@@ -121,6 +127,8 @@ export function DashboardGrid({ children, readonly }: { children: ReactNode; rea
     cols,
     containerRef: outerRef,
     onWidgetMove: moveWidgetToCell,
+    gap: GAP,
+    rowHeight: ROW_HEIGHT_VAL,
   });
 
   const maxRow = useMemo(() => widgets.reduce((max, w) => Math.max(max, w.y + w.h), 0), [widgets]);
@@ -150,7 +158,7 @@ export function DashboardGrid({ children, readonly }: { children: ReactNode; rea
         if (!resizeRef.current || !outerRef.current) return;
         const containerRect = outerRef.current.getBoundingClientRect();
         const cellWidth = (containerRect.width - (cols - 1) * GAP) / cols;
-        const cellHeight = ROW_HEIGHT;
+        const cellHeight = ROW_HEIGHT_VAL;
 
         const deltaW = Math.round((moveX - resizeRef.current.startX) / (cellWidth + GAP));
         const deltaH = Math.round((moveY - resizeRef.current.startY) / (cellHeight + GAP));
@@ -192,8 +200,8 @@ export function DashboardGrid({ children, readonly }: { children: ReactNode; rea
   );
 
   const ctxValue = useMemo<GridCtxValue>(
-    () => ({ breakpoint: bp, draggingId, dropTargetId, ghostPosition, drag, startResize }),
-    [bp, draggingId, dropTargetId, ghostPosition, drag, startResize]
+    () => ({ breakpoint: bp, draggingId, dropTargetId, ghostPosition, drag, startResize, motionAllowed }),
+    [bp, draggingId, dropTargetId, ghostPosition, drag, startResize, motionAllowed]
   );
 
   // Extra rows for the grid background
@@ -201,15 +209,18 @@ export function DashboardGrid({ children, readonly }: { children: ReactNode; rea
 
   return (
     <GridCtx.Provider value={ctxValue}>
-      <div
+      <motion.div
         ref={outerRef}
-        className={isEditMode ? 'dashboard-editing' : undefined}
+        variants={motionAllowed ? staggerGridContainer : undefined}
+        initial={motionAllowed ? 'hidden' : false}
+        animate='visible'
+        className={[isEditMode ? 'dashboard-editing' : '', className].filter(Boolean).join(' ') || undefined}
         style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${cols}, 1fr)`,
-          gridAutoRows: `${ROW_HEIGHT}px`,
+          gridAutoRows: `${ROW_HEIGHT_VAL}px`,
           gap: `${GAP}px`,
-          minHeight: maxRow * ROW_HEIGHT + Math.max(0, maxRow - 1) * GAP,
+          minHeight: maxRow * ROW_HEIGHT_VAL + Math.max(0, maxRow - 1) * GAP,
           width: '100%',
           position: 'relative',
         }}
@@ -257,7 +268,7 @@ export function DashboardGrid({ children, readonly }: { children: ReactNode; rea
             }}
           />
         )}
-      </div>
+      </motion.div>
     </GridCtx.Provider>
   );
 }
@@ -283,12 +294,13 @@ const MemoChildren = memo(function MemoChildren({
   return (
     <div
       ref={ref}
-      className={`h-full overflow-hidden rounded-2xl${isEditMode ? ' pointer-events-none select-none' : ''}${onClick && !isEditMode ? ' cursor-pointer' : ''}`}
+      className={`h-full overflow-hidden${isEditMode ? ' pointer-events-none select-none' : ''}${onClick && !isEditMode ? ' cursor-pointer' : ''}`}
       onClick={() => {
         if (onClick && ref.current) onClick(ref.current.getBoundingClientRect());
       }}
       {...(onLongPress && !isEditMode ? longPressHandlers : {})}
       style={{
+        borderRadius: 'var(--dash-card-radius, 24px)',
         opacity: dimmed ? 0 : 1,
         transition: 'opacity 0.25s ease',
       }}
@@ -304,7 +316,7 @@ const MemoChildren = memo(function MemoChildren({
 export function GridItem({ id, children, readonly }: { id: string; children: ReactNode; readonly?: boolean }) {
   const { layout } = useDashboardLayout();
   const { isEditMode: ctxEditMode } = useEditMode();
-  const { breakpoint, draggingId, dropTargetId, drag, startResize } = useGridCtx();
+  const { breakpoint, draggingId, dropTargetId, drag, startResize, motionAllowed } = useGridCtx();
   const { openMoreInfo, state: moreInfoState } = useMoreInfo();
   const { getWidgetConfig } = useWidgetConfig();
   const isEditMode = ctxEditMode && !readonly;
@@ -319,6 +331,25 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
   const isWidgetModalOpen = !isEditMode && moreInfoState?.widgetId === id;
   const isStatic = widget.static ?? false;
   const canDrag = isEditMode && !isStatic;
+
+  const handleMoreInfoClick = useCallback(
+    (rect: DOMRect) => {
+      const config = getWidgetConfig(id);
+      const cfgRecord = config as Record<string, unknown> | undefined;
+      const entityId =
+        (cfgRecord?.entityId as string) ||
+        Object.values(cfgRecord ?? {}).find((v): v is string => typeof v === 'string' && v.includes('.')) ||
+        '';
+      openMoreInfo(id, widget.type, entityId, rect);
+    },
+    [id, widget.type, getWidgetConfig, openMoreInfo]
+  );
+
+  const memoOnClick = useMemo(
+    () => (!isEditMode && hasMoreInfo ? handleMoreInfoClick : undefined),
+    [isEditMode, hasMoreInfo, handleMoreInfoClick]
+  );
+  const memoOnLongPress = memoOnClick;
 
   const gridStyle: React.CSSProperties = {
     gridColumnStart: widget.x + 1,
@@ -337,7 +368,8 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
   };
 
   return (
-    <div
+    <motion.div
+      variants={motionAllowed ? staggerGridItem : undefined}
       className='relative h-full'
       style={gridStyle}
       data-widget-id={id}
@@ -375,36 +407,7 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
     >
       <WidgetIdCtx.Provider value={id}>
         <WidgetErrorBoundary label={label}>
-          <MemoChildren
-            isEditMode={isEditMode}
-            dimmed={isWidgetModalOpen}
-            onClick={
-              !isEditMode && hasMoreInfo
-                ? rect => {
-                    const config = getWidgetConfig(id);
-                    const cfgRecord = config as Record<string, unknown> | undefined;
-                    const entityId =
-                      (cfgRecord?.entityId as string) ||
-                      Object.values(cfgRecord ?? {}).find((v): v is string => typeof v === 'string' && v.includes('.')) ||
-                      '';
-                    openMoreInfo(id, widget.type, entityId, rect);
-                  }
-                : undefined
-            }
-            onLongPress={
-              !isEditMode && hasMoreInfo
-                ? rect => {
-                    const config = getWidgetConfig(id);
-                    const cfgRecord = config as Record<string, unknown> | undefined;
-                    const entityId =
-                      (cfgRecord?.entityId as string) ||
-                      Object.values(cfgRecord ?? {}).find((v): v is string => typeof v === 'string' && v.includes('.')) ||
-                      '';
-                    openMoreInfo(id, widget.type, entityId, rect);
-                  }
-                : undefined
-            }
-          >
+          <MemoChildren isEditMode={isEditMode} dimmed={isWidgetModalOpen} onClick={memoOnClick} onLongPress={memoOnLongPress}>
             {children}
           </MemoChildren>
         </WidgetErrorBoundary>
@@ -418,6 +421,6 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
           onResizeStart={(clientX, clientY) => startResize(id, clientX, clientY)}
         />
       )}
-    </div>
+    </motion.div>
   );
 }

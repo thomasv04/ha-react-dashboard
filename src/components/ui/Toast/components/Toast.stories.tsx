@@ -192,6 +192,8 @@ const SOUND_OPTIONS: { value: SoundPreset; label: string; description: string }[
   { value: 'alert', label: 'Alerte', description: 'Triple bip urgent' },
   { value: 'success', label: 'Succès', description: 'Montée harmonique' },
   { value: 'warning', label: 'Avertissement', description: 'Tonalité basse descendante' },
+  { value: 'error', label: 'Erreur', description: 'Buzz dissonant descendant' },
+  { value: 'chime', label: 'Carillon', description: 'Sonnette plaisante' },
 ];
 
 function SoundTester() {

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DURATION_HERO } from '@/lib/motion-tokens';
 
 interface RippleItem {
   id: number;
@@ -27,7 +28,11 @@ export function useRipple() {
   return { ripples, trigger };
 }
 
-export function RippleLayer({ ripples, color = 'rgba(255,255,255,0.25)', duration = 0.5 }: RippleProps & { ripples: RippleItem[] }) {
+export function RippleLayer({
+  ripples,
+  color = 'rgba(255,255,255,0.25)',
+  duration = DURATION_HERO,
+}: RippleProps & { ripples: RippleItem[] }) {
   return (
     <AnimatePresence>
       {ripples.map(r => (

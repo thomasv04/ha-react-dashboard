@@ -42,7 +42,7 @@ export function useEntities<K extends string>(entityIds: K[]): PickedEntities<K>
   const cacheRef = useRef<PickedEntities<K> | null>(null);
 
   return useHass(
-    (s) => {
+    s => {
       const prev = cacheRef.current;
       let changed = prev === null;
 
@@ -71,10 +71,8 @@ export function useEntitiesByDomain(domain: string): HassEntity[] {
   const cacheRef = useRef<HassEntity[] | null>(null);
 
   return useHass(
-    (s) => {
-      const next = Object.values(s.entities ?? {}).filter(
-        e => e.entity_id.startsWith(`${domain}.`)
-      );
+    s => {
+      const next = Object.values(s.entities ?? {}).filter(e => e.entity_id.startsWith(`${domain}.`));
       const prev = cacheRef.current;
       if (
         prev !== null &&

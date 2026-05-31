@@ -1,12 +1,23 @@
 import { motion } from 'framer-motion';
+import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { Flame, Minus, Plus } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
+import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useWidgetId } from '@/components/layout/DashboardGrid';
+import type { PelletCardConfig } from '@/types/widget-configs';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
+import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 
 export function PelletCard() {
-  const pellet = useSafeEntity('climate.living_room');
+  const { t } = useI18n();
+  const widgetId = useWidgetId();
+  const config = useWidgetConfig<PelletCardConfig>(widgetId);
+  const entityId = config?.entityId ?? 'climate.pellet_stove';
+  const pellet = useSafeEntity(entityId);
   const { helpers } = useHass();
+  const playFeedback = useSoundFeedback();
   if (!pellet) return null;
 
   const currentTemp = pellet.attributes.current_temperature as number | undefined;
@@ -19,31 +30,33 @@ export function PelletCard() {
     helpers.callService({
       domain: 'climate',
       service: 'set_temperature',
-      target: { entity_id: 'climate.living_room' },
+      target: { entity_id: entityId },
       serviceData: { temperature: targetTemp + delta },
     });
+    playFeedback(delta > 0 ? 'temperature_up' : 'temperature_down');
   }
 
   function toggle() {
     helpers.callService({
       domain: 'climate',
       service: isOn ? 'turn_off' : 'turn_on',
-      target: { entity_id: 'climate.living_room' },
+      target: { entity_id: entityId },
     });
+    playFeedback(isOn ? 'toggle_off' : 'toggle_on');
   }
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.25 }}
+      transition={{ duration: DURATION_ENTRANCE, delay: 0.25 }}
       className='gc rounded-3xl p-5 h-full'
     >
       {/* Header */}
       <div className='flex items-center justify-between mb-4'>
         <div className='flex items-center gap-2'>
           <Flame size={18} className={isOn ? 'text-orange-400' : 'text-zinc-600'} />
-          <span className='text-white font-semibold text-sm'>Feu à pellet</span>
+          <span className='text-white font-semibold text-sm'>{t('widgets.pellet.title')}</span>
         </div>
         <motion.button
           whileHover={{ scale: 1.05 }}

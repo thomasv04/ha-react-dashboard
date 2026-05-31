@@ -21,11 +21,11 @@ interface Blob {
 }
 
 const PALETTES: Record<string, string[]> = {
-  default: ['rgba(239,68,68,', 'rgba(251,146,60,', 'rgba(236,72,153,', 'rgba(234,179,8,',  'rgba(249,115,22,'],
-  aurora:  ['rgba(99,102,241,', 'rgba(56,189,248,', 'rgba(167,139,250,','rgba(20,184,166,', 'rgba(139,92,246,'],
-  cool:    ['rgba(14,165,233,', 'rgba(56,189,248,', 'rgba(99,102,241,', 'rgba(6,182,212,',  'rgba(96,165,250,'],
-  nature:  ['rgba(34,197,94,',  'rgba(16,185,129,', 'rgba(20,184,166,', 'rgba(101,163,13,', 'rgba(74,222,128,'],
-  mono:    ['rgba(200,200,200,','rgba(160,160,160,','rgba(220,220,220,','rgba(130,130,130,','rgba(180,180,180,'],
+  default: ['rgba(239,68,68,', 'rgba(251,146,60,', 'rgba(236,72,153,', 'rgba(234,179,8,', 'rgba(249,115,22,'],
+  aurora: ['rgba(99,102,241,', 'rgba(56,189,248,', 'rgba(167,139,250,', 'rgba(20,184,166,', 'rgba(139,92,246,'],
+  cool: ['rgba(14,165,233,', 'rgba(56,189,248,', 'rgba(99,102,241,', 'rgba(6,182,212,', 'rgba(96,165,250,'],
+  nature: ['rgba(34,197,94,', 'rgba(16,185,129,', 'rgba(20,184,166,', 'rgba(101,163,13,', 'rgba(74,222,128,'],
+  mono: ['rgba(200,200,200,', 'rgba(160,160,160,', 'rgba(220,220,220,', 'rgba(130,130,130,', 'rgba(180,180,180,'],
 };
 
 interface LavaLampBackgroundProps {
@@ -74,7 +74,7 @@ export function LavaLampBackground({ config }: LavaLampBackgroundProps) {
     const colors = Array.from({ length: blobCount }, (_, i) => palette[i % palette.length]);
 
     const initBlobs = () => {
-      blobs = colors.map((color) => ({
+      blobs = colors.map(color => ({
         nx: Math.random(),
         ny: Math.random(),
         vx: (Math.random() - 0.5) * 0.15 * speedMult,
@@ -165,10 +165,5 @@ export function LavaLampBackground({ config }: LavaLampBackgroundProps) {
     };
   }, [motionAllowed, config]);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      className='fixed inset-0 -z-10 pointer-events-none'
-    />
-  );
+  return <canvas ref={canvasRef} className='fixed inset-0 -z-10 pointer-events-none' />;
 }

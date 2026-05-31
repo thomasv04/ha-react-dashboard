@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import type { WidgetConfig, WidgetConfigs } from '@/types/widget-configs';
 import { DEFAULT_WIDGET_CONFIGS } from '@/types/widget-configs';
 import { usePages } from '@/context/PageContext';
@@ -99,22 +99,30 @@ export function WidgetConfigProvider({ children, initialAllWidgetConfigs }: Widg
     setPreviewConfigEntry(null);
   }, []);
 
-  return (
-    <WidgetConfigContext.Provider
-      value={{
-        widgetConfigs,
-        getWidgetConfig,
-        updateWidgetConfig,
-        setPreviewConfig,
-        clearPreviewConfig,
-        editingWidgetId,
-        setEditingWidgetId,
-        allWidgetConfigsByPage: allWidgetConfigs,
-      }}
-    >
-      {children}
-    </WidgetConfigContext.Provider>
+  const value = useMemo(
+    () => ({
+      widgetConfigs,
+      getWidgetConfig,
+      updateWidgetConfig,
+      setPreviewConfig,
+      clearPreviewConfig,
+      editingWidgetId,
+      setEditingWidgetId,
+      allWidgetConfigsByPage: allWidgetConfigs,
+    }),
+    [
+      widgetConfigs,
+      getWidgetConfig,
+      updateWidgetConfig,
+      setPreviewConfig,
+      clearPreviewConfig,
+      editingWidgetId,
+      setEditingWidgetId,
+      allWidgetConfigs,
+    ]
   );
+
+  return <WidgetConfigContext.Provider value={value}>{children}</WidgetConfigContext.Provider>;
 }
 
 export function useWidgetConfig() {

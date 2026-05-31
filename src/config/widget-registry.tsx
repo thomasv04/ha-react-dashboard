@@ -26,9 +26,7 @@ import { PelletCard } from '@/components/cards/PelletCard/PelletCard';
  * Wraps a dynamic import of a named export into a lazy + memo component
  * with a Suspense boundary. Used for code-splitting widget chunks.
  */
-function lazyMemo<T extends ComponentType<any>>(
-  factory: () => Promise<{ default: T }>,
-) {
+function lazyMemo<T extends ComponentType<any>>(factory: () => Promise<{ default: T }>) {
   const Lazy = lazy(factory);
   return memo(function LazyWidget(props: React.ComponentProps<T>) {
     return (
@@ -42,7 +40,8 @@ function lazyMemo<T extends ComponentType<any>>(
 /** Helper: wrap a named export into { default } for React.lazy */
 const named =
   <T extends ComponentType<any>>(pick: (m: any) => T) =>
-  (mod: any) => ({ default: pick(mod) }) as { default: T };
+  (mod: any) =>
+    ({ default: pick(mod) }) as { default: T };
 
 /** Registry used for live previews in AddWidgetModal and WidgetEditModal */
 export const PREVIEW_COMPONENTS: Partial<Record<GridWidget['type'], React.ComponentType>> = {

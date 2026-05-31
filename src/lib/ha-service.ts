@@ -6,6 +6,9 @@ export function callHAService(
   serviceData?: Record<string, unknown>
 ) {
   (helpers.callService as (args: unknown) => void)({
-    domain, service, target, serviceData,
+    domain,
+    service,
+    target,
+    serviceData,
   });
 }

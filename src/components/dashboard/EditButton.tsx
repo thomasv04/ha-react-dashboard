@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DURATION_FAST } from '@/lib/motion-tokens';
 import { PencilLine, Check, X, CloudUpload, Plus, Loader2 } from 'lucide-react';
 import { useUser } from '@hakit/core';
 import { useDashboardLayout, useEditMode } from '@/context/DashboardLayoutContext';
@@ -9,8 +10,10 @@ import { useWallPanel } from '@/context/WallPanelContext';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 import { AddWidgetModal } from '@/components/layout/AddWidgetModal';
+import { useI18n } from '@/i18n';
 
 export function EditButton() {
+  const { t } = useI18n();
   const user = useUser();
   const { isEditMode, setEditMode } = useEditMode();
   const { saveLayout, allLayouts } = useDashboardLayout();
@@ -52,7 +55,7 @@ export function EditButton() {
               initial={{ opacity: 0, x: 20, scale: 0.9 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 20, scale: 0.9 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: DURATION_FAST }}
               className='flex items-center gap-2'
             >
               {/* Bouton Ajouter */}
@@ -61,7 +64,7 @@ export function EditButton() {
                 className='flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 text-blue-300 hover:text-blue-100 text-sm font-medium transition-colors backdrop-blur-sm'
               >
                 <Plus size={15} />
-                Ajouter
+                {t('common.add')}
               </button>
 
               {/* Bouton Sauvegarder */}
@@ -71,14 +74,14 @@ export function EditButton() {
                 className='flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 text-green-300 hover:text-green-100 text-sm font-medium transition-colors backdrop-blur-sm disabled:opacity-50'
               >
                 {isSaving ? <Loader2 size={15} className='animate-spin' /> : <CloudUpload size={15} />}
-                {isSaving ? 'Sauvegarde...' : 'Sauvegarder'}
+                {isSaving ? t('dashboard.saving') : t('common.save')}
               </button>
 
               {/* Bouton Annuler */}
               <button
                 onClick={() => setEditMode(false)}
                 className='p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white/60 hover:text-white transition-colors backdrop-blur-sm'
-                title='Annuler'
+                title={t('dashboard.cancelTooltip')}
               >
                 <X size={16} />
               </button>
@@ -90,7 +93,7 @@ export function EditButton() {
         <motion.button
           onClick={() => setEditMode(!isEditMode)}
           whileTap={{ scale: 0.92 }}
-          title={isEditMode ? 'Quitter le mode édition' : 'Modifier le dashboard'}
+          title={isEditMode ? t('dashboard.editTooltipExit') : t('dashboard.editTooltipEnter')}
           className={`p-2.5 rounded-xl border transition-colors backdrop-blur-sm ${
             isEditMode
               ? 'bg-purple-500/30 border-purple-500/50 text-purple-200'

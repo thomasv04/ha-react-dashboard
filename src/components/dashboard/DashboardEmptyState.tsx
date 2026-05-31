@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DURATION_HERO } from '@/lib/motion-tokens';
 import { Plus } from 'lucide-react';
 import { useUser } from '@hakit/core';
 import { useEditMode } from '@/context/DashboardLayoutContext';
@@ -90,7 +91,7 @@ export function DashboardEmptyState() {
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
+        transition={{ duration: DURATION_HERO, ease: 'easeOut' }}
         className='flex flex-col items-center justify-center min-h-[calc(100svh-14rem)] px-4 text-center'
       >
         <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>

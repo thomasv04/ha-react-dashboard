@@ -14,10 +14,7 @@ function getOrCreateDeviceId(): string {
   return id;
 }
 
-export function useSettingsSync<T extends object>(
-  settings: T,
-  onRemoteUpdate: (settings: T) => void
-) {
+export function useSettingsSync<T extends object>(settings: T, onRemoteUpdate: (settings: T) => void) {
   const deviceId = useRef(getOrCreateDeviceId());
   const lastRevisionRef = useRef<number>(0);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -41,7 +38,7 @@ export function useSettingsSync<T extends object>(
         }),
       });
       if (res.ok) {
-        const { revision } = await res.json() as { revision: number };
+        const { revision } = (await res.json()) as { revision: number };
         lastRevisionRef.current = revision;
         lastPushedRef.current = serialized;
       }
@@ -54,7 +51,7 @@ export function useSettingsSync<T extends object>(
     try {
       const res = await fetch(apiUrl(`/api/settings/current?device_id=${deviceId.current}`));
       if (!res.ok) return;
-      const json = await res.json() as { revision?: number; data?: T };
+      const json = (await res.json()) as { revision?: number; data?: T };
       const { revision, data } = json;
       if (!data || revision === undefined) return;
       if (revision > lastRevisionRef.current) {

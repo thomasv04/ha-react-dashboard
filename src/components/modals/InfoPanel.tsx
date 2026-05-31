@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
+import { useI18n } from '@/i18n';
 
 const HISTORY_OPTIONS = [6, 12, 24, 48, 72];
 const EXCLUDED_ATTRIBUTES = ['friendly_name', 'unit_of_measurement', 'entity_picture', 'icon'];
@@ -29,6 +30,7 @@ function formatAttrValue(val: unknown): string {
 }
 
 export function InfoPanel({ entityId, historyHours, onHistoryHoursChange, excludeAttributes = [], children }: InfoPanelProps) {
+  const { t } = useI18n();
   const entity = useSafeEntity(entityId);
   // Access raw entity for last_changed / last_updated (top-level props, not in attributes)
   const rawEntity = useHass(s => s.entities?.[entityId] ?? null) as { last_changed?: string; last_updated?: string } | null;
@@ -44,16 +46,16 @@ export function InfoPanel({ entityId, historyHours, onHistoryHoursChange, exclud
     <div className='space-y-6'>
       {/* Timeline */}
       <div>
-        <h3 className='text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3'>Timeline</h3>
+        <h3 className='text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3'>{t('layout.infoPanel.timeline')}</h3>
         <div className='relative pl-4 space-y-3 border-l border-white/10'>
           <div className='relative'>
             <div className='absolute -left-[calc(1rem+3px)] top-1.5 w-1.5 h-1.5 rounded-full bg-blue-400' />
-            <p className='text-xs text-white/60'>Dernier changement</p>
+            <p className='text-xs text-white/60'>{t('layout.infoPanel.lastChanged')}</p>
             <p className='text-xs text-white/90 font-medium'>{formatDate(lastChanged)}</p>
           </div>
           <div className='relative'>
             <div className='absolute -left-[calc(1rem+3px)] top-1.5 w-1.5 h-1.5 rounded-full bg-white/30' />
-            <p className='text-xs text-white/60'>Dernière mise à jour</p>
+            <p className='text-xs text-white/60'>{t('layout.infoPanel.lastUpdated')}</p>
             <p className='text-xs text-white/90 font-medium'>{formatDate(lastUpdated)}</p>
           </div>
         </div>
@@ -61,7 +63,7 @@ export function InfoPanel({ entityId, historyHours, onHistoryHoursChange, exclud
 
       {/* History hours selector */}
       <div>
-        <h3 className='text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3'>Historique (Heures)</h3>
+        <h3 className='text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3'>{t('layout.infoPanel.history')}</h3>
         <div className='flex gap-1.5'>
           {HISTORY_OPTIONS.map(h => (
             <button
@@ -83,7 +85,7 @@ export function InfoPanel({ entityId, historyHours, onHistoryHoursChange, exclud
       {/* Attributes */}
       {attrs.length > 0 && (
         <div>
-          <h3 className='text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3'>Attributs</h3>
+          <h3 className='text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3'>{t('layout.infoPanel.attributes')}</h3>
           <div className='space-y-2'>
             {attrs.map(([key, val]) => (
               <div key={key} className='flex items-start justify-between gap-2 text-xs'>

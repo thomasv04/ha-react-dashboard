@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { useHass } from '@hakit/core';
+import { useEntities } from '@/hooks/useEntities';
 import { CameraFeed } from '@/components/ui/CameraFeed/components/CameraFeed';
 import type { StreamProtocol } from '@/components/ui/CameraFeed/components/CameraFeed';
 import { cn } from '@/lib/utils';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { CameraCardConfig } from '@/types/widget-configs';
+import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 
 interface Cam {
   entityId: string;
@@ -26,11 +29,13 @@ export function CameraCard() {
   const config = getWidgetConfig<CameraCardConfig>(widgetId || 'camera');
   const cameras: Cam[] = config?.cameras?.length ? config.cameras : DEFAULT_CAMERAS;
   const selectorEntity = config?.selectorEntity ?? 'input_select.camera_selector';
+  const streamMode = config?.streamMode ?? 'mjpeg';
 
   const { helpers } = useHass();
-  const entities = useHass(s => s.entities);
+  const entities = useEntities([selectorEntity]);
+  const playFeedback = useSoundFeedback();
 
-  const haSelected = entities?.[selectorEntity]?.state as string | undefined;
+  const haSelected = entities[selectorEntity]?.state as string | undefined;
   const [localSelected, setLocalSelected] = useState<string>(cameras[0].name);
   const [protocol, setProtocol] = useState<StreamProtocol>(null);
   const selected = haSelected ?? localSelected;
@@ -44,6 +49,7 @@ export function CameraCard() {
       target: { entity_id: selectorEntity },
       serviceData: { option: name },
     });
+    playFeedback('click');
   }
 
   const current = cameras.find(c => c.name === selected) ?? cameras[0];
@@ -52,12 +58,18 @@ export function CameraCard() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: DURATION_ENTRANCE }}
       className='gc rounded-3xl p-3 flex gap-3 h-full'
     >
       {/* ── Single camera feed ── */}
       <div className='flex-1 min-w-0 relative rounded-2xl overflow-hidden bg-black/50'>
-        <CameraFeed key={current.entityId} entityId={current.entityId} className='w-full h-full' onProtocol={setProtocol} />
+        <CameraFeed
+          key={current.entityId}
+          entityId={current.entityId}
+          streamMode={streamMode}
+          className='w-full h-full'
+          onProtocol={setProtocol}
+        />
 
         {/* Camera name overlay */}
         <div className='absolute bottom-2 left-0 right-0 flex justify-center gap-1.5 pointer-events-none'>
@@ -87,7 +99,10 @@ export function CameraCard() {
               transition={{ duration: 0.25, delay: i * 0.05 }}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.96 }}
-              onClick={() => select(cam.name)}
+              onClick={e => {
+                e.stopPropagation();
+                select(cam.name);
+              }}
               className={cn(
                 'w-full text-center px-3 py-2.5 rounded-2xl text-sm font-medium transition-all duration-200',
                 isActive

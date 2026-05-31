@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { Blinds, Lightbulb, Cpu, Flower2, Bell, ShieldHalf, Camera, type LucideIcon } from 'lucide-react';
 import { usePanel, type PanelId } from '@/context/PanelContext';
 import { cn } from '@/lib/utils';
@@ -91,7 +92,7 @@ export function ShortcutsCard() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.1 }}
+      transition={{ duration: DURATION_ENTRANCE, delay: 0.1 }}
       className='gc rounded-3xl p-5 h-full'
     >
       <div className='text-white/40 text-xs uppercase tracking-wider mb-4 font-medium'>Raccourcis</div>
@@ -126,7 +127,7 @@ export function ShortcutsCard() {
                 className={cn('w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/10')}
                 whileHover={{ rotate: [0, -8, 8, 0], scale: 1.1 }}
                 whileTap={{ scale: 0.9, rotate: 0 }}
-                transition={{ duration: 0.4 }}
+                transition={{ duration: DURATION_ENTRANCE }}
               >
                 {s.customIconUrl ? (
                   <img src={s.customIconUrl} alt='' className='w-[18px] h-[18px] object-contain' />

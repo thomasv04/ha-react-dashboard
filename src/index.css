@@ -54,6 +54,10 @@
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
+  /* Layout defaults — overridden by ThemeContext */
+  --dash-grid-gap: 16px;
+  --dash-card-radius: 24px;
+  --dash-row-height: 80px;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -192,6 +196,7 @@
   position: relative;
   /* Use theme CSS variables when set, fall back to original glass effect */
   background: var(--dash-bg-card, rgba(6, 6, 24, 0.72));
+  border-radius: var(--dash-card-radius, 24px);
   -webkit-backdrop-filter: blur(var(--dash-glass-blur, 30px)) saturate(160%) brightness(80%);
   backdrop-filter: blur(var(--dash-glass-blur, 30px)) saturate(160%) brightness(80%);
   border-color: var(--dash-border, transparent);
@@ -467,4 +472,42 @@
   box-shadow:
     4px 4px 14px rgba(0, 0, 0, 0.45),
     inset 1px 1px 2px rgba(255, 255, 255, 0.06) !important;
+}
+
+/* ── Container queries for responsive cards ──────────────────────────────── */
+
+/* Cards use container queries to adapt to their own width */
+.grid-card {
+  container-type: inline-size;
+  container-name: card;
+}
+
+@container card (max-width: 200px) {
+  .card-title { font-size: 0.7rem; }
+  .card-value { font-size: 1.1rem; }
+  .card-subtitle { display: none; }
+}
+
+@container card (max-width: 300px) {
+  .card-controls {
+    flex-direction: column;
+  }
+}
+
+@container card (min-width: 300px) {
+  .card-controls {
+    flex-direction: row;
+  }
+}
+
+/* ── Mobile & compact layout modes ───────────────────────────────────────── */
+
+/* Mobile layout (< 640px) — tighter padding */
+.mobile-layout .gc {
+  padding: 0.75rem;
+}
+
+/* Compact layout (640–768px) — slightly tighter */
+.compact-layout .gc {
+  padding: 0.875rem;
 }

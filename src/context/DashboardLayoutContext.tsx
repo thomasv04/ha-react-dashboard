@@ -7,6 +7,8 @@ import { usePages, type Page } from '@/context/PageContext';
 import type { WallPanelConfig } from '@/types/wallpanel';
 import type { CustomPanel } from '@/types/custom-panel';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { SIZE_PRESETS as _SIZE_PRESETS } from '@/config/size-presets';
+export const SIZE_PRESETS = _SIZE_PRESETS;
 
 /**
  * Configuration d'un widget sur la grille
@@ -19,7 +21,6 @@ export interface GridWidget {
     | 'camera'
     | 'weather'
     | 'thermostat'
-    | 'rooms'
     | 'shortcuts'
     | 'tempo'
     | 'energy'
@@ -31,7 +32,13 @@ export interface GridWidget {
     | 'cover'
     | 'template'
     | 'automation'
-    | 'media_player';
+    | 'button'
+    | 'group'
+    | 'room'
+    | 'media_player'
+    | 'alarm'
+    | 'vacuum'
+    | 'pellet';
   x: number;
   y: number;
   w: number;
@@ -54,7 +61,6 @@ export const WIDGET_CATALOG: WidgetCatalogEntry[] = [
   { type: 'camera', label: 'Caméra', lg: { w: 6, h: 3 }, md: { w: 8, h: 3 }, sm: { w: 4, h: 2 } },
   { type: 'weather', label: 'Météo', lg: { w: 3, h: 3 }, md: { w: 4, h: 2 }, sm: { w: 4, h: 2 } },
   { type: 'thermostat', label: 'Thermostat', lg: { w: 3, h: 3 }, md: { w: 4, h: 2 }, sm: { w: 4, h: 2 } },
-  { type: 'rooms', label: 'Pièces', lg: { w: 4, h: 5 }, md: { w: 8, h: 4 }, sm: { w: 4, h: 4 } },
   { type: 'shortcuts', label: 'Raccourcis', lg: { w: 4, h: 3 }, md: { w: 8, h: 3 }, sm: { w: 4, h: 3 } },
   { type: 'tempo', label: 'Tempo EDF', lg: { w: 4, h: 2 }, md: { w: 8, h: 2 }, sm: { w: 4, h: 2 } },
   { type: 'energy', label: 'Énergie', lg: { w: 4, h: 2 }, md: { w: 8, h: 2 }, sm: { w: 4, h: 2 } },
@@ -64,7 +70,15 @@ export const WIDGET_CATALOG: WidgetCatalogEntry[] = [
   { type: 'cover', label: 'Volet', lg: { w: 2, h: 3 }, md: { w: 2, h: 3 }, sm: { w: 2, h: 3 } },
   { type: 'template', label: 'Template', lg: { w: 3, h: 1 }, md: { w: 4, h: 1 }, sm: { w: 4, h: 1 } },
   { type: 'automation', label: 'Automatisation', lg: { w: 3, h: 1 }, md: { w: 4, h: 1 }, sm: { w: 4, h: 1 } },
+  { type: 'button', label: 'Bouton', lg: { w: 2, h: 2 }, md: { w: 2, h: 2 }, sm: { w: 2, h: 2 } },
+  { type: 'group', label: 'Groupe', lg: { w: 4, h: 4 }, md: { w: 6, h: 4 }, sm: { w: 4, h: 4 } },
+  { type: 'room', label: 'Pièce', lg: { w: 2, h: 2 }, md: { w: 3, h: 2 }, sm: { w: 4, h: 2 } },
   { type: 'media_player', label: 'Lecteur média', lg: { w: 4, h: 3 }, md: { w: 4, h: 3 }, sm: { w: 4, h: 3 } },
+  { type: 'alarm', label: 'Alarme', lg: { w: 3, h: 3 }, md: { w: 4, h: 3 }, sm: { w: 4, h: 3 } },
+  { type: 'vacuum', label: 'Aspirateur', lg: { w: 3, h: 4 }, md: { w: 4, h: 4 }, sm: { w: 4, h: 4 } },
+  { type: 'pellet', label: 'Poêle à pellets', lg: { w: 2, h: 3 }, md: { w: 3, h: 3 }, sm: { w: 4, h: 3 } },
+  { type: 'activity', label: "Barre d'activité", lg: { w: 11, h: 1 }, md: { w: 7, h: 1 }, sm: { w: 3, h: 1 } },
+  { type: 'greeting', label: 'Horloge', lg: { w: 1, h: 1 }, md: { w: 1, h: 1 }, sm: { w: 1, h: 1 } },
 ];
 
 /** 3 presets de taille (compact/normal/large) par type de widget et par breakpoint */
@@ -75,281 +89,6 @@ export interface SizePreset {
   h: number;
 }
 export type WidgetSizePresets = Record<GridWidget['type'], Record<'lg' | 'md' | 'sm', SizePreset[]>>;
-
-export const SIZE_PRESETS: WidgetSizePresets = {
-  camera: {
-    lg: [
-      { name: 'Compact', w: 4, h: 2 },
-      { name: 'Normal', w: 6, h: 3 },
-      { name: 'Large', w: 8, h: 4 },
-    ],
-    md: [
-      { name: 'Compact', w: 4, h: 2 },
-      { name: 'Normal', w: 8, h: 3 },
-      { name: 'Large', w: 8, h: 4 },
-    ],
-    sm: [
-      { name: 'Compact', w: 4, h: 1 },
-      { name: 'Normal', w: 4, h: 2 },
-      { name: 'Large', w: 4, h: 3 },
-    ],
-  },
-  weather: {
-    lg: [
-      { name: 'Compact', w: 2, h: 2 },
-      { name: 'Normal', w: 3, h: 3 },
-      { name: 'Large', w: 4, h: 3 },
-    ],
-    md: [
-      { name: 'Compact', w: 4, h: 1 },
-      { name: 'Normal', w: 4, h: 2 },
-      { name: 'Large', w: 8, h: 2 },
-    ],
-    sm: [
-      { name: 'Compact', w: 4, h: 1 },
-      { name: 'Normal', w: 4, h: 2 },
-      { name: 'Large', w: 4, h: 3 },
-    ],
-  },
-  thermostat: {
-    lg: [
-      { name: 'Compact', w: 2, h: 2 },
-      { name: 'Normal', w: 3, h: 3 },
-      { name: 'Large', w: 4, h: 3 },
-    ],
-    md: [
-      { name: 'Compact', w: 4, h: 1 },
-      { name: 'Normal', w: 4, h: 2 },
-      { name: 'Large', w: 8, h: 3 },
-    ],
-    sm: [
-      { name: 'Compact', w: 4, h: 1 },
-      { name: 'Normal', w: 4, h: 2 },
-      { name: 'Large', w: 4, h: 3 },
-    ],
-  },
-  rooms: {
-    lg: [
-      { name: 'Compact', w: 3, h: 3 },
-      { name: 'Normal', w: 4, h: 5 },
-      { name: 'Large', w: 6, h: 6 },
-    ],
-    md: [
-      { name: 'Compact', w: 4, h: 3 },
-      { name: 'Normal', w: 8, h: 4 },
-      { name: 'Large', w: 8, h: 5 },
-    ],
-    sm: [
-      { name: 'Compact', w: 4, h: 2 },
-      { name: 'Normal', w: 4, h: 4 },
-      { name: 'Large', w: 4, h: 5 },
-    ],
-  },
-  shortcuts: {
-    lg: [
-      { name: 'Compact', w: 3, h: 2 },
-      { name: 'Normal', w: 4, h: 3 },
-      { name: 'Large', w: 6, h: 4 },
-    ],
-    md: [
-      { name: 'Compact', w: 4, h: 2 },
-      { name: 'Normal', w: 8, h: 3 },
-      { name: 'Large', w: 8, h: 4 },
-    ],
-    sm: [
-      { name: 'Compact', w: 4, h: 2 },
-      { name: 'Normal', w: 4, h: 3 },
-      { name: 'Large', w: 4, h: 4 },
-    ],
-  },
-  tempo: {
-    lg: [
-      { name: 'Compact', w: 3, h: 1 },
-      { name: 'Normal', w: 4, h: 2 },
-      { name: 'Large', w: 6, h: 3 },
-    ],
-    md: [
-      { name: 'Compact', w: 4, h: 1 },
-      { name: 'Normal', w: 8, h: 2 },
-      { name: 'Large', w: 8, h: 3 },
-    ],
-    sm: [
-      { name: 'Compact', w: 4, h: 1 },
-      { name: 'Normal', w: 4, h: 2 },
-      { name: 'Large', w: 4, h: 3 },
-    ],
-  },
-  energy: {
-    lg: [
-      { name: 'Compact', w: 3, h: 1 },
-      { name: 'Normal', w: 4, h: 2 },
-      { name: 'Large', w: 6, h: 3 },
-    ],
-    md: [
-      { name: 'Compact', w: 4, h: 1 },
-      { name: 'Normal', w: 8, h: 2 },
-      { name: 'Large', w: 8, h: 3 },
-    ],
-    sm: [
-      { name: 'Compact', w: 4, h: 1 },
-      { name: 'Normal', w: 4, h: 2 },
-      { name: 'Large', w: 4, h: 3 },
-    ],
-  },
-  activity: {
-    lg: [
-      { name: 'Normal', w: 11, h: 1 },
-      { name: 'Normal', w: 11, h: 1 },
-      { name: 'Normal', w: 11, h: 1 },
-    ],
-    md: [
-      { name: 'Normal', w: 7, h: 1 },
-      { name: 'Normal', w: 7, h: 1 },
-      { name: 'Normal', w: 7, h: 1 },
-    ],
-    sm: [
-      { name: 'Normal', w: 3, h: 1 },
-      { name: 'Normal', w: 3, h: 1 },
-      { name: 'Normal', w: 3, h: 1 },
-    ],
-  },
-  greeting: {
-    lg: [
-      { name: 'Normal', w: 1, h: 1 },
-      { name: 'Normal', w: 1, h: 1 },
-      { name: 'Normal', w: 1, h: 1 },
-    ],
-    md: [
-      { name: 'Normal', w: 1, h: 1 },
-      { name: 'Normal', w: 1, h: 1 },
-      { name: 'Normal', w: 1, h: 1 },
-    ],
-    sm: [
-      { name: 'Normal', w: 1, h: 1 },
-      { name: 'Normal', w: 1, h: 1 },
-      { name: 'Normal', w: 1, h: 1 },
-    ],
-  },
-  sensor: {
-    lg: [
-      { name: 'Compact', w: 2, h: 2 },
-      { name: 'Normal', w: 3, h: 2 },
-      { name: 'Large', w: 4, h: 3 },
-    ],
-    md: [
-      { name: 'Compact', w: 2, h: 2 },
-      { name: 'Normal', w: 4, h: 2 },
-      { name: 'Large', w: 4, h: 3 },
-    ],
-    sm: [
-      { name: 'Compact', w: 2, h: 2 },
-      { name: 'Normal', w: 4, h: 2 },
-      { name: 'Large', w: 4, h: 3 },
-    ],
-  },
-  light: {
-    lg: [
-      { name: 'Compact', w: 2, h: 2 },
-      { name: 'Normal', w: 3, h: 2 },
-      { name: 'Large', w: 4, h: 3 },
-    ],
-    md: [
-      { name: 'Compact', w: 2, h: 2 },
-      { name: 'Normal', w: 4, h: 2 },
-      { name: 'Large', w: 4, h: 3 },
-    ],
-    sm: [
-      { name: 'Compact', w: 2, h: 2 },
-      { name: 'Normal', w: 4, h: 2 },
-      { name: 'Large', w: 4, h: 3 },
-    ],
-  },
-  person: {
-    lg: [
-      { name: 'Compact', w: 4, h: 1 },
-      { name: 'Normal', w: 6, h: 1 },
-      { name: 'Large', w: 8, h: 1 },
-    ],
-    md: [
-      { name: 'Compact', w: 4, h: 1 },
-      { name: 'Normal', w: 8, h: 1 },
-      { name: 'Large', w: 8, h: 1 },
-    ],
-    sm: [
-      { name: 'Compact', w: 4, h: 1 },
-      { name: 'Normal', w: 4, h: 1 },
-      { name: 'Large', w: 4, h: 1 },
-    ],
-  },
-  cover: {
-    lg: [
-      { name: 'Compact', w: 2, h: 2 },
-      { name: 'Normal', w: 2, h: 3 },
-      { name: 'Large', w: 3, h: 4 },
-    ],
-    md: [
-      { name: 'Compact', w: 2, h: 2 },
-      { name: 'Normal', w: 2, h: 3 },
-      { name: 'Large', w: 4, h: 3 },
-    ],
-    sm: [
-      { name: 'Compact', w: 2, h: 2 },
-      { name: 'Normal', w: 2, h: 3 },
-      { name: 'Large', w: 4, h: 3 },
-    ],
-  },
-  template: {
-    lg: [
-      { name: 'Compact', w: 2, h: 1 },
-      { name: 'Normal', w: 3, h: 1 },
-      { name: 'Large', w: 4, h: 2 },
-    ],
-    md: [
-      { name: 'Compact', w: 2, h: 1 },
-      { name: 'Normal', w: 4, h: 1 },
-      { name: 'Large', w: 4, h: 2 },
-    ],
-    sm: [
-      { name: 'Compact', w: 2, h: 1 },
-      { name: 'Normal', w: 4, h: 1 },
-      { name: 'Large', w: 4, h: 2 },
-    ],
-  },
-  automation: {
-    lg: [
-      { name: 'Compact', w: 2, h: 1 },
-      { name: 'Normal', w: 3, h: 1 },
-      { name: 'Large', w: 4, h: 1 },
-    ],
-    md: [
-      { name: 'Compact', w: 2, h: 1 },
-      { name: 'Normal', w: 4, h: 1 },
-      { name: 'Large', w: 6, h: 1 },
-    ],
-    sm: [
-      { name: 'Compact', w: 2, h: 1 },
-      { name: 'Normal', w: 4, h: 1 },
-      { name: 'Large', w: 4, h: 1 },
-    ],
-  },
-  media_player: {
-    lg: [
-      { name: 'Compact', w: 4, h: 1 },
-      { name: 'Normal', w: 4, h: 3 },
-      { name: 'Large', w: 3, h: 4 },
-    ],
-    md: [
-      { name: 'Compact', w: 4, h: 1 },
-      { name: 'Normal', w: 4, h: 3 },
-      { name: 'Large', w: 4, h: 4 },
-    ],
-    sm: [
-      { name: 'Compact', w: 4, h: 1 },
-      { name: 'Normal', w: 4, h: 3 },
-      { name: 'Large', w: 4, h: 4 },
-    ],
-  },
-};
 
 export interface DashboardLayout {
   widgets: Record<'lg' | 'md' | 'sm', GridWidget[]>;
@@ -487,7 +226,6 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
     // Cette fonction ne fait plus d'appel réseau.
     // Le vrai bouton "Sauvegarder" de EditButton lit les variables
     // et les envoie via useDashboardConfig() !
-    console.log("Layout préparé pour l'envoi au backend");
   };
 
   const setLayout = useCallback(

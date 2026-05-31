@@ -47,9 +47,7 @@ export const WIDGET_SOUND_ACTIONS: Record<string, WidgetSoundAction[]> = {
     { action: 'toggle_off', defaultSound: 'toggle_off' },
     { action: 'action', defaultSound: 'click' },
   ],
-  camera: [
-    { action: 'select', defaultSound: 'click' },
-  ],
+  camera: [{ action: 'select', defaultSound: 'click' }],
   rooms: [
     { action: 'room_tap', defaultSound: 'click' },
     { action: 'light_on', defaultSound: 'toggle_on' },
@@ -59,9 +57,7 @@ export const WIDGET_SOUND_ACTIONS: Record<string, WidgetSoundAction[]> = {
     { action: 'arm', defaultSound: 'arm' },
     { action: 'disarm', defaultSound: 'disarm' },
   ],
-  button: [
-    { action: 'press', defaultSound: 'click' },
-  ],
+  button: [{ action: 'press', defaultSound: 'click' }],
   vacuum: [
     { action: 'start', defaultSound: 'vacuum_start' },
     { action: 'pause', defaultSound: 'media_pause' },
@@ -78,11 +74,7 @@ export const WIDGET_SOUND_ACTIONS: Record<string, WidgetSoundAction[]> = {
 };
 
 /** Get the resolved sound for a widget action, respecting overrides */
-export function resolveSound(
-  widgetType: string,
-  action: string,
-  overrides?: Record<string, SoundPreset>,
-): SoundPreset {
+export function resolveSound(widgetType: string, action: string, overrides?: Record<string, SoundPreset>): SoundPreset {
   if (overrides?.[action]) return overrides[action];
   const actions = WIDGET_SOUND_ACTIONS[widgetType];
   if (!actions) return 'none';

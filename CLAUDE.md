@@ -26,6 +26,21 @@ rtk discover          # Find missed rtk opportunities
 rtk proxy <cmd>       # Run raw (no filtering) but track usage
 ```
 
+## Releasing a new version (MANDATORY)
+
+When asked to create a new tag / release, **always** use:
+
+```bash
+npm run create-tag
+```
+
+This script automatically:
+1. Reads the current version from `ha-react-dashboard/config.yaml`
+2. Bumps the patch number (e.g. `2.0.14` → `2.0.15`)
+3. Commits, pushes to `main`, creates the git tag and pushes it
+
+**Never** manually edit `config.yaml` or run the git commands by hand for a release.
+
 ## i18n — Internationalisation (MANDATORY)
 
 All user-visible strings **must** go through the translation system. Never hardcode text in components.

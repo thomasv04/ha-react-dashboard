@@ -5,6 +5,7 @@ import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useEntityHistory } from '@/hooks/useEntityHistory';
 import { MoreInfoHeader } from './MoreInfoHeader';
 import { HistoryGraph } from '@/components/charts/HistoryGraph';
+import { useI18n } from '@/i18n';
 
 interface ForecastEntry {
   datetime: string;
@@ -42,6 +43,7 @@ function tempColor(temp: number): string {
 }
 
 export default function WeatherMoreInfo({ entityId }: { entityId: string; widgetId: string }) {
+  const { t } = useI18n();
   const entity = useSafeEntity(entityId);
   const { connection } = useHass();
   const [forecastType, setForecastType] = useState<'hourly' | 'daily'>('hourly');
@@ -71,7 +73,7 @@ export default function WeatherMoreInfo({ entityId }: { entityId: string; widget
       .catch(() => setForecasts([]));
   }, [connection, entityId, forecastType]);
 
-  if (!entity) return <div className='p-12 text-white/40 text-center'>Entité introuvable</div>;
+  if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
 
   const temp = entity.attributes.temperature as number | undefined;
   const humidity = entity.attributes.humidity as number | undefined;
@@ -84,12 +86,12 @@ export default function WeatherMoreInfo({ entityId }: { entityId: string; widget
   const color = temp != null ? tempColor(temp) : '#60a5fa';
 
   const details = [
-    { icon: Droplets, label: 'Humidité', value: humidity != null ? `${humidity}%` : '—' },
-    { icon: Gauge, label: 'Pression', value: pressure != null ? `${pressure} hPa` : '—' },
-    { icon: Wind, label: 'Vent', value: windSpeed != null ? `${windSpeed} km/h` : '—' },
-    { icon: Wind, label: 'Rafales', value: windGust != null ? `${windGust} km/h` : '—' },
-    { icon: Thermometer, label: 'Point rosée', value: dewPoint != null ? `${dewPoint}°C` : '—' },
-    { icon: Droplets, label: 'Précip.', value: precipitation != null ? `${precipitation} mm` : '—' },
+    { icon: Droplets, label: t('widgets.weather.humidity'), value: humidity != null ? `${humidity}%` : '—' },
+    { icon: Gauge, label: t('widgets.weather.pressure'), value: pressure != null ? `${pressure} hPa` : '—' },
+    { icon: Wind, label: t('widgets.weather.wind'), value: windSpeed != null ? `${windSpeed} km/h` : '—' },
+    { icon: Wind, label: t('widgets.weather.gusts'), value: windGust != null ? `${windGust} km/h` : '—' },
+    { icon: Thermometer, label: t('widgets.weather.dewPoint'), value: dewPoint != null ? `${dewPoint}°C` : '—' },
+    { icon: Droplets, label: t('widgets.weather.precipitation'), value: precipitation != null ? `${precipitation} mm` : '—' },
   ];
 
   return (

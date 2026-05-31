@@ -10,10 +10,7 @@ import { resolveSound } from '@/config/widget-sound-actions';
  * @param widgetType - The widget type (e.g. 'light', 'cover') for action resolution
  * @param soundOverrides - Optional per-action sound overrides from widget config
  */
-export function useSoundFeedback(
-  widgetType?: string,
-  soundOverrides?: Record<string, SoundPreset>,
-) {
+export function useSoundFeedback(widgetType?: string, soundOverrides?: Record<string, SoundPreset>) {
   const play = useCallback(
     (actionOrPreset: string) => {
       if (!isSoundEnabled()) return;

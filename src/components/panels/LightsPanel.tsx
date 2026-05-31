@@ -5,6 +5,7 @@ import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { Panel } from '@/components/layout/Panel';
 import { Slider } from '@/components/ui/Slider/components/slider';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 
 const LIGHTS = [
   { id: 'light.bandeau_led_cuisine', label: 'Bandeau LEDs Cuisine' },
@@ -68,16 +69,15 @@ function LightRow({ entityId, label }: { entityId: string; label: string }) {
 }
 
 export function LightsPanel() {
+  const { t } = useI18n();
   return (
-    <Panel title='Lumières' icon={<Lightbulb size={18} />}>
+    <Panel title={t('panels.lights_panel.title')} icon={<Lightbulb size={18} />}>
       <div className='flex flex-col gap-2'>
         {LIGHTS.map(light => (
           <LightRow key={light.id} entityId={light.id} label={light.label} />
         ))}
       </div>
-      <p className='text-white/20 text-xs text-center mt-2'>
-        Ajouter d'autres entités dans <code>LightsPanel.tsx</code>
-      </p>
+      <p className='text-white/20 text-xs text-center mt-2'>{t('panels.lights_panel.configHint')}</p>
     </Panel>
   );
 }

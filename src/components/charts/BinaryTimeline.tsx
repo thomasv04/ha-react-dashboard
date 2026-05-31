@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react';
 import type { HistoryPoint } from '@/hooks/useEntityHistory';
+import { useI18n } from '@/i18n';
 
 interface BinaryTimelineProps {
   data: HistoryPoint[];
@@ -17,6 +18,7 @@ function formatRelativeTime(date: Date, now: number): string {
 }
 
 export function BinaryTimeline({ data }: BinaryTimelineProps) {
+  const { t } = useI18n();
   const nowRef = useRef<number>(0);
   // eslint-disable-next-line react-hooks/purity
   if (nowRef.current === 0) nowRef.current = Date.now();
@@ -45,7 +47,7 @@ export function BinaryTimeline({ data }: BinaryTimelineProps) {
   }, [data, now]);
 
   if (segments.length === 0) {
-    return <div className='text-white/30 text-sm text-center py-4'>Pas de données</div>;
+    return <div className='text-white/30 text-sm text-center py-4'>{t('common.noData')}</div>;
   }
 
   return (

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const hasBrowserApis = () =>
-  typeof globalThis.window !== 'undefined' && typeof globalThis.document !== 'undefined';
+const hasBrowserApis = () => typeof globalThis.window !== 'undefined' && typeof globalThis.document !== 'undefined';
 
 const getMotionAllowed = (): boolean => {
   if (!hasBrowserApis()) return false;

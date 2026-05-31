@@ -4,6 +4,10 @@ import path from 'path';
 import fs from 'fs';
 import { randomUUID } from 'crypto';
 import sharp from 'sharp';
+import createDOMPurify from 'dompurify';
+import { JSDOM } from 'jsdom';
+
+const DOMPurify = createDOMPurify(new JSDOM('').window);
 
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
 const ALLOWED_ICON_MIME_TYPES = new Set(['image/png', 'image/webp', 'image/svg+xml']);
@@ -37,7 +41,7 @@ export function uploadsRouter(db, uploadsDir) {
       if (ALLOWED_MIME_TYPES.has(file.mimetype)) {
         cb(null, true);
       } else {
-        cb(new Error('Type de fichier non supporté. Utilisez JPEG, PNG, WebP, GIF ou AVIF.'));
+        cb(new Error('Unsupported file type. Use JPEG, PNG, WebP, GIF or AVIF.'));
       }
     },
   });
@@ -46,7 +50,7 @@ export function uploadsRouter(db, uploadsDir) {
   router.post('/background', upload.single('image'), (req, res) => {
     const file = req.file;
     if (!file) {
-      return res.status(400).json({ error: 'Aucun fichier reçu.' });
+      return res.status(400).json({ error: 'No file received.' });
     }
 
     db.prepare(
@@ -63,14 +67,14 @@ export function uploadsRouter(db, uploadsDir) {
   router.delete('/background/:filename', (req, res) => {
     const { filename } = req.params;
 
-    // Sécurité : rejeter les noms contenant des séparateurs de chemin
+    // Reject filenames containing path separators
     if (filename !== path.basename(filename)) {
-      return res.status(400).json({ error: 'Nom de fichier invalide.' });
+      return res.status(400).json({ error: 'Invalid filename.' });
     }
 
     const row = db.prepare('SELECT filename FROM uploaded_images WHERE filename = ?').get(filename);
     if (!row) {
-      return res.status(404).json({ error: 'Image introuvable.' });
+      return res.status(404).json({ error: 'Image not found.' });
     }
 
     const filePath = path.join(uploadsDir, filename);
@@ -102,7 +106,7 @@ export function uploadsRouter(db, uploadsDir) {
       if (ALLOWED_ICON_MIME_TYPES.has(file.mimetype)) {
         cb(null, true);
       } else {
-        cb(new Error('Type non supporté. Utilisez PNG, WebP ou SVG.'));
+        cb(new Error('Unsupported type. Use PNG, WebP or SVG.'));
       }
     },
   });
@@ -119,10 +123,22 @@ export function uploadsRouter(db, uploadsDir) {
   router.post('/icons', iconUpload.single('icon'), async (req, res) => {
     const file = req.file;
     if (!file) {
-      return res.status(400).json({ error: 'Aucun fichier reçu.' });
+      return res.status(400).json({ error: 'No file received.' });
     }
 
     const filePath = path.join(iconsDir, file.filename);
+
+    // Sanitize SVG uploads to prevent XSS (strip <script>, event handlers, etc.)
+    if (file.mimetype === 'image/svg+xml') {
+      try {
+        const raw = await fs.promises.readFile(filePath, 'utf-8');
+        const clean = DOMPurify.sanitize(raw, { USE_PROFILES: { svg: true } });
+        await fs.promises.writeFile(filePath, clean);
+      } catch (sanitizeErr) {
+        fs.unlinkSync(filePath);
+        return res.status(400).json({ error: 'Invalid SVG file.' });
+      }
+    }
 
     // Auto-resize raster images (PNG/WebP) to max 128×128, skip SVGs
     if (file.mimetype !== 'image/svg+xml') {
@@ -135,7 +151,7 @@ export function uploadsRouter(db, uploadsDir) {
       } catch (sharpErr) {
         // If resize fails, delete the uploaded file and return error
         fs.unlinkSync(filePath);
-        return res.status(400).json({ error: "Impossible de traiter l'image." });
+        return res.status(400).json({ error: 'Failed to process image.' });
       }
     }
 
@@ -156,12 +172,12 @@ export function uploadsRouter(db, uploadsDir) {
     const { filename } = req.params;
 
     if (filename !== path.basename(filename)) {
-      return res.status(400).json({ error: 'Nom de fichier invalide.' });
+      return res.status(400).json({ error: 'Invalid filename.' });
     }
 
     const row = db.prepare('SELECT filename FROM uploaded_icons WHERE filename = ?').get(filename);
     if (!row) {
-      return res.status(404).json({ error: 'Icône introuvable.' });
+      return res.status(404).json({ error: 'Icon not found.' });
     }
 
     const filePath = path.join(iconsDir, filename);
@@ -177,9 +193,9 @@ export function uploadsRouter(db, uploadsDir) {
   // ── Error handler (multer errors) ─────────────────────────────────────────
   router.use((err, _req, res, _next) => {
     if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(413).json({ error: 'Fichier trop volumineux.' });
+      return res.status(413).json({ error: 'File too large.' });
     }
-    return res.status(400).json({ error: err.message ?? "Erreur lors de l'upload." });
+    return res.status(400).json({ error: err.message ?? 'Upload failed.' });
   });
 
   return router;

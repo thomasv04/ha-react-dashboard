@@ -5,8 +5,10 @@ import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { MoreInfoHeader } from './MoreInfoHeader';
 import { InfoSidebar, type SidebarModule } from './sidebar';
 import type { PersonStatusConfig } from '@/types/widget-types';
+import { useI18n } from '@/i18n';
 
 export default function PersonMoreInfo({ entityId, widgetId }: { entityId: string; widgetId: string }) {
+  const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
   const config = getWidgetConfig<PersonStatusConfig>(widgetId);
   const showInfoPanel = config?.showInfoPanel !== false;
@@ -16,7 +18,7 @@ export default function PersonMoreInfo({ entityId, widgetId }: { entityId: strin
   const personEntityId = entityId || config?.persons?.[0]?.entityId || '';
   const entity = useSafeEntity(personEntityId);
 
-  if (!entity) return <div className='p-12 text-white/40 text-center'>Entité introuvable</div>;
+  if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
 
   const name = config?.persons?.[0]?.name ?? (entity.attributes.friendly_name as string) ?? personEntityId;
   const state = entity.state;

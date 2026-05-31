@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DURATION_FAST } from '@/lib/motion-tokens';
 import { Settings } from 'lucide-react';
 import { SettingsContent } from './SettingsContent';
 
@@ -43,7 +44,7 @@ export function ThemeControlsModal() {
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: DURATION_FAST }}
             >
               <div
                 className='pointer-events-auto w-full max-w-2xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden'

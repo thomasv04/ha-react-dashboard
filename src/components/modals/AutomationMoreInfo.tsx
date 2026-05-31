@@ -9,8 +9,10 @@ import { InfoSidebar, type SidebarModule } from './sidebar';
 import { BinaryTimeline } from '@/components/charts/BinaryTimeline';
 import { resolveIcon } from '@/lib/lucide-icon-map';
 import type { AutomationCardConfig } from '@/types/widget-types';
+import { useI18n } from '@/i18n';
 
 export default function AutomationMoreInfo({ entityId, widgetId }: { entityId: string; widgetId: string }) {
+  const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
   const config = getWidgetConfig<AutomationCardConfig>(widgetId);
   const showInfoPanel = config?.showInfoPanel !== false;
@@ -19,7 +21,7 @@ export default function AutomationMoreInfo({ entityId, widgetId }: { entityId: s
   const { helpers } = useHass();
   const { data } = useEntityHistory(entityId, historyHours);
 
-  if (!entity) return <div className='p-12 text-white/40 text-center'>Entité introuvable</div>;
+  if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
 
   const isOn = entity.state === 'on';
   const name = config?.name ?? (entity.attributes.friendly_name as string) ?? entityId;

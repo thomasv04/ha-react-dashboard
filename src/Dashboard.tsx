@@ -11,17 +11,30 @@ import { WidgetEditModal } from '@/components/layout/WidgetEditModal';
 import { ThemeControlsModal } from '@/components/layout/ThemeControlsModal';
 import { PageTabs } from '@/components/layout/PageTabs';
 import { MoreInfoModal } from '@/components/modals/MoreInfoModal';
-import { useEffect } from 'react';
+import { useEffect, memo } from 'react';
 import { AnimatePresence, LayoutGroup } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 import { usePageRouting } from '@/hooks/usePageRouting';
 import { WallPanelProvider, useWallPanel } from '@/context/WallPanelContext';
+import { useI18n } from '@/i18n';
 import { WallPanelOverlay } from '@/components/wallpanel/WallPanelOverlay';
 import { useIdleDetector } from '@/hooks/useIdleDetector';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { WIDGET_COMPONENTS } from '@/config/widget-registry';
+import type { GridWidget } from '@/context/DashboardLayoutContext';
+
+const WidgetItem = memo(function WidgetItem({ widget }: { widget: GridWidget }) {
+  const Component = WIDGET_COMPONENTS[widget.type];
+  if (!Component) return null;
+  return (
+    <GridItem id={widget.id}>
+      <Component />
+    </GridItem>
+  );
+});
 
 import { EditButton } from '@/components/dashboard/EditButton';
 import { ActivePanel } from '@/components/dashboard/ActivePanel';
@@ -62,26 +75,22 @@ function ScreensaverEntityWatcher() {
 function DashboardContent() {
   const { layout } = useDashboardLayout();
   usePageRouting();
+  const isMobile = useIsMobile(640);
+  const isCompact = useIsMobile(768) && !isMobile;
   // Use lg layout as canonical list of widget ids (all breakpoints share same ids)
   const widgets = layout.widgets.lg;
 
   return (
     <LayoutGroup>
       <div className='min-h-screen w-full text-white overflow-x-hidden'>
-        <div className='max-w-[1440px] mx-auto px-5 pt-5 pb-36'>
+        <div className='max-w-[1440px] mx-auto px-2 sm:px-4 md:px-5 pt-4 sm:pt-5 pb-24 sm:pb-32 md:pb-36'>
           {/* Onglets de navigation entre pages */}
           <PageTabs />
 
-          <DashboardGrid>
-            {widgets.map(widget => {
-              const Component = WIDGET_COMPONENTS[widget.type];
-              if (!Component) return null;
-              return (
-                <GridItem key={widget.id} id={widget.id}>
-                  <Component />
-                </GridItem>
-              );
-            })}
+          <DashboardGrid className={isMobile ? 'mobile-layout' : isCompact ? 'compact-layout' : undefined}>
+            {widgets.map(widget => (
+              <WidgetItem key={widget.id} widget={widget} />
+            ))}
           </DashboardGrid>
 
           {widgets.length === 0 && <DashboardEmptyState />}
@@ -119,13 +128,14 @@ function DashboardContent() {
 }
 
 function Dashboard() {
+  const { t } = useI18n();
   const { isLoading, pages, allLayouts, allWidgetConfigs, wallPanelConfig, wallPanelLayout, customPanels } = useDashboardConfig();
 
   if (isLoading) {
     return (
       <div className='min-h-screen w-full flex flex-col items-center justify-center bg-[#0c1028] text-white'>
         <Loader2 size={32} className='animate-spin text-blue-500 mb-4' />
-        <p className='text-white/60'>Loading configuration...</p>
+        <p className='text-white/60'>{t('dashboard.loading')}</p>
       </div>
     );
   }

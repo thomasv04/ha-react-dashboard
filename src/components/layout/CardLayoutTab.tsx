@@ -1,6 +1,7 @@
 import { useDashboardLayout } from '@/context/DashboardLayoutContext';
 import { WIDGET_DISPOSITIONS, getMinSize } from '@/config/widget-dispositions';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 
 interface CardLayoutTabProps {
   widgetId: string;
@@ -8,6 +9,7 @@ interface CardLayoutTabProps {
 }
 
 export function CardLayoutTab({ widgetId, breakpoint }: CardLayoutTabProps) {
+  const { t } = useI18n();
   const { layout, updateWidget } = useDashboardLayout();
   const widget = layout.widgets[breakpoint]?.find(w => w.id === widgetId);
 
@@ -52,7 +54,7 @@ export function CardLayoutTab({ widgetId, breakpoint }: CardLayoutTabProps) {
       {/* ── Disposition du contenu ──────────────────────────── */}
       {dispositions.length > 1 && (
         <div>
-          <h4 className='text-white/60 text-sm mb-3'>Disposition du contenu</h4>
+          <h4 className='text-white/60 text-sm mb-3'>{t('layout.contentLayout')}</h4>
           <div className='grid grid-cols-2 gap-3'>
             {dispositions.map(disp => (
               <button
@@ -91,7 +93,7 @@ export function CardLayoutTab({ widgetId, breakpoint }: CardLayoutTabProps) {
 
       {/* ── Prévisualisation grille + sliders ────────────────── */}
       <div>
-        <h4 className='text-white/60 text-sm mb-3'>Taille sur la grille</h4>
+        <h4 className='text-white/60 text-sm mb-3'>{t('layout.gridSize')}</h4>
 
         <div className='flex gap-3'>
           {/* Slider vertical (hauteur) à gauche */}

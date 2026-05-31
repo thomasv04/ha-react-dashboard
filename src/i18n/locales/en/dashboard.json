@@ -13,5 +13,8 @@
     "home": "Home",
     "addPage": "New page",
     "deletePage": "Delete page"
-  }
+  },
+  "editTooltipExit": "Exit edit mode",
+  "editTooltipEnter": "Edit dashboard",
+  "cancelTooltip": "Cancel"
 }

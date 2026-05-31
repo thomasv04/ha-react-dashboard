@@ -31,6 +31,8 @@ interface UseGridDragDropParams {
   cols: number;
   containerRef: React.RefObject<HTMLDivElement | null>;
   onWidgetMove: (id: string, col: number, row: number) => void;
+  gap?: number;
+  rowHeight?: number;
 }
 
 interface UseGridDragDropResult {
@@ -40,7 +42,14 @@ interface UseGridDragDropResult {
   dragHandlers: DragHandlers;
 }
 
-export function useGridDragDrop({ widgets, cols, containerRef, onWidgetMove }: UseGridDragDropParams): UseGridDragDropResult {
+export function useGridDragDrop({
+  widgets,
+  cols,
+  containerRef,
+  onWidgetMove,
+  gap = GAP,
+  rowHeight = ROW_HEIGHT,
+}: UseGridDragDropParams): UseGridDragDropResult {
   const dragSourceRef = useRef<{ id: string } | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
@@ -53,7 +62,7 @@ export function useGridDragDrop({ widgets, cols, containerRef, onWidgetMove }: U
       const containerRect = containerRef.current.getBoundingClientRect();
       const widget = widgets.find(w => w.id === dragSourceRef.current!.id);
       if (!widget) return;
-      const { col, row } = pixelToGrid(clientX, clientY, containerRect, cols, ROW_HEIGHT, GAP);
+      const { col, row } = pixelToGrid(clientX, clientY, containerRect, cols, rowHeight, gap);
       const clampedCol = Math.max(0, Math.min(cols - widget.w, col));
       const maxRow = widgets.reduce((max, w) => Math.max(max, w.y + w.h), 0) + 5;
       const map = buildOccupancyMap(widgets, cols, maxRow, widget.id);
@@ -62,7 +71,7 @@ export function useGridDragDrop({ widgets, cols, containerRef, onWidgetMove }: U
       ghostPositionRef.current = next;
       setGhostPosition(next);
     },
-    [widgets, cols, containerRef]
+    [widgets, cols, containerRef, gap, rowHeight]
   );
 
   const dragHandlers = useMemo<DragHandlers>(

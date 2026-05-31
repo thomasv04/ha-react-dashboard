@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Search, ChevronDown, ChevronUp, Upload, Trash2 } from 'lucide-react';
 import { getIconNames, resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-map';
 import { apiUrl } from '@/lib/api-base';
+import { useI18n } from '@/i18n';
 
 interface UploadedIcon {
   filename: string;
@@ -17,6 +18,7 @@ interface UploadedIcon {
  * Custom icons are stored as "custom:/uploads/icons/{filename}" in config values.
  */
 export function IconPicker({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<'lucide' | 'custom'>(() => (isCustomIcon(value) ? 'custom' : 'lucide'));
@@ -114,10 +116,30 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
   const allNames = useMemo(() => getIconNames(), []);
 
   const filtered = useMemo(() => {
-    if (!search) return allNames.slice(0, 120);
+    if (!search) return allNames;
     const q = search.toLowerCase();
-    return allNames.filter(n => n.toLowerCase().includes(q)).slice(0, 120);
+    return allNames.filter(n => n.toLowerCase().includes(q));
   }, [allNames, search]);
+
+  // Virtual scroll state for icon grid
+  const COLS = 6;
+  const ROW_H = 60; // px per row
+  const GRID_H = 240; // visible viewport height
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+
+  const rows = useMemo(() => {
+    const result: string[][] = [];
+    for (let i = 0; i < filtered.length; i += COLS) {
+      result.push(filtered.slice(i, i + COLS));
+    }
+    return result;
+  }, [filtered]);
+
+  const totalH = rows.length * ROW_H;
+  const firstVisible = Math.max(0, Math.floor(scrollTop / ROW_H) - 1);
+  const lastVisible = Math.min(rows.length - 1, Math.ceil((scrollTop + GRID_H) / ROW_H) + 1);
+  const visibleRows = rows.slice(firstVisible, lastVisible + 1);
 
   const SelectedIcon = resolveIcon(value);
   const isCustom = isCustomIcon(value);
@@ -137,7 +159,7 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
           <div className='w-4 h-4 rounded bg-white/10 shrink-0' />
         )}
         <span className={`text-sm flex-1 truncate ${value ? 'text-white/80' : 'text-white/30'}`}>
-          {isCustom ? 'Icône custom' : value || 'Choisir une icône...'}
+          {isCustom ? t('layout.iconCustom') : value || t('layout.iconChoose')}
         </span>
         {open ? <ChevronUp size={14} className='text-white/30' /> : <ChevronDown size={14} className='text-white/30' />}
       </div>
@@ -168,7 +190,7 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
                   tab === 'lucide' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-white/40 hover:text-white/60'
                 }`}
               >
-                Lucide
+                {t('layout.tabLucide')}
               </button>
               <button
                 onClick={() => setTab('custom')}
@@ -176,7 +198,7 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
                   tab === 'custom' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-white/40 hover:text-white/60'
                 }`}
               >
-                Custom
+                {t('layout.tabCustom')}
               </button>
             </div>
 
@@ -191,41 +213,55 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
                       value={search}
                       onChange={e => setSearch(e.target.value)}
                       className='bg-transparent text-sm text-white/80 outline-none flex-1 placeholder:text-white/20'
-                      placeholder='Rechercher icône...'
+                      placeholder={t('layout.iconSearch')}
                     />
                   </div>
-                  <div className='text-[10px] text-white/25 mt-1 px-1'>{filtered.length} icônes</div>
+                  <div className='text-[10px] text-white/25 mt-1 px-1'>{t('layout.iconCount', { count: filtered.length })}</div>
                 </div>
 
-                {/* Icon grid */}
-                <div className='overflow-y-auto p-2' style={{ maxHeight: 240 }}>
-                  <div className='grid grid-cols-6 gap-1'>
-                    {filtered.map(name => {
-                      const Ico = resolveIcon(name);
-                      if (!Ico) return null;
-                      const isActive = name === value;
-                      return (
-                        <button
-                          key={name}
-                          title={name}
-                          onClick={() => {
-                            onChange(name);
-                            setOpen(false);
-                            setSearch('');
-                          }}
-                          className={`flex flex-col items-center justify-center p-2 rounded-lg transition-colors ${
-                            isActive
-                              ? 'bg-blue-500/20 border border-blue-500/40 text-blue-300'
-                              : 'hover:bg-white/8 text-white/50 hover:text-white/80 border border-transparent'
-                          }`}
-                        >
-                          <Ico size={20} />
-                          <span className='text-[8px] mt-1 truncate w-full text-center leading-tight'>{name}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {filtered.length === 0 && <p className='text-center text-white/25 text-xs py-4'>Aucune icône trouvée</p>}
+                {/* Icon grid — virtualized */}
+                <div
+                  ref={scrollRef}
+                  className='overflow-y-auto p-2'
+                  style={{ maxHeight: GRID_H }}
+                  onScroll={e => setScrollTop((e.currentTarget as HTMLDivElement).scrollTop)}
+                >
+                  {filtered.length === 0 ? (
+                    <p className='text-center text-white/25 text-xs py-4'>{t('layout.noIconFound')}</p>
+                  ) : (
+                    <div style={{ height: totalH, position: 'relative' }}>
+                      <div style={{ position: 'absolute', top: firstVisible * ROW_H, left: 0, right: 0 }}>
+                        {visibleRows.map((row, ri) => (
+                          <div key={firstVisible + ri} className='grid grid-cols-6 gap-1' style={{ height: ROW_H }}>
+                            {row.map(name => {
+                              const Ico = resolveIcon(name);
+                              if (!Ico) return null;
+                              const isActive = name === value;
+                              return (
+                                <button
+                                  key={name}
+                                  title={name}
+                                  onClick={() => {
+                                    onChange(name);
+                                    setOpen(false);
+                                    setSearch('');
+                                  }}
+                                  className={`flex flex-col items-center justify-center p-2 rounded-lg transition-colors ${
+                                    isActive
+                                      ? 'bg-blue-500/20 border border-blue-500/40 text-blue-300'
+                                      : 'hover:bg-white/8 text-white/50 hover:text-white/80 border border-transparent'
+                                  }`}
+                                >
+                                  <Ico size={20} />
+                                  <span className='text-[8px] mt-1 truncate w-full text-center leading-tight'>{name}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -239,7 +275,7 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
                   className='flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-lg text-xs font-medium bg-white/5 border border-dashed border-white/20 text-white/50 hover:bg-white/10 hover:text-white/70 hover:border-white/30 transition-all disabled:opacity-40'
                 >
                   <Upload size={13} />
-                  {uploading ? 'Envoi en cours…' : 'Uploader une icône'}
+                  {uploading ? t('layout.iconUploading') : t('layout.uploadIcon')}
                 </button>
                 <input
                   ref={fileInputRef}
@@ -288,7 +324,7 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
                       );
                     })}
                   </div>
-                  {customIcons.length === 0 && <p className='text-center text-white/25 text-xs py-4'>Aucune icône custom</p>}
+                  {customIcons.length === 0 && <p className='text-center text-white/25 text-xs py-4'>{t('layout.noCustomIcon')}</p>}
                 </div>
               </div>
             )}

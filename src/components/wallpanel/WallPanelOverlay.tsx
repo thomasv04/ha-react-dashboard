@@ -1,11 +1,14 @@
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DURATION_HERO } from '@/lib/motion-tokens';
 import { PencilLine } from 'lucide-react';
 import { useWallPanel } from '@/context/WallPanelContext';
 import { BackgroundSlideshow } from './BackgroundSlideshow';
 import { WallPanelEditShell, WallPanelReadonlyShell } from './WallPanelEditShell';
+import { useI18n } from '@/i18n';
 
 export function WallPanelOverlay() {
+  const { t } = useI18n();
   const { isActive, deactivate, wallPanelLayout, config, isWallPanelEditMode, enterWallPanelEditMode } = useWallPanel();
   const hasWidgets = wallPanelLayout.widgets.lg.length > 0;
 
@@ -29,7 +32,7 @@ export function WallPanelOverlay() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.9 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.5, ease: 'easeIn' }}
+            transition={{ duration: DURATION_HERO, ease: 'easeIn' }}
           />
 
           {/* ── Phase 2 : full content (delayed) ── */}
@@ -42,6 +45,10 @@ export function WallPanelOverlay() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.8, delay: 0.25 }}
             onClick={isWallPanelEditMode ? undefined : deactivate}
+            onKeyDown={isWallPanelEditMode ? undefined : e => (e.key === 'Enter' || e.key === ' ') && deactivate()}
+            role={isWallPanelEditMode ? undefined : 'button'}
+            tabIndex={isWallPanelEditMode ? undefined : 0}
+            aria-label={isWallPanelEditMode ? undefined : t('layout.wallPanel.dismissOverlay')}
           >
             {/* Fond (slideshow ou dégradé) */}
             <BackgroundSlideshow config={config} />
@@ -62,7 +69,8 @@ export function WallPanelOverlay() {
             {!isWallPanelEditMode && (
               <button
                 className='absolute bottom-6 right-6 z-[201] p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white/50 hover:text-white transition-colors backdrop-blur-sm'
-                title='Modifier les widgets'
+                title={t('layout.wallPanel.editWidgets')}
+                aria-label={t('layout.wallPanel.editWidgets')}
                 onClick={e => {
                   e.stopPropagation();
                   enterWallPanelEditMode();
@@ -78,7 +86,7 @@ export function WallPanelOverlay() {
                 className='absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none'
                 style={{ color: 'rgba(255,255,255,0.18)', fontSize: 11, letterSpacing: '0.08em' }}
               >
-                TOUCHER POUR QUITTER
+                {t('layout.wallPanel.touchToExit')}
               </div>
             )}
           </motion.div>

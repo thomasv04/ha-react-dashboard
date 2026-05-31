@@ -33,10 +33,13 @@ export interface CameraEntry {
   name: string;
 }
 
+export type CameraStreamMode = 'mjpeg' | 'hls';
+
 export interface CameraCardConfig extends WidgetSoundOverrides {
   type: 'camera';
   cameras: CameraEntry[];
   selectorEntity?: string; // input_select for remembering selection
+  streamMode?: CameraStreamMode; // 'mjpeg' (default, low latency) | 'hls' (better compression)
   showInfoPanel?: boolean;
 }
 
@@ -72,6 +75,7 @@ export interface WeatherCardConfig {
 // ── Energy ────────────────────────────────────────────────────────────────────
 export interface EnergyCardConfig {
   type: 'energy';
+  name?: string;
   batteryLevelEntity: string;
   batteryStateEntity: string;
   gridInputPowerEntity: string;
@@ -100,20 +104,41 @@ export interface ThermostatCardConfig extends WidgetSoundOverrides {
   showInfoPanel?: boolean;
 }
 
-// ── Rooms ─────────────────────────────────────────────────────────────────────
+// ── Room Control ──────────────────────────────────────────────────────────────
+/** A single control button shown inside a room card */
+export interface RoomControl {
+  /** Label shown under the icon */
+  label: string;
+  /** Lucide icon or custom:// */
+  icon: string;
+  /** HA domain (light, cover, script, …) */
+  domain: string;
+  /** Service to call (toggle, turn_on, open_cover, …) */
+  service: string;
+  /** Target entity id */
+  entityId?: string;
+  /** If set, the button color reflects this entity's state (on/off) */
+  stateEntity?: string;
+  /** Accent color when the entity is on (hex) */
+  color?: string;
+}
+
 export interface RoomEntry {
   area: string;
   label: string;
-  icon: string; // lucide icon name
-  iconBg: string; // tailwind gradient classes
+  icon: string;
+  iconBg: string;
   tempEntity?: string;
+  humidityEntity?: string;
   lightEntities?: string[];
   panelId?: string;
+  controls?: RoomControl[];
 }
 
 export interface RoomsGridConfig extends WidgetSoundOverrides {
   type: 'rooms';
   rooms: RoomEntry[];
+  columns?: number;
 }
 
 // ── Shortcuts ─────────────────────────────────────────────────────────────────
@@ -167,6 +192,12 @@ export interface LightCardConfig extends WidgetSoundOverrides {
   /** Entity IDs des sous-lumières du groupe (pour compter les actives) */
   groupEntities?: string[];
   showInfoPanel?: boolean;
+  /** Afficher le slider de luminosité (défaut: true) */
+  showBrightness?: boolean;
+  /** Afficher le slider de température de couleur (défaut: true) */
+  showColorTemp?: boolean;
+  /** Afficher le slider de teinte couleur (défaut: true) */
+  showColor?: boolean;
 }
 
 // ── Person Status ─────────────────────────────────────────────────────────────
@@ -204,6 +235,76 @@ export interface AutomationCardConfig extends WidgetSoundOverrides {
   showInfoPanel?: boolean;
 }
 
+// ── Button ────────────────────────────────────────────────────────────────────
+export interface ButtonCardConfig {
+  type: 'button';
+  /** Label displayed on the button */
+  label: string;
+  /** Lucide icon name or custom:// URL */
+  icon?: string;
+  /** Accent color (hex or css color) */
+  color?: string;
+  /** HA domain to call (e.g. 'script', 'homeassistant', 'light') */
+  domain: string;
+  /** Service to call (e.g. 'turn_on', 'toggle') */
+  service: string;
+  /** Target entity_id (optional) */
+  entityId?: string;
+  /** Extra service data (JSON string) */
+  serviceData?: string;
+  /** Show a confirmation dialog before calling (default: false) */
+  requireConfirm?: boolean;
+  /** Confirmation message shown in dialog */
+  confirmText?: string;
+  /** Optional subtitle / description shown under the label */
+  subtitle?: string;
+}
+
+// ── Alarm ─────────────────────────────────────────────────────────────────────
+export type ArmMode = 'disarm' | 'home' | 'away' | 'night' | 'vacation';
+
+export interface AlarmCardConfig {
+  type: 'alarm';
+  entityId: string; // alarm_control_panel.xxx
+  name?: string;
+  /** Whether a PIN code is required to arm/disarm (default: true) */
+  requireCode?: boolean;
+  showInfoPanel?: boolean;
+  /** Which arm mode buttons to show in the card (default: all) */
+  armModes?: ArmMode[];
+}
+
+// ── Vacuum ────────────────────────────────────────────────────────────────────
+export interface VacuumRoom {
+  /** Unique ID for this room (e.g. "16") */
+  id: string;
+  /** Display name */
+  name: string;
+  /** Roborock segment ID (numeric) for app_segment_clean */
+  segmentId?: number;
+  /** Optional icon name (lucide) */
+  icon?: string;
+}
+
+/** A select entity to display as a dropdown control on the vacuum card */
+export interface VacuumSelectEntity {
+  /** Entity ID (e.g. select.roborock_qrevo_maxv_fan_speed) */
+  entityId: string;
+  /** Custom label override (falls back to friendly_name) */
+  label?: string;
+}
+
+export interface VacuumCardConfig {
+  type: 'vacuum';
+  entityId: string; // vacuum.xxx
+  name?: string;
+  /** Room/segment definitions from Roborock map */
+  rooms?: VacuumRoom[];
+  /** Select entities to show as controls (fan speed, scrub intensity, mop route…) */
+  selects?: VacuumSelectEntity[];
+  showInfoPanel?: boolean;
+}
+
 // ── Media Player ──────────────────────────────────────────────────────────────
 export interface MediaPlayerCardConfig extends WidgetSoundOverrides {
   type: 'media_player';
@@ -227,6 +328,71 @@ export interface TemplateCardConfig {
   showInfoPanel?: boolean;
 }
 
+// ── Pellet stove ─────────────────────────────────────────────────────────────
+export interface PelletCardConfig {
+  type: 'pellet';
+  entityId: string; // climate.xxx
+  name?: string;
+}
+
+// ── Group ─────────────────────────────────────────────────────────────────────
+/** A child widget entry stored inside a GroupCard */
+export interface GroupChild {
+  /** Unique ID — also used as key in allWidgetConfigs[pageId] */
+  id: string;
+  /** Widget type — drives which component is rendered */
+  type: Exclude<WidgetType, 'group'>;
+}
+
+/** Pseudo-type used before WidgetType is defined — resolved via the union below */
+type WidgetType =
+  | 'camera'
+  | 'weather'
+  | 'thermostat'
+  | 'shortcuts'
+  | 'tempo'
+  | 'energy'
+  | 'greeting'
+  | 'activity'
+  | 'sensor'
+  | 'light'
+  | 'person'
+  | 'cover'
+  | 'template'
+  | 'automation'
+  | 'button'
+  | 'media_player'
+  | 'alarm'
+  | 'vacuum'
+  | 'pellet'
+  | 'room'
+  | 'group';
+
+export interface GroupCardConfig {
+  type: 'group';
+  /** Optional title shown at the top */
+  title?: string;
+  /** Number of columns in the internal mini-grid (default: 2) */
+  columns?: 1 | 2 | 3;
+  /** Gap between children in px (default: 8) */
+  gap?: number;
+  /** Ordered list of child widgets */
+  children: GroupChild[];
+}
+
+// ── Room (standalone) ─────────────────────────────────────────────────────────
+export interface RoomCardConfig {
+  type: 'room';
+  label: string;
+  icon: string;
+  iconBg: string;
+  tempEntity?: string;
+  humidityEntity?: string;
+  lightEntities?: string[];
+  controls?: RoomControl[];
+  panelId?: string;
+}
+
 // ── Union type ────────────────────────────────────────────────────────────────
 export type WidgetConfig =
   | ActivityBarConfig
@@ -235,7 +401,6 @@ export type WidgetConfig =
   | EnergyCardConfig
   | TempoCardConfig
   | ThermostatCardConfig
-  | RoomsGridConfig
   | ShortcutsCardConfig
   | GreetingCardConfig
   | SensorCardConfig
@@ -244,7 +409,14 @@ export type WidgetConfig =
   | CoverCardConfig
   | TemplateCardConfig
   | AutomationCardConfig
-  | MediaPlayerCardConfig;
+  | ButtonCardConfig
+  | MediaPlayerCardConfig
+  | AlarmCardConfig
+  | VacuumCardConfig
+  | PelletCardConfig
+  | GroupCardConfig
+  | RoomCardConfig
+  | RoomsGridConfig;
 
 /** Map of widget id → its config */
 export type WidgetConfigs = Record<string, WidgetConfig>;
