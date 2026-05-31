@@ -1,0 +1,316 @@
+?{
+  "common": {
+    "on": "On",
+    "off": "Off",
+    "active": "Active",
+    "inactive": "Inactive",
+    "unavailable": "Unavailable",
+    "unknown": "Unknown",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "close": "Close",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "search": "Search",
+    "noResults": "No results"
+  },
+  "dashboard": {
+    "editMode": "Edit mode",
+    "saving": "Saving...",
+    "saved": "Saved!",
+    "addWidget": "Add widget",
+    "noWidgets": "No widgets on this page",
+    "loading": "Loading configuration...",
+    "pages": {
+      "home": "Home",
+      "addPage": "New page",
+      "deletePage": "Delete page"
+    }
+  },
+  "widgets": {
+    "weather": {
+      "label": "Weather",
+      "wind": "Wind",
+      "max": "MAX",
+      "min": "MIN",
+      "conditions": {
+        "clear-night": "Clear night",
+        "cloudy": "Cloudy",
+        "exceptional": "Exceptional conditions",
+        "fog": "Fog",
+        "hail": "Hail",
+        "lightning": "Thunderstorm",
+        "lightning-rainy": "Thunderstorm with rain",
+        "partlycloudy": "Partly cloudy",
+        "pouring": "Heavy rain",
+        "rainy": "Rainy",
+        "snowy": "Snowy",
+        "snowy-rainy": "Sleet",
+        "sunny": "Sunny",
+        "windy": "Windy",
+        "windy-variant": "Very windy"
+      },
+      "days": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    },
+    "thermostat": {
+      "label": "Thermostat",
+      "heating": "HEATING TO",
+      "cooling": "COOLING TO",
+      "idle": "IDLE",
+      "off": "OFF",
+      "fan_only": "FAN ONLY",
+      "drying": "DRYING",
+      "preheating": "PREHEATING"
+    },
+    "light": {
+      "label": "Light",
+      "brightness": "Brightness",
+      "colorTemp": "Color temperature",
+      "notFound": "Light not found"
+    },
+    "sensor": {
+      "label": "Sensor",
+      "notFound": "Entity not found"
+    },
+    "cover": {
+      "label": "Cover",
+      "open": "Open",
+      "closed": "Closed",
+      "opening": "Opening...",
+      "closing": "Closing...",
+      "notFound": "Cover not found"
+    },
+    "media_player": {
+      "label": "Media",
+      "playing": "Playing",
+      "paused": "Paused",
+      "idle": "Idle",
+      "off": "Off",
+      "notFound": "Player not found"
+    },
+    "person": {
+      "label": "People",
+      "home": "HOME",
+      "away": "AWAY",
+      "noPeople": "No people configured"
+    },
+    "alarm": {
+      "label": "Alarm",
+      "armed_home": "Armed — home",
+      "armed_away": "Armed — away",
+      "armed_night": "Armed — night",
+      "disarmed": "Disarmed",
+      "triggered": "ALERT!",
+      "arming": "Arming...",
+      "disarm": "Disarm",
+      "pinPlaceholder": "PIN code",
+      "modeHome": "Home",
+      "modeAway": "Away",
+      "modeNight": "Night"
+    },
+    "camera": {
+      "label": "Camera"
+    },
+    "energy": {
+      "label": "Energy",
+      "solar": "Solar energy",
+      "charging": "Charging",
+      "discharging": "Discharging",
+      "standby": "Standby",
+      "flowIn": "W in",
+      "flowOut": "W out"
+    },
+    "tempo": {
+      "label": "Tempo EDF",
+      "offPeak": "Off-peak hours",
+      "peak": "Peak hours",
+      "rate": "Rate ",
+      "tomorrow": "Tomorrow",
+      "blue": "Blue",
+      "white": "White",
+      "red": "Red"
+    },
+    "rooms": {
+      "label": "Rooms"
+    },
+    "shortcuts": {
+      "label": "Shortcuts",
+      "header": "Shortcuts",
+      "armed": "Armed",
+      "disarmed": "Disarmed"
+    },
+    "pellet": {
+      "label": "Pellet stove",
+      "current": "Current: "
+    },
+    "greeting": {
+      "goodMorning": "Good morning",
+      "goodAfternoon": "Good afternoon",
+      "goodEvening": "Good evening",
+      "goodNight": "Good night"
+    },
+    "automation": {
+      "label": "Automation"
+    },
+    "template": {
+      "label": "Template"
+    }
+  },
+  "panels": {
+    "lights": "Lights",
+    "shutters": "Shutters",
+    "vacuum": "Vacuum",
+    "security": "Security",
+    "notifications": "Notifications",
+    "flowers": "Plants",
+    "camera": "Camera",
+    "lights_panel": {
+      "title": "Lights",
+      "off": "Off"
+    },
+    "shutters_panel": {
+      "title": "Shutters"
+    },
+    "vacuum_panel": {
+      "title": "Vacuum",
+      "cleaning": "Cleaning",
+      "segmented": "Segmented cleaning",
+      "returning": "Returning to base",
+      "charging": "Charging",
+      "idle": "Idle",
+      "paused": "Paused",
+      "error": "Error",
+      "unavailable": "Unavailable",
+      "start": "Start",
+      "stop": "Stop",
+      "locate": "Locate",
+      "dock": "Dock",
+      "rooms": "Rooms to clean",
+      "launch": "Start selected cleaning",
+      "battery": "Battery: {value}%"
+    },
+    "notifications_panel": {
+      "title": "Notifications",
+      "empty": "No active notifications"
+    },
+    "flowers_panel": {
+      "title": "Plants",
+      "soilMoisture": "Soil moisture",
+      "temperature": "Temperature",
+      "brightness": "Brightness",
+      "humidity": "Air humidity",
+      "tooLow": "⚠️ Too low",
+      "tooHigh": "⚠️ Too high"
+    },
+    "security_panel": {
+      "title": "Security",
+      "cameras": "Cameras"
+    }
+  },
+  "activityBar": {
+    "alarmArmed": "Alarm armed",
+    "alarmDisarmed": "Alarm disarmed",
+    "pelletOn": "Stove on",
+    "pelletOff": "Stove off",
+    "battery": "Solar battery {value}%",
+    "tempo": "Tempo {value}",
+    "temperature": "Bedroom {value}°C"
+  },
+  "settings": {
+    "title": "Settings",
+    "appearance": "Appearance",
+    "performance": "Performance",
+    "language": "Language",
+    "footer": "HA Dashboard",
+    "appearance_section": {
+      "theme": "Theme",
+      "cardOpacity": "Card opacity",
+      "background": "Background",
+      "backgroundSolid": "Color",
+      "backgroundGradient": "Gradient",
+      "backgroundImage": "Image",
+      "color": "Color",
+      "color1": "Color 1",
+      "color2": "Color 2",
+      "angle": "Angle",
+      "overlay": "Overlay",
+      "imageUrl": "URL",
+      "imageFile": "File",
+      "imageUrlPlaceholder": "Image URL (https://...)",
+      "imageUploading": "Uploading…",
+      "imageChoose": "Choose an image",
+      "imageDelete": "Delete image",
+      "imageFormats": "JPEG · PNG · WebP · GIF · AVIF — max 10 MB"
+    },
+    "performance_section": {
+      "fps": "Frames per second (FPS)",
+      "fpsStop": "Stop",
+      "fpsMeasure": "Measure",
+      "fpsExcellent": "Excellent",
+      "fpsFair": "Fair",
+      "fpsLow": "Low",
+      "fpsDescription": "Measures browser rendering FPS in real time to diagnose slowdowns.",
+      "intro": "Disable costly visual effects to improve performance on tablets and small devices.",
+      "reduceBlur": "Reduce blur",
+      "reduceBlurDesc": "Reduces backdrop-filter from 20–40px to 4px on all cards.",
+      "reduceAnimations": "Disable animations",
+      "reduceAnimationsDesc": "Removes interface transitions and animations.",
+      "disableShadows": "Disable shadows",
+      "disableShadowsDesc": "Removes GPU box-shadows from cards.",
+      "disableModalAnimation": "Disable More Info animation",
+      "disableModalAnimationDesc": "Replaces the card-opening animation with a simple fade."
+    },
+    "language_section": {
+      "languageLabel": "Interface language",
+      "overridesTitle": "Custom translations",
+      "overridesDescription": "Override specific translation keys with your own text.",
+      "searchPlaceholder": "Search translations...",
+      "keyColumn": "Key",
+      "defaultColumn": "Default",
+      "customColumn": "Custom",
+      "resetTooltip": "Reset to default",
+      "saving": "Saving...",
+      "saved": "Saved!",
+      "noResults": "No results for this search",
+      "showAll": "Show all",
+      "showOnlyCustom": "Custom only"
+    }
+  },
+  "layout": {
+    "addWidget": "Add widget",
+    "addWidgetSub": "Unlimited · click for preview",
+    "searchWidget": "Search widgets...",
+    "noResults": "No results",
+    "selectWidget": "Select a widget",
+    "selectWidgetSub": "to see live preview",
+    "live": "Live",
+    "noPreview": "No preview",
+    "previewUnavailable": "Preview unavailable",
+    "addToDashboard": "Add to dashboard",
+    "configureWidget": "Configure widget",
+    "removeWidget": "Remove from dashboard",
+    "layout": "Layout",
+    "changeSize": "Change size (Compact > Normal > Large)",
+    "sizeNormal": "Normal",
+    "contentLayout": "Content layout",
+    "gridSize": "Grid size",
+    "desktop": "Desktop",
+    "tablet": "Tablet",
+    "mobile": "Mobile",
+    "minSize": "Minimum size: {w} cols × {h} rows ({label})",
+    "tabs": {
+      "config": "Configuration",
+      "advanced": "Advanced",
+      "layout": "Layout"
+    },
+    "livePreview": "Live preview",
+    "noPreviewAvailable": "No preview available",
+    "cancel": "Cancel",
+    "apply": "Apply"
+  }
+}

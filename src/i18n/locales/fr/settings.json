@@ -2,6 +2,7 @@
   "title": "Paramètres",
   "appearance": "Apparence",
   "performance": "Performances",
+  "sound": "Son",
   "language": "Langue",
   "footer": "HA Dashboard",
   "appearance_section": {
@@ -45,6 +46,11 @@
     "disableShadowsDesc": "Supprime les box-shadow GPU des cards.",
     "disableModalAnimation": "Désactiver l'animation More Info",
     "disableModalAnimationDesc": "Remplace l'animation d'ouverture depuis la carte par un simple fondu."
+  },
+  "sound_section": {
+    "intro": "Le retour sonore joue de courts sons lors des interactions avec les widgets.",
+    "enabled": "Activer le retour sonore",
+    "enabledDesc": "Jouer des sons lors des toggles, sliders, appuis bouton, etc."
   },
   "system": "Système",
   "system_section": {

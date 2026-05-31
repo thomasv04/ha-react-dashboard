@@ -26,7 +26,41 @@
   "tabs": {
     "config": "Configuration",
     "advanced": "Advanced",
-    "layout": "Layout"
+    "layout": "Layout",
+    "sound": "Sound"
+  },
+  "soundTab": {
+    "intro": "Choose the sound played for each action. Set to 'none' to mute an action.",
+    "noActions": "This widget has no sound actions.",
+    "default": "default",
+    "none": "None",
+    "preview": "Preview sound",
+    "actions": {
+      "toggle_on": "Turn on",
+      "toggle_off": "Turn off",
+      "toggle": "Toggle power",
+      "brightness_change": "Brightness change",
+      "open": "Open",
+      "close": "Close",
+      "stop": "Stop",
+      "play": "Play",
+      "pause": "Pause",
+      "next": "Next track",
+      "temperature_up": "Temperature up",
+      "temperature_down": "Temperature down",
+      "preset": "Preset change",
+      "select": "Select",
+      "room_tap": "Room tap",
+      "light_on": "Light on",
+      "light_off": "Light off",
+      "arm": "Arm",
+      "disarm": "Disarm",
+      "press": "Press",
+      "start": "Start",
+      "dock": "Return to dock",
+      "locate": "Locate",
+      "action": "Action"
+    }
   },
   "livePreview": "Live preview",
   "noPreviewAvailable": "No preview available",

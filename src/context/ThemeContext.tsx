@@ -21,6 +21,12 @@ const DEFAULT_PERF_SETTINGS: PerfSettings = {
   disableModalAnimation: false,
 };
 
+export interface SoundSettings {
+  enabled: boolean;
+}
+
+const DEFAULT_SOUND_SETTINGS: SoundSettings = { enabled: false };
+
 interface ThemeContextValue {
   themeId: ThemeId;
   tokens: ThemeTokens;
@@ -36,11 +42,26 @@ interface ThemeContextValue {
   /** Auto day/night theme */
   autoTheme: AutoThemeConfig;
   setAutoTheme: (cfg: AutoThemeConfig) => void;
+  /** Sound feedback settings */
+  soundSettings: SoundSettings;
+  setSoundSettings: (s: SoundSettings) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 const STORAGE_KEY = 'ha-dashboard-theme';
+
+/** Check if sound is enabled by reading localStorage directly (no hook needed) */
+export function isSoundEnabled(): boolean {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return parsed.soundSettings?.enabled ?? false;
+    }
+  } catch { /* ignore */ }
+  return false;
+}
 
 const DEFAULT_AUTO_THEME: AutoThemeConfig = {
   enabled: false,
@@ -54,6 +75,7 @@ function loadSettings(): {
   cardOpacity: number;
   perfSettings: PerfSettings;
   autoTheme: AutoThemeConfig;
+  soundSettings: SoundSettings;
 } {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -71,6 +93,7 @@ function loadSettings(): {
         cardOpacity: parsed.cardOpacity ?? THEMES.dark.tokens.glassOpacity,
         perfSettings: { ...DEFAULT_PERF_SETTINGS, ...(parsed.perfSettings ?? {}) },
         autoTheme: { ...DEFAULT_AUTO_THEME, ...(parsed.autoTheme ?? {}) },
+        soundSettings: { ...DEFAULT_SOUND_SETTINGS, ...(parsed.soundSettings ?? {}) },
       };
     }
   } catch {
@@ -82,6 +105,7 @@ function loadSettings(): {
     cardOpacity: THEMES.dark.tokens.glassOpacity,
     perfSettings: DEFAULT_PERF_SETTINGS,
     autoTheme: DEFAULT_AUTO_THEME,
+    soundSettings: DEFAULT_SOUND_SETTINGS,
   };
 }
 
@@ -92,6 +116,7 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
   const [cardOpacity, setCardOpacityState] = useState(saved.cardOpacity);
   const [perfSettings, setPerfSettingsState] = useState<PerfSettings>(saved.perfSettings);
   const [autoTheme, setAutoThemeState] = useState<AutoThemeConfig>(saved.autoTheme);
+  const [soundSettings, setSoundSettingsState] = useState<SoundSettings>(saved.soundSettings);
 
   const tokens = THEMES[themeId].tokens;
 
@@ -132,8 +157,8 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
 
   // Persistance
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ themeId, background, cardOpacity, perfSettings, autoTheme }));
-  }, [themeId, background, cardOpacity, perfSettings, autoTheme]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ themeId, background, cardOpacity, perfSettings, autoTheme, soundSettings }));
+  }, [themeId, background, cardOpacity, perfSettings, autoTheme, soundSettings]);
 
   const setTheme = useCallback((id: ThemeId) => {
     setThemeId(id);
@@ -144,6 +169,7 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
   const setCardOpacity = useCallback((v: number) => setCardOpacityState(v), []);
   const setPerfSettings = useCallback((s: PerfSettings) => setPerfSettingsState(s), []);
   const setAutoTheme = useCallback((cfg: AutoThemeConfig) => setAutoThemeState(cfg), []);
+  const setSoundSettings = useCallback((s: SoundSettings) => setSoundSettingsState(s), []);
 
   return (
     <ThemeContext.Provider
@@ -159,6 +185,8 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
         setPerfSettings,
         autoTheme,
         setAutoTheme,
+        soundSettings,
+        setSoundSettings,
       }}
     >
       {children}

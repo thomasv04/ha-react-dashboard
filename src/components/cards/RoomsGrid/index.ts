@@ -1,0 +1,1 @@
+export { RoomsGrid } from './RoomsGrid';

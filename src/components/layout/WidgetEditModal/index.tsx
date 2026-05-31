@@ -16,6 +16,9 @@ import { FieldInput } from './FieldInput';
 import { ListEditor } from './ListEditor';
 import { WeatherIconsEditor } from './WeatherIconsEditor';
 import { PanelSelectField } from './PanelSelectField';
+import { SoundTab } from './SoundTab';
+import { WIDGET_SOUND_ACTIONS } from '@/config/widget-sound-actions';
+import type { SoundPreset } from '@/lib/sounds';
 import { useI18n } from '@/i18n';
 
 export function WidgetEditModal() {
@@ -28,10 +31,11 @@ export function WidgetEditModal() {
   const label = config ? (WIDGET_LABELS[config.type] ?? config.type) : '';
   const hasDispositions = config ? !!WIDGET_DISPOSITIONS[config.type]?.length : false;
   const hasAdvanced = fields ? fields.some(f => f.fieldType === 'weather-icons') : false;
+  const hasSounds = config ? !!WIDGET_SOUND_ACTIONS[config.type]?.length : false;
   const breakpoint = resolveBreakpoint(window.innerWidth);
 
   // Tabs: config vs advanced vs layout
-  const [activeTab, setActiveTab] = useState<'config' | 'advanced' | 'layout'>('config');
+  const [activeTab, setActiveTab] = useState<'config' | 'advanced' | 'layout' | 'sound'>('config');
 
   // Local draft so we can cancel
   const [draft, setDraft] = useState<Record<string, unknown> | null>(null);
@@ -168,6 +172,17 @@ export function WidgetEditModal() {
                   {t('layout.tabs.layout')}
                 </button>
               )}
+              {hasSounds && (
+                <button
+                  onClick={() => setActiveTab('sound')}
+                  className={cn(
+                    'px-4 py-3 text-sm font-medium transition-colors cursor-pointer',
+                    activeTab === 'sound' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-white/40 hover:text-white/60'
+                  )}
+                >
+                  {t('layout.tabs.sound')}
+                </button>
+              )}
             </div>
 
             {/* Fields / Layout tab */}
@@ -301,6 +316,13 @@ export function WidgetEditModal() {
                     />
                   ))}
               {activeTab === 'layout' && hasDispositions && <CardLayoutTab widgetId={editingWidgetId} breakpoint={breakpoint} />}
+              {activeTab === 'sound' && hasSounds && config && (
+                <SoundTab
+                  widgetType={config.type}
+                  soundOverrides={draft.soundOverrides as Record<string, SoundPreset> | undefined}
+                  onChange={overrides => updateField('soundOverrides', Object.keys(overrides).length ? overrides : undefined)}
+                />
+              )}
             </div>
 
             {/* Footer */}

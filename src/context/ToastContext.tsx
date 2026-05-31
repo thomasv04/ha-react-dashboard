@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import { playSound, type SoundPreset } from '@/lib/sounds';
+import { isSoundEnabled } from '@/context/ThemeContext';
 
 export interface ToastAction {
   label: string;
@@ -42,7 +43,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const full: Toast = { durationMs: 5000, sound: 'notification', ...toast, id };
       setToasts(prev => [full, ...prev]);
-      if (full.sound !== false && full.sound) {
+      if (full.sound !== false && full.sound && isSoundEnabled()) {
         playSound(full.sound);
       }
       if (!full.persistent) {

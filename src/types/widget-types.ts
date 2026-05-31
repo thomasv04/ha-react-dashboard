@@ -4,6 +4,13 @@
  * that the user can customize via the edit modal.
  */
 
+import type { SoundPreset } from '@/lib/sounds';
+
+/** Optional sound overrides — per-action map of custom sound presets */
+export interface WidgetSoundOverrides {
+  soundOverrides?: Record<string, SoundPreset>;
+}
+
 // ── Activity Bar ──────────────────────────────────────────────────────────────
 export interface ActivityPill {
   id: string;
@@ -26,7 +33,7 @@ export interface CameraEntry {
   name: string;
 }
 
-export interface CameraCardConfig {
+export interface CameraCardConfig extends WidgetSoundOverrides {
   type: 'camera';
   cameras: CameraEntry[];
   selectorEntity?: string; // input_select for remembering selection
@@ -85,7 +92,7 @@ export interface TempoCardConfig {
 }
 
 // ── Thermostat ────────────────────────────────────────────────────────────────
-export interface ThermostatCardConfig {
+export interface ThermostatCardConfig extends WidgetSoundOverrides {
   type: 'thermostat';
   entityId: string; // climate.xxx
   minTemp?: number;
@@ -104,7 +111,7 @@ export interface RoomEntry {
   panelId?: string;
 }
 
-export interface RoomsGridConfig {
+export interface RoomsGridConfig extends WidgetSoundOverrides {
   type: 'rooms';
   rooms: RoomEntry[];
 }
@@ -133,7 +140,7 @@ export interface GreetingCardConfig {
 // ── Sensor ────────────────────────────────────────────────────────────────────
 export type SensorVariant = 'default' | 'gauge' | 'sparkline' | 'bar';
 
-export interface SensorCardConfig {
+export interface SensorCardConfig extends WidgetSoundOverrides {
   type: 'sensor';
   entityId: string;
   name?: string;
@@ -150,7 +157,7 @@ export interface SensorCardConfig {
 }
 
 // ── Light ─────────────────────────────────────────────────────────────────────
-export interface LightCardConfig {
+export interface LightCardConfig extends WidgetSoundOverrides {
   type: 'light';
   entityId: string; // light.xxx ou light.group_xxx
   name?: string; // Nom affiché (sinon friendly_name)
@@ -175,7 +182,7 @@ export interface PersonStatusConfig {
 }
 
 // ── Cover (volets/stores) ─────────────────────────────────────────────────────
-export interface CoverCardConfig {
+export interface CoverCardConfig extends WidgetSoundOverrides {
   type: 'cover';
   entityId: string; // cover.living_room
   name?: string; // Nom custom
@@ -186,7 +193,7 @@ export interface CoverCardConfig {
 }
 
 // ── Automation ───────────────────────────────────────────────────────────────
-export interface AutomationCardConfig {
+export interface AutomationCardConfig extends WidgetSoundOverrides {
   type: 'automation';
   /** Entity ID de l'automatisation (domain: automation) */
   entityId: string;
@@ -198,7 +205,7 @@ export interface AutomationCardConfig {
 }
 
 // ── Media Player ──────────────────────────────────────────────────────────────
-export interface MediaPlayerCardConfig {
+export interface MediaPlayerCardConfig extends WidgetSoundOverrides {
   type: 'media_player';
   entityId: string; // media_player.xxx
   name?: string;

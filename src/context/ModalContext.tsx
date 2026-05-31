@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import { playSound, type SoundPreset } from '@/lib/sounds';
+import { isSoundEnabled } from '@/context/ThemeContext';
 
 export interface ModalAction {
   label: string;
@@ -57,7 +58,7 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     setModals(prev => [...prev, full]);
 
     // Play sound if specified
-    if (full.sound !== false && full.sound) {
+    if (full.sound !== false && full.sound && isSoundEnabled()) {
       playSound(full.sound);
     }
 

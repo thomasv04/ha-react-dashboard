@@ -26,7 +26,41 @@
   "tabs": {
     "config": "Configuration",
     "advanced": "Avancé",
-    "layout": "Mise en page"
+    "layout": "Mise en page",
+    "sound": "Son"
+  },
+  "soundTab": {
+    "intro": "Choisissez le son joué pour chaque action. Mettez 'aucun' pour couper le son.",
+    "noActions": "Ce widget n'a aucune action sonore.",
+    "default": "défaut",
+    "none": "Aucun",
+    "preview": "Écouter le son",
+    "actions": {
+      "toggle_on": "Allumer",
+      "toggle_off": "Éteindre",
+      "toggle": "Marche / arrêt",
+      "brightness_change": "Changement de luminosité",
+      "open": "Ouvrir",
+      "close": "Fermer",
+      "stop": "Stop",
+      "play": "Lecture",
+      "pause": "Pause",
+      "next": "Piste suivante",
+      "temperature_up": "Température +",
+      "temperature_down": "Température −",
+      "preset": "Changement de mode",
+      "select": "Sélectionner",
+      "room_tap": "Appui pièce",
+      "light_on": "Lumière allumée",
+      "light_off": "Lumière éteinte",
+      "arm": "Armer",
+      "disarm": "Désarmer",
+      "press": "Appui",
+      "start": "Démarrer",
+      "dock": "Retour au dock",
+      "locate": "Localiser",
+      "action": "Action"
+    }
   },
   "livePreview": "Aperçu en direct",
   "noPreviewAvailable": "Pas d'aperçu disponible",

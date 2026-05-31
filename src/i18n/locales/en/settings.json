@@ -2,6 +2,7 @@
   "title": "Settings",
   "appearance": "Appearance",
   "performance": "Performance",
+  "sound": "Sound",
   "language": "Language",
   "footer": "HA Dashboard",
   "appearance_section": {
@@ -45,6 +46,11 @@
     "disableShadowsDesc": "Removes GPU box-shadows from cards.",
     "disableModalAnimation": "Disable More Info animation",
     "disableModalAnimationDesc": "Replaces the card-opening animation with a simple fade."
+  },
+  "sound_section": {
+    "intro": "Sound feedback plays short tones when you interact with widgets.",
+    "enabled": "Enable sound feedback",
+    "enabledDesc": "Play sounds on toggle, slider, button press, etc."
   },
   "system": "System",
   "system_section": {

@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { Settings, Palette, Zap, Languages, Server, X } from 'lucide-react';
+import { Settings, Palette, Zap, Languages, Server, X, Volume2 } from 'lucide-react';
 import { AppearanceSection } from './AppearanceSection';
 import { PerformanceSection } from './PerformanceSection';
 import { LanguageSection } from './LanguageSection';
 import { SystemSection } from './SystemSection';
+import { SoundSection } from './SoundSection';
 import { useI18n } from '@/i18n';
 
-type SettingsSection = 'appearance' | 'performance' | 'language' | 'system';
+type SettingsSection = 'appearance' | 'performance' | 'sound' | 'language' | 'system';
 
 export function SettingsContent({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
@@ -15,6 +16,7 @@ export function SettingsContent({ onClose }: { onClose: () => void }) {
   const NAV_ITEMS: { id: SettingsSection; label: string; Icon: React.ElementType }[] = [
     { id: 'appearance', label: t('settings.appearance'), Icon: Palette },
     { id: 'performance', label: t('settings.performance'), Icon: Zap },
+    { id: 'sound', label: t('settings.sound'), Icon: Volume2 },
     { id: 'language', label: t('settings.language'), Icon: Languages },
     { id: 'system', label: t('settings.system'), Icon: Server },
   ];
@@ -22,6 +24,7 @@ export function SettingsContent({ onClose }: { onClose: () => void }) {
   const SECTION_TITLES: Record<SettingsSection, string> = {
     appearance: t('settings.appearance'),
     performance: t('settings.performance'),
+    sound: t('settings.sound'),
     language: t('settings.language'),
     system: t('settings.system'),
   };
@@ -77,6 +80,7 @@ export function SettingsContent({ onClose }: { onClose: () => void }) {
         <div className='flex-1 overflow-y-auto p-6'>
           {section === 'appearance' && <AppearanceSection />}
           {section === 'performance' && <PerformanceSection />}
+          {section === 'sound' && <SoundSection />}
           {section === 'language' && <LanguageSection />}
           {section === 'system' && <SystemSection />}
         </div>

@@ -1,0 +1,1 @@
+export { VacuumCard } from './VacuumCard';

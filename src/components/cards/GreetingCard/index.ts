@@ -1,0 +1,1 @@
+export { GreetingCard } from './GreetingCard';
