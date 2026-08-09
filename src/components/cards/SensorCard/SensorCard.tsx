@@ -88,7 +88,7 @@ export function SensorCard() {
   const { ripples, trigger: triggerRipple } = useRipple();
   const cardRef = useRef<HTMLDivElement>(null);
   const widgetSize = useWidgetSize(cardRef);
-  const isCompact = widgetSize === 'xs' || widgetSize === 'sm';
+  const isCompact = widgetSize.compact;
 
   if (!entity) {
     return (
@@ -113,7 +113,6 @@ export function SensorCard() {
 
   const iconName = config?.icon ?? DOMAIN_ICONS[domain] ?? 'Activity';
   const customIconUrl = isCustomIcon(iconName) ? getCustomIconUrl(iconName) : undefined;
-  // eslint-disable-next-line react-hooks/static-components
   const IconComponent = customIconUrl ? undefined : resolveIcon(iconName);
 
   const thresholdColor = isNumeric ? getThresholdColor(numericValue, config?.thresholds) : undefined;
@@ -147,6 +146,38 @@ export function SensorCard() {
     return formatState(state, unit);
   })();
 
+  const iconTile = (
+    <motion.div
+      animate={isOn ? { scale: [1, 1.07, 1] } : undefined}
+      transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+      className={cn(
+        'rounded-xl flex items-center justify-center border transition-all duration-300 shrink-0',
+        isCompact ? 'w-7 h-7' : 'w-9 h-9',
+        isOn || (!isToggleable && !thresholdColor) ? 'bg-white/8 border-white/12' : 'bg-white/5 border-white/8'
+      )}
+      style={
+        thresholdColor
+          ? { backgroundColor: `${thresholdColor}14`, borderColor: `${thresholdColor}30` }
+          : isOn
+            ? { backgroundColor: `${accentColor}14`, borderColor: `${accentColor}28` }
+            : undefined
+      }
+    >
+      {customIconUrl ? (
+        <img src={customIconUrl} alt='' className={cn('object-contain', isCompact ? 'w-3.5 h-3.5' : 'w-4 h-4')} />
+      ) : IconComponent ? (
+        // eslint-disable-next-line react-hooks/static-components
+        <IconComponent
+          size={isCompact ? 14 : 17}
+          className='text-white/55 transition-colors'
+          style={thresholdColor || isOn ? { color: accentColor } : undefined}
+        />
+      ) : (
+        <Power size={isCompact ? 14 : 17} className='text-white/55' />
+      )}
+    </motion.div>
+  );
+
   return (
     <motion.div
       ref={cardRef}
@@ -163,9 +194,15 @@ export function SensorCard() {
     >
       {isToggleable && <RippleLayer ripples={ripples} color={`${accentColor}25`} />}
 
-      {/* ── Header : nom + badge toggle ── */}
-      <div className='flex items-center justify-between mb-1'>
-        <span className='text-white/40 text-xs font-medium truncate'>{name}</span>
+      {/* ── Header : (icône) + nom + badge toggle ──
+          Sur une tuile 2×2, l'icône occupait sa propre rangée et laissait un
+          trou entre elle et la valeur. Elle rejoint la ligne du titre : le
+          corps récupère la hauteur et la valeur peut respirer. */}
+      <div className='flex items-center justify-between mb-1 gap-2'>
+        <div className='flex items-center gap-2 min-w-0'>
+          {isCompact && iconTile}
+          <span className='text-white/40 text-xs font-medium truncate'>{name}</span>
+        </div>
 
         {isToggleable ? (
           <motion.span
@@ -192,47 +229,22 @@ export function SensorCard() {
         ) : null}
       </div>
 
-      {/* ── Icône ── */}
-      <div className={cn('flex items-center justify-between', isCompact ? 'mb-1' : 'mb-2')}>
-        <motion.div
-          animate={isOn ? { scale: [1, 1.07, 1] } : undefined}
-          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-          className={cn(
-            'rounded-xl flex items-center justify-center border transition-all duration-300',
-            isCompact ? 'w-7 h-7' : 'w-9 h-9',
-            isOn || (!isToggleable && !thresholdColor) ? 'bg-white/8 border-white/12' : 'bg-white/5 border-white/8'
-          )}
-          style={
-            thresholdColor
-              ? { backgroundColor: `${thresholdColor}14`, borderColor: `${thresholdColor}30` }
-              : isOn
-                ? { backgroundColor: `${accentColor}14`, borderColor: `${accentColor}28` }
-                : undefined
-          }
-        >
-          {customIconUrl ? (
-            <img src={customIconUrl} alt='' className={cn('object-contain', isCompact ? 'w-3.5 h-3.5' : 'w-4 h-4')} />
-          ) : IconComponent ? (
-            <IconComponent
-              size={isCompact ? 14 : 17}
-              className='text-white/55 transition-colors'
-              style={thresholdColor || isOn ? { color: accentColor } : undefined}
-            />
-          ) : (
-            <Power size={isCompact ? 14 : 17} className='text-white/55' />
-          )}
-        </motion.div>
+      {/* ── Icône (cards larges — sur sa propre rangée) ── */}
+      {!isCompact && (
+        <div className='flex items-center justify-between mb-2'>
+          {iconTile}
 
-        {/* Stale badge inline si pas de toggle */}
-        {!isToggleable && showStaleBadge && isStale && (
-          <span className='text-[9px] px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/20'>
-            ⚠ {t('widgets.sensor.stale')}
-          </span>
-        )}
-      </div>
+          {/* Stale badge inline si pas de toggle */}
+          {!isToggleable && showStaleBadge && isStale && (
+            <span className='text-[9px] px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/20'>
+              ⚠ {t('widgets.sensor.stale')}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* ── Corps : valeur / gauge / chart ── */}
-      <div className='flex-1 flex flex-col justify-end min-h-0'>
+      <div className='flex-1 flex flex-col min-h-0 justify-end'>
         {variant === 'gauge' && isNumeric ? (
           <div className='flex-1 flex items-center justify-center'>
             <SensorGauge
@@ -262,8 +274,10 @@ export function SensorCard() {
               </div>
             )}
 
-            {/* Barre de progression (variant default numérique) */}
-            {isNumeric && variant === 'default' && !isCompact && (
+            {/* Barre de progression (variant default numérique) — l'icône ayant
+                rejoint l'en-tête, la place existe aussi sur les tuiles carrées ;
+                seule une card d'une seule rangée s'en passe. */}
+            {isNumeric && variant === 'default' && !widgetSize.squat && (
               <div className='mb-2'>
                 <svg viewBox='0 0 120 6' className='w-full h-1.5' style={{ overflow: 'visible' }}>
                   <rect x='0' y='1' width='120' height='4' rx='2' fill='rgba(255,255,255,0.06)' />
@@ -289,7 +303,7 @@ export function SensorCard() {
 
             {/* Valeur principale */}
             <div
-              className={cn('font-light tracking-tight leading-none', isCompact ? 'text-xl' : 'text-3xl')}
+              className={cn('font-light tracking-tight leading-none', isCompact ? 'text-2xl' : 'text-3xl')}
               style={thresholdColor ? { color: thresholdColor } : undefined}
             >
               {isNumeric ? (

@@ -177,8 +177,8 @@ export function RoomCard() {
         >
           {customIconUrl ? (
             <img src={customIconUrl} alt='' className='w-4 h-4 object-contain' />
-          ) : // eslint-disable-next-line react-hooks/static-components
-          IconComp ? (
+          ) : IconComp ? (
+            // eslint-disable-next-line react-hooks/static-components
             <IconComp size={embedded ? 15 : 17} className='text-white' strokeWidth={1.8} />
           ) : null}
         </div>

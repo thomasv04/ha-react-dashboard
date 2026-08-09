@@ -211,7 +211,10 @@ export function playSound(sound: SoundPreset | string): void {
       return;
     }
 
-    const notes = PRESETS[sound as SoundPreset];
+    // Le paramètre est `SoundPreset | string`, union qui s'effondre en `string` :
+    // TypeScript ne peut donc pas retenir que `'none'` a déjà été écarté à la
+    // première ligne. Le cast rend cette garantie explicite.
+    const notes = PRESETS[sound as Exclude<SoundPreset, 'none'>];
     if (!notes) return;
 
     const ac = getContext();

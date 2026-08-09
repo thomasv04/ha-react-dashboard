@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import type { WidgetConfig, WidgetConfigs } from '@/types/widget-configs';
-import { DEFAULT_WIDGET_CONFIGS } from '@/types/widget-configs';
+import { DEFAULT_WIDGET_CONFIGS } from '@/widgets';
 import { usePages } from '@/context/PageContext';
 
 interface WidgetConfigContextValue {

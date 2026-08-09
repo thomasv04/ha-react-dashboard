@@ -153,6 +153,15 @@ test.describe('Add widget modal', () => {
     // Click "Capteur" in the widget list button
     await page.getByRole('button', { name: 'Capteur', exact: true }).click();
 
+    // Les widgets liés à un domaine HA (ici `sensor`) insèrent une étape de
+    // choix d'entité : tant qu'aucune entité n'est retenue, le bouton d'ajout
+    // reste désactivé.
+    await page.getByRole('button', { name: /Choisir une entité/i }).click();
+    await page
+      .getByRole('button', { name: /sensor.bedroom_temperature/ })
+      .first()
+      .click();
+
     // Wait for the preview panel's "Ajouter au dashboard" button to appear
     const addToDashboardBtn = page.getByRole('button', { name: /Ajouter au dashboard/i });
     await expect(addToDashboardBtn).toBeVisible({ timeout: 5000 });
@@ -162,8 +171,18 @@ test.describe('Add widget modal', () => {
     const newWidgetCount = await page.locator('[data-widget-id]').count();
     expect(newWidgetCount).toBeGreaterThan(initialWidgetCount);
 
-    // Cancel to discard changes (don't persist to test DB)
-    await page.getByRole('button', { name: 'Annuler' }).click();
+    // L'ajout enchaîne sur la modale d'édition du nouveau widget : la fermer
+    // avant de pouvoir atteindre la barre du mode édition.
+    // La modale d'édition n'écoute pas Échap : on utilise son propre bouton.
+    // `getByText` : le bouton du mode édition porte le même nom, mais via son
+    // attribut `title` — seul celui de la modale a « Annuler » comme contenu.
+    await page.getByText('Annuler', { exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Capteur' })).toHaveCount(0);
+
+    // Cancel to discard changes (don't persist to test DB).
+    // `getByTitle` et non `getByRole` : deux boutons portent le nom « Annuler »
+    // (celui du mode édition et celui de la modale).
+    await page.getByTitle('Annuler').click();
   });
 });
 

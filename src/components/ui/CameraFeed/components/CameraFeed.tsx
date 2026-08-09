@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback, useMemo, memo } from 'react';
-import Hls from 'hls.js';
+import { useStreamActive } from '@/hooks/useStreamActive';
 import { Camera } from 'lucide-react';
 import { useCamera, useHass } from '@hakit/core';
 import type { FilterByDomain, EntityName } from '@hakit/core';
@@ -21,10 +21,19 @@ interface CameraFeedProps {
  * HTTP connection, continuous JPEG frames, zero JS overhead.
  */
 const MjpegFeed = memo(function MjpegFeed({ entityId, className, onProtocol }: CameraFeedProps) {
-  const cam = useCamera(entityId as FilterByDomain<EntityName, 'camera'>, { poster: false });
+  // `poster: true` : une image fixe sert de dernière vue quand le flux est en
+  // pause, plutôt qu'un rectangle noir.
+  const cam = useCamera(entityId as FilterByDomain<EntityName, 'camera'>, { poster: true });
   const [failed, setFailed] = useState(false);
+  const holderRef = useRef<HTMLDivElement>(null);
+  // Un MJPEG est un téléchargement HTTP continu : le laisser tourner hors champ
+  // ou écran éteint coûte des centaines de Mo par heure pour rien.
+  const active = useStreamActive(holderRef);
 
   const mjpegUrl = cam.mjpeg.url;
+  // `?.` : `poster` n'est peuplé que si l'option est active côté `useCamera`.
+  // L'image fixe est un confort, son absence ne doit pas casser le flux.
+  const posterUrl = cam.poster?.url;
 
   // Build the stream URL from the mjpeg proxy URL
   // cam.mjpeg.url is typically /api/camera_proxy_stream/{entity_id}?token=...
@@ -49,7 +58,21 @@ const MjpegFeed = memo(function MjpegFeed({ entityId, className, onProtocol }: C
     );
   }
 
-  return <img src={streamUrl} alt='' className={cn('object-cover', className)} referrerPolicy='no-referrer' onError={handleError} />;
+  // Le conteneur reste monté pour que l'IntersectionObserver ait une cible ;
+  // seul le <img> du flux est démonté, ce qui ferme bien la connexion.
+  return (
+    <div ref={holderRef} className={cn('relative', className)}>
+      {active ? (
+        <img src={streamUrl} alt='' className='w-full h-full object-cover' referrerPolicy='no-referrer' onError={handleError} />
+      ) : posterUrl ? (
+        <img src={posterUrl} alt='' className='w-full h-full object-cover' referrerPolicy='no-referrer' />
+      ) : (
+        <div className='w-full h-full flex items-center justify-center text-white/20'>
+          <Camera size={28} />
+        </div>
+      )}
+    </div>
+  );
 });
 
 /**
@@ -60,45 +83,60 @@ const HlsFeed = memo(function HlsFeed({ entityId, className, onProtocol }: Camer
   const cam = useCamera(entityId as FilterByDomain<EntityName, 'camera'>, { poster: false });
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hlsFailed, setHlsFailed] = useState(false);
+  // Même garde-fou que le MJPEG : HLS télécharge des segments en continu.
+  const active = useStreamActive(videoRef);
 
   const streamUrl = cam.stream.url;
   const mjpegUrl = cam.mjpeg.url;
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !streamUrl) return;
+    if (!video || !streamUrl || !active) return;
 
     onProtocol?.('HLS');
 
-    if (Hls.isSupported()) {
-      const hls = new Hls({
-        lowLatencyMode: false,
-        backBufferLength: 0,
-        maxBufferLength: 8,
-        maxMaxBufferLength: 15,
-        xhrSetup: (xhr, url) => {
-          try {
-            const u = new URL(url, window.location.href);
-            if (u.searchParams.has('_HLS_msn') || u.searchParams.has('_HLS_part')) {
-              u.searchParams.delete('_HLS_msn');
-              u.searchParams.delete('_HLS_part');
-              xhr.open('GET', u.toString(), true);
+    let hls: { destroy: () => void } | null = null;
+    let cancelled = false;
+
+    // hls.js pèse ~330 kB et n'est utile qu'aux caméras en mode HLS : chargé à
+    // la demande plutôt que dans le bundle initial de la tablette.
+    void import('hls.js').then(({ default: Hls }) => {
+      if (cancelled) return;
+      if (Hls.isSupported()) {
+        const instance = new Hls({
+          lowLatencyMode: false,
+          backBufferLength: 0,
+          maxBufferLength: 8,
+          maxMaxBufferLength: 15,
+          xhrSetup: (xhr, url) => {
+            try {
+              const u = new URL(url, window.location.href);
+              if (u.searchParams.has('_HLS_msn') || u.searchParams.has('_HLS_part')) {
+                u.searchParams.delete('_HLS_msn');
+                u.searchParams.delete('_HLS_part');
+                xhr.open('GET', u.toString(), true);
+              }
+            } catch {
+              /* ignore */
             }
-          } catch {
-            /* ignore */
-          }
-        },
-      });
-      hls.on(Hls.Events.ERROR, (_event, data) => {
-        if (data.fatal) setHlsFailed(true);
-      });
-      hls.loadSource(streamUrl);
-      hls.attachMedia(video);
-      return () => hls.destroy();
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = streamUrl;
-    }
-  }, [streamUrl, onProtocol]);
+          },
+        });
+        instance.on(Hls.Events.ERROR, (_event, data) => {
+          if (data.fatal) setHlsFailed(true);
+        });
+        instance.loadSource(streamUrl);
+        instance.attachMedia(video);
+        hls = instance;
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = streamUrl;
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      hls?.destroy();
+    };
+  }, [streamUrl, onProtocol, active]);
 
   if (!streamUrl && !mjpegUrl) {
     return (
@@ -136,8 +174,9 @@ const HlsFeed = memo(function HlsFeed({ entityId, className, onProtocol }: Camer
  * Calls `onProtocol` once the active protocol is determined.
  */
 export function CameraFeed({ entityId, className, streamMode = 'mjpeg', onProtocol }: CameraFeedProps) {
-  const entities = useHass(s => s.entities);
-  const exists = !!entities?.[entityId];
+  // Booléen dérivé : un flux caméra remonté à chaque update d'entité
+  // relançait la connexion MJPEG/HLS pour rien.
+  const exists = useHass(s => !!s.entities?.[entityId]);
 
   if (!exists) {
     return (

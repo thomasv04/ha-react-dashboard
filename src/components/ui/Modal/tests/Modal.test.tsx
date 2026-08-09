@@ -45,7 +45,7 @@ describe('Modal', () => {
     fireEvent.click(screen.getByText('Open Modal'));
     await waitFor(() => expect(screen.getByText('Test Modal')).toBeInTheDocument());
 
-    fireEvent.click(screen.getByLabelText('Close'));
+    fireEvent.click(screen.getByLabelText('common.close'));
     await waitFor(() => expect(screen.queryByText('Test Modal')).not.toBeInTheDocument());
   });
 

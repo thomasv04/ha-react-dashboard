@@ -20,7 +20,7 @@ const next = parts.join('.');
 const updated = content.replace(`version: '${current}'`, `version: '${next}'`);
 writeFileSync(CONFIG_PATH, updated, 'utf-8');
 
-console.log(`Bumped ${current} → ${next}`);
+console.info(`Bumped ${current} → ${next}`);
 
 // Git: add, commit, push, tag
 const run = (cmd: string) => execSync(cmd, { stdio: 'inherit' });
@@ -31,4 +31,4 @@ run('git push origin main');
 run(`git tag v${next}`);
 run(`git push origin v${next}`);
 
-console.log(`\nTag v${next} pushed successfully.`);
+console.info(`\nTag v${next} pushed successfully.`);

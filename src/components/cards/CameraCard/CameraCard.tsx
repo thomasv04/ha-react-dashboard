@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { useHass } from '@hakit/core';
 import { useEntities } from '@/hooks/useEntities';
@@ -54,8 +55,60 @@ export function CameraCard() {
 
   const current = cameras.find(c => c.name === selected) ?? cameras[0];
 
+  // La colonne latérale de 110 px mangeait un tiers d'une card mobile : le flux
+  // tombait à ~225 px de large. Sous 380 px, le sélecteur passe en bandeau de
+  // pastilles posé sur le flux, qui récupère toute la surface de la card.
+  const cardRef = useRef<HTMLDivElement>(null);
+  const size = useWidgetSize(cardRef);
+  // La colonne latérale demande de la largeur (au-delà de ~480 px, sinon ses
+  // 110 px fixes coûtent plus au flux qu'ils ne rapportent) *et* de la hauteur
+  // (une liste verticale de 4 caméras ne tient pas dans deux rangées). Sinon,
+  // bandeau de pastilles posé sur le flux.
+  const asOverlay = size.w !== 'xl' || (size.h !== 'normal' && size.h !== 'tall');
+  const showSelector = cameras.length > 1;
+
+  const chips = (
+    <>
+      {cameras.map((cam, i) => {
+        const isActive = cam.name === selected;
+        return (
+          <motion.button
+            key={cam.name}
+            initial={{ opacity: 0, x: asOverlay ? 0 : 14, y: asOverlay ? -8 : 0 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            transition={{ duration: 0.25, delay: i * 0.05 }}
+            whileTap={{ scale: 0.96 }}
+            onClick={e => {
+              e.stopPropagation();
+              select(cam.name);
+            }}
+            className={cn(
+              'font-medium transition-all duration-200 whitespace-nowrap',
+              asOverlay
+                ? cn(
+                    // `min-h-8` : cible tactile praticable sur un bandeau posé
+                    // sur le flux, sans manger la vidéo.
+                    'px-3 min-h-8 rounded-full text-xs shrink-0 backdrop-blur-md border active:scale-95 transition-transform',
+                    isActive ? 'bg-white/85 text-black border-white/60' : 'bg-black/45 text-white/75 border-white/15'
+                  )
+                : cn(
+                    'w-full text-center px-3 py-2.5 rounded-2xl text-sm',
+                    isActive
+                      ? 'gc-inner text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]'
+                      : 'text-white/45 hover:text-white/75 hover:bg-white/5'
+                  )
+            )}
+          >
+            {cam.name}
+          </motion.button>
+        );
+      })}
+    </>
+  );
+
   return (
     <motion.div
+      ref={cardRef}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: DURATION_ENTRANCE }}
@@ -71,9 +124,16 @@ export function CameraCard() {
           onProtocol={setProtocol}
         />
 
+        {/* Sélecteur en bandeau — cards étroites */}
+        {asOverlay && showSelector && (
+          <div className='absolute top-0 left-0 right-0 pt-2 pb-4 px-2 bg-gradient-to-b from-black/55 to-transparent'>
+            <div className='flex gap-1.5 overflow-x-auto scrollbar-none'>{chips}</div>
+          </div>
+        )}
+
         {/* Camera name overlay */}
         <div className='absolute bottom-2 left-0 right-0 flex justify-center gap-1.5 pointer-events-none'>
-          <span className='text-xs text-white/60 bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full'>{current.name}</span>
+          <span className='text-xs text-white/75 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full'>{current.name}</span>
           {protocol && (
             <span
               className={cn(
@@ -87,34 +147,12 @@ export function CameraCard() {
         </div>
       </div>
 
-      {/* ── Camera list ── */}
-      <div className='w-[110px] flex flex-col gap-1.5 justify-center shrink-0'>
-        {cameras.map((cam, i) => {
-          const isActive = cam.name === selected;
-          return (
-            <motion.button
-              key={cam.name}
-              initial={{ opacity: 0, x: 14 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.25, delay: i * 0.05 }}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={e => {
-                e.stopPropagation();
-                select(cam.name);
-              }}
-              className={cn(
-                'w-full text-center px-3 py-2.5 rounded-2xl text-sm font-medium transition-all duration-200',
-                isActive
-                  ? 'gc-inner text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]'
-                  : 'text-white/45 hover:text-white/75 hover:bg-white/5'
-              )}
-            >
-              {cam.name}
-            </motion.button>
-          );
-        })}
-      </div>
+      {/* ── Camera list — cards larges ── */}
+      {/* `overflow-y-auto` : une installation avec beaucoup de caméras ne peut
+          pas faire déborder la card, quelle que soit sa hauteur. */}
+      {!asOverlay && showSelector && (
+        <div className='w-[110px] flex flex-col gap-1.5 justify-center shrink-0 overflow-y-auto scrollbar-none'>{chips}</div>
+      )}
     </motion.div>
   );
 }

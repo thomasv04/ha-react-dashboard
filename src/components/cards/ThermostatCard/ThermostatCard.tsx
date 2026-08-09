@@ -7,6 +7,7 @@ import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { cn } from '@/lib/utils';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
+import { useElementBox } from '@/hooks/useWidgetSize';
 import type { ThermostatCardConfig } from '@/types/widget-configs';
 import { useI18n } from '@/i18n';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
@@ -134,6 +135,13 @@ export function ThermostatCard() {
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
+  const cardRef = useRef<HTMLDivElement>(null);
+  // La jauge est carrée : dans une card large et basse, elle se cale sur la
+  // hauteur et laisse la largeur vide (523×90 → jauge de 90 px, 433 px perdus).
+  // Au-delà de ce rapport, on bascule en disposition paysage : jauge à gauche
+  // sur toute la hauteur, commandes à droite.
+  const [isLandscape, setIsLandscape] = useState(false);
+  useElementBox(cardRef, (w, h) => setIsLandscape(w / h > 1.7));
   const config = getWidgetConfig<ThermostatCardConfig>(widgetId || 'thermostat');
   const entityId = config?.entityId ?? 'climate.living_room';
   const minT = config?.minTemp ?? MIN_T;
@@ -249,9 +257,12 @@ export function ThermostatCard() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: DURATION_ENTRANCE, delay: 0.25 }}
-      className='gc rounded-3xl p-4 flex flex-col h-full'
+      ref={cardRef}
+      className={cn('gc rounded-3xl p-4 h-full', isLandscape ? 'flex flex-row items-stretch gap-3' : 'flex flex-col')}
     >
-      <div className='flex-1 min-h-0 overflow-hidden'>
+      {/* `aspect-square` en paysage : la jauge occupe toute la hauteur et
+          n'est plus bridée par la largeur restante. */}
+      <div className={cn('min-h-0 overflow-hidden', isLandscape ? 'h-full aspect-square shrink-0' : 'flex-1')}>
         <svg
           ref={svgRef}
           viewBox='0 0 270 270'
@@ -305,6 +316,11 @@ export function ThermostatCard() {
           <motion.circle
             cx={dot.x}
             cy={dot.y}
+            // `initial={false}` : sans état initial explicite, framer-motion
+            // tente d'animer cx/cy depuis une valeur qu'il n'a pas encore lue
+            // et écrit littéralement `cx="undefined"` au premier rendu
+            // (« <circle> attribute cx: Expected length, "undefined" »).
+            initial={false}
             animate={{ cx: dot.x, cy: dot.y }}
             transition={{ type: 'tween', duration: 0.05, ease: 'linear' }}
             r='10'
@@ -339,13 +355,17 @@ export function ThermostatCard() {
         </svg>
       </div>
 
-      <div className='grid grid-cols-4 gap-2 mt-1'>
+      {/* Paysage : rangée de boutons carrés, centrée verticalement à droite de
+          la jauge. Un 2×2 étiré sur la largeur restante donnait des pavés de
+          190×66 px, disproportionnés à côté du cadran. */}
+      <div className={cn('gap-2', isLandscape ? 'flex flex-1 min-w-0 items-center justify-center' : 'grid grid-cols-4 mt-1')}>
         <motion.button
           whileHover={{ scale: 1.06 }}
           whileTap={{ scale: 0.94 }}
           onClick={togglePower}
           className={cn(
-            'flex items-center justify-center h-[50px] rounded-[15px] transition-all duration-200',
+            'flex items-center justify-center rounded-[15px] transition-all duration-200',
+            isLandscape ? 'aspect-square flex-1 max-w-[62px]' : 'h-[50px]',
             !isOff
               ? 'bg-gradient-to-br from-white/5 to-white/20 border border-white/30 shadow-[inset_1px_1px_3px_rgba(255,255,255,0.3),2px_2px_6px_rgba(0,0,0,0.2)]'
               : 'bg-gradient-to-br from-black/10 to-black/20 border border-transparent hover:border-white/10'
@@ -362,7 +382,8 @@ export function ThermostatCard() {
               whileTap={{ scale: 0.94 }}
               onClick={e => selectPreset(e, value)}
               className={cn(
-                'flex items-center justify-center h-[50px] rounded-[15px] transition-all duration-200',
+                'flex items-center justify-center rounded-[15px] transition-all duration-200',
+                isLandscape ? 'aspect-square flex-1 max-w-[62px]' : 'h-[50px]',
                 isActive
                   ? 'bg-gradient-to-br from-white/5 to-white/20 border border-white/30 shadow-[inset_1px_1px_3px_rgba(255,255,255,0.3),2px_2px_6px_rgba(0,0,0,0.2)]'
                   : 'bg-gradient-to-br from-black/10 to-black/20 border border-transparent hover:border-white/10'

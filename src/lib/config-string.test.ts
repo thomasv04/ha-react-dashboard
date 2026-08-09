@@ -20,7 +20,7 @@ const MINIMAL_SNAPSHOT: ConfigSnapshot = {
   },
   dashboard: {
     version: 2,
-    pages: [{ id: 'home', label: 'Home', icon: '🏠' }],
+    pages: [{ id: 'home', label: 'Home', icon: '🏠', type: 'grid' as const, order: 0 }],
     layouts: {
       home: {
         widgets: { lg: [], md: [], sm: [] },
@@ -54,9 +54,9 @@ const LARGE_SNAPSHOT: ConfigSnapshot = {
   dashboard: {
     version: 2,
     pages: [
-      { id: 'home', label: 'Home', icon: '🏠' },
-      { id: 'media', label: 'Media', icon: '🎵' },
-      { id: 'security', label: 'Sécurité', icon: '🔒' },
+      { id: 'home', label: 'Home', icon: '🏠', type: 'grid' as const, order: 0 },
+      { id: 'media', label: 'Media', icon: '🎵', type: 'media' as const, order: 1 },
+      { id: 'security', label: 'Sécurité', icon: '🔒', type: 'grid' as const, order: 2 },
     ],
     layouts: {
       home: {
@@ -64,7 +64,7 @@ const LARGE_SNAPSHOT: ConfigSnapshot = {
           lg: [
             { id: 'w1', type: 'weather', x: 0, y: 0, w: 4, h: 3 },
             { id: 'w2', type: 'light', x: 4, y: 0, w: 2, h: 2 },
-            { id: 'w3', type: 'climate', x: 6, y: 0, w: 3, h: 2 },
+            { id: 'w3', type: 'thermostat', x: 6, y: 0, w: 3, h: 2 },
             { id: 'w4', type: 'camera', x: 0, y: 3, w: 6, h: 4 },
           ],
           md: [
@@ -86,15 +86,15 @@ const LARGE_SNAPSHOT: ConfigSnapshot = {
     },
     widgetConfigs: {
       home: {
-        w1: { entity_id: 'weather.home' },
-        w2: { entity_id: 'light.salon' },
-        w3: { entity_id: 'climate.thermostat' },
-        w4: { entity_id: 'camera.front' },
+        w1: { type: 'weather' as const, entityId: 'weather.home' },
+        w2: { type: 'light' as const, entityId: 'light.salon' },
+        w3: { type: 'thermostat' as const, entityId: 'climate.thermostat' },
+        w4: { type: 'camera' as const, cameras: [] },
       },
       media: {},
       security: {},
     },
-    customPanels: [{ id: 'custom:test', label: 'Test Panel', icon: '🧪' }],
+    customPanels: [{ id: 'custom:test', name: 'Test Panel', icon: '🧪', blocks: [] }],
   },
 };
 
@@ -143,7 +143,7 @@ describe('config-string', () => {
         ...MINIMAL_SNAPSHOT,
         dashboard: {
           ...MINIMAL_SNAPSHOT.dashboard,
-          pages: [{ id: 'home', label: 'Séjour 🏡', icon: '🇫🇷' }],
+          pages: [{ id: 'home', label: 'Séjour 🏡', icon: '🇫🇷', type: 'grid' as const, order: 0 }],
         },
       };
       const encoded = await encodeConfig(snap);

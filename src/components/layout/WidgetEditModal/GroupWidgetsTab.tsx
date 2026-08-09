@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { Plus, Trash2, GripVertical, ChevronDown, ChevronUp, Settings2, Pencil } from 'lucide-react';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
-import { DEFAULT_WIDGET_CONFIGS, WIDGET_FIELD_DEFS } from '@/types/widget-configs';
+import { DEFAULT_WIDGET_CONFIGS, WIDGET_FIELD_DEFS } from '@/widgets';
 import type { GroupChild, WidgetConfig, WidgetFieldDef } from '@/types/widget-configs';
-import { WIDGET_META } from '@/components/layout/AddWidgetModal/widget-meta';
+import { WIDGET_META } from '@/widgets';
 import { IconPicker, GradientPicker } from '@/components/layout/WidgetPickers';
 import { EntityPicker } from './EntityPicker';
 import { FieldInput } from './FieldInput';
@@ -180,7 +180,9 @@ function ChildRow({ child, onRemove }: { child: GroupChild; onRemove: () => void
   const updateField = (key: string, val: unknown) => {
     const next = { ...draft, [key]: val };
     setDraft(next);
-    updateWidgetConfig(child.id, next as WidgetConfig);
+    // Le brouillon est un sac de clés dynamiques : le passage par `unknown` est
+    // requis, les deux types ne se recouvrent pas assez pour un cast direct.
+    updateWidgetConfig(child.id, next as unknown as WidgetConfig);
   };
 
   return (
@@ -283,6 +285,7 @@ export function GroupWidgetsTab({ groupId: _groupId, draft, updateField }: Group
   const available = WIDGET_META.filter(m => !EXCLUDED_TYPES.has(m.type));
 
   const addChild = (type: string) => {
+    // eslint-disable-next-line react-hooks/purity
     const id = `${type}-${Date.now()}`;
     const defaultCfg = DEFAULT_WIDGET_CONFIGS[type as keyof typeof DEFAULT_WIDGET_CONFIGS];
     if (defaultCfg) updateWidgetConfig(id, { ...defaultCfg } as WidgetConfig);

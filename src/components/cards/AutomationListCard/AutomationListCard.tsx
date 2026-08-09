@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { Workflow } from 'lucide-react';
-import { useHass } from '@hakit/core';
+import { useHass, type HassStore } from '@hakit/core';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
@@ -16,16 +16,19 @@ function AutomationRow({
   item,
   helpers,
   soundOverrides,
+  t,
 }: {
   item: AutomationItem;
-  helpers: ReturnType<typeof useHass>['helpers'];
+  // `HassStore['helpers']` et non `ReturnType<typeof useHass>` : `useHass` est
+  // un store zustand surchargé, son type de retour brut se résout en `unknown`.
+  helpers: HassStore['helpers'];
   soundOverrides?: Record<string, SoundPreset>;
+  t: (key: string) => string;
 }) {
   const entity = useSafeEntity(item.entityId);
   const isOn = entity?.state === 'on';
   const playFeedback = useSoundFeedback('automation', soundOverrides);
 
-  // eslint-disable-next-line react-hooks/static-components
   const IconComponent = item.icon && !isCustomIcon(item.icon) ? (resolveIcon(item.icon) ?? Workflow) : Workflow;
   const customIconUrl = item.icon && isCustomIcon(item.icon) ? getCustomIconUrl(item.icon) : undefined;
 
@@ -76,7 +79,7 @@ function AutomationRow({
         <span
           className={cn('text-[10px] font-bold uppercase tracking-widest leading-none mt-0.5', isOn ? 'text-emerald-400' : 'text-white/25')}
         >
-          {isOn ? 'Actif' : 'Inactif'}
+          {isOn ? t('widgets.automation_list.active') : t('widgets.automation_list.inactive')}
         </span>
       </div>
 
@@ -101,7 +104,9 @@ export function AutomationListCard() {
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<AutomationListCardConfig>(widgetId || 'automation_list');
-  const { helpers } = useHass();
+  // Sélecteur ciblé : `useHass()` sans sélecteur s'abonne à tout le store et
+  // re-rendait la liste à chaque message WebSocket de la maison.
+  const helpers = useHass(s => s.helpers);
 
   const items: AutomationItem[] = config?.automations ?? [];
   const name = config?.name ?? t('widgets.automation_list.label');
@@ -140,7 +145,7 @@ export function AutomationListCard() {
       <div className='flex flex-col gap-1.5 flex-1 overflow-y-auto scrollbar-none' style={{ scrollbarWidth: 'none' }}>
         <AnimatePresence>
           {items.map(item => (
-            <AutomationRow key={item.entityId} item={item} helpers={helpers} soundOverrides={config?.soundOverrides} />
+            <AutomationRow key={item.entityId} item={item} helpers={helpers} soundOverrides={config?.soundOverrides} t={t} />
           ))}
         </AnimatePresence>
       </div>

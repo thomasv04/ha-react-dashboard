@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useState } from 'react';
 import type { HistoryPoint } from '@/hooks/useEntityHistory';
 import { useI18n } from '@/i18n';
 
@@ -19,10 +19,10 @@ function formatRelativeTime(date: Date, now: number): string {
 
 export function BinaryTimeline({ data }: BinaryTimelineProps) {
   const { t } = useI18n();
-  const nowRef = useRef<number>(0);
-  // eslint-disable-next-line react-hooks/purity
-  if (nowRef.current === 0) nowRef.current = Date.now();
-  const now = nowRef.current;
+  // Initialiseur paresseux de `useState` plutôt qu'un ref écrit pendant le
+  // rendu : même sémantique — l'instant de référence est figé au montage — mais
+  // sans lecture ni écriture de ref en phase de rendu.
+  const [now] = useState(() => Date.now());
 
   const { segments, events } = useMemo(() => {
     if (data.length === 0) return { segments: [], events: [] };

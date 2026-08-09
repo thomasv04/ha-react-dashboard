@@ -37,12 +37,12 @@ describe('PersonStatusCard', () => {
 
   it('shows MAISON for home state', () => {
     render(<PersonStatusCard />);
-    expect(screen.getByText('MAISON')).toBeDefined();
+    expect(screen.getByText('widgets.person.home')).toBeDefined();
   });
 
   it('shows ABSENT for not_home', () => {
     render(<PersonStatusCard />);
-    expect(screen.getByText('ABSENT')).toBeDefined();
+    expect(screen.getByText('widgets.person.away')).toBeDefined();
   });
 
   it('renders empty state when no persons configured', async () => {
@@ -52,6 +52,6 @@ describe('PersonStatusCard', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
     render(<PersonStatusCard />);
-    expect(screen.getByText(/aucune personne/i)).toBeDefined();
+    expect(screen.getByText(/widgets.person.noPeople/i)).toBeDefined();
   });
 });

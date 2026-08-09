@@ -35,7 +35,6 @@ export function ButtonCard() {
 
   const iconName = config?.icon;
   const customIconUrl = iconName && isCustomIcon(iconName) ? getCustomIconUrl(iconName) : undefined;
-  // eslint-disable-next-line react-hooks/static-components
   const IconComponent = iconName && !isCustomIcon(iconName) ? (resolveIcon(iconName) ?? Play) : Play;
 
   const callService = useCallback(async () => {
@@ -50,19 +49,22 @@ export function ButtonCard() {
           /* ignore invalid JSON */
         }
       }
+      // `as never` sur domain/service : ils sont saisis par l'utilisateur, donc
+      // inconnus à la compilation. La surcharge de `callService` en déduit alors
+      // que `serviceData` doit être `undefined` — d'où le cast de l'objet entier.
       await helpers.callService({
         domain: domain as never,
         service: service as never,
         target: config?.entityId ? { entity_id: config.entityId } : undefined,
         serviceData: Object.keys(serviceData).length ? serviceData : undefined,
-      });
+      } as never);
       setFeedback('success');
       setTimeout(() => setFeedback('idle'), 1800);
     } catch {
       setFeedback('error');
       setTimeout(() => setFeedback('idle'), 2500);
     }
-  }, [helpers, domain, service, config]);
+  }, [helpers, domain, service, config, setFeedback, playFeedback]);
 
   const handlePress = useCallback(
     (e: React.MouseEvent | React.PointerEvent) => {
@@ -75,13 +77,16 @@ export function ButtonCard() {
       setFeedback('idle');
       callService();
     },
-    [feedback, requireConfirm, callService]
+    [feedback, requireConfirm, callService, setFeedback]
   );
 
-  const cancelConfirm = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setFeedback('idle');
-  }, []);
+  const cancelConfirm = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setFeedback('idle');
+    },
+    [setFeedback]
+  );
 
   // Derive colors from accent
   const bgActive = `${color}18`;
@@ -198,6 +203,7 @@ export function ButtonCard() {
               {customIconUrl ? (
                 <img src={customIconUrl} alt='' className='w-6 h-6 object-contain' />
               ) : (
+                // eslint-disable-next-line react-hooks/static-components
                 <IconComponent size={24} style={{ color }} />
               )}
             </motion.div>

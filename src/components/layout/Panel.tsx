@@ -65,7 +65,11 @@ export function Panel({ children, title, icon, wide = false }: PanelProps) {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={closePanel}
-            className='w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/60 hover:text-white transition-colors'
+            aria-label='Fermer'
+            // `touch-target` : la pastille reste à 32 px visuellement, mais sa
+            // zone de contact monte à 44 px — elle est isolée, aucun risque de
+            // chevauchement avec un contrôle voisin.
+            className='touch-target w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/60 hover:text-white transition-colors'
           >
             <X size={16} />
           </motion.button>
@@ -94,9 +98,19 @@ export function PanelOverlay({ children }: { children: ReactNode }) {
             exit='exit'
             className='fixed inset-0 z-40 bg-black/45 backdrop-blur-sm'
           />
-          {/* Wrapper — clicking here (outside panel card) closes it */}
-          <div className='fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 pb-24 sm:pb-4' onClick={closePanel}>
-            {children}
+          {/* Wrapper — clicking here (outside panel card) closes it.
+              `pb-28` à toutes les tailles : le dock flotte au-dessus de cette
+              couche (cf. son z-index), la feuille ne doit donc jamais passer
+              dessous — sinon le dock masquerait le bas du panneau. */}
+          <div className='fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 pb-28' onClick={closePanel}>
+            {/* Clé sur le panneau actif : passer d'un panneau à l'autre depuis
+                le dock joue la sortie puis l'entrée au lieu d'échanger le
+                contenu d'un coup. `mode='wait'` séquence les deux. */}
+            <AnimatePresence mode='wait' initial={false}>
+              <motion.div key={activePanel} className='contents'>
+                {children}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </>
       )}

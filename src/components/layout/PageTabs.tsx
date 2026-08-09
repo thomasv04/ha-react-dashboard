@@ -31,7 +31,10 @@ export function PageTabs() {
 
   return (
     <>
-      <div className='flex items-center gap-2 overflow-x-auto scrollbar-none py-2 mb-3'>
+      {/* pl/pr : réserve la place des deux boutons flottants (réglages en haut à
+          gauche, édition en haut à droite) qui recouvraient sinon les onglets
+          dès que la fenêtre est étroite. */}
+      <div className='flex items-center gap-2 overflow-x-auto scrollbar-none py-2 mb-3 pl-12 pr-12'>
         {/* Bouton WallPanel — toujours à gauche */}
         {(isEditMode || isConfigured) && (
           <button

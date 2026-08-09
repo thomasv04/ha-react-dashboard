@@ -28,7 +28,14 @@ export default defineConfig({
   },
   projects: [
     {
+      // Amorce la base de test : sans configuration, le dashboard est vide et
+      // toute la suite expire en attendant un `[data-widget-id]`.
+      name: 'setup',
+      testMatch: /seed\.setup\.ts/,
+    },
+    {
       name: 'chromium',
+      dependencies: ['setup'],
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
     },
   ],

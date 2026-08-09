@@ -40,6 +40,19 @@ export function useHass<T>(selector?: (s: HassState) => T): HassState | T {
   return selector ? selector(state) : state;
 }
 
+// Le vrai `useHass` est un store zustand : `HAThrottlePatch` appelle
+// `getState` / `setState` / `subscribe` dessus au montage. Sans ces méthodes le
+// mock lève `useHass.getState is not a function` et **toute l'application**
+// plante en mode mock — c'est ce qui empêchait la suite E2E de démarrer.
+useHass.getState = (): HassState => ({ entities: ENTITIES, helpers: mockHelpers });
+useHass.setState = (_partial: Partial<HassState>): void => {
+  /* le jeu d'entités du mock est figé */
+};
+useHass.subscribe = (_listener: (s: HassState) => void): (() => void) => {
+  // Rien n'évolue dans le mock : on rend un désabonnement inerte.
+  return () => {};
+};
+
 // ─── useWeather ──────────────────────────────────────────────────────────────
 
 interface ForecastEntry {

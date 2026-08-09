@@ -24,7 +24,7 @@ export function CoverCard() {
   const sliderRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const widgetSize = useWidgetSize(cardRef);
-  const isCompact = widgetSize === 'xs' || widgetSize === 'sm';
+  const isCompact = widgetSize.compact;
   const [isDragging, setIsDragging] = useState(false);
   const [dragPosition, setDragPosition] = useState<number | null>(null);
   const playFeedback = useSoundFeedback();

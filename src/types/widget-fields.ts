@@ -1,4 +1,4 @@
-﻿import type { WidgetConfigs } from './widget-types';
+import type { WidgetConfigs } from './widget-types';
 
 export interface WidgetFieldDef {
   key: string;
@@ -25,8 +25,8 @@ export interface WidgetFieldDef {
   options?: { value: string; label: string; icon?: string }[];
 }
 
-// â”€â”€ Default configs (mirrors current hardcoded values) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-export const DEFAULT_WIDGET_CONFIGS: WidgetConfigs = {
+// ── Default configs (mirrors current hardcoded values) ────────────────────────
+export const LEGACY_DEFAULT_WIDGET_CONFIGS: WidgetConfigs = {
   activity: {
     type: 'activity',
     pills: [
@@ -34,14 +34,14 @@ export const DEFAULT_WIDGET_CONFIGS: WidgetConfigs = {
       { id: 'heater', entityId: 'climate.living_room', label: 'Chauffage', template: '{state}' },
       { id: 'solar', entityId: 'sensor.battery_level', label: 'Batterie solaire', template: '{state}%' },
       { id: 'tempo', entityId: 'sensor.tempo_current_color', label: 'Tempo', template: '{state}' },
-      { id: 'temp', entityId: 'sensor.bedroom_temperature', label: 'Chambre', template: '{state}Â°C' },
+      { id: 'temp', entityId: 'sensor.bedroom_temperature', label: 'Chambre', template: '{state}°C' },
     ],
     persons: [],
   },
   camera: {
     type: 'camera',
     cameras: [
-      { entityId: 'camera.front_door', name: 'EntrÃ©e' },
+      { entityId: 'camera.front_door', name: 'Entrée' },
       { entityId: 'camera.kitchen', name: 'Cuisine' },
       { entityId: 'camera.living_room', name: 'Salon' },
       { entityId: 'camera.hallway', name: 'Couloir' },
@@ -80,10 +80,10 @@ export const DEFAULT_WIDGET_CONFIGS: WidgetConfigs = {
     type: 'shortcuts',
     shortcuts: [
       { id: 'volets', label: 'Volets', icon: 'Blinds', panelId: 'volets', color: 'from-blue-500 to-cyan-400' },
-      { id: 'lumieres', label: 'LumiÃ¨res', icon: 'Lightbulb', panelId: 'lumieres', color: 'from-yellow-500 to-amber-400' },
+      { id: 'lumieres', label: 'Lumières', icon: 'Lightbulb', panelId: 'lumieres', color: 'from-yellow-500 to-amber-400' },
       {
         id: 'security',
-        label: 'SÃ©curitÃ©',
+        label: 'Sécurité',
         icon: 'ShieldHalf',
         panelId: 'security',
         color: 'from-green-500 to-emerald-400',
@@ -92,7 +92,7 @@ export const DEFAULT_WIDGET_CONFIGS: WidgetConfigs = {
       { id: 'aspirateur', label: 'Aspirateur', icon: 'Cpu', panelId: 'aspirateur', color: 'from-purple-500 to-violet-400' },
       { id: 'flowers', label: 'Plantes', icon: 'Flower2', panelId: 'flowers', color: 'from-lime-500 to-green-400' },
       { id: 'notifications', label: 'Notifs', icon: 'Bell', panelId: 'notifications', color: 'from-orange-500 to-red-400' },
-      { id: 'cameras', label: 'CamÃ©ras', icon: 'Camera', panelId: 'cameras', color: 'from-slate-500 to-gray-400' },
+      { id: 'cameras', label: 'Caméras', icon: 'Camera', panelId: 'cameras', color: 'from-slate-500 to-gray-400' },
     ],
   },
   greeting: {
@@ -122,7 +122,7 @@ export const DEFAULT_WIDGET_CONFIGS: WidgetConfigs = {
   template: {
     type: 'template',
     primaryInfo: 'Hello, {{user}}',
-    secondaryInfo: "{{ states('sensor.bedroom_temperature') }}Â°C",
+    secondaryInfo: "{{ states('sensor.bedroom_temperature') }}°C",
     icon: 'mdi:home',
     iconColor: 'blue',
   },
@@ -170,22 +170,22 @@ export const DEFAULT_WIDGET_CONFIGS: WidgetConfigs = {
   },
 };
 
-export const WIDGET_FIELD_DEFS: Record<string, WidgetFieldDef[]> = {
+export const LEGACY_WIDGET_FIELD_DEFS: Record<string, WidgetFieldDef[]> = {
   weather: [
-    { key: 'entityId', label: 'EntitÃ© mÃ©tÃ©o', fieldType: 'entity', domain: 'weather' },
+    { key: 'entityId', label: 'Entité météo', fieldType: 'entity', domain: 'weather' },
     { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
     { key: 'customIcons', label: 'Icônes personnalisées', fieldType: 'weather-icons' },
   ],
   thermostat: [
-    { key: 'entityId', label: 'EntitÃ© climate', fieldType: 'entity', domain: 'climate' },
-    { key: 'minTemp', label: 'TempÃ©rature min', fieldType: 'number' },
-    { key: 'maxTemp', label: 'TempÃ©rature max', fieldType: 'number' },
+    { key: 'entityId', label: 'Entité climate', fieldType: 'entity', domain: 'climate' },
+    { key: 'minTemp', label: 'Température min', fieldType: 'number' },
+    { key: 'maxTemp', label: 'Température max', fieldType: 'number' },
     { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
   ],
   energy: [
     { key: 'batteryLevelEntity', label: 'Niveau batterie', fieldType: 'entity', domain: 'sensor' },
-    { key: 'batteryStateEntity', label: 'Ã‰tat batterie', fieldType: 'entity', domain: 'sensor' },
-    { key: 'gridInputPowerEntity', label: 'Puissance rÃ©seau', fieldType: 'entity', domain: 'sensor' },
+    { key: 'batteryStateEntity', label: 'État batterie', fieldType: 'entity', domain: 'sensor' },
+    { key: 'gridInputPowerEntity', label: 'Puissance réseau', fieldType: 'entity', domain: 'sensor' },
     { key: 'homeOutputPowerEntity', label: 'Puissance maison', fieldType: 'entity', domain: 'sensor' },
     { key: 'solarProductionEntity', label: 'Production solaire', fieldType: 'entity', domain: 'sensor' },
     { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
@@ -199,13 +199,13 @@ export const WIDGET_FIELD_DEFS: Record<string, WidgetFieldDef[]> = {
     { key: 'remainingRedEntity', label: 'Jours rouge restants', fieldType: 'entity', domain: 'sensor' },
   ],
   camera: [
-    { key: 'selectorEntity', label: 'EntitÃ© sÃ©lection', fieldType: 'entity', domain: 'input_select' },
+    { key: 'selectorEntity', label: 'Entité sélection', fieldType: 'entity', domain: 'input_select' },
     {
       key: 'cameras',
-      label: 'CamÃ©ras',
+      label: 'Caméras',
       fieldType: 'list',
       itemFields: [
-        { key: 'entityId', label: 'EntitÃ© camÃ©ra', fieldType: 'entity', domain: 'camera' },
+        { key: 'entityId', label: 'Entité caméra', fieldType: 'entity', domain: 'camera' },
         { key: 'name', label: 'Nom', fieldType: 'text' },
       ],
     },
@@ -227,11 +227,11 @@ export const WIDGET_FIELD_DEFS: Record<string, WidgetFieldDef[]> = {
       fieldType: 'list',
       itemFields: [
         { key: 'id', label: 'Identifiant', fieldType: 'text' },
-        { key: 'label', label: 'Nom affichÃ©', fieldType: 'text' },
-        { key: 'icon', label: 'IcÃ´ne', fieldType: 'icon' },
+        { key: 'label', label: 'Nom affiché', fieldType: 'text' },
+        { key: 'icon', label: 'Icône', fieldType: 'icon' },
         { key: 'panelId', label: 'Panneau lié', fieldType: 'panel-select' },
         { key: 'color', label: 'Couleur', fieldType: 'gradient' },
-        { key: 'statusEntity', label: 'EntitÃ© statut', fieldType: 'entity' },
+        { key: 'statusEntity', label: 'Entité statut', fieldType: 'entity' },
       ],
     },
   ],
@@ -242,32 +242,32 @@ export const WIDGET_FIELD_DEFS: Record<string, WidgetFieldDef[]> = {
       fieldType: 'list',
       itemFields: [
         { key: 'id', label: 'Identifiant', fieldType: 'text' },
-        { key: 'entityId', label: 'EntitÃ©', fieldType: 'entity' },
+        { key: 'entityId', label: 'Entité', fieldType: 'entity' },
         { key: 'label', label: 'Label', fieldType: 'text' },
         { key: 'template', label: 'Template ({state}, {attr.X})', fieldType: 'text' },
       ],
     },
     {
       key: 'persons',
-      label: 'Utilisateurs affichÃ©s',
+      label: 'Utilisateurs affichés',
       fieldType: 'list',
       itemFields: [
-        { key: 'entityId', label: 'EntitÃ© personne', fieldType: 'entity', domain: 'person' },
-        { key: 'name', label: 'Nom affichÃ©', fieldType: 'text' },
+        { key: 'entityId', label: 'Entité personne', fieldType: 'entity', domain: 'person' },
+        { key: 'name', label: 'Nom affiché', fieldType: 'text' },
       ],
     },
   ],
   greeting: [{ key: 'locale', label: 'Locale (fr-FR, en-US...)', fieldType: 'text' }],
   sensor: [
-    { key: 'entityId', label: 'EntitÃ©', fieldType: 'entity' },
-    { key: 'name', label: 'Nom affichÃ©', fieldType: 'text' },
-    { key: 'icon', label: 'IcÃ´ne', fieldType: 'icon' },
+    { key: 'entityId', label: 'Entité', fieldType: 'entity' },
+    { key: 'name', label: 'Nom affiché', fieldType: 'text' },
+    { key: 'icon', label: 'Icône', fieldType: 'icon' },
     {
       key: 'variant',
       label: 'Variante',
       fieldType: 'select',
       options: [
-        { value: 'default', label: 'DÃ©faut (barre)' },
+        { value: 'default', label: 'Défaut (barre)' },
         { value: 'gauge', label: 'Jauge demi-cercle' },
         { value: 'sparkline', label: 'Courbe (SparkLine)' },
         { value: 'bar', label: 'Histogramme (BarChart)' },
@@ -295,24 +295,24 @@ export const WIDGET_FIELD_DEFS: Record<string, WidgetFieldDef[]> = {
       label: 'Personnes',
       fieldType: 'list',
       itemFields: [
-        { key: 'entityId', label: 'EntitÃ© personne', fieldType: 'entity', domain: 'person' },
-        { key: 'name', label: 'Nom affichÃ©', fieldType: 'text' },
+        { key: 'entityId', label: 'Entité personne', fieldType: 'entity', domain: 'person' },
+        { key: 'name', label: 'Nom affiché', fieldType: 'text' },
       ],
     },
     { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
   ],
   cover: [
-    { key: 'entityId', label: 'EntitÃ© volet', fieldType: 'entity', domain: 'cover' },
-    { key: 'name', label: 'Nom affichÃ©', fieldType: 'text' },
-    { key: 'icon', label: 'IcÃ´ne', fieldType: 'icon' },
+    { key: 'entityId', label: 'Entité volet', fieldType: 'entity', domain: 'cover' },
+    { key: 'name', label: 'Nom affiché', fieldType: 'text' },
+    { key: 'icon', label: 'Icône', fieldType: 'icon' },
     { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
   ],
   template: [
-    { key: 'entityId', label: 'EntitÃ© (contexte)', fieldType: 'entity' },
+    { key: 'entityId', label: 'Entité (contexte)', fieldType: 'entity' },
     { key: 'primaryInfo', label: 'Information principale', fieldType: 'template' },
     { key: 'secondaryInfo', label: 'Information secondaire', fieldType: 'template' },
-    { key: 'icon', label: 'IcÃ´ne', fieldType: 'template' },
-    { key: 'iconColor', label: 'Couleur icÃ´ne', fieldType: 'template' },
+    { key: 'icon', label: 'Icône', fieldType: 'template' },
+    { key: 'iconColor', label: 'Couleur icône', fieldType: 'template' },
     { key: 'image', label: 'Image (URL)', fieldType: 'template' },
     { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
   ],

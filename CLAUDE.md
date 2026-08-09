@@ -81,22 +81,107 @@ src/i18n/locales/
 - When adding new UI text: add to the appropriate category file in **both** `en/` and `fr/`
 - Translation overrides (user-customised strings) are stored server-side at `GET/PUT /api/translations/overrides`
 
-## New widget checklist (MANDATORY)
+## Créer un widget
 
-When implementing any new widget type, ALL of these files must be updated:
+### La commande
 
-| File | What to add |
-|------|-------------|
-| `src/components/cards/<Name>/<Name>.tsx` | Main component |
-| `src/components/cards/<Name>/index.ts` | Barrel export |
-| `src/types/widget-types.ts` | Config interface + `WidgetConfig` union |
-| `src/types/widget-configs.ts` | Re-export |
-| `src/types/widget-fields.ts` | Default config + field defs |
-| `src/config/widget-dispositions.ts` | `WIDGET_DISPOSITIONS` entry |
-| `src/context/DashboardLayoutContext.tsx` | `GridWidget['type']` union + `WIDGET_CATALOG` + `SIZE_PRESETS` |
-| `src/config/widget-registry.ts` | `PREVIEW_COMPONENTS` + `WIDGET_COMPONENTS` |
-| `src/components/layout/AddWidgetModal/widget-meta.ts` | `WIDGET_META` entry |
-| `src/i18n/locales/en/widgets.json` + `fr/widgets.json` | Translation keys |
+```bash
+npm run new:widget
+```
+
+Le générateur pose quatre questions (type, nom, libellé, domaine HA) puis écrit
+le composant, le manifeste, l'enregistrement, les types et les clés i18n `fr`/`en`.
+Mode non interactif :
+
+```bash
+npm run new:widget -- --type=doorbell --name=Doorbell --domain=binary_sensor
+```
+
+Vérifier ensuite avec `npm run check:widgets && npm run type-check`.
+
+### Le manifeste : une seule source de vérité
+
+Tout ce qui définit un widget vit dans `src/components/cards/<Nom>/widget.ts`,
+à côté de son composant. Les registres partagés en sont **dérivés** par
+`src/widgets/index.ts` — il n'y a rien à tenir en phase à la main.
+
+```ts
+import { Gauge } from 'lucide-react';
+import { defineWidget, type WidgetDefaults } from '@/widgets/define-widget';
+import type { DoorbellCardConfig } from '@/types/widget-configs';
+
+export default defineWidget({
+  type: 'doorbell',
+  component: () => import('./DoorbellCard').then(m => ({ default: m.DoorbellCard })),
+
+  meta: {
+    label: 'widgets.doorbell.label',            // clé i18n, jamais du texte
+    description: 'widgets.doorbell.description',
+    category: 'home',                            // onglet du catalogue
+    icon: Gauge,
+    color: '#3b82f6',
+    entityDomain: 'binary_sensor',               // pré-filtre le sélecteur d'entité
+  },
+
+  defaultSize: { lg: { w: 3, h: 2 }, md: { w: 4, h: 2 }, sm: { w: 2, h: 2 } },
+  minSize:     { lg: { w: 2, h: 1 }, md: { w: 2, h: 1 }, sm: { w: 2, h: 1 } },
+
+  sizePresets: { lg: [{ name: 'Compact', w: 2, h: 1 }, /* … */] },  // facultatif
+  dispositions: [/* variantes de mise en page */],                   // facultatif
+
+  fields: [
+    { key: 'entityId', label: 'Entité', fieldType: 'entity', domain: 'binary_sensor' },
+    { key: 'name', label: 'Nom affiché', fieldType: 'text' },
+  ],
+
+  defaults: { entityId: '' } satisfies WidgetDefaults<DoorbellCardConfig>,
+});
+```
+
+Puis **une seule ligne** dans un fichier partagé — l'import dans
+`src/widgets/registry.ts`. Le générateur s'en charge.
+
+Restent deux déclarations que TypeScript ne peut pas dériver d'une valeur, et
+que le générateur écrit aussi : le type dans l'union `GridWidget['type']`
+(`src/context/DashboardLayoutContext.tsx`) et l'interface de configuration dans
+`src/types/widget-types.ts`.
+
+### Anatomie du composant
+
+Une card **doit** s'adapter à sa case, sur les deux axes — les rangées de la
+grille font 80 px, une card peut donc être large et très basse :
+
+```tsx
+const cardRef = useRef<HTMLDivElement>(null);
+const size = useWidgetSize(cardRef);   // { w, h, compact, squat }
+
+// size.squat  → une seule rangée : passer en disposition horizontale
+// size.h      → 'squat' | 'short' | 'normal' | 'tall' (1 / 2 / 3 / 4+ rangées)
+// size.w      → 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+// size.compact→ étroit *ou* écrasé : masquer le contenu secondaire
+```
+
+Ne jamais laisser une card déborder de sa case : le contenu serait rogné. Faire
+disparaître les blocs secondaires plutôt que de les laisser dépasser.
+
+### Registres historiques
+
+Les widgets antérieurs à `defineWidget` déclarent encore leurs données dans les
+gros objets centraux (`LEGACY_WIDGET_META`, `LEGACY_WIDGET_CATALOG`,
+`LEGACY_SIZE_PRESETS`, `LEGACY_WIDGET_DISPOSITIONS`, `LEGACY_WIDGET_FIELD_DEFS`,
+`LEGACY_DEFAULT_WIDGET_CONFIGS`, `LEGACY_WIDGET_COMPONENTS`). Ils continuent de
+fonctionner : `src/widgets/index.ts` applique les manifestes **par-dessus**.
+
+Ne rien ajouter dans ces fichiers pour un nouveau widget. Migrer un widget
+existant = déplacer ses entrées dans un manifeste et les retirer des registres.
+
+### Toujours importer depuis `@/widgets`
+
+`WIDGET_COMPONENTS`, `WIDGET_META`, `WIDGET_CATALOG`, `WIDGET_DISPOSITIONS`,
+`SIZE_PRESETS`, `WIDGET_FIELD_DEFS`, `DEFAULT_WIDGET_CONFIGS`, `getMinSize`,
+`getDisposition` — seul `@/widgets` tient compte des manifestes. Importer
+directement depuis `@/config/*` ou `@/types/widget-fields` renvoie les données
+historiques, sans les widgets déclarés.
 
 ## Panel selects — UI component (MANDATORY)
 

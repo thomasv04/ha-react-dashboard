@@ -3,6 +3,8 @@ import { DURATION_ENTRANCE, DURATION_MEDIUM } from '@/lib/motion-tokens';
 import { Lightbulb, Flame, Battery, Sun, ShieldOff, ShieldCheck } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useEffect, useState, useRef } from 'react';
+import { useEntities, useEntitiesByDomain } from '@/hooks/useEntities';
+import { useI18n } from '@/i18n';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { ActivityBarConfig } from '@/types/widget-configs';
@@ -24,7 +26,7 @@ interface Person {
 }
 
 export function ActivityBar() {
-  const entities = useHass(s => s.entities);
+  const { t } = useI18n();
   const hassUrl = useHass(s => s.connection?.socket?.url);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -38,6 +40,19 @@ export function ActivityBar() {
     const pill = config?.pills?.find(p => p.id === pillId);
     return pill?.entityId ?? fallback;
   };
+
+  // La barre lit 5 entités nommées + le domaine `person`. S'abonner à la map
+  // complète la re-rendait à chaque message WebSocket de la maison entière.
+  const pillEntities = useEntities([
+    entityFor('alarm', 'alarm_control_panel.home_alarm'),
+    entityFor('heater', 'climate.living_room'),
+    entityFor('solar', 'sensor.battery_level'),
+    entityFor('tempo', 'sensor.tempo_current_color'),
+    entityFor('temp', 'sensor.bedroom_temperature'),
+    ...(config?.persons?.map(p => p.entityId) ?? []),
+  ]);
+  const personEntities = useEntitiesByDomain('person');
+  const entities = pillEntities as Record<string, (typeof pillEntities)[string] | undefined>;
 
   // Detect mobile via container width (not viewport)
   useEffect(() => {
@@ -59,7 +74,7 @@ export function ActivityBar() {
     pills.push({
       id: 'alarm',
       icon: isArmed ? <ShieldCheck size={14} /> : <ShieldOff size={14} />,
-      label: isArmed ? 'Alarme armée' : 'Alarme désarmée',
+      label: isArmed ? t('activityBar.alarmArmed') : t('activityBar.alarmDisarmed'),
       color: isArmed ? 'text-red-400' : 'text-green-400',
       bgColor: isArmed ? 'bg-red-400/10' : 'bg-green-400/10',
     });
@@ -72,7 +87,7 @@ export function ActivityBar() {
     pills.push({
       id: 'heater',
       icon: <Flame size={14} />,
-      label: isOn ? 'Poêle allumé' : 'Poêle éteint',
+      label: isOn ? t('activityBar.pelletOn') : t('activityBar.pelletOff'),
       color: isOn ? 'text-orange-400' : 'text-white/40',
       bgColor: isOn ? 'bg-orange-400/10' : 'bg-white/5',
     });
@@ -94,7 +109,7 @@ export function ActivityBar() {
     pills.push({
       id: 'battery',
       icon: <Battery size={14} />,
-      label: `Batterie solaire ${battLevel}%`,
+      label: t('activityBar.battery', { value: battLevel }),
       color,
       bgColor,
       hideOnMobile: true,
@@ -113,7 +128,7 @@ export function ActivityBar() {
     pills.push({
       id: 'tempo',
       icon: <Sun size={14} />,
-      label: `Tempo ${tempoCouleur}`,
+      label: t('activityBar.tempo', { value: tempoCouleur }),
       color: colorData.color,
       bgColor: colorData.bgColor,
       hideOnMobile: true,
@@ -126,7 +141,7 @@ export function ActivityBar() {
     pills.push({
       id: 'chambre',
       icon: <Lightbulb size={14} />,
-      label: `Chambre ${Number(chambreTemp).toFixed(1)}°C`,
+      label: t('activityBar.temperature', { value: Number(chambreTemp).toFixed(1) }),
       color: 'text-pink-400',
       bgColor: 'bg-pink-400/10',
       hideOnMobile: true,
@@ -170,16 +185,14 @@ export function ActivityBar() {
       });
     });
   } else {
-    Object.entries(entities ?? {}).forEach(([id, entity]) => {
-      if (id.startsWith('person.')) {
-        const avatarPath = entity.attributes?.entity_picture || entity.attributes?.avatar;
-        persons.push({
-          id,
-          name: entity.attributes?.friendly_name ?? id.replace('person.', ''),
-          avatar: getAvatarUrl(avatarPath),
-          state: entity.state,
-        });
-      }
+    personEntities.forEach(entity => {
+      const avatarPath = entity.attributes?.entity_picture || entity.attributes?.avatar;
+      persons.push({
+        id: entity.entity_id,
+        name: entity.attributes?.friendly_name ?? entity.entity_id.replace('person.', ''),
+        avatar: getAvatarUrl(avatarPath),
+        state: entity.state,
+      });
     });
   }
 

@@ -7,11 +7,16 @@ export type {
   CameraCardConfig,
   WeatherCardConfig,
   EnergyCardConfig,
+  EnergyFlowCardConfig,
   TempoCardConfig,
   ThermostatCardConfig,
   RoomControl,
   RoomEntry,
   RoomsGridConfig,
+  RoomCardConfig,
+  GroupChild,
+  GroupCardConfig,
+  ButtonCardConfig,
   ShortcutEntry,
   ShortcutsCardConfig,
   GreetingCardConfig,
@@ -23,6 +28,8 @@ export type {
   CoverCardConfig,
   TemplateCardConfig,
   AutomationCardConfig,
+  AutomationItem,
+  AutomationListCardConfig,
   MediaPlayerCardConfig,
   AlarmCardConfig,
   VacuumRoom,
@@ -33,5 +40,8 @@ export type {
   WidgetConfigs,
 } from './widget-types';
 
-export { DEFAULT_WIDGET_CONFIGS, WIDGET_FIELD_DEFS } from './widget-fields';
 export type { WidgetFieldDef } from './widget-fields';
+
+// `DEFAULT_WIDGET_CONFIGS` / `WIDGET_FIELD_DEFS` ne se réexportent plus d'ici :
+// ces registres sont désormais dérivés des manifestes de widgets. Les importer
+// depuis `@/widgets`, seule source qui tienne compte de `defineWidget`.

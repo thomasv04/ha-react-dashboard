@@ -98,6 +98,51 @@ export function compactVertically(widgets: GridWidget[], cols: number): GridWidg
 }
 
 /**
+ * Première position libre pouvant accueillir un widget de `w`×`h`,
+ * en balayant de haut en bas puis de gauche à droite.
+ */
+export function firstFreeSlot(widgets: GridWidget[], cols: number, w: number, h: number, maxRows = 400): { x: number; y: number } {
+  for (let y = 0; y < maxRows; y++) {
+    const map = buildOccupancyMap(widgets, cols, y + h + 1);
+    for (let x = 0; x + w <= cols; x++) {
+      if (canPlace(map, x, y, w, h, cols)) return { x, y };
+    }
+  }
+  return { x: 0, y: maxRows };
+}
+
+/**
+ * Tassement complet : referme aussi les trous **latéraux**.
+ *
+ * `compactVertically` ne modifie que `y` : un widget de 2 colonnes posé seul
+ * sur une grille de 4 garde ses deux colonnes vides à droite, indéfiniment.
+ * Ici chaque widget est reposé à la première place libre en ordre de lecture,
+ * ce qui met côte à côte deux demi-largeurs qui se suivaient.
+ *
+ * Volontairement **non automatique** : appliqué à une mise en page desktop
+ * soignée, il déplacerait presque tous les widgets. C'est une action que
+ * l'utilisateur déclenche (bouton « Réorganiser »), pas un effet de bord du
+ * chargement.
+ */
+export function packWidgets(widgets: GridWidget[], cols: number): GridWidget[] {
+  const sorted = [...widgets].sort((a, b) => a.y - b.y || a.x - b.x);
+  const placed: GridWidget[] = [];
+
+  for (const widget of sorted) {
+    if (widget.static) {
+      placed.push(widget);
+      continue;
+    }
+    // Un widget plus large que la grille est ramené à sa largeur.
+    const w = Math.min(widget.w, cols);
+    const { x, y } = firstFreeSlot(placed, cols, w, widget.h);
+    placed.push({ ...widget, x, y, w });
+  }
+
+  return placed;
+}
+
+/**
  * Vérifie si deux rectangles de grille se chevauchent.
  */
 function rectanglesOverlap(a: GridWidget, b: GridWidget): boolean {

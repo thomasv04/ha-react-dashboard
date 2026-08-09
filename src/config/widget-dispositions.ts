@@ -15,7 +15,7 @@ export type WidgetDispositions = Record<string, WidgetDisposition[]>;
  * Chaque type a au moins une disposition.
  * Les tailles min garantissent que le contenu reste lisible.
  */
-export const WIDGET_DISPOSITIONS: WidgetDispositions = {
+export const LEGACY_WIDGET_DISPOSITIONS: WidgetDispositions = {
   // ── Weather ────────────────────────────────────
   weather: [
     {
@@ -251,23 +251,6 @@ export const WIDGET_DISPOSITIONS: WidgetDispositions = {
   ],
 };
 
-/**
- * Récupère la disposition active d'un widget.
- * Fallback sur la première disposition du type.
- */
-export function getDisposition(widgetType: string, dispositionId?: string): WidgetDisposition | undefined {
-  const dispositions = WIDGET_DISPOSITIONS[widgetType];
-  if (!dispositions?.length) return undefined;
-  if (dispositionId) {
-    return dispositions.find(d => d.id === dispositionId) ?? dispositions[0];
-  }
-  return dispositions[0];
-}
-
-/**
- * Retourne la taille minimum pour un widget à un breakpoint donné.
- */
-export function getMinSize(widgetType: string, breakpoint: 'lg' | 'md' | 'sm', dispositionId?: string): { w: number; h: number } {
-  const disposition = getDisposition(widgetType, dispositionId);
-  return disposition?.minSize[breakpoint] ?? { w: 1, h: 1 };
-}
+// getDisposition / getMinSize vivent désormais dans `@/widgets` : ils doivent
+// lire le registre **dérivé** (manifestes inclus), et le lire d'ici créerait
+// un cycle à l'exécution.

@@ -1,31 +1,11 @@
 import React, { lazy, memo, Suspense, type ComponentType } from 'react';
 import type { GridWidget } from '@/context/DashboardLayoutContext';
-import { WeatherCard } from '@/components/cards/WeatherCard/WeatherCard';
-import { CameraCard } from '@/components/cards/CameraCard/CameraCard';
-import { ThermostatCard } from '@/components/cards/ThermostatCard/ThermostatCard';
-import { ShortcutsCard } from '@/components/cards/ShortcutsCard/ShortcutsCard';
-import { TempoCard } from '@/components/cards/TempoCard/TempoCard';
-import { EnergyCard } from '@/components/cards/EnergyCard/EnergyCard';
-import { GreetingCard } from '@/components/cards/GreetingCard/GreetingCard';
-import { ActivityBar } from '@/components/cards/ActivityBar/ActivityBar';
-import { SensorCard } from '@/components/cards/SensorCard/SensorCard';
-import { LightCard } from '@/components/cards/LightCard/LightCard';
-import { PersonStatusCard } from '@/components/cards/PersonStatus/PersonStatusCard';
-import { CoverCard } from '@/components/cards/CoverCard/CoverCard';
-import { TemplateCard } from '@/components/cards/TemplateCard/TemplateCard';
-import { AutomationCard } from '@/components/cards/AutomationCard/AutomationCard';
-import { ButtonCard } from '@/components/cards/ButtonCard/ButtonCard';
-import { GroupCard } from '@/components/cards/GroupCard/GroupCard';
-import { RoomCard } from '@/components/cards/RoomCard/RoomCard';
-import { MediaPlayerCard } from '@/components/cards/MediaPlayerCard/MediaPlayerCard';
-import { AlarmCard } from '@/components/cards/AlarmCard/AlarmCard';
-import { VacuumCard } from '@/components/cards/VacuumCard/VacuumCard';
-import { PelletCard } from '@/components/cards/PelletCard/PelletCard';
 
 /**
  * Wraps a dynamic import of a named export into a lazy + memo component
  * with a Suspense boundary. Used for code-splitting widget chunks.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function lazyMemo<T extends ComponentType<any>>(factory: () => Promise<{ default: T }>) {
   const Lazy = lazy(factory);
   return memo(function LazyWidget(props: React.ComponentProps<T>) {
@@ -39,37 +19,26 @@ function lazyMemo<T extends ComponentType<any>>(factory: () => Promise<{ default
 
 /** Helper: wrap a named export into { default } for React.lazy */
 const named =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   <T extends ComponentType<any>>(pick: (m: any) => T) =>
-  (mod: any) =>
-    ({ default: pick(mod) }) as { default: T };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (mod: any) =>
+      ({ default: pick(mod) }) as { default: T };
 
-/** Registry used for live previews in AddWidgetModal and WidgetEditModal */
-export const PREVIEW_COMPONENTS: Partial<Record<GridWidget['type'], React.ComponentType>> = {
-  weather: WeatherCard,
-  camera: CameraCard,
-  thermostat: ThermostatCard,
-  shortcuts: ShortcutsCard,
-  tempo: TempoCard,
-  energy: EnergyCard,
-  greeting: GreetingCard,
-  activity: ActivityBar,
-  sensor: SensorCard,
-  light: LightCard,
-  person: PersonStatusCard,
-  cover: CoverCard,
-  template: TemplateCard,
-  automation: AutomationCard,
-  button: ButtonCard,
-  group: GroupCard,
-  room: RoomCard,
-  media_player: MediaPlayerCard,
-  alarm: AlarmCard,
-  vacuum: VacuumCard,
-  pellet: PelletCard,
-};
-
-/** Registry used by the dashboard grid to render widgets (lazy-loaded + memoized for code-splitting) */
-export const WIDGET_COMPONENTS: Record<GridWidget['type'], React.ComponentType> = {
+/**
+ * Registry used by the dashboard grid to render widgets — et aussi pour les
+ * aperçus des modales d'ajout/édition.
+ *
+ * Il existait auparavant un second registre `PREVIEW_COMPONENTS` qui importait
+ * les 21 cards de façon statique, dans ce même module : le code-splitting était
+ * donc annulé (rolldown : `INEFFECTIVE_DYNAMIC_IMPORT`) et tout le catalogue de
+ * widgets atterrissait dans le bundle initial. Un seul registre lazy suffit
+ * pour les deux usages.
+ */
+// `Partial` et non `Record` : le type `rooms` existe dans l'union mais n'a
+// jamais eu de composant enregistré (cf. `npm run check:widgets`). Les
+// consommateurs gardent déjà le cas `undefined`.
+export const LEGACY_WIDGET_COMPONENTS: Partial<Record<GridWidget['type'], React.ComponentType>> = {
   weather: lazyMemo(() => import('@/components/cards/WeatherCard/WeatherCard').then(named(m => m.WeatherCard))),
   camera: lazyMemo(() => import('@/components/cards/CameraCard/CameraCard').then(named(m => m.CameraCard))),
   thermostat: lazyMemo(() => import('@/components/cards/ThermostatCard/ThermostatCard').then(named(m => m.ThermostatCard))),

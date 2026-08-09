@@ -68,6 +68,6 @@ describe('SensorCard', () => {
     const { useSafeEntity } = await import('@/hooks/useSafeEntity');
     vi.mocked(useSafeEntity).mockReturnValueOnce(null);
     render(<SensorCard />);
-    expect(screen.getByText(/introuvable/i)).toBeDefined();
+    expect(screen.getByText('widgets.sensor.notFound')).toBeDefined();
   });
 });

@@ -3,7 +3,8 @@ import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { Blinds, Lightbulb, Cpu, Flower2, Bell, ShieldHalf, Camera, type LucideIcon } from 'lucide-react';
 import { usePanel, type PanelId } from '@/context/PanelContext';
 import { cn } from '@/lib/utils';
-import { useHass } from '@hakit/core';
+import { useEntities } from '@/hooks/useEntities';
+import { useI18n } from '@/i18n';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { ShortcutsCardConfig } from '@/types/widget-configs';
@@ -82,11 +83,14 @@ function resolveShortcuts(config: ShortcutsCardConfig | undefined): ResolvedShor
 
 export function ShortcutsCard() {
   const { openPanel } = usePanel();
-  const entities = useHass(s => s.entities);
+  const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<ShortcutsCardConfig>(widgetId || 'shortcuts');
   const shortcuts = resolveShortcuts(config);
+  // Seuls les `statusEntity` des raccourcis sont lus — s'abonner à la map
+  // complète re-rendait la card à chaque message WebSocket de la maison.
+  const entities = useEntities(shortcuts.map(s => s.statusEntity).filter((id): id is string => !!id));
 
   return (
     <motion.div
@@ -95,7 +99,7 @@ export function ShortcutsCard() {
       transition={{ duration: DURATION_ENTRANCE, delay: 0.1 }}
       className='gc rounded-3xl p-5 h-full'
     >
-      <div className='text-white/40 text-xs uppercase tracking-wider mb-4 font-medium'>Raccourcis</div>
+      <div className='text-white/40 text-xs uppercase tracking-wider mb-4 font-medium'>{t('widgets.shortcuts.header')}</div>
       <div className='grid grid-cols-2 gap-2'>
         {shortcuts.map((s, i) => {
           // Dynamic status from entity
@@ -104,7 +108,7 @@ export function ShortcutsCard() {
             const state = entities?.[s.statusEntity]?.state;
             if (state) {
               const isArmed = state !== 'disarmed';
-              entityState = isArmed ? 'Armée' : 'Désarmée';
+              entityState = isArmed ? t('widgets.shortcuts.armed') : t('widgets.shortcuts.disarmed');
             }
           }
 

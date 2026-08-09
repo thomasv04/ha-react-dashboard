@@ -73,12 +73,12 @@ export const WithActions: Story = {
             {
               label: 'Voir les caméras',
               variant: 'primary',
-              onClick: () => console.log('Opening cameras'),
+              onClick: () => console.info('Opening cameras'),
             },
             {
               label: 'Désactiver',
               variant: 'danger',
-              onClick: () => console.log('Disabling alarm'),
+              onClick: () => console.info('Disabling alarm'),
             },
             {
               label: 'Ignorer',
@@ -124,7 +124,7 @@ export const NonDismissible: Story = {
             {
               label: 'Confirmer',
               variant: 'primary',
-              onClick: () => console.log('Confirmed'),
+              onClick: () => console.info('Confirmed'),
               // Close even if modal is marked persistent/non-dismissible
               closeOnClick: true,
             },
@@ -155,7 +155,7 @@ export const FromHAEvent: Story = {
             {
               label: 'Installer',
               variant: 'primary',
-              onClick: () => console.log('Installer via service hassio.addon_update'),
+              onClick: () => console.info('Installer via service hassio.addon_update'),
             },
             {
               label: 'Plus tard',

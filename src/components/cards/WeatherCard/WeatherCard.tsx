@@ -1,5 +1,8 @@
+import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { DURATION_ENTRANCE, DURATION_MEDIUM } from '@/lib/motion-tokens';
+import { cn } from '@/lib/utils';
+import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { Wind, Droplets, Gauge, Snowflake, Cloud, Sun, CloudRain, CloudSnow, Cloudy, CloudDrizzle, Zap } from 'lucide-react';
 import { useWeather, useHass } from '@hakit/core';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -53,8 +56,9 @@ export function WeatherCard() {
   const config = getWidgetConfig<WeatherCardConfig>(widgetId || 'weather');
   const entityId = config?.entityId ?? 'weather.home';
 
-  const entities = useHass(s => s.entities);
-  if (!entities?.[entityId]) {
+  // Booléen dérivé : sinon la card se re-rend à chaque message WebSocket.
+  const exists = useHass(s => !!s.entities?.[entityId]);
+  if (!exists) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -88,23 +92,63 @@ function WeatherCardInner({ entityId, config }: { entityId: string; config: Weat
   const todayLow = forecastDays[0]?.templow;
   const next4 = forecastDays.slice(1, 5);
 
-  const mainStyle = getConditionStyle(weather.state, 36, config?.customIcons);
+  // Divulgation progressive : la card empilait en-tête + température + chiffres
+  // + prévisions quelle que soit sa hauteur, et débordait de ~80 px dès qu'elle
+  // ne faisait que deux rangées. Chaque bloc n'apparaît que s'il a la place.
+  const cardRef = useRef<HTMLDivElement>(null);
+  const size = useWidgetSize(cardRef);
+  const mainStyle = getConditionStyle(weather.state, size.squat ? 22 : 36, config?.customIcons);
+  const showStats = size.h !== 'squat';
+  const showForecast = size.h === 'normal' || size.h === 'tall';
+  const showPressure = size.w !== 'xs' && size.w !== 'sm';
+
+  // Une seule rangée : tout tient sur une ligne, sinon rien n'est lisible.
+  if (size.squat) {
+    return (
+      <motion.div
+        ref={cardRef}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: DURATION_ENTRANCE, delay: 0.1 }}
+        className='gc rounded-3xl px-3.5 py-2 flex items-center gap-3 h-full relative overflow-hidden'
+      >
+        <div
+          className='w-10 h-10 rounded-2xl flex items-center justify-center border shrink-0'
+          style={{ background: mainStyle.bg, borderColor: mainStyle.border }}
+        >
+          {mainStyle.icon}
+        </div>
+        <div className='flex-1 min-w-0'>
+          <div className='text-white/40 text-[11px] font-medium capitalize truncate leading-tight'>{label}</div>
+          {todayHigh !== undefined && (
+            <div className='text-white/50 text-[11px] font-medium leading-tight'>
+              ↑{todayHigh}° ↓{todayLow ?? '—'}°
+            </div>
+          )}
+        </div>
+        <div className='text-2xl font-light tracking-tight text-white leading-none shrink-0'>
+          {temp !== undefined ? <AnimatedNumber value={temp} decimals={1} suffix='°' /> : '—'}
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
+      ref={cardRef}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: DURATION_ENTRANCE, delay: 0.1 }}
-      className='gc rounded-3xl p-3.5 flex flex-col h-full relative overflow-hidden'
+      className={cn('gc rounded-3xl flex flex-col h-full relative overflow-hidden', size.h === 'short' ? 'p-2.5' : 'p-3.5')}
     >
       <WeatherEffects condition={weather.state} />
 
       {/* Header: condition label */}
-      <div className='flex items-center justify-between mb-2'>
-        <span className='text-white/40 text-xs font-medium capitalize'>{label}</span>
+      <div className='flex items-center justify-between mb-2 shrink-0'>
+        <span className='text-white/40 text-xs font-medium capitalize truncate'>{label}</span>
         <div className='flex items-center gap-1.5'>
           {todayHigh !== undefined && (
-            <span className='text-[10px] text-white/50 font-medium'>
+            <span className='text-[10px] text-white/50 font-medium shrink-0'>
               ↑{todayHigh}° ↓{todayLow ?? '—'}°
             </span>
           )}
@@ -112,9 +156,9 @@ function WeatherCardInner({ entityId, config }: { entityId: string; config: Weat
       </div>
 
       {/* Main section: temp + icon */}
-      <div className='flex items-center justify-between mb-2'>
+      <div className='flex items-center justify-between mb-2 shrink-0'>
         <div className='flex flex-col'>
-          <div className='text-5xl font-light tracking-tight text-white leading-none'>
+          <div className={cn('font-light tracking-tight text-white leading-none', size.h === 'short' ? 'text-4xl' : 'text-5xl')}>
             {temp !== undefined ? <AnimatedNumber value={temp} decimals={1} suffix='°' /> : '—'}
           </div>
         </div>
@@ -124,7 +168,7 @@ function WeatherCardInner({ entityId, config }: { entityId: string; config: Weat
           initial={{ scale: 0.8, opacity: 0, rotate: -15 }}
           animate={{ scale: 1, opacity: 1, rotate: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 22 }}
-          className='w-16 h-16 rounded-2xl flex items-center justify-center border'
+          className={cn('rounded-2xl flex items-center justify-center border shrink-0', size.h === 'short' ? 'w-12 h-12' : 'w-16 h-16')}
           style={{ background: mainStyle.bg, borderColor: mainStyle.border }}
         >
           <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
@@ -134,55 +178,72 @@ function WeatherCardInner({ entityId, config }: { entityId: string; config: Weat
       </div>
 
       {/* Stats row */}
-      <div className='flex gap-2 mb-2'>
-        {wind !== undefined && (
-          <div className='flex items-center gap-1 px-2 py-1 rounded-xl bg-white/5 border border-white/8'>
-            <Wind size={11} className='text-white/40' />
-            <span className='text-[11px] text-white/50 font-medium'>
-              {wind} {windUnit}
-            </span>
-          </div>
-        )}
-        {humidity !== undefined && (
-          <div className='flex items-center gap-1 px-2 py-1 rounded-xl bg-white/5 border border-white/8'>
-            <Droplets size={11} className='text-sky-400/60' />
-            <span className='text-[11px] text-white/50 font-medium'>{humidity}%</span>
-          </div>
-        )}
-        {pressure !== undefined && (
-          <div className='flex items-center gap-1 px-2 py-1 rounded-xl bg-white/5 border border-white/8'>
-            <Gauge size={11} className='text-white/40' />
-            <span className='text-[11px] text-white/50 font-medium'>{pressure} hPa</span>
-          </div>
-        )}
-      </div>
+      {showStats && (
+        <div className='flex flex-wrap gap-1.5 mb-2 shrink-0'>
+          {wind !== undefined && (
+            <div className='flex items-center gap-1 px-2 py-1 rounded-xl bg-white/5 border border-white/8'>
+              <Wind size={11} className='text-white/40' />
+              <span className='text-[11px] text-white/50 font-medium'>
+                {wind} {windUnit}
+              </span>
+            </div>
+          )}
+          {humidity !== undefined && (
+            <div className='flex items-center gap-1 px-2 py-1 rounded-xl bg-white/5 border border-white/8'>
+              <Droplets size={11} className='text-sky-400/60' />
+              <span className='text-[11px] text-white/50 font-medium'>{humidity}%</span>
+            </div>
+          )}
+          {pressure !== undefined && showPressure && (
+            <div className='flex items-center gap-1 px-2 py-1 rounded-xl bg-white/5 border border-white/8'>
+              <Gauge size={11} className='text-white/40' />
+              <span className='text-[11px] text-white/50 font-medium'>{pressure} hPa</span>
+            </div>
+          )}
+        </div>
+      )}
 
-      {/* 4-day forecast */}
+      {/* Prévisions — version dense sur deux rangées (l'icône de condition
+          n'entre pas), version complète dès trois rangées. */}
       {next4.length > 0 && (
         <>
-          <div className='h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-2' />
-          <div className='flex gap-1 flex-1'>
+          <div className='h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-2 shrink-0' />
+          <div className='flex gap-1 flex-1 min-h-0'>
             {next4.map((day, i) => {
               const d = new Date(day.datetime);
               const dayName = days[d.getDay()];
-              const dayStyle = getConditionStyle(day.condition ?? '', 14, config?.customIcons);
+              const dayStyle = getConditionStyle(day.condition ?? '', showForecast ? 14 : 12, config?.customIcons);
               return (
                 <motion.div
                   key={day.datetime}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: DURATION_MEDIUM, delay: 0.1 + i * 0.06 }}
-                  className='flex flex-col items-center gap-1 flex-1 py-1.5 px-1 rounded-2xl bg-white/3 border border-white/6'
+                  className={cn(
+                    'flex flex-1 min-w-0 rounded-2xl bg-white/3 border border-white/6 overflow-hidden',
+                    // Sur deux rangées la tuile ne fait que ~31 px de haut : un
+                    // empilement jour/icône/température en demande ~37 et se
+                    // faisait rogner. En ligne, tout tient largement.
+                    showForecast
+                      ? 'flex-col items-center justify-center gap-1 py-1.5 px-1'
+                      : 'flex-row items-center justify-center gap-1 px-1.5 py-0.5'
+                  )}
                 >
-                  <span className='text-[10px] text-white/35 uppercase tracking-wider font-medium'>{dayName}</span>
-                  <div
-                    className='w-7 h-7 rounded-xl flex items-center justify-center border'
-                    style={{ background: dayStyle.bg, borderColor: dayStyle.border }}
-                  >
-                    {dayStyle.icon}
-                  </div>
-                  <span className='text-[11px] text-white/70 font-semibold leading-none'>{day.temperature}°</span>
-                  {day.templow !== undefined && <span className='text-[10px] text-white/30 leading-none'>{day.templow}°</span>}
+                  <span className='text-[10px] text-white/35 uppercase tracking-wider font-medium shrink-0'>{dayName}</span>
+                  {showForecast ? (
+                    <div
+                      className='w-7 h-7 rounded-xl flex items-center justify-center border'
+                      style={{ background: dayStyle.bg, borderColor: dayStyle.border }}
+                    >
+                      {dayStyle.icon}
+                    </div>
+                  ) : (
+                    <div className='flex items-center justify-center shrink-0'>{dayStyle.icon}</div>
+                  )}
+                  <span className='text-[11px] text-white/70 font-semibold leading-none shrink-0'>{day.temperature}°</span>
+                  {day.templow !== undefined && showForecast && (
+                    <span className='text-[10px] text-white/30 leading-none'>{day.templow}°</span>
+                  )}
                 </motion.div>
               );
             })}

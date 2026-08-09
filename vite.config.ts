@@ -46,9 +46,6 @@ export default defineConfig({
         : {}),
     },
   },
-  optimizeDeps: {
-    include: ['react-grid-layout'],
-  },
   server: {
     // Proxy API requests to the Express server (configurable port for E2E tests)
     proxy: {

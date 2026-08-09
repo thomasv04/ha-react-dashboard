@@ -14,10 +14,12 @@ describe('WIDGET_CATALOG', () => {
     }
   });
 
-  it('ne contient pas les widgets statiques (activity, greeting)', () => {
+  it('contient aussi les widgets système (activity, greeting)', () => {
+    // Ils sont proposés dans la modale d'ajout au même titre que les autres :
+    // le catalogue doit donc les décrire.
     const types = WIDGET_CATALOG.map(w => w.type);
-    expect(types).not.toContain('activity');
-    expect(types).not.toContain('greeting');
+    expect(types).toContain('activity');
+    expect(types).toContain('greeting');
   });
 
   it('chaque entrée a un label non vide', () => {

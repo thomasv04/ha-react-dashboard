@@ -1,14 +1,13 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import type { WidgetConfigs } from '@/types/widget-configs';
-import { DEFAULT_WIDGET_CONFIGS } from '@/types/widget-configs';
-import { compactVertically } from '@/lib/grid-utils';
-import { WIDGET_DISPOSITIONS } from '@/config/widget-dispositions';
+import { compactVertically, firstFreeSlot, packWidgets } from '@/lib/grid-utils';
 import { usePages, type Page } from '@/context/PageContext';
 import type { WallPanelConfig } from '@/types/wallpanel';
 import type { CustomPanel } from '@/types/custom-panel';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
-import { SIZE_PRESETS as _SIZE_PRESETS } from '@/config/size-presets';
-export const SIZE_PRESETS = _SIZE_PRESETS;
+// Registres dérivés des manifestes de widgets (cf. `src/widgets/index.ts`).
+import { DEFAULT_WIDGET_CONFIGS, WIDGET_DISPOSITIONS, WIDGET_CATALOG, SIZE_PRESETS } from '@/widgets';
+export { WIDGET_CATALOG, SIZE_PRESETS };
 
 /**
  * Configuration d'un widget sur la grille
@@ -24,6 +23,7 @@ export interface GridWidget {
     | 'shortcuts'
     | 'tempo'
     | 'energy'
+    | 'energy_flow'
     | 'greeting'
     | 'activity'
     | 'sensor'
@@ -32,6 +32,7 @@ export interface GridWidget {
     | 'cover'
     | 'template'
     | 'automation'
+    | 'automation_list'
     | 'button'
     | 'group'
     | 'room'
@@ -48,38 +49,7 @@ export interface GridWidget {
   disposition?: string;
 }
 
-/** Catalogue de tous les widgets pouvant être ajoutés/remis dans le dashboard */
-export interface WidgetCatalogEntry {
-  type: GridWidget['type'];
-  label: string;
-  lg: { w: number; h: number };
-  md: { w: number; h: number };
-  sm: { w: number; h: number };
-}
-
-export const WIDGET_CATALOG: WidgetCatalogEntry[] = [
-  { type: 'camera', label: 'Caméra', lg: { w: 6, h: 3 }, md: { w: 8, h: 3 }, sm: { w: 4, h: 2 } },
-  { type: 'weather', label: 'Météo', lg: { w: 3, h: 3 }, md: { w: 4, h: 2 }, sm: { w: 4, h: 2 } },
-  { type: 'thermostat', label: 'Thermostat', lg: { w: 3, h: 3 }, md: { w: 4, h: 2 }, sm: { w: 4, h: 2 } },
-  { type: 'shortcuts', label: 'Raccourcis', lg: { w: 4, h: 3 }, md: { w: 8, h: 3 }, sm: { w: 4, h: 3 } },
-  { type: 'tempo', label: 'Tempo EDF', lg: { w: 4, h: 2 }, md: { w: 8, h: 2 }, sm: { w: 4, h: 2 } },
-  { type: 'energy', label: 'Énergie', lg: { w: 4, h: 2 }, md: { w: 8, h: 2 }, sm: { w: 4, h: 2 } },
-  { type: 'sensor', label: 'Capteur', lg: { w: 3, h: 2 }, md: { w: 4, h: 2 }, sm: { w: 2, h: 2 } },
-  { type: 'light', label: 'Lumière', lg: { w: 3, h: 2 }, md: { w: 4, h: 2 }, sm: { w: 2, h: 2 } },
-  { type: 'person', label: 'Personnes', lg: { w: 6, h: 1 }, md: { w: 8, h: 1 }, sm: { w: 4, h: 1 } },
-  { type: 'cover', label: 'Volet', lg: { w: 2, h: 3 }, md: { w: 2, h: 3 }, sm: { w: 2, h: 3 } },
-  { type: 'template', label: 'Template', lg: { w: 3, h: 1 }, md: { w: 4, h: 1 }, sm: { w: 4, h: 1 } },
-  { type: 'automation', label: 'Automatisation', lg: { w: 3, h: 1 }, md: { w: 4, h: 1 }, sm: { w: 4, h: 1 } },
-  { type: 'button', label: 'Bouton', lg: { w: 2, h: 2 }, md: { w: 2, h: 2 }, sm: { w: 2, h: 2 } },
-  { type: 'group', label: 'Groupe', lg: { w: 4, h: 4 }, md: { w: 6, h: 4 }, sm: { w: 4, h: 4 } },
-  { type: 'room', label: 'Pièce', lg: { w: 2, h: 2 }, md: { w: 3, h: 2 }, sm: { w: 4, h: 2 } },
-  { type: 'media_player', label: 'Lecteur média', lg: { w: 4, h: 3 }, md: { w: 4, h: 3 }, sm: { w: 4, h: 3 } },
-  { type: 'alarm', label: 'Alarme', lg: { w: 3, h: 3 }, md: { w: 4, h: 3 }, sm: { w: 4, h: 3 } },
-  { type: 'vacuum', label: 'Aspirateur', lg: { w: 3, h: 4 }, md: { w: 4, h: 4 }, sm: { w: 4, h: 4 } },
-  { type: 'pellet', label: 'Poêle à pellets', lg: { w: 2, h: 3 }, md: { w: 3, h: 3 }, sm: { w: 4, h: 3 } },
-  { type: 'activity', label: "Barre d'activité", lg: { w: 11, h: 1 }, md: { w: 7, h: 1 }, sm: { w: 3, h: 1 } },
-  { type: 'greeting', label: 'Horloge', lg: { w: 1, h: 1 }, md: { w: 1, h: 1 }, sm: { w: 1, h: 1 } },
-];
+export type { WidgetCatalogEntry } from '@/config/widget-catalog';
 
 /** 3 presets de taille (compact/normal/large) par type de widget et par breakpoint */
 export type SizePresetName = 'Compact' | 'Normal' | 'Large';
@@ -88,7 +58,10 @@ export interface SizePreset {
   w: number;
   h: number;
 }
-export type WidgetSizePresets = Record<GridWidget['type'], Record<'lg' | 'md' | 'sm', SizePreset[]>>;
+// `Partial` : les presets sont facultatifs. En Record total, ajouter un type de
+// widget obligeait à compléter le registre historique — exactement le couplage
+// central que les manifestes suppriment. Les appelants utilisent déjà `?.`.
+export type WidgetSizePresets = Partial<Record<GridWidget['type'], Partial<Record<'lg' | 'md' | 'sm', SizePreset[]>>>>;
 
 export interface DashboardLayout {
   widgets: Record<'lg' | 'md' | 'sm', GridWidget[]>;
@@ -131,6 +104,8 @@ interface LayoutContextValue {
   updateWidget: (id: string, updates: Partial<GridWidget>, breakpoint?: 'lg' | 'md' | 'sm') => void;
   saveLayout: () => void;
   addWidgetByType: (type: GridWidget['type']) => string;
+  /** Referme les trous de la mise en page courante, pour un breakpoint donné */
+  packLayout: (breakpoint: 'lg' | 'md' | 'sm') => void;
   allLayouts: Record<string, DashboardLayout>;
 }
 
@@ -305,15 +280,20 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
       const id = `${type}-${Date.now()}`;
       setLayouts(prev => {
         const current = prev[currentPageId] ?? DEFAULT_LAYOUT;
-        const maxY = (ws: GridWidget[]) => (ws.length ? Math.max(...ws.map(w => w.y + w.h)) : 0);
-        const make = (bp: 'lg' | 'md' | 'sm', y: number): GridWidget => {
+        // Première place libre plutôt que `x: 0` tout en bas : un widget de
+        // demi-largeur se range à côté d'un autre au lieu d'ouvrir une rangée
+        // à moitié vide. C'est ce qui produisait des trous latéraux définitifs,
+        // puisque le compactage ne referme que la verticale.
+        const make = (bp: 'lg' | 'md' | 'sm'): GridWidget => {
           const size = disposition ? disposition.defaultSize[bp] : def![bp];
+          const w = Math.min(size.w, current.cols[bp]);
+          const { x, y } = firstFreeSlot(current.widgets[bp], current.cols[bp], w, size.h);
           return {
             id,
             type,
-            x: 0,
+            x,
             y,
-            w: size.w,
+            w,
             h: size.h,
             ...(disposition ? { disposition: disposition.id } : {}),
           };
@@ -323,9 +303,9 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
           [currentPageId]: {
             ...current,
             widgets: {
-              lg: [...current.widgets.lg, make('lg', maxY(current.widgets.lg))],
-              md: [...current.widgets.md, make('md', maxY(current.widgets.md))],
-              sm: [...current.widgets.sm, make('sm', maxY(current.widgets.sm))],
+              lg: [...current.widgets.lg, make('lg')],
+              md: [...current.widgets.md, make('md')],
+              sm: [...current.widgets.sm, make('sm')],
             },
           },
         };
@@ -338,6 +318,25 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
       return id;
     },
     [currentPageId, widgetCfgUpdate]
+  );
+
+  const packLayout = useCallback(
+    (breakpoint: 'lg' | 'md' | 'sm') => {
+      setLayouts(prev => {
+        const current = prev[currentPageId] ?? DEFAULT_LAYOUT;
+        return {
+          ...prev,
+          [currentPageId]: {
+            ...current,
+            widgets: {
+              ...current.widgets,
+              [breakpoint]: packWidgets(current.widgets[breakpoint], current.cols[breakpoint]),
+            },
+          },
+        };
+      });
+    },
+    [currentPageId]
   );
 
   const cycleSize = useCallback(
@@ -393,9 +392,10 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
       updateWidget,
       saveLayout,
       addWidgetByType,
+      packLayout,
       allLayouts: layouts,
     }),
-    [layout, setLayout, addWidget, removeWidget, updateWidget, saveLayout, addWidgetByType, layouts]
+    [layout, setLayout, addWidget, removeWidget, updateWidget, saveLayout, addWidgetByType, packLayout, layouts]
   );
 
   return (

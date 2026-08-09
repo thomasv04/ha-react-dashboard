@@ -6,7 +6,8 @@ import { Volume2, Play } from 'lucide-react';
 // ── Sound catalog ─────────────────────────────────────────────────────────────
 
 interface SoundInfo {
-  value: SoundPreset;
+  /** 'none' n'est pas listé dans la bibliothèque : rien à jouer. */
+  value: Exclude<SoundPreset, 'none'>;
   label: string;
   description: string;
   category: string;
@@ -75,7 +76,7 @@ function groupByCategory(items: SoundInfo[]): Record<string, SoundInfo[]> {
   return groups;
 }
 
-function noteDuration(preset: SoundPreset): number {
+function noteDuration(preset: Exclude<SoundPreset, 'none'>): number {
   const notes = PRESETS[preset];
   return Math.max(...notes.map(n => n.start + n.duration));
 }

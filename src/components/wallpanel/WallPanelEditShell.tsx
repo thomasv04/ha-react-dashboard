@@ -7,7 +7,7 @@ import { DashboardLayoutProvider, useDashboardLayout, useEditMode } from '@/cont
 import { DashboardGrid, GridItem } from '@/components/layout/DashboardGrid';
 import { AddWidgetModal } from '@/components/layout/AddWidgetModal';
 import { WidgetEditModal } from '@/components/layout/WidgetEditModal';
-import { DEFAULT_WIDGET_CONFIGS } from '@/types/widget-configs';
+import { DEFAULT_WIDGET_CONFIGS } from '@/widgets';
 import { useI18n } from '@/i18n';
 import type { GridWidget } from '@/context/DashboardLayoutContext';
 

@@ -18,49 +18,55 @@ test.describe('AlarmCard', () => {
     await expect(page.getByText('Désarmé')).toBeVisible();
   });
 
-  test('has an expand/collapse button', async ({ page }) => {
-    // The chevron expand button is the last button in the status row
-    const buttons = page.getByRole('button');
-    await expect(buttons.last()).toBeVisible();
-  });
-
-  test('clicking expand reveals PIN keypad', async ({ page }) => {
-    // The chevron expand button is the last visible button
-    await page.getByRole('button').last().click();
-    // PIN keypad digits 1–9 should appear
-    await expect(page.getByRole('button', { name: '1' })).toBeVisible();
-    await expect(page.getByRole('button', { name: '5' })).toBeVisible();
-    await expect(page.getByRole('button', { name: '9' })).toBeVisible();
-  });
-
-  test('PIN keypad has arm mode buttons', async ({ page }) => {
-    await page.getByRole('button').last().click();
+  test('shows the arm mode buttons on the card', async ({ page }) => {
     await expect(page.getByRole('button', { name: 'Désarmer' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Domicile' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Absent' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Nuit' })).toBeVisible();
   });
 
+  test('clicking a mode opens the keypad modal', async ({ page }) => {
+    await page.getByRole('button', { name: 'Nuit' }).click();
+    const modal = page.getByRole('dialog');
+    await expect(modal).toBeVisible();
+    // PIN keypad digits 1–9 should appear
+    await expect(modal.getByRole('button', { name: '1' })).toBeVisible();
+    await expect(modal.getByRole('button', { name: '5' })).toBeVisible();
+    await expect(modal.getByRole('button', { name: '9' })).toBeVisible();
+  });
+
+  test('keypad modal has arm mode buttons', async ({ page }) => {
+    await page.getByRole('button', { name: 'Nuit' }).click();
+    const modal = page.getByRole('dialog');
+    await expect(modal.getByRole('button', { name: 'Désarmer' })).toBeVisible();
+    await expect(modal.getByRole('button', { name: 'Domicile' })).toBeVisible();
+    await expect(modal.getByRole('button', { name: 'Absent' })).toBeVisible();
+    // 'Nuit' is the selected mode: it labels both the selector chip and the
+    // confirm button — first() is the chip.
+    await expect(modal.getByRole('button', { name: 'Nuit' }).first()).toBeVisible();
+  });
+
   test('entering PIN digits updates the code field', async ({ page }) => {
-    await page.getByRole('button').last().click();
-    await page.getByRole('button', { name: '1' }).click();
-    await page.getByRole('button', { name: '2' }).click();
-    await page.getByRole('button', { name: '3' }).click();
+    await page.getByRole('button', { name: 'Nuit' }).click();
+    const modal = page.getByRole('dialog');
+    await modal.getByRole('button', { name: '1' }).click();
+    await modal.getByRole('button', { name: '2' }).click();
+    await modal.getByRole('button', { name: '3' }).click();
     // Code display shows \u2022 (bullet) for each digit — placeholder MUST disappear
-    await expect(page.getByText('Code PIN')).not.toBeVisible();
+    await expect(modal.getByText('Code PIN')).not.toBeVisible();
     // Three bullets visible in the code area
-    await expect(page.locator('span').filter({ hasText: '\u2022\u2022\u2022' })).toBeVisible();
+    await expect(modal.locator('span').filter({ hasText: '\u2022\u2022\u2022' })).toBeVisible();
   });
 
   test('delete key clears last digit', async ({ page }) => {
-    await page.getByRole('button').last().click();
-    await page.getByRole('button', { name: '1' }).click();
-    await page.getByRole('button', { name: '2' }).click();
-    // ⌫ button in the numpad clears the last digit
-    await page.getByRole('button', { name: '⌫' }).click();
+    await page.getByRole('button', { name: 'Nuit' }).click();
+    const modal = page.getByRole('dialog');
+    await modal.getByRole('button', { name: '1' }).click();
+    await modal.getByRole('button', { name: '2' }).click();
+    // Backspace clears the last digit. The code field carries one too, so target
+    // the numpad key — the one further down the DOM.
+    await modal.getByRole('button', { name: 'Effacer' }).last().click();
     // After one delete: only 1 bullet (•) remains, not two
-    await expect(page.locator('span').filter({ hasText: '••' })).not.toBeVisible();
-    await expect(page.locator('span').filter({ hasText: /^•$/ })).toBeVisible();
+    await expect(modal.locator('span').filter({ hasText: /^••$/ })).not.toBeVisible();
+    await expect(modal.locator('span').filter({ hasText: /^•$/ })).toBeVisible();
   });
 });
 
@@ -204,16 +210,5 @@ test.describe('TempoCard', () => {
     await page.waitForLoadState('networkidle');
     // Multiple 'Bleu' texts exist in TempoCard (current + next day) — use first()
     await expect(page.getByText(/Bleu/i).first()).toBeVisible();
-  });
-});
-
-// ── RoomsGrid ─────────────────────────────────────────────────────────────────
-
-test.describe('RoomsGrid', () => {
-  test('shows room temperature data from mock', async ({ page }) => {
-    await page.goto('/iframe.html?id=cards-roomsgrid--default&viewMode=story');
-    await page.waitForLoadState('networkidle');
-    // Mock has sensor.temperature_chambre_temperature = 20.4°C
-    await expect(page.getByText(/Chambre/i)).toBeVisible();
   });
 });

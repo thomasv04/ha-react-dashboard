@@ -13,7 +13,10 @@ import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 export function PelletCard() {
   const { t } = useI18n();
   const widgetId = useWidgetId();
-  const config = useWidgetConfig<PelletCardConfig>(widgetId);
+  // `useWidgetConfig` renvoie le contexte, pas la config : c'est
+  // `getWidgetConfig(id)` qui donne celle du widget.
+  const { getWidgetConfig } = useWidgetConfig();
+  const config = getWidgetConfig<PelletCardConfig>(widgetId || 'pellet');
   const entityId = config?.entityId ?? 'climate.pellet_stove';
   const pellet = useSafeEntity(entityId);
   const { helpers } = useHass();

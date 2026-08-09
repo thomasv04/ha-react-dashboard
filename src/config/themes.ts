@@ -25,6 +25,15 @@ export interface ThemeTokens {
   glassBlur: number;
   /** Opacité du fond des glass cards (0-1) */
   glassOpacity: number;
+  /**
+   * Teinte de la surface des cards, en composantes RGB brutes (`'255 255 255'`).
+   * Quand elle est définie, `--dash-bg-card` est recomposé à partir de cette
+   * teinte et du curseur d'opacité — c'est ce qui rend le curseur fonctionnel.
+   * Les thèmes opaques (clay) l'omettent et gardent `bgCard` tel quel.
+   */
+  cardTint?: string;
+  /** Surface claire : le texte hardcodé en blanc doit être remappé en sombre */
+  light?: boolean;
   /** Statut : vert */
   statusSuccess: string;
   /** Statut : orange */
@@ -45,17 +54,20 @@ export const THEMES: Record<ThemeId, { label: string; tokens: ThemeTokens }> = {
   dark: {
     label: 'Sombre',
     tokens: {
-      bgPrimary: '#0a0a14',
-      bgCard: 'rgba(255, 255, 255, 0.04)',
-      bgCardHover: 'rgba(255, 255, 255, 0.06)',
+      // Un fond légèrement plus sombre que les cards donne aux ombres portées
+      // la marge de luminance dont elles ont besoin pour être visibles.
+      bgPrimary: '#08080f',
+      cardTint: '255 255 255',
+      bgCard: 'rgba(255, 255, 255, 0.065)',
+      bgCardHover: 'rgba(255, 255, 255, 0.10)',
       textPrimary: '#ffffff',
-      textSecondary: 'rgba(255, 255, 255, 0.7)',
-      textMuted: 'rgba(255, 255, 255, 0.4)',
+      textSecondary: 'rgba(255, 255, 255, 0.78)',
+      textMuted: 'rgba(255, 255, 255, 0.52)',
       accent: '#3b82f6',
       accentHover: '#60a5fa',
-      border: 'rgba(255, 255, 255, 0.08)',
+      border: 'rgba(255, 255, 255, 0.12)',
       glassBlur: 20,
-      glassOpacity: 0.04,
+      glassOpacity: 0.065,
       statusSuccess: '#22c55e',
       statusWarning: '#f59e0b',
       statusError: '#ef4444',
@@ -65,17 +77,19 @@ export const THEMES: Record<ThemeId, { label: string; tokens: ThemeTokens }> = {
   light: {
     label: 'Clair',
     tokens: {
-      bgPrimary: '#f5f5f5',
-      bgCard: 'rgba(255, 255, 255, 0.8)',
-      bgCardHover: 'rgba(255, 255, 255, 0.9)',
-      textPrimary: '#1a1a2e',
-      textSecondary: 'rgba(26, 26, 46, 0.7)',
-      textMuted: 'rgba(26, 26, 46, 0.4)',
+      light: true,
+      bgPrimary: '#eef1f6',
+      cardTint: '255 255 255',
+      bgCard: 'rgba(255, 255, 255, 0.86)',
+      bgCardHover: 'rgba(255, 255, 255, 0.95)',
+      textPrimary: '#141a25',
+      textSecondary: 'rgba(20, 26, 37, 0.72)',
+      textMuted: 'rgba(20, 26, 37, 0.48)',
       accent: '#2563eb',
       accentHover: '#3b82f6',
-      border: 'rgba(0, 0, 0, 0.08)',
+      border: 'rgba(15, 23, 42, 0.10)',
       glassBlur: 20,
-      glassOpacity: 0.8,
+      glassOpacity: 0.86,
       statusSuccess: '#16a34a',
       statusWarning: '#d97706',
       statusError: '#dc2626',
@@ -85,17 +99,20 @@ export const THEMES: Record<ThemeId, { label: string; tokens: ThemeTokens }> = {
   glass: {
     label: 'Verre',
     tokens: {
-      bgPrimary: '#0f0f23',
-      bgCard: 'rgba(255, 255, 255, 0.05)',
-      bgCardHover: 'rgba(255, 255, 255, 0.08)',
+      bgPrimary: '#0c0c1c',
+      cardTint: '255 255 255',
+      bgCard: 'rgba(255, 255, 255, 0.075)',
+      bgCardHover: 'rgba(255, 255, 255, 0.11)',
       textPrimary: '#ffffff',
-      textSecondary: 'rgba(255, 255, 255, 0.65)',
-      textMuted: 'rgba(255, 255, 255, 0.35)',
+      textSecondary: 'rgba(255, 255, 255, 0.76)',
+      textMuted: 'rgba(255, 255, 255, 0.5)',
       accent: '#8b5cf6',
       accentHover: '#a78bfa',
-      border: 'rgba(255, 255, 255, 0.10)',
-      glassBlur: 30,
-      glassOpacity: 0.05,
+      border: 'rgba(255, 255, 255, 0.14)',
+      // 24px au lieu de 30 : différence visuelle nulle, coût GPU nettement
+      // plus bas quand ~20 cards floutent le fond en même temps.
+      glassBlur: 24,
+      glassOpacity: 0.075,
       statusSuccess: '#34d399',
       statusWarning: '#fbbf24',
       statusError: '#f87171',
@@ -106,16 +123,17 @@ export const THEMES: Record<ThemeId, { label: string; tokens: ThemeTokens }> = {
     label: 'Minuit',
     tokens: {
       bgPrimary: '#020617',
-      bgCard: 'rgba(30, 41, 59, 0.5)',
-      bgCardHover: 'rgba(30, 41, 59, 0.7)',
+      cardTint: '38 52 74',
+      bgCard: 'rgba(38, 52, 74, 0.62)',
+      bgCardHover: 'rgba(38, 52, 74, 0.8)',
       textPrimary: '#e2e8f0',
-      textSecondary: '#94a3b8',
-      textMuted: '#475569',
+      textSecondary: '#b6c2d3',
+      textMuted: '#7d8ba1',
       accent: '#06b6d4',
       accentHover: '#22d3ee',
-      border: 'rgba(100, 116, 139, 0.2)',
+      border: 'rgba(148, 163, 184, 0.28)',
       glassBlur: 16,
-      glassOpacity: 0.3,
+      glassOpacity: 0.62,
       statusSuccess: '#10b981',
       statusWarning: '#f59e0b',
       statusError: '#ef4444',
@@ -125,17 +143,18 @@ export const THEMES: Record<ThemeId, { label: string; tokens: ThemeTokens }> = {
   emerald: {
     label: 'Émeraude',
     tokens: {
-      bgPrimary: '#022c22',
-      bgCard: 'rgba(6, 78, 59, 0.3)',
-      bgCardHover: 'rgba(6, 78, 59, 0.5)',
+      bgPrimary: '#021a14',
+      cardTint: '8 92 70',
+      bgCard: 'rgba(8, 92, 70, 0.45)',
+      bgCardHover: 'rgba(8, 92, 70, 0.62)',
       textPrimary: '#ecfdf5',
-      textSecondary: '#a7f3d0',
-      textMuted: '#6ee7b7',
+      textSecondary: '#b6f0d8',
+      textMuted: '#7fd4b4',
       accent: '#10b981',
       accentHover: '#34d399',
-      border: 'rgba(16, 185, 129, 0.15)',
+      border: 'rgba(52, 211, 153, 0.24)',
       glassBlur: 20,
-      glassOpacity: 0.15,
+      glassOpacity: 0.45,
       statusSuccess: '#34d399',
       statusWarning: '#fbbf24',
       statusError: '#f87171',
@@ -146,6 +165,7 @@ export const THEMES: Record<ThemeId, { label: string; tokens: ThemeTokens }> = {
     label: 'Clay Clair',
     tokens: {
       mode: 'clay',
+      light: true,
       bgPrimary: '#e8e4df',
       bgCard: '#f0ece7',
       bgCardHover: '#f5f1ed',

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DURATION_ENTRANCE, DURATION_MICRO } from '@/lib/motion-tokens';
+import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { Play, Pause, Square, LocateFixed, Home, ChevronRight, Battery, MapPin, ListOrdered, ChevronDown } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { callHAService } from '@/lib/ha-service';
@@ -306,6 +306,9 @@ export function VacuumCard() {
   const playFeedback = useSoundFeedback('vacuum', config?.soundOverrides);
 
   // ── Sequential cleaning: watch state changes ──
+  /* eslint-disable react-hooks/preserve-manual-memoization -- mémoïsation
+     conservée volontairement : ces callbacks alimentent les dépendances de
+     l'effet de file d'attente, leur identité doit rester stable. */
   const callVacuumSvc = useCallback(
     (service: string, serviceData?: Record<string, unknown>) => {
       callHAService(helpers, 'vacuum', service, { entity_id: entityId }, serviceData);
@@ -319,6 +322,7 @@ export function VacuumCard() {
     },
     [callVacuumSvc]
   );
+  /* eslint-enable react-hooks/preserve-manual-memoization */
 
   useEffect(() => {
     if (!queueActive || queueRef.current.length === 0) return;
@@ -491,10 +495,12 @@ export function VacuumCard() {
             </div>
 
             {/* Sequential queue indicator */}
+            {/* eslint-disable-next-line react-hooks/refs */}
             {queueActive && queueRef.current.length > 0 && (
               <div className='flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-500/10 border border-orange-500/20 mb-2'>
                 <ListOrdered size={14} className='text-orange-400' />
                 <span className='text-orange-300 text-xs font-medium'>
+                  {/* eslint-disable-next-line react-hooks/refs */}
                   {t('widgets.vacuum.queueProgress', { current: queueIndex + 1, total: queueRef.current.length })}
                 </span>
               </div>

@@ -41,14 +41,18 @@ export const staggerContainer: Variants = {
   visible: { transition: { staggerChildren: 0.08 } },
 };
 
+// 0.035 s et non 0.08 : à 0.08, un dashboard de 12 cards mettait ~1 s à
+// s'afficher entièrement — sur une tablette murale qui se réveille, la
+// chorégraphie devient de l'attente. À 0.035, l'effet de cascade reste lisible
+// pour ~0,4 s au total.
 export const staggerGridContainer: Variants = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.08 } },
+  visible: { transition: { staggerChildren: 0.035 } },
 };
 
 export const staggerGridItem: Variants = {
-  hidden: { opacity: 0, y: 10 },
-  visible: { opacity: 1, y: 0, transition: { duration: DURATION_NORMAL, ease: EASE_OUT } },
+  hidden: { opacity: 0, y: 12, scale: 0.98 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: DURATION_NORMAL, ease: EASE_OUT } },
 };
 
 export const sectionStaggerContainer: Variants = {

@@ -4,9 +4,10 @@ import { Plus, MousePointerClick, ArrowLeft, Search, Check } from 'lucide-react'
 import { useHass } from '@hakit/core';
 import { useI18n } from '@/i18n';
 import { MOCK_ENTITIES } from '@/mocks/hassEntities';
-import { WIDGET_CATALOG, type GridWidget } from '@/context/DashboardLayoutContext';
+import type { GridWidget } from '@/context/DashboardLayoutContext';
+import { WIDGET_CATALOG } from '@/widgets';
 import { WidgetIdProvider } from '@/components/layout/DashboardGrid';
-import { PREVIEW_COMPONENTS } from '@/config/widget-registry';
+import { WIDGET_COMPONENTS } from '@/widgets';
 import { type WidgetMeta, getPreviewDims } from './widget-meta';
 
 // ── Mock HA wrapper ──────────────────────────────────────────────────────────
@@ -102,7 +103,7 @@ function EntityPickerStep({ meta, onBack, onConfirm }: { meta: WidgetMeta; onBac
         {entities.length === 0 ? (
           <div className='flex flex-col items-center justify-center h-full gap-2'>
             <Search size={20} className='text-white/10' />
-            <p className='text-white/20 text-xs'>{t('layout.noEntityFound', { domain: meta.entityDomain })}</p>
+            <p className='text-white/20 text-xs'>{t('layout.noEntityFound', { domain: meta.entityDomain ?? '' })}</p>
           </div>
         ) : (
           entities.map(e => (
@@ -166,7 +167,7 @@ export function PreviewPanel({
   const { t } = useI18n();
   const [step, setStep] = useState<'info' | 'entity'>('info');
   const catalogEntry = meta ? WIDGET_CATALOG.find(c => c.type === meta.type) : null;
-  const Component = meta ? PREVIEW_COMPONENTS[meta.type] : null;
+  const Component = meta ? WIDGET_COMPONENTS[meta.type] : null;
   const dims = meta ? getPreviewDims(meta.type) : null;
 
   // Reset step when widget selection changes

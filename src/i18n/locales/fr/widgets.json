@@ -73,12 +73,12 @@
     "notFound": "Volet introuvable",
     "openAction": "OUVRIR",
     "closeAction": "FERMER",
-    "presetClosed": "FERM\u00c9",
+    "presetClosed": "FERMÉ",
     "presetOpen": "OUVERT",
     "percentOpen": "{value}% ouvert",
-    "presets": "Pr\u00e9r\u00e9glages",
+    "presets": "Préréglages",
     "info": "Informations",
-    "state": "\u00c9TAT",
+    "state": "ÉTAT",
     "position": "POSITION",
     "deviceClass": "CLASSE"
   },
@@ -116,7 +116,8 @@
     "modeAway": "Absent",
     "modeNight": "Nuit",
     "modeVacation": "Vacances",
-    "selectMode": "Choisir un mode"
+    "selectMode": "Choisir un mode",
+    "backspace": "Effacer"
   },
   "camera": {
     "label": "Caméra",
@@ -203,7 +204,10 @@
     "confirm": "Confirmer",
     "confirmDefault": "Confirmer l'exécution de cette action ?"
   },
-  "template": { "label": "Template", "description": "Widget entièrement personnalisable avec templates Jinja2/Nunjucks." },
+  "template": {
+    "label": "Template",
+    "description": "Widget entièrement personnalisable avec templates Jinja2/Nunjucks."
+  },
   "vacuum": {
     "label": "Aspirateur",
     "description": "Contrôle aspirateur robot avec nettoyage par pièce (Roborock, etc.).",
@@ -232,5 +236,21 @@
     "sequentialDesc": "Nettoyer les pièces une par une",
     "sequentialNote": "Les pièces seront nettoyées une par une dans l'ordre sélectionné.",
     "queueProgress": "Pièce {current}/{total}"
+  },
+  "automation_list": {
+    "label": "Liste d'automatisations",
+    "description": "Plusieurs automatisations dans une seule card, avec bascule.",
+    "empty": "Aucune automatisation configurée",
+    "active": "Actif",
+    "inactive": "Inactif"
+  },
+  "energy_flow": {
+    "label": "Flux d'énergie",
+    "description": "Solaire, maison, batterie et réseau : sens de circulation et autoconsommation.",
+    "solar": "Solaire",
+    "home": "Maison",
+    "battery": "Batterie",
+    "grid": "Réseau",
+    "selfUse": "AUTOCONSO"
   }
 }

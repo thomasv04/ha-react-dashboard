@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DURATION_FAST, DURATION_MICRO } from '@/lib/motion-tokens';
+import { DURATION_FAST } from '@/lib/motion-tokens';
 import { X, Plus, Trash2, ChevronUp, ChevronDown, Zap, Blinds, Minus, Layers, Copy, Check, LayoutTemplate, Search } from 'lucide-react';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';

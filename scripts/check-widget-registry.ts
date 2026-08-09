@@ -1,150 +1,157 @@
 /**
- * check-widget-registry.ts
+ * Vérifie que chaque type de widget est complètement déclaré.
  *
- * Vérifie que chaque type de widget défini dans WidgetConfig a une entrée
- * dans tous les registres obligatoires. Parse les fichiers source pour
- * extraire les clés sans importer de modules React/JSX.
+ * Deux façons valides de déclarer un widget :
  *
- * Usage: npx tsx scripts/check-widget-registry.ts
+ * 1. **Manifeste** (recommandé) — `src/components/cards/<Nom>/widget.ts` via
+ *    `defineWidget`, plus son import dans `src/widgets/registry.ts`. Tout est
+ *    dans le manifeste, il n'y a rien à tenir en phase.
+ * 2. **Registres historiques** — une entrée dans chacun des cinq gros objets
+ *    centraux. C'est ce que faisaient tous les widgets avant `defineWidget` ;
+ *    c'est précisément la synchronisation manuelle que le manifeste supprime.
+ *
+ * Ce script signale les types incomplets dans l'un et l'autre modèle.
  */
+import fs from 'node:fs';
+import path from 'node:path';
+import chalk from 'chalk';
 
-import { readFileSync } from 'fs';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
+const ROOT = path.resolve(import.meta.dirname, '..');
+const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const read = (rel: string) => readFileSync(resolve(ROOT, rel), 'utf-8');
+// ── Extraction ───────────────────────────────────────────────────────────────
 
-// ── 1. Extract widget types from WidgetConfig union in widget-types.ts ──────
-
-function extractWidgetTypes(): string[] {
-  const src = read('src/types/widget-types.ts');
-  // Each config interface has: type: 'xxx'
-  const types = new Set<string>();
-  for (const m of src.matchAll(/type:\s*'([a-z_]+)'/g)) {
-    types.add(m[1]);
-  }
-  return [...types].sort();
+/** Types déclarés dans l'union `GridWidget['type']` */
+function unionTypes(): string[] {
+  const src = read('src/context/DashboardLayoutContext.tsx');
+  const block = src.slice(src.indexOf('export interface GridWidget'), src.indexOf('  x: number;'));
+  return [...block.matchAll(/\|\s*'([a-z_]+)'/g)].map(m => m[1]);
 }
 
-// ── 2. Extract keys from object-keyed registries (Record<string, ...>) ──────
+/** Types déclarés par manifeste ET importés dans le registre */
+function manifestTypes(): { declared: string[]; registered: string[] } {
+  const cardsDir = path.join(ROOT, 'src/components/cards');
+  const declared: string[] = [];
+  for (const entry of fs.readdirSync(cardsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const manifest = path.join(cardsDir, entry.name, 'widget.ts');
+    if (!fs.existsSync(manifest)) continue;
+    const m = fs.readFileSync(manifest, 'utf8').match(/type:\s*'([a-z_]+)'/);
+    if (m) declared.push(m[1]);
+  }
+  const registry = read('src/widgets/registry.ts');
+  const registered = declared.filter(t => {
+    const dir = fs
+      .readdirSync(cardsDir)
+      .find(
+        d =>
+          fs.existsSync(path.join(cardsDir, d, 'widget.ts')) &&
+          fs.readFileSync(path.join(cardsDir, d, 'widget.ts'), 'utf8').includes(`type: '${t}'`)
+      );
+    return dir ? registry.includes(`cards/${dir}/widget`) : false;
+  });
+  return { declared, registered };
+}
 
-function extractObjectKeys(src: string, varName: string): string[] {
-  const re = new RegExp(`(?:export\\s+)?const\\s+${varName}[^=]*=\\s*\\{`, 's');
-  const startMatch = re.exec(src);
-  if (!startMatch) return [];
-
-  const startIdx = startMatch.index + startMatch[0].length;
-  const keys: string[] = [];
+/** Clés d'un objet exporté (première profondeur) */
+function objectKeys(src: string, name: string): string[] {
+  const start = src.indexOf(`export const ${name}`);
+  if (start < 0) return [];
+  const open = src.indexOf('{', start);
   let depth = 0;
-
-  let i = startIdx;
-  while (i < src.length) {
-    const ch = src[i];
-
-    if (ch === '{') {
-      depth++;
-      i++;
-      continue;
-    }
-    if (ch === '}') {
-      if (depth === 0) break; // end of top-level object
+  let end = open;
+  for (let i = open; i < src.length; i++) {
+    if (src[i] === '{' || src[i] === '[') depth++;
+    else if (src[i] === '}' || src[i] === ']') {
       depth--;
-      i++;
-      continue;
-    }
-    if (ch === '[') {
-      depth++;
-      i++;
-      continue;
-    }
-    if (ch === ']') {
-      depth--;
-      i++;
-      continue;
-    }
-
-    // Only match keys at depth 0
-    if (depth === 0) {
-      const keyMatch = src.slice(i).match(/^['"]?([a-z_]+)['"]?\s*:/);
-      if (keyMatch) {
-        keys.push(keyMatch[1]);
-        i += keyMatch[0].length;
-        continue;
+      if (depth === 0) {
+        end = i;
+        break;
       }
     }
-
-    i++;
   }
-
-  return keys;
+  return [...src.slice(open, end).matchAll(/^\s{2}'?([a-z_]+)'?:/gm)].map(m => m[1]);
 }
 
-// ── 3. Extract types from array-based registries (type: 'xxx') ──────────────
-
-function extractArrayTypes(src: string, varName: string): string[] {
-  const re = new RegExp(`(?:export\\s+)?const\\s+${varName}[^=]*=\\s*\\[`, 's');
-  const startMatch = re.exec(src);
-  if (!startMatch) return [];
-
-  const startIdx = startMatch.index + startMatch[0].length;
-  let depth = 1;
-  let endIdx = startIdx;
-  for (let i = startIdx; i < src.length && depth > 0; i++) {
-    if (src[i] === '[') depth++;
-    else if (src[i] === ']') depth--;
-    endIdx = i;
+function arrayTypes(src: string, name: string): string[] {
+  const start = src.indexOf(`export const ${name}`);
+  if (start < 0) return [];
+  // `= [` et non `[` : l'annotation de type contient déjà `[]` (`WidgetMeta[]`),
+  // dont le crochet ouvrant faisait terminer le balayage immédiatement.
+  const open = src.indexOf('[', src.indexOf('= [', start));
+  let depth = 0;
+  let end = open;
+  for (let i = open; i < src.length; i++) {
+    if (src[i] === '[' || src[i] === '{') depth++;
+    else if (src[i] === ']' || src[i] === '}') {
+      depth--;
+      if (depth === 0) {
+        end = i;
+        break;
+      }
+    }
   }
-
-  const body = src.slice(startIdx, endIdx);
-  const types: string[] = [];
-  for (const m of body.matchAll(/type:\s*'([a-z_]+)'/g)) {
-    types.push(m[1]);
-  }
-  return types;
+  return [...src.slice(open, end).matchAll(/type:\s*'([a-z_]+)'/g)].map(m => m[1]);
 }
 
-// ── Main ────────────────────────────────────────────────────────────────────────
+// ── Vérification ─────────────────────────────────────────────────────────────
 
-const widgetTypes = extractWidgetTypes();
-console.log(`Found ${widgetTypes.length} widget types: ${widgetTypes.join(', ')}\n`);
+const all = unionTypes();
+const { declared, registered } = manifestTypes();
 
-const registrySrc = read('src/config/widget-registry.tsx');
 const dispositionsSrc = read('src/config/widget-dispositions.ts');
 const metaSrc = read('src/components/layout/AddWidgetModal/widget-meta.ts');
 const fieldsSrc = read('src/types/widget-fields.ts');
-const layoutCtxSrc = read('src/context/DashboardLayoutContext.tsx');
+const catalogSrc = read('src/config/widget-catalog.ts');
+const registrySrc = read('src/config/widget-registry.tsx');
 
-const registries: { name: string; keys: string[] }[] = [
-  { name: 'WIDGET_COMPONENTS', keys: extractObjectKeys(registrySrc, 'WIDGET_COMPONENTS') },
-  { name: 'PREVIEW_COMPONENTS', keys: extractObjectKeys(registrySrc, 'PREVIEW_COMPONENTS') },
-  { name: 'WIDGET_DISPOSITIONS', keys: extractObjectKeys(dispositionsSrc, 'WIDGET_DISPOSITIONS') },
-  { name: 'WIDGET_META', keys: extractArrayTypes(metaSrc, 'WIDGET_META') },
-  { name: 'WIDGET_FIELD_DEFS', keys: extractObjectKeys(fieldsSrc, 'WIDGET_FIELD_DEFS') },
-  { name: 'DEFAULT_WIDGET_CONFIGS', keys: extractObjectKeys(fieldsSrc, 'DEFAULT_WIDGET_CONFIGS') },
-  { name: 'WIDGET_CATALOG', keys: extractArrayTypes(layoutCtxSrc, 'WIDGET_CATALOG') },
-];
+const legacy: Record<string, string[]> = {
+  LEGACY_WIDGET_COMPONENTS: objectKeys(registrySrc, 'LEGACY_WIDGET_COMPONENTS'),
+  LEGACY_WIDGET_META: arrayTypes(metaSrc, 'LEGACY_WIDGET_META'),
+  LEGACY_WIDGET_CATALOG: arrayTypes(catalogSrc, 'LEGACY_WIDGET_CATALOG'),
+  LEGACY_WIDGET_DISPOSITIONS: objectKeys(dispositionsSrc, 'LEGACY_WIDGET_DISPOSITIONS'),
+  LEGACY_WIDGET_FIELD_DEFS: objectKeys(fieldsSrc, 'LEGACY_WIDGET_FIELD_DEFS'),
+  LEGACY_DEFAULT_WIDGET_CONFIGS: objectKeys(fieldsSrc, 'LEGACY_DEFAULT_WIDGET_CONFIGS'),
+};
 
-let hasErrors = false;
+console.info(`${all.length} types déclarés : ${all.join(', ')}`);
+console.info(`${declared.length} par manifeste : ${declared.join(', ') || '—'}\n`);
 
-for (const { name, keys } of registries) {
-  const missing = widgetTypes.filter(t => !keys.includes(t));
-  const extra = keys.filter(k => !widgetTypes.includes(k));
+let failed = false;
 
-  if (missing.length > 0 || extra.length > 0) {
-    hasErrors = true;
-    console.log(`❌ ${name}:`);
-    if (missing.length > 0) console.log(`   Missing: ${missing.join(', ')}`);
-    if (extra.length > 0) console.log(`   Extra:   ${extra.join(', ')}`);
-  } else {
-    console.log(`✅ ${name} — ${keys.length}/${widgetTypes.length} types OK`);
+// 1. Un manifeste non importé n'existe pas pour l'application
+for (const t of declared) {
+  if (!registered.includes(t)) {
+    failed = true;
+    console.warn(chalk.red(`❌ « ${t} » a un manifeste mais n'est pas importé dans src/widgets/registry.ts`));
   }
 }
 
-console.log('');
-if (hasErrors) {
-  console.log('Some registries are out of sync. Please fix the issues above.');
-  process.exit(1);
-} else {
-  console.log('All registries are in sync!');
+// 2. Un type de l'union doit être servi par un manifeste ou par les registres
+for (const t of all) {
+  if (registered.includes(t)) continue;
+  const missing = Object.entries(legacy)
+    .filter(([, keys]) => !keys.includes(t))
+    .map(([name]) => name);
+  if (missing.length === Object.keys(legacy).length) {
+    failed = true;
+    console.warn(chalk.red(`❌ « ${t} » n'est déclaré nulle part — ni manifeste, ni registre historique`));
+  } else if (missing.length > 0) {
+    failed = true;
+    console.warn(chalk.red(`❌ « ${t} » (historique) manque dans : ${missing.join(', ')}`));
+    console.warn(chalk.dim(`   → le migrer vers un manifeste supprime ce genre d'oubli : npm run new:widget`));
+  }
 }
+
+// 3. Une entrée historique orpheline (type retiré de l'union)
+for (const [name, keys] of Object.entries(legacy)) {
+  const extra = keys.filter(k => !all.includes(k));
+  if (extra.length) console.warn(chalk.yellow(`⚠️  ${name} contient des types inconnus : ${extra.join(', ')}`));
+}
+
+console.info('');
+if (failed) {
+  console.error(chalk.red('Des widgets sont incomplets.'));
+  process.exit(1);
+}
+console.info(chalk.green('✅ Tous les widgets sont complètement déclarés.'));

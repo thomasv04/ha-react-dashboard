@@ -16,5 +16,14 @@
   },
   "editTooltipExit": "Exit edit mode",
   "editTooltipEnter": "Edit dashboard",
-  "cancelTooltip": "Cancel"
+  "cancelTooltip": "Cancel",
+  "boot": {
+    "connect": "Connecting to Home Assistant",
+    "config": "Loading dashboard",
+    "widgets": "Preparing widgets",
+    "slow": "This is taking longer than usual. The connection may be slow or the server unreachable.",
+    "continueOffline": "Continue anyway"
+  },
+  "pack": "Reflow",
+  "packTooltip": "Close gaps in the layout (current breakpoint only)"
 }

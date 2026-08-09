@@ -116,7 +116,8 @@
     "modeAway": "Away",
     "modeNight": "Night",
     "modeVacation": "Vacation",
-    "selectMode": "Select mode"
+    "selectMode": "Select mode",
+    "backspace": "Backspace"
   },
   "camera": {
     "label": "Camera",
@@ -203,7 +204,10 @@
     "confirm": "Confirm",
     "confirmDefault": "Are you sure you want to run this action?"
   },
-  "template": { "label": "Template", "description": "Fully customizable widget with Jinja2/Nunjucks templates." },
+  "template": {
+    "label": "Template",
+    "description": "Fully customizable widget with Jinja2/Nunjucks templates."
+  },
   "vacuum": {
     "label": "Vacuum",
     "description": "Robot vacuum control with room-by-room cleaning (Roborock, etc.).",
@@ -232,5 +236,21 @@
     "sequentialDesc": "Clean rooms one at a time",
     "sequentialNote": "Rooms will be cleaned one by one in the selected order.",
     "queueProgress": "Room {current}/{total}"
+  },
+  "automation_list": {
+    "label": "Automation list",
+    "description": "Several automations in a single card, with toggles.",
+    "empty": "No automation configured",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "energy_flow": {
+    "label": "Energy flow",
+    "description": "Solar, home, battery and grid: flow direction and self-consumption.",
+    "solar": "Solar",
+    "home": "Home",
+    "battery": "Battery",
+    "grid": "Grid",
+    "selfUse": "SELF-USE"
   }
 }

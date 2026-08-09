@@ -152,6 +152,7 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
         onClick={handleToggle}
       >
         {SelectedIcon ? (
+          // eslint-disable-next-line react-hooks/static-components
           <SelectedIcon size={16} className='text-white/70 shrink-0' />
         ) : isCustom ? (
           <img src={getCustomIconUrl(value)} alt='' className='w-4 h-4 object-contain shrink-0' />

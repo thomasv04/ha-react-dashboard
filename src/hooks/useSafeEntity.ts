@@ -29,6 +29,7 @@ export function useSafeEntity(entityId: string): SafeEntityState | null {
   const stableRef = useRef<SafeEntityState | null>(null);
 
   if (!raw) {
+    // eslint-disable-next-line react-hooks/refs
     if (stableRef.current !== null) stableRef.current = null;
     return null;
   }
@@ -38,9 +39,12 @@ export function useSafeEntity(entityId: string): SafeEntityState | null {
     attributes: (raw.attributes as Record<string, unknown>) ?? {},
   };
 
+  // eslint-disable-next-line react-hooks/refs
   if (!shallowEqualEntity(stableRef.current, next)) {
+    // eslint-disable-next-line react-hooks/refs
     stableRef.current = next;
   }
 
+  // eslint-disable-next-line react-hooks/refs
   return stableRef.current;
 }

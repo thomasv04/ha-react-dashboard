@@ -2,7 +2,7 @@ import type { SizePreset, SizePresetName, WidgetSizePresets } from '@/context/Da
 
 export type { SizePreset, SizePresetName, WidgetSizePresets };
 
-export const SIZE_PRESETS: WidgetSizePresets = {
+export const LEGACY_SIZE_PRESETS: WidgetSizePresets = {
   camera: {
     lg: [
       { name: 'Compact', w: 4, h: 2 },

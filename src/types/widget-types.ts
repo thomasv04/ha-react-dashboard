@@ -84,6 +84,20 @@ export interface EnergyCardConfig {
   showInfoPanel?: boolean;
 }
 
+// ── Energy flow ───────────────────────────────────────────────────────────────
+export interface EnergyFlowCardConfig {
+  type: 'energy_flow';
+  name?: string;
+  solarProductionEntity: string;
+  homeOutputPowerEntity: string;
+  gridInputPowerEntity: string;
+  batteryLevelEntity: string;
+  batteryStateEntity: string;
+  /** Inverse la convention de signe du capteur réseau (positif = soutirage) */
+  gridInvert?: boolean;
+  showInfoPanel?: boolean;
+}
+
 // ── Tempo EDF ─────────────────────────────────────────────────────────────────
 export interface TempoCardConfig {
   type: 'tempo';
@@ -235,8 +249,28 @@ export interface AutomationCardConfig extends WidgetSoundOverrides {
   showInfoPanel?: boolean;
 }
 
+// ── Automation list ───────────────────────────────────────────────────────────
+
+/** Une ligne de la liste d'automatisations */
+export interface AutomationItem {
+  /** Entity ID de l'automatisation (domain: automation) */
+  entityId: string;
+  /** Nom affiché (override du friendly_name) */
+  name?: string;
+  /** Icône Lucide personnalisée */
+  icon?: string;
+}
+
+export interface AutomationListCardConfig extends WidgetSoundOverrides {
+  type: 'automation_list';
+  /** Titre de la card */
+  name?: string;
+  /** Automatisations listées, dans l'ordre d'affichage */
+  automations: AutomationItem[];
+}
+
 // ── Button ────────────────────────────────────────────────────────────────────
-export interface ButtonCardConfig {
+export interface ButtonCardConfig extends WidgetSoundOverrides {
   type: 'button';
   /** Label displayed on the button */
   label: string;
@@ -294,7 +328,7 @@ export interface VacuumSelectEntity {
   label?: string;
 }
 
-export interface VacuumCardConfig {
+export interface VacuumCardConfig extends WidgetSoundOverrides {
   type: 'vacuum';
   entityId: string; // vacuum.xxx
   name?: string;
@@ -368,7 +402,7 @@ type WidgetType =
   | 'room'
   | 'group';
 
-export interface GroupCardConfig {
+export interface GroupCardConfig extends WidgetSoundOverrides {
   type: 'group';
   /** Optional title shown at the top */
   title?: string;
@@ -381,7 +415,7 @@ export interface GroupCardConfig {
 }
 
 // ── Room (standalone) ─────────────────────────────────────────────────────────
-export interface RoomCardConfig {
+export interface RoomCardConfig extends WidgetSoundOverrides {
   type: 'room';
   label: string;
   icon: string;
@@ -399,6 +433,7 @@ export type WidgetConfig =
   | CameraCardConfig
   | WeatherCardConfig
   | EnergyCardConfig
+  | EnergyFlowCardConfig
   | TempoCardConfig
   | ThermostatCardConfig
   | ShortcutsCardConfig
@@ -409,6 +444,7 @@ export type WidgetConfig =
   | CoverCardConfig
   | TemplateCardConfig
   | AutomationCardConfig
+  | AutomationListCardConfig
   | ButtonCardConfig
   | MediaPlayerCardConfig
   | AlarmCardConfig

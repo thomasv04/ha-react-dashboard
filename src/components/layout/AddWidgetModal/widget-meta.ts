@@ -1,11 +1,9 @@
-import React from 'react';
 import {
   Thermometer,
   Lightbulb,
   Cloud,
   Zap,
   Video,
-  LayoutGrid,
   Grip,
   ArrowUpDown,
   Users,
@@ -21,6 +19,7 @@ import {
   Play,
   Layers,
   Home,
+  type LucideIcon,
 } from 'lucide-react';
 import type { GridWidget } from '@/context/DashboardLayoutContext';
 
@@ -87,7 +86,10 @@ export interface WidgetMeta {
   label: string;
   description: string;
   category: Category;
-  icon: React.ComponentType<{ size?: number; className?: string; color?: string }>;
+  // `LucideIcon` plutôt qu'une signature réduite : toutes les entrées sont des
+  // icônes Lucide, et la signature restreinte interdisait `style`, que les
+  // appelants utilisent pour teinter l'icône.
+  icon: LucideIcon;
   color: string;
   /** If set, show entity picker step before adding (filters HA entities by this domain) */
   entityDomain?: string;
@@ -95,7 +97,7 @@ export interface WidgetMeta {
   entityConfigKey?: string;
 }
 
-export const WIDGET_META: WidgetMeta[] = [
+export const LEGACY_WIDGET_META: WidgetMeta[] = [
   {
     type: 'sensor',
     label: 'widgets.sensor.label',

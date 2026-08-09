@@ -1,5 +1,5 @@
 import { useDashboardLayout } from '@/context/DashboardLayoutContext';
-import { WIDGET_DISPOSITIONS, getMinSize } from '@/config/widget-dispositions';
+import { WIDGET_DISPOSITIONS, getMinSize } from '@/widgets';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 

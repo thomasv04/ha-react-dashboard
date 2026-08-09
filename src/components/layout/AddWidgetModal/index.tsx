@@ -5,9 +5,10 @@ import { X, Search } from 'lucide-react';
 import { useDashboardLayout, type GridWidget } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import type { WidgetConfig } from '@/types/widget-configs';
-import { DEFAULT_WIDGET_CONFIGS } from '@/types/widget-configs';
+import { DEFAULT_WIDGET_CONFIGS } from '@/widgets';
 import { cn } from '@/lib/utils';
-import { WIDGET_META, CATEGORIES, type Category } from './widget-meta';
+import { CATEGORIES, type Category } from './widget-meta';
+import { WIDGET_META } from '@/widgets';
 import { useI18n } from '@/i18n';
 import { PreviewPanel } from './PreviewPanel';
 import { ListRow } from './ListRow';
@@ -25,13 +26,25 @@ export function AddWidgetModal({ onClose }: AddWidgetModalProps) {
   const [selected, setSelected] = useState<GridWidget['type'] | null>(null);
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
+    const q = search
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '');
+    // La recherche portait sur `meta.label` / `meta.description`, qui sont des
+    // **clés i18n** (`widgets.weather.label`) : taper « météo » ne renvoyait
+    // rien, seul « weather » fonctionnait. On filtre sur le texte traduit, et
+    // en ignorant les accents — personne ne tape « énergie » avec l'accent.
+    const norm = (s: string) =>
+      s
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '');
     return WIDGET_META.filter(meta => {
       const matchCat = category === 'all' || meta.category === category;
-      const matchSearch = !q || meta.label.toLowerCase().includes(q) || meta.description.toLowerCase().includes(q);
+      const matchSearch = !q || norm(t(meta.label)).includes(q) || norm(t(meta.description)).includes(q);
       return matchCat && matchSearch;
     });
-  }, [search, category]);
+  }, [search, category, t]);
 
   const selectedMeta = selected ? (WIDGET_META.find(m => m.type === selected) ?? null) : null;
 

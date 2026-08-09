@@ -72,6 +72,8 @@ interface ThemeContextValue {
 export const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 const STORAGE_KEY = 'ha-dashboard-theme';
+/** Bumped when a stored field changes meaning — see `loadSettings`. */
+const SETTINGS_VERSION = 2;
 
 /** Check if sound is enabled by reading localStorage directly (no hook needed) */
 export function isSoundEnabled(): boolean {
@@ -106,6 +108,7 @@ function loadSettings(): {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored) as {
+        v?: number;
         themeId?: ThemeId;
         background?: BackgroundConfig;
         cardOpacity?: number;
@@ -114,10 +117,18 @@ function loadSettings(): {
         layoutSettings?: Partial<LayoutSettings>;
         soundSettings?: Partial<SoundSettings>;
       };
+      const themeId = parsed.themeId ?? 'dark';
+      // Avant la v2 le curseur d'opacité n'était branché sur rien : la valeur
+      // stockée n'a jamais reflété un choix visible. On repart du défaut du
+      // thème une fois, sinon tout le monde hériterait d'une card à 4 %.
+      const cardOpacity =
+        parsed.v === SETTINGS_VERSION && parsed.cardOpacity != null
+          ? parsed.cardOpacity
+          : (THEMES[themeId]?.tokens.glassOpacity ?? THEMES.dark.tokens.glassOpacity);
       return {
-        themeId: parsed.themeId ?? 'dark',
+        themeId,
         background: parsed.background ?? { mode: 'solid' },
-        cardOpacity: parsed.cardOpacity ?? THEMES.dark.tokens.glassOpacity,
+        cardOpacity,
         perfSettings: { ...DEFAULT_PERF_SETTINGS, ...(parsed.perfSettings ?? {}) },
         autoTheme: { ...DEFAULT_AUTO_THEME, ...(parsed.autoTheme ?? {}) },
         layoutSettings: { ...DEFAULT_LAYOUT_SETTINGS, ...(parsed.layoutSettings ?? {}) },
@@ -152,13 +163,17 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
 
   // Sync settings with server (multi-device)
   const syncedSettings = useMemo(
-    () => ({ themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings }),
+    () => ({ v: SETTINGS_VERSION, themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings }),
     [themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings]
   );
   const handleRemoteUpdate = useCallback((remote: typeof syncedSettings) => {
     if (remote.themeId && THEMES[remote.themeId]) {
       setThemeId(remote.themeId);
-      setCardOpacityState(remote.cardOpacity ?? THEMES[remote.themeId].tokens.glassOpacity);
+      // Même migration que dans `loadSettings` : une opacité venue d'un
+      // enregistrement pré-v2 n'a jamais été appliquée, on ne la ressuscite pas.
+      setCardOpacityState(
+        remote.v === SETTINGS_VERSION && remote.cardOpacity != null ? remote.cardOpacity : THEMES[remote.themeId].tokens.glassOpacity
+      );
     }
     if (remote.background) setBackgroundState(remote.background);
     if (remote.perfSettings) setPerfSettingsState({ ...DEFAULT_PERF_SETTINGS, ...remote.perfSettings });
@@ -172,8 +187,16 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
     root.style.setProperty('--dash-bg-primary', tokens.bgPrimary);
-    root.style.setProperty('--dash-bg-card', tokens.bgCard);
-    root.style.setProperty('--dash-bg-card-hover', tokens.bgCardHover);
+    // Le curseur d'opacité ne pilotait rien : il écrivait `--dash-glass-opacity`,
+    // qu'aucune règle CSS ne lisait. On recompose la surface à partir de la
+    // teinte du thème pour que le curseur agisse réellement sur les cards.
+    if (tokens.cardTint) {
+      root.style.setProperty('--dash-bg-card', `rgba(${tokens.cardTint} / ${cardOpacity})`);
+      root.style.setProperty('--dash-bg-card-hover', `rgba(${tokens.cardTint} / ${Math.min(1, cardOpacity * 1.5 + 0.02)})`);
+    } else {
+      root.style.setProperty('--dash-bg-card', tokens.bgCard);
+      root.style.setProperty('--dash-bg-card-hover', tokens.bgCardHover);
+    }
     root.style.setProperty('--dash-text-primary', tokens.textPrimary);
     root.style.setProperty('--dash-text-secondary', tokens.textSecondary);
     root.style.setProperty('--dash-text-muted', tokens.textMuted);
@@ -189,8 +212,12 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     // Clay-specific variables & class
     const isClay = tokens.mode === 'clay';
     root.classList.toggle('theme-clay', isClay);
-    root.classList.toggle('theme-clay-light', isClay && themeId === 'clay');
     root.classList.toggle('theme-clay-dark', isClay && themeId === 'clay-dark');
+    // Any light-surface theme (clay light *and* the plain light theme) needs the
+    // hardcoded `text-white/*` utilities remapped to dark text, otherwise the
+    // cards turn white and the text stays invisible.
+    root.classList.toggle('theme-light-surface', !!tokens.light);
+    root.dataset.theme = tokens.light ? 'light' : 'dark';
     root.style.setProperty('--dash-shadow-color', tokens.shadowColor ?? '');
     root.style.setProperty('--dash-shadow-highlight', tokens.shadowHighlight ?? '');
   }, [tokens, cardOpacity, themeId]);
@@ -215,7 +242,7 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings })
+      JSON.stringify({ v: SETTINGS_VERSION, themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings })
     );
   }, [themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings]);
 

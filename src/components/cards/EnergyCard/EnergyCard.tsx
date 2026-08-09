@@ -1,4 +1,6 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
+import { useElementBox } from '@/hooks/useWidgetSize';
+import { normalizePackState, type PackState } from '@/lib/battery-state';
 import { motion } from 'framer-motion';
 import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { Zap, Sun, BatteryCharging } from 'lucide-react';
@@ -9,14 +11,6 @@ import type { EnergyCardConfig } from '@/types/widget-configs';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
-
-type PackState = 'charging' | 'discharging' | 'idle';
-
-function normalizePackState(raw: string): PackState {
-  if (['charging', 'En charge', '1'].includes(raw)) return 'charging';
-  if (['discharging', 'En décharge', '2'].includes(raw)) return 'discharging';
-  return 'idle';
-}
 
 const STATE_STYLES: Record<PackState, { bg: string; border: string; text: string; dot: string }> = {
   charging: {
@@ -54,15 +48,11 @@ export function EnergyCard() {
   const cardRef = useRef<HTMLDivElement>(null);
   const [cardH, setCardH] = useState(999);
 
-  useEffect(() => {
-    const el = cardRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(entries => {
-      setCardH(entries[0].contentRect.height);
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+  // Mesure synchrone en boîte de bordure : les seuils ci-dessous sont exprimés
+  // en rangées de grille (80 / 176 / 272 px), ce que `contentRect` faussait en
+  // retranchant le padding — et qui ne partait pas du tout quand la page ne
+  // composait pas, laissant la card sur `999` (disposition la plus haute).
+  useElementBox(cardRef, (_w, height) => setCardH(height));
 
   if (!batteryLevel) return null;
 
@@ -87,8 +77,10 @@ export function EnergyCard() {
   const name = config?.name ?? t('widgets.energy.defaultName');
 
   // Layout modes based on available height
-  const isCompact = cardH < 160; // h=1 — ultra tight, single row
-  const isTight = cardH < 210; // h=2 — chips side by side
+  // Seuils en boîte de bordure, calés sur la trame : 1 rangée = 80 px,
+  // 2 rangées = 176 px, 3 rangées = 272 px.
+  const isCompact = cardH < 120; // 1 rangée — tout sur une ligne
+  const isTight = cardH < 220; // 2 rangées — pastilles côte à côte
 
   return (
     <motion.div

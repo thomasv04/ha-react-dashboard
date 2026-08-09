@@ -19,7 +19,6 @@ const STORIES: { id: string; label: string }[] = [
   { id: 'cards-greetingcard--default', label: 'GreetingCard/Default' },
   { id: 'cards-greetingcard--clock', label: 'GreetingCard/Clock' },
   { id: 'cards-pelletcard--default', label: 'PelletCard/Default' },
-  { id: 'cards-roomsgrid--default', label: 'RoomsGrid/Default' },
   { id: 'cards-shortcutscard--default', label: 'ShortcutsCard/Default' },
   { id: 'cards-tempocard--default', label: 'TempoCard/Default' },
   { id: 'cards-thermostatcard--default', label: 'ThermostatCard/Default' },

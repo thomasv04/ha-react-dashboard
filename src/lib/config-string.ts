@@ -41,7 +41,9 @@ function base64ToUint8(base64: string): Uint8Array {
 async function compress(data: Uint8Array): Promise<Uint8Array> {
   const cs = new CompressionStream('deflate-raw');
   const writer = cs.writable.getWriter();
-  writer.write(data);
+  // TS 5.7 paramètre Uint8Array par son buffer ; `BufferSource` attend un
+  // ArrayBuffer strict. Le cast est sûr, la donnée est bien un Uint8Array.
+  writer.write(data as unknown as BufferSource);
   writer.close();
   const reader = cs.readable.getReader();
   const chunks: Uint8Array[] = [];
@@ -66,7 +68,7 @@ async function decompress(data: Uint8Array): Promise<Uint8Array> {
   const writer = ds.writable.getWriter();
   // Write and close — suppress rejections on the writable side
   // (errors will surface via the readable side)
-  writer.write(data).catch(() => {});
+  writer.write(data as unknown as BufferSource).catch(() => {});
   writer.close().catch(() => {});
   const reader = ds.readable.getReader();
   const chunks: Uint8Array[] = [];

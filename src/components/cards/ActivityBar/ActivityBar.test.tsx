@@ -25,12 +25,13 @@ vi.mock('@hakit/core', () => ({
 
 import { ActivityBar } from './ActivityBar';
 
+// Les libellés passent désormais par `t()` (règle i18n du projet) et le mock
+// global de `@/i18n` renvoie la clé : on assert donc les clés de traduction,
+// ce qui vérifie aussi qu'aucun texte n'est resté codé en dur.
 test('renders pills and avatar initials when avatar fetch fails', () => {
-  // ensure a desktop width
-  // render
   render(<ActivityBar />);
-  expect(screen.getByText(/Alarme/)).toBeDefined();
-  expect(screen.getByText(/Poêle/)).toBeDefined();
-  expect(screen.getByText(/Batterie solaire/)).toBeDefined();
-  expect(screen.getByText(/Tempo/)).toBeDefined();
+  expect(screen.getByText('activityBar.alarmArmed')).toBeDefined();
+  expect(screen.getByText('activityBar.pelletOn')).toBeDefined();
+  expect(screen.getByText('activityBar.battery')).toBeDefined();
+  expect(screen.getByText('activityBar.tempo')).toBeDefined();
 });

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { DURATION_FAST } from '@/lib/motion-tokens';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId, WidgetIdProvider } from '@/components/layout/DashboardGrid';
-import { WIDGET_COMPONENTS } from '@/config/widget-registry';
+import { WIDGET_COMPONENTS } from '@/widgets';
 import type { GroupCardConfig, GroupChild } from '@/types/widget-configs';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';

@@ -11,19 +11,18 @@ import { WidgetEditModal } from '@/components/layout/WidgetEditModal';
 import { ThemeControlsModal } from '@/components/layout/ThemeControlsModal';
 import { PageTabs } from '@/components/layout/PageTabs';
 import { MoreInfoModal } from '@/components/modals/MoreInfoModal';
-import { useEffect, memo } from 'react';
+import { LoadingScreen } from '@/components/layout/LoadingScreen';
+import { useEffect, useState, memo } from 'react';
 import { AnimatePresence, LayoutGroup } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
 
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 import { usePageRouting } from '@/hooks/usePageRouting';
 import { WallPanelProvider, useWallPanel } from '@/context/WallPanelContext';
-import { useI18n } from '@/i18n';
 import { WallPanelOverlay } from '@/components/wallpanel/WallPanelOverlay';
 import { useIdleDetector } from '@/hooks/useIdleDetector';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { WIDGET_COMPONENTS } from '@/config/widget-registry';
+import { WIDGET_COMPONENTS } from '@/widgets';
 import type { GridWidget } from '@/context/DashboardLayoutContext';
 
 const WidgetItem = memo(function WidgetItem({ widget }: { widget: GridWidget }) {
@@ -128,16 +127,15 @@ function DashboardContent() {
 }
 
 function Dashboard() {
-  const { t } = useI18n();
   const { isLoading, pages, allLayouts, allWidgetConfigs, wallPanelConfig, wallPanelLayout, customPanels } = useDashboardConfig();
+  // Échappatoire : passer outre l'attente et afficher le dashboard tel qu'il
+  // peut l'être (cache ou valeurs par défaut). Le chargement continue derrière.
+  const [skipped, setSkipped] = useState(false);
 
-  if (isLoading) {
-    return (
-      <div className='min-h-screen w-full flex flex-col items-center justify-center bg-[#0c1028] text-white'>
-        <Loader2 size={32} className='animate-spin text-blue-500 mb-4' />
-        <p className='text-white/60'>{t('dashboard.loading')}</p>
-      </div>
-    );
+  // `isLoading` n'est vrai que sans cache **et** sans réponse serveur : au
+  // rechargement, le dashboard se peint immédiatement depuis le cache local.
+  if (isLoading && !skipped) {
+    return <LoadingScreen stage='config' onSkip={() => setSkipped(true)} />;
   }
 
   return (

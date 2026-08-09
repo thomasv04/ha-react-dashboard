@@ -1,4 +1,3 @@
-import { ThemeProvider } from '@hakit/components';
 import { HassConnect } from '@hakit/core';
 import { ToastProvider } from '@/context/ToastContext';
 import { ModalProvider } from '@/context/ModalContext';
@@ -14,6 +13,7 @@ import { useState, useEffect, type ReactNode } from 'react';
 import { useAutoTheme } from '@/hooks/useAutoTheme';
 import { apiUrl } from '@/lib/api-base';
 import { HAThrottlePatch } from '@/components/HAThrottlePatch';
+import { LoadingScreen } from '@/components/layout/LoadingScreen';
 
 function MotionConfigBridge({ children }: { children: ReactNode }) {
   const { perfSettings } = useTheme();
@@ -62,7 +62,10 @@ function App({ hassUrl: propHassUrl, hassToken: propHassToken }: AppProps = {}) 
   // Only runs when no token was provided via props/env.
   useEffect(() => {
     if (hassToken) return;
-    fetch(apiUrl('/api/system/ha-config'))
+    // Délai maximal : sans lui, un serveur qui ne répond pas laissait la
+    // promesse en suspens et le jeton n'arrivait jamais — HassConnect restait
+    // sur son écran d'attente sans que rien ne l'indique.
+    fetch(apiUrl('/api/system/ha-config'), { signal: AbortSignal.timeout(6_000) })
       .then(r => r.json())
       .then((data: { hassToken?: string | null }) => {
         if (data.hassToken) {
@@ -77,12 +80,17 @@ function App({ hassUrl: propHassUrl, hassToken: propHassToken }: AppProps = {}) 
   }, []);
 
   return (
-    <HassConnect hassUrl={hassUrl} hassToken={hassToken}>
-      <HAThrottlePatch />
-      <ThemeProvider />
-      <I18nProvider>
-        <ThemeContextProvider>
-          <BackgroundLayer />
+    // I18n et thème sont remontés **au-dessus** de HassConnect : ni l'un ni
+    // l'autre ne dépend de Home Assistant, et l'écran d'attente rendu par le
+    // slot `loading` doit pouvoir se traduire et adopter les couleurs du thème.
+    <I18nProvider>
+      <ThemeContextProvider>
+        <BackgroundLayer />
+        {/* `loading` : le slot existait mais n'était pas utilisé, on héritait de
+            l'écran d'attente par défaut de @hakit — un spinner muet, impossible
+            à distinguer d'un blocage. C'est la première des trois étapes. */}
+        <HassConnect hassUrl={hassUrl} hassToken={hassToken} loading={<LoadingScreen stage='connect' />}>
+          <HAThrottlePatch />
           <MotionConfigBridge>
             <ToastProvider>
               <ModalProvider>
@@ -94,9 +102,9 @@ function App({ hassUrl: propHassUrl, hassToken: propHassToken }: AppProps = {}) 
               </ModalProvider>
             </ToastProvider>
           </MotionConfigBridge>
-        </ThemeContextProvider>
-      </I18nProvider>
-    </HassConnect>
+        </HassConnect>
+      </ThemeContextProvider>
+    </I18nProvider>
   );
 }
 

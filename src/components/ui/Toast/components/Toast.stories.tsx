@@ -71,7 +71,7 @@ export const CourierArrived: Story = {
             {
               label: 'Voir les caméras',
               variant: 'primary',
-              onClick: () => console.log('open cameras'),
+              onClick: () => console.info('open cameras'),
             },
             {
               label: 'Ignorer',

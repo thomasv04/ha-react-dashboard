@@ -13,15 +13,17 @@ import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { cn } from '@/lib/utils';
 
 function useDebouncedCallback<T extends (...args: never[]) => void>(fn: T, delay: number): T {
-  const timer = useRef<ReturnType<typeof setTimeout>>(null);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useCallback(
-    function (...args: Parameters<T>) {
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Arrow inline en premier argument : le compilateur React refuse une
+  // expression `function` castée, il ne peut pas en analyser les dépendances.
+  const debounced = useCallback(
+    (...args: Parameters<T>) => {
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => fn(...args), delay);
-    } as T,
+    },
     [fn, delay]
   );
+  return debounced as unknown as T;
 }
 
 // ── Compact layout (small widget, ≤ 2 rows) ────────────────────────────────────

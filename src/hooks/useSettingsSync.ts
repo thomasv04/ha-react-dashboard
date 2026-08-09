@@ -2,7 +2,10 @@ import { useEffect, useRef, useCallback } from 'react';
 import { apiUrl } from '@/lib/api-base';
 
 const DEVICE_ID_KEY = 'ha_dashboard_device_id';
-const SYNC_INTERVAL_MS = 4_000;
+// Réglages, pas de l'état temps réel : 4 s = ~21 k requêtes/jour sur une
+// tablette murale allumée en permanence, pour une donnée qui bouge une fois
+// par semaine. 15 s reste imperceptible pour la propagation multi-appareils.
+const SYNC_INTERVAL_MS = 15_000;
 const DEBOUNCE_MS = 3_500;
 
 function getOrCreateDeviceId(): string {

@@ -12,6 +12,7 @@ import type { AlarmCardConfig, ArmMode } from '@/types/widget-types';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
+import { useElementBox } from '@/hooks/useWidgetSize';
 
 type AlarmState =
   | 'disarmed'
@@ -270,7 +271,12 @@ function AlarmKeypadModal({ open, pendingMode, onClose, entityId, name, requireC
             transition={{ type: 'spring', damping: 28, stiffness: 340 }}
             className='fixed inset-0 z-[101] flex items-end sm:items-center justify-center p-3 pointer-events-none'
           >
-            <div className='gc rounded-3xl w-full max-w-sm pointer-events-auto shadow-2xl overflow-hidden'>
+            <div
+              role='dialog'
+              aria-modal='true'
+              aria-label={name}
+              className='gc rounded-3xl w-full max-w-sm pointer-events-auto shadow-2xl overflow-hidden'
+            >
               {/* ── Coloured header ── */}
               <div className={cn('px-5 pt-5 pb-4 border-b border-white/6', visual.bgClass)}>
                 <div className='flex items-center justify-between'>
@@ -336,7 +342,8 @@ function AlarmKeypadModal({ open, pendingMode, onClose, entityId, name, requireC
                           exit={{ opacity: 0, scale: 0.7 }}
                           whileTap={{ scale: 0.85 }}
                           onClick={() => setCode(c => c.slice(0, -1))}
-                          className='w-8 h-8 rounded-xl gc-btn flex items-center justify-center'
+                          aria-label={t('widgets.alarm.backspace')}
+                          className='touch-target w-8 h-8 rounded-xl gc-btn flex items-center justify-center'
                         >
                           <Delete size={14} className='text-white/50' />
                         </motion.button>
@@ -359,6 +366,7 @@ function AlarmKeypadModal({ open, pendingMode, onClose, entityId, name, requireC
                             if (isDel) setCode(c => c.slice(0, -1));
                             else setCode(c => (c.length < 8 ? c + String(k) : c));
                           }}
+                          aria-label={isDel ? t('widgets.alarm.backspace') : String(k)}
                           className='py-3.5 rounded-2xl gc-btn font-semibold text-white text-lg hover:bg-white/10 transition-colors flex items-center justify-center'
                         >
                           {isDel ? <Delete size={18} className='text-white/50' /> : k}
@@ -408,17 +416,10 @@ export function AlarmCard() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [cardW, setCardW] = useState(300);
   const [cardH, setCardH] = useState(300);
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(entries => {
-      const { width, height } = entries[0].contentRect;
-      setCardW(width);
-      setCardH(height);
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+  useElementBox(containerRef, (width, height) => {
+    setCardW(width);
+    setCardH(height);
+  });
 
   if (!alarm) return null;
 
@@ -429,6 +430,9 @@ export function AlarmCard() {
   const activeModes = config?.armModes ?? DEFAULT_MODES;
   const ringFill = isArmed || alarm.state === 'triggered' ? 1 : alarm.state === 'arming' || alarm.state === 'pending' ? 0.5 : 0.15;
 
+  // Une rangée de grille (80 px) ne peut pas contenir en-tête + anneau + label
+  // empilés : sous ~120 px on bascule sur une disposition en ligne.
+  const isRow = cardH < 120;
   const isTiny = cardW < 180 || cardH < 180;
   const isSmall = cardW < 240 || cardH < 240;
   const showButtons = cardH >= 200 && !isTiny;
@@ -451,69 +455,120 @@ export function AlarmCard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: DURATION_ENTRANCE, delay: 0.1 }}
         onClick={() => openModal(activeModes[0] ?? 'disarm')}
-        className='gc rounded-3xl p-3.5 h-full flex flex-col cursor-pointer hover:ring-1 hover:ring-white/10 transition-all select-none overflow-hidden'
+        className={cn(
+          'gc rounded-3xl h-full cursor-pointer hover:ring-1 hover:ring-white/10 transition-all select-none overflow-hidden',
+          isRow ? 'px-3.5 py-2 flex items-center gap-3' : 'p-3.5 flex flex-col'
+        )}
       >
-        {/* Header */}
-        <div className='flex items-center justify-between mb-1'>
-          <span className={cn('text-white/40 font-medium truncate', isTiny ? 'text-[10px]' : 'text-xs')}>{name}</span>
-          <div className={cn('rounded-lg flex items-center justify-center shrink-0', visual.bgClass, isTiny ? 'w-5 h-5' : 'w-6 h-6')}>
-            <visual.Icon size={isTiny ? 10 : 13} className={visual.textClass} />
-          </div>
-        </div>
-
-        {/* Ring + icon */}
-        <div className='flex-1 flex items-center justify-center min-h-0'>
-          <div className='relative flex items-center justify-center' style={{ width: ringSize, height: ringSize }}>
-            <AlarmRing size={ringSize} fill={ringFill} color={visual.ringColor} pulse={visual.pulse} />
+        {isRow ? (
+          <>
+            {/* Pastille d'état */}
             <div
-              className='absolute rounded-full opacity-15 blur-2xl pointer-events-none'
-              style={{ width: ringSize * 0.7, height: ringSize * 0.7, background: visual.ringColor }}
-            />
-            <motion.div
-              animate={visual.pulse ? { scale: [1, 1.08, 1] } : {}}
-              transition={visual.pulse ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' } : {}}
-              className={cn('flex items-center justify-center border', iconBubble, visual.bgClass, visual.borderClass)}
+              className={cn('w-10 h-10 rounded-2xl flex items-center justify-center border shrink-0', visual.bgClass, visual.borderClass)}
             >
-              <visual.Icon size={iconSize} className={visual.textClass} />
-            </motion.div>
-          </div>
-        </div>
+              <visual.Icon size={19} className={visual.textClass} />
+            </div>
 
-        {/* Status label */}
-        <div className='text-center mt-1'>
-          <span className={cn('font-semibold', visual.textClass, isTiny ? 'text-[10px]' : isSmall ? 'text-xs' : 'text-sm')}>
-            {visual.label}
-          </span>
-        </div>
+            {/* Nom + état */}
+            <div className='flex-1 min-w-0'>
+              <div className='text-white/40 text-[11px] font-medium truncate leading-tight'>{name}</div>
+              <div className={cn('text-sm font-semibold truncate leading-tight', visual.textClass)}>{visual.label}</div>
+            </div>
 
-        {/* Mode buttons — dynamic */}
-        {showButtons && visibleModes.length > 0 && (
-          <div
-            className='mt-2.5 grid gap-1'
-            style={{ gridTemplateColumns: `repeat(${Math.min(visibleModes.length, isSmall ? 2 : 4)}, 1fr)` }}
-          >
-            {visibleModes.map(m => (
-              <motion.button
-                key={m.mode}
-                whileTap={{ scale: 0.91 }}
-                onClick={e => {
-                  e.stopPropagation();
-                  openModal(m.mode);
-                }}
-                className={cn(
-                  'flex flex-col items-center gap-0.5 rounded-xl border transition-colors',
-                  isSmall ? 'py-1.5 text-[9px]' : 'py-2 text-[10px]',
-                  m.bgClass,
-                  m.hoverClass,
-                  m.borderClass,
-                  m.textClass
-                )}
+            {/* Modes en pastilles — icône seule, ce qui tient dans la largeur.
+                40 px : le maximum qu'autorise une rangée de 80 px une fois le
+                padding retiré, et une cible confortable au doigt. */}
+            {visibleModes.length > 0 && (
+              <div className='flex items-center gap-1.5 shrink-0'>
+                {visibleModes.slice(0, cardW < 300 ? 2 : 4).map(m => (
+                  <motion.button
+                    key={m.mode}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={e => {
+                      e.stopPropagation();
+                      openModal(m.mode);
+                    }}
+                    title={t(m.labelKey)}
+                    aria-label={t(m.labelKey)}
+                    className={cn(
+                      'w-10 h-10 rounded-xl border flex items-center justify-center transition-colors active:scale-90',
+                      m.bgClass,
+                      m.hoverClass,
+                      m.borderClass,
+                      m.textClass
+                    )}
+                  >
+                    <m.Icon size={16} />
+                  </motion.button>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {/* Header */}
+            <div className='flex items-center justify-between mb-1'>
+              <span className={cn('text-white/40 font-medium truncate', isTiny ? 'text-[10px]' : 'text-xs')}>{name}</span>
+              <div className={cn('rounded-lg flex items-center justify-center shrink-0', visual.bgClass, isTiny ? 'w-5 h-5' : 'w-6 h-6')}>
+                <visual.Icon size={isTiny ? 10 : 13} className={visual.textClass} />
+              </div>
+            </div>
+
+            {/* Ring + icon */}
+            <div className='flex-1 flex items-center justify-center min-h-0'>
+              <div className='relative flex items-center justify-center' style={{ width: ringSize, height: ringSize }}>
+                <AlarmRing size={ringSize} fill={ringFill} color={visual.ringColor} pulse={visual.pulse} />
+                <div
+                  className='absolute rounded-full opacity-15 blur-2xl pointer-events-none'
+                  style={{ width: ringSize * 0.7, height: ringSize * 0.7, background: visual.ringColor }}
+                />
+                <motion.div
+                  animate={visual.pulse ? { scale: [1, 1.08, 1] } : {}}
+                  transition={visual.pulse ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' } : {}}
+                  className={cn('flex items-center justify-center border', iconBubble, visual.bgClass, visual.borderClass)}
+                >
+                  <visual.Icon size={iconSize} className={visual.textClass} />
+                </motion.div>
+              </div>
+            </div>
+
+            {/* Status label */}
+            <div className='text-center mt-1'>
+              <span className={cn('font-semibold', visual.textClass, isTiny ? 'text-[10px]' : isSmall ? 'text-xs' : 'text-sm')}>
+                {visual.label}
+              </span>
+            </div>
+
+            {/* Mode buttons — dynamic */}
+            {showButtons && visibleModes.length > 0 && (
+              <div
+                className='mt-2.5 grid gap-1'
+                style={{ gridTemplateColumns: `repeat(${Math.min(visibleModes.length, isSmall ? 2 : 4)}, 1fr)` }}
               >
-                <m.Icon size={isSmall ? 10 : 12} />
-                <span className='font-semibold leading-tight'>{t(m.labelKey)}</span>
-              </motion.button>
-            ))}
-          </div>
+                {visibleModes.map(m => (
+                  <motion.button
+                    key={m.mode}
+                    whileTap={{ scale: 0.91 }}
+                    onClick={e => {
+                      e.stopPropagation();
+                      openModal(m.mode);
+                    }}
+                    className={cn(
+                      'flex flex-col items-center gap-0.5 rounded-xl border transition-colors',
+                      isSmall ? 'py-1.5 text-[9px]' : 'py-2 text-[10px]',
+                      m.bgClass,
+                      m.hoverClass,
+                      m.borderClass,
+                      m.textClass
+                    )}
+                  >
+                    <m.Icon size={isSmall ? 10 : 12} />
+                    <span className='font-semibold leading-tight'>{t(m.labelKey)}</span>
+                  </motion.button>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </motion.div>
 

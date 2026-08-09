@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { DURATION_MICRO } from '@/lib/motion-tokens';
 import { useDashboardLayout, useSizePresets, type GridWidget, type SizePresetName } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
-import { WIDGET_DISPOSITIONS } from '@/config/widget-dispositions';
+import { WIDGET_DISPOSITIONS } from '@/widgets';
 import { useI18n } from '@/i18n';
 import type { Breakpoint } from './DashboardGrid';
 

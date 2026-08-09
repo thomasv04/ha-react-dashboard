@@ -1,22 +1,17 @@
-import { renderHook, act } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useSafeEntity } from './useSafeEntity';
 
 // ── Mock @hakit/core ────────────────────────────────────────────────────────────
 
 let entityStore: Record<string, { state: string; attributes: Record<string, unknown> } | undefined> = {};
-let selector: ((s: { entities: typeof entityStore }) => unknown) | null = null;
 
 vi.mock('@hakit/core', () => ({
-  useHass: (sel: (s: { entities: typeof entityStore }) => unknown) => {
-    selector = sel;
-    return sel({ entities: entityStore });
-  },
+  useHass: (sel: (s: { entities: typeof entityStore }) => unknown) => sel({ entities: entityStore }),
 }));
 
 beforeEach(() => {
   entityStore = {};
-  selector = null;
 });
 
 // ── Tests ───────────────────────────────────────────────────────────────────────

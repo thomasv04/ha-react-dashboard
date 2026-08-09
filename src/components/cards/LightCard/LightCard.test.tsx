@@ -57,7 +57,7 @@ describe('LightCard', () => {
   it('renders fallback when entity not found', () => {
     vi.mocked(useSafeEntity).mockReturnValueOnce(null);
     render(<LightCard />);
-    expect(screen.getByText(/introuvable/i)).toBeDefined();
+    expect(screen.getByText('widgets.light.notFound')).toBeDefined();
   });
 
   it('toggles light on click', () => {

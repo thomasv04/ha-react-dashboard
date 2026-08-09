@@ -101,7 +101,7 @@ export default function CoverMoreInfo({ entityId, widgetId }: { entityId: string
                   type: 'presets',
                   title: t('widgets.cover.presets'),
                   presets: PRESET_KEYS.map(p => ({
-                    label: 'labelKey' in p ? t(p.labelKey) : p.label,
+                    label: 'labelKey' in p && p.labelKey ? t(p.labelKey) : (p.label ?? ''),
                     value: p.value,
                     active: position === p.value,
                   })),

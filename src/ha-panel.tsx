@@ -6,7 +6,6 @@
  * via the setter, giving us the access token and HA URL without any manual config.
  */
 import { createRoot } from 'react-dom/client';
-import { ThemeProvider } from '@hakit/components';
 import { HassConnect } from '@hakit/core';
 import { ToastProvider } from '@/context/ToastContext';
 import { ToastContainer } from '@/components/ui/Toast/components/Toast';
@@ -14,6 +13,8 @@ import { useHAToast } from '@/hooks/useHAToast';
 import Dashboard from './Dashboard';
 import { ThemeContextProvider } from '@/context/ThemeContext';
 import { BackgroundLayer } from '@/components/layout/BackgroundLayer';
+import { LoadingScreen } from '@/components/layout/LoadingScreen';
+import { I18nProvider } from '@/i18n';
 import './index.css';
 
 function HAToastBridge() {
@@ -28,17 +29,21 @@ interface PanelAppProps {
 
 function PanelApp({ hassUrl, hassToken }: PanelAppProps) {
   return (
-    <HassConnect hassUrl={hassUrl} hassToken={hassToken}>
-      <ThemeProvider />
+    // `I18nProvider` manquait entièrement dans la build panneau : `useI18n`
+    // lève hors provider, donc le premier composant traduit faisait planter le
+    // panneau. Même arbre que `App.tsx` : i18n et thème au-dessus de HassConnect.
+    <I18nProvider>
       <ThemeContextProvider>
         <BackgroundLayer />
-        <ToastProvider>
-          <HAToastBridge />
-          <Dashboard />
-          <ToastContainer />
-        </ToastProvider>
+        <HassConnect hassUrl={hassUrl} hassToken={hassToken} loading={<LoadingScreen stage='connect' />}>
+          <ToastProvider>
+            <HAToastBridge />
+            <Dashboard />
+            <ToastContainer />
+          </ToastProvider>
+        </HassConnect>
       </ThemeContextProvider>
-    </HassConnect>
+    </I18nProvider>
   );
 }
 

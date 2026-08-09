@@ -15,15 +15,17 @@ import { resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-m
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 
 function useDebouncedCallback<T extends (...args: never[]) => void>(fn: T, delay: number): T {
-  const timer = useRef<ReturnType<typeof setTimeout>>(null);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useCallback(
-    function (...args: Parameters<T>) {
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Arrow inline en premier argument : le compilateur React refuse une
+  // expression `function` castée, il ne peut pas en analyser les dépendances.
+  const debounced = useCallback(
+    (...args: Parameters<T>) => {
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => fn(...args), delay);
-    } as T,
+    },
     [fn, delay]
   );
+  return debounced as unknown as T;
 }
 
 /** Convert HA color_temp (mireds) to a 0-100 slider value (warm=0, cool=100) */
@@ -109,6 +111,9 @@ export function LightCard() {
   const { ripples, trigger: triggerRipple } = useRipple();
   const playFeedback = useSoundFeedback();
 
+  const cardRef = useRef<HTMLDivElement>(null);
+  const widgetSize = useWidgetSize(cardRef);
+
   if (!entity) {
     return (
       <motion.div
@@ -175,9 +180,7 @@ export function LightCard() {
   // eslint-disable-next-line react-hooks/static-components
   const CustomIcon = iconName && !isCustomIcon(iconName) ? resolveIcon(iconName) : undefined;
 
-  const cardRef = useRef<HTMLDivElement>(null);
-  const widgetSize = useWidgetSize(cardRef);
-  const isCompact = widgetSize === 'xs' || widgetSize === 'sm';
+  const isCompact = widgetSize.compact;
 
   const visibleTabs: Tab[] = [
     ...(showBrightness ? ['brightness' as Tab] : []),
@@ -186,9 +189,11 @@ export function LightCard() {
   ];
   const currentTab = visibleTabs.includes(activeTab) ? activeTab : (visibleTabs[0] ?? 'brightness');
 
-  // Responsive sizes
-  const iconBtnClass = isCompact ? 'w-10 h-10 rounded-xl' : 'w-16 h-16 rounded-2xl';
-  const iconSize = isCompact ? 18 : 28;
+  // Responsive sizes — le bouton n'est réduit que sur les cards vraiment
+  // écrasées (une rangée) ; sur une tuile carrée il reste la cible principale.
+  const isTight = widgetSize.squat || widgetSize.w === 'xs';
+  const iconBtnClass = isTight ? 'w-10 h-10 rounded-xl' : isCompact ? 'w-14 h-14 rounded-2xl' : 'w-16 h-16 rounded-2xl';
+  const iconSize = isTight ? 18 : isCompact ? 25 : 28;
 
   return (
     <motion.div
@@ -198,6 +203,18 @@ export function LightCard() {
       transition={{ duration: DURATION_ENTRANCE }}
       onPointerDown={triggerRipple}
       className={cn('gc rounded-3xl flex flex-col h-full relative overflow-hidden select-none', isCompact ? 'p-2.5' : 'p-3.5')}
+      // Surface allumée : la card entière prend la couleur de la lampe et un
+      // halo. Repérer une pièce allumée d'un coup d'œil depuis l'autre bout de
+      // la pièce demande un contraste de *surface*, pas seulement d'icône.
+      style={
+        isOn
+          ? {
+              background: `linear-gradient(180deg, ${accentColor ?? '#fbbf24'}26, ${accentColor ?? '#fbbf24'}12)`,
+              borderColor: `${accentColor ?? '#fbbf24'}44`,
+              boxShadow: `var(--dash-elev-card), 0 0 28px -8px ${accentColor ?? '#fbbf24'}66`,
+            }
+          : undefined
+      }
     >
       <RippleLayer ripples={ripples} color={accentColor ? `${accentColor}22` : 'rgba(251,191,36,0.12)'} />
 
@@ -250,6 +267,9 @@ export function LightCard() {
           {customIconUrl ? (
             <img src={customIconUrl} alt='' className={cn('relative object-contain', isCompact ? 'w-5 h-5' : 'w-7 h-7')} />
           ) : CustomIcon ? (
+            // L'icône est résolue depuis la config utilisateur : elle ne peut
+            // pas être hissée hors du rendu, son identité dépend de la config.
+            // eslint-disable-next-line react-hooks/static-components
             <CustomIcon
               size={iconSize}
               className={cn('relative transition-all duration-300', isOn ? '' : 'text-white/25')}

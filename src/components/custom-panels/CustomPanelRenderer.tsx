@@ -25,6 +25,7 @@ function BlockRenderer({ block }: { block: CustomBlock }) {
 
 export function CustomPanelRenderer({ panelId }: { panelId: string }) {
   const { getPanel } = useCustomPanels();
+  const { t } = useI18n();
   const panel = getPanel(panelId);
 
   if (!panel) return null;
@@ -34,7 +35,6 @@ export function CustomPanelRenderer({ panelId }: { panelId: string }) {
 
   // eslint-disable-next-line react-hooks/static-components
   const panelIcon = IconComponent ? <IconComponent size={18} /> : undefined;
-  const { t } = useI18n();
   return (
     <Panel title={panel.name} icon={panelIcon}>
       <div className='flex flex-col gap-2'>

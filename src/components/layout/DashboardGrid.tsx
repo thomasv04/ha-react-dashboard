@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { staggerGridContainer, staggerGridItem } from '@/lib/motion-variants';
 import { useLowPowerMotion } from '@/hooks/useLowPowerMotion';
 import { placeWidgetAt } from '@/lib/grid-utils';
-import { getMinSize } from '@/config/widget-dispositions';
+import { getMinSize } from '@/widgets';
 import { useGridDragDrop } from '@/hooks/useGridDragDrop';
 import { GridItemOverlay } from './GridItemOverlay';
 import { WidgetErrorBoundary } from '@/components/ui/WidgetErrorBoundary';
@@ -85,11 +85,16 @@ export function DashboardGrid({ children, readonly, className }: { children: Rea
   const [bp, setBp] = useState<Breakpoint>('lg');
   const motionAllowed = useLowPowerMotion();
 
+  const [gridWidth, setGridWidth] = useState(0);
+
   useLayoutEffect(() => {
     const el = outerRef.current;
     if (!el) return;
     const measure = (w: number) => {
-      if (w > 0) setBp(resolveBreakpoint(w));
+      if (w > 0) {
+        setBp(resolveBreakpoint(w));
+        setGridWidth(w);
+      }
     };
     measure(el.getBoundingClientRect().width);
     const obs = new ResizeObserver(entries => measure(entries[0]?.contentRect.width ?? 0));
@@ -99,6 +104,25 @@ export function DashboardGrid({ children, readonly, className }: { children: Rea
 
   const widgets = layout.widgets[bp];
   const cols = layout.cols[bp];
+
+  /**
+   * Largeur de colonne en pixels **entiers**, au lieu de `1fr`.
+   *
+   * Avec `1fr`, une largeur de conteneur qui ne se divise pas également donne
+   * des pistes fractionnaires (554,5 px) : les cards atterrissent alors sur des
+   * demi-pixels. Le compositeur aligne la couche sur des pixels entiers mais
+   * calcule la zone échantillonnée par `backdrop-filter` d'après le rectangle
+   * fractionnaire — d'où un liseré d'un demi-pixel sur les bords, qui
+   * apparaît et disparaît au gré des repeints. C'est l'origine des traits
+   * aléatoires sur l'interface.
+   *
+   * Le reliquat (au pire `cols - 1` px) reste inutilisé à droite : invisible.
+   */
+  const colWidth = useMemo(() => {
+    if (gridWidth <= 0) return null;
+    const available = gridWidth - (cols - 1) * GAP;
+    return Math.max(1, Math.floor(available / cols));
+  }, [gridWidth, cols, GAP]);
 
   const moveWidgetToCell = useCallback(
     (widgetId: string, col: number, row: number) => {
@@ -196,7 +220,7 @@ export function DashboardGrid({ children, readonly, className }: { children: Rea
       document.addEventListener('touchmove', onTouchMove, { passive: false });
       document.addEventListener('touchend', onEnd);
     },
-    [widgets, cols, bp, setLayout, layout]
+    [widgets, cols, bp, setLayout, layout, GAP, ROW_HEIGHT_VAL]
   );
 
   const ctxValue = useMemo<GridCtxValue>(
@@ -217,7 +241,9 @@ export function DashboardGrid({ children, readonly, className }: { children: Rea
         className={[isEditMode ? 'dashboard-editing' : '', className].filter(Boolean).join(' ') || undefined}
         style={{
           display: 'grid',
-          gridTemplateColumns: `repeat(${cols}, 1fr)`,
+          // Pistes en px entiers dès que la largeur est connue ; `1fr` sur le
+          // tout premier rendu, avant mesure.
+          gridTemplateColumns: colWidth ? `repeat(${cols}, ${colWidth}px)` : `repeat(${cols}, 1fr)`,
           gridAutoRows: `${ROW_HEIGHT_VAL}px`,
           gap: `${GAP}px`,
           minHeight: maxRow * ROW_HEIGHT_VAL + Math.max(0, maxRow - 1) * GAP,
@@ -303,6 +329,11 @@ const MemoChildren = memo(function MemoChildren({
         borderRadius: 'var(--dash-card-radius, 24px)',
         opacity: dimmed ? 0 : 1,
         transition: 'opacity 0.25s ease',
+        // Isole chaque widget : un re-rendu dans une card (une valeur de
+        // capteur qui bouge) ne peut plus invalider le layout ni le paint des
+        // autres. `paint` est sans effet visuel ici, l'élément est déjà
+        // `overflow-hidden`.
+        contain: 'layout paint style',
       }}
     >
       {children}
@@ -322,18 +353,11 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
   const isEditMode = ctxEditMode && !readonly;
 
   const widget = layout.widgets[breakpoint]?.find(w => w.id === id);
-  if (!widget) return null;
-
-  const isDragging = draggingId === id;
-  const isDropTarget = dropTargetId === id;
-  const label = WIDGET_LABELS[widget.type] ?? widget.type;
-  const hasMoreInfo = MORE_INFO_WIDGET_TYPES.includes(widget.type);
-  const isWidgetModalOpen = !isEditMode && moreInfoState?.widgetId === id;
-  const isStatic = widget.static ?? false;
-  const canDrag = isEditMode && !isStatic;
+  const hasMoreInfo = widget ? MORE_INFO_WIDGET_TYPES.includes(widget.type) : false;
 
   const handleMoreInfoClick = useCallback(
     (rect: DOMRect) => {
+      if (!widget) return;
       const config = getWidgetConfig(id);
       const cfgRecord = config as Record<string, unknown> | undefined;
       const entityId =
@@ -342,7 +366,7 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
         '';
       openMoreInfo(id, widget.type, entityId, rect);
     },
-    [id, widget.type, getWidgetConfig, openMoreInfo]
+    [id, widget, getWidgetConfig, openMoreInfo]
   );
 
   const memoOnClick = useMemo(
@@ -350,6 +374,15 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
     [isEditMode, hasMoreInfo, handleMoreInfoClick]
   );
   const memoOnLongPress = memoOnClick;
+
+  if (!widget) return null;
+
+  const isDragging = draggingId === id;
+  const isDropTarget = dropTargetId === id;
+  const label = WIDGET_LABELS[widget.type] ?? widget.type;
+  const isWidgetModalOpen = !isEditMode && moreInfoState?.widgetId === id;
+  const isStatic = widget.static ?? false;
+  const canDrag = isEditMode && !isStatic;
 
   const gridStyle: React.CSSProperties = {
     gridColumnStart: widget.x + 1,
@@ -379,7 +412,9 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
           e.preventDefault();
           return;
         }
-        drag.onItemDragStart(e, id);
+        // framer-motion type `onDragStart` avec une union d'events natifs ;
+        // le handler attend un DragEvent React, seul cas réel ici.
+        drag.onItemDragStart(e as unknown as React.DragEvent<Element>, id);
       }}
       onDragOver={drag.onItemDragOver}
       onDragEnter={() => drag.onItemDragEnter(id)}

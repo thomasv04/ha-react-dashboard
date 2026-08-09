@@ -3,14 +3,15 @@ import { motion } from 'framer-motion';
 import { DURATION_FAST } from '@/lib/motion-tokens';
 import { X } from 'lucide-react';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
-import { WIDGET_FIELD_DEFS, type WidgetConfig } from '@/types/widget-configs';
+import type { WidgetConfig } from '@/types/widget-configs';
+import { WIDGET_FIELD_DEFS } from '@/widgets';
 import { WIDGET_LABELS, resolveBreakpoint } from '@/components/layout/DashboardGrid';
 import { IconPicker, GradientPicker } from '@/components/layout/WidgetPickers';
 import { TemplateEditor } from '@/components/layout/TemplateField';
 import { CardLayoutTab } from '@/components/layout/CardLayoutTab';
-import { WIDGET_DISPOSITIONS } from '@/config/widget-dispositions';
+import { WIDGET_DISPOSITIONS } from '@/widgets';
 import { cn } from '@/lib/utils';
-import { PREVIEW_COMPONENTS } from '@/config/widget-registry';
+import { WIDGET_COMPONENTS } from '@/widgets';
 import { WidgetIdProvider } from '@/components/layout/DashboardGrid';
 import { EntityPicker } from './EntityPicker';
 import { FieldInput } from './FieldInput';
@@ -75,7 +76,9 @@ export function WidgetEditModal() {
 
   if (!editingWidgetId || !draft || !fields) return null;
 
-  const PreviewComponent = config ? PREVIEW_COMPONENTS[config.type] : null;
+  // `config.type` couvre aussi `rooms`, qui n'a pas de widget enregistré :
+  // l'accès est volontairement tolérant, le rendu gère déjà le cas absent.
+  const PreviewComponent = config ? (WIDGET_COMPONENTS as Record<string, React.ComponentType | undefined>)[config.type] : null;
 
   const handleSave = () => {
     if (draft) {

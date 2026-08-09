@@ -185,6 +185,132 @@
   }
 }
 
+/* ── Couche tactile ──────────────────────────────────────────────────────────
+   Cible principale : une tablette murale et un téléphone. Le comportement par
+   défaut du navigateur y est celui d'un *document*, pas d'une application. */
+
+@layer base {
+  html {
+    /* Pas de flash gris au toucher (Chrome Android / WebView Fully Kiosk) */
+    -webkit-tap-highlight-color: transparent;
+    /* `manipulation` supprime le double-tap-to-zoom et, avec lui, le délai de
+       ~300 ms avant le clic : c'est ce qui donne la réactivité « app native ».
+       À poser sur html, pas seulement sur les boutons, sinon le délai revient
+       sur les zones vides. */
+    touch-action: manipulation;
+  }
+
+  body {
+    /* Pas de tiré-pour-rafraîchir ni d'effet élastique en bout de liste : sur
+       un panneau mural, ce sont des gestes parasites, jamais intentionnels. */
+    overscroll-behavior: none;
+    /* Un dashboard n'est pas un texte : la sélection au appui long ne fait que
+       gêner. Les champs de saisie la réactivent juste en dessous. */
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  input,
+  textarea,
+  [contenteditable] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /* Le défilement interne d'une card ne doit pas entraîner la page derrière */
+  [class*='overflow-y-auto'],
+  [class*='overflow-x-auto'],
+  [class*='overflow-auto'] {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@layer utilities {
+  /* Utilisée par le dock, les onglets de pages et le sélecteur de caméras —
+     elle n'existait nulle part, les barres de défilement restaient visibles. */
+  .scrollbar-none {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE / Edge legacy */
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+
+  /* Étend la zone tactile d'un petit contrôle sans changer son rendu.
+     Le minimum recommandé est 44×44 px ; beaucoup d'icônes font 24–32. */
+  .touch-target {
+    position: relative;
+  }
+  .touch-target::after {
+    content: '';
+    position: absolute;
+    inset: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Sur un écran tactile, `:hover` n'existe pas : c'est `:active` qui doit
+   porter le retour visuel, et il doit être immédiat. */
+@media (hover: none) {
+  .gc-btn:active,
+  button:active {
+    transition-duration: 0.06s;
+  }
+}
+
+/* ── Elevation scale ──────────────────────────────────────────
+   Glass on a dark background reads as "flat" unless three things stack:
+   a luminance lift (card brighter than backdrop), a hairline edge, and a
+   real drop shadow. These tokens keep all three in one place so themes can
+   retune depth without touching every component.                        */
+
+:root {
+  /* Ambient (contact) + key (cast) shadow, layered = perceived height */
+  --dash-shadow-ambient: rgba(0, 0, 0, 0.34);
+  --dash-shadow-key: rgba(0, 0, 0, 0.55);
+  /* Top light edge — simulates the lit lip of a glass slab */
+  --dash-edge: rgba(255, 255, 255, 0.14);
+  /* Inner containment ring, keeps the card crisp against busy wallpapers */
+  --dash-ring: rgba(255, 255, 255, 0.07);
+
+  --dash-elev-card:
+    0 1px 2px var(--dash-shadow-ambient),
+    0 10px 24px -10px var(--dash-shadow-key),
+    0 28px 56px -28px var(--dash-shadow-key),
+    inset 0 1px 0 var(--dash-edge),
+    inset 0 0 0 1px var(--dash-ring);
+
+  --dash-elev-card-hover:
+    0 2px 4px var(--dash-shadow-ambient),
+    0 16px 34px -12px var(--dash-shadow-key),
+    0 38px 70px -30px var(--dash-shadow-key),
+    inset 0 1px 0 var(--dash-edge),
+    inset 0 0 0 1px var(--dash-ring);
+
+  --dash-elev-inner:
+    0 1px 2px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09);
+
+  --dash-elev-overlay:
+    0 2px 6px var(--dash-shadow-ambient),
+    0 24px 48px -12px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 var(--dash-edge),
+    inset 0 0 0 1px var(--dash-ring);
+}
+
+/* Light surfaces need soft, tinted shadows — pure black reads as dirt */
+[data-theme='light'] {
+  --dash-shadow-ambient: rgba(15, 23, 42, 0.08);
+  --dash-shadow-key: rgba(15, 23, 42, 0.16);
+  --dash-edge: rgba(255, 255, 255, 0.9);
+  --dash-ring: rgba(15, 23, 42, 0.06);
+}
+
 /* ── Glass morphism utilities ─────────────────────────────── */
 
 /*
@@ -197,17 +323,36 @@
   /* Use theme CSS variables when set, fall back to original glass effect */
   background: var(--dash-bg-card, rgba(6, 6, 24, 0.72));
   border-radius: var(--dash-card-radius, 24px);
-  -webkit-backdrop-filter: blur(var(--dash-glass-blur, 30px)) saturate(160%) brightness(80%);
-  backdrop-filter: blur(var(--dash-glass-blur, 30px)) saturate(160%) brightness(80%);
+  -webkit-backdrop-filter: blur(var(--dash-glass-blur, 30px)) saturate(var(--dash-glass-saturate, 180%))
+    brightness(var(--dash-glass-brightness, 105%));
+  backdrop-filter: blur(var(--dash-glass-blur, 30px)) saturate(var(--dash-glass-saturate, 180%))
+    brightness(var(--dash-glass-brightness, 105%));
   border-color: var(--dash-border, transparent);
   color: var(--dash-text-primary, #ffffff);
-  box-shadow:
-    0 8px 40px rgba(0, 0, 0, 0.55),
-    inset -8px 10px 15px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--dash-elev-card);
+  /* Contexte d'empilement propre par card : le `backdrop-filter` échantillonne
+     alors une zone stable, au lieu de dépendre de l'ordre de composition des
+     voisines — seconde source de liserés au repeint. */
+  isolation: isolate;
+  transition:
+    box-shadow 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.2s ease;
 }
 
-.gc:hover {
-  background: var(--dash-bg-card-hover, rgba(6, 6, 24, 0.80));
+@media (hover: hover) {
+  .gc:hover {
+    background: var(--dash-bg-card-hover, rgba(6, 6, 24, 0.80));
+    box-shadow: var(--dash-elev-card-hover);
+    transform: translateY(-2px);
+  }
+}
+
+/* Press feedback — the card sinks back to the surface */
+.gc:active {
+  transform: translateY(0);
+  box-shadow: var(--dash-elev-card);
+  transition-duration: 0.08s;
 }
 
 /* Shiny gradient border via mask technique */
@@ -220,8 +365,8 @@
   background: linear-gradient(
     60deg,
     rgba(255, 255, 255, 0.00)  0%,
-    rgba(255, 255, 255, 0.22) 48%,
-    rgba(255, 255, 255, 0.22) 52%,
+    rgba(255, 255, 255, 0.30) 46%,
+    rgba(255, 255, 255, 0.34) 54%,
     rgba(255, 255, 255, 0.00) 100%
   );
   -webkit-mask:
@@ -242,8 +387,9 @@
   border-radius: inherit;
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.06) 0%,
-    rgba(255, 255, 255, 0.00) 40%
+    rgba(255, 255, 255, 0.10) 0%,
+    rgba(255, 255, 255, 0.02) 38%,
+    rgba(0, 0, 0, 0.06) 100%
   );
   pointer-events: none;
   z-index: 0;
@@ -258,10 +404,11 @@
 /* Lighter variant (used in nested contexts) */
 .gc-light {
   position: relative;
-  background: rgba(10, 10, 32, 0.55);
-  -webkit-backdrop-filter: blur(20px) saturate(140%) brightness(82%);
-  backdrop-filter: blur(20px) saturate(140%) brightness(82%);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.06);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: var(--dash-elev-inner);
 }
 
 .gc-light > * {
@@ -272,27 +419,33 @@
 /* Bottom nav bar */
 .gc-pill {
   background: rgba(4, 4, 16, 0.92);
-  -webkit-backdrop-filter: blur(40px) saturate(130%);
-  backdrop-filter: blur(40px) saturate(130%);
-  border-top: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow: 0 -6px 32px rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(40px) saturate(150%);
+  backdrop-filter: blur(40px) saturate(150%);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: var(--dash-elev-overlay);
 }
 
 /* Small chips / badges */
 .gc-inner {
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: var(--dash-elev-inner);
 }
 
 /* Button style */
 .gc-btn {
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  transition: background 0.15s;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: var(--dash-elev-inner);
+  transition: background 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 
 .gc-btn:hover {
-  background: rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.17);
+}
+
+.gc-btn:active {
+  transform: scale(0.97);
 }
 
 /* ── Claymorphism overrides (theme-clay on <html>) ─────────────────────────── */
@@ -386,31 +539,33 @@
     inset 1px 1px 2px var(--dash-shadow-highlight, rgba(255, 255, 255, 0.3));
 }
 
-/* ── Light clay: remap hardcoded white text to dark ───────────────────────── */
+/* ── Light surfaces: remap hardcoded white text to dark ───────────────────── */
+/* Applies to every light theme (clay light AND the plain `light` theme, which
+   was previously unreadable — cards turned white but text stayed white). */
 
 /* Full white → primary dark text */
-.theme-clay-light [class*="text-white"] {
+.theme-light-surface [class*="text-white"] {
   color: var(--dash-text-primary) !important;
 }
 
 /* White with opacity → secondary text */
-.theme-clay-light [class*="text-white\/"] {
+.theme-light-surface [class*="text-white\/"] {
   color: var(--dash-text-secondary) !important;
 }
 
 /* Very faint white (20-39% opacity) → muted text */
-.theme-clay-light [class*="text-white\/2"],
-.theme-clay-light [class*="text-white\/3"] {
+.theme-light-surface [class*="text-white\/2"],
+.theme-light-surface [class*="text-white\/3"] {
   color: var(--dash-text-muted) !important;
 }
 
-/* Remap white backgrounds to clay surface colors */
-.theme-clay-light [class*="bg-white\/"] {
+/* Remap white backgrounds to light surface colors */
+.theme-light-surface [class*="bg-white\/"] {
   background-color: rgba(0, 0, 0, 0.06) !important;
 }
 
 /* Remap white borders */
-.theme-clay-light [class*="border-white"] {
+.theme-light-surface [class*="border-white"] {
   border-color: var(--dash-border) !important;
 }
 
@@ -474,32 +629,6 @@
     inset 1px 1px 2px rgba(255, 255, 255, 0.06) !important;
 }
 
-/* ── Container queries for responsive cards ──────────────────────────────── */
-
-/* Cards use container queries to adapt to their own width */
-.grid-card {
-  container-type: inline-size;
-  container-name: card;
-}
-
-@container card (max-width: 200px) {
-  .card-title { font-size: 0.7rem; }
-  .card-value { font-size: 1.1rem; }
-  .card-subtitle { display: none; }
-}
-
-@container card (max-width: 300px) {
-  .card-controls {
-    flex-direction: column;
-  }
-}
-
-@container card (min-width: 300px) {
-  .card-controls {
-    flex-direction: row;
-  }
-}
-
 /* ── Mobile & compact layout modes ───────────────────────────────────────── */
 
 /* Mobile layout (< 640px) — tighter padding */
@@ -510,4 +639,159 @@
 /* Compact layout (640–768px) — slightly tighter */
 .compact-layout .gc {
   padding: 0.875rem;
+}
+
+/* ── Tramage du fond ─────────────────────────────────────────────────────────
+   Les nappes ambiantes s'étalent sur ~35 niveaux de gris à peine, répartis sur
+   toute la hauteur de l'écran : en 8 bits par canal, chaque niveau occupe des
+   dizaines de pixels et l'œil voit des bandes franches (effet de Mach). Le
+   `backdrop-filter` des cards échantillonne ce fond et amplifie encore le
+   phénomène.
+
+   Un bruit très faible superposé casse la quantification : les transitions
+   redeviennent continues. C'est le remède classique, et il est gratuit — une
+   seule image de 64 px carrés, répétée et composée une fois.
+
+   L'opacité doit rester sous ~4 % : au-delà le grain devient perceptible. */
+
+.dash-dither::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-repeat: repeat;
+  background-size: 64px 64px;
+  /* Bruit fractal SVG : plus léger qu'un PNG et net à tout ratio de pixels */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='64' height='64' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Flux d'énergie ──────────────────────────────────────────────────────────
+   Les points qui circulent le long des liens sont animés via `offset-path` :
+   c'est le compositeur qui déplace l'élément, sans une ligne de JS par image.
+   Un `requestAnimationFrame` pour six points tournerait en permanence sur une
+   tablette murale — ici le coût est nul dès que l'onglet n'est plus visible. */
+
+@keyframes dash-flow-dot {
+  from {
+    offset-distance: 0%;
+  }
+  to {
+    offset-distance: 100%;
+  }
+}
+
+.flow-dot {
+  animation: dash-flow-dot var(--flow-duration, 2.2s) linear infinite;
+  animation-delay: var(--flow-delay, 0s);
+}
+
+/* Pas de mouvement perpétuel quand l'utilisateur n'en veut pas */
+@media (prefers-reduced-motion: reduce) {
+  .flow-dot {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+.perf-no-animations .flow-dot {
+  animation: none;
+  opacity: 0.7;
+}
+
+/* ── Legibility ramp ─────────────────────────────────────────────────────────
+   A wall tablet is read from 1–2 m away, often with daylight on the screen.
+   The raw alpha ramp used across the cards (text-white/40 for titles,
+   text-white/20-25 for "off" states) falls far below WCAG AA at that distance.
+
+   These rules lift the low end of the ramp while preserving the hierarchy —
+   /20 is still quieter than /40, it is simply readable. Living in the
+   `utilities` layer means any `hover:` / `group-hover:` variant still wins
+   (same layer, higher specificity), and `.theme-light-surface` still wins via
+   !important, so light themes are unaffected.
+
+   Tuning: these are the only numbers to touch to make the whole dashboard
+   softer or harder to read. */
+
+@layer utilities {
+  [class~='text-white/10'] { color: rgba(255, 255, 255, 0.26); }
+  [class~='text-white/12'] { color: rgba(255, 255, 255, 0.28); }
+  [class~='text-white/15'] { color: rgba(255, 255, 255, 0.32); }
+  [class~='text-white/18'] { color: rgba(255, 255, 255, 0.36); }
+  [class~='text-white/20'] { color: rgba(255, 255, 255, 0.40); }
+  [class~='text-white/22'] { color: rgba(255, 255, 255, 0.42); }
+  [class~='text-white/25'] { color: rgba(255, 255, 255, 0.46); }
+  [class~='text-white/28'] { color: rgba(255, 255, 255, 0.50); }
+  [class~='text-white/30'] { color: rgba(255, 255, 255, 0.54); }
+  [class~='text-white/35'] { color: rgba(255, 255, 255, 0.60); }
+  [class~='text-white/40'] { color: rgba(255, 255, 255, 0.66); }
+  [class~='text-white/45'] { color: rgba(255, 255, 255, 0.70); }
+  [class~='text-white/50'] { color: rgba(255, 255, 255, 0.74); }
+  [class~='text-white/55'] { color: rgba(255, 255, 255, 0.78); }
+  [class~='text-white/60'] { color: rgba(255, 255, 255, 0.82); }
+  [class~='text-white/65'] { color: rgba(255, 255, 255, 0.85); }
+  [class~='text-white/70'] { color: rgba(255, 255, 255, 0.88); }
+  [class~='text-white/75'] { color: rgba(255, 255, 255, 0.90); }
+  [class~='text-white/80'] { color: rgba(255, 255, 255, 0.93); }
+  [class~='text-white/90'] { color: rgba(255, 255, 255, 0.97); }
+
+  /* Sub-surfaces inside a card (icon tiles, chips, segmented controls) were
+     invisible at 3–8% white. Lift them just enough to read as a surface. */
+  [class~='bg-white/3']  { background-color: rgba(255, 255, 255, 0.055); }
+  [class~='bg-white/4']  { background-color: rgba(255, 255, 255, 0.07); }
+  [class~='bg-white/5']  { background-color: rgba(255, 255, 255, 0.085); }
+  [class~='bg-white/6']  { background-color: rgba(255, 255, 255, 0.095); }
+  [class~='bg-white/8']  { background-color: rgba(255, 255, 255, 0.12); }
+  [class~='bg-white/10'] { background-color: rgba(255, 255, 255, 0.14); }
+
+  [class~='border-white/5']  { border-color: rgba(255, 255, 255, 0.10); }
+  [class~='border-white/6']  { border-color: rgba(255, 255, 255, 0.11); }
+  [class~='border-white/8']  { border-color: rgba(255, 255, 255, 0.14); }
+  [class~='border-white/10'] { border-color: rgba(255, 255, 255, 0.16); }
+  [class~='border-white/12'] { border-color: rgba(255, 255, 255, 0.18); }
+}
+
+/* Light themes drive their own contrast — opt out of the dark ramp entirely */
+.theme-light-surface [class*='bg-white\/'] {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ── Wall-tablet type scale ──────────────────────────────────────────────────
+   ~190 labels are pinned at 9–11px, which is a phone-distance size. On a
+   tablet-sized viewport give each step +1px: enough to read across a room,
+   small enough that no card layout reflows. */
+
+@media (min-width: 768px) {
+  [class~='text-[9px]']  { font-size: 10px; }
+  [class~='text-[10px]'] { font-size: 11px; }
+  [class~='text-[11px]'] { font-size: 12px; }
+}
+
+/* ── Focus visibility (keyboard / HA remote navigation) ──────────────────── */
+
+:where(button, a, [role='button'], input, select, textarea):focus-visible {
+  outline: 2px solid var(--dash-accent, #3b82f6);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ── Reduced motion / low-power ──────────────────────────────────────────── */
+
+.perf-no-animations *,
+.perf-no-animations *::before,
+.perf-no-animations *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gc,
+  .gc-btn {
+    transition: none;
+  }
+  .gc:hover {
+    transform: none;
+  }
 }

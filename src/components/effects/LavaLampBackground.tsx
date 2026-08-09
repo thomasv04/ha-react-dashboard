@@ -66,6 +66,11 @@ export function LavaLampBackground({ config }: LavaLampBackgroundProps) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // `draw` est une déclaration de fonction, donc hoistée : TypeScript y
+    // abandonne le rétrécissement de `ctx` (elle pourrait être appelée avant
+    // la garde ci-dessus). On fige la valeur non nulle dans une const dédiée.
+    const g2d: CanvasRenderingContext2D = ctx;
+
     let animId: number;
     let lastFrameAt = 0;
     let blobs: Blob[] = [];
@@ -115,7 +120,7 @@ export function LavaLampBackground({ config }: LavaLampBackgroundProps) {
       const h = window.innerHeight;
       const minDim = Math.min(w, h);
 
-      ctx.clearRect(0, 0, w, h);
+      g2d.clearRect(0, 0, w, h);
 
       for (const blob of blobs) {
         blob.phaseX += blob.phaseSpeedX;
@@ -135,15 +140,15 @@ export function LavaLampBackground({ config }: LavaLampBackgroundProps) {
         const radius = minDim * blob.radiusRatio;
         const op = 0.22 * opacity;
 
-        const grad = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        const grad = g2d.createRadialGradient(x, y, 0, x, y, radius);
         grad.addColorStop(0, `${blob.color}${op})`);
         grad.addColorStop(0.5, `${blob.color}${op * 0.55})`);
         grad.addColorStop(1, `${blob.color}0)`);
 
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = grad;
-        ctx.fill();
+        g2d.beginPath();
+        g2d.arc(x, y, radius, 0, Math.PI * 2);
+        g2d.fillStyle = grad;
+        g2d.fill();
       }
 
       animId = requestAnimationFrame(draw);
