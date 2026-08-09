@@ -31,19 +31,33 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"],
-        // Tailwind / CSS-in-JS generate inline styles at runtime
-        styleSrc: ["'self'", "'unsafe-inline'"],
+        // Tailwind / CSS-in-JS generate inline styles at runtime.
+        // fonts.googleapis.com : la feuille de style de Google Sans Flex,
+        // référencée par index.html et utilisée par tout le thème.
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         // Camera streams, weather icons, uploaded backgrounds from any origin
         imgSrc: ["'self'", 'data:', 'blob:', 'http:', 'https:'],
         // HA WebSocket (ws/wss) can be on any user-configured host
         connectSrc: ["'self'", 'ws:', 'wss:', 'http:', 'https:'],
         // Media player artwork / streams
         mediaSrc: ["'self'", 'blob:', 'http:', 'https:'],
-        fontSrc: ["'self'", 'data:'],
+        fontSrc: ["'self'", 'data:', 'https://fonts.gstatic.com'],
         objectSrc: ["'none'"],
         frameAncestors: ["'self'"],
+        // helmet ajoute `upgrade-insecure-requests` par défaut. Derrière
+        // l'ingress HA la page est servie en clair (http://homeassistant.local:8123) :
+        // le navigateur réécrirait chaque asset en https://, qui n'écoute pas,
+        // et tout le bundle tomberait en ERR_SSL_PROTOCOL_ERROR. C'est à HA de
+        // terminer TLS, pas à l'add-on de l'exiger.
+        upgradeInsecureRequests: null,
       },
     },
+    // Même raison, en pire : HSTS n'est honoré qu'en HTTPS, mais il épingle
+    // alors *toute* l'origine (homeassistant.local et ses sous-domaines) en
+    // HTTPS pour un an — donc HA lui-même, pas seulement l'add-on. Une seule
+    // visite en HTTPS suffirait à rendre l'accès en HTTP impossible ensuite.
+    // C'est au reverse-proxy qui termine TLS de décider, pas à l'add-on.
+    strictTransportSecurity: false,
   })
 );
 
