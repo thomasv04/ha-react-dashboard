@@ -97,9 +97,12 @@ The dashboard runs **directly inside Home Assistant** with no token required, au
 #### Steps
 
 1. **Add Custom Repository**
-   - Settings → Add-ons → Create Add-on → **Add custom repository**
+   - Settings → Add-ons → **Add-on Store** → ⋮ → **Repositories**
    - URL: `https://github.com/thomasv04/ha-react-dashboard`
-   - Category: `Frontend`
+   - Un dépôt d'add-on n'a **pas** de catégorie. Celle-ci n'existe que dans le
+     dialogue « dépôt personnalisé » de HACS, où il faut choisir **Integration**
+     — pas *Dashboard*, qui déposerait l'intégration dans `www/community/` où
+     Home Assistant ne la chargera jamais.
 
 2. **Install Add-on**
    - Go to **Add-ons Store** tab
