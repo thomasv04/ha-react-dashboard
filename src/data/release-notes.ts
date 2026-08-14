@@ -29,6 +29,8 @@ export const RELEASE_NOTES: ReleaseNote[] = [
   {
     version: '2.1.0',
     date: '2026-08-14',
+    // Doit rester aligné sur le tag publié : `npm run create-tag` compare les
+    // deux et prévient si elles divergent.
     title: 'Un dashboard qui part de zéro',
     items: [
       {
