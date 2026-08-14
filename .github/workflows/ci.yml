@@ -87,6 +87,10 @@ jobs:
         with:
           python-version: '3.14'
           cache: pip
+          # Sans ce chemin, le cache cherche `requirements.txt` / `pyproject.toml`
+          # à la racine, n'en trouve aucun et fait échouer l'étape. Les
+          # dépendances Python de ce dépôt tiennent dans ce seul fichier.
+          cache-dependency-path: requirements-test.txt
 
       - uses: actions/setup-node@v4
         with:
