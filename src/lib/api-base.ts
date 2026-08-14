@@ -24,20 +24,32 @@ const PANEL_API_BASE = '/api/ha_react_dashboard/';
 /** Fichiers téléversés — servis en statique par l'intégration, sans auth. */
 const PANEL_FILES_BASE = '/ha_react_dashboard_files/';
 
-let panelToken: string | undefined;
+/**
+ * Fournisseur de jeton, interrogé **à chaque appel**.
+ *
+ * `force` demande un renouvellement même si le jeton paraît encore valide —
+ * utilisé après un 401.
+ */
+export type PanelTokenProvider = (force?: boolean) => Promise<string | undefined>;
+
+let panelAuth: PanelTokenProvider | undefined;
 
 /**
  * Bascule le client en mode « carte Lovelace » : les appels partent vers
- * l'intégration Python et portent le jeton HA. Appelé par `ha-panel.tsx` à
- * chaque injection de `hass` — le jeton d'accès HA tourne, on garde le dernier.
+ * l'intégration Python et portent le jeton HA.
+ *
+ * On garde un *fournisseur*, pas un jeton. Un jeton d'accès Home Assistant vit
+ * trente minutes : le copier au montage, c'était garantir que tout revenait en
+ * 401 dès qu'on rouvrait l'onglet une demi-heure plus tard, et l'écran de
+ * chargement tournait alors indéfiniment.
  */
-export function setPanelAuth(token: string | undefined): void {
-  panelToken = token;
+export function setPanelAuth(provider: PanelTokenProvider | undefined): void {
+  panelAuth = provider;
 }
 
 /** Vrai quand le bundle tourne comme carte Lovelace sur l'origine HA. */
 export function isPanelMode(): boolean {
-  return panelToken !== undefined;
+  return panelAuth !== undefined;
 }
 
 /**
@@ -69,10 +81,18 @@ export function assetUrl(path: string): string {
  * un `fetch` nu renverrait 401. Derrière l'ingress, c'est le superviseur qui
  * authentifie — pas d'en-tête à ajouter.
  */
-export function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
-  if (!panelToken) return fetch(apiUrl(path), init);
-  return fetch(apiUrl(path), {
-    ...init,
-    headers: { ...init.headers, Authorization: `Bearer ${panelToken}` },
-  });
+export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  if (!panelAuth) return fetch(apiUrl(path), init);
+
+  const url = apiUrl(path);
+  const send = (token: string | undefined) => fetch(url, { ...init, headers: { ...init.headers, Authorization: `Bearer ${token}` } });
+
+  const res = await send(await panelAuth());
+  if (res.status !== 401) return res;
+
+  // Le jeton a pu expirer entre sa lecture et l'arrivée de la requête, ou Home
+  // Assistant a rendu la main avant d'avoir renouvelé. Un seul réessai, avec
+  // renouvellement forcé : au-delà, c'est un vrai refus d'authentification et
+  // le 401 doit remonter.
+  return send(await panelAuth(true));
 }

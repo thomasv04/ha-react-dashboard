@@ -57,6 +57,17 @@ function PanelApp({ hassUrl, hassToken }: PanelAppProps) {
   );
 }
 
+/**
+ * Sous-ensemble de l'objet `Auth` de home-assistant-js-websocket dont on se
+ * sert. `hass` arrive non typé depuis le frontend HA.
+ */
+interface HassAuth {
+  data?: { hassUrl?: string; access_token?: string };
+  readonly accessToken?: string;
+  readonly expired?: boolean;
+  refreshAccessToken(): Promise<void>;
+}
+
 /** Poignée rendue au chargeur (`ha-card.ts`) pour piloter l'app montée. */
 export interface DashboardHandle {
   setHass(hass: Record<string, unknown>): void;
@@ -77,21 +88,55 @@ export function mountDashboard(host: HTMLElement): DashboardHandle {
   const root = createRoot(mountPoint);
   let hassUrl = window.location.origin;
   let hassToken: string | undefined;
+  /** Objet `Auth` de Home Assistant — vivant, contrairement au jeton. */
+  let hassAuth: HassAuth | undefined;
 
   const render = () => root.render(<PanelApp hassUrl={hassUrl} hassToken={hassToken} />);
   render();
 
   return {
     setHass(hass) {
-      const data = (hass?.auth as Record<string, unknown> | undefined)?.data as Record<string, unknown> | undefined;
+      const auth = hass?.auth as HassAuth | undefined;
+      const data = auth?.data;
       if (!data) return;
-      hassUrl = (data['hassUrl'] as string) || window.location.origin;
-      hassToken = data['access_token'] as string | undefined;
-      // Les vues de l'intégration exigent l'auth HA : sans ce jeton, tous les
-      // appels de config partiraient en 401. Le jeton tourne, on le remet à
-      // chaque injection.
-      setPanelAuth(hassToken);
-      render();
+
+      hassAuth = auth;
+      hassUrl = data.hassUrl || window.location.origin;
+
+      // Les vues de l'intégration exigent l'auth HA. On enregistre un
+      // *fournisseur* : un jeton d'accès HA vit trente minutes, en copier la
+      // valeur ici condamnait tous les appels au 401 dès qu'on revenait sur
+      // l'onglet plus tard.
+      setPanelAuth(async force => {
+        if (!hassAuth) return undefined;
+        if (force || hassAuth.expired) {
+          try {
+            await hassAuth.refreshAccessToken();
+          } catch {
+            // Renouvellement refusé (session révoquée) : on renvoie le dernier
+            // jeton connu, l'appelant verra le 401 et pourra le signaler.
+          }
+        }
+        return hassAuth.accessToken ?? hassAuth.data?.access_token;
+      });
+
+      // `HassConnect` reçoit un jeton figé en propriété : il doit être frais au
+      // moment du rendu, sinon la connexion WebSocket échoue et l'écran de
+      // chargement reste bloqué sur « Connexion à Home Assistant ».
+      const applyToken = (token: string | undefined) => {
+        if (token === hassToken) return;
+        hassToken = token;
+        render();
+      };
+
+      if (auth.expired) {
+        auth
+          .refreshAccessToken()
+          .then(() => applyToken(auth.accessToken ?? auth.data?.access_token))
+          .catch(() => applyToken(data.access_token));
+      } else {
+        applyToken(auth.accessToken ?? data.access_token);
+      }
     },
     destroy() {
       root.unmount();
