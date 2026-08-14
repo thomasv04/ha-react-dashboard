@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { apiUrl } from '@/lib/api-base';
+import { apiFetch } from '@/lib/api-base';
 
 const DEVICE_ID_KEY = 'ha_dashboard_device_id';
 // Réglages, pas de l'état temps réel : 4 s = ~21 k requêtes/jour sur une
@@ -31,7 +31,7 @@ export function useSettingsSync<T extends object>(settings: T, onRemoteUpdate: (
     const serialized = JSON.stringify(data);
     if (serialized === lastPushedRef.current) return;
     try {
-      const res = await fetch(apiUrl('/api/settings/current'), {
+      const res = await apiFetch('/api/settings/current', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -52,7 +52,7 @@ export function useSettingsSync<T extends object>(settings: T, onRemoteUpdate: (
 
   const pullFromServer = useCallback(async () => {
     try {
-      const res = await fetch(apiUrl(`/api/settings/current?device_id=${deviceId.current}`));
+      const res = await apiFetch(`/api/settings/current?device_id=${deviceId.current}`);
       if (!res.ok) return;
       const json = (await res.json()) as { revision?: number; data?: T };
       const { revision, data } = json;

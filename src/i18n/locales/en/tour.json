@@ -1,0 +1,71 @@
+{
+  "title": "Guided tour",
+  "replay": "Replay the tour",
+  "replayDesc": "Walk through the dashboard basics again.",
+  "skip": "Skip",
+  "next": "Next",
+  "previous": "Back",
+  "done": "Got it",
+  "steps": {
+    "pages": {
+      "title": "Your pages",
+      "body": "Each tab is a separate page. Add as many as you need — one per room, one per floor, whatever fits."
+    },
+    "edit": {
+      "title": "Edit mode",
+      "body": "The pencil unlocks the grid: drag, resize, configure or delete your widgets. Nothing moves until you turn it on."
+    },
+    "add": {
+      "title": "Add a widget",
+      "body": "Open the catalogue and pick a card: light, camera, sensor, thermostat… then choose the entity it controls."
+    },
+    "addPage": {
+      "title": "A new page",
+      "body": "Add a page to split your dashboard by room or by floor. Each page keeps its own grid."
+    },
+    "save": {
+      "title": "Save",
+      "body": "Nothing is persisted until you save. Cancel with the cross to drop every change made since entering edit mode."
+    },
+    "dock": {
+      "title": "The dock",
+      "body": "The bottom bar opens your panels. Its gear icon lets you reorder them or add new ones."
+    },
+    "settings": {
+      "title": "Settings",
+      "body": "Theme, layout, language, backup. Everything that changes the look of the dashboard lives here."
+    },
+    "widgetsAdd": {
+      "title": "The catalogue",
+      "body": "Widgets are grouped by category. Pick one, then select the Home Assistant entity it should control."
+    },
+    "widgetsResize": {
+      "title": "Arrange the grid",
+      "body": "In edit mode each card can be dragged, and resized from its bottom-right corner. Each screen size keeps its own layout."
+    },
+    "widgetsSave": {
+      "title": "Keep your work",
+      "body": "Save once the layout suits you. Your dashboard is stored on the server, so every device sees it."
+    },
+    "panelsCreate": {
+      "title": "Custom panels",
+      "body": "A panel is a full-screen sheet you build from blocks: cover rows, action buttons, section titles."
+    },
+    "panelsDock": {
+      "title": "Put it in the dock",
+      "body": "Once a panel exists, add it to the bottom bar from the gear icon — it becomes one tap away."
+    },
+    "panelsSave": {
+      "title": "Save",
+      "body": "Panels are saved along with the rest of the dashboard."
+    },
+    "appearanceOpen": {
+      "title": "Themes",
+      "body": "Seven themes, card opacity, wallpaper, automatic day/night switching — all in the appearance section."
+    },
+    "appearanceWallpanel": {
+      "title": "Wall panel mode",
+      "body": "Set up a screensaver layout for a tablet mounted on the wall: it takes over after a while idle."
+    }
+  }
+}

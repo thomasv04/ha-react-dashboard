@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "HA React Dashboard",
+        "description": "Creates the “React Dashboard” Lovelace dashboard and serves the dashboard bundle. Once installed, open Settings → Dashboards → React Dashboard → “Set as default on this device” on each phone or tablet."
+      }
+    },
+    "abort": {
+      "already_configured": "HA React Dashboard is already set up."
+    }
+  }
+}

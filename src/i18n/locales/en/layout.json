@@ -70,7 +70,7 @@
   "apply": "Apply",
   "chooseEntity": "Choose an entity",
   "noEntityFound": "No {domain} entity found",
-  "chooseEntityArrow": "Choose an entity \u2192",
+  "chooseEntityArrow": "Choose an entity →",
   "customizeDock": "Customize the dock",
   "dock": "Dock",
   "addPage": "Page",
@@ -90,7 +90,6 @@
   "entityNoResult": "No entity found",
   "panelNone": "No panel",
   "panelNoneDisplay": "— No panel —",
-  "panelBuiltin": "Built-in panels",
   "panelCustom": "Custom panels",
   "previewLabel": "Preview:",
   "addEntityBtn": "Add an entity",
@@ -231,7 +230,7 @@
     "haEntityDesc": "If defined, HA can trigger the screensaver via this entity",
     "forcedActivation": "Forced activation",
     "backgroundImages": "Background images",
-    "noImages": "No image \u2014 gradient background used",
+    "noImages": "No image — gradient background used",
     "imageFit": "Fit",
     "imageOrder": "Order",
     "fitCover": "Cover (cropped)",
@@ -250,5 +249,11 @@
     "editWidgets": "Edit widgets",
     "touchToExit": "TOUCH TO EXIT",
     "dismissOverlay": "Dismiss screensaver"
-  }
+  },
+  "panelNoneCreated": "No panel yet — create one from the edit mode.",
+  "dockLabelsOn": "Labels on",
+  "dockLabelsOff": "Labels off",
+  "dockRemove": "Remove from dock",
+  "dockAdd": "Add to dock",
+  "dockNoPanels": "No custom panel yet. Create one from the edit mode, then add it here."
 }

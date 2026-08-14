@@ -3,6 +3,7 @@ import { ToastProvider } from '@/context/ToastContext';
 import { ModalProvider } from '@/context/ModalContext';
 import { ToastContainer } from '@/components/ui/Toast/components/Toast';
 import { useHAToast } from '@/hooks/useHAToast';
+import { useHAModal } from '@/hooks/useHAModal';
 import Dashboard from './Dashboard';
 import { ModalContainer } from './components/ui/Modal/components/Modal';
 import { ThemeContextProvider, useTheme } from '@/context/ThemeContext';
@@ -11,7 +12,7 @@ import { BackgroundLayer } from '@/components/layout/BackgroundLayer';
 import { MotionConfig } from 'framer-motion';
 import { useState, useEffect, type ReactNode } from 'react';
 import { useAutoTheme } from '@/hooks/useAutoTheme';
-import { apiUrl } from '@/lib/api-base';
+import { apiFetch } from '@/lib/api-base';
 import { HAThrottlePatch } from '@/components/HAThrottlePatch';
 import { LoadingScreen } from '@/components/layout/LoadingScreen';
 
@@ -23,6 +24,9 @@ function MotionConfigBridge({ children }: { children: ReactNode }) {
 /** Mounts the HA event subscription inside the providers */
 function HAToastBridge() {
   useHAToast();
+  // `ha_dashboard_modal` était implémenté mais jamais abonné : l'événement
+  // n'apparaissait même pas dans les écouteurs actifs de Home Assistant.
+  useHAModal();
   return null;
 }
 
@@ -65,7 +69,7 @@ function App({ hassUrl: propHassUrl, hassToken: propHassToken }: AppProps = {}) 
     // Délai maximal : sans lui, un serveur qui ne répond pas laissait la
     // promesse en suspens et le jeton n'arrivait jamais — HassConnect restait
     // sur son écran d'attente sans que rien ne l'indique.
-    fetch(apiUrl('/api/system/ha-config'), { signal: AbortSignal.timeout(6_000) })
+    apiFetch('/api/system/ha-config', { signal: AbortSignal.timeout(6_000) })
       .then(r => r.json())
       .then((data: { hassToken?: string | null }) => {
         if (data.hassToken) {

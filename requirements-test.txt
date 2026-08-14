@@ -1,0 +1,23 @@
+# Tests de l'intégration Home Assistant (`custom_components/ha_react_dashboard`).
+#
+#   python -m venv .venv-test
+#   .venv-test/bin/pip install -r requirements-test.txt
+#   .venv-test/bin/pytest
+#
+# Ce harnais embarque Home Assistant 2026.8.1 et exige Python 3.14.
+#
+# ⚠️ Linux ou macOS uniquement : `homeassistant/runner.py` importe `fcntl`, qui
+# n'existe pas sous Windows — HA 2026 ne s'y importe même pas. Sous Windows,
+# passer par Docker, ce qui reproduit exactement la CI :
+#
+#   docker run --rm -v "/$PWD://w" -w //w python:3.14-slim \
+#     sh -c "pip install -q -r requirements-test.txt && pytest"
+#
+# (Le repli `pytest-homeassistant-custom-component<0.14` sur Python 3.12
+# s'installe nativement sous Windows, mais teste HA 2025.1 — une version dont
+# les structures internes de Lovelace diffèrent.)
+pytest-homeassistant-custom-component==0.13.355
+
+# Le composant `frontend`, dont dépend l'intégration, importe ce paquet ; la
+# version est celle épinglée par HA 2026.8.1.
+home-assistant-frontend==20260729.6

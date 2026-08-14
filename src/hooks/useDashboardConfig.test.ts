@@ -12,6 +12,9 @@ vi.mock('@/context/ToastContext', () => ({
 
 vi.mock('@/lib/api-base', () => ({
   apiUrl: (path: string) => path,
+  // Hors mode carte, `apiFetch` n'ajoute rien : les assertions portent
+  // toujours sur `global.fetch`.
+  apiFetch: (path: string, init?: RequestInit) => fetch(path, init),
 }));
 
 beforeEach(() => {

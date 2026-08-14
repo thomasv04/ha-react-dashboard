@@ -1,6 +1,7 @@
 import { useTheme } from '@/context/ThemeContext';
 import { AuroraBackground } from '@/components/effects/AuroraBackground';
 import { LavaLampBackground } from '@/components/effects/LavaLampBackground';
+import { assetUrl } from '@/lib/api-base';
 
 export function BackgroundLayer() {
   const { background, tokens } = useTheme();
@@ -46,7 +47,7 @@ export function BackgroundLayer() {
   if (background.mode === 'image' && background.imageUrl) {
     return (
       <>
-        <div className='fixed inset-0 -z-10 bg-cover bg-center' style={{ backgroundImage: `url(${background.imageUrl})` }} />
+        <div className='fixed inset-0 -z-10 bg-cover bg-center' style={{ backgroundImage: `url(${assetUrl(background.imageUrl)})` }} />
         <div className='fixed inset-0 -z-10' style={{ backgroundColor: `rgba(0,0,0,${background.overlayOpacity ?? 0.5})` }} />
       </>
     );

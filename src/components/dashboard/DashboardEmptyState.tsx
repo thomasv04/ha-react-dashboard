@@ -106,6 +106,7 @@ export function DashboardEmptyState() {
             onClick={handleAddWidget}
             whileTap={{ scale: 0.96 }}
             whileHover={{ scale: 1.03 }}
+            data-tour='add-widget'
             className='mt-8 flex items-center gap-2 px-7 py-3 rounded-full text-white font-semibold text-sm shadow-lg shadow-violet-900/40'
             style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)' }}
           >

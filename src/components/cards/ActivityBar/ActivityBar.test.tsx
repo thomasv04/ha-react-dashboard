@@ -1,8 +1,20 @@
 import { render, screen } from '@testing-library/react';
 import { vi, test, expect } from 'vitest';
 
+// Les pastilles n'ont plus d'entité par défaut : chacune n'existe que si la
+// config du widget lui en assigne une.
 vi.mock('@/context/WidgetConfigContext', () => ({
-  useWidgetConfig: vi.fn(() => ({ getWidgetConfig: () => undefined })),
+  useWidgetConfig: vi.fn(() => ({
+    getWidgetConfig: () => ({
+      pills: [
+        { id: 'alarm', entityId: 'alarm_control_panel.home_alarm' },
+        { id: 'heater', entityId: 'climate.living_room' },
+        { id: 'solar', entityId: 'sensor.battery_level' },
+        { id: 'tempo', entityId: 'sensor.tempo_current_color' },
+        { id: 'temp', entityId: 'sensor.bedroom_temperature' },
+      ],
+    }),
+  })),
 }));
 
 vi.mock('@hakit/core', () => ({

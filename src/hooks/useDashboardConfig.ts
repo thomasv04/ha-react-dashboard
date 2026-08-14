@@ -6,7 +6,7 @@ import { DEFAULT_PAGES, type Page } from '@/context/PageContext';
 import { DEFAULT_WALLPANEL_CONFIG, type WallPanelConfig } from '@/types/wallpanel';
 import type { CustomPanel } from '@/types/custom-panel';
 import { useToast } from '@/context/ToastContext';
-import { apiUrl } from '@/lib/api-base';
+import { apiFetch } from '@/lib/api-base';
 
 /** Au-delà, on considère le serveur injoignable et on rend depuis le cache. */
 const FETCH_TIMEOUT_MS = 8_000;
@@ -124,7 +124,7 @@ export function useDashboardConfig() {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
       try {
-        const res = await fetch(apiUrl('/api/config'), { signal: controller.signal });
+        const res = await apiFetch('/api/config', { signal: controller.signal });
         const data: unknown = await res.json();
         if (cancelled) return;
 
@@ -170,7 +170,7 @@ export function useDashboardConfig() {
   const saveConfig = useCallback(async (config: DashboardConfigV2) => {
     setIsSaving(true);
     try {
-      const response = await fetch(apiUrl('/api/config'), {
+      const response = await apiFetch('/api/config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),

@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js';
 import path from 'path';
 
 import dotenv from 'dotenv';
@@ -14,7 +13,9 @@ dotenv.config();
 // VITE_HACS=true       → SPA with relative paths for HACS frontend category (Level 1)
 // (default)            → SPA with absolute paths for SSH deployment
 const isAddon = process.env.VITE_ADDON === 'true';
-const isHACSPanel = process.env.VITE_HACS_PANEL === 'true';
+// `vite build --mode panel` : évite d'avoir à poser une variable d'environnement,
+// ce qui ne s'écrit pas pareil sous Windows et sous Linux.
+const isHACSPanel = process.env.VITE_HACS_PANEL === 'true' || process.argv.includes('panel');
 const useRelativePaths = process.env.VITE_HACS === 'true';
 const VITE_FOLDER_NAME = process.env.VITE_FOLDER_NAME || 'community/ha-react-dashboard';
 // Addon MUST use './' — ingress rewrites the path prefix so absolute '/'
@@ -30,8 +31,11 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    // In panel mode, inject CSS into the JS bundle to produce a single self-contained file
-    ...(isHACSPanel ? [cssInjectedByJsPlugin()] : []),
+    // `vite-plugin-css-injected-by-js` a été retiré du mode carte : il pose le
+    // CSS dans `document.head`, or une carte Lovelace vit dans le shadow DOM de
+    // `hui-root`, qui ne voit pas les styles du document — le dashboard sortait
+    // entièrement sans style. Le CSS est désormais un fichier, que `ha-card.ts`
+    // attache aux deux endroits.
   ],
   resolve: {
     alias: {
@@ -47,6 +51,9 @@ export default defineConfig({
     },
   },
   server: {
+    // Sur Windows, Node résout `localhost` en `::1` d'abord : Vite n'écoutait
+    // que sur IPv6 pendant que Chrome appelait 127.0.0.1 → ERR_CONNECTION_REFUSED.
+    host: '127.0.0.1',
     // Proxy API requests to the Express server (configurable port for E2E tests)
     proxy: {
       '/api': {
@@ -59,17 +66,31 @@ export default defineConfig({
       },
     },
   },
+  // En mode `lib`, Vite ne substitue pas `process.env.NODE_ENV` (contrairement au
+  // build SPA) : React et framer-motion le lisent au chargement et la carte
+  // mourait sur `process is not defined`.
+  define: isHACSPanel ? { 'process.env.NODE_ENV': '"production"' } : {},
   build: isHACSPanel
     ? {
+        // ESM, pas IIFE : HA charge ce fichier sur *chaque* page du frontend.
+        // Un bundle monolithique, c'était 21 Mo à chaque navigation. En module,
+        // Rollup sort une entrée de quelques kilo-octets et ne télécharge le
+        // dashboard qu'au montage de la carte (`import()` dans ha-card.ts).
         lib: {
-          entry: path.resolve(__dirname, 'src/ha-panel.tsx'),
-          name: 'HaReactDashboard',
-          fileName: 'ha-react-dashboard',
-          formats: ['iife'],
+          entry: path.resolve(__dirname, 'src/ha-card.ts'),
+          fileName: () => 'ha-react-dashboard.js',
+          formats: ['es'],
         },
+        // Une seule feuille de style, à nom fixe : `ha-card.ts` la résout par
+        // `import.meta.url` et doit pouvoir la nommer sans lire de manifeste.
+        cssCodeSplit: false,
         rollupOptions: {
           // Bundle everything — HA loads the file as a standalone script
           external: [],
+          output: {
+            chunkFileNames: 'chunks/[name]-[hash].js',
+            assetFileNames: info => (info.names?.[0]?.endsWith('.css') ? 'assets/dashboard.css' : 'assets/[name]-[hash][extname]'),
+          },
         },
         outDir: 'custom_components/ha_react_dashboard/www',
         emptyOutDir: true,

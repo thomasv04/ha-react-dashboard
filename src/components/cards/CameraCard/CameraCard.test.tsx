@@ -1,8 +1,17 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, test, expect } from 'vitest';
 
+// Plus de caméras par défaut : la liste vient entièrement de la config.
 vi.mock('@/context/WidgetConfigContext', () => ({
-  useWidgetConfig: vi.fn(() => ({ getWidgetConfig: () => undefined })),
+  useWidgetConfig: vi.fn(() => ({
+    getWidgetConfig: () => ({
+      cameras: [
+        { entityId: 'camera.front_door', name: 'Entrée' },
+        { entityId: 'camera.kitchen', name: 'Cuisine' },
+      ],
+      selectorEntity: 'input_select.camera_selector',
+    }),
+  })),
 }));
 
 const callServiceMock = vi.fn();
@@ -30,4 +39,14 @@ test('renders camera card and selecting camera triggers service', () => {
   expect(cuisineBtn).toBeDefined();
   fireEvent.click(cuisineBtn);
   expect(callServiceMock).toHaveBeenCalled();
+});
+
+test('shows an empty state instead of crashing when no camera is configured', async () => {
+  const { useWidgetConfig } = await import('@/context/WidgetConfigContext');
+  vi.mocked(useWidgetConfig).mockReturnValueOnce({
+    getWidgetConfig: () => undefined,
+  } as unknown as ReturnType<typeof useWidgetConfig>);
+
+  render(<CameraCard />);
+  expect(screen.getByText('widgets.camera.empty')).toBeDefined();
 });

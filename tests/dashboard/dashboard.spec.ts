@@ -17,6 +17,13 @@ async function waitForDashboard(page: import('@playwright/test').Page) {
   await page.waitForSelector('[data-widget-id]', { timeout: 15_000 });
 }
 
+// La visite guidée se lance seule au premier chargement et recouvre l'interface
+// d'un calque plein écran : les tests fonctionnels la neutralisent. Elle a son
+// propre spec (`tour.spec.ts`).
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('ha-dashboard-tour-done', 'true'));
+});
+
 // ── Smoke ─────────────────────────────────────────────────────────────────────
 
 test.describe('Dashboard smoke', () => {
@@ -40,12 +47,9 @@ test.describe('Dashboard smoke', () => {
     await expect(greetingWidget.getByText(/\d{2}[:\u202f]\d{2}/)).toBeVisible();
   });
 
-  test('shows the bottom navigation', async ({ page }) => {
-    const nav = page.locator('nav');
-    await expect(nav).toBeVisible();
-    // Bottom nav has panel buttons (scoped to nav to avoid shortcut card matches)
-    await expect(nav.getByRole('button', { name: /Lumières/ })).toBeVisible();
-    await expect(nav.getByRole('button', { name: /Volets/ })).toBeVisible();
+  test('hides the dock until a panel is added to it', async ({ page }) => {
+    // Plus de panneaux intégrés : un dashboard neuf n'a pas de dock du tout.
+    await expect(page.locator('nav')).toHaveCount(0);
   });
 });
 
@@ -216,30 +220,33 @@ test.describe('Remove widget', () => {
   });
 });
 
-// ── Bottom nav panels ─────────────────────────────────────────────────────────
+// ── Dock ──────────────────────────────────────────────────────────────────────
 
-test.describe('Bottom nav panels', () => {
-  test.beforeEach(async ({ page }) => {
+test.describe('Dock', () => {
+  test('shows a custom panel put in the dock, and opens it', async ({ page }) => {
+    // Le dock ne connaît plus que les panneaux créés par l'utilisateur, et son
+    // contenu vit dans localStorage. On amorce les deux.
+    await page.addInitScript(() => {
+      localStorage.setItem('ha-dashboard-dock-panels', JSON.stringify(['e2e-panel']));
+    });
+    await page.route('**/api/config', async (route, request) => {
+      if (request.method() !== 'GET') return route.continue();
+      const res = await route.fetch();
+      const body = await res.json();
+      body.customPanels = [
+        { id: 'e2e-panel', name: 'Panneau E2E', icon: 'Layers', blocks: [{ id: 'b1', type: 'section-header', title: 'Bloc de test' }] },
+      ];
+      await route.fulfill({ response: res, json: body });
+    });
+
     await page.goto('/');
     await waitForDashboard(page);
-  });
 
-  test('opens lights panel from bottom nav', async ({ page }) => {
-    // Scope to nav to avoid matching the shortcut card button
-    await page
-      .locator('nav')
-      .getByRole('button', { name: /Lumières/ })
-      .click();
-    // Panel should slide in with light controls
-    await expect(page.getByText(/bandeau|cuisine|salon|chambre/i).first()).toBeVisible({ timeout: 5000 });
-  });
+    const dockBtn = page.locator('nav').getByRole('button', { name: 'Panneau E2E' });
+    await expect(dockBtn).toBeVisible();
 
-  test('opens shutters panel from bottom nav', async ({ page }) => {
-    await page
-      .locator('nav')
-      .getByRole('button', { name: /Volets/ })
-      .click();
-    await expect(page.getByText(/volet|cuisine|salon/i).first()).toBeVisible({ timeout: 5000 });
+    await dockBtn.click();
+    await expect(page.getByText('Bloc de test')).toBeVisible({ timeout: 5000 });
   });
 });
 

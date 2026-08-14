@@ -18,6 +18,10 @@ export default defineConfig({
   fullyParallel: false, // sequential — tests may depend on dashboard state
   retries: process.env.CI ? 2 : 0,
   workers: 1,
+  // La première navigation attend que Vite compile tout le graphe de modules :
+  // ~40 s à froid, bien au-delà des 30 s par défaut. Les tests suivants
+  // tournent en moins d'une seconde.
+  timeout: 90_000,
   reporter: [['html', { outputFolder: 'playwright-report-dashboard', open: 'never' }], ['list']],
   use: {
     baseURL: 'http://localhost:5174',

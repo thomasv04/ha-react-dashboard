@@ -4,6 +4,7 @@ import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { MoreInfoHeader } from './MoreInfoHeader';
+import { CameraFeed } from '@/components/ui/CameraFeed/components/CameraFeed';
 import type { CameraCardConfig } from '@/types/widget-types';
 
 type CameraMode = 'stream' | 'snapshot';
@@ -15,8 +16,10 @@ export default function CameraMoreInfo({ entityId, widgetId }: { entityId: strin
   const [mode, setMode] = useState<CameraMode>('stream');
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Get the first camera entity if the config uses a cameras array
-  const cameraEntityId = entityId || config?.cameras?.[0]?.entityId || '';
+  // La card caméra n'a pas d'`entityId` : sa liste vit dans `cameras`. Et si un
+  // `entityId` arrive quand même, il doit être une caméra — pas l'input_select
+  // de sélection.
+  const cameraEntityId = (entityId.startsWith('camera.') ? entityId : config?.cameras?.[0]?.entityId) || '';
   const cameraEntity = useSafeEntity(cameraEntityId);
 
   const accessToken = cameraEntity?.attributes.access_token as string | undefined;
@@ -27,7 +30,6 @@ export default function CameraMoreInfo({ entityId, widgetId }: { entityId: strin
     ? (connection as unknown as { options?: { auth?: { data?: { hassUrl?: string } } } })?.options?.auth?.data?.hassUrl || ''
     : '';
 
-  const streamUrl = accessToken ? `${baseUrl}/api/camera_proxy_stream/${cameraEntityId}?token=${encodeURIComponent(accessToken)}` : '';
   const snapshotUrl = accessToken
     ? `${baseUrl}/api/camera_proxy/${cameraEntityId}?token=${encodeURIComponent(accessToken)}&_=${refreshKey}`
     : '';
@@ -72,13 +74,11 @@ export default function CameraMoreInfo({ entityId, widgetId }: { entityId: strin
 
       {/* Video / Image */}
       <div className='relative w-full rounded-2xl overflow-hidden bg-black/50 aspect-video'>
-        {accessToken ? (
-          <img
-            key={mode === 'snapshot' ? `snap-${refreshKey}` : 'stream'}
-            src={mode === 'stream' ? streamUrl : snapshotUrl}
-            alt={name}
-            className='w-full h-full object-contain'
-          />
+        {mode === 'stream' ? (
+          // Même moteur que la card : une caméra RTSP passe en HLS, sinon MJPEG.
+          <CameraFeed entityId={cameraEntityId} className='w-full h-full' streamMode={config?.streamMode} />
+        ) : accessToken ? (
+          <img key={`snap-${refreshKey}`} src={snapshotUrl} alt={name} className='w-full h-full object-contain' />
         ) : (
           <div className='flex items-center justify-center h-full text-white/30 text-sm'>Caméra non disponible</div>
         )}

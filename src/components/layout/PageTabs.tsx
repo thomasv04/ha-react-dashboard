@@ -34,11 +34,18 @@ export function PageTabs() {
       {/* pl/pr : réserve la place des deux boutons flottants (réglages en haut à
           gauche, édition en haut à droite) qui recouvraient sinon les onglets
           dès que la fenêtre est étroite. */}
-      <div className='flex items-center gap-2 overflow-x-auto scrollbar-none py-2 mb-3 pl-12 pr-12'>
+      {/* En mode édition la barre d'actions est en `fixed` sur toute la largeur
+          utile : sous 1024 px elle recouvrait les onglets (et le bouton
+          Panneaux). Le décalage tient donc jusqu'à `lg`, pas jusqu'à `sm`. */}
+      <div
+        data-tour='pages'
+        className={cn('flex items-center gap-2 overflow-x-auto scrollbar-none py-2 mb-3 pl-12 pr-12', isEditMode && 'mt-14 lg:mt-0')}
+      >
         {/* Bouton WallPanel — toujours à gauche */}
         {(isEditMode || isConfigured) && (
           <button
             onClick={() => setShowWpConfig(true)}
+            data-tour='wallpanel'
             className={cn(
               'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap',
               isConfigured
@@ -55,6 +62,7 @@ export function PageTabs() {
         {(isEditMode || panels.length > 0) && (
           <button
             onClick={() => setShowPanelsEditor(true)}
+            data-tour='panels-button'
             className={cn(
               'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap',
               panels.length > 0
@@ -105,6 +113,7 @@ export function PageTabs() {
         {isEditMode && (
           <button
             onClick={() => addPage({ label: t('layout.newPage'), type: 'grid' })}
+            data-tour='add-page'
             className='flex items-center gap-1 px-3 py-2 rounded-xl text-white/30 hover:text-white/60 hover:bg-white/5 transition-colors'
           >
             <Plus size={14} />

@@ -20,6 +20,7 @@
     "sync": "npx tsx scripts/sync-types.ts",
     "prebuild": "npm run prettier",
     "deploy": "npx tsx scripts/deploy.ts",
+    "deploy:integration": "npx tsx scripts/deploy-integration.ts",
     "create-tag": "npx tsx scripts/create-tag.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
@@ -27,7 +28,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:dashboard": "playwright test --config playwright.dashboard.config.ts",
     "test:e2e:dashboard:ui": "playwright test --config playwright.dashboard.config.ts --ui",
-    "build:panel": "tsc -b && vite build",
+    "build:panel": "tsc -b && vite build --mode panel",
     "check:widgets": "tsx scripts/check-widget-registry.ts",
     "new:widget": "tsx scripts/new-widget.ts"
   },
@@ -91,7 +92,6 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.57.0",
     "vite": "^8.0.1",
-    "vite-plugin-css-injected-by-js": "^4.0.1",
     "vitest": "^4.1.0",
     "wait-on": "^9.0.4"
   },

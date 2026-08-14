@@ -276,7 +276,7 @@ export function VacuumCard() {
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<VacuumCardConfig>(widgetId || 'vacuum');
-  const entityId = config?.entityId ?? 'vacuum.robot';
+  const entityId = config?.entityId ?? '';
 
   const vacuum = useSafeEntity(entityId);
   const { helpers } = useHass();

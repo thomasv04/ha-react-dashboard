@@ -1,11 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION_FAST } from '@/lib/motion-tokens';
 import { Settings } from 'lucide-react';
 import { SettingsContent } from './SettingsContent';
+import { START_TOUR_EVENT } from '@/components/onboarding/TourOverlay';
 
 export function ThemeControlsModal() {
   const [isOpen, setIsOpen] = useState(false);
+
+  // Le tour met en avant des éléments du dashboard : les réglages doivent
+  // s'effacer, sinon le projecteur éclaire le dos de leur propre backdrop.
+  useEffect(() => {
+    const close = () => setIsOpen(false);
+    window.addEventListener(START_TOUR_EVENT, close);
+    return () => window.removeEventListener(START_TOUR_EVENT, close);
+  }, []);
 
   return (
     <>
@@ -13,6 +22,7 @@ export function ThemeControlsModal() {
       <motion.button
         onClick={() => setIsOpen(v => !v)}
         whileTap={{ scale: 0.92 }}
+        data-tour='settings'
         title='Paramètres'
         className={`fixed top-4 left-4 z-50 p-2.5 rounded-xl border transition-colors backdrop-blur-sm ${
           isOpen
@@ -47,12 +57,8 @@ export function ThemeControlsModal() {
               transition={{ duration: DURATION_FAST }}
             >
               <div
-                className='pointer-events-auto w-full max-w-2xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden'
-                style={{
-                  background: 'rgba(12, 16, 40, 0.97)',
-                  backdropFilter: 'blur(20px)',
-                  height: 'min(85vh, 560px)',
-                }}
+                className='gc-overlay pointer-events-auto w-full max-w-2xl rounded-2xl overflow-hidden'
+                style={{ height: 'min(85vh, 560px)' }}
               >
                 <SettingsContent onClose={() => setIsOpen(false)} />
               </div>

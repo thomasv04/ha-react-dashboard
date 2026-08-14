@@ -1,6 +1,10 @@
-import { LayoutGrid, Square, RotateCcw } from 'lucide-react';
+import { useState } from 'react';
+import { LayoutGrid, Square, RotateCcw, Monitor } from 'lucide-react';
 import { useTheme, type LayoutSettings } from '@/context/ThemeContext';
 import { useI18n } from '@/i18n';
+import { isPanelMode } from '@/lib/api-base';
+import { isKioskEnabled, setKiosk } from '@/lib/kiosk';
+import { PerfToggle } from './PerfToggle';
 
 const DEFAULT_LAYOUT: LayoutSettings = {
   gridGap: 16,
@@ -55,6 +59,36 @@ function SliderRow({ label, description, value, min, max, step = 1, unit = 'px',
   );
 }
 
+/**
+ * Plein écran — réglage **par appareil**, donc hors du thème partagé : la
+ * tablette murale le veut, le portable préfère souvent garder la navigation HA.
+ * N'a de sens qu'en carte Lovelace ; servi par l'add-on, il n'y a pas d'en-tête
+ * HA à masquer.
+ */
+function KioskToggle() {
+  const { t } = useI18n();
+  const [enabled, setEnabled] = useState(() => isKioskEnabled());
+
+  if (!isPanelMode()) return null;
+
+  return (
+    <div>
+      <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-4 flex items-center gap-2'>
+        <Monitor size={12} /> {t('settings.layout_section.display')}
+      </h3>
+      <PerfToggle
+        checked={enabled}
+        onChange={value => {
+          setKiosk(value);
+          setEnabled(value);
+        }}
+        label={t('settings.layout_section.kiosk')}
+        description={t('settings.layout_section.kioskDesc')}
+      />
+    </div>
+  );
+}
+
 export function LayoutSection() {
   const { t } = useI18n();
   const { layoutSettings, setLayoutSettings } = useTheme();
@@ -68,6 +102,8 @@ export function LayoutSection() {
 
   return (
     <div className='flex flex-col gap-7'>
+      <KioskToggle />
+
       {/* Grid section */}
       <div>
         <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-4 flex items-center gap-2'>

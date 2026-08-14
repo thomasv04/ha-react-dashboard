@@ -68,7 +68,6 @@ const DEFAULT_ROOMS: RoomEntry[] = [
     icon: 'Sofa',
     iconBg: 'from-yellow-500 to-amber-400',
     lightEntities: ['light.living_room'],
-    panelId: 'lumieres',
   },
   {
     area: 'office',

@@ -28,7 +28,15 @@
       "windy": "Venteux",
       "windy-variant": "Très venteux"
     },
-    "days": ["dim", "lun", "mar", "mer", "jeu", "ven", "sam"]
+    "days": [
+      "dim",
+      "lun",
+      "mar",
+      "mer",
+      "jeu",
+      "ven",
+      "sam"
+    ]
   },
   "thermostat": {
     "label": "Thermostat",
@@ -124,7 +132,8 @@
     "description": "Flux vidéo en direct d'une ou plusieurs caméras Frigate/RTSP.",
     "streamMode": "Mode de streaming",
     "mjpeg": "MJPEG (faible latence)",
-    "hls": "HLS (meilleure compression)"
+    "hls": "HLS (meilleure compression)",
+    "empty": "Aucune caméra configurée. Modifiez ce widget pour en ajouter une."
   },
   "energy": {
     "label": "Énergie",
@@ -153,7 +162,8 @@
     "description": "Boutons rapides pour ouvrir les panneaux lumières, volets, sécurité...",
     "header": "Raccourcis",
     "armed": "Armée",
-    "disarmed": "Désarmée"
+    "disarmed": "Désarmée",
+    "empty": "Aucun raccourci configuré. Modifiez ce widget pour en ajouter."
   },
   "pellet": {
     "label": "Feu à pellet",

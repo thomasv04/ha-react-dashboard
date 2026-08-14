@@ -42,31 +42,8 @@ interface ResolvedShortcut {
   statusEntity?: string;
 }
 
-const DEFAULT_SHORTCUTS: ResolvedShortcut[] = [
-  { id: 'volets', Icon: Blinds, label: 'Volets', accentBg: 'bg-sky-500/15 hover:bg-sky-500/25', accentText: 'text-sky-400' },
-  {
-    id: 'lumieres',
-    Icon: Lightbulb,
-    label: 'Lumières',
-    accentBg: 'bg-yellow-500/15 hover:bg-yellow-500/25',
-    accentText: 'text-yellow-400',
-  },
-  {
-    id: 'security',
-    Icon: ShieldHalf,
-    label: 'Sécurité',
-    accentBg: 'bg-green-500/15 hover:bg-green-500/25',
-    accentText: 'text-green-400',
-    statusEntity: 'alarm_control_panel.home_alarm',
-  },
-  { id: 'aspirateur', Icon: Cpu, label: 'Aspirateur', accentBg: 'bg-blue-500/15 hover:bg-blue-500/25', accentText: 'text-blue-400' },
-  { id: 'flowers', Icon: Flower2, label: 'Plantes', accentBg: 'bg-emerald-500/15 hover:bg-emerald-500/25', accentText: 'text-emerald-400' },
-  { id: 'notifications', Icon: Bell, label: 'Notifs', accentBg: 'bg-purple-500/15 hover:bg-purple-500/25', accentText: 'text-purple-400' },
-  { id: 'cameras', Icon: Camera, label: 'Caméras', accentBg: 'bg-zinc-500/15 hover:bg-zinc-500/25', accentText: 'text-zinc-300' },
-];
-
 function resolveShortcuts(config: ShortcutsCardConfig | undefined): ResolvedShortcut[] {
-  if (!config?.shortcuts?.length) return DEFAULT_SHORTCUTS;
+  if (!config?.shortcuts?.length) return [];
   return config.shortcuts.map(s => {
     const accent = gradientToAccent(s.color);
     return {
@@ -100,6 +77,7 @@ export function ShortcutsCard() {
       className='gc rounded-3xl p-5 h-full'
     >
       <div className='text-white/40 text-xs uppercase tracking-wider mb-4 font-medium'>{t('widgets.shortcuts.header')}</div>
+      {shortcuts.length === 0 && <p className='text-white/30 text-xs leading-relaxed'>{t('widgets.shortcuts.empty')}</p>}
       <div className='grid grid-cols-2 gap-2'>
         {shortcuts.map((s, i) => {
           // Dynamic status from entity

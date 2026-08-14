@@ -1,0 +1,71 @@
+{
+  "title": "Visite guidée",
+  "replay": "Revoir la visite",
+  "replayDesc": "Reparcourir les bases du dashboard.",
+  "skip": "Passer",
+  "next": "Suivant",
+  "previous": "Retour",
+  "done": "Compris",
+  "steps": {
+    "pages": {
+      "title": "Vos pages",
+      "body": "Chaque onglet est une page distincte. Créez-en autant que nécessaire — une par pièce, une par étage, comme vous voulez."
+    },
+    "edit": {
+      "title": "Mode édition",
+      "body": "Le crayon déverrouille la grille : déplacez, redimensionnez, configurez ou supprimez vos widgets. Rien ne bouge tant qu'il est éteint."
+    },
+    "add": {
+      "title": "Ajouter un widget",
+      "body": "Ouvrez le catalogue et choisissez une card : lumière, caméra, capteur, thermostat… puis l'entité qu'elle pilote."
+    },
+    "addPage": {
+      "title": "Une nouvelle page",
+      "body": "Ajoutez une page pour séparer votre dashboard par pièce ou par étage. Chaque page garde sa propre grille."
+    },
+    "save": {
+      "title": "Enregistrer",
+      "body": "Rien n'est conservé tant que vous n'avez pas enregistré. La croix annule toutes les modifications depuis l'entrée en édition."
+    },
+    "dock": {
+      "title": "Le dock",
+      "body": "La barre du bas ouvre vos panneaux. Son engrenage permet de les réordonner ou d'en ajouter."
+    },
+    "settings": {
+      "title": "Réglages",
+      "body": "Thème, disposition, langue, sauvegarde. Tout ce qui change l'apparence du dashboard est ici."
+    },
+    "widgetsAdd": {
+      "title": "Le catalogue",
+      "body": "Les widgets sont classés par catégorie. Choisissez-en un, puis sélectionnez l'entité Home Assistant qu'il doit piloter."
+    },
+    "widgetsResize": {
+      "title": "Organiser la grille",
+      "body": "En mode édition, chaque card se déplace et se redimensionne par son coin inférieur droit. Chaque taille d'écran garde sa disposition."
+    },
+    "widgetsSave": {
+      "title": "Conserver votre travail",
+      "body": "Enregistrez une fois la disposition à votre goût. Le dashboard est stocké sur le serveur : tous vos appareils le voient."
+    },
+    "panelsCreate": {
+      "title": "Panneaux personnalisés",
+      "body": "Un panneau est une feuille plein écran que vous composez par blocs : rangées de volets, boutons d'action, titres de section."
+    },
+    "panelsDock": {
+      "title": "Le mettre dans le dock",
+      "body": "Une fois le panneau créé, ajoutez-le à la barre du bas via l'engrenage — il devient accessible en un geste."
+    },
+    "panelsSave": {
+      "title": "Enregistrer",
+      "body": "Les panneaux sont sauvegardés avec le reste du dashboard."
+    },
+    "appearanceOpen": {
+      "title": "Les thèmes",
+      "body": "Sept thèmes, opacité des cards, fond d'écran, bascule jour/nuit automatique — tout est dans la section Apparence."
+    },
+    "appearanceWallpanel": {
+      "title": "Mode mural",
+      "body": "Configurez un écran de veille pour une tablette fixée au mur : il prend le relais après un moment d'inactivité."
+    }
+  }
+}

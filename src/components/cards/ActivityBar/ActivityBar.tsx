@@ -35,20 +35,18 @@ export function ActivityBar() {
   const widgetId = useWidgetId();
   const config = getWidgetConfig<ActivityBarConfig>(widgetId || 'activity');
 
-  // Helper to pick entity from config or fallback
-  const entityFor = (pillId: string, fallback: string) => {
-    const pill = config?.pills?.find(p => p.id === pillId);
-    return pill?.entityId ?? fallback;
-  };
+  // Chaque pastille n'existe que si l'utilisateur lui a assigné une entité :
+  // pas de repli sur des entités codées en dur.
+  const entityFor = (pillId: string) => config?.pills?.find(p => p.id === pillId)?.entityId ?? '';
 
   // La barre lit 5 entités nommées + le domaine `person`. S'abonner à la map
   // complète la re-rendait à chaque message WebSocket de la maison entière.
   const pillEntities = useEntities([
-    entityFor('alarm', 'alarm_control_panel.home_alarm'),
-    entityFor('heater', 'climate.living_room'),
-    entityFor('solar', 'sensor.battery_level'),
-    entityFor('tempo', 'sensor.tempo_current_color'),
-    entityFor('temp', 'sensor.bedroom_temperature'),
+    entityFor('alarm'),
+    entityFor('heater'),
+    entityFor('solar'),
+    entityFor('tempo'),
+    entityFor('temp'),
     ...(config?.persons?.map(p => p.entityId) ?? []),
   ]);
   const personEntities = useEntitiesByDomain('person');
@@ -68,7 +66,7 @@ export function ActivityBar() {
   const pills: Pill[] = [];
 
   // Alarm
-  const alarmState = entities?.[entityFor('alarm', 'alarm_control_panel.home_alarm')]?.state;
+  const alarmState = entities?.[entityFor('alarm')]?.state;
   if (alarmState) {
     const isArmed = alarmState !== 'disarmed';
     pills.push({
@@ -81,7 +79,7 @@ export function ActivityBar() {
   }
 
   // Heater
-  const heaterState = entities?.[entityFor('heater', 'climate.living_room')]?.state;
+  const heaterState = entities?.[entityFor('heater')]?.state;
   if (heaterState) {
     const isOn = heaterState !== 'off';
     pills.push({
@@ -94,7 +92,7 @@ export function ActivityBar() {
   }
 
   // Battery solar
-  const battLevel = entities?.[entityFor('solar', 'sensor.battery_level')]?.state;
+  const battLevel = entities?.[entityFor('solar')]?.state;
   if (battLevel) {
     const lvl = Number(battLevel);
     let color = 'text-green-400';
@@ -117,7 +115,7 @@ export function ActivityBar() {
   }
 
   // Tempo couleur
-  const tempoCouleur = entities?.[entityFor('tempo', 'sensor.tempo_current_color')]?.state;
+  const tempoCouleur = entities?.[entityFor('tempo')]?.state;
   if (tempoCouleur) {
     const colorMap: Record<string, { color: string; bgColor: string }> = {
       Rouge: { color: 'text-red-400', bgColor: 'bg-red-400/10' },
@@ -136,7 +134,7 @@ export function ActivityBar() {
   }
 
   // Chambre temp
-  const chambreTemp = entities?.[entityFor('temp', 'sensor.bedroom_temperature')]?.state;
+  const chambreTemp = entities?.[entityFor('temp')]?.state;
   if (chambreTemp) {
     pills.push({
       id: 'chambre',
