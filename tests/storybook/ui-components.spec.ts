@@ -195,11 +195,16 @@ test.describe('Layout/Panel', () => {
 // ── Layout/BottomNav ──────────────────────────────────────────────────────────
 
 test.describe('Layout/BottomNav', () => {
-  test('renders navigation buttons', async ({ page }) => {
+  // Le dock ne connaît plus que les panneaux créés par l'utilisateur : hors
+  // mode édition et sans panneau, il ne s'affiche pas du tout.
+  test('reste absent tant qu’aucun panneau n’y est ajouté', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', err => errors.push(err.message));
+
     await page.goto('/iframe.html?id=layout-bottomnav--default&viewMode=story');
     await page.waitForLoadState('networkidle');
-    const buttons = page.getByRole('button');
-    const count = await buttons.count();
-    expect(count).toBeGreaterThanOrEqual(1);
+
+    await expect(page.locator('nav')).toHaveCount(0);
+    expect(errors).toHaveLength(0);
   });
 });

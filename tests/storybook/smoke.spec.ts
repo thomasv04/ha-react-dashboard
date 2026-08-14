@@ -28,14 +28,9 @@ const STORIES: { id: string; label: string }[] = [
   { id: 'layout-panel--default', label: 'Panel/Default' },
   { id: 'layout-panel--wide', label: 'Panel/Wide' },
   { id: 'layout-panel--no-icon', label: 'Panel/NoIcon' },
-  // ── Panels ────────────────────────────────────────────────────────────────
-  { id: 'panels-camerapanel--default', label: 'CameraPanel/Default' },
-  { id: 'panels-flowerspanel--default', label: 'FlowersPanel/Default' },
-  { id: 'panels-lightspanel--default', label: 'LightsPanel/Default' },
-  { id: 'panels-notificationspanel--default', label: 'NotificationsPanel/Default' },
-  { id: 'panels-securitypanel--default', label: 'SecurityPanel/Default' },
-  { id: 'panels-shutterspanel--default', label: 'ShuttersPanel/Default' },
-  { id: 'panels-vacuumpanel--default', label: 'VacuumPanel/Default' },
+  // Les sept panneaux intégrés ont disparu avec leurs stories : ils visaient
+  // les entités d'une seule maison. `Layout/Panel` reste — c'est le composant
+  // générique dont se servent les panneaux personnalisés.
   // ── UI: Button ────────────────────────────────────────────────────────────
   { id: 'ui-button--default', label: 'Button/Default' },
   { id: 'ui-button--outline', label: 'Button/Outline' },

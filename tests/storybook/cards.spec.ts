@@ -82,25 +82,19 @@ test.describe('ShortcutsCard', () => {
     await expect(page.getByText('RACCOURCIS')).toBeVisible();
   });
 
-  test('renders all 7 shortcut buttons', async ({ page }) => {
-    // Shortcut buttons — check non-accented labels and total count
-    await expect(page.getByRole('button', { name: /Volets/ })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Aspirateur/ })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Plantes/ })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Notifs/ })).toBeVisible();
-    const buttons = page.getByRole('button');
-    expect(await buttons.count()).toBe(7);
+  // Les sept raccourcis par défaut pointaient vers les panneaux intégrés, qui
+  // visaient les entités d'une seule maison. Sans configuration, la card n'a
+  // donc plus rien à montrer — et le dit.
+  test('sans configuration, affiche son état vide plutôt que des raccourcis', async ({ page }) => {
+    await expect(page.getByText(/Aucun raccourci|No shortcut/)).toBeVisible();
+    expect(await page.getByRole('button').count()).toBe(0);
   });
 
-  test('security button shows alarm state (Désarmée)', async ({ page }) => {
-    // Mock has alarm in 'disarmed' state → should show "Désarmée"
-    await expect(page.getByRole('button', { name: /Désarmée/ })).toBeVisible();
-  });
-
-  test('clicking a shortcut button does not throw a JS error', async ({ page }) => {
+  test('ne lève pas d’erreur JS au rendu', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', err => errors.push(err.message));
-    await page.getByRole('button', { name: /Volets/ }).click();
+    await page.reload();
+    await page.waitForLoadState('networkidle');
     expect(errors).toHaveLength(0);
   });
 });
