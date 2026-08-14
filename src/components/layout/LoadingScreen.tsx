@@ -17,6 +17,12 @@ interface LoadingScreenProps {
   stage: BootStage;
   /** Proposé quand le démarrage semble bloqué (affichage dégradé) */
   onSkip?: () => void;
+  /**
+   * Proposé quand le blocage n'a pas d'issue dégradée — typiquement l'étape de
+   * connexion, où il n'y a rien à afficher sans Home Assistant. Sans cette
+   * porte de sortie, l'écran se contentait d'avertir puis tournait sans fin.
+   */
+  onRetry?: () => void;
 }
 
 /**
@@ -31,7 +37,7 @@ interface LoadingScreenProps {
  * 3. **Il ressemble déjà au dashboard.** Même fond, même verre : pas de flash
  *    blanc ni de rupture visuelle au moment où le dashboard prend la main.
  */
-export function LoadingScreen({ stage, onSkip }: LoadingScreenProps) {
+export function LoadingScreen({ stage, onSkip, onRetry }: LoadingScreenProps) {
   const { t } = useI18n();
   const [stuck, setStuck] = useState(false);
   const currentIndex = STAGES.indexOf(stage);
@@ -121,6 +127,14 @@ export function LoadingScreen({ stage, onSkip }: LoadingScreenProps) {
               <TriangleAlert size={14} className='shrink-0 mt-0.5' />
               <span>{t('dashboard.boot.slow')}</span>
             </div>
+            {onRetry && (
+              <button
+                onClick={onRetry}
+                className='w-full h-11 rounded-2xl bg-blue-500 hover:bg-blue-400 text-sm font-semibold text-white active:scale-[0.98] transition-transform'
+              >
+                {t('dashboard.boot.retry')}
+              </button>
+            )}
             {onSkip && (
               <button
                 onClick={onSkip}

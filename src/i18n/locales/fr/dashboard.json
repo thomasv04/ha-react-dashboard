@@ -22,7 +22,8 @@
     "config": "Chargement du tableau de bord",
     "widgets": "Préparation des widgets",
     "slow": "C'est plus long que d'habitude. La connexion est peut-être lente ou le serveur injoignable.",
-    "continueOffline": "Continuer quand même"
+    "continueOffline": "Continuer quand même",
+    "retry": "Réessayer"
   },
   "pack": "Réorganiser",
   "packTooltip": "Referme les trous de la mise en page (breakpoint affiché uniquement)"

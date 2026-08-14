@@ -93,7 +93,11 @@ function App({ hassUrl: propHassUrl, hassToken: propHassToken }: AppProps = {}) 
         {/* `loading` : le slot existait mais n'était pas utilisé, on héritait de
             l'écran d'attente par défaut de @hakit — un spinner muet, impossible
             à distinguer d'un blocage. C'est la première des trois étapes. */}
-        <HassConnect hassUrl={hassUrl} hassToken={hassToken} loading={<LoadingScreen stage='connect' />}>
+        <HassConnect
+          hassUrl={hassUrl}
+          hassToken={hassToken}
+          loading={<LoadingScreen stage='connect' onRetry={() => window.location.reload()} />}
+        >
           <HAThrottlePatch />
           <MotionConfigBridge>
             <ToastProvider>

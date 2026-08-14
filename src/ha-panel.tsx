@@ -45,7 +45,11 @@ function PanelApp({ hassUrl, hassToken }: PanelAppProps) {
     <I18nProvider>
       <ThemeContextProvider>
         <BackgroundLayer />
-        <HassConnect hassUrl={hassUrl} hassToken={hassToken} loading={<LoadingScreen stage='connect' />}>
+        <HassConnect
+          hassUrl={hassUrl}
+          hassToken={hassToken}
+          loading={<LoadingScreen stage='connect' onRetry={() => window.location.reload()} />}
+        >
           <ToastProvider>
             <HAToastBridge />
             <Dashboard />

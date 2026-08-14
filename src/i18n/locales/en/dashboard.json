@@ -22,7 +22,8 @@
     "config": "Loading dashboard",
     "widgets": "Preparing widgets",
     "slow": "This is taking longer than usual. The connection may be slow or the server unreachable.",
-    "continueOffline": "Continue anyway"
+    "continueOffline": "Continue anyway",
+    "retry": "Retry"
   },
   "pack": "Reflow",
   "packTooltip": "Close gaps in the layout (current breakpoint only)"
