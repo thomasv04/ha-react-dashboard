@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION_FAST } from '@/lib/motion-tokens';
-import { PencilLine, Check, X, CloudUpload, Plus, Loader2, LayoutGrid } from 'lucide-react';
+import { PencilLine, Check, X, CloudUpload, Plus, Loader2, LayoutGrid, HelpCircle } from 'lucide-react';
 import { useUser } from '@hakit/core';
 import { useDashboardLayout, useEditMode } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -10,6 +10,7 @@ import { useWallPanel } from '@/context/WallPanelContext';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 import { AddWidgetModal } from '@/components/layout/AddWidgetModal';
+import { HelpModal } from '@/components/onboarding/HelpModal';
 import { useI18n } from '@/i18n';
 import { useIsMobile } from '@/hooks/useIsMobile';
 
@@ -33,6 +34,7 @@ export function EditButton() {
   const { saveConfig, isSaving } = useDashboardConfig();
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   if (!user?.is_admin) return null;
 
@@ -55,7 +57,11 @@ export function EditButton() {
 
   return (
     <>
-      <div className='fixed top-4 right-4 z-50 flex items-center gap-2'>
+      {/* `left-16` + `flex-wrap` : la barre partait vers la gauche sans limite
+          et, sur mobile, passait sous le bouton Apparence (fixe en haut à
+          gauche) puis débordait de l'écran. Bornée à droite du bouton, elle
+          repasse à la ligne au lieu de recouvrir quoi que ce soit. */}
+      <div className='fixed top-4 left-16 right-4 z-50 flex flex-wrap items-center justify-end gap-2'>
         <AnimatePresence>
           {isEditMode && (
             <motion.div
@@ -66,13 +72,29 @@ export function EditButton() {
               transition={{ duration: DURATION_FAST }}
               className='flex items-center gap-2'
             >
+              {/* Aide — visite guidée et documentation */}
+              <button
+                onClick={() => setShowHelp(true)}
+                data-tour='help'
+                data-testid='help-button'
+                title={t('help.title')}
+                aria-label={t('help.title')}
+                className='p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white/70 hover:text-white transition-colors backdrop-blur-sm'
+              >
+                <HelpCircle size={15} />
+              </button>
+
               {/* Bouton Ajouter */}
+              {/* `title` : sous 640 px le libellé disparaît, le bouton se
+                  retrouverait sans nom accessible. */}
               <button
                 onClick={() => setShowAddModal(true)}
-                className='flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 text-blue-300 hover:text-blue-100 text-sm font-medium transition-colors backdrop-blur-sm'
+                data-tour='add'
+                title={t('common.add')}
+                className='flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 text-blue-300 hover:text-blue-100 text-sm font-medium transition-colors backdrop-blur-sm'
               >
                 <Plus size={15} />
-                {t('common.add')}
+                <span className='hidden sm:inline'>{t('common.add')}</span>
               </button>
 
               {/* Réorganiser — referme les trous de la mise en page courante.
@@ -92,11 +114,13 @@ export function EditButton() {
               {/* Bouton Sauvegarder */}
               <button
                 onClick={handleSave}
+                data-tour='save'
                 disabled={isSaving}
-                className='flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 text-green-300 hover:text-green-100 text-sm font-medium transition-colors backdrop-blur-sm disabled:opacity-50'
+                title={t('common.save')}
+                className='flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 text-green-300 hover:text-green-100 text-sm font-medium transition-colors backdrop-blur-sm disabled:opacity-50'
               >
                 {isSaving ? <Loader2 size={15} className='animate-spin' /> : <CloudUpload size={15} />}
-                {isSaving ? t('dashboard.saving') : t('common.save')}
+                <span className='hidden sm:inline'>{isSaving ? t('dashboard.saving') : t('common.save')}</span>
               </button>
 
               {/* Bouton Annuler */}
@@ -115,6 +139,7 @@ export function EditButton() {
         <motion.button
           onClick={() => setEditMode(!isEditMode)}
           whileTap={{ scale: 0.92 }}
+          data-tour='edit'
           title={isEditMode ? t('dashboard.editTooltipExit') : t('dashboard.editTooltipEnter')}
           className={`p-2.5 rounded-xl border transition-colors backdrop-blur-sm ${
             isEditMode
@@ -128,6 +153,9 @@ export function EditButton() {
 
       {/* Modal ajout de widget */}
       <AnimatePresence>{showAddModal && <AddWidgetModal onClose={() => setShowAddModal(false)} />}</AnimatePresence>
+
+      {/* Aide / documentation */}
+      <AnimatePresence>{showHelp && <HelpModal onClose={() => setShowHelp(false)} />}</AnimatePresence>
     </>
   );
 }

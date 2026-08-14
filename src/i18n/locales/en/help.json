@@ -1,0 +1,43 @@
+{
+  "title": "Help",
+  "subtitle": "Guided tours through each part of the dashboard.",
+  "launch": "Start the tour",
+  "sections": {
+    "basics": {
+      "title": "First steps",
+      "body": "Pages, edit mode, adding a widget, saving. The tour to run first."
+    },
+    "widgets": {
+      "title": "Add and arrange widgets",
+      "body": "Browse the catalogue, bind an entity, move and resize your cards."
+    },
+    "panels": {
+      "title": "Set up a panel",
+      "body": "Build a full-screen panel out of blocks, then add it to the bottom dock."
+    },
+    "appearance": {
+      "title": "Look and wall panel",
+      "body": "Themes, wallpaper, card opacity, and the screensaver mode for a wall-mounted tablet."
+    },
+    "events": {
+      "title": "Open modals from Home Assistant",
+      "body": "Fire an event from any automation to show a modal or a toast on every dashboard."
+    },
+    "releaseNotes": {
+      "title": "What's new",
+      "body": "The changes brought by the latest version."
+    }
+  },
+  "events": {
+    "intro": "The dashboard listens to two custom events on the Home Assistant WebSocket. Any automation, script or Developer Tools > Events can fire them — every open dashboard reacts at once.",
+    "modalDesc": "A centred modal: title, markdown content, and action buttons that call a service.",
+    "toastDesc": "A discreet notification in the corner, auto-dismissed unless made persistent.",
+    "preview": "Preview",
+    "copied": "Copied",
+    "demoModalTitle": "Modal preview",
+    "demoModalBody": "This is what an automation firing `ha_dashboard_modal` would display.",
+    "demoToastTitle": "Toast preview",
+    "demoToastBody": "Fired locally — no Home Assistant event involved.",
+    "tip": "Test without writing an automation: Developer Tools > Events, event type ha_dashboard_toast, then paste the event_data block."
+  }
+}

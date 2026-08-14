@@ -47,7 +47,7 @@ export const LEGACY_DEFAULT_WIDGET_CONFIGS: WidgetConfigs = {
       { entityId: 'camera.hallway', name: 'Couloir' },
     ],
     selectorEntity: 'input_select.camera_selector',
-    streamMode: 'mjpeg',
+    streamMode: 'auto',
   },
   weather: {
     type: 'weather',
@@ -78,22 +78,8 @@ export const LEGACY_DEFAULT_WIDGET_CONFIGS: WidgetConfigs = {
   },
   shortcuts: {
     type: 'shortcuts',
-    shortcuts: [
-      { id: 'volets', label: 'Volets', icon: 'Blinds', panelId: 'volets', color: 'from-blue-500 to-cyan-400' },
-      { id: 'lumieres', label: 'Lumières', icon: 'Lightbulb', panelId: 'lumieres', color: 'from-yellow-500 to-amber-400' },
-      {
-        id: 'security',
-        label: 'Sécurité',
-        icon: 'ShieldHalf',
-        panelId: 'security',
-        color: 'from-green-500 to-emerald-400',
-        statusEntity: 'alarm_control_panel.home_alarm',
-      },
-      { id: 'aspirateur', label: 'Aspirateur', icon: 'Cpu', panelId: 'aspirateur', color: 'from-purple-500 to-violet-400' },
-      { id: 'flowers', label: 'Plantes', icon: 'Flower2', panelId: 'flowers', color: 'from-lime-500 to-green-400' },
-      { id: 'notifications', label: 'Notifs', icon: 'Bell', panelId: 'notifications', color: 'from-orange-500 to-red-400' },
-      { id: 'cameras', label: 'Caméras', icon: 'Camera', panelId: 'cameras', color: 'from-slate-500 to-gray-400' },
-    ],
+    // Vide : les raccourcis pointent vers des panneaux que l'utilisateur crée.
+    shortcuts: [],
   },
   greeting: {
     type: 'greeting',
@@ -214,8 +200,9 @@ export const LEGACY_WIDGET_FIELD_DEFS: Record<string, WidgetFieldDef[]> = {
       label: 'Mode de streaming',
       fieldType: 'select',
       options: [
-        { value: 'mjpeg', label: 'MJPEG (faible latence)' },
-        { value: 'hls', label: 'HLS (meilleure compression)' },
+        { value: 'auto', label: 'Auto (HLS si la caméra le supporte)' },
+        { value: 'mjpeg', label: 'MJPEG (caméras nativement MJPEG)' },
+        { value: 'hls', label: 'HLS (flux RTSP, fluide)' },
       ],
     },
     { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },

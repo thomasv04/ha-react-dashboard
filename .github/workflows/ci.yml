@@ -53,6 +53,62 @@ jobs:
       - name: TypeScript check
         run: npm run type-check
 
+  # ── Conformité de l'empaquetage ───────────────────────────────────────────
+  # `hassfest` valide le manifeste au regard des règles de HA, `hacs/action`
+  # valide `hacs.json` et la structure du dépôt. Les deux échouent au moindre
+  # champ manquant — c'est ce qui casse une installation HACS, pas le code.
+  validate:
+    name: Hassfest & HACS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Hassfest
+        uses: home-assistant/actions/hassfest@master
+
+      - name: HACS
+        uses: hacs/action@main
+        with:
+          category: integration
+          # `brands` : réservé aux intégrations du dépôt HACS par défaut ; ce
+          # dépôt s'ajoute en dépôt personnalisé.
+          ignore: brands
+
+  # ── Intégration Home Assistant (Python) ───────────────────────────────────
+  integration:
+    name: HA Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 3.14 : c'est ce qu'exige le harnais qui embarque HA 2026.8.1, la version
+      # visée en production. (Non installable sous Windows — HA importe `fcntl`.)
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          cache: pip
+          # Sans ce chemin, le cache cherche `requirements.txt` / `pyproject.toml`
+          # à la racine, n'en trouve aucun et fait échouer l'étape. Les
+          # dépendances Python de ce dépôt tiennent dans ce seul fichier.
+          cache-dependency-path: requirements-test.txt
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # Une des vues sert le bundle : sans lui, le test correspondant échoue.
+      - name: Build the Lovelace card bundle
+        run: |
+          npm ci
+          npm run build:panel
+
+      - name: Install test dependencies
+        run: pip install -r requirements-test.txt
+
+      - name: Run integration tests
+        run: pytest
+
   # ── Job 3: Unit tests ─────────────────────────────────────────────────────
   test:
     name: Unit Tests

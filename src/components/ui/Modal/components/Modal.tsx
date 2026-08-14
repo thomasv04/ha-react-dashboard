@@ -6,6 +6,7 @@ import { X } from 'lucide-react';
 import { useModal, type Modal, type ModalAction } from '@/context/ModalContext';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
+import DOMPurify from 'dompurify';
 
 // Safe content renderer
 function ModalContentRenderer({ content }: { content: Modal['content'] }) {
@@ -25,26 +26,24 @@ function ModalContentRenderer({ content }: { content: Modal['content'] }) {
     }
 
     if (type === 'html') {
-      // For HTML, we recommend receiving pre-sanitized content from HA
-      // DO NOT use dangerouslySetInnerHTML with unsanitized user input
+      // Ce contenu vient de l'événement `ha_dashboard_modal` : n'importe quelle
+      // automatisation peut l'émettre, et son texte provient souvent d'une
+      // source externe (flux, notification, capteur). L'injecter tel quel était
+      // une XSS sur l'origine du dashboard — un commentaire « recommandé
+      // pré-assaini » n'est pas un contrôle.
       return (
         <div
           className='text-white/80 text-sm leading-relaxed prose prose-invert prose-sm max-w-none'
-          dangerouslySetInnerHTML={{ __html: value }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(value) }}
         />
       );
     }
 
     if (type === 'markdown') {
-      // For markdown, recommend using marked + DOMPurify
-      // Installation: npm install marked dompurify @types/dompurify
-      // For now, fallback to plain text with a note
-      return (
-        <div className='text-white/80 text-sm leading-relaxed'>
-          <p className='text-yellow-400/80 text-xs mb-2'>⚠️ Markdown rendering requires 'marked' + 'dompurify' libraries</p>
-          <pre className='whitespace-pre-wrap font-sans'>{value}</pre>
-        </div>
-      );
+      // Pas de moteur markdown embarqué : rendu tel quel, en respectant les
+      // retours à la ligne. Afficher un avertissement de développeur à
+      // l'utilisateur final n'aidait personne.
+      return <p className='text-white/80 text-sm leading-relaxed whitespace-pre-wrap'>{value}</p>;
     }
   }
 

@@ -35,10 +35,7 @@ export function SettingsContent({ onClose }: { onClose: () => void }) {
   return (
     <div className='flex h-full'>
       {/* ── Sidebar ── */}
-      <div
-        className='w-52 flex-shrink-0 flex flex-col rounded-l-2xl border-r border-white/6'
-        style={{ background: 'rgba(6, 8, 22, 0.98)' }}
-      >
+      <div className='w-52 flex-shrink-0 flex flex-col rounded-l-2xl border-r border-white/6' style={{ background: 'rgba(0, 0, 0, 0.18)' }}>
         {/* Header */}
         <div className='flex items-center gap-2.5 px-5 pt-5 pb-5 border-b border-white/6'>
           <div className='p-1.5 rounded-lg bg-blue-500/20'>

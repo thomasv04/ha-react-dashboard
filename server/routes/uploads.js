@@ -9,6 +9,25 @@ import { JSDOM } from 'jsdom';
 
 const DOMPurify = createDOMPurify(new JSDOM('').window);
 
+/**
+ * Extension de sortie **imposée** par type déclaré.
+ *
+ * L'extension venait de `originalname`, contrôlé par le client, et le filtre ne
+ * regardait que `file.mimetype` — c'est-à-dire le `Content-Type` de la partie
+ * multipart, tout aussi contrôlé par le client. Envoyer `Content-Type: image/png`
+ * avec `filename="x.html"` écrivait donc `<uuid>.html` dans un dossier servi par
+ * `express.static` : XSS stockée sur l'origine du dashboard. Idem en `.svg`.
+ * Le nom de fichier ne doit plus rien emprunter à la requête.
+ */
+const MIME_TO_EXT = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+  'image/gif': '.gif',
+  'image/avif': '.avif',
+  'image/svg+xml': '.svg',
+};
+
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
 const ALLOWED_ICON_MIME_TYPES = new Set(['image/png', 'image/webp', 'image/svg+xml']);
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -28,10 +47,7 @@ export function uploadsRouter(db, uploadsDir) {
   // ── multer storage ─────────────────────────────────────────────────────────
   const storage = multer.diskStorage({
     destination: (_req, _file, cb) => cb(null, uploadsDir),
-    filename: (_req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase();
-      cb(null, `${randomUUID()}${ext}`);
-    },
+    filename: (_req, file, cb) => cb(null, `${randomUUID()}${MIME_TO_EXT[file.mimetype] ?? '.bin'}`),
   });
 
   const upload = multer({
@@ -93,10 +109,7 @@ export function uploadsRouter(db, uploadsDir) {
 
   const iconStorage = multer.diskStorage({
     destination: (_req, _file, cb) => cb(null, iconsDir),
-    filename: (_req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase();
-      cb(null, `${randomUUID()}${ext}`);
-    },
+    filename: (_req, file, cb) => cb(null, `${randomUUID()}${MIME_TO_EXT[file.mimetype] ?? '.bin'}`),
   });
 
   const iconUpload = multer({

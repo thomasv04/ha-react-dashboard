@@ -17,7 +17,49 @@
 
 ## 🚀 Installation
 
-### **Option 1: Home Assistant Add-on (Recommended)** ⭐
+### **Option 1: Lovelace dashboard via HACS (Recommended)** ⭐
+
+C'est la seule option qui produit un **vrai tableau de bord Lovelace**, donc la seule
+qui permet « définir par défaut sur cet appareil » — ouvrir l'application Home
+Assistant sur son téléphone arrive directement sur le dashboard, en plein écran,
+sans en-tête ni barre latérale.
+
+> Un panneau d'add-on (ingress) ou un panneau custom **ne peut pas** être défini
+> comme tableau de bord par défaut : le sélecteur de HA ne liste que les tableaux
+> de bord Lovelace.
+
+#### Étapes
+
+1. **Ajouter le dépôt à HACS**
+   - HACS → Intégrations → ⋮ → **Dépôt personnalisé**
+   - URL : `https://github.com/thomasv04/ha-react-dashboard`
+   - Catégorie : **Integration**
+   - Installer **HA React Dashboard**, puis redémarrer Home Assistant
+
+2. **Ajouter l'intégration**
+   - Paramètres → Appareils et services → **Ajouter une intégration** → *HA React Dashboard*
+   - Elle crée le tableau de bord **React Dashboard** (visible dans la barre latérale),
+     sert le bundle et expose l'API de persistance.
+
+3. **En faire le tableau de bord par défaut**
+   - Depuis **chaque** téléphone/tablette : Paramètres → Tableaux de bord →
+     *React Dashboard* → **Définir par défaut sur cet appareil**
+
+#### Ce que fait l'intégration
+
+| | |
+|---|---|
+| Bundle | Servi sous `/ha_react_dashboard_static/`, injecté dans le frontend. L'entrée fait 1,5 ko : le dashboard lui-même (≈ 250 ko gz) n'est téléchargé qu'à l'ouverture de la carte. |
+| Tableau de bord | `config/ha_react_dashboard/dashboard.yaml`, une vue en mode panneau contenant `type: custom:ha-react-dashboard-panel`. Modifiable à la main, jamais réécrit. |
+| Plein écran | La carte masque l'en-tête et la barre latérale de HA. Réglable **par appareil** depuis le dashboard : Paramètres → Disposition → Plein écran. `kiosk: false` sur la carte ne change que le défaut. |
+| Persistance | `/api/ha_react_dashboard/*` (config, profils, réglages par appareil, traductions, téléversements) → `.storage/ha_react_dashboard`, avec l'authentification HA. |
+
+> ⚠️ Les icônes SVG téléversées ne sont pas prises en charge dans ce mode
+> (PNG/WebP uniquement) : les nettoyer demanderait un parseur côté Python.
+
+---
+
+### **Option 2: Home Assistant Add-on**
 
 The dashboard runs **directly inside Home Assistant** with no token required, automatic session management, and persistent storage.
 
@@ -45,7 +87,7 @@ The dashboard runs **directly inside Home Assistant** with no token required, au
 
 ---
 
-### **Option 2: Manual SSH Deploy**
+### **Option 3: Manual SSH Deploy**
 
 Build locally, upload via SSH to your Home Assistant instance.
 
@@ -89,7 +131,7 @@ Build locally, upload via SSH to your Home Assistant instance.
 
 ---
 
-### **Option 3: Frontend Integration (Static Files)**
+### **Option 4: Frontend Integration (Static Files)**
 
 Host the built dashboard files directly in Home Assistant's `/www/` folder.
 
@@ -134,6 +176,26 @@ cp .env.example .env
 | `npm run test:run` | Run tests once |
 | `npm run storybook` | Open Storybook (localhost:6006) |
 | `npm run sync` | Sync HA entity/service types for TypeScript |
+| `npm run build:panel` | Build the Lovelace card bundle into `custom_components/ha_react_dashboard/www` |
+| `npm run deploy:integration` | Copie l'intégration dans `/config/custom_components` (essai sans HACS) |
+| `pytest` | Tests de l'intégration Home Assistant (voir ci-dessous) |
+
+#### Tests de l'intégration Python
+
+Le harnais embarque **Home Assistant 2026.8.1** et exige **Python 3.14**.
+
+```bash
+npm run build:panel        # une vue sert ce bundle
+python -m venv .venv-test
+.venv-test/bin/pip install -r requirements-test.txt
+.venv-test/bin/pytest
+```
+
+⚠️ **Linux / macOS uniquement** : `homeassistant/runner.py` importe `fcntl`, absent de Windows — HA 2026 ne s'y importe pas. Sous Windows, passer par Docker, ce qui reproduit exactement la CI :
+
+```bash
+docker run --rm -v "/$PWD://w" -w //w python:3.14-slim sh -c "pip install -q -r requirements-test.txt && pytest"
+```
 
 ### Example Dev Session
 

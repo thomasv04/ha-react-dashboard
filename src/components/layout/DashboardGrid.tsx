@@ -314,7 +314,7 @@ const MemoChildren = memo(function MemoChildren({
   dimmed?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const longPressHandlers = useLongPress(() => {
+  const { handlers: longPressHandlers, moved } = useLongPress(() => {
     if (onLongPress && ref.current) onLongPress(ref.current.getBoundingClientRect());
   }, 500);
   return (
@@ -322,6 +322,9 @@ const MemoChildren = memo(function MemoChildren({
       ref={ref}
       className={`h-full overflow-hidden${isEditMode ? ' pointer-events-none select-none' : ''}${onClick && !isEditMode ? ' cursor-pointer' : ''}`}
       onClick={() => {
+        // Un glissement (jauge de thermostat, curseur de luminosité) se termine
+        // par un `click` sur la card : il ne doit pas ouvrir la fiche.
+        if (moved.current) return;
         if (onClick && ref.current) onClick(ref.current.getBoundingClientRect());
       }}
       {...(onLongPress && !isEditMode ? longPressHandlers : {})}
@@ -358,12 +361,12 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
   const handleMoreInfoClick = useCallback(
     (rect: DOMRect) => {
       if (!widget) return;
-      const config = getWidgetConfig(id);
-      const cfgRecord = config as Record<string, unknown> | undefined;
-      const entityId =
-        (cfgRecord?.entityId as string) ||
-        Object.values(cfgRecord ?? {}).find((v): v is string => typeof v === 'string' && v.includes('.')) ||
-        '';
+      const config = getWidgetConfig(id) as Record<string, unknown> | undefined;
+      // Ne prendre que `entityId` : le repli « premier champ qui ressemble à une
+      // entité » attrapait des entités annexes (le `selectorEntity` d'une card
+      // caméra, par exemple). Les modales qui n'ont pas d'`entityId` en config
+      // résolvent déjà la leur depuis `widgetId`.
+      const entityId = typeof config?.entityId === 'string' ? config.entityId : '';
       openMoreInfo(id, widget.type, entityId, rect);
     },
     [id, widget, getWidgetConfig, openMoreInfo]

@@ -1,28 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Layers, LayoutGrid } from 'lucide-react';
+import { ChevronDown, ChevronUp, Layers } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 
-const BUILTIN_PANELS = [
-  { value: 'volets', label: 'Volets', emoji: '🪟' },
-  { value: 'lumieres', label: 'Lumières', emoji: '💡' },
-  { value: 'security', label: 'Sécurité', emoji: '🛡️' },
-  { value: 'aspirateur', label: 'Aspirateur', emoji: '🤖' },
-  { value: 'flowers', label: 'Plantes', emoji: '🌿' },
-  { value: 'notifications', label: 'Notifications', emoji: '🔔' },
-  { value: 'cameras', label: 'Caméras', emoji: '📷' },
-  { value: 'alarme', label: 'Alarme', emoji: '🚨' },
-];
-
 function getLabel(value: string, customPanels: { id: string; name: string }[]): string {
   if (!value) return '';
-  if (value.startsWith('custom:')) {
-    const id = value.slice(7);
-    return customPanels.find(p => p.id === id)?.name ?? value;
-  }
-  return BUILTIN_PANELS.find(p => p.value === value)?.label ?? value;
+  return customPanels.find(p => p.id === value.replace(/^custom:/, ''))?.name ?? value;
 }
 
 export function PanelSelectField({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
@@ -64,13 +49,12 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
     createPortal(
       <div
         ref={dropRef}
-        className='fixed z-[200] rounded-xl border border-white/12 shadow-2xl overflow-hidden'
+        data-portal-dropdown
+        className='gc-overlay fixed z-[200] rounded-xl overflow-hidden'
         style={{
           top: dropPos.top,
           left: dropPos.left,
           width: dropPos.width,
-          background: 'rgba(12, 16, 40, 0.98)',
-          backdropFilter: 'blur(20px)',
           maxHeight: 320,
           overflowY: 'auto',
         }}
@@ -88,30 +72,8 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
             <span>{t('layout.panelNone')}</span>
           </button>
 
-          {/* Separator + built-in label */}
-          <div className='flex items-center gap-2 px-3 pt-2 pb-1'>
-            <LayoutGrid size={11} className='text-white/25' />
-            <span className='text-[10px] font-semibold text-white/25 uppercase tracking-wider'>{t('layout.panelBuiltin')}</span>
-          </div>
-
-          {BUILTIN_PANELS.map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => select(opt.value)}
-              className={cn(
-                'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-left transition-colors',
-                value === opt.value
-                  ? 'bg-blue-500/15 border border-blue-500/30 text-blue-300'
-                  : 'border border-transparent text-white/70 hover:bg-white/6 hover:text-white/90'
-              )}
-            >
-              <span className='text-base leading-none w-5 text-center'>{opt.emoji}</span>
-              <span className='flex-1'>{opt.label}</span>
-            </button>
-          ))}
-
           {/* Custom panels */}
-          {panels.length > 0 && (
+          {panels.length > 0 ? (
             <>
               <div className='flex items-center gap-2 px-3 pt-2 pb-1'>
                 <Layers size={11} className='text-white/25' />
@@ -136,6 +98,8 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
                 );
               })}
             </>
+          ) : (
+            <p className='px-3 py-2 text-xs text-white/30 leading-relaxed'>{t('layout.panelNoneCreated')}</p>
           )}
         </div>
       </div>,
@@ -153,13 +117,7 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
           open ? 'border-blue-500/40 bg-white/8' : 'border-white/10 hover:border-white/20'
         )}
       >
-        {value ? (
-          value.startsWith('custom:') ? (
-            <Layers size={14} className='text-violet-400/70 flex-shrink-0' />
-          ) : (
-            <span className='text-base leading-none'>{BUILTIN_PANELS.find(p => p.value === value)?.emoji ?? '📋'}</span>
-          )
-        ) : null}
+        {value ? <Layers size={14} className='text-violet-400/70 flex-shrink-0' /> : null}
         <span className={cn('text-sm flex-1 truncate', value ? 'text-white/80' : 'text-white/30')}>
           {displayLabel || t('layout.panelNoneDisplay')}
         </span>

@@ -64,10 +64,9 @@ export function MoreInfoModal() {
           <motion.div
             ref={shellRef}
             key={state.widgetId}
-            className='relative w-full max-w-5xl rounded-3xl md:rounded-[2rem]'
+            data-testid='more-info-modal'
+            className='gc-overlay relative w-full max-w-5xl rounded-3xl md:rounded-[2rem]'
             style={{
-              background: 'linear-gradient(135deg, rgba(15,23,42,0.97), rgba(10,15,30,0.99))',
-              border: '1px solid rgba(255,255,255,0.08)',
               willChange: 'transform, opacity',
               originX: '50%',
               originY: '50%',

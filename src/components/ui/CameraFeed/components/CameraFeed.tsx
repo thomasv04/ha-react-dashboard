@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback, useMemo, memo } from 'react';
 import { useStreamActive } from '@/hooks/useStreamActive';
-import { Camera } from 'lucide-react';
+import { Camera, Loader2 } from 'lucide-react';
 import { useCamera, useHass } from '@hakit/core';
 import type { FilterByDomain, EntityName } from '@hakit/core';
 import { cn } from '@/lib/utils';
@@ -75,6 +75,15 @@ const MjpegFeed = memo(function MjpegFeed({ entityId, className, onProtocol }: C
   );
 });
 
+/** Ce dont on a besoin de hls.js, sans le charger pour le typage. */
+interface HlsInstance {
+  destroy: () => void;
+  startLoad: () => void;
+}
+
+/** Un flux figé au-delà de ce délai est relancé. */
+const STALL_TIMEOUT_MS = 8_000;
+
 /**
  * HLS feed — uses hls.js to play an HLS stream in a `<video>` element.
  * Better compression (H.264) but higher latency (~2-5s buffer).
@@ -82,18 +91,40 @@ const MjpegFeed = memo(function MjpegFeed({ entityId, className, onProtocol }: C
 const HlsFeed = memo(function HlsFeed({ entityId, className, onProtocol }: CameraFeedProps) {
   const cam = useCamera(entityId as FilterByDomain<EntityName, 'camera'>, { poster: false });
   const videoRef = useRef<HTMLVideoElement>(null);
+  const holderRef = useRef<HTMLDivElement>(null);
+  const hlsRef = useRef<HlsInstance | null>(null);
   const [hlsFailed, setHlsFailed] = useState(false);
+  // Tant que la première image n'est pas décodée, la `<video>` est un
+  // rectangle noir : indiscernable d'une caméra en panne.
+  const [ready, setReady] = useState(false);
   // Même garde-fou que le MJPEG : HLS télécharge des segments en continu.
-  const active = useStreamActive(videoRef);
+  //
+  // L'observation porte sur le conteneur, jamais sur la `<video>` : au premier
+  // rendu l'URL du flux n'est pas encore résolue, la `<video>` n'existe donc
+  // pas. L'`IntersectionObserver` se posait alors sur `null` et n'était plus
+  // jamais recréé — `active` restait faux, hls.js ne s'attachait pas, et la
+  // caméra restait grise indéfiniment.
+  const active = useStreamActive(holderRef);
 
   const streamUrl = cam.stream.url;
   const mjpegUrl = cam.mjpeg.url;
 
+  // Le badge doit refléter ce qui est affiché, pas ce qui est en train de se
+  // charger. Le signaler depuis le corps du rendu déclenchait un `setState` du
+  // parent pendant le rendu, et laissait « MJPEG » affiché une fois le flux HLS
+  // arrivé — le seul moment où le protocole était corrigé était l'attachement
+  // de hls.js, qui n'a pas lieu quand la card est hors champ.
+  useEffect(() => {
+    if (hlsFailed || !streamUrl) {
+      if (mjpegUrl) onProtocol?.('MJPEG');
+    } else {
+      onProtocol?.('HLS');
+    }
+  }, [hlsFailed, streamUrl, mjpegUrl, onProtocol]);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !streamUrl || !active) return;
-
-    onProtocol?.('HLS');
 
     let hls: { destroy: () => void } | null = null;
     let cancelled = false;
@@ -108,6 +139,15 @@ const HlsFeed = memo(function HlsFeed({ entityId, className, onProtocol }: Camer
           backBufferLength: 0,
           maxBufferLength: 8,
           maxMaxBufferLength: 15,
+          // Par défaut hls.js se tient à trois segments du direct. Home
+          // Assistant annonce `TARGETDURATION: 6` : ça faisait près de 20 s de
+          // retard sur une sonnette, mesuré sur une vraie installation. Et
+          // quand le lecteur décrochait davantage, il sautait d'un coup au
+          // direct — c'est ce qu'on voyait comme un « gel » suivi d'un bond.
+          //
+          // Un seul segment de marge suffit à absorber une hoquet réseau.
+          liveSyncDurationCount: 1,
+          liveMaxLatencyDurationCount: 4,
           xhrSetup: (xhr, url) => {
             try {
               const u = new URL(url, window.location.href);
@@ -127,6 +167,7 @@ const HlsFeed = memo(function HlsFeed({ entityId, className, onProtocol }: Camer
         instance.loadSource(streamUrl);
         instance.attachMedia(video);
         hls = instance;
+        hlsRef.current = instance;
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = streamUrl;
       }
@@ -135,48 +176,99 @@ const HlsFeed = memo(function HlsFeed({ entityId, className, onProtocol }: Camer
     return () => {
       cancelled = true;
       hls?.destroy();
+      hlsRef.current = null;
     };
   }, [streamUrl, onProtocol, active]);
 
-  if (!streamUrl && !mjpegUrl) {
-    return (
-      <div className={cn('flex items-center justify-center text-white/20', className)}>
-        <Camera size={28} />
-      </div>
-    );
-  }
+  // Une nouvelle URL de flux repart d'une image noire : le voile de chargement
+  // doit revenir, sinon on afficherait le dernier cadre de l'ancienne caméra.
+  useEffect(() => setReady(false), [streamUrl]);
 
-  // Fallback to MJPEG if HLS failed or stream URL not available
-  if (hlsFailed || !streamUrl) {
-    if (mjpegUrl) {
-      onProtocol?.('MJPEG');
-      return <img src={mjpegUrl} className={cn('object-cover', className)} alt='' referrerPolicy='no-referrer' />;
-    }
-    return (
-      <div className={cn('flex items-center justify-center text-white/20', className)}>
-        <Camera size={28} />
-      </div>
-    );
-  }
+  /**
+   * Chien de garde : un flux HLS peut se figer sans lever d'erreur — segment
+   * manquant, caméra qui hoquette, réseau qui tousse. hls.js n'en sort pas
+   * toujours seul, et l'image restait alors gelée indéfiniment.
+   *
+   * ponytail: relance simplement le chargement. Si la caméra elle-même est
+   * tombée, ça retentera toutes les 8 s sans jamais abandonner — suffisant pour
+   * un mur d'images, à revoir si on veut afficher « caméra injoignable ».
+   */
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !active || !ready) return;
 
-  return <video ref={videoRef} autoPlay muted playsInline className={cn('object-cover', className)} />;
+    let last = -1;
+    const timer = setInterval(() => {
+      if (video.paused || video.seeking) return;
+      if (video.currentTime === last) {
+        hlsRef.current?.startLoad();
+      }
+      last = video.currentTime;
+    }, STALL_TIMEOUT_MS);
+
+    return () => clearInterval(timer);
+  }, [active, ready, streamUrl]);
+
+  // Repli MJPEG tant que l'URL du flux n'est pas résolue, ou si HLS a échoué.
+  const fallback = hlsFailed || !streamUrl;
+
+  // Le conteneur reste monté quoi qu'il arrive : c'est la cible de
+  // l'`IntersectionObserver`, et la `<video>` garde son élément d'un rendu à
+  // l'autre au lieu d'être détruite puis recréée quand le flux arrive.
+  return (
+    <div ref={holderRef} className={cn('relative', className)}>
+      {fallback &&
+        (mjpegUrl ? (
+          <img src={mjpegUrl} className='absolute inset-0 w-full h-full object-cover' alt='' referrerPolicy='no-referrer' />
+        ) : (
+          <div className='absolute inset-0 flex items-center justify-center text-white/20'>
+            <Camera size={28} />
+          </div>
+        ))}
+
+      {/* Voile de chargement : le temps que la première image soit décodée, la
+          `<video>` est noire — on ne distingue pas « ça arrive » de « en
+          panne ». Pas de voile quand le repli MJPEG montre déjà une image. */}
+      {!fallback && !ready && (
+        <div className='absolute inset-0 flex items-center justify-center bg-black/40 text-white/40'>
+          <Loader2 size={24} className='animate-spin' />
+        </div>
+      )}
+
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        playsInline
+        onLoadedData={() => setReady(true)}
+        className={cn('w-full h-full object-cover', fallback && 'opacity-0')}
+      />
+    </div>
+  );
 });
 
 /**
  * Displays a HA camera entity as a live stream.
  *
  * `streamMode` controls the streaming strategy:
- * - `'mjpeg'` (default) — Single `<img>` tag using HA's MJPEG proxy stream.
- *   One persistent HTTP connection, ~100-300ms latency, zero JS overhead.
+ * - `'auto'` (default) — HLS dès que la caméra expose un vrai flux, MJPEG sinon.
+ * - `'mjpeg'` — Single `<img>` tag using HA's MJPEG proxy stream.
+ *   One persistent HTTP connection, zero JS overhead — mais pour une caméra
+ *   RTSP, HA fabrique ce flux en repollant `camera_image()`, ce qui plafonne
+ *   souvent à ~0,3 image/s. À réserver aux caméras nativement MJPEG.
  * - `'hls'` — hls.js-based `<video>` with HLS stream. Better compression
  *   (H.264) but ~2-5s latency due to buffering. Falls back to MJPEG on error.
  *
  * Calls `onProtocol` once the active protocol is determined.
  */
-export function CameraFeed({ entityId, className, streamMode = 'mjpeg', onProtocol }: CameraFeedProps) {
+export function CameraFeed({ entityId, className, streamMode = 'auto', onProtocol }: CameraFeedProps) {
   // Booléen dérivé : un flux caméra remonté à chaque update d'entité
   // relançait la connexion MJPEG/HLS pour rien.
   const exists = useHass(s => !!s.entities?.[entityId]);
+  // `CAMERA_SUPPORT_STREAM` (bit 2) : la caméra a un vrai flux vidéo côté HA.
+  const supportsStream = useHass(
+    s => !!(((s.entities?.[entityId]?.attributes as { supported_features?: number })?.supported_features ?? 0) & 2)
+  );
 
   if (!exists) {
     return (
@@ -186,7 +278,7 @@ export function CameraFeed({ entityId, className, streamMode = 'mjpeg', onProtoc
     );
   }
 
-  if (streamMode === 'hls') {
+  if (streamMode === 'hls' || (streamMode === 'auto' && supportsStream)) {
     return <HlsFeed entityId={entityId} className={className} onProtocol={onProtocol} />;
   }
 

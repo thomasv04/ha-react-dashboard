@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Copy, Check, Server, Download, Upload, AlertTriangle } from 'lucide-react';
+import { Copy, Check, Server, Download, Upload, AlertTriangle, Compass } from 'lucide-react';
+import { startTour } from '@/components/onboarding/TourOverlay';
 import { useI18n } from '@/i18n';
-import { apiUrl } from '@/lib/api-base';
+import { apiFetch, isPanelMode } from '@/lib/api-base';
 import { useTheme } from '@/context/ThemeContext';
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 import { encodeConfig, decodeConfig, type ConfigSnapshot } from '@/lib/config-string';
@@ -37,7 +38,13 @@ export function SystemSection() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    fetch(apiUrl('/api/system/ingress-url'))
+    // L'URL d'ingress n'a de sens que servi par l'add-on. En carte Lovelace,
+    // l'adresse du dashboard est celle du tableau de bord HA lui-même.
+    if (isPanelMode()) {
+      setLoading(false);
+      return;
+    }
+    apiFetch('/api/system/ingress-url')
       .then(r => r.json())
       .then(data => setIngressPath(data.url ?? null))
       .catch(() => setIngressPath(null))
@@ -127,6 +134,20 @@ export function SystemSection() {
 
   return (
     <div className='flex flex-col gap-7'>
+      {/* ── Visite guidée ── */}
+      <div>
+        <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-3 flex items-center gap-2'>
+          <Compass size={12} /> {t('tour.title')}
+        </h3>
+        <p className='text-white/40 text-xs mb-4 leading-relaxed'>{t('tour.replayDesc')}</p>
+        <button
+          onClick={() => startTour('basics')}
+          className='flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/8 border border-white/12 text-white/70 hover:bg-white/12 hover:text-white transition-colors text-xs font-semibold'
+        >
+          <Compass size={12} /> {t('tour.replay')}
+        </button>
+      </div>
+
       {/* ── Ingress URL ── */}
       <div>
         <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-3 flex items-center gap-2'>

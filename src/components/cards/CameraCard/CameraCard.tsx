@@ -11,33 +11,28 @@ import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { CameraCardConfig } from '@/types/widget-configs';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
+import { useI18n } from '@/i18n';
 
 interface Cam {
   entityId: string;
   name: string;
 }
 
-const DEFAULT_CAMERAS: Cam[] = [
-  { entityId: 'camera.front_door', name: 'Entrée' },
-  { entityId: 'camera.kitchen', name: 'Cuisine' },
-  { entityId: 'camera.living_room', name: 'Salon' },
-  { entityId: 'camera.hallway', name: 'Couloir' },
-];
-
 export function CameraCard() {
+  const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<CameraCardConfig>(widgetId || 'camera');
-  const cameras: Cam[] = config?.cameras?.length ? config.cameras : DEFAULT_CAMERAS;
-  const selectorEntity = config?.selectorEntity ?? 'input_select.camera_selector';
-  const streamMode = config?.streamMode ?? 'mjpeg';
+  const cameras: Cam[] = config?.cameras ?? [];
+  const selectorEntity = config?.selectorEntity ?? '';
+  const streamMode = config?.streamMode ?? 'auto';
 
   const { helpers } = useHass();
   const entities = useEntities([selectorEntity]);
   const playFeedback = useSoundFeedback();
 
   const haSelected = entities[selectorEntity]?.state as string | undefined;
-  const [localSelected, setLocalSelected] = useState<string>(cameras[0].name);
+  const [localSelected, setLocalSelected] = useState<string>(cameras[0]?.name ?? '');
   const [protocol, setProtocol] = useState<StreamProtocol>(null);
   const selected = haSelected ?? localSelected;
 
@@ -54,6 +49,9 @@ export function CameraCard() {
   }
 
   const current = cameras.find(c => c.name === selected) ?? cameras[0];
+  // Widget fraîchement posé : aucune caméra choisie. Sans ce garde, la card
+  // plantait sur `current.entityId` et emportait tout le dashboard avec elle.
+  const hasCamera = !!current;
 
   // La colonne latérale de 110 px mangeait un tiers d'une card mobile : le flux
   // tombait à ~225 px de large. Sous 380 px, le sélecteur passe en bandeau de
@@ -105,6 +103,14 @@ export function CameraCard() {
       })}
     </>
   );
+
+  if (!hasCamera) {
+    return (
+      <div ref={cardRef} className='gc rounded-3xl p-5 h-full flex items-center justify-center text-center'>
+        <p className='text-white/35 text-xs leading-relaxed'>{t('widgets.camera.empty')}</p>
+      </div>
+    );
+  }
 
   return (
     <motion.div

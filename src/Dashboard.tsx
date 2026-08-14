@@ -38,6 +38,8 @@ const WidgetItem = memo(function WidgetItem({ widget }: { widget: GridWidget }) 
 import { EditButton } from '@/components/dashboard/EditButton';
 import { ActivePanel } from '@/components/dashboard/ActivePanel';
 import { DashboardEmptyState } from '@/components/dashboard/DashboardEmptyState';
+import { TourHost } from '@/components/onboarding/TourOverlay';
+import { ReleaseNotesHost } from '@/components/onboarding/ReleaseNotesModal';
 
 /**
  * Watcher d'inactivité — doit être monté à l'intérieur du WallPanelProvider
@@ -121,6 +123,12 @@ function DashboardContent() {
 
         {/* More Info modal */}
         <MoreInfoModal />
+
+        {/* Visite guidée — au premier lancement, puis à la demande */}
+        <TourHost />
+
+        {/* Nouveautés — après une mise à jour, puis à la demande */}
+        <ReleaseNotesHost />
       </div>
     </LayoutGroup>
   );

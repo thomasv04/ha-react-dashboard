@@ -27,6 +27,15 @@ data/uploads/
 # Stale build artifacts accidentally placed at project root
 /assets/
 
+# Bundle de la carte Lovelace — reconstruit par `npm run build:panel`, publié
+# dans le zip de release HACS, jamais versionné (23 Mo de chunks).
+custom_components/ha_react_dashboard/www/
+
+# Python — environnement de test de l'intégration
+.venv-test/
+__pycache__/
+.pytest_cache/
+
 # Environment — never commit secrets
 .env
 .env.*

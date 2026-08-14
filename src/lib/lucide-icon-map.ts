@@ -6,6 +6,7 @@
  */
 import * as allIcons from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { assetUrl } from '@/lib/api-base';
 
 /** Full map name → component (lazy-built, cached) */
 let _iconMap: Record<string, LucideIcon> | null = null;
@@ -45,5 +46,5 @@ export function isCustomIcon(name: string | undefined): boolean {
 
 /** Get the URL of a custom icon (strips "custom:" prefix) */
 export function getCustomIconUrl(name: string): string {
-  return name.replace(/^custom:/, '');
+  return assetUrl(name.replace(/^custom:/, ''));
 }

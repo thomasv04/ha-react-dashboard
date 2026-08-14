@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
-import { apiUrl } from '@/lib/api-base';
+import { apiFetch } from '@/lib/api-base';
 
 // EN
 import enCommon from './locales/en/common.json';
@@ -9,6 +9,9 @@ import enPanels from './locales/en/panels.json';
 import enSettings from './locales/en/settings.json';
 import enLayout from './locales/en/layout.json';
 import enActivityBar from './locales/en/activityBar.json';
+import enTour from './locales/en/tour.json';
+import enHelp from './locales/en/help.json';
+import enReleaseNotes from './locales/en/releaseNotes.json';
 
 // FR
 import frCommon from './locales/fr/common.json';
@@ -18,6 +21,9 @@ import frPanels from './locales/fr/panels.json';
 import frSettings from './locales/fr/settings.json';
 import frLayout from './locales/fr/layout.json';
 import frActivityBar from './locales/fr/activityBar.json';
+import frTour from './locales/fr/tour.json';
+import frHelp from './locales/fr/help.json';
+import frReleaseNotes from './locales/fr/releaseNotes.json';
 
 import type { SupportedLanguage, TranslationKeys } from './types';
 import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES } from './types';
@@ -34,6 +40,9 @@ const translations: Record<SupportedLanguage, TranslationKeys> = {
     settings: enSettings,
     layout: enLayout,
     activityBar: enActivityBar,
+    tour: enTour,
+    help: enHelp,
+    releaseNotes: enReleaseNotes,
   },
   fr: {
     common: frCommon as unknown as TranslationKeys['common'],
@@ -43,6 +52,9 @@ const translations: Record<SupportedLanguage, TranslationKeys> = {
     settings: frSettings as unknown as TranslationKeys['settings'],
     layout: frLayout as unknown as TranslationKeys['layout'],
     activityBar: frActivityBar,
+    tour: frTour,
+    help: frHelp,
+    releaseNotes: frReleaseNotes,
   },
 };
 
@@ -87,7 +99,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    fetch(apiUrl('/api/translations/overrides'))
+    apiFetch('/api/translations/overrides')
       .then(r => r.json())
       .then((data: { overrides?: Record<string, string> }) => {
         if (data.overrides && typeof data.overrides === 'object') {
@@ -142,7 +154,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   );
 
   const persistOverrides = useCallback((next: Record<string, string>) => {
-    fetch(apiUrl('/api/translations/overrides'), {
+    apiFetch('/api/translations/overrides', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ overrides: next }),

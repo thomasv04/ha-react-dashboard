@@ -33,13 +33,13 @@ export interface CameraEntry {
   name: string;
 }
 
-export type CameraStreamMode = 'mjpeg' | 'hls';
+export type CameraStreamMode = 'auto' | 'mjpeg' | 'hls';
 
 export interface CameraCardConfig extends WidgetSoundOverrides {
   type: 'camera';
   cameras: CameraEntry[];
   selectorEntity?: string; // input_select for remembering selection
-  streamMode?: CameraStreamMode; // 'mjpeg' (default, low latency) | 'hls' (better compression)
+  streamMode?: CameraStreamMode; // 'auto' (default) | 'mjpeg' (caméras nativement MJPEG) | 'hls'
   showInfoPanel?: boolean;
 }
 

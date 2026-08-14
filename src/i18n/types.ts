@@ -5,6 +5,9 @@ import type panelsEn from './locales/en/panels.json';
 import type settingsEn from './locales/en/settings.json';
 import type layoutEn from './locales/en/layout.json';
 import type activityBarEn from './locales/en/activityBar.json';
+import type tourEn from './locales/en/tour.json';
+import type helpEn from './locales/en/help.json';
+import type releaseNotesEn from './locales/en/releaseNotes.json';
 
 export interface TranslationKeys {
   common: typeof commonEn;
@@ -14,6 +17,9 @@ export interface TranslationKeys {
   settings: typeof settingsEn;
   layout: typeof layoutEn;
   activityBar: typeof activityBarEn;
+  tour: typeof tourEn;
+  help: typeof helpEn;
+  releaseNotes: typeof releaseNotesEn;
 }
 
 export type SupportedLanguage = 'en' | 'fr';

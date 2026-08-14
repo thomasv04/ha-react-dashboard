@@ -68,3 +68,18 @@ setup('amorce la configuration du dashboard de test', async ({ request }) => {
   const body = await check.json();
   expect(body.layouts.home.widgets.lg.length).toBeGreaterThanOrEqual(5);
 });
+
+/**
+ * Préchauffage du serveur de dev.
+ *
+ * Playwright considère le serveur prêt dès que le port répond, mais Vite
+ * réoptimise ses dépendances et compile tout le graphe de modules à la première
+ * navigation — plusieurs minutes après un changement de configuration. Sans ce
+ * préchauffage, ce sont les premiers tests qui encaissent l'attente et
+ * expirent, alors que les suivants passent en moins d'une seconde.
+ */
+setup('préchauffe le serveur de développement', async ({ page }) => {
+  setup.setTimeout(600_000);
+  await page.goto('/', { timeout: 600_000, waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('[data-widget-id]', { timeout: 120_000 });
+});

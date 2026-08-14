@@ -1,53 +1,33 @@
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
-import { Blinds, Lightbulb, Cpu, Flower2, Bell, ShieldHalf, Camera, ShieldCheck, GripVertical, EyeOff, Eye, Settings2 } from 'lucide-react';
-import { usePanel, type PanelId, type BuiltinPanelId } from '@/context/PanelContext';
-import { useHass } from '@hakit/core';
+import { GripVertical, LayoutGrid, Plus, Settings2, X } from 'lucide-react';
+import { usePanel, type PanelId } from '@/context/PanelContext';
+import { useCustomPanels } from '@/context/CustomPanelContext';
 import { cn } from '@/lib/utils';
 import { useEditMode } from '@/context/DashboardLayoutContext';
 import { useState, useEffect, useRef } from 'react';
-import { PanelSelectField } from '@/components/layout/WidgetEditModal/PanelSelectField';
+import { resolveIcon } from '@/lib/lucide-icon-map';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useI18n } from '@/i18n';
 
-interface Launcher {
-  id: BuiltinPanelId;
-  icon: React.ReactNode;
-  activeIcon?: React.ReactNode;
-  label: string;
-  badge?: string | null;
-  color: string;
-  activeBg: string;
-  activeBorder: string;
-}
-
-interface DockItem {
-  id: BuiltinPanelId;
-  hidden: boolean;
-  panelId?: PanelId; // override: what panel to open (defaults to id)
-}
-
-const DOCK_STORAGE_KEY = 'ha-dashboard-dock-config';
+const DOCK_STORAGE_KEY = 'ha-dashboard-dock-panels';
 const DOCK_LABELS_KEY = 'ha-dashboard-dock-labels';
 
-function loadDockConfig(launchers: Launcher[]): DockItem[] {
+/** Ids de panneaux custom, dans l'ordre d'affichage. Vide au premier lancement. */
+function loadDockConfig(): string[] {
   try {
     const stored = localStorage.getItem(DOCK_STORAGE_KEY);
     if (stored) {
-      const parsed: DockItem[] = JSON.parse(stored);
-      const existingIds = new Set(parsed.map(i => i.id));
-      return [
-        ...parsed.filter(i => launchers.some(l => l.id === i.id)),
-        ...launchers.filter(l => !existingIds.has(l.id)).map(l => ({ id: l.id, hidden: false })),
-      ];
+      const parsed: unknown = JSON.parse(stored);
+      if (Array.isArray(parsed)) return parsed.filter((v): v is string => typeof v === 'string');
     }
   } catch {
     // ignore
   }
-  return launchers.map(l => ({ id: l.id, hidden: false }));
+  return [];
 }
 
-function saveDockConfig(config: DockItem[]) {
-  localStorage.setItem(DOCK_STORAGE_KEY, JSON.stringify(config));
+function saveDockConfig(ids: string[]) {
+  localStorage.setItem(DOCK_STORAGE_KEY, JSON.stringify(ids));
 }
 
 function loadShowLabels(): boolean {
@@ -65,18 +45,12 @@ function saveShowLabels(v: boolean) {
 export function BottomNav() {
   const { t } = useI18n();
   const { openPanel, closePanel, activePanel } = usePanel();
-  // Ne s'abonner qu'aux deux valeurs dérivées, pas à la map d'entités entière :
-  // le dock est monté en permanence et se re-rendait à chaque message WebSocket
-  // de la maison. Un sélecteur qui renvoie un nombre / un booléen ne déclenche
-  // un rendu que quand ce nombre change réellement.
-  const lightsOn = useHass(
-    s => Object.entries(s.entities ?? {}).filter(([id, e]) => id.startsWith('light.') && !id.includes('group') && e.state === 'on').length
-  );
-  const alarmArmed = useHass(s => (s.entities?.['alarm_control_panel.home_alarm']?.state ?? 'disarmed') !== 'disarmed');
+  const { panels } = useCustomPanels();
   const { isEditMode } = useEditMode();
   const isWideDock = !useIsMobile(1024);
   const [showDockEditor, setShowDockEditor] = useState(false);
   const [showLabels, setShowLabels] = useState(() => loadShowLabels());
+  const [dockIds, setDockIds] = useState<string[]>(() => loadDockConfig());
   const editorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -86,7 +60,11 @@ export function BottomNav() {
   useEffect(() => {
     if (!showDockEditor) return;
     const handler = (e: MouseEvent) => {
-      if (editorRef.current && !editorRef.current.contains(e.target as Node)) {
+      const target = e.target as Element | null;
+      // Les selects du popover s'affichent dans un portail sur <body> : sans
+      // cette exception, choisir un panneau fermait l'éditeur de dock.
+      if (target?.closest?.('[data-portal-dropdown]')) return;
+      if (editorRef.current && !editorRef.current.contains(target as Node)) {
         setShowDockEditor(false);
       }
     };
@@ -94,92 +72,23 @@ export function BottomNav() {
     return () => document.removeEventListener('mousedown', handler);
   }, [showDockEditor]);
 
-  const launchers: Launcher[] = [
-    {
-      id: 'lumieres',
-      icon: <Lightbulb size={22} />,
-      label: t('panels.lights'),
-      badge: lightsOn > 0 ? String(lightsOn) : null,
-      color: 'text-yellow-400',
-      activeBg: 'rgba(251,191,36,0.14)',
-      activeBorder: 'rgba(251,191,36,0.28)',
-    },
-    {
-      id: 'volets',
-      icon: <Blinds size={22} />,
-      label: t('panels.shutters'),
-      badge: null,
-      color: 'text-sky-400',
-      activeBg: 'rgba(56,189,248,0.12)',
-      activeBorder: 'rgba(56,189,248,0.26)',
-    },
-    {
-      id: 'security',
-      icon: <ShieldHalf size={22} />,
-      activeIcon: <ShieldCheck size={22} />,
-      label: t('panels.security'),
-      badge: alarmArmed ? '!' : null,
-      color: alarmArmed ? 'text-red-400' : 'text-green-400',
-      activeBg: alarmArmed ? 'rgba(248,113,113,0.12)' : 'rgba(74,222,128,0.12)',
-      activeBorder: alarmArmed ? 'rgba(248,113,113,0.26)' : 'rgba(74,222,128,0.26)',
-    },
-    {
-      id: 'aspirateur',
-      icon: <Cpu size={22} />,
-      label: t('panels.vacuum'),
-      badge: null,
-      color: 'text-blue-400',
-      activeBg: 'rgba(96,165,250,0.12)',
-      activeBorder: 'rgba(96,165,250,0.26)',
-    },
-    {
-      id: 'flowers',
-      icon: <Flower2 size={22} />,
-      label: t('panels.flowers'),
-      badge: null,
-      color: 'text-green-400',
-      activeBg: 'rgba(74,222,128,0.12)',
-      activeBorder: 'rgba(74,222,128,0.26)',
-    },
-    {
-      id: 'cameras',
-      icon: <Camera size={22} />,
-      label: t('panels.camera'),
-      badge: null,
-      color: 'text-purple-400',
-      activeBg: 'rgba(192,132,252,0.12)',
-      activeBorder: 'rgba(192,132,252,0.26)',
-    },
-    {
-      id: 'notifications',
-      icon: <Bell size={22} />,
-      label: t('panels.notifications'),
-      badge: null,
-      color: 'text-orange-400',
-      activeBg: 'rgba(251,146,60,0.12)',
-      activeBorder: 'rgba(251,146,60,0.26)',
-    },
-  ];
-
-  const [dockConfig, setDockConfig] = useState<DockItem[]>(() => loadDockConfig(launchers));
-
   useEffect(() => {
-    saveDockConfig(dockConfig);
-  }, [dockConfig]);
+    saveDockConfig(dockIds);
+  }, [dockIds]);
   useEffect(() => {
     saveShowLabels(showLabels);
   }, [showLabels]);
 
-  const toggleHidden = (id: BuiltinPanelId) => {
-    setDockConfig(prev => prev.map(item => (item.id === id ? { ...item, hidden: !item.hidden } : item)));
-  };
+  // Un panneau supprimé disparaît du dock sans laisser de trou.
+  const dockPanels = dockIds.map(id => panels.find(p => p.id === id)).filter((p): p is (typeof panels)[number] => !!p);
+  const available = panels.filter(p => !dockIds.includes(p.id));
 
-  const setPanelOverride = (id: BuiltinPanelId, panelId: PanelId) => {
-    setDockConfig(prev => prev.map(item => (item.id === id ? { ...item, panelId } : item)));
-  };
+  const addToDock = (id: string) => setDockIds(prev => [...prev, id]);
+  const removeFromDock = (id: string) => setDockIds(prev => prev.filter(v => v !== id));
 
-  const visibleItems = dockConfig.filter(i => !i.hidden);
-  const orderedLaunchers = dockConfig.map(item => launchers.find(l => l.id === item.id)!).filter(Boolean);
+  // Rien à afficher tant que l'utilisateur n'a pas créé de panneau — sauf en
+  // mode édition, où la pastille porte le bouton d'ajout.
+  if (dockPanels.length === 0 && !isEditMode) return null;
 
   return (
     // z-[55] : au-dessus de la couche des panneaux (z-50), qui posait un
@@ -198,18 +107,9 @@ export function BottomNav() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.96 }}
             transition={{ type: 'spring', stiffness: 340, damping: 28 }}
-            className='pointer-events-auto mb-3 w-80'
+            className='pointer-events-auto mb-3 w-80 max-h-[60vh] overflow-y-auto'
           >
-            <div
-              className='rounded-2xl px-3 py-3 flex flex-col gap-1'
-              style={{
-                background: 'var(--dash-bg-card, rgba(6,6,24,0.72))',
-                backdropFilter: 'blur(48px) saturate(160%)',
-                WebkitBackdropFilter: 'blur(48px) saturate(160%)',
-                border: '1px solid rgba(255,255,255,0.10)',
-                boxShadow: '0 8px 40px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.06) inset',
-              }}
-            >
+            <div className='gc-overlay rounded-2xl px-3 py-3 flex flex-col gap-1'>
               {/* Header + labels toggle */}
               <div className='flex items-center gap-2 px-1 mb-1'>
                 <p className='text-white/40 text-[10px] font-semibold uppercase tracking-wider flex-1'>{t('layout.customizeDock')}</p>
@@ -220,7 +120,7 @@ export function BottomNav() {
                     showLabels ? 'bg-white/10 text-white/60 hover:bg-white/15' : 'bg-white/5 text-white/30 hover:bg-white/8'
                   )}
                 >
-                  <span>{showLabels ? 'Labels on' : 'Labels off'}</span>
+                  <span>{showLabels ? t('layout.dockLabelsOn') : t('layout.dockLabelsOff')}</span>
                   <div className={cn('w-6 h-3.5 rounded-full transition-colors relative', showLabels ? 'bg-blue-500/70' : 'bg-white/15')}>
                     <div
                       className={cn(
@@ -231,50 +131,54 @@ export function BottomNav() {
                   </div>
                 </button>
               </div>
-              <Reorder.Group axis='y' values={dockConfig} onReorder={setDockConfig} className='flex flex-col gap-1'>
-                {orderedLaunchers.map(launcher => {
-                  const item = dockConfig.find(i => i.id === launcher.id)!;
-                  const isHidden = item?.hidden ?? false;
-                  const currentPanelId: PanelId = item?.panelId ?? launcher.id;
 
+              <Reorder.Group axis='y' values={dockIds} onReorder={setDockIds} className='flex flex-col gap-1'>
+                {dockPanels.map(panel => {
+                  const Icon = resolveIcon(panel.icon) ?? LayoutGrid;
                   return (
                     <Reorder.Item
-                      key={launcher.id}
-                      value={item}
-                      className={cn(
-                        'flex flex-col gap-1.5 px-2 py-2 rounded-xl transition-colors hover:bg-white/5',
-                        isHidden ? 'opacity-40' : 'opacity-100'
-                      )}
+                      key={panel.id}
+                      value={panel.id}
+                      className='flex items-center gap-2 px-2 py-2 rounded-xl transition-colors hover:bg-white/5 cursor-grab active:cursor-grabbing'
                     >
-                      {/* Row: drag + icon + label + eye */}
-                      <div className='flex items-center gap-2 cursor-grab active:cursor-grabbing'>
-                        <GripVertical size={13} className='text-white/25 shrink-0' />
-                        <span className={cn('shrink-0', launcher.color)} style={{ fontSize: 0, lineHeight: 0 }}>
-                          <span style={{ display: 'inline-flex', transform: 'scale(0.75)' }}>{launcher.icon}</span>
-                        </span>
-                        <span className='text-white/75 text-sm font-medium flex-1'>{launcher.label}</span>
-                        <button
-                          onClick={() => toggleHidden(launcher.id)}
-                          className='p-1 rounded-lg hover:bg-white/10 transition-colors text-white/35 hover:text-white/70 shrink-0'
-                        >
-                          {isHidden ? <Eye size={14} /> : <EyeOff size={14} />}
-                        </button>
-                      </div>
-
-                      {/* Panel selector */}
-                      {!isHidden && (
-                        <div className='ml-7'>
-                          <PanelSelectField
-                            label=''
-                            value={currentPanelId ?? ''}
-                            onChange={v => setPanelOverride(launcher.id, v as PanelId)}
-                          />
-                        </div>
-                      )}
+                      <GripVertical size={13} className='text-white/25 shrink-0' />
+                      <Icon size={16} className='text-white/60 shrink-0' />
+                      <span className='text-white/75 text-sm font-medium flex-1 truncate'>{panel.name}</span>
+                      <button
+                        onClick={() => removeFromDock(panel.id)}
+                        className='p-1 rounded-lg hover:bg-white/10 transition-colors text-white/35 hover:text-white/70 shrink-0'
+                        title={t('layout.dockRemove')}
+                        aria-label={t('layout.dockRemove')}
+                      >
+                        <X size={14} />
+                      </button>
                     </Reorder.Item>
                   );
                 })}
               </Reorder.Group>
+
+              {/* Panneaux disponibles */}
+              {available.length > 0 && (
+                <>
+                  <p className='text-white/25 text-[10px] font-semibold uppercase tracking-wider px-1 pt-2 pb-1'>{t('layout.dockAdd')}</p>
+                  {available.map(panel => {
+                    const Icon = resolveIcon(panel.icon) ?? LayoutGrid;
+                    return (
+                      <button
+                        key={panel.id}
+                        onClick={() => addToDock(panel.id)}
+                        className='flex items-center gap-2 px-2 py-2 rounded-xl text-left transition-colors hover:bg-white/5'
+                      >
+                        <Plus size={13} className='text-white/30 shrink-0' />
+                        <Icon size={16} className='text-white/50 shrink-0' />
+                        <span className='text-white/55 text-sm flex-1 truncate'>{panel.name}</span>
+                      </button>
+                    );
+                  })}
+                </>
+              )}
+
+              {panels.length === 0 && <p className='text-white/30 text-xs px-1 py-2 leading-relaxed'>{t('layout.dockNoPanels')}</p>}
             </div>
           </motion.div>
         )}
@@ -282,7 +186,7 @@ export function BottomNav() {
 
       {/* Dock pill
           Chaque item n'affichait qu'une icône de 36 px surmontée d'un libellé de
-          9 px masqué sous 640 px : sur téléphone, sept icônes anonymes collées
+          9 px masqué sous 640 px : sur téléphone, des icônes anonymes collées
           bord à bord. Désormais seul l'item actif porte son libellé, dans une
           pastille qui se déplie — lisible à toutes les largeurs, et la barre
           défile horizontalement si le dock déborde. */}
@@ -292,6 +196,7 @@ export function BottomNav() {
         transition={{ type: 'spring', stiffness: 260, damping: 24 }}
         className='pointer-events-auto mb-3 px-3 max-w-full'
         style={{ marginBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+        data-tour='dock'
       >
         <div
           className='flex items-center gap-1 p-1.5 rounded-[26px] max-w-full overflow-x-auto scrollbar-none'
@@ -303,21 +208,19 @@ export function BottomNav() {
             boxShadow: 'var(--dash-elev-overlay)',
           }}
         >
-          {visibleItems.map(({ id, panelId }) => {
-            const launcher = launchers.find(l => l.id === id);
-            if (!launcher) return null;
-            const targetPanel: PanelId = panelId ?? id;
-            const isActive = targetPanel === activePanel;
-            const icon = isActive && launcher.activeIcon ? launcher.activeIcon : launcher.icon;
+          {dockPanels.map(panel => {
+            const target: PanelId = `custom:${panel.id}`;
+            const isActive = target === activePanel;
+            const Icon = resolveIcon(panel.icon) ?? LayoutGrid;
 
             // Au-delà de 1024 px (tablette murale en paysage) tout tient :
             // chaque pastille porte son libellé. En dessous, seul l'item actif
-            // se déplie — sept icônes anonymes ne se distinguent pas.
+            // se déplie — des icônes anonymes ne se distinguent pas.
             const showLabel = showLabels && (isActive || isWideDock);
 
             return (
               <motion.button
-                key={launcher.id}
+                key={panel.id}
                 layout
                 transition={{ type: 'spring', stiffness: 420, damping: 34 }}
                 whileTap={{ scale: 0.93 }}
@@ -326,37 +229,26 @@ export function BottomNav() {
                 onClick={() => {
                   if (isEditMode) return;
                   if (isActive) closePanel();
-                  else openPanel(targetPanel);
+                  else openPanel(target);
                 }}
                 className={cn(
                   'relative h-11 shrink-0 rounded-[18px] flex items-center justify-center select-none border transition-colors duration-200',
                   showLabel ? 'gap-2 px-3' : 'w-11',
-                  !isActive && 'hover:bg-white/8'
+                  isActive ? 'bg-white/12 border-white/20' : 'bg-transparent border-transparent hover:bg-white/8'
                 )}
-                style={
-                  isActive
-                    ? { background: launcher.activeBg, borderColor: launcher.activeBorder }
-                    : { background: 'transparent', borderColor: 'transparent' }
-                }
-                title={launcher.label}
-                aria-label={launcher.label}
+                title={panel.name}
+                aria-label={panel.name}
                 aria-current={isActive ? 'page' : undefined}
               >
-                <span className={cn('transition-colors duration-200 shrink-0', isActive ? launcher.color : 'text-white/55')}>{icon}</span>
+                <Icon size={22} className={cn('transition-colors duration-200 shrink-0', isActive ? 'text-white' : 'text-white/55')} />
 
                 {showLabel && (
                   <motion.span
                     layout='position'
-                    className={cn('text-[13px] font-semibold leading-none whitespace-nowrap', isActive ? launcher.color : 'text-white/55')}
+                    className={cn('text-[13px] font-semibold leading-none whitespace-nowrap', isActive ? 'text-white' : 'text-white/55')}
                   >
-                    {launcher.label}
+                    {panel.name}
                   </motion.span>
-                )}
-
-                {launcher.badge && (
-                  <span className='absolute top-0.5 right-0.5 min-w-[17px] h-[17px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none z-10 ring-2 ring-black/40'>
-                    {launcher.badge}
-                  </span>
                 )}
               </motion.button>
             );

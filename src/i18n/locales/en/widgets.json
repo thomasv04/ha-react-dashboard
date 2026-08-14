@@ -28,7 +28,15 @@
       "windy": "Windy",
       "windy-variant": "Very windy"
     },
-    "days": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    "days": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ]
   },
   "thermostat": {
     "label": "Thermostat",
@@ -124,7 +132,8 @@
     "description": "Live video stream from one or more Frigate/RTSP cameras.",
     "streamMode": "Stream mode",
     "mjpeg": "MJPEG (low latency)",
-    "hls": "HLS (better compression)"
+    "hls": "HLS (better compression)",
+    "empty": "No camera configured. Edit this widget to add one."
   },
   "energy": {
     "label": "Energy",
@@ -153,7 +162,8 @@
     "description": "Quick buttons to open lights, covers, security panels...",
     "header": "Shortcuts",
     "armed": "Armed",
-    "disarmed": "Disarmed"
+    "disarmed": "Disarmed",
+    "empty": "No shortcut configured. Edit this widget to add one."
   },
   "pellet": {
     "label": "Pellet stove",

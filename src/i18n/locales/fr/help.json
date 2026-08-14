@@ -1,0 +1,43 @@
+{
+  "title": "Aide",
+  "subtitle": "Des visites guidées pour chaque partie du dashboard.",
+  "launch": "Lancer la visite",
+  "sections": {
+    "basics": {
+      "title": "Premiers pas",
+      "body": "Les pages, le mode édition, ajouter un widget, enregistrer. La visite à faire en premier."
+    },
+    "widgets": {
+      "title": "Ajouter et organiser des widgets",
+      "body": "Parcourir le catalogue, associer une entité, déplacer et redimensionner vos cards."
+    },
+    "panels": {
+      "title": "Configurer un panneau",
+      "body": "Composer un panneau plein écran par blocs, puis l'ajouter au dock du bas."
+    },
+    "appearance": {
+      "title": "Apparence et mode mural",
+      "body": "Thèmes, fond d'écran, opacité des cards, et l'écran de veille pour une tablette murale."
+    },
+    "events": {
+      "title": "Ouvrir des modales depuis Home Assistant",
+      "body": "Déclenchez un événement depuis n'importe quelle automatisation pour afficher une modale ou un toast sur tous les dashboards."
+    },
+    "releaseNotes": {
+      "title": "Nouveautés",
+      "body": "Ce que la dernière version a changé."
+    }
+  },
+  "events": {
+    "intro": "Le dashboard écoute deux événements personnalisés sur le WebSocket de Home Assistant. N'importe quelle automatisation, script ou l'onglet Outils de développement > Événements peut les émettre — tous les dashboards ouverts réagissent en même temps.",
+    "modalDesc": "Une modale centrée : titre, contenu markdown, et des boutons qui appellent un service.",
+    "toastDesc": "Une notification discrète dans le coin, qui s'efface seule sauf si on la rend persistante.",
+    "preview": "Aperçu",
+    "copied": "Copié",
+    "demoModalTitle": "Aperçu de la modale",
+    "demoModalBody": "Voilà ce qu'afficherait une automatisation émettant `ha_dashboard_modal`.",
+    "demoToastTitle": "Aperçu du toast",
+    "demoToastBody": "Déclenché localement — aucun événement Home Assistant impliqué.",
+    "tip": "Pour tester sans écrire une automatisation : Outils de développement > Événements, type ha_dashboard_toast, puis collez le bloc event_data."
+  }
+}

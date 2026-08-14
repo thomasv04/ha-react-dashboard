@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, ChevronDown, ChevronUp, Upload, Trash2 } from 'lucide-react';
 import { getIconNames, resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-map';
-import { apiUrl } from '@/lib/api-base';
+import { apiFetch, assetUrl } from '@/lib/api-base';
 import { useI18n } from '@/i18n';
 
 interface UploadedIcon {
@@ -41,7 +41,7 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
   // Fetch custom icons when opening on the custom tab
   const fetchCustomIcons = useCallback(async () => {
     try {
-      const res = await fetch(apiUrl('/api/uploads/icons'));
+      const res = await apiFetch('/api/uploads/icons');
       if (res.ok) setCustomIcons(await res.json());
     } catch {
       /* ignore */
@@ -61,7 +61,7 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
     try {
       const formData = new FormData();
       formData.append('icon', file);
-      const res = await fetch(apiUrl('/api/uploads/icons'), { method: 'POST', body: formData });
+      const res = await apiFetch('/api/uploads/icons', { method: 'POST', body: formData });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Erreur upload');
       onChange(`custom:${json.url}`);
@@ -77,7 +77,7 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
   // Delete handler
   async function handleDeleteIcon(filename: string) {
     try {
-      await fetch(apiUrl(`/api/uploads/icons/${encodeURIComponent(filename)}`), { method: 'DELETE' });
+      await apiFetch(`/api/uploads/icons/${encodeURIComponent(filename)}`, { method: 'DELETE' });
       setCustomIcons(prev => prev.filter(i => i.filename !== filename));
       if (value === `custom:/uploads/icons/${filename}`) onChange('');
     } catch {
@@ -306,7 +306,7 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
                               isActive ? 'bg-blue-500/20 border border-blue-500/40' : 'hover:bg-white/8 border border-transparent'
                             }`}
                           >
-                            <img src={icon.url} alt={icon.originalName} className='w-6 h-6 object-contain' />
+                            <img src={assetUrl(icon.url)} alt={icon.originalName} className='w-6 h-6 object-contain' />
                             <span className='text-[7px] mt-1 truncate w-full text-center text-white/40 leading-tight'>
                               {icon.originalName.replace(/\.[^.]+$/, '')}
                             </span>

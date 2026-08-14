@@ -31,13 +31,20 @@ rtk proxy <cmd>       # Run raw (no filtering) but track usage
 When asked to create a new tag / release, **always** use:
 
 ```bash
-npm run create-tag
+npm run create-tag              # patch : 2.0.18 → 2.0.19
+npm run create-tag -- --minor   # 2.0.18 → 2.1.0
+npm run create-tag -- --major   # 2.0.18 → 3.0.0
+npm run create-tag -- 2.4.0     # version explicite
 ```
 
 This script automatically:
 1. Reads the current version from `ha-react-dashboard/config.yaml`
-2. Bumps the patch number (e.g. `2.0.14` → `2.0.15`)
+2. Computes the next version (patch by default, see flags above)
 3. Commits, pushes to `main`, creates the git tag and pushes it
+
+It refuses to run outside `main`, on a dirty tree, on an existing tag, or on a
+version that does not move forward. It also warns when
+`src/data/release-notes.ts` announces a different version than the tag.
 
 **Never** manually edit `config.yaml` or run the git commands by hand for a release.
 

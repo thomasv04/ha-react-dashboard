@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 
-export type BuiltinPanelId = 'volets' | 'lumieres' | 'security' | 'aspirateur' | 'notifications' | 'alarme' | 'flowers' | 'cameras';
-export type PanelId = BuiltinPanelId | `custom:${string}` | null;
+// Les panneaux sont désormais tous créés par l'utilisateur : les sept panneaux
+// « built-in » étaient câblés sur les entités d'une seule maison.
+export type PanelId = `custom:${string}` | null;
 
 interface PanelContextValue {
   activePanel: PanelId;

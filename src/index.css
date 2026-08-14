@@ -35,9 +35,15 @@
 
 /* Reduce blur: drop backdrop-filter to minimal value on all glass elements */
 .perf-reduce-blur .gc,
-.perf-reduce-blur .gc-light {
+.perf-reduce-blur .gc-light,
+.perf-reduce-blur .gc-overlay {
   -webkit-backdrop-filter: blur(4px) !important;
   backdrop-filter: blur(4px) !important;
+}
+
+/* Sans flou, un panneau à 55 % ne serait plus lisible : le rendre opaque. */
+.perf-reduce-blur .gc-overlay {
+  background: rgba(10, 12, 30, 0.96) !important;
 }
 
 /* Disable shadows: remove box-shadow GPU compositing */
@@ -223,6 +229,60 @@
   [class*='overflow-auto'] {
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ── Barres de défilement ─────────────────────────────────────────────────────
+   Chrome/Windows pose par défaut une barre grise opaque de 17 px qui tranche
+   le verre des modales en deux. Fine, arrondie, sans piste : elle se fond dans
+   la surface au lieu de la découper.
+
+   `scrollbar-color` est héritée, `scrollbar-width` **ne l'est pas** : la
+   première se pose sur `:root`, la seconde doit viser chaque élément. Le tout
+   dans `@layer base`, que la couche `utilities` surclasse — `.scrollbar-none`
+   garde donc le dernier mot sur le dock et les onglets. */
+:root {
+  --dash-scrollbar-thumb: rgba(255, 255, 255, 0.18);
+  --dash-scrollbar-thumb-hover: rgba(255, 255, 255, 0.34);
+}
+
+/* Sur fond clair, un pouce blanc est invisible. */
+.theme-light-surface {
+  --dash-scrollbar-thumb: rgba(15, 23, 42, 0.22);
+  --dash-scrollbar-thumb-hover: rgba(15, 23, 42, 0.40);
+}
+
+@layer base {
+  :root {
+    scrollbar-color: var(--dash-scrollbar-thumb) transparent;
+  }
+
+  * {
+    scrollbar-width: thin;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--dash-scrollbar-thumb);
+    border-radius: 999px;
+    /* La bordure transparente amincit le pouce sans réduire la zone de saisie :
+       8 px de large à la souris, 4 px à l'œil. */
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--dash-scrollbar-thumb-hover);
+    background-clip: padding-box;
   }
 }
 
@@ -423,6 +483,23 @@
   backdrop-filter: blur(40px) saturate(150%);
   border-top: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: var(--dash-elev-overlay);
+}
+
+/* Overlay surfaces (modales, popovers, dropdowns) — même recette de verre que
+   le dock. Teinte fixe et non `--dash-bg-card` : le contenu de ces panneaux est
+   écrit en texte clair, un thème clair les rendrait illisibles. */
+.gc-overlay {
+  background: rgba(10, 12, 30, 0.55);
+  -webkit-backdrop-filter: blur(48px) saturate(180%);
+  backdrop-filter: blur(48px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: var(--dash-elev-overlay);
+}
+
+.theme-clay .gc-overlay {
+  background: rgba(16, 18, 32, 0.94);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 /* Small chips / badges */

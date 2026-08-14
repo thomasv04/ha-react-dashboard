@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { apiUrl } from '@/lib/api-base';
+import { apiFetch } from '@/lib/api-base';
 
 interface Profile {
   id: string;
@@ -19,7 +19,7 @@ export function useProfiles() {
   const loadProfiles = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(apiUrl('/api/profiles'));
+      const res = await apiFetch('/api/profiles');
       const data = await res.json();
       setProfiles(data);
     } catch (err) {
@@ -30,7 +30,7 @@ export function useProfiles() {
   }, []);
 
   const saveProfile = useCallback(async (label: string, data: unknown): Promise<{ id: string; label: string }> => {
-    const res = await fetch(apiUrl('/api/profiles'), {
+    const res = await apiFetch('/api/profiles', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ label, data }),
@@ -39,12 +39,12 @@ export function useProfiles() {
   }, []);
 
   const loadProfile = useCallback(async (id: string): Promise<ProfileWithData> => {
-    const res = await fetch(apiUrl(`/api/profiles/${id}`));
+    const res = await apiFetch(`/api/profiles/${id}`);
     return res.json();
   }, []);
 
   const updateProfile = useCallback(async (id: string, label?: string, data?: unknown): Promise<void> => {
-    await fetch(apiUrl(`/api/profiles/${id}`), {
+    await apiFetch(`/api/profiles/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ label, data }),
@@ -52,7 +52,7 @@ export function useProfiles() {
   }, []);
 
   const deleteProfile = useCallback(async (id: string) => {
-    await fetch(apiUrl(`/api/profiles/${id}`), { method: 'DELETE' });
+    await apiFetch(`/api/profiles/${id}`, { method: 'DELETE' });
     setProfiles(prev => prev.filter(p => p.id !== id));
   }, []);
 

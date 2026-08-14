@@ -6,9 +6,11 @@ import { useWallPanel } from '@/context/WallPanelContext';
 import { BackgroundSlideshow } from './BackgroundSlideshow';
 import { WallPanelEditShell, WallPanelReadonlyShell } from './WallPanelEditShell';
 import { useI18n } from '@/i18n';
+import { useUser } from '@hakit/core';
 
 export function WallPanelOverlay() {
   const { t } = useI18n();
+  const user = useUser();
   const { isActive, deactivate, wallPanelLayout, config, isWallPanelEditMode, enterWallPanelEditMode } = useWallPanel();
   const hasWidgets = wallPanelLayout.widgets.lg.length > 0;
 
@@ -65,8 +67,12 @@ export function WallPanelOverlay() {
               )}
             </div>
 
-            {/* ── Bouton d'édition (bas-droite) ── */}
-            {!isWallPanelEditMode && (
+            {/* ── Bouton d'édition (bas-droite) ──
+                Réservé aux administrateurs, comme le crayon du dashboard : il
+                ouvre `WallPanelEditShell`, qui active le mode édition global.
+                Sans ce garde, n'importe qui passant devant la tablette murale
+                pouvait éditer la disposition. */}
+            {!isWallPanelEditMode && user?.is_admin && (
               <button
                 className='absolute bottom-6 right-6 z-[201] p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white/50 hover:text-white transition-colors backdrop-blur-sm'
                 title={t('layout.wallPanel.editWidgets')}

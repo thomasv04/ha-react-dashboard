@@ -149,11 +149,49 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/aarch64:${{ steps.version.outputs.value }}
           labels: ${{ steps.meta.outputs.labels }}
 
+      # ── Intégration HACS ────────────────────────────────────────────────
+      # Le bundle du panneau n'est pas versionné : il est construit ici puis
+      # zippé avec l'intégration. `hacs.json` (zip_release) fait pointer HACS
+      # sur cette archive.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Build Lovelace card bundle
+        run: |
+          npm ci
+          npm run build:panel
+
+      - name: Sync integration version with the tag
+        run: |
+          node -e "
+            const fs = require('fs');
+            const p = 'custom_components/ha_react_dashboard/manifest.json';
+            const m = JSON.parse(fs.readFileSync(p, 'utf8'));
+            m.version = '${{ steps.version.outputs.value }}';
+            fs.writeFileSync(p, JSON.stringify(m, null, 2) + '\n');
+          "
+
+      - name: Zip integration for HACS
+        run: |
+          cd custom_components/ha_react_dashboard
+          zip -r ../../ha_react_dashboard.zip .
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
+          files: ha_react_dashboard.zip
           body: |
             ## Installation
+
+            ### 🧩 **Tableau de bord Lovelace (recommandé — « définir par défaut » possible)**
+            ```
+            HACS → Intégrations → ⋮ → Dépôt personnalisé
+            URL: https://github.com/${{ github.repository }}   (catégorie: Integration)
+            ```
+            Puis **Paramètres → Appareils et services → Ajouter une intégration → HA React Dashboard**.
+            Enfin, sur chaque téléphone/tablette : **Paramètres → Tableaux de bord → React Dashboard → « Définir par défaut sur cet appareil »**.
 
             ### 🐳 **Home Assistant Add-on**
             ```

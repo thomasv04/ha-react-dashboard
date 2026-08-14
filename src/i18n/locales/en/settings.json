@@ -62,9 +62,9 @@
     "disableModalAnimationDesc": "Replaces the card-opening animation with a simple fade."
   },
   "sound_section": {
-    "intro": "Sound feedback plays short tones when you interact with widgets.",
-    "enabled": "Enable sound feedback",
-    "enabledDesc": "Play sounds on toggle, slider, button press, etc."
+    "intro": "Play a short sound effect when you interact with widgets (toggle, buttons, sliders…).",
+    "enabled": "Sound feedback",
+    "enabledDesc": "Plays a tone when you tap a card or change a setting."
   },
   "system": "System",
   "system_section": {
@@ -109,12 +109,6 @@
     "showOnlyCustom": "Custom only"
   },
   "layout": "Layout",
-  "sound": "Sound",
-  "sound_section": {
-    "intro": "Play a short sound effect when you interact with widgets (toggle, buttons, sliders…).",
-    "enabled": "Sound feedback",
-    "enabledDesc": "Plays a tone when you tap a card or change a setting."
-  },
   "layout_section": {
     "grid": "Grid",
     "gridGap": "Card gap",
@@ -124,6 +118,9 @@
     "cards": "Cards",
     "cardRadius": "Corner radius",
     "cardRadiusDesc": "Border radius of cards (in px).",
-    "reset": "Reset to defaults"
+    "reset": "Reset to defaults",
+    "display": "Display",
+    "kiosk": "Fullscreen",
+    "kioskDesc": "Hides the Home Assistant header and sidebar. Applies to this device only."
   }
 }

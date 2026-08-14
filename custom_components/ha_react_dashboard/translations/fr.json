@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "HA React Dashboard",
+        "description": "Crée le tableau de bord Lovelace « React Dashboard » et sert le bundle du dashboard. Ensuite, sur chaque téléphone ou tablette : Paramètres → Tableaux de bord → React Dashboard → « Définir par défaut sur cet appareil »."
+      }
+    },
+    "abort": {
+      "already_configured": "HA React Dashboard est déjà configuré."
+    }
+  }
+}

@@ -407,7 +407,7 @@ export function AlarmCard() {
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<AlarmCardConfig>(widgetId || 'alarm');
-  const entityId = config?.entityId ?? 'alarm_control_panel.home_alarm';
+  const entityId = config?.entityId ?? '';
 
   const alarm = useSafeEntity(entityId);
   const [modalOpen, setModalOpen] = useState(false);

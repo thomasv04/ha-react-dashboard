@@ -62,9 +62,9 @@
     "disableModalAnimationDesc": "Remplace l'animation d'ouverture depuis la carte par un simple fondu."
   },
   "sound_section": {
-    "intro": "Le retour sonore joue de courts sons lors des interactions avec les widgets.",
-    "enabled": "Activer le retour sonore",
-    "enabledDesc": "Jouer des sons lors des toggles, sliders, appuis bouton, etc."
+    "intro": "Joue un bref effet sonore lorsque vous interagissez avec les widgets (toggle, boutons, sliders…).",
+    "enabled": "Retour sonore",
+    "enabledDesc": "Joue une tonalité lorsque vous appuyez sur une carte ou modifiez un réglage."
   },
   "system": "Système",
   "system_section": {
@@ -109,12 +109,6 @@
     "showOnlyCustom": "Personnalisés seulement"
   },
   "layout": "Disposition",
-  "sound": "Son",
-  "sound_section": {
-    "intro": "Joue un bref effet sonore lorsque vous interagissez avec les widgets (toggle, boutons, sliders…).",
-    "enabled": "Retour sonore",
-    "enabledDesc": "Joue une tonalité lorsque vous appuyez sur une carte ou modifiez un réglage."
-  },
   "layout_section": {
     "grid": "Grille",
     "gridGap": "Espacement",
@@ -124,6 +118,9 @@
     "cards": "Cartes",
     "cardRadius": "Rayon des coins",
     "cardRadiusDesc": "Rayon de bordure des cartes (en px).",
-    "reset": "Réinitialiser"
+    "reset": "Réinitialiser",
+    "display": "Affichage",
+    "kiosk": "Plein écran",
+    "kioskDesc": "Masque l'en-tête et la barre latérale de Home Assistant. Réglage propre à cet appareil."
   }
 }
