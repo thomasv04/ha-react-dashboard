@@ -20,7 +20,7 @@ import { Client, type ScpClient } from 'node-scp';
 import * as dotenv from 'dotenv';
 import { join } from 'path';
 import chalk from 'chalk';
-import { access, constants, cp, readdir, rm } from 'fs/promises';
+import { access, constants, cp, readdir, readFile, rm, writeFile } from 'fs/promises';
 
 dotenv.config();
 
@@ -80,11 +80,38 @@ function nextSteps() {
   console.info('  3. Paramètres → Tableaux de bord → React Dashboard → Définir par défaut sur cet appareil');
 }
 
+/**
+ * Aligne `manifest.json` sur la version de `config.yaml` avant l'envoi.
+ *
+ * Le manifeste versionné reste figé entre deux releases : c'est le workflow qui
+ * le réécrit depuis le tag, et **seulement dans le zip**. Un déploiement local
+ * écrasait donc l'installation HACS avec un numéro périmé — Home Assistant
+ * affichait une version qui ne correspondait ni à ce qui tournait, ni à ce que
+ * HACS croyait avoir posé.
+ *
+ * Écrit dans l'arbre de travail : le fichier est versionné, `git diff` le
+ * montrera. C'est voulu — la valeur doit finir par être commitée.
+ */
+async function syncManifestVersion() {
+  const config = await readFile('ha-react-dashboard/config.yaml', 'utf-8');
+  const version = config.match(/^version:\s*'([^']+)'/m)?.[1];
+  if (!version) return;
+
+  const path = `${LOCAL_DIR}/manifest.json`;
+  const manifest = await readFile(path, 'utf-8');
+  const current = manifest.match(/"version":\s*"([^"]+)"/)?.[1];
+  if (current === version) return;
+
+  await writeFile(path, manifest.replace(/("version":\s*")[^"]+(")/, `$1${version}$2`), 'utf-8');
+  console.info(chalk.yellow(`manifest.json : ${current} → ${version}`));
+}
+
 /** Copie directe : partage Samba monté, lecteur réseau ou dossier local. */
 async function copyToConfigPath() {
   if (!(await exists(CONFIG_PATH!))) {
     throw new Error(`HA_CONFIG_PATH introuvable : ${CONFIG_PATH}\nLe partage est-il monté et accessible ?`);
   }
+  await syncManifestVersion();
   const target = join(CONFIG_PATH!, 'custom_components', DOMAIN);
 
   // Purge d'abord : sinon un chunk supprimé d'une version à l'autre reste, et

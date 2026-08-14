@@ -14,6 +14,7 @@ import { readFileSync, writeFileSync } from 'fs';
 
 const CONFIG_PATH = 'ha-react-dashboard/config.yaml';
 const NOTES_PATH = 'src/data/release-notes.ts';
+const MANIFEST_PATH = 'custom_components/ha_react_dashboard/manifest.json';
 
 const capture = (cmd: string) => execSync(cmd, { encoding: 'utf-8' }).trim();
 const run = (cmd: string) => execSync(cmd, { stdio: 'inherit' });
@@ -98,9 +99,18 @@ try {
 // ── Publication ──────────────────────────────────────────────────────────────
 
 writeFileSync(CONFIG_PATH, content.replace(`version: '${current}'`, `version: '${next}'`), 'utf-8');
+
+// Le manifeste de l'intégration doit suivre. Le workflow le réécrit déjà depuis
+// le tag, mais **uniquement dans le zip** : toute installation qui lit le dépôt
+// plutôt que la release (HACS avant publication de l'asset, clone manuel)
+// récupérait la version d'il y a plusieurs mois. Home Assistant affichait alors
+// un numéro qui ne correspondait à rien.
+const manifest = readFileSync(MANIFEST_PATH, 'utf-8');
+writeFileSync(MANIFEST_PATH, manifest.replace(/("version":\s*")[^"]+(")/, `$1${next}$2`), 'utf-8');
+
 console.info(`Bumped ${current} → ${next}`);
 
-run(`git add ${CONFIG_PATH}`);
+run(`git add ${CONFIG_PATH} ${MANIFEST_PATH}`);
 run(`git commit -m "chore: bump version to ${next}"`);
 run('git push origin main');
 run(`git tag ${tag}`);

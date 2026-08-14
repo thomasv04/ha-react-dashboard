@@ -194,10 +194,36 @@ mais les fichiers réellement servis sont antérieurs :
 
 `www_dir = custom_components/ha_react_dashboard/www` (`__init__.py:56`) et ce
 dossier n'est **pas suivi par git** : il est construit par la CI et empaqueté
-dans l'asset `ha_react_dashboard.zip` de la release. v2.1.0 est la première
-release à porter cet asset. Un redémarrage ne retélécharge rien : il faut faire
-un *Redownload* de l'intégration dans HACS, puis redémarrer, puis vider le
-cache du navigateur.
+dans l'asset `ha_react_dashboard.zip` de la release (`hacs.json` :
+`zip_release: true`). v2.1.0 est la première release à porter cet asset.
+
+Après un *Redownload* HACS (l'entité est passée à `v2.1.1` à 18 h 49 UTC), les
+fichiers servis n'avaient **toujours pas bougé** :
+
+```
+ha-react-dashboard.js        Last-Modified: Fri, 14 Aug 2026 10:38:53 GMT
+chunks/ha-panel-DtQraxyh.js  Last-Modified: Fri, 14 Aug 2026 10:38:53 GMT
+assets/dashboard.css         Last-Modified: Fri, 14 Aug 2026 10:38:53 GMT
+```
+
+Or l'archive de v2.1.1 est saine : le run « Build & Publish Add-on » a réussi
+sur le tag v2.1.1 à 18 h 15 UTC, et l'API GitHub confirme que ce tag contient
+bien `3d596a1` (`compare/3d596a1...v2.1.1` → `behind_by: 0`). Un zip extrait
+restitue les mtimes qu'il contient, donc ces fichiers devraient dater de la
+construction CI (~18 h 15), pas de 10 h 38.
+
+**HACS a donc mis à jour sa métadonnée de version sans réécrire
+`custom_components/ha_react_dashboard/www/`.** Vérification en une commande,
+sans redémarrer :
+
+```bash
+curl -sI -H "Authorization: Bearer $TOKEN" \
+  http://homeassistant.local:8123/ha_react_dashboard_static/ha-react-dashboard.js | grep -i last-modified
+```
+
+Tant que la date reste au 14/08 10 h 38, l'extraction n'a pas eu lieu : purger
+`custom_components/ha_react_dashboard/`, refaire le téléchargement depuis HACS,
+redémarrer, puis vider le cache du navigateur.
 
 Conséquence visible tant que ce n'est pas fait : la barre du bas expose les
 sept emplacements built-in au lieu des panneaux personnalisés, et un panneau
