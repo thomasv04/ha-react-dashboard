@@ -4,6 +4,11 @@ on:
   push:
     tags:
       - 'v*'
+  # Repli manuel : un tag poussé par le GITHUB_TOKEN par défaut ne déclenche
+  # aucun workflow. Choisir le tag comme ref au lancement (« Use workflow from »
+  # → le tag `vX.Y.Z`) relance donc la publication à l'identique — `GITHUB_REF_NAME`
+  # vaut alors le nom du tag, comme sur un push.
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io

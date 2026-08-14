@@ -1,0 +1,77 @@
+name: Create Release Tag
+
+# Publie une version depuis GitHub, sans clone local.
+#
+# Onglet Actions → « Create Release Tag » → Run workflow → choisir le niveau.
+#
+# Pourquoi : `npm run create-tag` tague ce que contient le `main` de ta machine.
+# Un `git pull` oublié, ou un push qui n'a pas abouti, et la version publiée ne
+# correspond pas à ce que GitHub héberge — c'est arrivé pour la v2.1.0, taguée
+# sans le correctif du renouvellement de jeton.
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Niveau de version'
+        type: choice
+        required: true
+        default: patch
+        options: [patch, minor, major]
+      version:
+        description: 'Version explicite (X.Y.Z) — ignore le champ ci-dessus'
+        type: string
+        required: false
+
+jobs:
+  tag:
+    name: Bump & tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # `RELEASE_TOKEN` (PAT) si présent : un tag poussé avec le GITHUB_TOKEN
+      # par défaut ne déclenche aucun autre workflow, donc « Build & Publish
+      # Add-on » ne partirait pas tout seul. Sans le secret, on retombe sur le
+      # jeton par défaut et le résumé indique quoi lancer à la main.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      # Réutilise le script local : une seule logique de version, mêmes
+      # garde-fous (branche, arbre propre, tag existant, version qui recule).
+      - name: Create tag
+        id: tag
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            npm run create-tag -- "${{ inputs.version }}"
+          else
+            npm run create-tag -- --${{ inputs.bump }}
+          fi
+          echo "version=$(grep -oP "^version:\s*'\K[^']+" ha-react-dashboard/config.yaml)" >> "$GITHUB_OUTPUT"
+
+      - name: Résumé
+        run: |
+          V="${{ steps.tag.outputs.version }}"
+          echo "### Tag \`v$V\` publié" >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "${{ secrets.RELEASE_TOKEN }}" ]; then
+            echo "« Build & Publish Add-on » démarre automatiquement." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "⚠️ Secret \`RELEASE_TOKEN\` absent : un tag poussé par le jeton par défaut ne déclenche pas d'autre workflow." >> "$GITHUB_STEP_SUMMARY"
+            echo "Lance « Build & Publish Add-on » à la main sur le tag \`v$V\`, ou ajoute le secret pour automatiser." >> "$GITHUB_STEP_SUMMARY"
+          fi
