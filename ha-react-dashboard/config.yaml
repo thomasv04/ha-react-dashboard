@@ -20,6 +20,12 @@ homeassistant_api: true
 ingress: true
 ingress_port: 8099
 panel_icon: 'mdi:view-dashboard'
+# Le serveur Express ne peut pas distinguer un administrateur d'un utilisateur
+# ordinaire : derrière l'ingress, le superviseur authentifie mais ne transmet
+# pas le rôle. C'est donc lui qui doit restreindre l'accès au panneau. Valeur
+# par défaut du superviseur, rendue explicite : elle porte ici une décision de
+# sécurité, pas une préférence d'affichage.
+panel_admin: true
 
 # Optional long-lived token; if empty run.sh falls back to $SUPERVISOR_TOKEN
 options:

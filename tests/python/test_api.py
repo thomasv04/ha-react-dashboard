@@ -315,3 +315,47 @@ async def test_bundle_is_served(hass, entry, hass_client):
     assert response.status == 200
     body = await response.text()
     assert "ha-react-dashboard-panel" in body
+
+
+# ── Rôles ─────────────────────────────────────────────────────────────────────
+# `HomeAssistantView` authentifie mais ne distingue pas les rôles : sans garde
+# explicite, tout utilisateur Home Assistant pouvait réécrire la configuration
+# partagée du dashboard.
+
+
+async def test_shared_writes_require_an_admin(
+    hass, entry, hass_client, hass_admin_user
+):
+    """Un utilisateur non administrateur ne peut pas écrire la config partagée."""
+    client = await hass_client()
+    hass_admin_user.groups = []  # rétrograde l'utilisateur du client
+
+    assert (await client.put(f"{BASE}/config", json={"version": 2})).status == 403
+    assert (await client.post(f"{BASE}/profiles", json={"name": "X"})).status == 403
+    assert (
+        await client.put(f"{BASE}/translations/overrides", json={})
+    ).status == 403
+
+
+async def test_device_settings_stay_open_to_everyone(
+    hass, entry, hass_client, hass_admin_user
+):
+    """Les réglages d'appareil ne sont pas partagés : ils restent accessibles.
+
+    Les verrouiller empêcherait une tablette murale ou le téléphone d'un proche
+    de choisir son propre thème.
+    """
+    client = await hass_client()
+    hass_admin_user.groups = []
+
+    res = await client.put(
+        f"{BASE}/settings/current",
+        json={"device_id": "salon", "data": {"theme": "dark"}},
+    )
+    assert res.status == 200
+
+
+async def test_an_admin_still_writes(hass, entry, hass_client):
+    """Le garde ne doit pas bloquer le cas normal."""
+    client = await hass_client()
+    assert (await client.put(f"{BASE}/config", json={"version": 2})).status == 200

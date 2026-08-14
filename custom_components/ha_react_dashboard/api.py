@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 import uuid
+from functools import wraps
 from pathlib import Path
 from typing import Any
 
@@ -43,6 +44,32 @@ def _safe_name(filename: str) -> str | None:
     return filename
 
 
+def require_admin(handler):
+    """Réserve un point d'entrée aux administrateurs.
+
+    `HomeAssistantView` authentifie déjà (`requires_auth` vaut True par
+    défaut), mais ne distingue pas les rôles : n'importe quel utilisateur
+    Home Assistant pouvait réécrire la configuration partagée du dashboard.
+    Le verrou `is_admin` du frontend ne fait que masquer des boutons.
+
+    Volontairement **non** appliqué à `/settings/current` : ces réglages sont
+    propres à un appareil (thème, performances), pas partagés. Les verrouiller
+    empêcherait une tablette murale ou le téléphone d'un proche de choisir son
+    propre affichage.
+    """
+
+    @wraps(handler)
+    async def wrapper(self, request: web.Request, *args: Any, **kwargs: Any) -> web.Response:
+        user = request.get("hass_user")
+        if user is None or not user.is_admin:
+            return self.json(
+                {"error": "Admin privileges required"}, status_code=403
+            )
+        return await handler(self, request, *args, **kwargs)
+
+    return wrapper
+
+
 class _Base(HomeAssistantView):
     """Vue partageant l'accès au store."""
 
@@ -64,6 +91,7 @@ class ConfigView(_Base):
             return self.json({"message": "No config yet", "layout": []})
         return self.json(config)
 
+    @require_admin
     async def put(self, request: web.Request) -> web.Response:
         body = await request.json()
         if not isinstance(body, dict):
@@ -88,6 +116,7 @@ class ProfilesView(_Base):
             ]
         )
 
+    @require_admin
     async def post(self, request: web.Request) -> web.Response:
         body = await request.json()
         label, data = body.get("label"), body.get("data")
@@ -120,6 +149,7 @@ class ProfileView(_Base):
             return self.json({"error": "Profile not found"}, status_code=404)
         return self.json(profile)
 
+    @require_admin
     async def put(self, request: web.Request, profile_id: str) -> web.Response:
         profile = self.store.collection("profiles").get(profile_id)
         if profile is None:
@@ -135,6 +165,7 @@ class ProfileView(_Base):
         await self.store.async_set_item("profiles", profile_id, updated)
         return self.json({"success": True})
 
+    @require_admin
     async def delete(self, request: web.Request, profile_id: str) -> web.Response:
         if not await self.store.async_delete_item("profiles", profile_id):
             return self.json({"error": "Profile not found"}, status_code=404)
@@ -200,6 +231,7 @@ class TranslationsView(_Base):
     async def get(self, request: web.Request) -> web.Response:
         return self.json({"overrides": self.store.get("translations", {})})
 
+    @require_admin
     async def put(self, request: web.Request) -> web.Response:
         body = await request.json()
         overrides = body.get("overrides") if isinstance(body, dict) else None
@@ -280,6 +312,7 @@ class BackgroundUploadView(_UploadBase):
     url = f"{BASE}/uploads/background"
     name = f"api:{DOMAIN}:uploads:background"
 
+    @require_admin
     async def post(self, request: web.Request) -> web.Response:
         meta, error = await self._save(request, "image", IMAGE_TYPES, MAX_IMAGE_SIZE)
         if error is not None:
@@ -296,6 +329,7 @@ class BackgroundFileView(_UploadBase):
     url = f"{BASE}/uploads/background/{{filename}}"
     name = f"api:{DOMAIN}:uploads:background:file"
 
+    @require_admin
     async def delete(self, request: web.Request, filename: str) -> web.Response:
         safe = _safe_name(filename)
         if safe is None:
@@ -320,6 +354,7 @@ class IconsView(_UploadBase):
             ]
         )
 
+    @require_admin
     async def post(self, request: web.Request) -> web.Response:
         meta, error = await self._save(
             request, "icon", ICON_TYPES, MAX_ICON_SIZE, subdir="icons"
@@ -342,6 +377,7 @@ class IconFileView(_UploadBase):
     url = f"{BASE}/uploads/icons/{{filename}}"
     name = f"api:{DOMAIN}:uploads:icons:file"
 
+    @require_admin
     async def delete(self, request: web.Request, filename: str) -> web.Response:
         safe = _safe_name(filename)
         if safe is None:
