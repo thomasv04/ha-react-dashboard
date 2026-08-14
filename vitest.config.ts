@@ -19,6 +19,7 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     include: [
       'src/**/*.test.{ts,tsx,js,jsx}',
+      'server/**/*.test.{ts,js}', // Routes Express (uploads, config…)
       '*.test.{ts,tsx,js,jsx}', // Ajout pour server.test.js
     ],
     server: {

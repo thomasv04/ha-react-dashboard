@@ -106,6 +106,16 @@ app.use('/api/translations', translationsRouter(db));
 app.get('/api/system/ha-config', (_req, res) => {
   let hassToken = null;
 
+  // Ce point d'entrée rend un jeton HA de longue durée, souvent créé par un
+  // administrateur : il vaut un accès complet à la maison. Sans authentification
+  // devant `/api/`, n'importe qui joignant le port le récupérait. On refuse
+  // plutôt que de le divulguer — le dashboard sait fonctionner sans (il retombe
+  // sur le flux d'authentification de HA).
+  if (isProduction && process.env.HA_AUTH !== 'true') {
+    console.error('[ha-dashboard] HA_AUTH is not enabled: refusing to serve the HA token over an unauthenticated endpoint.');
+    return res.json({ hassToken: null, reason: 'auth_disabled' });
+  }
+
   // Read ha_token from /data/options.json if present (set via HA add-on options)
   try {
     const optionsPath = process.env.OPTIONS_PATH || '/data/options.json';
