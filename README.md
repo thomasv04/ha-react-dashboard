@@ -1,6 +1,33 @@
+<div align="center">
+
+<img src="docs/images/logo.png" alt="HA React Dashboard" width="160" />
+
 # HA React Dashboard
 
-🎨 A responsive, **drag-and-drop** React dashboard for **Home Assistant** with real-time entity updates, edit mode, and widget management.
+**Un tableau de bord React pour Home Assistant** — grille réorganisable à la souris,
+widgets configurables, panneaux sur mesure, mise à jour en temps réel.
+
+</div>
+
+<img src="docs/images/dashboard.png" alt="Le dashboard" />
+
+> Toutes les captures de ce README sont produites depuis l'environnement de test
+> à entités simulées (`SCREENSHOTS=1 npx playwright test --config playwright.dashboard.config.ts screenshots`).
+> Aucune donnée d'une vraie installation n'y figure.
+
+## Aperçu
+
+| Mode édition | Catalogue de widgets |
+|---|---|
+| <img src="docs/images/edit-mode.png" alt="Mode édition" /> | <img src="docs/images/widget-catalog.png" alt="Catalogue" /> |
+| Déplacez et redimensionnez chaque card. Chaque taille d'écran garde sa disposition. | Lumières, caméras, capteurs, thermostats… reliés à l'entité de votre choix. |
+
+| Visite guidée | Fiche détaillée |
+|---|---|
+| <img src="docs/images/tour.png" alt="Visite guidée" /> | <img src="docs/images/more-info.png" alt="Fiche plus d'infos" /> |
+| Au premier lancement, puis à la demande depuis le bouton d'aide. | Historique, attributs et commandes, au clic sur une card. |
+
+<img src="docs/images/settings.png" alt="Réglages" width="640" />
 
 ## ✨ Features
 
