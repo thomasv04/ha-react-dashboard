@@ -5,7 +5,7 @@ import { useCustomPanels } from '@/context/CustomPanelContext';
 import { cn } from '@/lib/utils';
 import { useEditMode } from '@/context/DashboardLayoutContext';
 import { useState, useEffect, useRef } from 'react';
-import { resolveIcon } from '@/lib/lucide-icon-map';
+import { resolveIcon, useIconCatalog } from '@/lib/lucide-icon-map';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useI18n } from '@/i18n';
 
@@ -43,6 +43,9 @@ function saveShowLabels(v: boolean) {
 }
 
 export function BottomNav() {
+  // Les icones hors du noyau arrivent avec le catalogue complet, charge a la
+  // demande : sans cet abonnement elles resteraient sur leur icone de repli.
+  useIconCatalog();
   const { t } = useI18n();
   const { openPanel, closePanel, activePanel } = usePanel();
   const { panels } = useCustomPanels();

@@ -5,7 +5,7 @@ import { useEditMode } from '@/context/DashboardLayoutContext';
 import { useWallPanel } from '@/context/WallPanelContext';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { cn } from '@/lib/utils';
-import { resolveIcon } from '@/lib/lucide-icon-map';
+import { resolveIcon, useIconCatalog } from '@/lib/lucide-icon-map';
 import { useState } from 'react';
 import { WallPanelConfigModal } from '@/components/wallpanel/WallPanelConfigModal';
 import { CustomPanelEditorModal } from '@/components/custom-panels';
@@ -19,6 +19,9 @@ const DEFAULT_ICONS: Record<PageType, LucideIcon> = {
 };
 
 export function PageTabs() {
+  // Les icones hors du noyau arrivent avec le catalogue complet, charge a la
+  // demande : sans cet abonnement elles resteraient sur leur icone de repli.
+  useIconCatalog();
   const { t } = useI18n();
   const { pages, currentPageId, setCurrentPage, addPage, deletePage } = usePages();
   const { isEditMode } = useEditMode();

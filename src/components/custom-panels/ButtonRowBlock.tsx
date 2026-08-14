@@ -1,9 +1,12 @@
 import { motion } from 'framer-motion';
 import { useHass } from '@hakit/core';
-import { resolveIcon } from '@/lib/lucide-icon-map';
+import { resolveIcon, useIconCatalog } from '@/lib/lucide-icon-map';
 import type { ButtonRowBlock, InlineButton } from '@/types/custom-panel';
 
 function InlineButtonRenderer({ btn }: { btn: InlineButton }) {
+  // Les icones hors du noyau arrivent avec le catalogue complet, charge a la
+  // demande : sans cet abonnement elles resteraient sur leur icone de repli.
+  useIconCatalog();
   const { helpers } = useHass();
   // eslint-disable-next-line react-hooks/static-components
   const Icon = btn.icon ? resolveIcon(btn.icon) : undefined;

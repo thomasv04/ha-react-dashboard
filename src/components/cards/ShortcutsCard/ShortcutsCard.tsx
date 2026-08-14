@@ -8,7 +8,7 @@ import { useI18n } from '@/i18n';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { ShortcutsCardConfig } from '@/types/widget-configs';
-import { resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-map';
+import { resolveIcon, isCustomIcon, getCustomIconUrl, useIconCatalog } from '@/lib/lucide-icon-map';
 
 const FALLBACK_ICON_MAP: Record<string, LucideIcon> = {
   Blinds,
@@ -59,6 +59,9 @@ function resolveShortcuts(config: ShortcutsCardConfig | undefined): ResolvedShor
 }
 
 export function ShortcutsCard() {
+  // Les icones hors du noyau arrivent avec le catalogue complet, charge a la
+  // demande : sans cet abonnement elles resteraient sur leur icone de repli.
+  useIconCatalog();
   const { openPanel } = usePanel();
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();

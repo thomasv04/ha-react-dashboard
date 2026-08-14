@@ -21,7 +21,7 @@ import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { RoomsGridConfig, RoomEntry, RoomControl } from '@/types/widget-configs';
-import { resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-map';
+import { resolveIcon, isCustomIcon, getCustomIconUrl, useIconCatalog } from '@/lib/lucide-icon-map';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import { cn } from '@/lib/utils';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
@@ -81,6 +81,9 @@ const DEFAULT_ROOMS: RoomEntry[] = [
 // ── Control button ─────────────────────────────────────────────────────────────
 
 function ControlButton({ ctrl }: { ctrl: RoomControl }) {
+  // Les icones hors du noyau arrivent avec le catalogue complet, charge a la
+  // demande : sans cet abonnement elles resteraient sur leur icone de repli.
+  useIconCatalog();
   const { helpers } = useHass();
   const playFeedback = useSoundFeedback();
   const stateEntity = useSafeEntity(ctrl.stateEntity ?? '');
@@ -174,6 +177,9 @@ function DefaultLightControls({ entityIds }: { entityIds: string[] }) {
 // ── Room card ─────────────────────────────────────────────────────────────────
 
 function RoomCard({ room, index }: { room: RoomEntry; index: number }) {
+  // Les icones hors du noyau arrivent avec le catalogue complet, charge a la
+  // demande : sans cet abonnement elles resteraient sur leur icone de repli.
+  useIconCatalog();
   const { openPanel } = usePanel();
 
   const sensorIds = [room.tempEntity, room.humidityEntity].filter(Boolean) as string[];
