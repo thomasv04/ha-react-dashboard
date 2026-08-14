@@ -214,7 +214,12 @@
     "deleteBlock": "Supprimer le bloc",
     "deletePanel": "Supprimer le panneau",
     "removeEntity": "Retirer l'entité",
-    "removeButton": "Retirer le bouton"
+    "removeButton": "Retirer le bouton",
+    "blockTypeWidget": "Widget",
+    "blockTypeWidgetDesc": "Embarquer n'importe quelle card du dashboard — caméra, lumière, capteur, thermostat…",
+    "widgetType": "Card",
+    "widgetRows": "Hauteur (rangées)",
+    "widgetRowsHint": "Une rangée = 80 px. Les cards adaptent leur mise en page à la hauteur donnée."
   },
   "wallPanel": {
     "subtitle": "Écran de veille avec widgets",

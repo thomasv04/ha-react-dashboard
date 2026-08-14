@@ -125,10 +125,31 @@ export function WidgetConfigProvider({ children, initialAllWidgetConfigs }: Widg
   return <WidgetConfigContext.Provider value={value}>{children}</WidgetConfigContext.Provider>;
 }
 
+/**
+ * Configs injectees pour un sous-arbre, court-circuitant celles de la page.
+ *
+ * Sert aux blocs `widget` des panneaux personnalises : la card y porte sa
+ * config en ligne, alors que `getWidgetConfig` tape normalement dans
+ * `allWidgetConfigs[currentPageId]`.
+ */
+const WidgetConfigOverrideContext = createContext<WidgetConfigs | null>(null);
+
+export function WidgetConfigOverride({ configs, children }: { configs: WidgetConfigs; children: ReactNode }) {
+  return <WidgetConfigOverrideContext.Provider value={configs}>{children}</WidgetConfigOverrideContext.Provider>;
+}
+
 export function useWidgetConfig() {
   const ctx = useContext(WidgetConfigContext);
+  const overrides = useContext(WidgetConfigOverrideContext);
   if (!ctx) {
     throw new Error('useWidgetConfig must be used within WidgetConfigProvider');
   }
-  return ctx;
+  // `getWidgetConfig` est un `useCallback` **du provider** : il ne peut pas lire
+  // un contexte situe sous lui. La surcharge se fait donc ici, dans le hook,
+  // appele par le consommateur.
+  if (!overrides) return ctx; // chemin normal : objet memoise d'origine, inchange
+  return {
+    ...ctx,
+    getWidgetConfig: <T extends WidgetConfig>(id: string): T | undefined => (overrides[id] as T | undefined) ?? ctx.getWidgetConfig<T>(id),
+  };
 }

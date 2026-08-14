@@ -13,7 +13,9 @@
 import { createRoot } from 'react-dom/client';
 import { HassConnect } from '@hakit/core';
 import { ToastProvider } from '@/context/ToastContext';
+import { ModalProvider } from '@/context/ModalContext';
 import { ToastContainer } from '@/components/ui/Toast/components/Toast';
+import { ModalContainer } from '@/components/ui/Modal/components/Modal';
 import { useHAToast } from '@/hooks/useHAToast';
 import { useHAModal } from '@/hooks/useHAModal';
 import Dashboard from './Dashboard';
@@ -51,9 +53,15 @@ function PanelApp({ hassUrl, hassToken }: PanelAppProps) {
           loading={<LoadingScreen stage='connect' onRetry={() => window.location.reload()} />}
         >
           <ToastProvider>
-            <HAToastBridge />
-            <Dashboard />
-            <ToastContainer />
+            {/* `ModalProvider` manquait dans la build panneau : `HAToastBridge`
+                s'abonne à `ha_dashboard_modal` via `useModal`, qui lève hors
+                provider — le panneau plantait au montage. Même arbre qu'App.tsx. */}
+            <ModalProvider>
+              <HAToastBridge />
+              <Dashboard />
+              <ToastContainer />
+              <ModalContainer />
+            </ModalProvider>
           </ToastProvider>
         </HassConnect>
       </ThemeContextProvider>

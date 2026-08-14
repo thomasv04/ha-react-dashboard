@@ -38,7 +38,32 @@ export interface SectionHeaderBlock {
   title: string;
 }
 
-export type CustomBlock = CoverRowBlock | ButtonBlock | ButtonRowBlock | SectionHeaderBlock;
+/**
+ * Embarque n'importe quelle card du registre dans un panneau.
+ *
+ * Les quatre autres blocs *agissent* sans rien *afficher* : pas d'etat, pas
+ * d'image, pas de courbe. Ecrire un bloc dedie par besoin, c'etait redevelopper
+ * des cards qui existent deja. Celui-ci les reutilise toutes, avec leur edition,
+ * leurs dispositions et leur i18n.
+ */
+export interface WidgetBlock {
+  id: string;
+  type: 'widget';
+  /** Cle de `WIDGET_COMPONENTS` : 'camera', 'vacuum', 'light'... */
+  widgetType: string;
+  /**
+   * Config de la card, **en ligne dans le bloc**.
+   *
+   * Pas dans `widgetConfigs[page]` : un panneau est global, les configs de
+   * widgets sont par page. Les y stocker rendrait un panneau dependant de la
+   * page depuis laquelle on l'ouvre.
+   */
+  config: Record<string, unknown>;
+  /** Hauteur en rangees de grille (80 px). Defaut 4. */
+  rows?: number;
+}
+
+export type CustomBlock = CoverRowBlock | ButtonBlock | ButtonRowBlock | SectionHeaderBlock | WidgetBlock;
 
 export interface CustomPanel {
   id: string;

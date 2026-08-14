@@ -2,8 +2,24 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION_FAST } from '@/lib/motion-tokens';
-import { X, Plus, Trash2, ChevronUp, ChevronDown, Zap, Blinds, Minus, Layers, Copy, Check, LayoutTemplate, Search } from 'lucide-react';
+import {
+  X,
+  Plus,
+  Trash2,
+  ChevronUp,
+  ChevronDown,
+  Zap,
+  Blinds,
+  Minus,
+  Layers,
+  Copy,
+  Check,
+  LayoutTemplate,
+  Search,
+  LayoutGrid,
+} from 'lucide-react';
 import { useCustomPanels } from '@/context/CustomPanelContext';
+import { WIDGET_META } from '@/widgets';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { IconPicker } from '@/components/layout/WidgetPickers';
 import { resolveIcon } from '@/lib/lucide-icon-map';
@@ -17,6 +33,7 @@ import type {
   InlineButton,
   CoverRowBlock,
   SectionHeaderBlock,
+  WidgetBlock,
 } from '@/types/custom-panel';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -45,6 +62,11 @@ const BLOCK_META = {
     color: 'bg-white/8 text-white/40 border border-white/12',
     Icon: Minus,
   },
+  widget: {
+    labelKey: 'layout.customPanel.blockTypeWidget',
+    color: 'bg-violet-500/20 text-violet-400 border border-violet-500/30',
+    Icon: LayoutGrid,
+  },
 } as const;
 
 const BLOCK_TYPE_PICKER: Array<{
@@ -66,6 +88,16 @@ const BLOCK_TYPE_PICKER: Array<{
     iconColor: 'text-blue-400',
     border: 'border-blue-500/20',
     hover: 'hover:bg-blue-500/10 hover:border-blue-500/30',
+  },
+  {
+    type: 'widget',
+    labelKey: 'layout.customPanel.blockTypeWidget',
+    descriptionKey: 'layout.customPanel.blockTypeWidgetDesc',
+    Icon: LayoutGrid,
+    iconBg: 'bg-violet-500/15',
+    iconColor: 'text-violet-400',
+    border: 'border-violet-500/20',
+    hover: 'hover:bg-violet-500/10 hover:border-violet-500/30',
   },
   {
     type: 'button-row',
@@ -111,6 +143,8 @@ function blockSummary(block: CustomBlock, t: TFn): string {
       return block.label || block.entityId || t('layout.customPanel.blockNoEntity');
     case 'section-header':
       return block.title || t('layout.customPanel.blockNoName');
+    case 'widget':
+      return block.widgetType || t('layout.customPanel.blockNoName');
     default:
       return '';
   }
@@ -575,6 +609,50 @@ function SectionHeaderBlockForm({ block, onChange }: { block: SectionHeaderBlock
   );
 }
 
+// ── Widget block ──────────────────────────────────────────────────────────────
+
+/**
+ * Choix de la card et de sa hauteur.
+ *
+ * La configuration fine (entité, options) se fait dans le panneau lui-même :
+ * une card embarquée s'édite comme sur la grille, via son propre formulaire.
+ * Dupliquer ici les champs de vingt-quatre cards n'apporterait rien.
+ */
+function WidgetBlockForm({ block, onChange }: { block: WidgetBlock; onChange: (b: WidgetBlock) => void }) {
+  const { t } = useI18n();
+  return (
+    <div className='pt-3 border-t border-white/8 flex flex-col gap-3'>
+      <div>
+        <label className='text-[11px] text-white/40 block mb-1'>{t('layout.customPanel.widgetType')}</label>
+        <select
+          value={block.widgetType}
+          onChange={e => onChange({ ...block, widgetType: e.target.value })}
+          className='w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 outline-none focus:border-blue-500/50'
+        >
+          <option value=''>—</option>
+          {WIDGET_META.map(m => (
+            <option key={m.type} value={m.type}>
+              {t(m.label)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className='text-[11px] text-white/40 block mb-1'>{t('layout.customPanel.widgetRows')}</label>
+        <input
+          type='number'
+          min={1}
+          max={12}
+          value={block.rows ?? 4}
+          onChange={e => onChange({ ...block, rows: Math.max(1, Math.min(12, Number(e.target.value) || 4)) })}
+          className='w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 outline-none focus:border-blue-500/50'
+        />
+        <p className='text-[10px] text-white/25 mt-1'>{t('layout.customPanel.widgetRowsHint')}</p>
+      </div>
+    </div>
+  );
+}
+
 // ── Block item ────────────────────────────────────────────────────────────────
 
 function BlockItem({
@@ -669,6 +747,7 @@ function BlockItem({
               {block.type === 'button-row' && <ButtonRowBlockForm block={block} onChange={b => onUpdate(b)} />}
               {block.type === 'cover-row' && <CoverRowBlockForm block={block} onChange={b => onUpdate(b)} />}
               {block.type === 'section-header' && <SectionHeaderBlockForm block={block} onChange={b => onUpdate(b)} />}
+              {block.type === 'widget' && <WidgetBlockForm block={block} onChange={b => onUpdate(b)} />}
             </div>
           </motion.div>
         )}
@@ -713,6 +792,8 @@ function PanelEditor({ panel, onChange }: { panel: CustomPanel; onChange: (p: Cu
       block = { id, type: 'button-row', buttons: [] };
     } else if (type === 'cover-row') {
       block = { id, type: 'cover-row', entityId: '' };
+    } else if (type === 'widget') {
+      block = { id, type: 'widget', widgetType: '', config: {}, rows: 4 };
     } else {
       block = { id, type: 'section-header', title: '' };
     }

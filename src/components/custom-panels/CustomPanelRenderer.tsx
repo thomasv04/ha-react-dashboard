@@ -5,6 +5,7 @@ import { CoverRowBlockRenderer } from './CoverRowBlock';
 import { ButtonBlockRenderer } from './ButtonBlock';
 import { ButtonRowBlockRenderer } from './ButtonRowBlock';
 import { SectionHeaderBlockRenderer } from './SectionHeaderBlock';
+import { WidgetBlockRenderer } from './WidgetBlock';
 import type { CustomBlock } from '@/types/custom-panel';
 import { useI18n } from '@/i18n';
 
@@ -18,6 +19,8 @@ function BlockRenderer({ block }: { block: CustomBlock }) {
       return <ButtonRowBlockRenderer block={block} />;
     case 'section-header':
       return <SectionHeaderBlockRenderer block={block} />;
+    case 'widget':
+      return <WidgetBlockRenderer block={block} />;
     default:
       return null;
   }
