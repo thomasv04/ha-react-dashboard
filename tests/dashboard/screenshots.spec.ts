@@ -50,7 +50,10 @@ test.describe('Captures du README', () => {
     await page.goto('/');
     await settle(page);
     await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
-    await page.getByRole('button', { name: /Ajouter/ }).first().click();
+    await page
+      .getByRole('button', { name: /Ajouter/ })
+      .first()
+      .click();
     await page.waitForTimeout(800);
     await page.screenshot({ path: path.join(OUT, 'widget-catalog.png') });
   });
