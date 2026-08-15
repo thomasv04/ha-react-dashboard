@@ -207,7 +207,10 @@ async function main() {
     if (!new RegExp(`\\b${varName}\\b[,\\]]`).test(src.split('export const WIDGETS')[1] ?? '')) {
       fs.writeFileSync(
         abs,
-        src.replace(/(export const WIDGETS = \[)([^\]]*)\]/, (_m, a, b) => `${a}${b.trim()}, ${varName}]`)
+        // `.replace(/,$/, '')` : le tableau est reformaté par prettier avec une
+        // virgule finale. Sans ça on écrivait `fan,, clock` — un trou dans le
+        // tableau, donc un `undefined` que `satisfies` refuse.
+        src.replace(/(export const WIDGETS = \[)([^\]]*)\]/, (_m, a, b) => `${a}\n  ${b.trim().replace(/,$/, '')},\n  ${varName},\n]`)
       );
     }
   }
