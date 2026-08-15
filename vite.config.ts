@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
+import { readFileSync } from 'fs';
 
 import dotenv from 'dotenv';
 dotenv.config();
@@ -24,6 +25,13 @@ const basePath = isAddon ? './' : useRelativePaths ? './' : `/local/${VITE_FOLDE
 
 // Mock-HA mode: replace @hakit/* with local mocks for E2E testing
 const isMockHA = process.env.VITE_MOCK_HA === 'true';
+
+// Version gravée dans le bundle. Lue depuis `config.yaml` — c'est ce fichier que
+// `create-tag` bump, donc le seul qui suive le tag publié. `release-notes.ts`,
+// tenu à la main, annonçait 2.1.3 dans un build 2.1.4. Un build qui ne sait pas
+// quelle version il est n'a rien à faire dans une release : on échoue ici.
+const buildVersion = readFileSync(path.resolve(__dirname, 'ha-react-dashboard/config.yaml'), 'utf-8').match(/^version:\s*'([^']+)'/m)?.[1];
+if (!buildVersion) throw new Error('Version introuvable dans ha-react-dashboard/config.yaml — le bundle afficherait un numéro faux.');
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -69,7 +77,10 @@ export default defineConfig({
   // En mode `lib`, Vite ne substitue pas `process.env.NODE_ENV` (contrairement au
   // build SPA) : React et framer-motion le lisent au chargement et la carte
   // mourait sur `process is not defined`.
-  define: isHACSPanel ? { 'process.env.NODE_ENV': '"production"' } : {},
+  define: {
+    __BUILD_VERSION__: JSON.stringify(buildVersion),
+    ...(isHACSPanel ? { 'process.env.NODE_ENV': '"production"' } : {}),
+  },
   build: isHACSPanel
     ? {
         // ESM, pas IIFE : HA charge ce fichier sur *chaque* page du frontend.

@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Copy, Check, Server, Download, Upload, AlertTriangle, Compass } from 'lucide-react';
 import { startTour } from '@/components/onboarding/TourOverlay';
-import { RELEASE_NOTES } from '@/data/release-notes';
 import { useI18n } from '@/i18n';
 import { apiFetch, isPanelMode } from '@/lib/api-base';
 import { useTheme } from '@/context/ThemeContext';
@@ -136,15 +135,16 @@ export function SystemSection() {
   return (
     <div className='flex flex-col gap-7'>
       {/* ── Version réellement chargée ── */}
-      {/* `RELEASE_NOTES[0]` est compilé dans le bundle : ce numéro est donc
-          celui du build servi, pas celui que HACS croit avoir installé. Les
-          deux ont divergé plusieurs fois sans que rien ne le montre. */}
+      {/* `__BUILD_VERSION__` vient de `config.yaml` au moment du build, donc du
+          commit tagué. Ce champ lisait `RELEASE_NOTES[0]`, tenu à la main : un
+          build 2.1.4 s'annonçait 2.1.3 et faisait croire à une mise à jour HACS
+          qui n'était jamais arrivée. */}
       <div className='flex items-baseline gap-2'>
         <span className='text-white/45 text-[11px] font-semibold tracking-widest uppercase'>
           {t('settings.system_section.buildVersion')}
         </span>
         <code data-testid='build-version' className='text-white/70 text-xs font-mono'>
-          {RELEASE_NOTES[0]?.version ?? '—'}
+          {__BUILD_VERSION__}
         </code>
       </div>
 

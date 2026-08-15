@@ -13,6 +13,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  // Injecté par vite.config.ts au build. Valeur factice ici : les tests ne
+  // doivent pas dépendre de la version en cours (cf. ed65051).
+  define: { __BUILD_VERSION__: '"test"' },
   test: {
     globals: true,
     environment: 'jsdom',
