@@ -43,6 +43,11 @@ export function MoreInfoProvider({ children }: { children: ReactNode }) {
   return <MoreInfoContext.Provider value={{ state, openMoreInfo, closeMoreInfo }}>{children}</MoreInfoContext.Provider>;
 }
 
+/** Variante tolérante : `null` hors provider (previews, stories, tests). */
+export function useMoreInfoOptional() {
+  return useContext(MoreInfoContext);
+}
+
 export function useMoreInfo() {
   const ctx = useContext(MoreInfoContext);
   if (!ctx) throw new Error('useMoreInfo must be used within MoreInfoProvider');

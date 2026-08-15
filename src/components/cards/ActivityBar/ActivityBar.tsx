@@ -1,21 +1,33 @@
 import { motion } from 'framer-motion';
 import { DURATION_ENTRANCE, DURATION_MEDIUM } from '@/lib/motion-tokens';
-import { Lightbulb, Flame, Battery, Sun, ShieldOff, ShieldCheck } from 'lucide-react';
+import { Activity, Lightbulb, Flame, Battery, Sun, ShieldOff, ShieldCheck } from 'lucide-react';
 import { useHass } from '@hakit/core';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, createElement } from 'react';
 import { useEntities, useEntitiesByDomain } from '@/hooks/useEntities';
 import { useI18n } from '@/i18n';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useMoreInfoOptional } from '@/context/MoreInfoContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
-import type { ActivityBarConfig } from '@/types/widget-configs';
+import { resolveIcon } from '@/lib/lucide-icon-map';
+import type { ActivityBarConfig, ActivityPill } from '@/types/widget-configs';
 
-interface Pill {
-  id: string;
+type Translate = (key: string, params?: Record<string, string | number>) => string;
+
+interface PillVisual {
   icon: React.ReactNode;
   label: string;
   color: string;
   bgColor: string;
   hideOnMobile?: boolean;
+}
+
+interface Pill extends PillVisual {
+  id: string;
+  entityId: string;
+  state: string;
+  action: NonNullable<ActivityPill['action']>;
+  service?: string;
+  accent?: string;
 }
 
 interface Person {
@@ -25,9 +37,92 @@ interface Person {
   state?: string;
 }
 
+/**
+ * Pastilles historiques : leur apparence est calculée depuis l'état, pas depuis
+ * la config. Une pastille dont l'`id` n'est pas ici est rendue génériquement
+ * (icône + `template` + couleur de la config).
+ */
+const PRESETS: Record<string, (state: string, t: Translate) => PillVisual> = {
+  alarm: (state, t) => {
+    const armed = state !== 'disarmed';
+    return {
+      icon: armed ? <ShieldCheck size={14} /> : <ShieldOff size={14} />,
+      label: armed ? t('activityBar.alarmArmed') : t('activityBar.alarmDisarmed'),
+      color: armed ? 'text-red-400' : 'text-green-400',
+      bgColor: armed ? 'bg-red-400/10' : 'bg-green-400/10',
+    };
+  },
+  heater: (state, t) => {
+    const isOn = state !== 'off';
+    return {
+      icon: <Flame size={14} />,
+      label: isOn ? t('activityBar.pelletOn') : t('activityBar.pelletOff'),
+      color: isOn ? 'text-orange-400' : 'text-white/40',
+      bgColor: isOn ? 'bg-orange-400/10' : 'bg-white/5',
+    };
+  },
+  solar: (state, t) => {
+    const lvl = Number(state);
+    let color = 'text-green-400';
+    let bgColor = 'bg-green-400/10';
+    if (lvl <= 25) {
+      color = 'text-red-400';
+      bgColor = 'bg-red-400/10';
+    } else if (lvl <= 60) {
+      color = 'text-yellow-400';
+      bgColor = 'bg-yellow-400/10';
+    }
+    return { icon: <Battery size={14} />, label: t('activityBar.battery', { value: state }), color, bgColor, hideOnMobile: true };
+  },
+  tempo: (state, t) => {
+    const colorMap: Record<string, { color: string; bgColor: string }> = {
+      Rouge: { color: 'text-red-400', bgColor: 'bg-red-400/10' },
+      Blanc: { color: 'text-white/80', bgColor: 'bg-white/10' },
+      Bleu: { color: 'text-blue-400', bgColor: 'bg-blue-400/10' },
+    };
+    const colorData = colorMap[state] ?? { color: 'text-blue-400', bgColor: 'bg-blue-400/10' };
+    return { icon: <Sun size={14} />, label: t('activityBar.tempo', { value: state }), ...colorData, hideOnMobile: true };
+  },
+  temp: (state, t) => ({
+    icon: <Lightbulb size={14} />,
+    label: t('activityBar.temperature', { value: Number(state).toFixed(1) }),
+    color: 'text-pink-400',
+    bgColor: 'bg-pink-400/10',
+    hideOnMobile: true,
+  }),
+};
+
+/** Domaine HA → fiche détail du registre `more-info`. */
+const MORE_INFO_TYPES: Record<string, string> = {
+  light: 'light',
+  cover: 'cover',
+  weather: 'weather',
+  climate: 'thermostat',
+  camera: 'camera',
+  person: 'person',
+  automation: 'automation',
+};
+
+/**
+ * Domaines dont la bascule n'est pas `homeassistant.toggle`.
+ * ponytail: alarm_control_panel n'y est pas — armer/désarmer demande un code,
+ * ça reste une fiche détail. À câbler si le besoin arrive.
+ */
+const TOGGLE_SERVICES: Record<string, (state: string) => [string, string]> = {
+  lock: state => ['lock', state === 'locked' ? 'unlock' : 'lock'],
+  cover: state => ['cover', state === 'open' ? 'close_cover' : 'open_cover'],
+};
+
+/** `{state}` → état, `{attr.X}` → attribut X. */
+function renderTemplate(template: string, state: string, attributes: Record<string, unknown> | undefined) {
+  return template.replace(/\{state\}/g, state).replace(/\{attr\.([\w.]+)\}/g, (_, key: string) => String(attributes?.[key] ?? ''));
+}
+
 export function ActivityBar() {
   const { t } = useI18n();
   const hassUrl = useHass(s => s.connection?.socket?.url);
+  const helpers = useHass(s => s.helpers);
+  const moreInfo = useMoreInfoOptional();
   const containerRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
@@ -35,20 +130,9 @@ export function ActivityBar() {
   const widgetId = useWidgetId();
   const config = getWidgetConfig<ActivityBarConfig>(widgetId || 'activity');
 
-  // Chaque pastille n'existe que si l'utilisateur lui a assigné une entité :
-  // pas de repli sur des entités codées en dur.
-  const entityFor = (pillId: string) => config?.pills?.find(p => p.id === pillId)?.entityId ?? '';
-
-  // La barre lit 5 entités nommées + le domaine `person`. S'abonner à la map
-  // complète la re-rendait à chaque message WebSocket de la maison entière.
-  const pillEntities = useEntities([
-    entityFor('alarm'),
-    entityFor('heater'),
-    entityFor('solar'),
-    entityFor('tempo'),
-    entityFor('temp'),
-    ...(config?.persons?.map(p => p.entityId) ?? []),
-  ]);
+  // La barre ne s'abonne qu'à ses propres entités : la map complète la
+  // re-rendait à chaque message WebSocket de la maison entière.
+  const pillEntities = useEntities([...(config?.pills?.map(p => p.entityId) ?? []), ...(config?.persons?.map(p => p.entityId) ?? [])]);
   const personEntities = useEntitiesByDomain('person');
   const entities = pillEntities as Record<string, (typeof pillEntities)[string] | undefined>;
 
@@ -63,88 +147,56 @@ export function ActivityBar() {
     return () => obs.disconnect();
   }, []);
 
+  // Chaque pastille n'existe que si l'utilisateur lui a assigné une entité
+  // vivante : pas de repli sur des entités codées en dur.
   const pills: Pill[] = [];
-
-  // Alarm
-  const alarmState = entities?.[entityFor('alarm')]?.state;
-  if (alarmState) {
-    const isArmed = alarmState !== 'disarmed';
+  for (const p of config?.pills ?? []) {
+    const entity = entities?.[p.entityId];
+    if (!entity?.state) continue;
+    const preset = PRESETS[p.id]?.(entity.state, t);
+    // `createElement` plutôt qu'une balise JSX : une icône résolue au render
+    // n'est pas un composant stable, et React le reconstruirait à chaque passe.
+    const customIcon = p.icon ? resolveIcon(p.icon) : null;
+    // Le `template` ne sert qu'aux pastilles sans preset : les configs
+    // existantes portent toutes `template: '{state}'` par défaut et perdraient
+    // sinon leurs libellés traduits.
+    const generic = p.template ? renderTemplate(p.template, entity.state, entity.attributes) : entity.state;
     pills.push({
-      id: 'alarm',
-      icon: isArmed ? <ShieldCheck size={14} /> : <ShieldOff size={14} />,
-      label: isArmed ? t('activityBar.alarmArmed') : t('activityBar.alarmDisarmed'),
-      color: isArmed ? 'text-red-400' : 'text-green-400',
-      bgColor: isArmed ? 'bg-red-400/10' : 'bg-green-400/10',
+      id: p.id,
+      entityId: p.entityId,
+      state: entity.state,
+      icon: customIcon ? createElement(customIcon, { size: 14 }) : (preset?.icon ?? <Activity size={14} />),
+      label: preset?.label ?? (p.label ? `${p.label} ${generic}` : generic),
+      color: preset?.color ?? 'text-white/80',
+      bgColor: preset?.bgColor ?? 'bg-white/5',
+      hideOnMobile: preset?.hideOnMobile,
+      accent: p.color,
+      action: p.action ?? 'none',
+      service: p.service,
     });
   }
 
-  // Heater
-  const heaterState = entities?.[entityFor('heater')]?.state;
-  if (heaterState) {
-    const isOn = heaterState !== 'off';
-    pills.push({
-      id: 'heater',
-      icon: <Flame size={14} />,
-      label: isOn ? t('activityBar.pelletOn') : t('activityBar.pelletOff'),
-      color: isOn ? 'text-orange-400' : 'text-white/40',
-      bgColor: isOn ? 'bg-orange-400/10' : 'bg-white/5',
-    });
-  }
-
-  // Battery solar
-  const battLevel = entities?.[entityFor('solar')]?.state;
-  if (battLevel) {
-    const lvl = Number(battLevel);
-    let color = 'text-green-400';
-    let bgColor = 'bg-green-400/10';
-    if (lvl <= 25) {
-      color = 'text-red-400';
-      bgColor = 'bg-red-400/10';
-    } else if (lvl <= 60) {
-      color = 'text-yellow-400';
-      bgColor = 'bg-yellow-400/10';
+  const handlePillClick = (pill: Pill, e: React.MouseEvent<HTMLElement>) => {
+    const domain = pill.entityId.split('.')[0];
+    if (pill.action === 'more-info') {
+      moreInfo?.openMoreInfo(
+        widgetId || 'activity',
+        MORE_INFO_TYPES[domain] ?? 'sensor',
+        pill.entityId,
+        e.currentTarget.getBoundingClientRect()
+      );
+      return;
     }
-    pills.push({
-      id: 'battery',
-      icon: <Battery size={14} />,
-      label: t('activityBar.battery', { value: battLevel }),
-      color,
-      bgColor,
-      hideOnMobile: true,
-    });
-  }
-
-  // Tempo couleur
-  const tempoCouleur = entities?.[entityFor('tempo')]?.state;
-  if (tempoCouleur) {
-    const colorMap: Record<string, { color: string; bgColor: string }> = {
-      Rouge: { color: 'text-red-400', bgColor: 'bg-red-400/10' },
-      Blanc: { color: 'text-white/80', bgColor: 'bg-white/10' },
-      Bleu: { color: 'text-blue-400', bgColor: 'bg-blue-400/10' },
-    };
-    const colorData = colorMap[tempoCouleur] ?? { color: 'text-blue-400', bgColor: 'bg-blue-400/10' };
-    pills.push({
-      id: 'tempo',
-      icon: <Sun size={14} />,
-      label: t('activityBar.tempo', { value: tempoCouleur }),
-      color: colorData.color,
-      bgColor: colorData.bgColor,
-      hideOnMobile: true,
-    });
-  }
-
-  // Chambre temp
-  const chambreTemp = entities?.[entityFor('temp')]?.state;
-  if (chambreTemp) {
-    pills.push({
-      id: 'chambre',
-      icon: <Lightbulb size={14} />,
-      label: t('activityBar.temperature', { value: Number(chambreTemp).toFixed(1) }),
-      color: 'text-pink-400',
-      bgColor: 'bg-pink-400/10',
-      hideOnMobile: true,
-    });
-  }
+    if (!helpers) return;
+    const [serviceDomain, service] =
+      pill.action === 'service' ? (pill.service ?? '').split('.') : (TOGGLE_SERVICES[domain]?.(pill.state) ?? ['homeassistant', 'toggle']);
+    if (!serviceDomain || !service) return;
+    helpers.callService({
+      domain: serviceDomain as never,
+      service: service as never,
+      target: { entity_id: pill.entityId },
+    } as never);
+  };
 
   // Helper to convert relative avatar paths to absolute URLs
   const getAvatarUrl = (avatarPath?: string) => {
@@ -197,7 +249,9 @@ export function ActivityBar() {
   const visiblePills = pills.filter(p => !(isMobile && p.hideOnMobile));
 
   return (
-    <div ref={containerRef} className='flex items-center justify-between w-full gap-4'>
+    // `h-full` + `items-center` : la case du widget est rognée aux coins
+    // arrondis, une pastille collée en haut à gauche y serait coupée.
+    <div ref={containerRef} className='flex items-center justify-between w-full h-full gap-4 px-1'>
       {/* Pills left */}
       {visiblePills.length > 0 && (
         <motion.div
@@ -206,18 +260,35 @@ export function ActivityBar() {
           transition={{ duration: DURATION_ENTRANCE }}
           className='flex gap-2 flex-wrap items-center'
         >
-          {visiblePills.map((pill, i) => (
-            <motion.div
-              key={pill.id}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: DURATION_MEDIUM, delay: i * 0.05 }}
-              className={`${pill.bgColor} rounded-full px-3 py-1.5 flex items-center gap-2 text-xs border border-white/10 backdrop-blur-sm`}
-            >
-              <span className={pill.color}>{pill.icon}</span>
-              <span className='text-white/90 font-medium text-xs'>{pill.label}</span>
-            </motion.div>
-          ))}
+          {visiblePills.map((pill, i) => {
+            const clickable = pill.action !== 'none';
+            const common = {
+              initial: { opacity: 0, scale: 0.9 },
+              animate: { opacity: 1, scale: 1 },
+              transition: { duration: DURATION_MEDIUM, delay: i * 0.05 },
+              className: `${pill.accent ? '' : pill.bgColor} rounded-full px-3 py-1.5 flex items-center gap-2 text-xs border border-white/10 backdrop-blur-sm${
+                clickable ? ' cursor-pointer hover:border-white/25' : ''
+              }`,
+              style: pill.accent ? { backgroundColor: `${pill.accent}1a` } : undefined,
+            };
+            const content = (
+              <>
+                <span className={pill.accent ? undefined : pill.color} style={pill.accent ? { color: pill.accent } : undefined}>
+                  {pill.icon}
+                </span>
+                <span className='text-white/90 font-medium text-xs'>{pill.label}</span>
+              </>
+            );
+            return clickable ? (
+              <motion.button key={pill.id} type='button' whileTap={{ scale: 0.94 }} onClick={e => handlePillClick(pill, e)} {...common}>
+                {content}
+              </motion.button>
+            ) : (
+              <motion.div key={pill.id} {...common}>
+                {content}
+              </motion.div>
+            );
+          })}
         </motion.div>
       )}
 

@@ -151,6 +151,24 @@ export function ListEditor({
                           label={field.label}
                         />
                       );
+                    } else if (field.fieldType === 'select' && field.options) {
+                      content = (
+                        <div>
+                          <label className='text-[11px] text-white/40 mb-1 block'>{field.label}</label>
+                          <select
+                            value={(item[field.key] as string) || field.options[0].value}
+                            onChange={e => updateItem(idx, field.key, e.target.value)}
+                            className='w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 outline-none focus:border-blue-500/50 cursor-pointer'
+                            style={{ colorScheme: 'dark' }}
+                          >
+                            {field.options.map(opt => (
+                              <option key={opt.value} value={opt.value} className='bg-[#0c1028]'>
+                                {opt.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      );
                     } else if (field.fieldType === 'panel-select') {
                       content = (
                         <PanelSelectField

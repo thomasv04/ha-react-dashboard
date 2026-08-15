@@ -193,6 +193,7 @@ export const LEGACY_WIDGET_FIELD_DEFS: Record<string, WidgetFieldDef[]> = {
       itemFields: [
         { key: 'entityId', label: 'Entité caméra', fieldType: 'entity', domain: 'camera' },
         { key: 'name', label: 'Nom', fieldType: 'text' },
+        { key: 'posterEntity', label: "Image d'attente (entité instantané)", fieldType: 'entity', domain: 'camera' },
       ],
     },
     {
@@ -232,6 +233,20 @@ export const LEGACY_WIDGET_FIELD_DEFS: Record<string, WidgetFieldDef[]> = {
         { key: 'entityId', label: 'Entité', fieldType: 'entity' },
         { key: 'label', label: 'Label', fieldType: 'text' },
         { key: 'template', label: 'Template ({state}, {attr.X})', fieldType: 'text' },
+        { key: 'icon', label: 'Icône', fieldType: 'icon' },
+        { key: 'color', label: 'Couleur (#hex, vide = auto)', fieldType: 'text' },
+        {
+          key: 'action',
+          label: 'Au clic',
+          fieldType: 'select',
+          options: [
+            { value: 'none', label: 'Rien' },
+            { value: 'more-info', label: 'Ouvrir la fiche détail' },
+            { value: 'toggle', label: "Basculer l'entité" },
+            { value: 'service', label: 'Appeler un service' },
+          ],
+        },
+        { key: 'service', label: 'Service (domain.service)', fieldType: 'text' },
       ],
     },
     {
