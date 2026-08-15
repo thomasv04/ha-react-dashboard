@@ -84,8 +84,24 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+      # Aligné sur `ci.yml` : cache du navigateur, chromium seul (les deux
+      # configs Playwright ne déclarent que ce projet), et pas de `--with-deps`
+      # — l'étape apt qu'il déclenche expirait sur le miroir Azure pendant un
+      # quart d'heure, pour des libs déjà présentes sur `ubuntu-latest`.
+      - name: Get Playwright version
+        id: pw-version
+        run: echo "version=$(npx playwright --version | awk '{print $2}')" >> $GITHUB_OUTPUT
+
+      - name: Cache Playwright browser
+        uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ steps.pw-version.outputs.version }}-chromium
+
+      - name: Install Playwright browser
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install chromium
 
       - name: Start Storybook
         run: npm run storybook &

@@ -161,13 +161,16 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ steps.pw-version.outputs.version }}-chromium
 
-      - name: Install Playwright browsers
+      # Pas de `--with-deps` : les runners `ubuntu-latest` embarquent déjà les
+      # bibliothèques système de Chromium. L'étape apt qu'il déclenche passait
+      # un quart d'heure à expirer sur le miroir `azure.archive.ubuntu.com`
+      # avant de basculer sur `archive.ubuntu.com` — et elle tournait sur les
+      # *deux* branches du cache, qui n'économisait donc que le téléchargement
+      # du navigateur. Si une lib venait à manquer, Chromium échouerait au
+      # lancement, franchement : remettre `--with-deps` ici seulement.
+      - name: Install Playwright browser
         if: steps.pw-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
-
-      - name: Install Playwright system deps (cached browsers)
-        if: steps.pw-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
+        run: npx playwright install chromium
 
       - name: Start Storybook
         run: npm run storybook &
@@ -204,13 +207,16 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ steps.pw-version.outputs.version }}-chromium
 
-      - name: Install Playwright browsers
+      # Pas de `--with-deps` : les runners `ubuntu-latest` embarquent déjà les
+      # bibliothèques système de Chromium. L'étape apt qu'il déclenche passait
+      # un quart d'heure à expirer sur le miroir `azure.archive.ubuntu.com`
+      # avant de basculer sur `archive.ubuntu.com` — et elle tournait sur les
+      # *deux* branches du cache, qui n'économisait donc que le téléchargement
+      # du navigateur. Si une lib venait à manquer, Chromium échouerait au
+      # lancement, franchement : remettre `--with-deps` ici seulement.
+      - name: Install Playwright browser
         if: steps.pw-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
-
-      - name: Install Playwright system deps (cached browsers)
-        if: steps.pw-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
+        run: npx playwright install chromium
 
       - name: Run dashboard e2e tests
         run: npm run test:e2e:dashboard
