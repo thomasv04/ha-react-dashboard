@@ -52,6 +52,17 @@
   box-shadow: none !important;
 }
 
+/* La liste déroulante d'un `<select>` est peinte par l'OS, pas par la page : nos
+   classes Tailwind habillent le contrôle fermé, jamais le menu, qui sortait donc
+   en blanc sur fond sombre. `color-scheme` est le seul levier — il vaut pour les
+   neuf `<select>` de l'app, y compris ceux montés en portail sur `document.body`.
+   ponytail: sélecteur nu, donc visible aussi depuis le `document.head` de Home
+   Assistant en mode panneau. HA n'expose que des `ha-select` en shadow DOM :
+   rien à atteindre. Scoper devient nécessaire le jour où ce n'est plus vrai. */
+select {
+  color-scheme: dark;
+}
+
 #root {
   width: 100%;
   height: 100%;

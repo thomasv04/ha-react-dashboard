@@ -61,7 +61,12 @@ export function EditButton() {
           et, sur mobile, passait sous le bouton Apparence (fixe en haut à
           gauche) puis débordait de l'écran. Bornée à droite du bouton, elle
           repasse à la ligne au lieu de recouvrir quoi que ce soit. */}
-      <div className='fixed top-4 left-16 right-4 z-50 flex flex-wrap items-center justify-end gap-2'>
+      {/* `pointer-events-none` : la barre s'étend sur toute la largeur alors que
+          ses boutons sont calés à droite. Au-dessus de `lg` la rangée d'onglets
+          repasse sous elle (`lg:mt-0`), et cette bande vide interceptait les
+          clics sur WallPanel et Panneaux — seuls leurs derniers pixels
+          répondaient. Les enfants réactivent le pointeur. */}
+      <div className='fixed top-4 left-16 right-4 z-50 flex flex-wrap items-center justify-end gap-2 pointer-events-none'>
         <AnimatePresence>
           {isEditMode && (
             <motion.div
@@ -70,7 +75,7 @@ export function EditButton() {
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 20, scale: 0.9 }}
               transition={{ duration: DURATION_FAST }}
-              className='flex items-center gap-2'
+              className='flex items-center gap-2 pointer-events-auto'
             >
               {/* Aide — visite guidée et documentation */}
               <button
@@ -141,7 +146,7 @@ export function EditButton() {
           whileTap={{ scale: 0.92 }}
           data-tour='edit'
           title={isEditMode ? t('dashboard.editTooltipExit') : t('dashboard.editTooltipEnter')}
-          className={`p-2.5 rounded-xl border transition-colors backdrop-blur-sm ${
+          className={`p-2.5 rounded-xl border transition-colors backdrop-blur-sm pointer-events-auto ${
             isEditMode
               ? 'bg-purple-500/30 border-purple-500/50 text-purple-200'
               : 'bg-white/10 border-white/20 text-white/70 hover:text-white hover:bg-white/20'
