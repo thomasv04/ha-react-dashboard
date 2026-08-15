@@ -17,7 +17,11 @@ import { isKioskEnabled, registerKioskHost, setKiosk } from './lib/kiosk';
 // (`/ha_react_dashboard_static/`) comme en développement, sans rien coder en dur.
 // `@vite-ignore` : le fichier est émis par le build CSS, pas par cette
 // expression — sa résolution est volontairement laissée à l'exécution.
-const CSS_URL = new URL(/* @vite-ignore */ './assets/dashboard.css', import.meta.url).href;
+// `?v=` : le nom du fichier est fixe (pas de hash) et HA le sert en
+// `cache-control: max-age=2678400`. Sans ça le navigateur garde la feuille d'une
+// version précédente pendant un mois pendant que le JS, lui, se met à jour — un
+// balisage neuf sur du CSS périmé (les modales perdaient `.gc-overlay`).
+const CSS_URL = new URL(/* @vite-ignore */ './assets/dashboard.css', import.meta.url).href + `?v=${__BUILD_VERSION__}`;
 
 // La SPA charge cette police depuis son `index.html`, fichier qui n'existe pas
 // en mode carte : sans ça, le dashboard tombe sur la police par défaut de HA.
