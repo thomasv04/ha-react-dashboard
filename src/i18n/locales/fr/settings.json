@@ -91,7 +91,8 @@
     "configImportErrCompressed": "Chaîne invalide — décompression échouée.",
     "configImportErrJson": "Chaîne invalide — impossible de lire le contenu.",
     "configImportErrVersion": "Version de configuration non supportée.",
-    "configImportErrMissing": "Configuration incomplète — les données de thème ou de dashboard sont manquantes."
+    "configImportErrMissing": "Configuration incomplète — les données de thème ou de dashboard sont manquantes.",
+    "buildVersion": "Build chargé"
   },
   "language_section": {
     "languageLabel": "Langue de l'interface",

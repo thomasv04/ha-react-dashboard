@@ -91,7 +91,8 @@
     "configImportErrCompressed": "Invalid string — decompression failed.",
     "configImportErrJson": "Invalid string — could not parse content.",
     "configImportErrVersion": "Unsupported config version.",
-    "configImportErrMissing": "Incomplete config — theme or dashboard data is missing."
+    "configImportErrMissing": "Incomplete config — theme or dashboard data is missing.",
+    "buildVersion": "Loaded build"
   },
   "language_section": {
     "languageLabel": "Interface language",
