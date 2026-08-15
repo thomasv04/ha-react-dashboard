@@ -1,0 +1,4 @@
+# Le dépôt est déjà stocké en LF ; sans cette ligne, git écrit la copie de
+# travail en CRLF sous Windows (`core.autocrlf`) et `prettier --check` refuse
+# alors tous les fichiers en local, alors que la CI (checkout Linux) les valide.
+* text=auto eol=lf
