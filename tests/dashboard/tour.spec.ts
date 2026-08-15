@@ -181,7 +181,10 @@ test.describe('Documentation des événements HA', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('ha-dashboard-tour-done', 'true');
-      localStorage.setItem('ha-dashboard-seen-version', '2.1.0');
+      // Ne rien poser : au premier chargement l'application note la version
+      // elle-meme sans rien annoncer. Y figer un numero le couplait a la
+      // release en cours, et la fenetre « Nouveautes » surgissait par-dessus
+      // des qu'elle avancait.
     });
     await page.goto('/');
     await waitForDashboard(page);
@@ -209,7 +212,10 @@ test.describe('Gestes sur les cards', () => {
   test("régler la jauge d'un thermostat n'ouvre pas la fiche", async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('ha-dashboard-tour-done', 'true');
-      localStorage.setItem('ha-dashboard-seen-version', '2.1.0');
+      // Ne rien poser : au premier chargement l'application note la version
+      // elle-meme sans rien annoncer. Y figer un numero le couplait a la
+      // release en cours, et la fenetre « Nouveautes » surgissait par-dessus
+      // des qu'elle avancait.
     });
     await page.goto('/');
     await waitForDashboard(page);
@@ -234,7 +240,10 @@ test.describe('Gestes sur les cards', () => {
   test('un simple clic ouvre toujours la fiche', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('ha-dashboard-tour-done', 'true');
-      localStorage.setItem('ha-dashboard-seen-version', '2.1.0');
+      // Ne rien poser : au premier chargement l'application note la version
+      // elle-meme sans rien annoncer. Y figer un numero le couplait a la
+      // release en cours, et la fenetre « Nouveautes » surgissait par-dessus
+      // des qu'elle avancait.
     });
     await page.goto('/');
     await waitForDashboard(page);
