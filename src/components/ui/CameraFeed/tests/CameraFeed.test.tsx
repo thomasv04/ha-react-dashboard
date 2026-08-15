@@ -5,8 +5,19 @@ const mockUseCamera = vi.fn();
 
 vi.mock('@hakit/core', () => ({
   useCamera: (entityId: string) => mockUseCamera(entityId),
-  useHass: (selector: (s: { entities: Record<string, unknown> }) => unknown) =>
-    selector({ entities: { 'camera.living_room': {}, 'camera.kitchen': {}, 'camera.unknown': {}, 'camera.front_door': {} } }),
+  useHass: (selector: (s: { entities: Record<string, unknown>; connection: unknown }) => unknown) =>
+    selector({
+      entities: {
+        'camera.living_room': {},
+        'camera.kitchen': {},
+        'camera.unknown': {},
+        'camera.front_door': {},
+        'camera.couloir_snapshot': {
+          attributes: { entity_picture: '/api/camera_proxy/camera.couloir_snapshot?token=xyz' },
+        },
+      },
+      connection: { socket: { url: 'ws://ha:8123/api/websocket' } },
+    }),
 }));
 
 vi.mock('hls.js', () => ({
@@ -112,6 +123,25 @@ describe('HLS — voile de chargement', () => {
 
     // Une <video> noire est indiscernable d'une caméra en panne.
     expect(container.querySelector('.animate-spin')).toBeInTheDocument();
+  });
+
+  it('affiche l’image d’attente sous le voile, puis la retire quand le direct arrive', () => {
+    mockUseCamera.mockReturnValue({
+      stream: { url: 'https://ha/api/hls/token/master_playlist.m3u8', loading: false, error: undefined },
+      mjpeg: { url: undefined, shouldRenderMJPEG: false },
+      poster: { url: undefined },
+    });
+    const { container } = render(<CameraFeed entityId='camera.living_room' streamMode='hls' posterEntity='camera.couloir_snapshot' />);
+
+    // L'attribut `entity_picture` de l'entité choisie, préfixé par la base HA.
+    expect(container.querySelector('img')).toHaveAttribute('src', 'http://ha:8123/api/camera_proxy/camera.couloir_snapshot?token=xyz');
+    // Le loader reste : l'image fixe ne doit pas laisser croire au direct.
+    expect(container.querySelector('.animate-spin')).toBeInTheDocument();
+
+    fireEvent.loadedData(container.querySelector('video')!);
+
+    expect(container.querySelector('img')).not.toBeInTheDocument();
+    expect(container.querySelector('.animate-spin')).not.toBeInTheDocument();
   });
 
   it('retire l’indicateur une fois la vidéo prête', () => {

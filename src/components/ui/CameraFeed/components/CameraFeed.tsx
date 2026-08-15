@@ -4,6 +4,7 @@ import { Camera, Loader2 } from 'lucide-react';
 import { useCamera, useHass } from '@hakit/core';
 import type { FilterByDomain, EntityName } from '@hakit/core';
 import { cn } from '@/lib/utils';
+import { useEntityPicture } from '@/hooks/useEntityPicture';
 import type { CameraStreamMode } from '@/types/widget-types';
 
 export type StreamProtocol = 'HLS' | 'MJPEG' | null;
@@ -12,6 +13,13 @@ interface CameraFeedProps {
   entityId: string;
   className?: string;
   streamMode?: CameraStreamMode;
+  /**
+   * Entité caméra dont l'image fixe est affichée pendant le chargement du flux,
+   * au lieu du rectangle noir — typiquement l'entité « instantané » d'une
+   * caméra, plus rapide à charger que son direct. Le voile de chargement reste
+   * posé par-dessus.
+   */
+  posterEntity?: string;
   onProtocol?: (protocol: StreamProtocol) => void;
 }
 
@@ -20,7 +28,7 @@ interface CameraFeedProps {
  * The browser handles the multipart/x-mixed-replace natively: one persistent
  * HTTP connection, continuous JPEG frames, zero JS overhead.
  */
-const MjpegFeed = memo(function MjpegFeed({ entityId, className, onProtocol }: CameraFeedProps) {
+const MjpegFeed = memo(function MjpegFeed({ entityId, className, posterEntity, onProtocol }: CameraFeedProps) {
   // `poster: true` : une image fixe sert de dernière vue quand le flux est en
   // pause, plutôt qu'un rectangle noir.
   const cam = useCamera(entityId as FilterByDomain<EntityName, 'camera'>, { poster: true });
@@ -33,7 +41,9 @@ const MjpegFeed = memo(function MjpegFeed({ entityId, className, onProtocol }: C
   const mjpegUrl = cam.mjpeg.url;
   // `?.` : `poster` n'est peuplé que si l'option est active côté `useCamera`.
   // L'image fixe est un confort, son absence ne doit pas casser le flux.
-  const posterUrl = cam.poster?.url;
+  // L'entité choisie en config prime sur le poster de la caméra elle-même.
+  const configPoster = useEntityPicture(posterEntity);
+  const posterUrl = configPoster ?? cam.poster?.url;
 
   // Build the stream URL from the mjpeg proxy URL
   // cam.mjpeg.url is typically /api/camera_proxy_stream/{entity_id}?token=...
@@ -51,7 +61,11 @@ const MjpegFeed = memo(function MjpegFeed({ entityId, className, onProtocol }: C
   }, [streamUrl, onProtocol]);
 
   if (!streamUrl || failed) {
-    return (
+    return posterUrl ? (
+      <div className={cn('relative', className)}>
+        <img src={posterUrl} alt='' className='absolute inset-0 w-full h-full object-cover' referrerPolicy='no-referrer' />
+      </div>
+    ) : (
       <div className={cn('flex items-center justify-center text-white/20', className)}>
         <Camera size={28} />
       </div>
@@ -60,16 +74,29 @@ const MjpegFeed = memo(function MjpegFeed({ entityId, className, onProtocol }: C
 
   // Le conteneur reste monté pour que l'IntersectionObserver ait une cible ;
   // seul le <img> du flux est démonté, ce qui ferme bien la connexion.
+  //
+  // L'image fixe reste dessous en permanence : un MJPEG n'affiche rien tant que
+  // la première trame n'est pas arrivée, et le flux la recouvre dès qu'elle
+  // l'est. Les deux couches sont positionnées, sinon l'absolue passerait devant.
   return (
     <div ref={holderRef} className={cn('relative', className)}>
-      {active ? (
-        <img src={streamUrl} alt='' className='w-full h-full object-cover' referrerPolicy='no-referrer' onError={handleError} />
-      ) : posterUrl ? (
-        <img src={posterUrl} alt='' className='w-full h-full object-cover' referrerPolicy='no-referrer' />
+      {posterUrl ? (
+        <img src={posterUrl} alt='' className='absolute inset-0 w-full h-full object-cover' referrerPolicy='no-referrer' />
       ) : (
-        <div className='w-full h-full flex items-center justify-center text-white/20'>
-          <Camera size={28} />
-        </div>
+        !active && (
+          <div className='absolute inset-0 flex items-center justify-center text-white/20'>
+            <Camera size={28} />
+          </div>
+        )
+      )}
+      {active && (
+        <img
+          src={streamUrl}
+          alt=''
+          className='absolute inset-0 w-full h-full object-cover'
+          referrerPolicy='no-referrer'
+          onError={handleError}
+        />
       )}
     </div>
   );
@@ -88,7 +115,7 @@ const STALL_TIMEOUT_MS = 8_000;
  * HLS feed — uses hls.js to play an HLS stream in a `<video>` element.
  * Better compression (H.264) but higher latency (~2-5s buffer).
  */
-const HlsFeed = memo(function HlsFeed({ entityId, className, onProtocol }: CameraFeedProps) {
+const HlsFeed = memo(function HlsFeed({ entityId, className, posterEntity, onProtocol }: CameraFeedProps) {
   const cam = useCamera(entityId as FilterByDomain<EntityName, 'camera'>, { poster: false });
   const videoRef = useRef<HTMLVideoElement>(null);
   const holderRef = useRef<HTMLDivElement>(null);
@@ -108,6 +135,7 @@ const HlsFeed = memo(function HlsFeed({ entityId, className, onProtocol }: Camer
 
   const streamUrl = cam.stream.url;
   const mjpegUrl = cam.mjpeg.url;
+  const posterUrl = useEntityPicture(posterEntity);
 
   // Le badge doit refléter ce qui est affiché, pas ce qui est en train de se
   // charger. Le signaler depuis le corps du rendu déclenchait un `setState` du
@@ -217,20 +245,35 @@ const HlsFeed = memo(function HlsFeed({ entityId, className, onProtocol }: Camer
   // l'autre au lieu d'être détruite puis recréée quand le flux arrive.
   return (
     <div ref={holderRef} className={cn('relative', className)}>
+      {/* Image d'attente : couche la plus basse, visible tant que la vidéo n'a
+          pas décodé sa première trame (ou en repli sans MJPEG). */}
+      {posterUrl && !ready && (
+        <img src={posterUrl} className='absolute inset-0 w-full h-full object-cover' alt='' referrerPolicy='no-referrer' />
+      )}
+
       {fallback &&
         (mjpegUrl ? (
           <img src={mjpegUrl} className='absolute inset-0 w-full h-full object-cover' alt='' referrerPolicy='no-referrer' />
         ) : (
-          <div className='absolute inset-0 flex items-center justify-center text-white/20'>
-            <Camera size={28} />
-          </div>
+          !posterUrl && (
+            <div className='absolute inset-0 flex items-center justify-center text-white/20'>
+              <Camera size={28} />
+            </div>
+          )
         ))}
 
       {/* Voile de chargement : le temps que la première image soit décodée, la
           `<video>` est noire — on ne distingue pas « ça arrive » de « en
           panne ». Pas de voile quand le repli MJPEG montre déjà une image. */}
       {!fallback && !ready && (
-        <div className='absolute inset-0 flex items-center justify-center bg-black/40 text-white/40'>
+        <div
+          className={cn(
+            'absolute inset-0 flex items-center justify-center text-white/40',
+            // Sur une image d'attente, un voile plus léger : elle doit rester
+            // lisible, le spinner suffit à dire que le direct arrive.
+            posterUrl ? 'bg-black/20' : 'bg-black/40'
+          )}
+        >
           <Loader2 size={24} className='animate-spin' />
         </div>
       )}
@@ -261,7 +304,7 @@ const HlsFeed = memo(function HlsFeed({ entityId, className, onProtocol }: Camer
  *
  * Calls `onProtocol` once the active protocol is determined.
  */
-export function CameraFeed({ entityId, className, streamMode = 'auto', onProtocol }: CameraFeedProps) {
+export function CameraFeed({ entityId, className, streamMode = 'auto', posterEntity, onProtocol }: CameraFeedProps) {
   // Booléen dérivé : un flux caméra remonté à chaque update d'entité
   // relançait la connexion MJPEG/HLS pour rien.
   const exists = useHass(s => !!s.entities?.[entityId]);
@@ -279,8 +322,8 @@ export function CameraFeed({ entityId, className, streamMode = 'auto', onProtoco
   }
 
   if (streamMode === 'hls' || (streamMode === 'auto' && supportsStream)) {
-    return <HlsFeed entityId={entityId} className={className} onProtocol={onProtocol} />;
+    return <HlsFeed entityId={entityId} className={className} posterEntity={posterEntity} onProtocol={onProtocol} />;
   }
 
-  return <MjpegFeed entityId={entityId} className={className} onProtocol={onProtocol} />;
+  return <MjpegFeed entityId={entityId} className={className} posterEntity={posterEntity} onProtocol={onProtocol} />;
 }

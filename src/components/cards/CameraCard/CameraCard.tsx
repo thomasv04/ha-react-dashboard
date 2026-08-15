@@ -16,6 +16,7 @@ import { useI18n } from '@/i18n';
 interface Cam {
   entityId: string;
   name: string;
+  posterEntity?: string;
 }
 
 export function CameraCard() {
@@ -126,6 +127,7 @@ export function CameraCard() {
           key={current.entityId}
           entityId={current.entityId}
           streamMode={streamMode}
+          posterEntity={current.posterEntity}
           className='w-full h-full'
           onProtocol={setProtocol}
         />

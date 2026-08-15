@@ -76,7 +76,12 @@ export default function CameraMoreInfo({ entityId, widgetId }: { entityId: strin
       <div className='relative w-full rounded-2xl overflow-hidden bg-black/50 aspect-video'>
         {mode === 'stream' ? (
           // Même moteur que la card : une caméra RTSP passe en HLS, sinon MJPEG.
-          <CameraFeed entityId={cameraEntityId} className='w-full h-full' streamMode={config?.streamMode} />
+          <CameraFeed
+            entityId={cameraEntityId}
+            className='w-full h-full'
+            streamMode={config?.streamMode}
+            posterEntity={config?.cameras?.find(c => c.entityId === cameraEntityId)?.posterEntity}
+          />
         ) : accessToken ? (
           <img key={`snap-${refreshKey}`} src={snapshotUrl} alt={name} className='w-full h-full object-contain' />
         ) : (
