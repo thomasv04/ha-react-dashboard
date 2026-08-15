@@ -10,7 +10,7 @@
  * d'être « défini par défaut » sur un appareil — un panneau d'add-on ou un panneau
  * custom ne peut pas l'être.
  */
-import { createRoot } from 'react-dom/client';
+import { createRoot, type Root } from 'react-dom/client';
 import { HassConnect } from '@hakit/core';
 import { ToastProvider } from '@/context/ToastContext';
 import { ModalProvider } from '@/context/ModalContext';
@@ -87,23 +87,53 @@ export interface DashboardHandle {
 }
 
 /**
+ * Racine React **unique**, partagée par toutes les instances de l'élément.
+ *
+ * Home Assistant détruit et recrée la carte à chaque reconstruction de vue :
+ * changement d'onglet Lovelace, reconnexion du frontend, retour d'arrière-plan
+ * sur l'application mobile. Remonter l'arbre condamnait le dashboard —
+ * `HassConnect` remet son magasin à zéro en se démontant (`ready` repasse à
+ * faux, les abonnements sont coupés) mais ne retente **jamais** la connexion
+ * pour une URL déjà tentée dans la page (`attemptedUrls`, module de @hakit).
+ * On restait sur « Connexion à Home Assistant » jusqu'au rechargement complet.
+ *
+ * On garde donc l'arbre vivant et on déplace simplement son nœud d'accueil.
+ */
+let mountPoint: HTMLDivElement | null = null;
+let root: Root | null = null;
+/** Hôte qui détient l'arbre : une poignée périmée ne doit pas le détacher. */
+let owner: HTMLElement | null = null;
+let teardownTimer: number | null = null;
+
+let hassUrl = window.location.origin;
+let hassToken: string | undefined;
+/** Objet `Auth` de Home Assistant — vivant, contrairement au jeton. */
+let hassAuth: HassAuth | undefined;
+
+const render = () => root?.render(<PanelApp hassUrl={hassUrl} hassToken={hassToken} />);
+
+/**
  * Monte le dashboard dans un élément hôte.
  *
  * Ce module pèse plusieurs mégaoctets : il n'est importé qu'au moment où la
  * carte apparaît réellement à l'écran, jamais au chargement du frontend HA.
  */
 export function mountDashboard(host: HTMLElement): DashboardHandle {
-  const mountPoint = document.createElement('div');
-  mountPoint.style.cssText = 'width:100%;height:100%;position:absolute;inset:0;';
+  if (teardownTimer !== null) {
+    clearTimeout(teardownTimer);
+    teardownTimer = null;
+  }
+
+  if (!mountPoint) {
+    mountPoint = document.createElement('div');
+    mountPoint.style.cssText = 'width:100%;height:100%;position:absolute;inset:0;';
+    root = createRoot(mountPoint);
+  }
+
+  // `appendChild` *déplace* le nœud si un autre hôte le détenait : l'arbre React
+  // ne se démonte pas, il change simplement de parent.
   host.appendChild(mountPoint);
-
-  const root = createRoot(mountPoint);
-  let hassUrl = window.location.origin;
-  let hassToken: string | undefined;
-  /** Objet `Auth` de Home Assistant — vivant, contrairement au jeton. */
-  let hassAuth: HassAuth | undefined;
-
-  const render = () => root.render(<PanelApp hassUrl={hassUrl} hassToken={hassToken} />);
+  owner = host;
   render();
 
   return {
@@ -151,8 +181,19 @@ export function mountDashboard(host: HTMLElement): DashboardHandle {
       }
     },
     destroy() {
-      root.unmount();
-      mountPoint.remove();
+      // Un autre hôte a déjà repris l'arbre : cette poignée est périmée.
+      if (owner !== host) return;
+      owner = null;
+      // Détacher, pas démonter : la carte revient presque toujours. Le
+      // démontage réel n'a lieu que si personne ne la remonte — sinon les flux
+      // caméra continueraient de tourner dans un nœud détaché.
+      mountPoint?.remove();
+      teardownTimer = window.setTimeout(() => {
+        teardownTimer = null;
+        root?.unmount();
+        root = null;
+        mountPoint = null;
+      }, 5_000);
     },
   };
 }
