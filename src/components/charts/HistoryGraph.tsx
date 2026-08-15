@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { HistoryPoint } from '@/hooks/useEntityHistory';
+import { useI18n } from '@/i18n';
 
 interface HistoryGraphProps {
   data: HistoryPoint[];
@@ -31,6 +32,7 @@ function formatTime(d: Date): string {
 }
 
 export function HistoryGraph({ data, height = 350, color = '#60a5fa' }: HistoryGraphProps) {
+  const { t } = useI18n();
   const graphWidth = W - PADDING_LEFT - PADDING_RIGHT;
   const graphHeight = height - PADDING_TOP - PADDING_BOTTOM;
 
@@ -79,7 +81,7 @@ export function HistoryGraph({ data, height = 350, color = '#60a5fa' }: HistoryG
   if (points.length < 2) {
     return (
       <div className='flex items-center justify-center text-white/30 text-sm' style={{ height }}>
-        Pas assez de données
+        {t('common.noData')}
       </div>
     );
   }

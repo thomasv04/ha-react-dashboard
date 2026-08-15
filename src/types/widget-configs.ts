@@ -36,6 +36,13 @@ export type {
   VacuumSelectEntity,
   VacuumCardConfig,
   PelletCardConfig,
+  ChartVariant,
+  ChartCardConfig,
+  BatteriesCardConfig,
+  LockCardConfig,
+  CalendarCardConfig,
+  TodoCardConfig,
+  FanCardConfig,
   WidgetConfig,
   WidgetConfigs,
 } from './widget-types';

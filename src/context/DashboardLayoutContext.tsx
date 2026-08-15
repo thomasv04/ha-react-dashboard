@@ -39,6 +39,12 @@ export interface GridWidget {
     | 'media_player'
     | 'alarm'
     | 'vacuum'
+    | 'chart'
+    | 'batteries'
+    | 'lock'
+    | 'calendar'
+    | 'todo'
+    | 'fan'
     | 'pellet';
   x: number;
   y: number;

@@ -262,5 +262,55 @@
     "battery": "Batterie",
     "grid": "Réseau",
     "selfUse": "AUTOCONSO"
+  },
+  "chart": {
+    "label": "Graphique",
+    "description": "Historique d'une entité, en courbe ou en frise on/off.",
+    "notFound": "Entité introuvable"
+  },
+  "batteries": {
+    "label": "Batteries",
+    "description": "Toutes les batteries de la maison, la plus faible en tête.",
+    "lowCount": "{count} sous {threshold}%",
+    "empty": "Aucune batterie détectée",
+    "allHealthy": "Toutes les batteries vont bien"
+  },
+  "lock": {
+    "label": "Serrure",
+    "description": "Verrouille et déverrouille une serrure, avec confirmation.",
+    "notFound": "Serrure introuvable",
+    "locked": "Verrouillée",
+    "unlocked": "Déverrouillée",
+    "locking": "Verrouillage...",
+    "unlocking": "Déverrouillage...",
+    "opening": "Ouverture...",
+    "jammed": "Bloquée",
+    "confirmUnlock": "Appuyer pour confirmer",
+    "openAction": "OUVRIR"
+  },
+  "calendar": {
+    "label": "Agenda",
+    "description": "Les prochains évènements de un ou plusieurs agendas.",
+    "empty": "Aucun évènement à venir",
+    "noCalendar": "Choisir un agenda",
+    "error": "Agenda inaccessible",
+    "today": "Aujourd'hui",
+    "tomorrow": "Demain"
+  },
+  "todo": {
+    "label": "Liste de tâches",
+    "description": "Courses et à-faire : cocher et ajouter depuis la card.",
+    "notFound": "Choisir une liste",
+    "empty": "Rien à faire",
+    "error": "Liste inaccessible",
+    "addPlaceholder": "Ajouter..."
+  },
+  "fan": {
+    "label": "Ventilateur",
+    "description": "Marche/arrêt, vitesse et oscillation d'un ventilateur.",
+    "notFound": "Ventilateur introuvable",
+    "on": "Allumé",
+    "off": "Éteint",
+    "oscillate": "Oscillation"
   }
 }

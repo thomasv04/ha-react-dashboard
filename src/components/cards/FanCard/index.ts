@@ -1,0 +1,1 @@
+export { FanCard } from './FanCard';

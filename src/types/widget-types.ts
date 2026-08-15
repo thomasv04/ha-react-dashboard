@@ -19,6 +19,12 @@ export interface ActivityPill {
   icon?: string; // lucide icon name
   /** Template: {state} is replaced by entity state, {attr.X} by attribute X */
   template?: string;
+  /** Accent colour (hex) — overrides the state-derived colour */
+  color?: string;
+  /** Click behaviour: nothing, detail sheet, entity toggle, or a HA service */
+  action?: 'none' | 'more-info' | 'toggle' | 'service';
+  /** action === 'service': 'domain.service', called on the pill entity */
+  service?: string;
 }
 
 export interface ActivityBarConfig {
@@ -31,6 +37,8 @@ export interface ActivityBarConfig {
 export interface CameraEntry {
   entityId: string;
   name: string;
+  /** Camera entity whose still image is shown while the stream loads */
+  posterEntity?: string;
 }
 
 export type CameraStreamMode = 'auto' | 'mjpeg' | 'hls';
@@ -428,6 +436,67 @@ export interface RoomCardConfig extends WidgetSoundOverrides {
 }
 
 // ── Union type ────────────────────────────────────────────────────────────────
+/** Rendu du graphique : courbe pour du numérique, frise pour du binaire */
+export type ChartVariant = 'line' | 'timeline';
+
+export interface ChartCardConfig {
+  type: 'chart';
+  entityId?: string;
+  name?: string;
+  /** Fenêtre d'historique, en heures */
+  hours?: number;
+  variant?: ChartVariant;
+  color?: string;
+}
+
+export interface BatteriesCardConfig {
+  type: 'batteries';
+  name?: string;
+  /** Seuil d'alerte, en % */
+  threshold?: number;
+  /** N'afficher que les batteries sous le seuil */
+  onlyLow?: boolean;
+  /** Entités à ignorer (faux positifs du filtre par device_class) */
+  exclude?: string[];
+}
+
+export interface LockCardConfig {
+  type: 'lock';
+  entityId?: string;
+  name?: string;
+  /** Demander une confirmation avant de déverrouiller */
+  confirmUnlock?: boolean;
+}
+
+export interface CalendarCardConfig {
+  type: 'calendar';
+  /** Agendas agrégés dans la card */
+  entityIds?: string[];
+  name?: string;
+  /** Horizon en jours */
+  days?: number;
+  /** Nombre maximum d'évènements listés */
+  max?: number;
+}
+
+export interface TodoCardConfig {
+  type: 'todo';
+  entityId?: string;
+  name?: string;
+  /** Afficher aussi les tâches terminées */
+  showCompleted?: boolean;
+  /** Champ de saisie pour ajouter une tâche */
+  allowAdd?: boolean;
+}
+
+export interface FanCardConfig {
+  type: 'fan';
+  entityId?: string;
+  name?: string;
+  /** Masquer le bouton d'oscillation même si l'entité le gère */
+  hideOscillate?: boolean;
+}
+
 export type WidgetConfig =
   | ActivityBarConfig
   | CameraCardConfig
@@ -452,6 +521,12 @@ export type WidgetConfig =
   | PelletCardConfig
   | GroupCardConfig
   | RoomCardConfig
+  | ChartCardConfig
+  | BatteriesCardConfig
+  | LockCardConfig
+  | CalendarCardConfig
+  | TodoCardConfig
+  | FanCardConfig
   | RoomsGridConfig;
 
 /** Map of widget id → its config */

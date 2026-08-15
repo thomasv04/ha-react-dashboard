@@ -262,5 +262,55 @@
     "battery": "Battery",
     "grid": "Grid",
     "selfUse": "SELF-USE"
+  },
+  "chart": {
+    "label": "Chart",
+    "description": "History of any entity, as a curve or an on/off timeline.",
+    "notFound": "Entity not found"
+  },
+  "batteries": {
+    "label": "Batteries",
+    "description": "Every battery in the house, lowest first.",
+    "lowCount": "{count} below {threshold}%",
+    "empty": "No battery detected",
+    "allHealthy": "All batteries are fine"
+  },
+  "lock": {
+    "label": "Lock",
+    "description": "Locks and unlocks a lock, with optional confirmation.",
+    "notFound": "Lock not found",
+    "locked": "Locked",
+    "unlocked": "Unlocked",
+    "locking": "Locking...",
+    "unlocking": "Unlocking...",
+    "opening": "Opening...",
+    "jammed": "Jammed",
+    "confirmUnlock": "Tap to confirm",
+    "openAction": "OPEN"
+  },
+  "calendar": {
+    "label": "Calendar",
+    "description": "Upcoming events from one or several calendars.",
+    "empty": "No upcoming event",
+    "noCalendar": "Pick a calendar",
+    "error": "Calendar unavailable",
+    "today": "Today",
+    "tomorrow": "Tomorrow"
+  },
+  "todo": {
+    "label": "To-do list",
+    "description": "Shopping and tasks: tick and add from the card.",
+    "notFound": "Pick a list",
+    "empty": "Nothing to do",
+    "error": "List unavailable",
+    "addPlaceholder": "Add..."
+  },
+  "fan": {
+    "label": "Fan",
+    "description": "On/off, speed and oscillation for a fan.",
+    "notFound": "Fan not found",
+    "on": "On",
+    "off": "Off",
+    "oscillate": "Oscillate"
   }
 }

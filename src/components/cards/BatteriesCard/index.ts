@@ -1,0 +1,1 @@
+export { BatteriesCard } from './BatteriesCard';

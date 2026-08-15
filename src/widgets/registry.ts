@@ -14,8 +14,24 @@ import type { WidgetDefinition } from './define-widget';
 import automation from '@/components/cards/AutomationCard/widget';
 import automationList from '@/components/cards/AutomationListCard/widget';
 import energyFlow from '@/components/cards/EnergyFlowCard/widget';
+import chart from '@/components/cards/ChartCard/widget';
+import batteries from '@/components/cards/BatteriesCard/widget';
+import lock from '@/components/cards/LockCard/widget';
+import calendar from '@/components/cards/CalendarCard/widget';
+import todo from '@/components/cards/TodoCard/widget';
+import fan from '@/components/cards/FanCard/widget';
 
-export const WIDGETS = [automation, automationList, energyFlow] satisfies readonly WidgetDefinition[];
+export const WIDGETS = [
+  automation,
+  automationList,
+  energyFlow,
+  chart,
+  batteries,
+  lock,
+  calendar,
+  todo,
+  fan,
+] satisfies readonly WidgetDefinition[];
 
 /** Union des types de widgets déclarés par manifeste */
 export type ManifestWidgetType = (typeof WIDGETS)[number]['type'];
