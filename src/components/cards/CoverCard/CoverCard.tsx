@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { Blinds, ChevronUp, ChevronDown, Square } from 'lucide-react';
+import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -94,8 +95,8 @@ export function CoverCard() {
 
   if (!entity) {
     return (
-      <div className='gc rounded-3xl p-4 flex items-center justify-center h-full'>
-        <span className='text-white/30 text-sm'>{t('widgets.cover.notFound')}</span>
+      <div className='gc rounded-3xl p-4 h-full'>
+        <CardPlaceholder icon={Blinds} text={t('widgets.cover.notFound')} />
       </div>
     );
   }
@@ -123,9 +124,36 @@ export function CoverCard() {
 
   return (
     <div ref={cardRef} className={cn('gc rounded-3xl flex flex-col h-full', isCompact ? 'p-2.5' : 'p-3.5')}>
-      {/* Header */}
-      <div className={cn('flex items-center justify-between', isCompact ? 'mb-1' : 'mb-2')}>
-        <span className={cn('text-white/40 font-medium truncate', isCompact ? 'text-[10px]' : 'text-xs')}>{name}</span>
+      {/* Header — l'icône rejoint la ligne du titre : elle occupait sa propre
+          rangée et volait de la hauteur au store, qui est le vrai sujet. */}
+      <div className={cn('flex items-center justify-between gap-2', isCompact ? 'mb-1.5' : 'mb-2.5')}>
+        <div className='flex items-center gap-2 min-w-0'>
+          <div
+            className={cn(
+              'rounded-xl flex items-center justify-center border transition-all duration-300 shrink-0',
+              isCompact ? 'w-6 h-6' : 'w-7 h-7'
+            )}
+            style={
+              isOpen
+                ? {
+                    background: 'rgba(56,189,248,0.12)',
+                    borderColor: 'rgba(56,189,248,0.26)',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.10), 0 0 14px -6px rgba(56,189,248,0.9)',
+                  }
+                : {
+                    background: 'rgba(255,255,255,0.05)',
+                    borderColor: 'rgba(255,255,255,0.08)',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+                  }
+            }
+          >
+            <Blinds
+              size={isCompact ? 12 : 14}
+              className={cn('transition-colors duration-300', isMoving && 'animate-pulse', isOpen ? 'text-sky-400' : 'text-white/35')}
+            />
+          </div>
+          <span className={cn('text-white/40 font-medium truncate', isCompact ? 'text-[10px]' : 'text-xs')}>{name}</span>
+        </div>
         <motion.span
           key={stateLabel}
           initial={{ scale: 0.8, opacity: 0 }}
@@ -144,52 +172,58 @@ export function CoverCard() {
         </motion.span>
       </div>
 
-      {/* Icon */}
-      <div className={cn('flex items-center', isCompact ? 'mb-1.5' : 'mb-3')}>
-        <div
-          className={cn(
-            'rounded-xl flex items-center justify-center border transition-all duration-300',
-            isCompact ? 'w-7 h-7' : 'w-9 h-9'
-          )}
-          style={
-            isOpen
-              ? { background: 'rgba(56,189,248,0.12)', borderColor: 'rgba(56,189,248,0.26)' }
-              : { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }
-          }
-        >
-          <Blinds
-            size={isCompact ? 13 : 17}
-            className={cn('transition-colors duration-300', isMoving && 'animate-pulse', isOpen ? 'text-sky-400' : 'text-white/35')}
-          />
-        </div>
-      </div>
-
       {/* Vertical slider */}
       <div className={cn('flex-1 flex items-stretch min-h-0', isCompact ? 'gap-1.5' : 'gap-3')}>
         <div
           ref={sliderRef}
           className='flex-1 relative rounded-2xl overflow-hidden cursor-ns-resize select-none'
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+          style={{
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+            border: '1px solid rgba(255,255,255,0.07)',
+            boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.30)',
+          }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
         >
-          {/* Closed portion from top */}
+          {/* Lamelles en filigrane sur toute la hauteur — sans elles, un store
+              grand ouvert n'était qu'un rectangle gris uni. */}
+          <div aria-hidden className='absolute inset-0 flex flex-col pointer-events-none'>
+            {Array.from({ length: 10 }, (_, i) => (
+              <div key={i} className='w-full border-b border-white/[0.04]' style={{ height: '10%' }} />
+            ))}
+          </div>
+
+          {/* Portion fermée, depuis le haut */}
           <motion.div
-            className='absolute top-0 left-0 right-0 rounded-t-2xl overflow-hidden'
+            className='absolute top-0 left-0 right-0 overflow-hidden'
             animate={{ height: `${closedPercent}%` }}
             transition={isDragging ? { duration: 0 } : { duration: DURATION_ENTRANCE, ease: 'easeOut' }}
-            style={{ background: 'rgba(56,189,248,0.22)', borderBottom: '1px solid rgba(56,189,248,0.30)' }}
+            style={{
+              background: 'linear-gradient(180deg, rgba(56,189,248,0.30), rgba(56,189,248,0.16))',
+              borderBottom: '1px solid rgba(56,189,248,0.45)',
+              boxShadow: '0 4px 14px -4px rgba(56,189,248,0.55)',
+            }}
           >
-            {/* Slat lines */}
+            {/* Lamelles de la portion fermée */}
             {Array.from({ length: 10 }, (_, i) => (
               <div key={i} className='w-full border-b border-sky-400/20' style={{ height: '10%' }} />
             ))}
           </motion.div>
 
+          {/* Poignée sur l'arête du store — rend le glissement évident */}
+          <motion.div
+            aria-hidden
+            className='absolute left-0 right-0 flex justify-center pointer-events-none'
+            animate={{ top: `calc(${closedPercent}% - 2px)` }}
+            transition={isDragging ? { duration: 0 } : { duration: DURATION_ENTRANCE, ease: 'easeOut' }}
+          >
+            <span className='h-1 w-7 rounded-full bg-white/50 shadow-md' />
+          </motion.div>
+
           {/* Position label */}
           <div className='absolute inset-0 flex items-center justify-center pointer-events-none'>
-            <span className={cn('text-white font-semibold drop-shadow-lg tabular-nums', isCompact ? 'text-sm' : 'text-base')}>
+            <span className={cn('text-white font-semibold drop-shadow-lg tabular-nums', isCompact ? 'text-sm' : 'text-lg')}>
               {Math.round(displayPosition)}%
             </span>
           </div>

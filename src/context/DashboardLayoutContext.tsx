@@ -45,6 +45,7 @@ export interface GridWidget {
     | 'calendar'
     | 'todo'
     | 'fan'
+    | 'clock'
     | 'pellet';
   x: number;
   y: number;

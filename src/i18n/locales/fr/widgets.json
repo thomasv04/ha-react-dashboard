@@ -28,15 +28,7 @@
       "windy": "Venteux",
       "windy-variant": "Très venteux"
     },
-    "days": [
-      "dim",
-      "lun",
-      "mar",
-      "mer",
-      "jeu",
-      "ven",
-      "sam"
-    ]
+    "days": ["dim", "lun", "mar", "mer", "jeu", "ven", "sam"]
   },
   "thermostat": {
     "label": "Thermostat",
@@ -59,7 +51,9 @@
     "color": "Couleur",
     "notFound": "Lumière introuvable",
     "on": "Allumé",
-    "off": "Éteint"
+    "off": "Éteint",
+    "warm": "Chaud",
+    "cold": "Froid"
   },
   "sensor": {
     "label": "Capteur",
@@ -185,7 +179,12 @@
   "automation": {
     "label": "Automatisation",
     "notFound": "Automatisation introuvable",
-    "description": "Active ou désactive une automatisation Home Assistant."
+    "description": "Active ou désactive une automatisation Home Assistant.",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "neverTriggered": "Jamais déclenchée",
+    "justTriggered": "à l'instant",
+    "triggeredAgo": "il y a {value}"
   },
   "group": {
     "label": "Groupe",
@@ -252,7 +251,8 @@
     "description": "Plusieurs automatisations dans une seule card, avec bascule.",
     "empty": "Aucune automatisation configurée",
     "active": "Actif",
-    "inactive": "Inactif"
+    "inactive": "Inactif",
+    "emptyHint": "Modifier le widget pour ajouter des automatisations"
   },
   "energy_flow": {
     "label": "Flux d'énergie",
@@ -295,7 +295,8 @@
     "noCalendar": "Choisir un agenda",
     "error": "Agenda inaccessible",
     "today": "Aujourd'hui",
-    "tomorrow": "Demain"
+    "tomorrow": "Demain",
+    "noCalendarHint": "Modifier le widget pour lier un agenda"
   },
   "todo": {
     "label": "Liste de tâches",
@@ -303,7 +304,8 @@
     "notFound": "Choisir une liste",
     "empty": "Rien à faire",
     "error": "Liste inaccessible",
-    "addPlaceholder": "Ajouter..."
+    "addPlaceholder": "Ajouter...",
+    "notFoundHint": "Modifier le widget pour lier une liste"
   },
   "fan": {
     "label": "Ventilateur",
@@ -312,5 +314,9 @@
     "on": "Allumé",
     "off": "Éteint",
     "oscillate": "Oscillation"
+  },
+  "clock": {
+    "label": "Horloge",
+    "description": "L'heure locale : cadran analogique sur les grandes cards, numérique sur les petites."
   }
 }

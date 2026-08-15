@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { Lightbulb, Palette, Thermometer } from 'lucide-react';
+import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useRipple, RippleLayer } from '@/components/ui/Ripple';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
@@ -116,12 +117,8 @@ export function LightCard() {
 
   if (!entity) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className='gc rounded-3xl p-4 flex items-center justify-center h-full'
-      >
-        <span className='text-white/30 text-sm'>{t('widgets.light.notFound')}</span>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className='gc rounded-3xl p-4 h-full'>
+        <CardPlaceholder icon={Lightbulb} text={t('widgets.light.notFound')} />
       </motion.div>
     );
   }
@@ -180,20 +177,35 @@ export function LightCard() {
   // eslint-disable-next-line react-hooks/static-components
   const CustomIcon = iconName && !isCustomIcon(iconName) ? resolveIcon(iconName) : undefined;
 
-  const isCompact = widgetSize.compact;
-
   const visibleTabs: Tab[] = [
     ...(showBrightness ? ['brightness' as Tab] : []),
     ...(showColorTemp ? ['colortemp' as Tab] : []),
     ...(showColor ? ['color' as Tab] : []),
   ];
-  const currentTab = visibleTabs.includes(activeTab) ? activeTab : (visibleTabs[0] ?? 'brightness');
+  const selectedTab = visibleTabs.includes(activeTab) ? activeTab : (visibleTabs[0] ?? 'brightness');
 
-  // Responsive sizes — le bouton n'est réduit que sur les cards vraiment
-  // écrasées (une rangée) ; sur une tuile carrée il reste la cible principale.
-  const isTight = widgetSize.squat || widgetSize.w === 'xs';
-  const iconBtnClass = isTight ? 'w-10 h-10 rounded-xl' : isCompact ? 'w-14 h-14 rounded-2xl' : 'w-16 h-16 rounded-2xl';
-  const iconSize = isTight ? 18 : isCompact ? 25 : 28;
+  /**
+   * Trois paliers, un par silhouette réelle de la card :
+   *
+   * - `sm` — une rangée ou colonne étroite : tout tient sur une ligne
+   *   horizontale, pas de halo, pas de curseur.
+   * - `md` — deux rangées : bouton centré + luminosité seule, sans onglets ni
+   *   halo. Le halo fait 92 px et débordait sur les onglets à cette hauteur.
+   * - `lg` — trois rangées ou plus : halo, onglets, curseur, libellé.
+   */
+  const tier: 'sm' | 'md' | 'lg' =
+    widgetSize.squat || widgetSize.w === 'xs' ? 'sm' : widgetSize.h === 'short' || widgetSize.w === 'sm' ? 'md' : 'lg';
+
+  const iconBtnClass = tier === 'sm' ? 'w-10 h-10 rounded-xl' : tier === 'md' ? 'w-14 h-14 rounded-2xl' : 'w-16 h-16 rounded-2xl';
+  const iconSize = tier === 'sm' ? 18 : tier === 'md' ? 25 : 28;
+  // Le halo se cale sur la hauteur disponible : sur 3 rangées il ne reste
+  // qu'une centaine de pixels au bouton une fois l'en-tête et les contrôles
+  // servis, un anneau de 100 px déborderait.
+  const haloSize = widgetSize.h === 'tall' ? 100 : 84;
+
+  // Sans onglets, seule la luminosité est atteignable : rendre le curseur de
+  // couleur sans son sélecteur laisserait l'utilisateur coincé dessus.
+  const currentTab: Tab = tier === 'lg' ? selectedTab : showBrightness ? 'brightness' : selectedTab;
 
   return (
     <motion.div
@@ -202,7 +214,12 @@ export function LightCard() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: DURATION_ENTRANCE }}
       onPointerDown={triggerRipple}
-      className={cn('gc rounded-3xl flex flex-col h-full relative overflow-hidden select-none', isCompact ? 'p-2.5' : 'p-3.5')}
+      className={cn(
+        'gc rounded-3xl flex h-full relative overflow-hidden select-none',
+        tier === 'sm' ? 'flex-row items-center gap-3 px-3 py-2' : 'flex-col',
+        tier === 'md' && 'p-2.5',
+        tier === 'lg' && 'p-3.5'
+      )}
       // Surface allumée : la card entière prend la couleur de la lampe et un
       // halo. Repérer une pièce allumée d'un coup d'œil depuis l'autre bout de
       // la pièce demande un contraste de *surface*, pas seulement d'icône.
@@ -218,8 +235,9 @@ export function LightCard() {
     >
       <RippleLayer ripples={ripples} color={accentColor ? `${accentColor}22` : 'rgba(251,191,36,0.12)'} />
 
-      {/* Header */}
-      <div className='flex items-center justify-between mb-1 shrink-0'>
+      {/* Header — masqué au palier `sm`, où nom et état passent à côté du
+          bouton plutôt qu'au-dessus : sur une rangée rien ne s'empile. */}
+      <div className={cn('flex items-center justify-between mb-1 shrink-0', tier === 'sm' && 'hidden')}>
         <span className='text-white/40 text-xs font-medium truncate'>{name}</span>
         <motion.span
           key={isOn ? 'on' : 'off'}
@@ -244,7 +262,27 @@ export function LightCard() {
       </div>
 
       {/* Icon toggle */}
-      <div className='flex items-center justify-center flex-1 min-h-0'>
+      <div className={cn('relative flex items-center justify-center', tier === 'sm' ? 'shrink-0' : 'flex-1 min-h-0')}>
+        {/* Halo projeté : la lampe éclaire autour d'elle quand elle est
+            allumée, et garde un anneau discret éteinte — sans lui la card se
+            réduisait à une icône flottant dans le vide. Réservé au palier
+            `lg` : plus bas il débordait sur les onglets. */}
+        {tier === 'lg' && (
+          <motion.span
+            aria-hidden
+            className='rounded-full border pointer-events-none'
+            style={{
+              position: 'absolute',
+              width: haloSize,
+              height: haloSize,
+              borderColor: isOn ? `${accentColor ?? '#fbbf24'}22` : 'rgba(255,255,255,0.05)',
+              background: isOn ? `radial-gradient(circle, ${accentColor ?? '#fbbf24'}26 0%, transparent 70%)` : 'transparent',
+            }}
+            animate={isOn ? { scale: [1, 1.05, 1], opacity: [0.75, 1, 0.75] } : { scale: 1, opacity: 1 }}
+            transition={isOn ? { duration: 3.4, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}
+          />
+        )}
+
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={handleToggle}
@@ -254,18 +292,23 @@ export function LightCard() {
               ? {
                   background: accentColor ? `${accentColor}18` : 'rgba(251,191,36,0.14)',
                   borderColor: accentColor ? `${accentColor}35` : 'rgba(251,191,36,0.25)',
+                  boxShadow: `0 0 22px -6px ${accentColor ?? '#fbbf24'}, inset 0 1px 0 rgba(255,255,255,0.10)`,
                 }
-              : { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }
+              : {
+                  background: 'rgba(255,255,255,0.05)',
+                  borderColor: 'rgba(255,255,255,0.08)',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+                }
           }
         >
           {isOn && (
             <div
-              className={cn('absolute inset-0 blur-xl opacity-20 pointer-events-none', isCompact ? 'rounded-xl' : 'rounded-2xl')}
+              className={cn('absolute inset-0 blur-xl opacity-20 pointer-events-none', tier === 'sm' ? 'rounded-xl' : 'rounded-2xl')}
               style={{ background: accentColor ?? '#fbbf24' }}
             />
           )}
           {customIconUrl ? (
-            <img src={customIconUrl} alt='' className={cn('relative object-contain', isCompact ? 'w-5 h-5' : 'w-7 h-7')} />
+            <img src={customIconUrl} alt='' className={cn('relative object-contain', tier === 'sm' ? 'w-5 h-5' : 'w-7 h-7')} />
           ) : CustomIcon ? (
             // L'icône est résolue depuis la config utilisateur : elle ne peut
             // pas être hissée hors du rendu, son identité dépend de la config.
@@ -285,19 +328,32 @@ export function LightCard() {
         </motion.button>
       </div>
 
-      {/* Controls — only shown when on, at least one enabled, and card is large enough */}
+      {/* Palier `sm` — nom et état à droite du bouton */}
+      {tier === 'sm' && (
+        <div className='flex-1 min-w-0'>
+          <div className='text-white/40 text-xs font-medium truncate'>{name}</div>
+          <div className='text-xs font-semibold truncate' style={{ color: isOn ? (accentColor ?? '#fbbf24') : 'rgba(255,255,255,0.25)' }}>
+            {isOn ? `${currentBrightness}%` : t('widgets.light.off')}
+          </div>
+        </div>
+      )}
+
+      {/* Contrôles — visibles même éteinte (en retrait) : sinon la card se
+          vidait entièrement dès qu'on éteignait. Bouger un curseur rallume,
+          `light.turn_on` porte déjà la valeur. */}
       <AnimatePresence>
-        {isOn && visibleTabs.length > 0 && !isCompact && (
+        {visibleTabs.length > 0 && tier !== 'sm' && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25 }}
-            className='shrink-0 overflow-hidden'
+            className={cn('shrink-0 overflow-hidden transition-opacity duration-300', isOn ? 'opacity-100' : 'opacity-45')}
           >
             <div className='mt-2'>
-              {/* Tab pills — only if multiple controls */}
-              {hasTabs && (
+              {/* Onglets — seulement au palier `lg` : sur deux rangées ils
+                  mangeaient la place du bouton, la luminosité suffit. */}
+              {hasTabs && tier === 'lg' && (
                 <div className='flex gap-1 mb-2'>
                   {visibleTabs.map(tab => (
                     <button
@@ -334,13 +390,14 @@ export function LightCard() {
                   value={currentBrightness}
                   onChange={handleBrightnessChange}
                   onClick={e => e.stopPropagation()}
-                  className='w-full h-1 rounded-full appearance-none cursor-pointer
+                  className='w-full h-1.5 rounded-full appearance-none cursor-pointer
                     [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5
                     [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-grab
                     [&::-webkit-slider-thumb]:active:cursor-grabbing [&::-webkit-slider-thumb]:shadow-md'
                   style={
                     {
-                      background: `linear-gradient(to right, ${accentColor ?? 'rgba(251,191,36,0.55)'} 0%, ${accentColor ?? 'rgba(251,191,36,0.55)'} ${currentBrightness}%, rgba(255,255,255,0.08) ${currentBrightness}%, rgba(255,255,255,0.08) 100%)`,
+                      background: `linear-gradient(to right, ${accentColor ?? 'rgba(251,191,36,0.55)'} 0%, ${accentColor ?? 'rgba(251,191,36,0.55)'} ${currentBrightness}%, rgba(255,255,255,0.06) ${currentBrightness}%, rgba(255,255,255,0.06) 100%)`,
+                      boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.35)',
                       '--thumb-color': accentColor ?? '#fbbf24',
                     } as React.CSSProperties & Record<string, string>
                   }
@@ -366,8 +423,8 @@ export function LightCard() {
                     }}
                   />
                   <div className='flex justify-between mt-1'>
-                    <span className='text-[9px] text-orange-300/60'>Chaud</span>
-                    <span className='text-[9px] text-blue-200/60'>Froid</span>
+                    <span className='text-[9px] text-orange-300/60'>{t('widgets.light.warm')}</span>
+                    <span className='text-[9px] text-blue-200/60'>{t('widgets.light.cold')}</span>
                   </div>
                 </div>
               )}
@@ -404,12 +461,12 @@ export function LightCard() {
         )}
       </AnimatePresence>
 
-      {/* State label */}
-      <div className={cn('text-center shrink-0', isCompact ? 'mt-0.5' : 'mt-1.5')}>
+      {/* State label — le palier `sm` l'affiche déjà à côté du bouton */}
+      <div className={cn('text-center shrink-0', tier === 'sm' ? 'hidden' : tier === 'md' ? 'mt-0.5' : 'mt-1.5')}>
         <span
           className={cn(
             'font-semibold transition-colors duration-300',
-            isCompact ? 'text-[10px]' : 'text-xs',
+            tier === 'md' ? 'text-[10px]' : 'text-xs',
             isOn ? 'text-amber-400/70' : 'text-white/20'
           )}
         >

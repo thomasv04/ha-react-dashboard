@@ -28,15 +28,7 @@
       "windy": "Windy",
       "windy-variant": "Very windy"
     },
-    "days": [
-      "Sun",
-      "Mon",
-      "Tue",
-      "Wed",
-      "Thu",
-      "Fri",
-      "Sat"
-    ]
+    "days": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
   },
   "thermostat": {
     "label": "Thermostat",
@@ -59,7 +51,9 @@
     "color": "Color",
     "notFound": "Light not found",
     "on": "On",
-    "off": "Off"
+    "off": "Off",
+    "warm": "Warm",
+    "cold": "Cold"
   },
   "sensor": {
     "label": "Sensor",
@@ -185,7 +179,12 @@
   "automation": {
     "label": "Automation",
     "notFound": "Automation not found",
-    "description": "Enables or disables a Home Assistant automation."
+    "description": "Enables or disables a Home Assistant automation.",
+    "active": "Active",
+    "inactive": "Inactive",
+    "neverTriggered": "Never triggered",
+    "justTriggered": "just now",
+    "triggeredAgo": "{value} ago"
   },
   "group": {
     "label": "Group",
@@ -252,7 +251,8 @@
     "description": "Several automations in a single card, with toggles.",
     "empty": "No automation configured",
     "active": "Active",
-    "inactive": "Inactive"
+    "inactive": "Inactive",
+    "emptyHint": "Edit the widget to add automations"
   },
   "energy_flow": {
     "label": "Energy flow",
@@ -295,7 +295,8 @@
     "noCalendar": "Pick a calendar",
     "error": "Calendar unavailable",
     "today": "Today",
-    "tomorrow": "Tomorrow"
+    "tomorrow": "Tomorrow",
+    "noCalendarHint": "Edit the widget to link a calendar"
   },
   "todo": {
     "label": "To-do list",
@@ -303,7 +304,8 @@
     "notFound": "Pick a list",
     "empty": "Nothing to do",
     "error": "List unavailable",
-    "addPlaceholder": "Add..."
+    "addPlaceholder": "Add...",
+    "notFoundHint": "Edit the widget to link a list"
   },
   "fan": {
     "label": "Fan",
@@ -312,5 +314,9 @@
     "on": "On",
     "off": "Off",
     "oscillate": "Oscillate"
+  },
+  "clock": {
+    "label": "Clock",
+    "description": "Local time — analog face on large cards, digital on small ones."
   }
 }

@@ -1,7 +1,8 @@
 import { useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, CalendarCheck, CalendarX } from 'lucide-react';
+import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useHass } from '@hakit/core';
 import { useServiceResponse } from '@/hooks/useServiceResponse';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -101,13 +102,18 @@ export function CalendarCard() {
       {/* Liste */}
       <div className='flex-1 min-h-0 mt-2'>
         {entityIds.length === 0 ? (
-          <Placeholder text={t('widgets.calendar.noCalendar')} />
+          <CardPlaceholder
+            icon={CalendarDays}
+            text={t('widgets.calendar.noCalendar')}
+            hint={t('widgets.calendar.noCalendarHint')}
+            compact={size.compact}
+          />
         ) : error ? (
-          <Placeholder text={t('widgets.calendar.error')} />
+          <CardPlaceholder icon={CalendarX} text={t('widgets.calendar.error')} tone='error' compact={size.compact} />
         ) : loading && events.length === 0 ? (
-          <Placeholder text={t('common.loading')} />
+          <CardPlaceholder icon={CalendarDays} text={t('common.loading')} tone='loading' compact={size.compact} />
         ) : events.length === 0 ? (
-          <Placeholder text={t('widgets.calendar.empty')} />
+          <CardPlaceholder icon={CalendarCheck} text={t('widgets.calendar.empty')} compact={size.compact} />
         ) : (
           <div className='flex flex-col gap-1.5 h-full overflow-y-auto scrollbar-none' style={{ scrollbarWidth: 'none' }}>
             {events.map((event, i) => (
@@ -126,13 +132,5 @@ export function CalendarCard() {
         )}
       </div>
     </motion.div>
-  );
-}
-
-function Placeholder({ text }: { text: string }) {
-  return (
-    <div className='h-full flex items-center justify-center'>
-      <span className='text-white/25 text-sm text-center'>{text}</span>
-    </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
@@ -7,7 +7,8 @@ import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { SensorCardConfig } from '@/types/widget-configs';
 import { cn } from '@/lib/utils';
 import { resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-map';
-import { Power } from 'lucide-react';
+import { Power, Activity } from 'lucide-react';
+import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useHass } from '@hakit/core';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import { SparkLine } from '@/components/charts/SparkLine';
@@ -18,23 +19,7 @@ import { useI18n } from '@/i18n';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useRipple, RippleLayer } from '@/components/ui/Ripple';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
-
-function useRelativeTime(isoTimestamp: string | undefined): string {
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 30_000);
-    return () => clearInterval(id);
-  }, []);
-  if (!isoTimestamp) return '';
-  // eslint-disable-next-line react-hooks/purity
-  const diffMs = Date.now() - new Date(isoTimestamp).getTime();
-  const diffMin = Math.floor(diffMs / 60_000);
-  if (diffMin < 1) return '__justNow__';
-  if (diffMin < 60) return `${diffMin}m`;
-  const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `${diffH}h`;
-  return `${Math.floor(diffH / 24)}j`;
-}
+import { useRelativeTime, JUST_NOW } from '@/hooks/useRelativeTime';
 
 const DOMAIN_ICONS: Record<string, string> = {
   sensor: 'Activity',
@@ -92,12 +77,8 @@ export function SensorCard() {
 
   if (!entity) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className='gc rounded-3xl p-4 flex items-center justify-center h-full'
-      >
-        <span className='text-white/30 text-sm'>{t('widgets.sensor.notFound')}</span>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className='gc rounded-3xl p-4 h-full'>
+        <CardPlaceholder icon={Activity} text={t('widgets.sensor.notFound')} />
       </motion.div>
     );
   }
@@ -118,14 +99,14 @@ export function SensorCard() {
   const thresholdColor = isNumeric ? getThresholdColor(numericValue, config?.thresholds) : undefined;
   const accentColor = thresholdColor ?? (isOn ? '#fbbf24' : '#60a5fa');
 
+  const gaugeMin = config?.min ?? 0;
+  const gaugeMax = config?.max ?? 100;
+  const gaugePercent = Math.max(0, Math.min(100, ((numericValue - gaugeMin) / (gaugeMax - gaugeMin || 1)) * 100));
+
   // eslint-disable-next-line react-hooks/purity
   const isStale = showStaleBadge && lastUpdated ? Date.now() - new Date(lastUpdated).getTime() > staleThreshold : false;
   const staleBadgeLabel =
-    relativeTime === '__justNow__'
-      ? t('widgets.sensor.justNow')
-      : relativeTime
-        ? t('widgets.sensor.updatedAgo', { value: relativeTime })
-        : '';
+    relativeTime === JUST_NOW ? t('widgets.sensor.justNow') : relativeTime ? t('widgets.sensor.updatedAgo', { value: relativeTime }) : '';
 
   const handleToggle = () => {
     if (!isToggleable) return;
@@ -191,8 +172,25 @@ export function SensorCard() {
         isCompact ? 'p-2.5' : 'p-3.5',
         isToggleable ? 'cursor-pointer' : 'cursor-default'
       )}
+      style={
+        thresholdColor || isOn
+          ? { borderColor: `${accentColor}30`, boxShadow: `var(--dash-elev-card), 0 0 28px -10px ${accentColor}77` }
+          : undefined
+      }
     >
       {isToggleable && <RippleLayer ripples={ripples} color={`${accentColor}25`} />}
+
+      {/* Halo d'accent en fond — donne de la profondeur au verre dès que la
+          valeur franchit un seuil ou que l'entité est allumée. */}
+      {(thresholdColor || isOn) && (
+        <span
+          aria-hidden
+          className='-top-10 -right-10 w-32 h-32 rounded-full pointer-events-none'
+          // `position` en inline : `.gc > *` force `relative` sur les enfants
+          // directs et bat l'utilitaire Tailwind. Même parade que Ripple.
+          style={{ position: 'absolute', background: `radial-gradient(circle, ${accentColor}26 0%, transparent 70%)` }}
+        />
+      )}
 
       {/* ── Header : (icône) + nom + badge toggle ──
           Sur une tuile 2×2, l'icône occupait sa propre rangée et laissait un
@@ -243,8 +241,10 @@ export function SensorCard() {
         </div>
       )}
 
-      {/* ── Corps : valeur / gauge / chart ── */}
-      <div className='flex-1 flex flex-col min-h-0 justify-end'>
+      {/* ── Corps : valeur / gauge / chart ──
+          `justify-center` et non `justify-end` : la valeur creusait un trou
+          entre l'icône et elle sur les tuiles hautes. */}
+      <div className='flex-1 flex flex-col min-h-0 justify-center'>
         {variant === 'gauge' && isNumeric ? (
           <div className='flex-1 flex items-center justify-center'>
             <SensorGauge
@@ -274,44 +274,53 @@ export function SensorCard() {
               </div>
             )}
 
-            {/* Barre de progression (variant default numérique) — l'icône ayant
-                rejoint l'en-tête, la place existe aussi sur les tuiles carrées ;
-                seule une card d'une seule rangée s'en passe. */}
-            {isNumeric && variant === 'default' && !widgetSize.squat && (
-              <div className='mb-2'>
-                <svg viewBox='0 0 120 6' className='w-full h-1.5' style={{ overflow: 'visible' }}>
-                  <rect x='0' y='1' width='120' height='4' rx='2' fill='rgba(255,255,255,0.06)' />
-                  <motion.rect
-                    x='0'
-                    y='1'
-                    height='4'
-                    rx='2'
-                    initial={{ width: 0 }}
-                    animate={{
-                      width: Math.max(
-                        4,
-                        Math.min(120, ((numericValue - (config?.min ?? 0)) / ((config?.max ?? 100) - (config?.min ?? 0))) * 120)
-                      ),
-                    }}
-                    transition={{ duration: 0.8, ease: 'easeOut' }}
-                    fill={accentColor}
-                    opacity={0.55}
-                  />
-                </svg>
-              </div>
-            )}
-
-            {/* Valeur principale */}
+            {/* Valeur principale — l'unité se détache en plus petit et plus
+                sourde, la valeur reste le seul point de fixation. */}
             <div
-              className={cn('font-light tracking-tight leading-none', isCompact ? 'text-2xl' : 'text-3xl')}
+              className={cn('font-light tracking-tight leading-none flex items-baseline gap-1', isCompact ? 'text-2xl' : 'text-[2.1rem]')}
               style={thresholdColor ? { color: thresholdColor } : undefined}
             >
               {isNumeric ? (
-                <AnimatedNumber value={numericValue} decimals={Number.isInteger(numericValue) ? 0 : 1} suffix={unit ? ` ${unit}` : ''} />
+                <>
+                  <AnimatedNumber value={numericValue} decimals={Number.isInteger(numericValue) ? 0 : 1} />
+                  {unit && <span className={cn('font-medium text-white/35 shrink-0', isCompact ? 'text-xs' : 'text-sm')}>{unit}</span>}
+                </>
               ) : (
                 <span className='text-white'>{displayState}</span>
               )}
             </div>
+
+            {/* Jauge linéaire (variant default numérique) — piste de verre
+                creusée, remplissage dégradé avec halo à l'extrémité. Les bornes
+                donnent enfin une échelle au chiffre. */}
+            {isNumeric && variant === 'default' && !widgetSize.squat && (
+              <div className='mt-2.5'>
+                <div
+                  className='relative h-1.5 w-full rounded-full overflow-hidden'
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.35), inset 0 -1px 0 rgba(255,255,255,0.04)',
+                  }}
+                >
+                  <motion.div
+                    className='absolute inset-y-0 left-0 rounded-full'
+                    initial={{ width: 0 }}
+                    animate={{ width: `${gaugePercent}%` }}
+                    transition={{ duration: 0.8, ease: 'easeOut' }}
+                    style={{
+                      background: `linear-gradient(90deg, ${accentColor}55, ${accentColor})`,
+                      boxShadow: `0 0 10px -1px ${accentColor}aa`,
+                    }}
+                  />
+                </div>
+                {!isCompact && (
+                  <div className='flex justify-between mt-1 text-[9px] font-medium tabular-nums text-white/25'>
+                    <span>{gaugeMin}</span>
+                    <span>{gaugeMax}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>

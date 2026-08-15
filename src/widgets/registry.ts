@@ -20,6 +20,7 @@ import lock from '@/components/cards/LockCard/widget';
 import calendar from '@/components/cards/CalendarCard/widget';
 import todo from '@/components/cards/TodoCard/widget';
 import fan from '@/components/cards/FanCard/widget';
+import clock from '@/components/cards/ClockCard/widget';
 
 export const WIDGETS = [
   automation,
@@ -31,6 +32,7 @@ export const WIDGETS = [
   calendar,
   todo,
   fan,
+  clock,
 ] satisfies readonly WidgetDefinition[];
 
 /** Union des types de widgets déclarés par manifeste */

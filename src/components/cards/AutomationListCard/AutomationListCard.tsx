@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { Workflow } from 'lucide-react';
+import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useHass, type HassStore } from '@hakit/core';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
@@ -110,15 +111,14 @@ export function AutomationListCard() {
 
   const items: AutomationItem[] = config?.automations ?? [];
   const name = config?.name ?? t('widgets.automation_list.label');
+  // Sélecteur qui ne renvoie qu'un nombre : la card ne se re-rend que si le
+  // décompte change réellement, pas à chaque message du store.
+  const activeCount = useHass(s => items.filter(i => s.entities?.[i.entityId]?.state === 'on').length);
 
   if (items.length === 0) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className='gc rounded-3xl p-4 flex items-center justify-center h-full'
-      >
-        <span className='text-white/30 text-sm'>{t('widgets.automation_list.empty')}</span>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className='gc rounded-3xl p-4 h-full'>
+        <CardPlaceholder icon={Workflow} text={t('widgets.automation_list.empty')} hint={t('widgets.automation_list.emptyHint')} />
       </motion.div>
     );
   }
@@ -130,15 +130,28 @@ export function AutomationListCard() {
       transition={{ duration: DURATION_ENTRANCE }}
       className='gc rounded-3xl p-3.5 flex flex-col h-full'
     >
-      {/* Header */}
+      {/* Header — le compteur d'actives manquait, `TodoCard` a bien le sien */}
       <div className='flex items-center gap-2 mb-2.5'>
         <div
           className='w-7 h-7 rounded-xl flex items-center justify-center border shrink-0'
-          style={{ background: 'rgba(74,222,128,0.10)', borderColor: 'rgba(74,222,128,0.22)' }}
+          style={{
+            background: 'rgba(74,222,128,0.10)',
+            borderColor: 'rgba(74,222,128,0.22)',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
+          }}
         >
           <Workflow size={13} className='text-emerald-400' />
         </div>
         <span className='text-white/40 text-xs font-medium truncate'>{name}</span>
+        <span
+          className={cn(
+            'ml-auto text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full border shrink-0 tabular-nums',
+            activeCount > 0 ? 'text-emerald-300' : 'bg-white/5 text-white/25 border-white/8'
+          )}
+          style={activeCount > 0 ? { background: 'rgba(74,222,128,0.12)', borderColor: 'rgba(74,222,128,0.25)' } : undefined}
+        >
+          {activeCount}/{items.length}
+        </span>
       </div>
 
       {/* List */}

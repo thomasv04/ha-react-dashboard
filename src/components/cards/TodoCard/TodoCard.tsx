@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
-import { ListChecks, Check, Plus } from 'lucide-react';
+import { ListChecks, Check, Plus, ListX, PartyPopper } from 'lucide-react';
+import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useServiceResponse } from '@/hooks/useServiceResponse';
@@ -86,8 +87,8 @@ export function TodoCard() {
 
   if (!entityId) {
     return (
-      <div ref={cardRef} className='gc rounded-3xl p-4 flex items-center justify-center h-full'>
-        <span className='text-white/30 text-sm'>{t('widgets.todo.notFound')}</span>
+      <div ref={cardRef} className='gc rounded-3xl p-4 h-full'>
+        <CardPlaceholder icon={ListChecks} text={t('widgets.todo.notFound')} hint={t('widgets.todo.notFoundHint')} compact={size.compact} />
       </div>
     );
   }
@@ -117,11 +118,11 @@ export function TodoCard() {
       {/* Liste */}
       <div className='flex-1 min-h-0 mt-2'>
         {error ? (
-          <Placeholder text={t('widgets.todo.error')} />
+          <CardPlaceholder icon={ListX} text={t('widgets.todo.error')} tone='error' compact={size.compact} />
         ) : loading && items.length === 0 ? (
-          <Placeholder text={t('common.loading')} />
+          <CardPlaceholder icon={ListChecks} text={t('common.loading')} tone='loading' compact={size.compact} />
         ) : items.length === 0 ? (
-          <Placeholder text={t('widgets.todo.empty')} />
+          <CardPlaceholder icon={PartyPopper} text={t('widgets.todo.empty')} compact={size.compact} />
         ) : (
           <div className='flex flex-col gap-1 h-full overflow-y-auto scrollbar-none' style={{ scrollbarWidth: 'none' }}>
             <AnimatePresence initial={false}>
@@ -174,13 +175,5 @@ export function TodoCard() {
         </form>
       )}
     </motion.div>
-  );
-}
-
-function Placeholder({ text }: { text: string }) {
-  return (
-    <div className='h-full flex items-center justify-center'>
-      <span className='text-white/25 text-sm text-center'>{text}</span>
-    </div>
   );
 }

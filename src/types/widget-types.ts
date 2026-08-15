@@ -497,6 +497,17 @@ export interface FanCardConfig {
   hideOscillate?: boolean;
 }
 
+export interface ClockCardConfig {
+  type: 'clock';
+  name?: string;
+  /** Cadran analogique quand la card est assez haute */
+  showAnalog?: boolean;
+  showDate?: boolean;
+  showSeconds?: boolean;
+  /** Format 12 h avec AM/PM, sinon 24 h */
+  hour12?: boolean;
+}
+
 export type WidgetConfig =
   | ActivityBarConfig
   | CameraCardConfig
@@ -527,6 +538,7 @@ export type WidgetConfig =
   | CalendarCardConfig
   | TodoCardConfig
   | FanCardConfig
+  | ClockCardConfig
   | RoomsGridConfig;
 
 /** Map of widget id → its config */
