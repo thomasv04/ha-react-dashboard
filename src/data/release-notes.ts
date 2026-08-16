@@ -50,6 +50,10 @@ export const RELEASE_NOTES: ReleaseNote[] = [
         tour: 'appearance',
       },
       {
+        text: "Dans un panneau, cliquer sur un bloc ouvre enfin la fiche détaillée de l'entité au lieu de ne rien faire. L'éditeur de panneaux, devenu illisible, est découpé en formulaires par type de bloc.",
+        tour: 'panels',
+      },
+      {
         text: 'Les touches `e` et `c` ouvrent une barre de commande rapide : `e` cherche une entité et ouvre sa fiche, `c` va à une page ou ouvre un panneau.',
       },
       {
@@ -59,7 +63,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
         text: "Un widget qui plante n'emporte plus la page, ni le panneau qui le contient. Une configuration invalide est signalée au chargement au lieu d'échouer en silence.",
       },
       {
-        text: "Correctifs : les bulles des fonds Aurora et Lave ne sautent plus d'un bord à l'autre, un clic sur un bloc de panneau ouvre bien la fiche détaillée, le flux caméra HLS redemande une URL à chaque réactivation, et la modale météo affiche enfin son historique de température.",
+        text: "Correctifs : les bulles des fonds Aurora et Lave ne sautent plus d'un bord à l'autre, le flux caméra HLS redemande une URL à chaque réactivation, et la modale météo affiche enfin son historique de température.",
       },
     ],
   },
