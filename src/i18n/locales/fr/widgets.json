@@ -10,6 +10,10 @@
     "gusts": "Rafales",
     "dewPoint": "Point rosée",
     "precipitation": "Précip.",
+    "hourly": "HORAIRE",
+    "daily": "JOURNALIER",
+    "details": "Détails",
+    "noHistory": "Pas d'historique de température disponible",
     "description": "Conditions météo actuelles et prévisions sur plusieurs jours.",
     "conditions": {
       "clear-night": "Nuit claire",
