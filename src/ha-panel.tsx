@@ -14,10 +14,12 @@ import { createRoot, type Root } from 'react-dom/client';
 import { HassConnect } from '@hakit/core';
 import { ToastProvider } from '@/context/ToastContext';
 import { ModalProvider } from '@/context/ModalContext';
+import { NotificationProvider } from '@/context/NotificationContext';
 import { ToastContainer } from '@/components/ui/Toast/components/Toast';
 import { ModalContainer } from '@/components/ui/Modal/components/Modal';
 import { useHAToast } from '@/hooks/useHAToast';
 import { useHAModal } from '@/hooks/useHAModal';
+import { useHANotification } from '@/hooks/useHANotification';
 import Dashboard from './Dashboard';
 import { ThemeContextProvider } from '@/context/ThemeContext';
 import { BackgroundLayer } from '@/components/layout/BackgroundLayer';
@@ -31,6 +33,7 @@ function HAToastBridge() {
   // `ha_dashboard_modal` était implémenté mais jamais abonné : l'événement
   // n'apparaissait même pas dans les écouteurs actifs de Home Assistant.
   useHAModal();
+  useHANotification();
   return null;
 }
 
@@ -57,10 +60,12 @@ function PanelApp({ hassUrl, hassToken }: PanelAppProps) {
                 s'abonne à `ha_dashboard_modal` via `useModal`, qui lève hors
                 provider — le panneau plantait au montage. Même arbre qu'App.tsx. */}
             <ModalProvider>
-              <HAToastBridge />
-              <Dashboard />
-              <ToastContainer />
-              <ModalContainer />
+              <NotificationProvider>
+                <HAToastBridge />
+                <Dashboard />
+                <ToastContainer />
+                <ModalContainer />
+              </NotificationProvider>
             </ModalProvider>
           </ToastProvider>
         </HassConnect>

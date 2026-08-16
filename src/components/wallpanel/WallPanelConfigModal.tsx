@@ -1,13 +1,45 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { EASE_OUT } from '@/lib/motion-tokens';
-import { X, Play, Plus, Trash2, Clock, Image, Layers, Settings2 } from 'lucide-react';
+import { X, Play, Plus, Trash2, Clock, Image, Layers, Settings2, Hand } from 'lucide-react';
 import { useWallPanel } from '@/context/WallPanelContext';
+import { PanelSelectField } from '@/components/layout/WidgetEditModal/PanelSelectField';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
-import type { ImageFit, MediaOrder } from '@/types/wallpanel';
+import { gesturesOf, type ImageFit, type MediaOrder } from '@/types/wallpanel';
 
-type Tab = 'activation' | 'background' | 'widgets' | 'style';
+type Tab = 'activation' | 'background' | 'widgets' | 'style' | 'gestures';
+
+/** Ligne interrupteur — le même bloc revenait cinq fois dans l'onglet Gestes. */
+function ToggleRow({
+  label,
+  description,
+  checked,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  description?: string;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label className={cn('flex items-center justify-between gap-4', disabled && 'opacity-40')}>
+      <div className='min-w-0'>
+        <p className='text-white/80 text-sm font-medium'>{label}</p>
+        {description && <p className='text-white/28 text-xs mt-0.5'>{description}</p>}
+      </div>
+      <input
+        type='checkbox'
+        checked={checked}
+        disabled={disabled}
+        onChange={e => onChange(e.target.checked)}
+        className='w-4 h-4 accent-purple-500 shrink-0'
+      />
+    </label>
+  );
+}
 
 interface WallPanelConfigModalProps {
   onClose: () => void;
@@ -41,7 +73,11 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
     { id: 'background', label: t('layout.wallPanel.tabBackground'), icon: Image },
     { id: 'widgets', label: t('layout.wallPanel.tabWidgets'), icon: Layers },
     { id: 'style', label: t('layout.wallPanel.tabStyle'), icon: Settings2 },
+    { id: 'gestures', label: t('layout.wallPanel.gestures.tab'), icon: Hand },
   ];
+
+  const gestures = gesturesOf(config);
+  const setGesture = (partial: Partial<typeof gestures>) => updateConfig({ gestures: { ...gestures, ...partial } });
 
   return (
     <>
@@ -333,6 +369,57 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                     }
                     className='w-full accent-purple-500'
                   />
+                </div>
+              </>
+            )}
+
+            {/* ── GESTES ── */}
+            {tab === 'gestures' && (
+              <>
+                <ToggleRow
+                  label={t('layout.wallPanel.gestures.enable')}
+                  description={t('layout.wallPanel.gestures.enableDesc')}
+                  checked={gestures.enabled}
+                  onChange={enabled => setGesture({ enabled })}
+                />
+
+                <div className={cn('space-y-5', !gestures.enabled && 'pointer-events-none')}>
+                  <ToggleRow
+                    label={t('layout.wallPanel.gestures.photos')}
+                    description={t('layout.wallPanel.gestures.photosDesc')}
+                    checked={gestures.photos}
+                    disabled={!gestures.enabled || config.image_urls.length === 0}
+                    onChange={photos => setGesture({ photos })}
+                  />
+
+                  <div className={cn(!gestures.enabled && 'opacity-40')}>
+                    <PanelSelectField
+                      label={t('layout.wallPanel.gestures.quickPanel')}
+                      value={gestures.quickPanelId}
+                      onChange={quickPanelId => setGesture({ quickPanelId })}
+                    />
+                    <p className='text-white/20 text-[10px] mt-1'>{t('layout.wallPanel.gestures.quickPanelDesc')}</p>
+                  </div>
+
+                  <ToggleRow
+                    label={t('layout.wallPanel.gestures.notifications')}
+                    description={t('layout.wallPanel.gestures.notificationsDesc')}
+                    checked={gestures.notifications}
+                    disabled={!gestures.enabled}
+                    onChange={notifications => setGesture({ notifications })}
+                  />
+
+                  <ToggleRow
+                    label={t('layout.wallPanel.gestures.hints')}
+                    description={t('layout.wallPanel.gestures.hintsDesc')}
+                    checked={gestures.hints}
+                    disabled={!gestures.enabled}
+                    onChange={hints => setGesture({ hints })}
+                  />
+                </div>
+
+                <div className='p-3 rounded-xl border border-purple-500/15 bg-purple-500/5'>
+                  <p className='text-white/40 text-xs leading-relaxed'>{t('layout.wallPanel.gestures.help')}</p>
                 </div>
               </>
             )}

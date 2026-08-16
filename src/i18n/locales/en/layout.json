@@ -255,7 +255,25 @@
     "infoBoxWidth": "Info box width: {value}px",
     "editWidgets": "Edit widgets",
     "touchToExit": "TOUCH TO EXIT",
-    "dismissOverlay": "Dismiss screensaver"
+    "dismissOverlay": "Dismiss screensaver",
+    "gestures": {
+      "tab": "Gestures",
+      "enable": "Enable touch gestures",
+      "enableDesc": "Swipe the screensaver without leaving it",
+      "photos": "Swipe to change photo",
+      "photosDesc": "Left or right",
+      "quickPanel": "Quick menu panel",
+      "quickPanelDesc": "Opened by swiping up. Empty = gesture disabled",
+      "notifications": "Home Assistant notifications",
+      "notificationsDesc": "Opened by swiping down — ha_dashboard_notification event",
+      "hints": "Show edge hints on start",
+      "hintsDesc": "Four markers that fade out after a few seconds",
+      "help": "A single tap always exits the screensaver: only swipes trigger these actions. Arrow keys do the same.",
+      "quickMenu": "Quick menu",
+      "noQuickPanel": "No panel selected",
+      "noNotifications": "No notifications",
+      "dismissAll": "Dismiss all"
+    }
   },
   "panelNoneCreated": "No panel yet — create one from the edit mode.",
   "dockLabelsOn": "Labels on",

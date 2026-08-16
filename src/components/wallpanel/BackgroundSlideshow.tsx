@@ -1,9 +1,24 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback, useImperativeHandle, type Ref } from 'react';
 import type { WallPanelConfig } from '@/types/wallpanel';
 import { useResolvedMediaUrls } from '@/hooks/useResolvedMediaUrls';
 
+/** Durée du fondu enchaîné, alignée sur `transition-opacity duration-1000`. */
+const CROSSFADE_MS = 1000;
+
+export interface SlideshowHandle {
+  /** +1 = image suivante, -1 = précédente. Sans effet pendant un fondu. */
+  go: (delta: number) => void;
+}
+
 interface BackgroundSlideshowProps {
   config: WallPanelConfig;
+  ref?: Ref<SlideshowHandle>;
+  /**
+   * Nombre d'images après résolution. Une seule URL `media-source://` peut
+   * désigner un album entier : l'appelant ne peut pas le déduire de la config,
+   * et il en a besoin pour savoir si le balayage horizontal a un sens.
+   */
+  onCountChange?: (count: number) => void;
 }
 
 function shuffleArray<T>(arr: T[]): T[] {
@@ -32,13 +47,12 @@ function BlurBg({ src, opacity }: { src: string; opacity: number }) {
   );
 }
 
-export function BackgroundSlideshow({ config }: BackgroundSlideshowProps) {
+export function BackgroundSlideshow({ config, ref, onCountChange }: BackgroundSlideshowProps) {
   const resolvedUrls = useResolvedMediaUrls(config.image_urls);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [nextIdx, setNextIdx] = useState(1);
   const [transitioning, setTransitioning] = useState(false);
   const [orderedUrls, setOrderedUrls] = useState<string[]>([]);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // (Re)construire la liste ordonnée quand les URLs résolues ou l'ordre changent
   useEffect(() => {
@@ -49,21 +63,37 @@ export function BackgroundSlideshow({ config }: BackgroundSlideshowProps) {
     setNextIdx(Math.min(1, urls.length - 1));
   }, [resolvedUrls, config.media_order]);
 
-  // Timer de défilement
-  useEffect(() => {
-    if (orderedUrls.length <= 1 || config.image_duration <= 0) return;
-    intervalRef.current = setInterval(() => {
+  useEffect(() => onCountChange?.(resolvedUrls.length), [resolvedUrls.length, onCountChange]);
+
+  /**
+   * Avance ou recule d'une image. Le modulo est ramené dans le positif :
+   * `-1 % 5` vaut `-1` en JavaScript, ce qui sortirait du tableau au premier
+   * balayage vers l'arrière.
+   */
+  const go = useCallback(
+    (delta: number) => {
+      const total = orderedUrls.length;
+      if (total <= 1 || transitioning) return;
+      setNextIdx((((currentIdx + delta) % total) + total) % total);
       setTransitioning(true);
       setTimeout(() => {
-        setCurrentIdx(prev => (prev + 1) % orderedUrls.length);
-        setNextIdx(prev => (prev + 1) % orderedUrls.length);
+        setCurrentIdx(prev => (((prev + delta) % total) + total) % total);
         setTransitioning(false);
-      }, 1000); // durée du crossfade CSS
-    }, config.image_duration * 1000);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [orderedUrls, config.image_duration]);
+      }, CROSSFADE_MS);
+    },
+    [currentIdx, orderedUrls.length, transitioning]
+  );
+
+  useImperativeHandle(ref, () => ({ go }), [go]);
+
+  // Défilement automatique. Un `setTimeout` réarmé à chaque image, et non un
+  // `setInterval` : après un balayage manuel, l'image suivante bénéficie ainsi
+  // d'une durée d'affichage complète au lieu du reliquat de l'intervalle.
+  useEffect(() => {
+    if (orderedUrls.length <= 1 || config.image_duration <= 0) return;
+    const timer = setTimeout(() => go(1), config.image_duration * 1000);
+    return () => clearTimeout(timer);
+  }, [currentIdx, orderedUrls.length, config.image_duration, go]);
 
   if (orderedUrls.length === 0) {
     return <div className='absolute inset-0' style={{ background: 'linear-gradient(135deg, #0c1028 0%, #1a2550 100%)' }} />;

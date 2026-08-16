@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { X, Compass, LayoutGrid, Layers, Palette, Play, Radio, Sparkles, ChevronRight } from 'lucide-react';
+import { X, Compass, Hand, LayoutGrid, Layers, Palette, Play, Radio, Sparkles, ChevronRight } from 'lucide-react';
 import { DURATION_FAST } from '@/lib/motion-tokens';
 import { useI18n } from '@/i18n';
 import { startTour, type TourId } from './TourOverlay';
 import { showReleaseNotes } from './ReleaseNotesModal';
 import { EventsDoc } from './EventsDoc';
+import { GesturesDoc } from './GesturesDoc';
 
 const TOUR_SECTIONS: { id: TourId; Icon: typeof Compass }[] = [
   { id: 'basics', Icon: Compass },
@@ -14,11 +15,41 @@ const TOUR_SECTIONS: { id: TourId; Icon: typeof Compass }[] = [
   { id: 'appearance', Icon: Palette },
 ];
 
+/**
+ * Rubrique documentaire, dépliable sur place.
+ *
+ * Certaines choses n'ont rien à mettre en avant à l'écran — un événement arrive
+ * de Home Assistant, un geste n'existe que dans l'écran de veille. Une visite
+ * guidée n'aurait rien à éclairer : c'est une doc, pas un parcours.
+ */
+function DocSection({ id, Icon, tint, children }: { id: string; Icon: typeof Radio; tint: string; children: ReactNode }) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className='rounded-xl bg-white/[0.04] border border-white/8 p-4'>
+      <button
+        onClick={() => setOpen(v => !v)}
+        data-testid={`help-${id}-toggle`}
+        aria-expanded={open}
+        className='flex items-start gap-3 w-full text-left'
+      >
+        <div className={`p-2 rounded-lg flex-shrink-0 ${tint}`}>
+          <Icon size={15} />
+        </div>
+        <div className='min-w-0 flex-1'>
+          <h3 className='text-white text-sm font-semibold'>{t(`help.sections.${id}.title`)}</h3>
+          <p className='text-white/45 text-xs mt-1 leading-relaxed'>{t(`help.sections.${id}.body`)}</p>
+        </div>
+        <ChevronRight size={15} className={`text-white/30 flex-shrink-0 mt-2 transition-transform ${open ? 'rotate-90' : ''}`} />
+      </button>
+      {open && <div className='mt-4'>{children}</div>}
+    </div>
+  );
+}
+
 export function HelpModal({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
-  // Les événements HA n'ont rien à mettre en avant à l'écran : c'est une doc,
-  // pas une visite. Elle se déplie sur place.
-  const [showEvents, setShowEvents] = useState(false);
 
   const launch = (id: TourId) => {
     // Fermer d'abord : le projecteur de la visite éclairerait sinon le dos de
@@ -85,32 +116,15 @@ export function HelpModal({ onClose }: { onClose: () => void }) {
               </div>
             ))}
 
+            {/* ── Gestes de l'écran de veille ── */}
+            <DocSection id='gestures' Icon={Hand} tint='bg-teal-500/15 text-teal-300'>
+              <GesturesDoc />
+            </DocSection>
+
             {/* ── Événements Home Assistant ── */}
-            <div className='rounded-xl bg-white/[0.04] border border-white/8 p-4'>
-              <button
-                onClick={() => setShowEvents(v => !v)}
-                data-testid='help-events-toggle'
-                aria-expanded={showEvents}
-                className='flex items-start gap-3 w-full text-left'
-              >
-                <div className='p-2 rounded-lg bg-violet-500/15 text-violet-300 flex-shrink-0'>
-                  <Radio size={15} />
-                </div>
-                <div className='min-w-0 flex-1'>
-                  <h3 className='text-white text-sm font-semibold'>{t('help.sections.events.title')}</h3>
-                  <p className='text-white/45 text-xs mt-1 leading-relaxed'>{t('help.sections.events.body')}</p>
-                </div>
-                <ChevronRight
-                  size={15}
-                  className={`text-white/30 flex-shrink-0 mt-2 transition-transform ${showEvents ? 'rotate-90' : ''}`}
-                />
-              </button>
-              {showEvents && (
-                <div className='mt-4'>
-                  <EventsDoc />
-                </div>
-              )}
-            </div>
+            <DocSection id='events' Icon={Radio} tint='bg-violet-500/15 text-violet-300'>
+              <EventsDoc />
+            </DocSection>
 
             {/* ── Nouveautés ── */}
             <button

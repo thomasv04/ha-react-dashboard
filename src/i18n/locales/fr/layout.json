@@ -255,7 +255,25 @@
     "infoBoxWidth": "Largeur boîte info : {value}px",
     "editWidgets": "Modifier les widgets",
     "touchToExit": "TOUCHER POUR QUITTER",
-    "dismissOverlay": "Fermer l'écran de veille"
+    "dismissOverlay": "Fermer l'écran de veille",
+    "gestures": {
+      "tab": "Gestes",
+      "enable": "Activer les gestes tactiles",
+      "enableDesc": "Balayer l'écran de veille sans en sortir",
+      "photos": "Balayer pour changer de photo",
+      "photosDesc": "Vers la gauche ou la droite",
+      "quickPanel": "Panneau du menu rapide",
+      "quickPanelDesc": "Ouvert par un balayage vers le haut. Vide = geste désactivé",
+      "notifications": "Notifications Home Assistant",
+      "notificationsDesc": "Ouvertes par un balayage vers le bas — événement ha_dashboard_notification",
+      "hints": "Afficher les poignées au démarrage",
+      "hintsDesc": "Quatre repères qui s'effacent après quelques secondes",
+      "help": "Un appui simple quitte toujours l'écran de veille : seuls les balayages déclenchent ces actions. Au clavier, les flèches font la même chose.",
+      "quickMenu": "Menu rapide",
+      "noQuickPanel": "Aucun panneau sélectionné",
+      "noNotifications": "Aucune notification",
+      "dismissAll": "Tout effacer"
+    }
   },
   "panelNoneCreated": "Aucun panneau pour l'instant — créez-en un depuis le mode édition.",
   "dockLabelsOn": "Libellés",

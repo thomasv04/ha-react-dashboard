@@ -281,68 +281,68 @@ export function DashboardGrid({ children, readonly, className }: { children: Rea
   return (
     <GridCtx.Provider value={ctxValue}>
       <SelectionCtx.Provider value={selectionValue}>
-      <motion.div
-        ref={outerRef}
-        variants={motionAllowed ? staggerGridContainer : undefined}
-        initial={motionAllowed ? 'hidden' : false}
-        animate='visible'
-        className={[isEditMode ? 'dashboard-editing' : '', className].filter(Boolean).join(' ') || undefined}
-        style={{
-          display: 'grid',
-          // Pistes en px entiers dès que la largeur est connue ; `1fr` sur le
-          // tout premier rendu, avant mesure.
-          gridTemplateColumns: colWidth ? `repeat(${cols}, ${colWidth}px)` : `repeat(${cols}, 1fr)`,
-          gridAutoRows: `${ROW_HEIGHT_VAL}px`,
-          gap: `${GAP}px`,
-          minHeight: maxRow * ROW_HEIGHT_VAL + Math.max(0, maxRow - 1) * GAP,
-          width: '100%',
-          position: 'relative',
-        }}
-        onDragOver={e => {
-          if (!isEditMode) return;
-          drag.onItemDragOver(e);
-        }}
-        onDrop={e => {
-          if (!isEditMode) return;
-          drag.onItemDrop(e, '');
-        }}
-      >
-        {/* Grid background cells visible in edit mode */}
-        {isEditMode &&
-          Array.from({ length: displayRows * cols }, (_, i) => {
-            const row = Math.floor(i / cols);
-            const col = i % cols;
-            return (
-              <div
-                key={`bg-${col}-${row}`}
-                className='rounded-xl border border-dashed border-white/[0.04] bg-white/[0.01]'
-                style={{
-                  gridColumnStart: col + 1,
-                  gridRowStart: row + 1,
-                  pointerEvents: 'none',
-                }}
-              />
-            );
-          })}
+        <motion.div
+          ref={outerRef}
+          variants={motionAllowed ? staggerGridContainer : undefined}
+          initial={motionAllowed ? 'hidden' : false}
+          animate='visible'
+          className={[isEditMode ? 'dashboard-editing' : '', className].filter(Boolean).join(' ') || undefined}
+          style={{
+            display: 'grid',
+            // Pistes en px entiers dès que la largeur est connue ; `1fr` sur le
+            // tout premier rendu, avant mesure.
+            gridTemplateColumns: colWidth ? `repeat(${cols}, ${colWidth}px)` : `repeat(${cols}, 1fr)`,
+            gridAutoRows: `${ROW_HEIGHT_VAL}px`,
+            gap: `${GAP}px`,
+            minHeight: maxRow * ROW_HEIGHT_VAL + Math.max(0, maxRow - 1) * GAP,
+            width: '100%',
+            position: 'relative',
+          }}
+          onDragOver={e => {
+            if (!isEditMode) return;
+            drag.onItemDragOver(e);
+          }}
+          onDrop={e => {
+            if (!isEditMode) return;
+            drag.onItemDrop(e, '');
+          }}
+        >
+          {/* Grid background cells visible in edit mode */}
+          {isEditMode &&
+            Array.from({ length: displayRows * cols }, (_, i) => {
+              const row = Math.floor(i / cols);
+              const col = i % cols;
+              return (
+                <div
+                  key={`bg-${col}-${row}`}
+                  className='rounded-xl border border-dashed border-white/[0.04] bg-white/[0.01]'
+                  style={{
+                    gridColumnStart: col + 1,
+                    gridRowStart: row + 1,
+                    pointerEvents: 'none',
+                  }}
+                />
+              );
+            })}
 
-        {children}
+          {children}
 
-        {/* Ghost placeholder during drag */}
-        {isEditMode && ghostPosition && (
-          <div
-            className={ghostPosition.valid ? 'grid-placeholder' : 'grid-placeholder-invalid'}
-            style={{
-              gridColumnStart: ghostPosition.col + 1,
-              gridRowStart: ghostPosition.row + 1,
-              gridColumnEnd: `span ${ghostPosition.w}`,
-              gridRowEnd: `span ${ghostPosition.h}`,
-              pointerEvents: 'none',
-              zIndex: 40,
-              transition: 'all 0.15s ease',
-            }}
-          />
-        )}
-      </motion.div>
+          {/* Ghost placeholder during drag */}
+          {isEditMode && ghostPosition && (
+            <div
+              className={ghostPosition.valid ? 'grid-placeholder' : 'grid-placeholder-invalid'}
+              style={{
+                gridColumnStart: ghostPosition.col + 1,
+                gridRowStart: ghostPosition.row + 1,
+                gridColumnEnd: `span ${ghostPosition.w}`,
+                gridRowEnd: `span ${ghostPosition.h}`,
+                pointerEvents: 'none',
+                zIndex: 40,
+                transition: 'all 0.15s ease',
+              }}
+            />
+          )}
+        </motion.div>
       </SelectionCtx.Provider>
     </GridCtx.Provider>
   );
@@ -462,15 +462,14 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
   const runAction = useCardActions();
 
   const makeHandler = useCallback(
-    (which: 'tapAction' | 'holdAction') =>
-      (rect: DOMRect) => {
-        const config = getWidgetConfig(id) as (Record<string, unknown> & CardActionsConfig) | undefined;
-        const entityId = typeof config?.entityId === 'string' ? config.entityId : '';
-        // `false` = action non prise en charge (`default`, ou `more-info` qui a
-        // besoin du cadre de la card pour s'animer).
-        if (runAction(config?.[which], entityId)) return;
-        if (hasMoreInfo) handleMoreInfoClick(rect);
-      },
+    (which: 'tapAction' | 'holdAction') => (rect: DOMRect) => {
+      const config = getWidgetConfig(id) as (Record<string, unknown> & CardActionsConfig) | undefined;
+      const entityId = typeof config?.entityId === 'string' ? config.entityId : '';
+      // `false` = action non prise en charge (`default`, ou `more-info` qui a
+      // besoin du cadre de la card pour s'animer).
+      if (runAction(config?.[which], entityId)) return;
+      if (hasMoreInfo) handleMoreInfoClick(rect);
+    },
     [id, getWidgetConfig, runAction, hasMoreInfo, handleMoreInfoClick]
   );
 
@@ -487,10 +486,7 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
     [visibility, stateStyles]
   );
   const watched = useEntities(watchedIds);
-  const states = useMemo(
-    () => Object.fromEntries(watchedIds.map(eid => [eid, watched[eid]?.state])),
-    [watchedIds, watched]
-  );
+  const states = useMemo(() => Object.fromEntries(watchedIds.map(eid => [eid, watched[eid]?.state])), [watchedIds, watched]);
 
   const visible = useMemo(() => isVisible(visibility, breakpoint, states), [visibility, breakpoint, states]);
   const styleOverride = useMemo(() => matchStateStyle(stateStyles, breakpoint, states), [stateStyles, breakpoint, states]);
@@ -502,7 +498,10 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
   const hasHold = hasMoreInfo || (config?.holdAction && config.holdAction.action !== 'default');
 
   const memoOnClick = useMemo(() => (!isEditMode && hasTap ? makeHandler('tapAction') : undefined), [isEditMode, hasTap, makeHandler]);
-  const memoOnLongPress = useMemo(() => (!isEditMode && hasHold ? makeHandler('holdAction') : undefined), [isEditMode, hasHold, makeHandler]);
+  const memoOnLongPress = useMemo(
+    () => (!isEditMode && hasHold ? makeHandler('holdAction') : undefined),
+    [isEditMode, hasHold, makeHandler]
+  );
 
   if (!widget) return null;
 
@@ -540,7 +539,10 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
   return (
     <motion.div
       variants={motionAllowed ? staggerGridItem : undefined}
-      className='relative h-full'
+      // `pointer-events-auto` : sans effet ici, mais l'écran de veille rend la
+      // grille dans un conteneur `pointer-events-none` pour laisser passer les
+      // balayages entre les cards — chaque card doit y rester cliquable.
+      className='relative h-full pointer-events-auto'
       style={gridStyle}
       data-widget-id={id}
       onClickCapture={e => {
@@ -593,9 +595,9 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
             canal, et laisse les trente composants inchangés. */}
         <StateStyled id={id} override={styleOverride} config={conditionalConfig}>
           <WidgetErrorBoundary label={label}>
-          <MemoChildren isEditMode={isEditMode} dimmed={isWidgetModalOpen} onClick={memoOnClick} onLongPress={memoOnLongPress}>
-            {children}
-          </MemoChildren>
+            <MemoChildren isEditMode={isEditMode} dimmed={isWidgetModalOpen} onClick={memoOnClick} onLongPress={memoOnLongPress}>
+              {children}
+            </MemoChildren>
           </WidgetErrorBoundary>
         </StateStyled>
       </WidgetIdCtx.Provider>

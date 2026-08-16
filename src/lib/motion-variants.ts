@@ -85,6 +85,13 @@ export const bottomSheet: Variants = {
   exit: { y: '100%', transition: { duration: DURATION_SLOW, ease: EASE_OUT } },
 };
 
+/** Miroir de `bottomSheet` — feuille qui descend du haut de l'écran. */
+export const topSheet: Variants = {
+  hidden: { y: '-100%' },
+  visible: { y: 0, transition: { duration: DURATION_SLOW, ease: EASE_OUT } },
+  exit: { y: '-100%', transition: { duration: DURATION_SLOW, ease: EASE_OUT } },
+};
+
 // ── Navigation ──
 
 export const slidePushEnter: Variants = {

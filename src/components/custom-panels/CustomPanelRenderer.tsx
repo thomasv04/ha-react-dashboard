@@ -16,7 +16,7 @@ import { WidgetErrorBoundary } from '@/components/ui/WidgetErrorBoundary';
  * une entité supprimée ou un champ mal rempli suffisent à faire lever une
  * exception au rendu.
  */
-function SafeBlock({ block }: { block: CustomBlock }) {
+export function SafeBlock({ block }: { block: CustomBlock }) {
   return (
     <WidgetErrorBoundary label={block.type}>
       <BlockRenderer block={block} />

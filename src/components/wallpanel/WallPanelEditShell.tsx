@@ -142,7 +142,10 @@ export function WallPanelReadonlyShell() {
   return (
     <PageProvider initialPages={WALLPANEL_PAGES}>
       <DashboardLayoutProvider initialLayouts={initialLayouts} initialAllWidgetConfigs={initialAllWidgetConfigs}>
-        <div className='pointer-events-auto max-w-[1440px] mx-auto px-5 pt-8'>
+        {/* `pointer-events-none` sur le conteneur, réactivé sur chaque card :
+            cette bande couvre toute la largeur, et en `auto` elle interceptait
+            les balayages destinés au fond entre deux cards. */}
+        <div className='pointer-events-none max-w-[1440px] mx-auto px-5 pt-8'>
           <DashboardGrid readonly>
             <WallPanelGridWidgets />
           </DashboardGrid>
