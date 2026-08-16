@@ -6,45 +6,24 @@ import { X } from 'lucide-react';
 import { useModal, type Modal, type ModalAction } from '@/context/ModalContext';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
-import DOMPurify from 'dompurify';
+import { RichText } from '@/components/ui/RichText';
 
-// Safe content renderer
+const TEXT_CLASS = 'text-white/80 text-sm leading-relaxed whitespace-pre-wrap';
+const HTML_CLASS = 'text-white/80 text-sm leading-relaxed prose prose-invert prose-sm max-w-none';
+
+// Safe content renderer — l'assainissement du HTML vit dans `RichText`.
 function ModalContentRenderer({ content }: { content: Modal['content'] }) {
   if (!content) return null;
 
   // Plain string
   if (typeof content === 'string') {
-    return <p className='text-white/80 text-sm leading-relaxed whitespace-pre-wrap'>{content}</p>;
+    return <RichText value={content} className={TEXT_CLASS} />;
   }
 
   // Structured content with type
   if (typeof content === 'object' && 'type' in content && 'value' in content) {
     const { type, value } = content;
-
-    if (type === 'plain') {
-      return <p className='text-white/80 text-sm leading-relaxed whitespace-pre-wrap'>{value}</p>;
-    }
-
-    if (type === 'html') {
-      // Ce contenu vient de l'événement `ha_dashboard_modal` : n'importe quelle
-      // automatisation peut l'émettre, et son texte provient souvent d'une
-      // source externe (flux, notification, capteur). L'injecter tel quel était
-      // une XSS sur l'origine du dashboard — un commentaire « recommandé
-      // pré-assaini » n'est pas un contrôle.
-      return (
-        <div
-          className='text-white/80 text-sm leading-relaxed prose prose-invert prose-sm max-w-none'
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(value) }}
-        />
-      );
-    }
-
-    if (type === 'markdown') {
-      // Pas de moteur markdown embarqué : rendu tel quel, en respectant les
-      // retours à la ligne. Afficher un avertissement de développeur à
-      // l'utilisateur final n'aidait personne.
-      return <p className='text-white/80 text-sm leading-relaxed whitespace-pre-wrap'>{value}</p>;
-    }
+    return <RichText type={type} value={value} className={type === 'html' ? HTML_CLASS : TEXT_CLASS} />;
   }
 
   // ReactNode

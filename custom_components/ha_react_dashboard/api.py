@@ -32,6 +32,11 @@ from .store import DashboardStore
 BASE = f"/api/{DOMAIN}"
 DEVICE_ID_RE = re.compile(r"^[\w-]{1,128}$")
 
+#: Nombre d'états de configuration conservés. Doit rester aligné sur
+#: `CONFIG_HISTORY_LIMIT` de `server/db.js` — les deux backends servent le même
+#: frontend.
+CONFIG_HISTORY_LIMIT = 20
+
 
 def _uploads_path(hass: HomeAssistant) -> Path:
     return Path(hass.config.path(UPLOAD_DIR, "uploads"))
@@ -81,23 +86,135 @@ class _Base(HomeAssistantView):
 # ── Config ────────────────────────────────────────────────────────────────────
 
 
-class ConfigView(_Base):
+class _ConfigWriter(_Base):
+    """Écriture historisée de la configuration.
+
+    Même contrat que l'add-on (`server/routes/config.js`), à deux détails de
+    stockage près — ici un `Store` HA, là SQLite. Le frontend ne sait pas lequel
+    des deux lui répond : ils doivent se comporter à l'identique.
+    """
+
+    async def _write(self, config: dict[str, Any], label: str | None = None) -> int:
+        """Archive l'état courant puis écrit le nouveau. Renvoie la révision."""
+        current = self.store.get("config")
+
+        # Deux enregistrements identiques d'affilée ne méritent pas deux
+        # entrées : les places disponibles seraient consommées sans qu'aucun
+        # état distinct ne devienne récupérable.
+        if current is not None and current != config:
+            history = list(self.store.get("config_history", []))
+            entry_id = self.store.get("config_history_seq", 0) + 1
+            history.append(
+                {
+                    "id": entry_id,
+                    "data": current,
+                    "version": current.get("version", 2),
+                    "size": len(str(current)),
+                    "label": label,
+                    "created_at": dt_util.utcnow().isoformat(),
+                }
+            )
+            await self.store.async_set("config_history", history[-CONFIG_HISTORY_LIMIT:])
+            await self.store.async_set("config_history_seq", entry_id)
+
+        revision = self.store.get("config_revision", 0) + 1
+        await self.store.async_set("config", config)
+        await self.store.async_set("config_revision", revision)
+        return revision
+
+
+class ConfigView(_ConfigWriter):
     url = f"{BASE}/config"
     name = f"api:{DOMAIN}:config"
 
     async def get(self, request: web.Request) -> web.Response:
+        revision = str(self.store.get("config_revision", 0))
         config = self.store.get("config")
         if config is None:
-            return self.json({"message": "No config yet", "layout": []})
-        return self.json(config)
+            return self.json(
+                {"message": "No config yet", "layout": []},
+                headers={"X-Config-Revision": revision},
+            )
+        return self.json(config, headers={"X-Config-Revision": revision})
 
     @require_admin
     async def put(self, request: web.Request) -> web.Response:
         body = await request.json()
         if not isinstance(body, dict):
             return self.json({"error": "Invalid config"}, status_code=400)
-        await self.store.async_set("config", body)
-        return self.json({"success": True})
+
+        # En-tête absent = client antérieur à la 2.2.0, ou import volontairement
+        # écrasant. On n'impose pas : refuser casserait les versions déjà
+        # déployées sans rien protéger de plus.
+        expected = request.headers.get("X-Expected-Revision")
+        if expected is not None:
+            current = self.store.get("config_revision", 0)
+            try:
+                stale = current != int(expected)
+            except ValueError:
+                return self.json(
+                    {"error": "Invalid X-Expected-Revision"}, status_code=400
+                )
+            if stale:
+                return self.json(
+                    {
+                        "error": "Conflict",
+                        "current_revision": current,
+                        "message": "Config was modified by another device",
+                    },
+                    status_code=409,
+                )
+
+        revision = await self._write(body)
+        return self.json(
+            {"success": True, "revision": revision},
+            headers={"X-Config-Revision": str(revision)},
+        )
+
+
+class ConfigHistoryView(_Base):
+    url = f"{BASE}/config/history"
+    name = f"api:{DOMAIN}:config:history"
+
+    @require_admin
+    async def get(self, request: web.Request) -> web.Response:
+        """Liste les états archivés, du plus récent au plus ancien.
+
+        Les données elles-mêmes ne sont pas renvoyées : la liste sert à choisir
+        un point de restauration, pas à le charger.
+        """
+        history = self.store.get("config_history", [])
+        return self.json(
+            [
+                {k: v for k, v in entry.items() if k != "data"}
+                for entry in reversed(history)
+            ]
+        )
+
+
+class ConfigRestoreView(_ConfigWriter):
+    url = f"{BASE}/config/history/{{entry_id}}/restore"
+    name = f"api:{DOMAIN}:config:restore"
+
+    @require_admin
+    async def post(self, request: web.Request, entry_id: str) -> web.Response:
+        try:
+            wanted = int(entry_id)
+        except ValueError:
+            return self.json({"error": "Invalid history id"}, status_code=400)
+
+        entry = next(
+            (e for e in self.store.get("config_history", []) if e.get("id") == wanted),
+            None,
+        )
+        if entry is None:
+            return self.json({"error": "History entry not found"}, status_code=404)
+
+        # La restauration passe par le chemin d'écriture normal : l'état courant
+        # est donc lui-même archivé. Se tromper de point de restauration reste
+        # rattrapable.
+        revision = await self._write(entry["data"], label="avant restauration")
+        return self.json({"success": True, "revision": revision})
 
 
 # ── Profils ───────────────────────────────────────────────────────────────────
@@ -219,6 +336,38 @@ class SettingsView(_Base):
             {"device_id": device_id, "data": data, "revision": revision},
         )
         return self.json({"success": True, "revision": revision})
+
+
+class SettingsBroadcastView(_Base):
+    """Recopie des réglages courants sur tous les appareils connus.
+
+    Réservé aux administrateurs, contrairement au reste des réglages : écrire
+    les siens n'engage que soi, les imposer à toute la maison est une autre
+    affaire.
+    """
+
+    url = f"{BASE}/settings/broadcast"
+    name = f"api:{DOMAIN}:settings:broadcast"
+
+    @require_admin
+    async def post(self, request: web.Request) -> web.Response:
+        body = await request.json()
+        data = body.get("data") if isinstance(body, dict) else None
+        if not isinstance(data, dict):
+            return self.json({"error": "Invalid settings data"}, status_code=400)
+
+        settings = dict(self.store.collection("settings"))
+        for device_id, entry in settings.items():
+            settings[device_id] = {
+                "device_id": device_id,
+                "data": data,
+                # Révision incrémentée : un appareil resté ouvert verra un 409 à
+                # sa prochaine écriture et rechargera, au lieu de réimposer
+                # silencieusement ses anciens réglages.
+                "revision": entry.get("revision", 0) + 1,
+            }
+        await self.store.async_set("settings", settings)
+        return self.json({"success": True, "devices": len(settings)})
 
 
 # ── Traductions ───────────────────────────────────────────────────────────────
@@ -400,9 +549,12 @@ def async_register_views(hass: HomeAssistant, store: DashboardStore) -> None:
     """
     for view in (
         ConfigView,
+        ConfigHistoryView,
+        ConfigRestoreView,
         ProfilesView,
         ProfileView,
         SettingsView,
+        SettingsBroadcastView,
         TranslationsView,
         BackgroundUploadView,
         BackgroundFileView,

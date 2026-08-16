@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from 'react';
 import type { WidgetConfigs } from '@/types/widget-configs';
 import { compactVertically, firstFreeSlot, packWidgets } from '@/lib/grid-utils';
 import { usePages, type Page } from '@/context/PageContext';
@@ -111,9 +111,19 @@ interface LayoutContextValue {
   updateWidget: (id: string, updates: Partial<GridWidget>, breakpoint?: 'lg' | 'md' | 'sm') => void;
   saveLayout: () => void;
   addWidgetByType: (type: GridWidget['type']) => string;
+  /** Recopie un widget et sa configuration au premier emplacement libre */
+  duplicateWidget: (id: string) => string;
+  /** Supprime plusieurs widgets en un seul geste (donc un seul « annuler ») */
+  removeWidgets: (ids: string[]) => void;
   /** Referme les trous de la mise en page courante, pour un breakpoint donné */
   packLayout: (breakpoint: 'lg' | 'md' | 'sm') => void;
   allLayouts: Record<string, DashboardLayout>;
+  /** Revient au point de retour précédent (Ctrl+Z) */
+  undo: () => void;
+  /** Rejoue le point de retour annulé (Ctrl+Maj+Z) */
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 interface EditModeContextValue {
@@ -132,6 +142,11 @@ type DashboardLayoutContextValue = LayoutContextValue & EditModeContextValue & S
 const LayoutContext = createContext<LayoutContextValue | null>(null);
 const EditModeContext = createContext<EditModeContextValue | null>(null);
 const SizePresetsContext = createContext<SizePresetsContextValue | null>(null);
+
+/** Profondeur de la pile « annuler ». */
+const HISTORY_LIMIT = 20;
+/** Mutations plus rapprochées que ça = un seul point de retour. */
+const HISTORY_COALESCE_MS = 400;
 
 // Configuration par défaut (layouts différents par breakpoint)
 // On la garde ici au cas où l'API Node renvoie un fichier vide
@@ -159,7 +174,7 @@ interface ProviderProps {
 
 export function DashboardLayoutProvider({ children, initialLayouts, initialAllWidgetConfigs: _initialAllWidgetConfigs }: ProviderProps) {
   const { currentPageId, pages } = usePages();
-  const { updateWidgetConfig: widgetCfgUpdate } = useWidgetConfig();
+  const { updateWidgetConfig: widgetCfgUpdate, getWidgetConfig } = useWidgetConfig();
 
   const [layouts, setLayouts] = useState<Record<string, DashboardLayout>>(() =>
     initialLayouts && Object.keys(initialLayouts).length > 0 ? initialLayouts : { home: DEFAULT_LAYOUT }
@@ -204,6 +219,92 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
   // Current page's layout (derived)
   const layout = layouts[currentPageId] ?? DEFAULT_LAYOUT;
 
+  // ── Annuler / rétablir ──────────────────────────────────────────────────────
+  //
+  // Un déplacement raté était irréversible : il fallait le refaire à la main, ou
+  // recharger la page en ayant perdu tout le reste. La pile vit en mémoire et
+  // meurt avec la session — l'historique long terme, c'est `config_history`
+  // côté serveur, qui répond à un autre besoin (revenir à hier, pas à il y a
+  // trois secondes).
+
+  // Écrit dans un effet et non pendant le rendu : y toucher pendant le rendu
+  // n'est pas sûr en mode concurrent, React pouvant abandonner un rendu commencé.
+  // Les lecteurs (`pushHistory`, `undo`, `duplicateWidget`) sont tous des
+  // gestionnaires d'événement, qui ne s'exécutent qu'après le commit — la
+  // valeur y est donc toujours à jour.
+  const layoutsRef = useRef(layouts);
+  useEffect(() => {
+    layoutsRef.current = layouts;
+  }, [layouts]);
+
+  const pastRef = useRef<Record<string, DashboardLayout>[]>([]);
+  const futureRef = useRef<Record<string, DashboardLayout>[]>([]);
+  const lastPushRef = useRef(0);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+
+  /**
+   * Enregistre l'état courant comme point de retour.
+   *
+   * Appelée par chaque mutation, donc aussi à chaque pixel d'un
+   * redimensionnement ou d'un glisser-déposer : sans regroupement, un seul
+   * geste remplirait la pile et « annuler » ne reculerait que d'un pixel.
+   *
+   * ponytail: regroupement par fenêtre de temps. Un geste très lent produit
+   * quelques entrées au lieu d'une. Passer par des bornes de geste explicites
+   * (début/fin de drag remontés depuis DashboardGrid) si ça gêne à l'usage.
+   */
+  const pushHistory = useCallback(() => {
+    const now = Date.now();
+    if (now - lastPushRef.current < HISTORY_COALESCE_MS) return;
+    lastPushRef.current = now;
+
+    pastRef.current = [...pastRef.current.slice(-(HISTORY_LIMIT - 1)), layoutsRef.current];
+    futureRef.current = [];
+    setCanUndo(true);
+    setCanRedo(false);
+  }, []);
+
+  const undo = useCallback(() => {
+    const previous = pastRef.current.at(-1);
+    if (!previous) return;
+    futureRef.current = [layoutsRef.current, ...futureRef.current];
+    pastRef.current = pastRef.current.slice(0, -1);
+    // Le prochain geste doit repartir d'un point de retour propre, même s'il
+    // suit l'annulation de très près.
+    lastPushRef.current = 0;
+    setLayouts(previous);
+    setCanUndo(pastRef.current.length > 0);
+    setCanRedo(true);
+  }, []);
+
+  const redo = useCallback(() => {
+    const [next, ...rest] = futureRef.current;
+    if (!next) return;
+    pastRef.current = [...pastRef.current, layoutsRef.current];
+    futureRef.current = rest;
+    lastPushRef.current = 0;
+    setLayouts(next);
+    setCanUndo(true);
+    setCanRedo(rest.length > 0);
+  }, []);
+
+  // Ctrl+Z / Ctrl+Maj+Z, **en mode édition seulement** : hors édition, ces
+  // touches appartiennent au champ de saisie qui a le focus, et les intercepter
+  // globalement casserait la correction d'une recherche ou d'un nom de page.
+  useEffect(() => {
+    if (!isEditMode) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'z') return;
+      const el = e.target as HTMLElement | null;
+      if (el?.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el?.tagName ?? '')) return;
+      e.preventDefault();
+      (e.shiftKey ? redo : undo)();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isEditMode, undo, redo]);
+
   const saveLayout = () => {
     // Cette fonction ne fait plus d'appel réseau.
     // Le vrai bouton "Sauvegarder" de EditButton lit les variables
@@ -212,13 +313,15 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
 
   const setLayout = useCallback(
     (newLayout: DashboardLayout) => {
+      pushHistory();
       setLayouts(prev => ({ ...prev, [currentPageId]: newLayout }));
     },
-    [currentPageId]
+    [currentPageId, pushHistory]
   );
 
   const addWidget = useCallback(
     (widget: GridWidget, breakpoint: 'lg' | 'md' | 'sm' = 'lg') => {
+      pushHistory();
       setLayouts(prev => {
         const current = prev[currentPageId] ?? DEFAULT_LAYOUT;
         return {
@@ -233,12 +336,13 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
         };
       });
     },
-    [currentPageId]
+    [currentPageId, pushHistory]
   );
 
   // Supprime de tous les breakpoints
   const removeWidget = useCallback(
     (id: string) => {
+      pushHistory();
       setLayouts(prev => {
         const current = prev[currentPageId] ?? DEFAULT_LAYOUT;
         return {
@@ -254,11 +358,41 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
         };
       });
     },
-    [currentPageId]
+    [currentPageId, pushHistory]
+  );
+
+  /**
+   * Supprime plusieurs widgets d'un coup, sur tous les breakpoints.
+   *
+   * Un seul point d'historique (`pushHistory` n'est appelé qu'une fois) : une
+   * suppression multiple est un geste, et devrait s'annuler d'un seul Ctrl+Z.
+   */
+  const removeWidgets = useCallback(
+    (ids: string[]) => {
+      if (ids.length === 0) return;
+      const doomed = new Set(ids);
+      pushHistory();
+      setLayouts(prev => {
+        const current = prev[currentPageId] ?? DEFAULT_LAYOUT;
+        return {
+          ...prev,
+          [currentPageId]: {
+            ...current,
+            widgets: {
+              lg: current.widgets.lg.filter(w => !doomed.has(w.id)),
+              md: current.widgets.md.filter(w => !doomed.has(w.id)),
+              sm: current.widgets.sm.filter(w => !doomed.has(w.id)),
+            },
+          },
+        };
+      });
+    },
+    [currentPageId, pushHistory]
   );
 
   const updateWidget = useCallback(
     (id: string, updates: Partial<GridWidget>, breakpoint: 'lg' | 'md' | 'sm' = 'lg') => {
+      pushHistory();
       setLayouts(prev => {
         const current = prev[currentPageId] ?? DEFAULT_LAYOUT;
         return {
@@ -273,7 +407,7 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
         };
       });
     },
-    [currentPageId]
+    [currentPageId, pushHistory]
   );
 
   const addWidgetByType = useCallback(
@@ -283,6 +417,7 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
       const disposition = dispositions?.[0];
       const def = WIDGET_CATALOG.find(d => d.type === type);
       if (!disposition && !def) return '';
+      pushHistory();
       // Generate a unique id so the same type can be added multiple times
       const id = `${type}-${Date.now()}`;
       setLayouts(prev => {
@@ -324,11 +459,50 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
       }
       return id;
     },
-    [currentPageId, widgetCfgUpdate]
+    [currentPageId, widgetCfgUpdate, pushHistory]
+  );
+
+  /**
+   * Recopie un widget, sa configuration comprise.
+   *
+   * C'est là tout l'intérêt : refaire à la main un thermostat ou un graphe
+   * finement réglé, uniquement pour l'avoir sur une autre page, était le geste
+   * le plus fastidieux du mode édition.
+   *
+   * La copie est placée au premier emplacement libre de chaque breakpoint —
+   * pas aux coordonnées de l'original, où elle se superposerait exactement.
+   */
+  const duplicateWidget = useCallback(
+    (id: string) => {
+      const source = layoutsRef.current[currentPageId]?.widgets.lg.find(w => w.id === id);
+      if (!source) return '';
+
+      const newId = `${source.type}-${Date.now()}`;
+      pushHistory();
+
+      setLayouts(prev => {
+        const current = prev[currentPageId] ?? DEFAULT_LAYOUT;
+        const widgets = { ...current.widgets };
+        for (const bp of ['lg', 'md', 'sm'] as const) {
+          const original = current.widgets[bp].find(w => w.id === id);
+          if (!original) continue;
+          const { x, y } = firstFreeSlot(current.widgets[bp], current.cols[bp], original.w, original.h);
+          widgets[bp] = [...current.widgets[bp], { ...original, id: newId, x, y }];
+        }
+        return { ...prev, [currentPageId]: { ...current, widgets } };
+      });
+
+      const sourceConfig = getWidgetConfig(id);
+      if (sourceConfig) widgetCfgUpdate(newId, { ...sourceConfig });
+
+      return newId;
+    },
+    [currentPageId, pushHistory, getWidgetConfig, widgetCfgUpdate]
   );
 
   const packLayout = useCallback(
     (breakpoint: 'lg' | 'md' | 'sm') => {
+      pushHistory();
       setLayouts(prev => {
         const current = prev[currentPageId] ?? DEFAULT_LAYOUT;
         return {
@@ -343,11 +517,12 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
         };
       });
     },
-    [currentPageId]
+    [currentPageId, pushHistory]
   );
 
   const cycleSize = useCallback(
     (id: string, breakpoint: 'lg' | 'md' | 'sm') => {
+      pushHistory();
       setLayouts(prev => {
         const current = prev[currentPageId] ?? DEFAULT_LAYOUT;
         const widgets = current.widgets[breakpoint];
@@ -370,7 +545,7 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
         };
       });
     },
-    [currentPageId]
+    [currentPageId, pushHistory]
   );
 
   const getCurrentPresetName = useCallback(
@@ -399,10 +574,32 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
       updateWidget,
       saveLayout,
       addWidgetByType,
+      duplicateWidget,
+      removeWidgets,
       packLayout,
       allLayouts: layouts,
+      undo,
+      redo,
+      canUndo,
+      canRedo,
     }),
-    [layout, setLayout, addWidget, removeWidget, updateWidget, saveLayout, addWidgetByType, packLayout, layouts]
+    [
+      layout,
+      setLayout,
+      addWidget,
+      removeWidget,
+      updateWidget,
+      saveLayout,
+      addWidgetByType,
+      duplicateWidget,
+      removeWidgets,
+      packLayout,
+      layouts,
+      undo,
+      redo,
+      canUndo,
+      canRedo,
+    ]
   );
 
   return (

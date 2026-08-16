@@ -10,6 +10,7 @@ import { DashboardGrid, GridItem } from '@/components/layout/DashboardGrid';
 import { WidgetEditModal } from '@/components/layout/WidgetEditModal';
 import { ThemeControlsModal } from '@/components/layout/ThemeControlsModal';
 import { PageTabs } from '@/components/layout/PageTabs';
+import { PageBadges } from '@/components/layout/PageBadges';
 import { MoreInfoModal } from '@/components/modals/MoreInfoModal';
 import { LoadingScreen } from '@/components/layout/LoadingScreen';
 import { useEffect, useState, memo } from 'react';
@@ -40,6 +41,12 @@ import { ActivePanel } from '@/components/dashboard/ActivePanel';
 import { DashboardEmptyState } from '@/components/dashboard/DashboardEmptyState';
 import { TourHost } from '@/components/onboarding/TourOverlay';
 import { ReleaseNotesHost } from '@/components/onboarding/ReleaseNotesModal';
+import { WidgetErrorBoundary } from '@/components/ui/WidgetErrorBoundary';
+import { QuickBar } from '@/components/dashboard/QuickBar';
+import { useTheme } from '@/context/ThemeContext';
+import { usePages } from '@/context/PageContext';
+import { usePanel } from '@/context/PanelContext';
+import { useMoreInfo } from '@/context/MoreInfoContext';
 
 /**
  * Watcher d'inactivité — doit être monté à l'intérieur du WallPanelProvider
@@ -52,6 +59,39 @@ function IdleWatcher() {
     onIdle: activate,
     onActive: () => {},
   });
+  return null;
+}
+
+/**
+ * Ramène à la première page après un temps d'inactivité.
+ *
+ * Le cas d'usage est la tablette murale : quelqu'un consulte la page « Caméras »,
+ * s'en va, et l'écran reste sur les caméras jusqu'au prochain passage. Le
+ * détecteur d'inactivité existait déjà pour l'économiseur d'écran — il ne
+ * manquait que le réglage et ce branchement.
+ */
+function ReturnHomeWatcher() {
+  const { behaviourSettings } = useTheme();
+  const { pages, currentPageId, setCurrentPage } = usePages();
+  const { closePanel } = usePanel();
+  const { closeMoreInfo } = useMoreInfo();
+
+  const home = pages[0]?.id;
+
+  useIdleDetector({
+    // Le réglage est en minutes, le détecteur en secondes.
+    idleTime: behaviourSettings.returnHomeAfter * 60,
+    enabled: behaviourSettings.returnHomeAfter > 0 && !!home,
+    onIdle: () => {
+      // Refermer aussi ce qui se superpose : revenir à l'accueil en laissant
+      // une fiche ouverte par-dessus ne ramènerait rien de visible.
+      closeMoreInfo();
+      closePanel();
+      if (home && currentPageId !== home) setCurrentPage(home);
+    },
+    onActive: () => {},
+  });
+
   return null;
 }
 
@@ -88,6 +128,9 @@ function DashboardContent() {
           {/* Onglets de navigation entre pages */}
           <PageTabs />
 
+          {/* Pastilles d'état de la page — n'occupent aucune place si vides */}
+          <PageBadges />
+
           <DashboardGrid className={isMobile ? 'mobile-layout' : isCompact ? 'compact-layout' : undefined}>
             {widgets.map(widget => (
               <WidgetItem key={widget.id} widget={widget} />
@@ -111,18 +154,30 @@ function DashboardContent() {
         {/* Bottom nav */}
         <BottomNav />
 
-        {/* Panel overlay */}
+        {/* Panel overlay — le contenu vient d'une config éditable, il peut
+            planter. Sans frontière, il emportait tout le dashboard avec lui. */}
         <PanelOverlay>
-          <ActivePanel />
+          <WidgetErrorBoundary messageKey='common.panelUnavailable'>
+            <ActivePanel />
+          </WidgetErrorBoundary>
         </PanelOverlay>
 
         {/* Idle detector + WallPanel overlay */}
         <IdleWatcher />
+        <ReturnHomeWatcher />
         <ScreensaverEntityWatcher />
         <WallPanelOverlay />
 
-        {/* More Info modal */}
-        <MoreInfoModal />
+        {/* More Info modal — une modale par domaine, chacune avec ses graphes
+            et son historique : beaucoup de surface pour une exception. */}
+        <WidgetErrorBoundary messageKey='common.panelUnavailable'>
+          <MoreInfoModal />
+        </WidgetErrorBoundary>
+
+        {/* Barre de commande rapide — « e » une entité, « c » une page */}
+        <AnimatePresence>
+          <QuickBar />
+        </AnimatePresence>
 
         {/* Visite guidée — au premier lancement, puis à la demande */}
         <TourHost />

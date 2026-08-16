@@ -8,6 +8,21 @@ import { SectionHeaderBlockRenderer } from './SectionHeaderBlock';
 import { WidgetBlockRenderer } from './WidgetBlock';
 import type { CustomBlock } from '@/types/custom-panel';
 import { useI18n } from '@/i18n';
+import { WidgetErrorBoundary } from '@/components/ui/WidgetErrorBoundary';
+
+/**
+ * Un bloc qui plante ne doit pas emporter le panneau — ni, par ricochet, tout
+ * l'arbre React. Les blocs viennent d'une configuration éditable à la main :
+ * une entité supprimée ou un champ mal rempli suffisent à faire lever une
+ * exception au rendu.
+ */
+export function SafeBlock({ block }: { block: CustomBlock }) {
+  return (
+    <WidgetErrorBoundary label={block.type}>
+      <BlockRenderer block={block} />
+    </WidgetErrorBoundary>
+  );
+}
 
 function BlockRenderer({ block }: { block: CustomBlock }) {
   switch (block.type) {
@@ -42,7 +57,7 @@ export function CustomPanelRenderer({ panelId }: { panelId: string }) {
     <Panel title={panel.name} icon={panelIcon}>
       <div className='flex flex-col gap-2'>
         {panel.blocks.map(block => (
-          <BlockRenderer key={block.id} block={block} />
+          <SafeBlock key={block.id} block={block} />
         ))}
         {panel.blocks.length === 0 && <div className='text-white/30 text-sm text-center py-6'>{t('layout.customPanel.emptyPanel')}</div>}
       </div>

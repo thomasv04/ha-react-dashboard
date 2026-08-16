@@ -9,6 +9,13 @@ export interface Page {
   type: PageType;
   /** Ordre d'affichage dans les onglets */
   order: number;
+  /**
+   * Entités affichées en pastilles au-dessus de la grille.
+   *
+   * Portées par la page et non par un widget : elles suivent l'export,
+   * l'historique et la restauration comme le reste de la configuration.
+   */
+  badges?: string[];
 }
 
 interface PageContextValue {

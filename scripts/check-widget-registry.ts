@@ -1,16 +1,17 @@
 /**
  * Vérifie que chaque type de widget est complètement déclaré.
  *
- * Deux façons valides de déclarer un widget :
+ * Depuis la 2.2.0 il n'y a **plus qu'une façon** de déclarer un widget : un
+ * manifeste `src/components/cards/<Nom>/widget.ts` via `defineWidget`, importé
+ * dans `src/widgets/registry.ts`. Les sept registres centraux — composants,
+ * méta, catalogue, dispositions, tailles, champs, valeurs par défaut — ont
+ * disparu, et avec eux la synchronisation manuelle qu'ils imposaient.
  *
- * 1. **Manifeste** (recommandé) — `src/components/cards/<Nom>/widget.ts` via
- *    `defineWidget`, plus son import dans `src/widgets/registry.ts`. Tout est
- *    dans le manifeste, il n'y a rien à tenir en phase.
- * 2. **Registres historiques** — une entrée dans chacun des cinq gros objets
- *    centraux. C'est ce que faisaient tous les widgets avant `defineWidget` ;
- *    c'est précisément la synchronisation manuelle que le manifeste supprime.
+ * Ce script vérifie donc les deux seules choses qui restent à tenir en phase :
  *
- * Ce script signale les types incomplets dans l'un et l'autre modèle.
+ * 1. tout type de l'union `GridWidget['type']` a un manifeste **importé** ;
+ * 2. aucun manifeste ne traîne sans import — écrit mais invisible de
+ *    l'application, c'est le genre d'oubli qui ne se voit qu'à l'usage.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -19,8 +20,6 @@ import chalk from 'chalk';
 const ROOT = path.resolve(import.meta.dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
-// ── Extraction ───────────────────────────────────────────────────────────────
-
 /** Types déclarés dans l'union `GridWidget['type']` */
 function unionTypes(): string[] {
   const src = read('src/context/DashboardLayoutContext.tsx');
@@ -28,70 +27,27 @@ function unionTypes(): string[] {
   return [...block.matchAll(/\|\s*'([a-z_]+)'/g)].map(m => m[1]);
 }
 
-/** Types déclarés par manifeste ET importés dans le registre */
-function manifestTypes(): { declared: string[]; registered: string[] } {
+/** Types déclarés par manifeste, et ceux réellement importés dans le registre. */
+function manifestTypes(): { declared: Map<string, string>; registered: Set<string> } {
   const cardsDir = path.join(ROOT, 'src/components/cards');
-  const declared: string[] = [];
+  const registry = read('src/widgets/registry.ts');
+
+  const declared = new Map<string, string>();
+  const registered = new Set<string>();
+
   for (const entry of fs.readdirSync(cardsDir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
     const manifest = path.join(cardsDir, entry.name, 'widget.ts');
     if (!fs.existsSync(manifest)) continue;
-    const m = fs.readFileSync(manifest, 'utf8').match(/type:\s*'([a-z_]+)'/);
-    if (m) declared.push(m[1]);
+
+    const type = fs.readFileSync(manifest, 'utf8').match(/type:\s*'([a-z_]+)'/)?.[1];
+    if (!type) continue;
+
+    declared.set(type, entry.name);
+    if (registry.includes(`cards/${entry.name}/widget`)) registered.add(type);
   }
-  const registry = read('src/widgets/registry.ts');
-  const registered = declared.filter(t => {
-    const dir = fs
-      .readdirSync(cardsDir)
-      .find(
-        d =>
-          fs.existsSync(path.join(cardsDir, d, 'widget.ts')) &&
-          fs.readFileSync(path.join(cardsDir, d, 'widget.ts'), 'utf8').includes(`type: '${t}'`)
-      );
-    return dir ? registry.includes(`cards/${dir}/widget`) : false;
-  });
+
   return { declared, registered };
-}
-
-/** Clés d'un objet exporté (première profondeur) */
-function objectKeys(src: string, name: string): string[] {
-  const start = src.indexOf(`export const ${name}`);
-  if (start < 0) return [];
-  const open = src.indexOf('{', start);
-  let depth = 0;
-  let end = open;
-  for (let i = open; i < src.length; i++) {
-    if (src[i] === '{' || src[i] === '[') depth++;
-    else if (src[i] === '}' || src[i] === ']') {
-      depth--;
-      if (depth === 0) {
-        end = i;
-        break;
-      }
-    }
-  }
-  return [...src.slice(open, end).matchAll(/^\s{2}'?([a-z_]+)'?:/gm)].map(m => m[1]);
-}
-
-function arrayTypes(src: string, name: string): string[] {
-  const start = src.indexOf(`export const ${name}`);
-  if (start < 0) return [];
-  // `= [` et non `[` : l'annotation de type contient déjà `[]` (`WidgetMeta[]`),
-  // dont le crochet ouvrant faisait terminer le balayage immédiatement.
-  const open = src.indexOf('[', src.indexOf('= [', start));
-  let depth = 0;
-  let end = open;
-  for (let i = open; i < src.length; i++) {
-    if (src[i] === '[' || src[i] === '{') depth++;
-    else if (src[i] === ']' || src[i] === '}') {
-      depth--;
-      if (depth === 0) {
-        end = i;
-        break;
-      }
-    }
-  }
-  return [...src.slice(open, end).matchAll(/type:\s*'([a-z_]+)'/g)].map(m => m[1]);
 }
 
 // ── Vérification ─────────────────────────────────────────────────────────────
@@ -99,54 +55,33 @@ function arrayTypes(src: string, name: string): string[] {
 const all = unionTypes();
 const { declared, registered } = manifestTypes();
 
-const dispositionsSrc = read('src/config/widget-dispositions.ts');
-const metaSrc = read('src/components/layout/AddWidgetModal/widget-meta.ts');
-const fieldsSrc = read('src/types/widget-fields.ts');
-const catalogSrc = read('src/config/widget-catalog.ts');
-const registrySrc = read('src/config/widget-registry.tsx');
-
-const legacy: Record<string, string[]> = {
-  LEGACY_WIDGET_COMPONENTS: objectKeys(registrySrc, 'LEGACY_WIDGET_COMPONENTS'),
-  LEGACY_WIDGET_META: arrayTypes(metaSrc, 'LEGACY_WIDGET_META'),
-  LEGACY_WIDGET_CATALOG: arrayTypes(catalogSrc, 'LEGACY_WIDGET_CATALOG'),
-  LEGACY_WIDGET_DISPOSITIONS: objectKeys(dispositionsSrc, 'LEGACY_WIDGET_DISPOSITIONS'),
-  LEGACY_WIDGET_FIELD_DEFS: objectKeys(fieldsSrc, 'LEGACY_WIDGET_FIELD_DEFS'),
-  LEGACY_DEFAULT_WIDGET_CONFIGS: objectKeys(fieldsSrc, 'LEGACY_DEFAULT_WIDGET_CONFIGS'),
-};
-
-console.info(`${all.length} types déclarés : ${all.join(', ')}`);
-console.info(`${declared.length} par manifeste : ${declared.join(', ') || '—'}\n`);
+console.info(`${all.length} types déclarés dans l'union`);
+console.info(`${declared.size} manifestes, dont ${registered.size} importés\n`);
 
 let failed = false;
 
 // 1. Un manifeste non importé n'existe pas pour l'application
-for (const t of declared) {
-  if (!registered.includes(t)) {
+for (const [type, dir] of declared) {
+  if (!registered.has(type)) {
     failed = true;
-    console.warn(chalk.red(`❌ « ${t} » a un manifeste mais n'est pas importé dans src/widgets/registry.ts`));
+    console.warn(chalk.red(`❌ « ${type} » (${dir}) a un manifeste mais n'est pas importé dans src/widgets/registry.ts`));
   }
 }
 
-// 2. Un type de l'union doit être servi par un manifeste ou par les registres
-for (const t of all) {
-  if (registered.includes(t)) continue;
-  const missing = Object.entries(legacy)
-    .filter(([, keys]) => !keys.includes(t))
-    .map(([name]) => name);
-  if (missing.length === Object.keys(legacy).length) {
+// 2. Un type de l'union sans manifeste n'a rien pour le rendre
+for (const type of all) {
+  if (!registered.has(type)) {
     failed = true;
-    console.warn(chalk.red(`❌ « ${t} » n'est déclaré nulle part — ni manifeste, ni registre historique`));
-  } else if (missing.length > 0) {
-    failed = true;
-    console.warn(chalk.red(`❌ « ${t} » (historique) manque dans : ${missing.join(', ')}`));
-    console.warn(chalk.dim(`   → le migrer vers un manifeste supprime ce genre d'oubli : npm run new:widget`));
+    console.warn(chalk.red(`❌ « ${type} » figure dans GridWidget['type'] mais n'a aucun manifeste`));
+    console.warn(chalk.dim(`   → npm run new:widget`));
   }
 }
 
-// 3. Une entrée historique orpheline (type retiré de l'union)
-for (const [name, keys] of Object.entries(legacy)) {
-  const extra = keys.filter(k => !all.includes(k));
-  if (extra.length) console.warn(chalk.yellow(`⚠️  ${name} contient des types inconnus : ${extra.join(', ')}`));
+// 3. Un manifeste dont le type a quitté l'union ne sera jamais rendu
+for (const [type, dir] of declared) {
+  if (!all.includes(type)) {
+    console.warn(chalk.yellow(`⚠️  « ${type} » (${dir}) a un manifeste mais ne figure pas dans GridWidget['type']`));
+  }
 }
 
 console.info('');
@@ -154,4 +89,4 @@ if (failed) {
   console.error(chalk.red('Des widgets sont incomplets.'));
   process.exit(1);
 }
-console.info(chalk.green('✅ Tous les widgets sont complètement déclarés.'));
+console.info(chalk.green(`✅ ${registered.size} widgets complètement déclarés, tous par manifeste.`));

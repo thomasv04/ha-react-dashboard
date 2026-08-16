@@ -6,6 +6,8 @@
   "unavailable": "Indisponible",
   "unknown": "Inconnu",
   "loading": "Chargement...",
+  "error": "Erreur",
+  "restore": "Restaurer",
   "save": "Sauvegarder",
   "cancel": "Annuler",
   "delete": "Supprimer",
@@ -22,5 +24,8 @@
   "noData": "Pas de données",
   "select": "Sélectionner...",
   "searchPlaceholder": "Rechercher...",
-  "stop": "STOP"
+  "stop": "STOP",
+  "widgetUnavailable": "Widget indisponible",
+  "panelUnavailable": "Panneau indisponible",
+  "retry": "Réessayer"
 }

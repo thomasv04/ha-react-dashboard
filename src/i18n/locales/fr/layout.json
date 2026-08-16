@@ -29,7 +29,9 @@
     "advanced": "Avancé",
     "layout": "Mise en page",
     "sound": "Son",
-    "widgets": "Widgets"
+    "widgets": "Widgets",
+    "actions": "Actions",
+    "visibility": "Visibilité"
   },
   "soundTab": {
     "intro": "Choisissez le son joué pour chaque action. Mettez 'aucun' pour couper le son.",
@@ -253,12 +255,78 @@
     "infoBoxWidth": "Largeur boîte info : {value}px",
     "editWidgets": "Modifier les widgets",
     "touchToExit": "TOUCHER POUR QUITTER",
-    "dismissOverlay": "Fermer l'écran de veille"
+    "dismissOverlay": "Fermer l'écran de veille",
+    "gestures": {
+      "tab": "Gestes",
+      "enable": "Activer les gestes tactiles",
+      "enableDesc": "Balayer l'écran de veille sans en sortir",
+      "photos": "Balayer pour changer de photo",
+      "photosDesc": "Vers la gauche ou la droite",
+      "quickPanel": "Panneau du menu rapide",
+      "quickPanelDesc": "Ouvert par un balayage vers le haut. Vide = geste désactivé",
+      "notifications": "Notifications Home Assistant",
+      "notificationsDesc": "Ouvertes par un balayage vers le bas — événement ha_dashboard_notification",
+      "hints": "Afficher les poignées au démarrage",
+      "hintsDesc": "Quatre repères qui s'effacent après quelques secondes",
+      "help": "Un appui simple quitte toujours l'écran de veille : seuls les balayages déclenchent ces actions. Au clavier, les flèches font la même chose.",
+      "quickMenu": "Menu rapide",
+      "noQuickPanel": "Aucun panneau sélectionné",
+      "noNotifications": "Aucune notification",
+      "dismissAll": "Tout effacer"
+    }
   },
   "panelNoneCreated": "Aucun panneau pour l'instant — créez-en un depuis le mode édition.",
   "dockLabelsOn": "Libellés",
   "dockLabelsOff": "Sans libellés",
   "dockRemove": "Retirer du dock",
   "dockAdd": "Ajouter au dock",
-  "dockNoPanels": "Aucun panneau personnalisé. Créez-en un depuis le mode édition, puis ajoutez-le ici."
+  "dockNoPanels": "Aucun panneau personnalisé. Créez-en un depuis le mode édition, puis ajoutez-le ici.",
+  "duplicateWidget": "Dupliquer le widget",
+  "actions": {
+    "intro": "Choisissez ce que fait un appui simple ou un appui long sur cette carte. « Défaut » conserve le comportement habituel du widget.",
+    "tap": "Appui simple",
+    "hold": "Appui long",
+    "target": "Destination",
+    "service": "Service",
+    "entity": "Entité ciblée",
+    "entityHint": "Laissez vide pour utiliser l'entité de la carte.",
+    "serviceData": "Données (JSON)",
+    "url": "Adresse",
+    "type": {
+      "default": "Défaut",
+      "more-info": "Fiche détaillée",
+      "navigate": "Naviguer",
+      "call-service": "Appeler un service",
+      "url": "Ouvrir un lien",
+      "none": "Rien"
+    }
+  },
+  "visibility": {
+    "intro": "N'affiche cette carte que si toutes les conditions ci-dessous sont remplies. En mode édition elle reste visible, atténuée, pour rester modifiable.",
+    "empty": "Aucune condition — la carte est toujours affichée.",
+    "add": "Ajouter une condition",
+    "entity": "Entité",
+    "stateIs": "État égal à",
+    "stateIsNot": "État différent de",
+    "kind": {
+      "state": "État d'une entité",
+      "screen": "Taille d'écran"
+    },
+    "screen": {
+      "lg": "Ordinateur",
+      "md": "Tablette",
+      "sm": "Mobile"
+    }
+  },
+  "badges": {
+    "add": "Ajouter une pastille"
+  },
+  "stateStyles": {
+    "title": "Icône selon l'état",
+    "intro": "Remplace l'icône ou sa couleur quand une règle est satisfaite. La première règle satisfaite l'emporte — placez le cas particulier en haut.",
+    "rule": "Règle {value}",
+    "icon": "Icône",
+    "color": "Couleur",
+    "add": "Ajouter une règle"
+  }
 }

@@ -43,6 +43,8 @@ Ce dossier contient des guides détaillés, étape par étape, pour implémenter
 | # | Guide | Difficulté | Temps estimé | Dépendances |
 |---|-------|-----------|-------------|-------------|
 | 13 | [Template Engine (Jinja2/Nunjucks par champ)](./13-TEMPLATE-ENGINE.md) | 🔴 Complexe | — | SensorCard (01) en premier |
+| 14 | [WallPanel / Écran de veille](./14-WALLPANEL-SCREENSAVER.md) | 🔴 Complexe | — | Aucune — ✅ livré |
+| 15 | [WallPanel — gestes tactiles](./15-WALLPANEL-GESTURES.md) | 🟡 Moyen | — | 14 |
 
 ## Conventions du projet
 

@@ -20,16 +20,20 @@
       "body": "Thèmes, fond d'écran, opacité des cards, et l'écran de veille pour une tablette murale."
     },
     "events": {
-      "title": "Ouvrir des modales depuis Home Assistant",
-      "body": "Déclenchez un événement depuis n'importe quelle automatisation pour afficher une modale ou un toast sur tous les dashboards."
+      "title": "Modales, toasts et notifications depuis Home Assistant",
+      "body": "Déclenchez un événement depuis n'importe quelle automatisation pour afficher une modale, un toast, ou déposer une notification sur tous les dashboards."
     },
     "releaseNotes": {
       "title": "Nouveautés",
       "body": "Ce que la dernière version a changé."
+    },
+    "gestures": {
+      "title": "Balayer l'écran de veille",
+      "body": "Changer de photo, ouvrir un menu rapide ou le tiroir de notifications, sans quitter l'écran de veille."
     }
   },
   "events": {
-    "intro": "Le dashboard écoute deux événements personnalisés sur le WebSocket de Home Assistant. N'importe quelle automatisation, script ou l'onglet Outils de développement > Événements peut les émettre — tous les dashboards ouverts réagissent en même temps.",
+    "intro": "Le dashboard écoute trois événements personnalisés sur le WebSocket de Home Assistant. N'importe quelle automatisation, script ou l'onglet Outils de développement > Événements peut les émettre — tous les dashboards ouverts réagissent en même temps.",
     "modalDesc": "Une modale centrée : titre, contenu markdown, et des boutons qui appellent un service.",
     "toastDesc": "Une notification discrète dans le coin, qui s'efface seule sauf si on la rend persistante.",
     "preview": "Aperçu",
@@ -38,6 +42,31 @@
     "demoModalBody": "Voilà ce qu'afficherait une automatisation émettant `ha_dashboard_modal`.",
     "demoToastTitle": "Aperçu du toast",
     "demoToastBody": "Déclenché localement — aucun événement Home Assistant impliqué.",
-    "tip": "Pour tester sans écrire une automatisation : Outils de développement > Événements, type ha_dashboard_toast, puis collez le bloc event_data."
+    "tip": "Dans Outils de développement > Événements, le type et les données sont deux champs séparés : bascule sur « Outils de dév. » ci-dessus pour obtenir la bonne forme. Coller le bloc « action: » entier ne déclenche rien.",
+    "notificationDesc": "Une notification qui reste dans le tiroir de l'écran de veille (balayage vers le bas), même après un rechargement, jusqu'à ce qu'on l'efface.",
+    "demoNotificationTitle": "Aperçu de la notification",
+    "demoNotificationBody": "Déposée dans le tiroir : balayez l'écran de veille vers le bas pour la retrouver.",
+    "formAutomation": "Automatisation",
+    "formDevTools": "Outils de dév."
+  },
+  "gestures": {
+    "intro": "L'écran de veille se pilote au doigt. Les quatre gestes ci-dessous fonctionnent aussi au clavier, avec les flèches.",
+    "photos": {
+      "title": "Balayer à gauche ou à droite",
+      "body": "Photo suivante ou précédente du diaporama. Le minuteur repart à zéro."
+    },
+    "quick": {
+      "title": "Balayer vers le haut",
+      "body": "Ouvre le menu rapide : un de vos panneaux, choisi dans l'onglet Gestes du WallPanel."
+    },
+    "notifications": {
+      "title": "Balayer vers le bas",
+      "body": "Ouvre le tiroir de notifications. Une pastille en haut de l'écran signale les messages en attente."
+    },
+    "exit": {
+      "title": "Appuyer une fois",
+      "body": "Quitte l'écran de veille. Un balayage ne le quitte jamais, même s'il se termine par un appui."
+    },
+    "config": "Chaque geste s'active ou se coupe séparément dans WallPanel > Gestes, avec le panneau à ouvrir vers le haut."
   }
 }

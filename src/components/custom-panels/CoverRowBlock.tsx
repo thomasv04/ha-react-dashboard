@@ -1,14 +1,18 @@
+import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { DURATION_HERO } from '@/lib/motion-tokens';
 import { ChevronsUp, ChevronsDown, Square } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
+import { useMoreInfo } from '@/context/MoreInfoContext';
 import { cn } from '@/lib/utils';
 import type { CoverRowBlock } from '@/types/custom-panel';
 
 export function CoverRowBlockRenderer({ block }: { block: CoverRowBlock }) {
   const cover = useSafeEntity(block.entityId);
   const { helpers } = useHass();
+  const { openMoreInfo } = useMoreInfo();
+  const rowRef = useRef<HTMLDivElement>(null);
 
   if (!cover) return null;
 
@@ -21,12 +25,29 @@ export function CoverRowBlockRenderer({ block }: { block: CoverRowBlock }) {
   }
 
   return (
-    <div className='flex items-center justify-between gc-inner rounded-2xl px-4 py-3'>
+    // La ligne entière ouvre la fiche détaillée, comme une carte de la grille —
+    // les trois boutons restent des raccourcis. Sans ça, un volet listé dans un
+    // panneau était le seul endroit du dashboard d'où sa fiche était
+    // inatteignable : position exacte, historique et réglages fins compris.
+    <div
+      ref={rowRef}
+      role='button'
+      tabIndex={0}
+      onClick={() => openMoreInfo(block.entityId, 'cover', block.entityId, rowRef.current?.getBoundingClientRect() ?? null)}
+      onKeyDown={e => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        openMoreInfo(block.entityId, 'cover', block.entityId, rowRef.current?.getBoundingClientRect() ?? null);
+      }}
+      className='flex items-center justify-between gc-inner rounded-2xl px-4 py-3 cursor-pointer transition-colors hover:bg-white/5'
+    >
       <div>
         <div className='text-white font-medium text-sm'>{label}</div>
         <div className='text-white/40 text-xs mt-0.5'>{pos !== undefined ? `${pos}%` : cover.state}</div>
       </div>
-      <div className='flex items-center gap-3'>
+      {/* `stopPropagation` : monter, stopper ou fermer ne doit pas *aussi*
+          ouvrir la fiche par-dessus. */}
+      <div className='flex items-center gap-3' onClick={e => e.stopPropagation()}>
         <div className='w-16 h-1.5 bg-white/8 rounded-full overflow-hidden'>
           <motion.div
             animate={{ width: `${pos ?? 0}%` }}

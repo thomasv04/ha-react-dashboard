@@ -6,15 +6,15 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import helmet from 'helmet';
-import { initDB } from './db.js';
+import { initDB, checkpoint } from './db.js';
 import { configRouter } from './routes/config.js';
 import { profilesRouter } from './routes/profiles.js';
 import { settingsRouter } from './routes/settings.js';
-import { uploadsRouter } from './routes/uploads.js';
+import { uploadsRouter, pruneOrphanUploads } from './routes/uploads.js';
 import { translationsRouter } from './routes/translations.js';
-import { haAuthMiddleware } from './haAuth.js';
+import { haAuthMiddleware, adminWrites, writeGuard } from './haAuth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -65,35 +65,97 @@ app.use(
 // Global fallback kept small — only /api/config gets 2 MB
 app.use(express.json({ limit: '50kb' }));
 
-// Rate limiting par IP
-const apiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 300, // 300 requêtes par minute
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many requests, please try again later.' },
-});
-app.use('/api/', apiLimiter);
-
-// HA auth middleware (optionnel, activé en mode add-on)
-if (process.env.HA_AUTH === 'true') {
-  app.use('/api/', haAuthMiddleware);
-}
-
 // ── Database ──────────────────────────────────────────────────────────────────
+// Initialisée avant les middlewares d'authentification et de débit : la sonde
+// de santé ci-dessous interroge la base et doit rester joignable sans jeton.
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'data', 'dashboard.db');
 export const db = initDB(DB_PATH);
+
+// ── Health check ─────────────────────────────────────────────────────────────
+
+/**
+ * Sonde lue par le watchdog du superviseur (cf. `watchdog:` dans config.yaml).
+ *
+ * Montée **avant** le rate-limiter et avant `haAuthMiddleware`, délibérément :
+ *
+ * - derrière le limiteur, un pic de trafic ferait échouer la sonde et
+ *   redémarrer l'add-on — exactement au pire moment ;
+ * - derrière l'authentification, le superviseur n'aurait aucun jeton à
+ *   présenter et le watchdog redémarrerait en boucle un add-on parfaitement
+ *   sain.
+ *
+ * Elle ne divulgue donc rien : un booléen et la disponibilité de la base.
+ */
+app.get('/api/health', (_req, res) => {
+  try {
+    db.prepare('SELECT 1').get();
+    res.json({ ok: true, db: 'up', uptime: Math.round(process.uptime()) });
+  } catch (err) {
+    console.error('[health] DB unreachable:', err.message);
+    res.status(503).json({ ok: false, db: 'down' });
+  }
+});
+
+// ── Rate limiting ────────────────────────────────────────────────────────────
+//
+// Clé sur l'utilisateur, pas sur l'IP : derrière l'ingress, toutes les requêtes
+// portent l'adresse du superviseur. Un quota par IP était donc partagé par
+// toute la maison — une tablette bavarde bloquait tout le monde. On retombe sur
+// l'IP quand l'identité n'est pas connue (mode standalone sans en-tête, dev).
+// `ipKeyGenerator` en repli : une IPv6 nue laisserait un quota par adresse d'un
+// même préfixe /64, que n'importe quel client peut faire varier à volonté.
+const clientKey = req => req.headers['x-remote-user-id'] || req.headers['x-ha-user-id'] || req.query?.device_id || ipKeyGenerator(req.ip);
+
+const limiter = (max, windowMs = 60_000) =>
+  rateLimit({
+    windowMs,
+    max,
+    keyGenerator: clientKey,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests, please try again later.' },
+  });
+
+// Les lectures sont nombreuses et bon marché ; les écritures sont rares et
+// coûteuses (2 Mo de configuration, images). Deux quotas, pas un.
+app.use('/api/', limiter(300));
+app.use('/api/', (req, res, next) => (req.method === 'GET' ? next() : limiter(30)(req, res, next)));
+
+// ── Authentification et rôle ─────────────────────────────────────────────────
+if (process.env.HA_AUTH === 'true') {
+  app.use('/api/', haAuthMiddleware);
+} else if (isProduction) {
+  // Aucune authentification configurée en production : lecture seule. Cf.
+  // `writeGuard` — le même raisonnement que pour le jeton HA ci-dessous.
+  console.error('[ha-dashboard] HA_AUTH is not enabled: the API is served read-only.');
+  app.use('/api/', writeGuard);
+}
 
 // ── Uploads directory ────────────────────────────────────────────────────────
 const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, '..', 'data', 'uploads');
 
+// Ménage au démarrage : le seul moment où plus personne n'est en train de
+// choisir une image. Voir `pruneOrphanUploads` pour le délai de grâce.
+if (process.env.NODE_ENV !== 'test') {
+  try {
+    pruneOrphanUploads(db, UPLOADS_DIR);
+  } catch (err) {
+    console.error('[uploads] Prune failed:', err.message);
+  }
+}
+
 // ── API Routes ────────────────────────────────────────────────────────────────
-// /api/config can be large (full dashboard layout)
-app.use('/api/config', express.json({ limit: '2mb' }), configRouter(db));
-app.use('/api/profiles', profilesRouter(db));
+//
+// `adminWrites` sur tout ce qui est **partagé** : la configuration du
+// dashboard, les profils, les traductions et les fichiers appartiennent au
+// foyer entier. `/api/settings` en est délibérément exempt — thème,
+// performances et mode kiosque sont propres à un appareil, et chacun doit
+// pouvoir régler le sien.
+app.use('/api/config', express.json({ limit: '2mb' }), adminWrites, configRouter(db));
+app.use('/api/profiles', adminWrites, profilesRouter(db));
 app.use('/api/settings', settingsRouter(db));
-app.use('/api/uploads', uploadsRouter(db, UPLOADS_DIR));
-app.use('/api/translations', translationsRouter(db));
+app.use('/api/uploads', adminWrites, uploadsRouter(db, UPLOADS_DIR));
+app.use('/api/translations', adminWrites, translationsRouter(db));
 
 // ── System info ──────────────────────────────────────────────────────────────
 
@@ -171,6 +233,17 @@ if (process.env.NODE_ENV !== 'test') {
     console.log(`[ha-dashboard] Server running on port ${PORT}`);
     console.log(`[ha-dashboard] DB path: ${DB_PATH}`);
   });
+
+  // Le superviseur envoie SIGTERM à l'arrêt et lors d'une sauvegarde à chaud.
+  // Fusionner le WAL avant de rendre la main évite qu'une copie de `/data`
+  // reparte sans les dernières écritures (cf. checkpoint() dans db.js).
+  for (const signal of ['SIGTERM', 'SIGINT']) {
+    process.on(signal, () => {
+      checkpoint(db);
+      db.close();
+      process.exit(0);
+    });
+  }
 }
 
 export default app;

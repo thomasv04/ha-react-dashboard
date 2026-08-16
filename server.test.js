@@ -58,7 +58,7 @@ describe('PUT /api/config', () => {
     const config = { version: 2, layout: ['itemA', 'itemB'] };
     const res = await request(app).put('/api/config').send(config);
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ success: true });
+    expect(res.body).toEqual({ success: true, revision: 1 });
   });
 
   it('renvoie 400 si le body est invalide', async () => {

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import { playSound, type SoundPreset } from '@/lib/sounds';
-import { isSoundEnabled } from '@/context/ThemeContext';
+import { isSoundEnabled, isDoNotDisturb } from '@/context/ThemeContext';
 
 export interface ToastAction {
   label: string;
@@ -42,6 +42,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     (toast: Omit<Toast, 'id'>): string => {
       const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const full: Toast = { durationMs: 5000, sound: 'notification', ...toast, id };
+
+      // « Ne pas déranger » ne masque que le passager. Une notification
+      // persistante attend une action de l'utilisateur : l'escamoter la ferait
+      // disparaître sans que personne ne l'ait vue ni traitée.
+      if (isDoNotDisturb() && !full.persistent) return id;
+
       setToasts(prev => [full, ...prev]);
       if (full.sound !== false && full.sound && isSoundEnabled()) {
         playSound(full.sound);

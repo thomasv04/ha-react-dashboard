@@ -35,6 +35,77 @@ const MAX_ICON_SIZE = 2 * 1024 * 1024; // 2 MB (pre-resize)
 const ICON_MAX_DIM = 128; // max width/height after resize
 
 /**
+ * Volume total autorisé pour les fichiers téléversés.
+ *
+ * Sans plafond, remplacer dix fois un fond d'écran laissait dix fichiers de
+ * 10 Mo dans `/data` — que chaque sauvegarde Home Assistant emportait ensuite.
+ * 200 Mo laissent largement de quoi faire tourner un diaporama tout en gardant
+ * les sauvegardes d'une taille raisonnable.
+ */
+const MAX_TOTAL_BYTES = 200 * 1024 * 1024;
+
+/**
+ * Délai de grâce avant qu'un fichier non référencé soit considéré orphelin.
+ *
+ * Un fond d'écran est téléversé *avant* d'être enregistré dans la
+ * configuration. Sans ce délai, un redémarrage survenu entre les deux
+ * supprimerait l'image que l'utilisateur vient de choisir.
+ */
+const ORPHAN_GRACE_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Supprime les fichiers que plus aucune configuration ne référence.
+ *
+ * Remplacer dix fois un fond d'écran laissait dix fichiers de 10 Mo derrière
+ * lui : le quota finissait par bloquer un envoi légitime, et chaque sauvegarde
+ * Home Assistant emportait le tout.
+ *
+ * La détection est une simple recherche du nom de fichier dans la
+ * configuration sérialisée. Les noms sont des UUID : aucun faux positif
+ * possible, et c'est bien plus robuste que de parcourir une arborescence de
+ * widgets dont la forme change à chaque version.
+ *
+ * @param {import('better-sqlite3').Database} db
+ * @param {string} uploadsDir
+ * @returns {number} nombre de fichiers supprimés
+ */
+export function pruneOrphanUploads(db, uploadsDir) {
+  const row = db.prepare('SELECT data FROM dashboard_config WHERE id = 1').get();
+  // Pas de configuration = installation neuve. Tout supprimer serait le pire
+  // moment pour se tromper.
+  if (!row?.data) return 0;
+
+  // L'historique compte : une image encore citée par un état archivé doit
+  // survivre, sinon la restauration rendrait un dashboard aux cadres vides.
+  const haystack = [
+    row.data,
+    ...db
+      .prepare('SELECT data FROM config_history')
+      .all()
+      .map(h => h.data),
+  ].join('');
+  const cutoff = Date.now() - ORPHAN_GRACE_MS;
+  let removed = 0;
+
+  for (const [table, subdir] of [
+    ['uploaded_images', ''],
+    ['uploaded_icons', 'icons'],
+  ]) {
+    for (const file of db.prepare(`SELECT filename, created_at FROM ${table}`).all()) {
+      if (haystack.includes(file.filename)) continue;
+      if (Date.parse(`${file.created_at.replace(' ', 'T')}Z`) > cutoff) continue;
+
+      fs.rmSync(path.join(uploadsDir, subdir, file.filename), { force: true });
+      db.prepare(`DELETE FROM ${table} WHERE filename = ?`).run(file.filename);
+      removed += 1;
+    }
+  }
+
+  if (removed > 0) console.info(`[uploads] Pruned ${removed} orphaned file(s)`);
+  return removed;
+}
+
+/**
  * @param {import('better-sqlite3').Database} db
  * @param {string} uploadsDir  Chemin absolu vers le dossier de stockage
  */
@@ -43,6 +114,28 @@ export function uploadsRouter(db, uploadsDir) {
 
   // S'assurer que le dossier existe
   fs.mkdirSync(uploadsDir, { recursive: true });
+
+  /** Volume déjà occupé, images et icônes confondues. */
+  const usedBytes = () =>
+    (db.prepare('SELECT COALESCE(SUM(size), 0) AS total FROM uploaded_images').get().total ?? 0) +
+    (db.prepare('SELECT COALESCE(SUM(size), 0) AS total FROM uploaded_icons').get().total ?? 0);
+
+  /**
+   * Refuse et supprime le fichier tout juste écrit si le quota est dépassé.
+   *
+   * Le contrôle a lieu **après** l'écriture : multer écrit au fil de l'eau, et
+   * la taille réelle n'est connue qu'à la fin. Un dépassement ponctuel d'un
+   * fichier est sans conséquence, il repart aussitôt.
+   */
+  const enforceQuota = (file, res) => {
+    if (usedBytes() + file.size <= MAX_TOTAL_BYTES) return false;
+    fs.unlinkSync(path.join(file.destination, file.filename));
+    res.status(507).json({
+      error: 'Storage quota exceeded.',
+      message: `Delete existing images first — the ${Math.round(MAX_TOTAL_BYTES / 1024 / 1024)} MB limit is reached.`,
+    });
+    return true;
+  };
 
   // ── multer storage ─────────────────────────────────────────────────────────
   const storage = multer.diskStorage({
@@ -68,6 +161,7 @@ export function uploadsRouter(db, uploadsDir) {
     if (!file) {
       return res.status(400).json({ error: 'No file received.' });
     }
+    if (enforceQuota(file, res)) return;
 
     db.prepare(
       `
@@ -138,6 +232,7 @@ export function uploadsRouter(db, uploadsDir) {
     if (!file) {
       return res.status(400).json({ error: 'No file received.' });
     }
+    if (enforceQuota(file, res)) return;
 
     const filePath = path.join(iconsDir, file.filename);
 

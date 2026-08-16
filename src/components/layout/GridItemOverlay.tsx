@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import { MoveDiagonal, Pencil, Trash2, Settings } from 'lucide-react';
+import { MoveDiagonal, Pencil, Trash2, Settings, Copy } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { DURATION_MICRO } from '@/lib/motion-tokens';
 import { useDashboardLayout, useSizePresets, type GridWidget, type SizePresetName } from '@/context/DashboardLayoutContext';
@@ -18,7 +18,7 @@ interface GridItemOverlayProps {
 
 function GridItemOverlayInner({ id, label, widget, breakpoint, onResizeStart }: GridItemOverlayProps) {
   const { t } = useI18n();
-  const { removeWidget } = useDashboardLayout();
+  const { removeWidget, duplicateWidget } = useDashboardLayout();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const { cycleSize, getCurrentPresetName } = useSizePresets();
   const { setEditingWidgetId } = useWidgetConfig();
@@ -58,6 +58,17 @@ function GridItemOverlayInner({ id, label, widget, breakpoint, onResizeStart }: 
             title={t('layout.configureWidget')}
           >
             <Settings size={12} />
+          </button>
+          {/* Dupliquer — reprend aussi la configuration. Refaire à la main un
+              thermostat ou un graphe finement réglé était le geste le plus
+              fastidieux du mode édition. */}
+          <button
+            onMouseDown={e => e.stopPropagation()}
+            onClick={() => duplicateWidget(id)}
+            className='p-1.5 rounded-lg bg-white/8 hover:bg-white/20 text-white/50 hover:text-white transition-colors cursor-pointer'
+            title={t('layout.duplicateWidget')}
+          >
+            <Copy size={12} />
           </button>
           <div className='relative'>
             <button

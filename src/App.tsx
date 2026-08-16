@@ -1,9 +1,11 @@
 import { HassConnect } from '@hakit/core';
 import { ToastProvider } from '@/context/ToastContext';
 import { ModalProvider } from '@/context/ModalContext';
+import { NotificationProvider } from '@/context/NotificationContext';
 import { ToastContainer } from '@/components/ui/Toast/components/Toast';
 import { useHAToast } from '@/hooks/useHAToast';
 import { useHAModal } from '@/hooks/useHAModal';
+import { useHANotification } from '@/hooks/useHANotification';
 import Dashboard from './Dashboard';
 import { ModalContainer } from './components/ui/Modal/components/Modal';
 import { ThemeContextProvider, useTheme } from '@/context/ThemeContext';
@@ -27,6 +29,7 @@ function HAToastBridge() {
   // `ha_dashboard_modal` était implémenté mais jamais abonné : l'événement
   // n'apparaissait même pas dans les écouteurs actifs de Home Assistant.
   useHAModal();
+  useHANotification();
   return null;
 }
 
@@ -102,11 +105,13 @@ function App({ hassUrl: propHassUrl, hassToken: propHassToken }: AppProps = {}) 
           <MotionConfigBridge>
             <ToastProvider>
               <ModalProvider>
-                <HAToastBridge />
-                <AutoThemeBridge />
-                <Dashboard />
-                <ToastContainer />
-                <ModalContainer />
+                <NotificationProvider>
+                  <HAToastBridge />
+                  <AutoThemeBridge />
+                  <Dashboard />
+                  <ToastContainer />
+                  <ModalContainer />
+                </NotificationProvider>
               </ModalProvider>
             </ToastProvider>
           </MotionConfigBridge>

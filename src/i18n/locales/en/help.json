@@ -20,16 +20,20 @@
       "body": "Themes, wallpaper, card opacity, and the screensaver mode for a wall-mounted tablet."
     },
     "events": {
-      "title": "Open modals from Home Assistant",
-      "body": "Fire an event from any automation to show a modal or a toast on every dashboard."
+      "title": "Modals, toasts and notifications from Home Assistant",
+      "body": "Fire an event from any automation to show a modal, a toast, or file a notification on every dashboard."
     },
     "releaseNotes": {
       "title": "What's new",
       "body": "The changes brought by the latest version."
+    },
+    "gestures": {
+      "title": "Swipe the screensaver",
+      "body": "Change photo, open a quick menu or the notification drawer, without leaving the screensaver."
     }
   },
   "events": {
-    "intro": "The dashboard listens to two custom events on the Home Assistant WebSocket. Any automation, script or Developer Tools > Events can fire them — every open dashboard reacts at once.",
+    "intro": "The dashboard listens for three custom events on the Home Assistant WebSocket. Any automation, script, or the Developer tools > Events tab can fire them — every open dashboard reacts at the same time.",
     "modalDesc": "A centred modal: title, markdown content, and action buttons that call a service.",
     "toastDesc": "A discreet notification in the corner, auto-dismissed unless made persistent.",
     "preview": "Preview",
@@ -38,6 +42,31 @@
     "demoModalBody": "This is what an automation firing `ha_dashboard_modal` would display.",
     "demoToastTitle": "Toast preview",
     "demoToastBody": "Fired locally — no Home Assistant event involved.",
-    "tip": "Test without writing an automation: Developer Tools > Events, event type ha_dashboard_toast, then paste the event_data block."
+    "tip": "In Developer tools > Events, the type and the data are two separate fields: switch to \"Dev tools\" above to get the right shape. Pasting the whole \"action:\" block fires nothing.",
+    "notificationDesc": "A notification that stays in the screensaver drawer (swipe down), surviving a reload, until it is dismissed.",
+    "demoNotificationTitle": "Notification preview",
+    "demoNotificationBody": "Filed in the drawer: swipe the screensaver down to find it.",
+    "formAutomation": "Automation",
+    "formDevTools": "Dev tools"
+  },
+  "gestures": {
+    "intro": "The screensaver is driven by touch. All four gestures below also work from the keyboard, with the arrow keys.",
+    "photos": {
+      "title": "Swipe left or right",
+      "body": "Next or previous slideshow photo. The timer restarts from scratch."
+    },
+    "quick": {
+      "title": "Swipe up",
+      "body": "Opens the quick menu: one of your panels, picked in the WallPanel Gestures tab."
+    },
+    "notifications": {
+      "title": "Swipe down",
+      "body": "Opens the notification drawer. A pill at the top of the screen flags waiting messages."
+    },
+    "exit": {
+      "title": "Tap once",
+      "body": "Leaves the screensaver. A swipe never leaves it, even though it ends with a tap."
+    },
+    "config": "Each gesture can be turned on or off separately in WallPanel > Gestures, along with the panel to open upwards."
   }
 }

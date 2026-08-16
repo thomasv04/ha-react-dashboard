@@ -8,6 +8,7 @@ from pathlib import Path
 import aiohttp
 import pytest
 
+from custom_components.ha_react_dashboard.api import CONFIG_HISTORY_LIMIT
 from custom_components.ha_react_dashboard.const import DOMAIN, UPLOAD_DIR
 
 BASE = f"/api/{DOMAIN}"
@@ -80,6 +81,80 @@ async def test_config_survives_a_restart(hass, entry, hass_client):
 async def test_config_rejects_a_non_object(hass, entry, hass_client):
     client = await hass_client()
     assert (await client.put(f"{BASE}/config", json=["nope"])).status == 400
+
+
+async def test_config_revision_increases_and_is_exposed(hass, entry, hass_client):
+    client = await hass_client()
+
+    assert (await client.get(f"{BASE}/config")).headers["X-Config-Revision"] == "0"
+
+    first = await client.put(f"{BASE}/config", json={"version": 2, "pages": ["a"]})
+    assert (await first.json())["revision"] == 1
+
+    await client.put(f"{BASE}/config", json={"version": 2, "pages": ["b"]})
+    assert (await client.get(f"{BASE}/config")).headers["X-Config-Revision"] == "2"
+
+
+async def test_config_rejects_a_stale_revision(hass, entry, hass_client):
+    """Deux tablettes en mode édition ne doivent pas s'écraser en silence."""
+    client = await hass_client()
+    await client.put(f"{BASE}/config", json={"version": 2, "pages": ["a"]})
+    await client.put(f"{BASE}/config", json={"version": 2, "pages": ["b"]})
+
+    conflict = await client.put(
+        f"{BASE}/config",
+        json={"version": 2, "pages": ["perdu"]},
+        headers={"X-Expected-Revision": "1"},
+    )
+    assert conflict.status == 409
+    assert (await conflict.json())["current_revision"] == 2
+
+    # Le point de tout l'exercice : rien n'a été écrasé.
+    assert (await (await client.get(f"{BASE}/config")).json())["pages"] == ["b"]
+
+
+async def test_config_history_archives_and_restores(hass, entry, hass_client):
+    client = await hass_client()
+    await client.put(f"{BASE}/config", json={"version": 2, "pages": ["original"]})
+    await client.put(f"{BASE}/config", json={"version": 2, "pages": ["cassé"]})
+
+    history = await (await client.get(f"{BASE}/config/history")).json()
+    assert len(history) == 1
+    # La liste sert à choisir un point de restauration, pas à le charger.
+    assert "data" not in history[0]
+
+    restore = await client.post(f"{BASE}/config/history/{history[0]['id']}/restore")
+    assert restore.status == 200
+    assert (await (await client.get(f"{BASE}/config")).json())["pages"] == ["original"]
+
+    # L'état écrasé par la restauration a lui aussi été archivé.
+    history = await (await client.get(f"{BASE}/config/history")).json()
+    assert len(history) == 2
+    assert history[0]["label"] == "avant restauration"
+
+
+async def test_config_history_ignores_identical_saves(hass, entry, hass_client):
+    client = await hass_client()
+    for _ in range(3):
+        await client.put(f"{BASE}/config", json={"version": 2, "pages": ["a"]})
+
+    assert await (await client.get(f"{BASE}/config/history")).json() == []
+
+
+async def test_config_history_is_capped(hass, entry, hass_client):
+    client = await hass_client()
+    for i in range(CONFIG_HISTORY_LIMIT + 5):
+        await client.put(f"{BASE}/config", json={"version": 2, "pages": [f"v{i}"]})
+
+    history = await (await client.get(f"{BASE}/config/history")).json()
+    assert len(history) == CONFIG_HISTORY_LIMIT
+    # Ce sont les plus récents qui restent, pas les plus anciens.
+    assert history[0]["id"] > history[-1]["id"]
+
+
+async def test_config_restore_rejects_unknown_id(hass, entry, hass_client):
+    client = await hass_client()
+    assert (await client.post(f"{BASE}/config/history/999/restore")).status == 404
 
 
 # ── Profils ───────────────────────────────────────────────────────────────────
@@ -188,6 +263,44 @@ async def test_settings_reject_invalid_data(hass, entry, hass_client):
     client = await hass_client()
     response = await client.put(f"{BASE}/settings/current", json={"data": "nope"})
     assert response.status == 400
+
+
+async def test_settings_broadcast_applies_to_every_device(hass, entry, hass_client):
+    client = await hass_client()
+    for device in ("salon", "cuisine"):
+        await client.put(
+            f"{BASE}/settings/current", json={"device_id": device, "data": {"theme": "dark"}}
+        )
+
+    res = await client.post(f"{BASE}/settings/broadcast", json={"data": {"theme": "ocean"}})
+    assert res.status == 200
+    assert (await res.json())["devices"] == 2
+
+    for device in ("salon", "cuisine"):
+        got = await (await client.get(f"{BASE}/settings/current?device_id={device}")).json()
+        assert got["data"] == {"theme": "ocean"}
+        # Révision incrémentée : un appareil resté ouvert sera refusé (409) au
+        # lieu de réimposer silencieusement ses anciens réglages.
+        assert got["revision"] == 2
+
+
+async def test_settings_broadcast_requires_admin(hass, entry, hass_client, hass_admin_user):
+    client = await hass_client()
+    await client.put(
+        f"{BASE}/settings/current", json={"device_id": "salon", "data": {"theme": "dark"}}
+    )
+
+    hass_admin_user.groups = []
+    res = await client.post(f"{BASE}/settings/broadcast", json={"data": {"theme": "ocean"}})
+    assert res.status == 403
+
+    got = await (await client.get(f"{BASE}/settings/current?device_id=salon")).json()
+    assert got["data"] == {"theme": "dark"}
+
+
+async def test_settings_broadcast_rejects_invalid_data(hass, entry, hass_client):
+    client = await hass_client()
+    assert (await client.post(f"{BASE}/settings/broadcast", json={"data": "nope"})).status == 400
 
 
 # ── Traductions ───────────────────────────────────────────────────────────────

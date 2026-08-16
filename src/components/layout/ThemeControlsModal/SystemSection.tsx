@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { Copy, Check, Server, Download, Upload, AlertTriangle, Compass } from 'lucide-react';
+import { Copy, Check, Server, Download, Upload, AlertTriangle, Compass, FileDown, FileUp } from 'lucide-react';
 import { startTour } from '@/components/onboarding/TourOverlay';
 import { useI18n } from '@/i18n';
 import { apiFetch, isPanelMode } from '@/lib/api-base';
 import { useTheme } from '@/context/ThemeContext';
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 import { encodeConfig, decodeConfig, type ConfigSnapshot } from '@/lib/config-string';
+import { ConfigHistorySection } from './ConfigHistorySection';
 
 export function SystemSection() {
   const { t } = useI18n();
@@ -84,6 +85,30 @@ export function SystemSection() {
     navigator.clipboard.writeText(exportString).then(() => {
       setExportCopied(true);
       setTimeout(() => setExportCopied(false), 1800);
+    });
+  };
+
+  /**
+   * Une configuration complète pèse vite plusieurs dizaines de kilo-octets. Le
+   * presse-papier tient, mais le trajet jusqu'à un fichier texte ne tient pas
+   * toujours : troncature à la lecture, retours à la ligne insérés au collage.
+   * Le fichier supprime toute la chaîne de manipulation.
+   */
+  const downloadExport = () => {
+    const url = URL.createObjectURL(new Blob([exportString], { type: 'text/plain' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ha-dashboard-${new Date().toISOString().slice(0, 10)}.hadash`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const loadImportFile = (file: File | undefined) => {
+    if (!file) return;
+    file.text().then(text => {
+      setImportString(text.trim());
+      setConfirmImport(false);
+      setImportStatus('idle');
     });
   };
 
@@ -214,13 +239,22 @@ export function SystemSection() {
               className='w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white/70 text-xs font-mono resize-none focus:outline-none focus:border-blue-500/40'
               onClick={() => textareaRef.current?.select()}
             />
-            <button
-              onClick={copyExport}
-              className='self-end flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-400 hover:bg-blue-500/30 transition-colors text-xs font-semibold'
-            >
-              {exportCopied ? <Check size={12} /> : <Copy size={12} />}
-              {exportCopied ? t('settings.system_section.configExportCopied') : t('settings.system_section.configExportCopy')}
-            </button>
+            <div className='self-end flex items-center gap-2'>
+              <button
+                onClick={downloadExport}
+                className='flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/8 border border-white/12 text-white/70 hover:bg-white/12 hover:text-white transition-colors text-xs font-semibold'
+              >
+                <FileDown size={12} />
+                {t('settings.system_section.configExportDownload')}
+              </button>
+              <button
+                onClick={copyExport}
+                className='flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-400 hover:bg-blue-500/30 transition-colors text-xs font-semibold'
+              >
+                {exportCopied ? <Check size={12} /> : <Copy size={12} />}
+                {exportCopied ? t('settings.system_section.configExportCopied') : t('settings.system_section.configExportCopy')}
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -239,10 +273,23 @@ export function SystemSection() {
             setConfirmImport(false);
             setImportStatus('idle');
           }}
+          onDragOver={e => e.preventDefault()}
+          onDrop={e => {
+            e.preventDefault();
+            loadImportFile(e.dataTransfer.files[0]);
+          }}
           rows={4}
           placeholder={t('settings.system_section.configImportPlaceholder')}
           className='w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white/70 text-xs font-mono resize-none focus:outline-none focus:border-blue-500/40 placeholder:text-white/20 mb-3'
         />
+
+        {/* Le champ natif reste caché : son rendu par défaut jure avec le reste
+            de la modale, mais c'est bien lui qui ouvre le sélecteur. */}
+        <label className='inline-flex items-center gap-1.5 px-3 py-2 mb-3 rounded-lg bg-white/8 border border-white/12 text-white/70 hover:bg-white/12 hover:text-white transition-colors text-xs font-semibold cursor-pointer'>
+          <FileUp size={12} />
+          {t('settings.system_section.configImportFile')}
+          <input type='file' accept='.hadash,.txt' className='hidden' onChange={e => loadImportFile(e.target.files?.[0])} />
+        </label>
 
         {importStatus === 'error' && (
           <div className='flex items-center gap-2 text-red-400 text-xs mb-3'>
@@ -276,6 +323,9 @@ export function SystemSection() {
             : t('settings.system_section.configImportBtn')}
         </button>
       </div>
+
+      {/* ── Historique de configuration ── */}
+      <ConfigHistorySection />
     </div>
   );
 }

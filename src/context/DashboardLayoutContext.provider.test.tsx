@@ -3,10 +3,13 @@ import { vi, describe, it, expect } from 'vitest';
 
 // Mock dependencies before importing
 vi.mock('@hakit/core', () => ({ useHass: vi.fn() }));
+// Store de configs partagé : `duplicateWidget` doit recopier celle de la source,
+// ce qu'un mock renvoyant toujours `undefined` ne permettrait pas de vérifier.
+const widgetConfigs = new Map<string, unknown>();
 vi.mock('@/context/WidgetConfigContext', () => ({
   useWidgetConfig: () => ({
-    getWidgetConfig: () => undefined,
-    updateWidgetConfig: vi.fn(),
+    getWidgetConfig: (id: string) => widgetConfigs.get(id),
+    updateWidgetConfig: (id: string, cfg: unknown) => widgetConfigs.set(id, cfg),
   }),
 }));
 
@@ -98,6 +101,184 @@ describe('DashboardLayoutProvider', () => {
     const weatherAfter = result.current.layout.widgets.lg.find(w => w.id === 'weather');
     expect(weatherAfter!.w).toBe(5);
     expect(weatherAfter!.h).toBe(4);
+  });
+});
+
+describe('duplicateWidget', () => {
+  it('recopie le widget et sa configuration sous un nouvel identifiant', () => {
+    widgetConfigs.clear();
+    const { result } = renderHook(() => useDashboardLayout(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.addWidget({ id: 'source', type: 'thermostat', x: 0, y: 0, w: 3, h: 3 });
+    });
+    widgetConfigs.set('source', { type: 'thermostat', entityId: 'climate.salon' });
+
+    let copyId = '';
+    act(() => {
+      copyId = result.current.duplicateWidget('source');
+    });
+
+    expect(copyId).not.toBe('source');
+    expect(result.current.layout.widgets.lg).toHaveLength(2);
+    // Tout l'intérêt : la copie arrive déjà réglée.
+    expect(widgetConfigs.get(copyId)).toEqual({ type: 'thermostat', entityId: 'climate.salon' });
+  });
+
+  it("ne superpose pas la copie à l'original", () => {
+    widgetConfigs.clear();
+    const { result } = renderHook(() => useDashboardLayout(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.addWidget({ id: 'source', type: 'sensor', x: 0, y: 0, w: 2, h: 2 });
+    });
+    act(() => {
+      result.current.duplicateWidget('source');
+    });
+
+    const [a, b] = result.current.layout.widgets.lg;
+    expect(`${a.x},${a.y}`).not.toBe(`${b.x},${b.y}`);
+  });
+
+  it('ignore un identifiant inconnu', () => {
+    const { result } = renderHook(() => useDashboardLayout(), { wrapper: createWrapper() });
+    let id = 'x';
+    act(() => {
+      id = result.current.duplicateWidget('nexiste-pas');
+    });
+    expect(id).toBe('');
+    expect(result.current.layout.widgets.lg).toEqual([]);
+  });
+});
+
+describe('removeWidgets', () => {
+  const wid = (id: string): GridWidget => ({ id, type: 'sensor', x: 0, y: 0, w: 2, h: 2 });
+
+  it('supprime tout le groupe en un seul geste', () => {
+    vi.useFakeTimers();
+    const { result } = renderHook(() => useDashboardLayout(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.addWidget(wid('a'));
+      result.current.addWidget(wid('b'));
+      result.current.addWidget(wid('c'));
+    });
+
+    act(() => {
+      vi.setSystemTime(Date.now() + 500);
+      result.current.removeWidgets(['a', 'c']);
+    });
+    expect(result.current.layout.widgets.lg.map(w => w.id)).toEqual(['b']);
+
+    // Un seul point d'historique : une suppression multiple est *un* geste.
+    act(() => result.current.undo());
+    expect(result.current.layout.widgets.lg.map(w => w.id)).toEqual(['a', 'b', 'c']);
+
+    vi.useRealTimers();
+  });
+
+  it("ignore une liste vide sans toucher à l'historique", () => {
+    const { result } = renderHook(() => useDashboardLayout(), { wrapper: createWrapper() });
+    act(() => result.current.addWidget(wid('a')));
+    const before = result.current.canUndo;
+
+    act(() => result.current.removeWidgets([]));
+
+    expect(result.current.layout.widgets.lg).toHaveLength(1);
+    expect(result.current.canUndo).toBe(before);
+  });
+});
+
+describe('annuler / rétablir', () => {
+  const wid = (id: string): GridWidget => ({ id, type: 'sensor', x: 0, y: 0, w: 2, h: 2 });
+
+  /** Les mutations sont regroupées sur 400 ms — les espacer force des points de retour distincts. */
+  const advance = () => vi.setSystemTime(Date.now() + 500);
+
+  it('revient sur un ajout, puis le rejoue', () => {
+    vi.useFakeTimers();
+    const { result } = renderHook(() => useDashboardLayout(), { wrapper: createWrapper() });
+
+    expect(result.current.canUndo).toBe(false);
+
+    act(() => result.current.addWidget(wid('a')));
+    expect(result.current.layout.widgets.lg.map(w => w.id)).toEqual(['a']);
+    expect(result.current.canUndo).toBe(true);
+
+    act(() => result.current.undo());
+    expect(result.current.layout.widgets.lg).toEqual([]);
+    expect(result.current.canRedo).toBe(true);
+
+    act(() => result.current.redo());
+    expect(result.current.layout.widgets.lg.map(w => w.id)).toEqual(['a']);
+
+    vi.useRealTimers();
+  });
+
+  it('remonte plusieurs gestes un par un', () => {
+    vi.useFakeTimers();
+    const { result } = renderHook(() => useDashboardLayout(), { wrapper: createWrapper() });
+
+    act(() => result.current.addWidget(wid('a')));
+    act(() => {
+      advance();
+      result.current.addWidget(wid('b'));
+    });
+    act(() => {
+      advance();
+      result.current.addWidget(wid('c'));
+    });
+    expect(result.current.layout.widgets.lg).toHaveLength(3);
+
+    act(() => result.current.undo());
+    expect(result.current.layout.widgets.lg.map(w => w.id)).toEqual(['a', 'b']);
+    act(() => result.current.undo());
+    expect(result.current.layout.widgets.lg.map(w => w.id)).toEqual(['a']);
+
+    vi.useRealTimers();
+  });
+
+  it("regroupe les mutations rapprochées — un glisser-déposer n'est pas cent points de retour", () => {
+    vi.useFakeTimers();
+    const { result } = renderHook(() => useDashboardLayout(), { wrapper: createWrapper() });
+
+    act(() => result.current.addWidget(wid('a')));
+    act(() => {
+      advance();
+      // Cinquante déplacements d'affilée, comme pendant un redimensionnement.
+      for (let x = 1; x <= 50; x++) result.current.updateWidget('a', { x });
+    });
+    expect(result.current.layout.widgets.lg[0].x).toBe(50);
+
+    // Une seule annulation ramène avant le geste entier, pas d'un pixel.
+    act(() => result.current.undo());
+    expect(result.current.layout.widgets.lg[0].x).toBe(0);
+
+    vi.useRealTimers();
+  });
+
+  it('une nouvelle action efface le futur', () => {
+    vi.useFakeTimers();
+    const { result } = renderHook(() => useDashboardLayout(), { wrapper: createWrapper() });
+
+    act(() => result.current.addWidget(wid('a')));
+    act(() => result.current.undo());
+    expect(result.current.canRedo).toBe(true);
+
+    act(() => {
+      advance();
+      result.current.addWidget(wid('b'));
+    });
+    expect(result.current.canRedo).toBe(false);
+
+    vi.useRealTimers();
+  });
+
+  it("ne fait rien quand il n'y a rien à annuler", () => {
+    const { result } = renderHook(() => useDashboardLayout(), { wrapper: createWrapper() });
+    act(() => result.current.undo());
+    act(() => result.current.redo());
+    expect(result.current.layout.widgets.lg).toEqual([]);
   });
 });
 

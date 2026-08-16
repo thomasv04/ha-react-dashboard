@@ -70,10 +70,14 @@ test.describe('Edit mode', () => {
     // In edit mode, the grid container gets .dashboard-editing
     await expect(page.locator('.dashboard-editing')).toBeVisible();
 
-    // Action buttons appear
-    await expect(page.getByRole('button', { name: 'Ajouter' })).toBeVisible();
+    // Action buttons appear.
+    //
+    // `exact` partout : la 2.2.0 a ajouté « Annuler (Ctrl+Z) » à côté de
+    // « Annuler », et « Ajouter une pastille » à côté d'« Ajouter ». Sans lui,
+    // le mode strict de Playwright refuse deux correspondances.
+    await expect(page.getByRole('button', { name: 'Ajouter', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Sauvegarder' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Annuler' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Annuler', exact: true })).toBeVisible();
 
     // Exit edit mode
     const exitBtn = page.getByRole('button', { name: 'Quitter le mode édition' });
@@ -95,7 +99,7 @@ test.describe('Edit mode', () => {
     expect(await removeBtns.count()).toBeGreaterThanOrEqual(3);
 
     // Cleanup
-    await page.getByRole('button', { name: 'Annuler' }).click();
+    await page.getByRole('button', { name: 'Annuler', exact: true }).click();
   });
 
   test('widgets have drag handles in edit mode', async ({ page }) => {
@@ -106,7 +110,7 @@ test.describe('Edit mode', () => {
     const handles = page.locator('[data-drag-handle]');
     expect(await handles.count()).toBeGreaterThanOrEqual(3);
 
-    await page.getByRole('button', { name: 'Annuler' }).click();
+    await page.getByRole('button', { name: 'Annuler', exact: true }).click();
   });
 });
 
@@ -121,7 +125,7 @@ test.describe('Add widget modal', () => {
   });
 
   test('opens and closes the add widget modal', async ({ page }) => {
-    await page.getByRole('button', { name: 'Ajouter' }).click();
+    await page.getByRole('button', { name: 'Ajouter', exact: true }).click();
 
     // Modal title
     await expect(page.getByText('Ajouter un widget')).toBeVisible();
@@ -136,7 +140,7 @@ test.describe('Add widget modal', () => {
   });
 
   test('can search for a widget in the add modal', async ({ page }) => {
-    await page.getByRole('button', { name: 'Ajouter' }).click();
+    await page.getByRole('button', { name: 'Ajouter', exact: true }).click();
     await expect(page.getByText('Ajouter un widget')).toBeVisible();
 
     const searchInput = page.getByPlaceholder('Rechercher un widget...');
@@ -151,7 +155,7 @@ test.describe('Add widget modal', () => {
   test('can add a widget from the modal', async ({ page }) => {
     const initialWidgetCount = await page.locator('[data-widget-id]').count();
 
-    await page.getByRole('button', { name: 'Ajouter' }).click();
+    await page.getByRole('button', { name: 'Ajouter', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Ajouter un widget' })).toBeVisible();
 
     // Click "Capteur" in the widget list button
@@ -185,8 +189,10 @@ test.describe('Add widget modal', () => {
 
     // Cancel to discard changes (don't persist to test DB).
     // `getByTitle` et non `getByRole` : deux boutons portent le nom « Annuler »
-    // (celui du mode édition et celui de la modale).
-    await page.getByTitle('Annuler').click();
+    // (celui du mode édition et celui de la modale). Et `exact` en plus, sans
+    // quoi le titre du bouton d'annulation « Annuler (Ctrl+Z) » correspond
+    // aussi — `getByTitle` cherche une sous-chaîne par défaut.
+    await page.getByTitle('Annuler', { exact: true }).click();
   });
 });
 
@@ -216,7 +222,7 @@ test.describe('Remove widget', () => {
     expect(newCount).toBe(initialCount - 1);
 
     // Cancel to discard
-    await page.getByRole('button', { name: 'Annuler' }).click();
+    await page.getByRole('button', { name: 'Annuler', exact: true }).click();
   });
 });
 

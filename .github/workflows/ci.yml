@@ -53,6 +53,24 @@ jobs:
       - name: TypeScript check
         run: npm run type-check
 
+  # ── Vulnérabilités des dépendances ────────────────────────────────────────
+  # L'add-on tourne sur le réseau domestique avec un jeton Home Assistant à
+  # portée : une faille dans une dépendance transitive vaut un accès à la
+  # maison. Seuil `high` — en dessous, le bruit ferait ignorer le job.
+  audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: npm audit
+        run: npm audit --audit-level=high
+
   # ── Conformité de l'empaquetage ───────────────────────────────────────────
   # `hassfest` valide le manifeste au regard des règles de HA, `hacs/action`
   # valide `hacs.json` et la structure du dépôt. Les deux échouent au moindre

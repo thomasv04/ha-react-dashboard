@@ -27,6 +27,47 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '2.2.0',
+    date: '2026-08-16',
+    title: 'La tablette murale se pilote au doigt',
+    items: [
+      {
+        text: "L'écran de veille se balaie : à gauche et à droite pour changer de photo, vers le haut pour un menu rapide — un de vos panneaux —, vers le bas pour le tiroir de notifications. Un appui simple quitte la veille comme avant, un balayage ne la quitte jamais. Tout se règle dans WallPanel > Gestes.",
+      },
+      {
+        text: "Un troisième événement, `ha_dashboard_notification`, dépose une notification qui **reste** : titre, niveau, icône et boutons qui appellent un service. Elle survit à un rechargement de la page et attend dans le tiroir de l'écran de veille jusqu'à ce qu'on l'efface, ou qu'une automatisation la retire.",
+      },
+      {
+        text: "Le mode édition sait annuler et rétablir, dupliquer un widget, en sélectionner plusieurs et agir sur le lot. Chaque card accepte une action au tap et une à l'appui long, une visibilité conditionnelle, et une icône ou une couleur qui suit l'état d'une entité.",
+        tour: 'widgets',
+      },
+      {
+        text: "Un onglet Régional rassemble ce qui était figé dans le code : 12 h / 24 h, format de date, unité de température, premier jour de la semaine. Ces réglages sont propres à l'appareil — une tablette murale ne les impose pas au téléphone du salon.",
+        tour: 'appearance',
+      },
+      {
+        text: "Retour automatique à l'accueil après inactivité, code de verrouillage du mode édition, mode « ne pas déranger », bascule jour/nuit par capteur de luminosité, et import des thèmes Home Assistant.",
+        tour: 'appearance',
+      },
+      {
+        text: "Dans un panneau, cliquer sur un bloc ouvre enfin la fiche détaillée de l'entité au lieu de ne rien faire. L'éditeur de panneaux, devenu illisible, est découpé en formulaires par type de bloc.",
+        tour: 'panels',
+      },
+      {
+        text: 'Les touches `e` et `c` ouvrent une barre de commande rapide : `e` cherche une entité et ouvre sa fiche, `c` va à une page ou ouvre un panneau.',
+      },
+      {
+        text: 'Côté serveur : historique de la configuration avec restauration, détection de conflit quand deux appareils enregistrent en même temps, quota sur les fichiers envoyés, et écritures réservées aux administrateurs jusque dans le serveur.',
+      },
+      {
+        text: "Un widget qui plante n'emporte plus la page, ni le panneau qui le contient. Une configuration invalide est signalée au chargement au lieu d'échouer en silence.",
+      },
+      {
+        text: "Correctifs : les bulles des fonds Aurora et Lave ne sautent plus d'un bord à l'autre, le flux caméra HLS redemande une URL à chaque réactivation, et la modale météo affiche enfin son historique de température.",
+      },
+    ],
+  },
+  {
     version: '2.1.3',
     date: '2026-08-14',
     title: 'Vos widgets dans les panneaux',

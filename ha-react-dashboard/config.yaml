@@ -20,6 +20,13 @@ homeassistant_api: true
 ingress: true
 ingress_port: 8099
 panel_icon: 'mdi:view-dashboard'
+
+# Sonde de santé : sans elle le superviseur ne redémarre jamais l'add-on figé —
+# le conteneur tourne toujours, seul le serveur ne répond plus. `/api/health`
+# est monté avant l'authentification et avant le limiteur de débit, sans quoi
+# un pic de trafic ou l'absence de jeton provoquerait des redémarrages en
+# boucle sur un add-on parfaitement sain.
+watchdog: 'http://[HOST]:[PORT:8099]/api/health'
 # Le serveur Express ne peut pas distinguer un administrateur d'un utilisateur
 # ordinaire : derrière l'ingress, le superviseur authentifie mais ne transmet
 # pas le rôle. C'est donc lui qui doit restreindre l'accès au panneau. Valeur

@@ -13,6 +13,14 @@ if (!('ResizeObserver' in globalThis)) {
   };
 }
 
+// Même lacune de jsdom pour `scrollIntoView` : il ne gère aucune mise en page,
+// donc aucun défilement. Les composants qui suivent leur sélection au clavier
+// (barre de commande rapide) l'appellent dans un effet et planteraient au
+// montage. Il n'y a rien à vérifier ici — seulement à ne pas jeter.
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {};
+}
+
 // Global mock for i18n — provides identity t() for tests that don't mock it themselves
 vi.mock('@/i18n', () => ({
   useI18n: () => ({

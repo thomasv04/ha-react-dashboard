@@ -3,21 +3,28 @@ import { motion } from 'framer-motion';
 import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
+import { useI18n } from '@/i18n';
+import { useFormats } from '@/hooks/useFormats';
 import type { GreetingCardConfig } from '@/types/widget-configs';
 
-function getGreeting(h: number): string {
-  if (h >= 18) return 'Bonsoir';
-  if (h >= 12) return 'Bon après-midi';
-  if (h >= 5) return 'Bonjour';
-  return 'Bonne nuit';
+/** Clé i18n de la salutation correspondant à l'heure. */
+function greetingKey(h: number): string {
+  if (h >= 18) return 'widgets.greeting.goodEvening';
+  if (h >= 12) return 'widgets.greeting.goodAfternoon';
+  if (h >= 5) return 'widgets.greeting.goodMorning';
+  return 'widgets.greeting.goodNight';
 }
 
 /** Full-width header bar: greeting on the left, big clock on the right. */
 export function GreetingCard() {
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
+  const { t } = useI18n();
+  const formats = useFormats();
   const config = getWidgetConfig<GreetingCardConfig>(widgetId || 'greeting');
-  const locale = config?.locale ?? 'fr-FR';
+  // La carte laisse choisir une locale explicite ; sinon elle suit les formats
+  // régionaux, plutôt qu'un `fr-FR` figé.
+  const locale = config?.locale;
 
   const [now, setNow] = useState(new Date());
 
@@ -26,10 +33,12 @@ export function GreetingCard() {
     return () => clearInterval(t);
   }, []);
 
-  const hm = now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+  const hm = locale ? now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }) : formats.formatTime(now);
   const sec = String(now.getSeconds()).padStart(2, '0');
-  const greeting = getGreeting(now.getHours());
-  const date = now.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
+  const greeting = t(greetingKey(now.getHours()));
+  const date = locale
+    ? now.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' })
+    : formats.formatDate(now, 'long');
 
   return (
     <motion.div
@@ -56,19 +65,16 @@ export function GreetingCard() {
 /** Compact inline clock + date used in the top header row. */
 export function ClockWidget() {
   const [now, setNow] = useState(new Date());
+  const formats = useFormats();
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
 
-  const hm = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  const hm = formats.formatTime(now);
   const sec = String(now.getSeconds()).padStart(2, '0');
-  const date = now.toLocaleDateString('fr-FR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
+  const date = formats.formatDate(now, 'long');
 
   return (
     <div className='flex flex-col items-end shrink-0'>

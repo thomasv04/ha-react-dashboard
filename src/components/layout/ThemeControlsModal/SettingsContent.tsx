@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { Settings, Palette, Zap, Languages, Server, LayoutGrid, Volume2, X } from 'lucide-react';
+import { Settings, Palette, Zap, Languages, Server, LayoutGrid, Volume2, Globe, X } from 'lucide-react';
 import { AppearanceSection } from './AppearanceSection';
 import { PerformanceSection } from './PerformanceSection';
 import { LanguageSection } from './LanguageSection';
 import { SystemSection } from './SystemSection';
 import { LayoutSection } from './LayoutSection';
 import { SoundSection } from './SoundSection';
+import { RegionalSection } from './RegionalSection';
 import { useI18n } from '@/i18n';
 
-type SettingsSection = 'appearance' | 'layout' | 'performance' | 'sound' | 'language' | 'system';
+type SettingsSection = 'appearance' | 'layout' | 'performance' | 'sound' | 'regional' | 'language' | 'system';
 
 export function SettingsContent({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
@@ -19,6 +20,7 @@ export function SettingsContent({ onClose }: { onClose: () => void }) {
     { id: 'layout', label: t('settings.layout'), Icon: LayoutGrid },
     { id: 'performance', label: t('settings.performance'), Icon: Zap },
     { id: 'sound', label: t('settings.sound'), Icon: Volume2 },
+    { id: 'regional', label: t('settings.regional'), Icon: Globe },
     { id: 'language', label: t('settings.language'), Icon: Languages },
     { id: 'system', label: t('settings.system'), Icon: Server },
   ];
@@ -28,6 +30,7 @@ export function SettingsContent({ onClose }: { onClose: () => void }) {
     layout: t('settings.layout'),
     performance: t('settings.performance'),
     sound: t('settings.sound'),
+    regional: t('settings.regional'),
     language: t('settings.language'),
     system: t('settings.system'),
   };
@@ -82,6 +85,7 @@ export function SettingsContent({ onClose }: { onClose: () => void }) {
           {section === 'layout' && <LayoutSection />}
           {section === 'performance' && <PerformanceSection />}
           {section === 'sound' && <SoundSection />}
+          {section === 'regional' && <RegionalSection />}
           {section === 'language' && <LanguageSection />}
           {section === 'system' && <SystemSection />}
         </div>

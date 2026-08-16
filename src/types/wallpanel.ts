@@ -16,6 +16,19 @@ export interface WallPanelStyle {
   containBlurBackground?: boolean;
 }
 
+export interface WallPanelGestures {
+  /** Interrupteur global des gestes tactiles */
+  enabled: boolean;
+  /** Balayage horizontal → photo précédente / suivante */
+  photos: boolean;
+  /** Panneau custom ouvert par le balayage vers le haut. '' = geste désactivé */
+  quickPanelId: string;
+  /** Balayage vers le bas → notifications Home Assistant */
+  notifications: boolean;
+  /** Poignées de bord affichées quelques secondes à l'activation */
+  hints: boolean;
+}
+
 export interface WallPanelConfig {
   /** Activer l'écran de veille */
   enabled: boolean;
@@ -35,6 +48,27 @@ export interface WallPanelConfig {
   screensaver_entity?: string;
   /** Styles avancés */
   style: WallPanelStyle;
+  /** Gestes tactiles. Absent dans les configs antérieures — lire via `gesturesOf`. */
+  gestures?: WallPanelGestures;
+}
+
+export const DEFAULT_GESTURES: WallPanelGestures = {
+  enabled: true,
+  photos: true,
+  quickPanelId: '',
+  notifications: true,
+  hints: true,
+};
+
+/**
+ * Gestes d'une config, champs manquants comblés.
+ *
+ * `gestures` est optionnel pour que les configurations enregistrées avant cette
+ * fonctionnalité restent valides : sans ce passage obligé, chaque lecture
+ * devrait répéter le même jeu de valeurs par défaut.
+ */
+export function gesturesOf(config: WallPanelConfig): WallPanelGestures {
+  return { ...DEFAULT_GESTURES, ...config.gestures };
 }
 
 export const DEFAULT_WALLPANEL_CONFIG: WallPanelConfig = {
@@ -52,4 +86,5 @@ export const DEFAULT_WALLPANEL_CONFIG: WallPanelConfig = {
     infoBoxWidth: 380,
     containBlurBackground: false,
   },
+  gestures: DEFAULT_GESTURES,
 };

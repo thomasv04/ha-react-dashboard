@@ -192,13 +192,22 @@ test.describe('Documentation des événements HA', () => {
     await page.getByTestId('help-button').click();
   });
 
-  test('déplie les deux événements avec leur YAML', async ({ page }) => {
+  test('déplie les trois événements avec leur YAML', async ({ page }) => {
     await page.getByTestId('help-events-toggle').click();
 
     await expect(page.getByTestId('events-preview-modal')).toBeVisible();
     await expect(page.getByTestId('events-preview-toast')).toBeVisible();
+    await expect(page.getByTestId('events-preview-notification')).toBeVisible();
     await expect(page.getByText('event: ha_dashboard_modal')).toBeVisible();
     await expect(page.getByText('event: ha_dashboard_toast')).toBeVisible();
+    await expect(page.getByText('event: ha_dashboard_notification')).toBeVisible();
+  });
+
+  test("déplie les gestes de l'écran de veille", async ({ page }) => {
+    await page.getByTestId('help-gestures-toggle').click();
+
+    await expect(page.getByText('Balayer à gauche ou à droite')).toBeVisible();
+    await expect(page.getByText('Balayer vers le bas')).toBeVisible();
   });
 
   test("l'aperçu affiche réellement le toast", async ({ page }) => {
