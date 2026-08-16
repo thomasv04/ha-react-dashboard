@@ -104,7 +104,6 @@ export const BLOCK_TYPE_PICKER: Array<{
   },
 ];
 
-
 export function blockSummary(block: CustomBlock, t: TFn): string {
   switch (block.type) {
     case 'button':

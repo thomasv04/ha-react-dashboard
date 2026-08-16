@@ -19,14 +19,14 @@ describe('isVisible', () => {
     expect(isVisible(c, 'lg', { 'sensor.x': 'unavailable' })).toBe(false);
   });
 
-  it('masque quand l\'entité est absente du store', () => {
+  it("masque quand l'entité est absente du store", () => {
     // La condition portait sur une donnée qu'on n'a pas : la supposer vraie
     // ferait apparaître la card au mauvais moment.
     const c: VisibilityCondition[] = [{ condition: 'state', entityId: 'sensor.disparu', state: 'on' }];
     expect(isVisible(c, 'lg', {})).toBe(false);
   });
 
-  it('filtre par taille d\'écran', () => {
+  it("filtre par taille d'écran", () => {
     const c: VisibilityCondition[] = [{ condition: 'screen', breakpoints: ['lg', 'md'] }];
     expect(isVisible(c, 'lg', {})).toBe(true);
     expect(isVisible(c, 'md', {})).toBe(true);
@@ -47,7 +47,7 @@ describe('isVisible', () => {
     expect(isVisible(c, 'sm', { 'binary_sensor.nuit': 'off' })).toBe(false);
   });
 
-  it('ignore une condition d\'état laissée vide', () => {
+  it("ignore une condition d'état laissée vide", () => {
     // L'utilisateur a ajouté la condition mais n'a rien saisi : ne pas faire
     // disparaître sa card pour autant.
     const c: VisibilityCondition[] = [{ condition: 'state', entityId: 'sensor.x', state: '' }];

@@ -26,7 +26,7 @@ describe('CoverRowBlockRenderer', () => {
     expect(openMoreInfo).toHaveBeenCalledWith('cover.bureau', 'cover', 'cover.bureau', expect.anything());
   });
 
-  it('les boutons de commande n\'ouvrent pas la fiche par-dessus', async () => {
+  it("les boutons de commande n'ouvrent pas la fiche par-dessus", async () => {
     // Le reproche exact auquel `stopPropagation` répond : monter un volet
     // déclenchait aussi le clic de la ligne qui l'entoure.
     const { container } = render(<CoverRowBlockRenderer block={block} />);

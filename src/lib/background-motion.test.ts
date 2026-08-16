@@ -14,7 +14,7 @@ describe('advanceParticle', () => {
   });
 
   describe('fade', () => {
-    it('éteint la particule à mesure qu\'elle approche du bord', () => {
+    it("éteint la particule à mesure qu'elle approche du bord", () => {
       const loin = advanceParticle(particle(0.5), 0, 0, 'fade');
       const proche = advanceParticle(particle(TRACK_MAX - 0.15), 0, 0, 'fade');
       const auBord = advanceParticle(particle(TRACK_MAX), 0, 0, 'fade');
@@ -56,7 +56,7 @@ describe('advanceParticle', () => {
       expect(p.nx).toBeGreaterThan(0.5);
     });
 
-    it('repart bien dans l\'autre sens au pas suivant', () => {
+    it("repart bien dans l'autre sens au pas suivant", () => {
       const p = particle(TRACK_MAX - 0.01);
       advanceParticle(p, 0.05, 0, 'bounce');
       const apresRebond = p.nx;
@@ -90,7 +90,7 @@ describe('advanceParticle', () => {
   });
 
   describe('wrap', () => {
-    it('reproduit le comportement d\'origine, saut compris', () => {
+    it("reproduit le comportement d'origine, saut compris", () => {
       const p = particle(TRACK_MAX - 0.01);
       const alpha = advanceParticle(p, 0.05, 0, 'wrap');
 

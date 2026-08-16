@@ -40,12 +40,12 @@ async function open(key: 'e' | 'c') {
 }
 
 describe('QuickBar', () => {
-  it('reste invisible tant qu\'on ne l\'appelle pas', () => {
+  it("reste invisible tant qu'on ne l'appelle pas", () => {
     render(<QuickBar />);
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
 
-  it('« e » liste les entités et rien d\'autre', async () => {
+  it("« e » liste les entités et rien d'autre", async () => {
     await open('e');
     expect(screen.getByText('Lampe du salon')).toBeInTheDocument();
     expect(screen.queryByText('Accueil')).not.toBeInTheDocument();
@@ -58,7 +58,7 @@ describe('QuickBar', () => {
     expect(screen.queryByText('Lampe du salon')).not.toBeInTheDocument();
   });
 
-  it('filtre sur le nom convivial comme sur l\'identifiant', async () => {
+  it("filtre sur le nom convivial comme sur l'identifiant", async () => {
     await open('e');
     const input = screen.getByRole('textbox');
 
@@ -71,7 +71,7 @@ describe('QuickBar', () => {
     expect(screen.getByText('Lampe du salon')).toBeInTheDocument();
   });
 
-  it('ouvre la fiche de l\'entité choisie', async () => {
+  it("ouvre la fiche de l'entité choisie", async () => {
     await open('e');
     await userEvent.type(screen.getByRole('textbox'), 'salon');
     await userEvent.click(screen.getByText('Lampe du salon'));
@@ -114,7 +114,7 @@ describe('QuickBar', () => {
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
 
-  it('ne s\'ouvre pas en mode édition — on y saisit du texte', async () => {
+  it("ne s'ouvre pas en mode édition — on y saisit du texte", async () => {
     isEditMode = true;
     render(<QuickBar />);
     await userEvent.keyboard('e');

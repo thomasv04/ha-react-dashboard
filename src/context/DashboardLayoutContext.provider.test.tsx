@@ -274,7 +274,7 @@ describe('annuler / rétablir', () => {
     vi.useRealTimers();
   });
 
-  it('ne fait rien quand il n\'y a rien à annuler', () => {
+  it("ne fait rien quand il n'y a rien à annuler", () => {
     const { result } = renderHook(() => useDashboardLayout(), { wrapper: createWrapper() });
     act(() => result.current.undo());
     act(() => result.current.redo());

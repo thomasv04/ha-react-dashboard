@@ -35,7 +35,7 @@ describe('useAutoTheme', () => {
       expect(setTheme).toHaveBeenCalledWith('light');
     });
 
-    it('reste sur le thème de nuit sous l\'horizon', () => {
+    it("reste sur le thème de nuit sous l'horizon", () => {
       run({}, { 'sun.sun': { state: 'below_horizon' } });
       expect(setTheme).not.toHaveBeenCalled(); // déjà en 'dark'
     });
@@ -49,7 +49,11 @@ describe('useAutoTheme', () => {
   describe('via un capteur de luminosité', () => {
     it("l'emporte sur le soleil — c'est un choix explicite, et plus précis", () => {
       // Il fait jour astronomiquement, mais la pièce est sombre (volets fermés).
-      run({ illuminanceEntity: 'sensor.lux', illuminanceThreshold: 50 }, { 'sun.sun': { state: 'above_horizon' }, 'sensor.lux': { state: '5' } }, 'light');
+      run(
+        { illuminanceEntity: 'sensor.lux', illuminanceThreshold: 50 },
+        { 'sun.sun': { state: 'above_horizon' }, 'sensor.lux': { state: '5' } },
+        'light'
+      );
       expect(setTheme).toHaveBeenCalledWith('dark');
     });
 
@@ -63,7 +67,7 @@ describe('useAutoTheme', () => {
       expect(setTheme).toHaveBeenCalledWith('dark');
     });
 
-    it('utilise le seuil par défaut quand la config n\'en a pas', () => {
+    it("utilise le seuil par défaut quand la config n'en a pas", () => {
       // Cas d'une configuration exportée avant la 2.2.0.
       run({ illuminanceEntity: 'sensor.lux' }, { 'sensor.lux': { state: '120' } });
       expect(setTheme).toHaveBeenCalledWith('light');

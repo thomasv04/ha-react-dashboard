@@ -25,7 +25,7 @@ describe('useCardActions', () => {
     expect(run()(undefined, 'light.salon')).toBe(false);
   });
 
-  it('rend la main sur « more-info » — seule la card connaît sa position à l\'écran', () => {
+  it("rend la main sur « more-info » — seule la card connaît sa position à l'écran", () => {
     expect(run()({ action: 'more-info' }, 'light.salon')).toBe(false);
   });
 
@@ -43,12 +43,12 @@ describe('useCardActions', () => {
     expect(openPanel).toHaveBeenCalledWith('custom:cuisine');
   });
 
-  it('ignore une page inconnue au lieu de vider l\'écran', () => {
+  it("ignore une page inconnue au lieu de vider l'écran", () => {
     run()({ action: 'navigate', target: 'nexiste-pas' }, '');
     expect(setCurrentPage).not.toHaveBeenCalled();
   });
 
-  it('appelle un service, en retombant sur l\'entité de la card', () => {
+  it("appelle un service, en retombant sur l'entité de la card", () => {
     run()({ action: 'call-service', service: 'light.turn_on' }, 'light.salon');
 
     expect(callService).toHaveBeenCalledWith(
@@ -56,7 +56,7 @@ describe('useCardActions', () => {
     );
   });
 
-  it('préfère l\'entité explicitement choisie', () => {
+  it("préfère l'entité explicitement choisie", () => {
     run()({ action: 'call-service', service: 'switch.toggle', entityId: 'switch.prise' }, 'light.salon');
     expect(callService).toHaveBeenCalledWith(expect.objectContaining({ target: { entity_id: 'switch.prise' } }));
   });

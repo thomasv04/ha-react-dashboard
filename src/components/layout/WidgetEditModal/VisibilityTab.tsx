@@ -217,7 +217,12 @@ function StateStylesEditor({ draft, updateField }: { draft: Record<string, unkno
           <div className='grid grid-cols-2 gap-2'>
             <label className='block'>
               <span className='block text-white/45 text-xs mb-1.5'>{t('layout.stateStyles.icon')}</span>
-              <input value={style.icon ?? ''} onChange={e => patch(i, { icon: e.target.value })} placeholder='Lightbulb' className={inputClass} />
+              <input
+                value={style.icon ?? ''}
+                onChange={e => patch(i, { icon: e.target.value })}
+                placeholder='Lightbulb'
+                className={inputClass}
+              />
             </label>
             <label className='block'>
               <span className='block text-white/45 text-xs mb-1.5'>{t('layout.stateStyles.color')}</span>
@@ -228,7 +233,12 @@ function StateStylesEditor({ draft, updateField }: { draft: Record<string, unkno
                   onChange={e => patch(i, { color: e.target.value })}
                   className='w-9 h-9 rounded-lg bg-transparent border border-white/10 cursor-pointer flex-shrink-0'
                 />
-                <input value={style.color ?? ''} onChange={e => patch(i, { color: e.target.value })} placeholder='#f97316' className={inputClass} />
+                <input
+                  value={style.color ?? ''}
+                  onChange={e => patch(i, { color: e.target.value })}
+                  placeholder='#f97316'
+                  className={inputClass}
+                />
               </div>
             </label>
           </div>

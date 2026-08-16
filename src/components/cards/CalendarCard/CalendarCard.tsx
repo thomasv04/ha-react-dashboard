@@ -73,11 +73,7 @@ export function CalendarCard() {
     const start = new Date(event.start);
     const dayDiff = Math.round((startOfDay(start) - today) / 86_400_000);
     const day =
-      dayDiff === 0
-        ? t('widgets.calendar.today')
-        : dayDiff === 1
-          ? t('widgets.calendar.tomorrow')
-          : formats.formatDate(start, 'medium');
+      dayDiff === 0 ? t('widgets.calendar.today') : dayDiff === 1 ? t('widgets.calendar.tomorrow') : formats.formatDate(start, 'medium');
     if (isAllDay(event)) return day;
     return `${day} ${formats.formatTime(start)}`;
   };

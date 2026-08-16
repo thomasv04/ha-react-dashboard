@@ -8,14 +8,7 @@ import { IconPicker } from '@/components/layout/WidgetPickers';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { genId } from './block-meta';
-import type {
-  ButtonBlock,
-  ButtonRowBlock,
-  InlineButton,
-  CoverRowBlock,
-  SectionHeaderBlock,
-  WidgetBlock,
-} from '@/types/custom-panel';
+import type { ButtonBlock, ButtonRowBlock, InlineButton, CoverRowBlock, SectionHeaderBlock, WidgetBlock } from '@/types/custom-panel';
 
 // ── Service picker ────────────────────────────────────────────────────────────
 

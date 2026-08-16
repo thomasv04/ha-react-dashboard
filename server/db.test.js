@@ -2,7 +2,11 @@ import Database from 'better-sqlite3';
 import { describe, it, expect } from 'vitest';
 import { initDB, migrate, checkpoint, SCHEMA_VERSION } from './db.js';
 
-const tableNames = db => db.prepare(`SELECT name FROM sqlite_master WHERE type = 'table'`).all().map(r => r.name);
+const tableNames = db =>
+  db
+    .prepare(`SELECT name FROM sqlite_master WHERE type = 'table'`)
+    .all()
+    .map(r => r.name);
 
 describe('migrations de schéma', () => {
   it('amène une base neuve à la version courante avec toutes les tables', () => {

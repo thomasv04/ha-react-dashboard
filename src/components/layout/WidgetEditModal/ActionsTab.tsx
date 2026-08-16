@@ -92,13 +92,7 @@ function ActionEditor({ value, onChange }: { value: CardAction | undefined; onCh
  * Rendu ici et lu par `GridItem` : rien à ajouter dans un composant de card
  * pour qu'il en bénéficie.
  */
-export function ActionsTab({
-  draft,
-  updateField,
-}: {
-  draft: Record<string, unknown>;
-  updateField: (key: string, value: unknown) => void;
-}) {
+export function ActionsTab({ draft, updateField }: { draft: Record<string, unknown>; updateField: (key: string, value: unknown) => void }) {
   const { t } = useI18n();
 
   return (

@@ -238,9 +238,7 @@ function BroadcastButton() {
           <AlertTriangle size={12} /> {t('settings.regional_section.broadcastConfirm')}
         </p>
       )}
-      {state === 'done' && (
-        <p className='text-emerald-400 text-xs'>{t('settings.regional_section.broadcastDone', { value: count })}</p>
-      )}
+      {state === 'done' && <p className='text-emerald-400 text-xs'>{t('settings.regional_section.broadcastDone', { value: count })}</p>}
       {state === 'error' && <p className='text-red-400 text-xs'>{t('settings.regional_section.broadcastError')}</p>}
 
       <button

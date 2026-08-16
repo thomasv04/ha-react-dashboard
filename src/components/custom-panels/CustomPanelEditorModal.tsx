@@ -20,7 +20,6 @@ import {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-
 function BlockItem({
   block,
   index,

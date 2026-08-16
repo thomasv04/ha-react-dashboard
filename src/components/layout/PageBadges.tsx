@@ -55,9 +55,7 @@ function Badge({ entityId, state, attributes }: { entityId: string; state?: stri
       onClick={() => openMoreInfo(entityId, modalTypeFor(entityId), entityId, ref.current?.getBoundingClientRect() ?? null)}
       title={name}
       className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs transition-colors cursor-pointer ${
-        missing
-          ? 'bg-white/3 border-white/8 text-white/25'
-          : 'bg-white/8 border-white/12 text-white/70 hover:bg-white/14 hover:text-white'
+        missing ? 'bg-white/3 border-white/8 text-white/25' : 'bg-white/8 border-white/12 text-white/70 hover:bg-white/14 hover:text-white'
       }`}
     >
       {iconNode}

@@ -50,15 +50,13 @@ describe('fetchHAThemes', () => {
   const connect = (result: unknown) => ({ sendMessagePromise: vi.fn().mockResolvedValue(result) });
 
   it('liste les thèmes par ordre alphabétique', async () => {
-    const themes = await fetchHAThemes(
-      connect({ themes: { zenith: { 'primary-color': '#111' }, aurore: { 'primary-color': '#222' } } })
-    );
+    const themes = await fetchHAThemes(connect({ themes: { zenith: { 'primary-color': '#111' }, aurore: { 'primary-color': '#222' } } }));
 
     expect(themes.map(t => t.name)).toEqual(['aurore', 'zenith']);
     expect(themes[0].tokens.accent).toBe('#222');
   });
 
-  it('rend une liste vide quand Home Assistant n\'a aucun thème', async () => {
+  it("rend une liste vide quand Home Assistant n'a aucun thème", async () => {
     expect(await fetchHAThemes(connect({ themes: {} }))).toEqual([]);
     expect(await fetchHAThemes(connect({}))).toEqual([]);
   });

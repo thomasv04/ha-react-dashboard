@@ -407,7 +407,9 @@ export function WidgetEditModal() {
                     />
                   ))}
               {activeTab === 'actions' && draft && <ActionsTab draft={draft as Record<string, unknown>} updateField={updateField} />}
-              {activeTab === 'visibility' && draft && <VisibilityTab draft={draft as Record<string, unknown>} updateField={updateField} widgetType={config?.type} />}
+              {activeTab === 'visibility' && draft && (
+                <VisibilityTab draft={draft as Record<string, unknown>} updateField={updateField} widgetType={config?.type} />
+              )}
               {activeTab === 'layout' && hasDispositions && <CardLayoutTab widgetId={editingWidgetId} breakpoint={breakpoint} />}
               {activeTab === 'sound' && hasSounds && config && (
                 <SoundTab

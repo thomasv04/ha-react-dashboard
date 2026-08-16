@@ -243,8 +243,14 @@ export function EditButton() {
 
       {/* Code de verrouillage du mode édition */}
       {pinPrompt && (
-        <div className='fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm' onClick={() => setPinPrompt(false)}>
-          <div onClick={e => e.stopPropagation()} className='w-[min(90vw,320px)] rounded-2xl bg-[#12121f] border border-white/12 p-5 shadow-2xl'>
+        <div
+          className='fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm'
+          onClick={() => setPinPrompt(false)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className='w-[min(90vw,320px)] rounded-2xl bg-[#12121f] border border-white/12 p-5 shadow-2xl'
+          >
             <h3 className='text-white/85 text-sm font-semibold mb-1'>{t('dashboard.pinTitle')}</h3>
             <p className='text-white/40 text-xs mb-4'>{t('dashboard.pinDesc')}</p>
             <input

@@ -65,7 +65,7 @@ describe('useFormats', () => {
       expect(long.toLowerCase()).toContain('août');
     });
 
-    it('utilise le style configuré quand aucun n\'est passé', () => {
+    it("utilise le style configuré quand aucun n'est passé", () => {
       const f = formats({ dateStyle: 'long' }, 'fr');
       expect(f.formatDate(AFTERNOON)).toBe(f.formatDate(AFTERNOON, 'long'));
     });

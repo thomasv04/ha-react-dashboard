@@ -48,7 +48,7 @@ describe('WidgetErrorBoundary', () => {
     expect(screen.getByText('Météo')).toBeInTheDocument();
   });
 
-  it('distingue un panneau en défaut d\'un widget en défaut', () => {
+  it("distingue un panneau en défaut d'un widget en défaut", () => {
     render(
       <WidgetErrorBoundary messageKey='common.panelUnavailable'>
         <ThrowingComponent message='crash' />

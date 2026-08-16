@@ -39,7 +39,7 @@ describe('adminWrites', () => {
 });
 
 describe('writeGuard', () => {
-  it('sert en lecture seule quand rien n\'authentifie l\'appelant', async () => {
+  it("sert en lecture seule quand rien n'authentifie l'appelant", async () => {
     const app = appWith(writeGuard, undefined);
 
     expect((await request(app).get('/api/config')).status).toBe(200);

@@ -75,7 +75,7 @@ describe('POST /api/settings/broadcast', () => {
     expect(body.data).toEqual({ themeId: 'dark' });
   });
 
-  it("laisse un non-administrateur régler *son* appareil", async () => {
+  it('laisse un non-administrateur régler *son* appareil', async () => {
     // Le point de l'exemption : verrouiller aussi `/current` empêcherait une
     // tablette ou le téléphone d'un proche de choisir son propre affichage.
     app = createApp({ id: 'invite', isAdmin: false });

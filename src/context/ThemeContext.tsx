@@ -225,9 +225,7 @@ function loadSettings(): {
       // stockée n'a jamais reflété un choix visible. On repart du défaut du
       // thème une fois, sinon tout le monde hériterait d'une card à 4 %.
       const cardOpacity =
-        parsed.v === SETTINGS_VERSION && parsed.cardOpacity != null
-          ? parsed.cardOpacity
-          : themeTokens(themeId).glassOpacity;
+        parsed.v === SETTINGS_VERSION && parsed.cardOpacity != null ? parsed.cardOpacity : themeTokens(themeId).glassOpacity;
       return {
         themeId,
         background: parsed.background ?? { mode: 'solid' },
@@ -278,8 +276,31 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
 
   // Sync settings with server (multi-device)
   const syncedSettings = useMemo(
-    () => ({ v: SETTINGS_VERSION, themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings, regionalSettings, behaviourSettings, importedTheme }),
-    [themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings, regionalSettings, behaviourSettings, importedTheme]
+    () => ({
+      v: SETTINGS_VERSION,
+      themeId,
+      background,
+      cardOpacity,
+      perfSettings,
+      autoTheme,
+      layoutSettings,
+      soundSettings,
+      regionalSettings,
+      behaviourSettings,
+      importedTheme,
+    }),
+    [
+      themeId,
+      background,
+      cardOpacity,
+      perfSettings,
+      autoTheme,
+      layoutSettings,
+      soundSettings,
+      regionalSettings,
+      behaviourSettings,
+      importedTheme,
+    ]
   );
   const handleRemoteUpdate = useCallback((remote: typeof syncedSettings) => {
     if (remote.themeId && isKnownTheme(remote.themeId)) {
@@ -360,9 +381,32 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ v: SETTINGS_VERSION, themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings, regionalSettings, behaviourSettings, importedTheme })
+      JSON.stringify({
+        v: SETTINGS_VERSION,
+        themeId,
+        background,
+        cardOpacity,
+        perfSettings,
+        autoTheme,
+        layoutSettings,
+        soundSettings,
+        regionalSettings,
+        behaviourSettings,
+        importedTheme,
+      })
     );
-  }, [themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings, regionalSettings, behaviourSettings, importedTheme]);
+  }, [
+    themeId,
+    background,
+    cardOpacity,
+    perfSettings,
+    autoTheme,
+    layoutSettings,
+    soundSettings,
+    regionalSettings,
+    behaviourSettings,
+    importedTheme,
+  ]);
 
   const setTheme = useCallback((id: ThemeId) => {
     setThemeId(id);

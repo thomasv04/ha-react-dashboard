@@ -252,48 +252,51 @@ export function useDashboardConfig() {
   }, []);
 
   // Save full config v2 (pages + all layouts + all widget configs)
-  const saveConfig = useCallback(async (config: DashboardConfigV2) => {
-    setIsSaving(true);
-    try {
-      const response = await apiFetch('/api/config', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          // Révision lue au dernier chargement. Le serveur refuse (409) si un
-          // autre appareil a enregistré entre-temps : sans cet en-tête, le
-          // dernier à cliquer effaçait le travail de l'autre sans un mot.
-          'X-Expected-Revision': String(revisionRef.current),
-        },
-        body: JSON.stringify(config),
-      });
-
-      if (response.status === 409) {
-        // Pas de fusion automatique : deux dispositions divergentes ne se
-        // recollent pas, et deviner produirait un résultat que personne n'a
-        // voulu. On prévient, l'utilisateur recharge et refait son geste.
-        addToast({
-          title: t('dashboard.conflictTitle'),
-          description: t('dashboard.conflictDescription'),
-          sound: false,
+  const saveConfig = useCallback(
+    async (config: DashboardConfigV2) => {
+      setIsSaving(true);
+      try {
+        const response = await apiFetch('/api/config', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            // Révision lue au dernier chargement. Le serveur refuse (409) si un
+            // autre appareil a enregistré entre-temps : sans cet en-tête, le
+            // dernier à cliquer effaçait le travail de l'autre sans un mot.
+            'X-Expected-Revision': String(revisionRef.current),
+          },
+          body: JSON.stringify(config),
         });
-        return;
-      }
 
-      if (response.ok) {
-        const revision = response.headers.get('X-Config-Revision');
-        if (revision !== null) revisionRef.current = Number(revision);
-        setPages(config.pages);
-        setAllLayouts(config.layouts);
-        setAllWidgetConfigs(config.widgetConfigs);
-        writeCache(config);
+        if (response.status === 409) {
+          // Pas de fusion automatique : deux dispositions divergentes ne se
+          // recollent pas, et deviner produirait un résultat que personne n'a
+          // voulu. On prévient, l'utilisateur recharge et refait son geste.
+          addToast({
+            title: t('dashboard.conflictTitle'),
+            description: t('dashboard.conflictDescription'),
+            sound: false,
+          });
+          return;
+        }
+
+        if (response.ok) {
+          const revision = response.headers.get('X-Config-Revision');
+          if (revision !== null) revisionRef.current = Number(revision);
+          setPages(config.pages);
+          setAllLayouts(config.layouts);
+          setAllWidgetConfigs(config.widgetConfigs);
+          writeCache(config);
+        }
+      } catch (err) {
+        console.error('Erreur lors de la sauvegarde:', err);
+        addToast({ title: t('common.error'), description: t('dashboard.saveFailed'), sound: false });
+      } finally {
+        setIsSaving(false);
       }
-    } catch (err) {
-      console.error('Erreur lors de la sauvegarde:', err);
-      addToast({ title: t('common.error'), description: t('dashboard.saveFailed'), sound: false });
-    } finally {
-      setIsSaving(false);
-    }
-  }, [t]);
+    },
+    [t]
+  );
 
   return {
     pages,

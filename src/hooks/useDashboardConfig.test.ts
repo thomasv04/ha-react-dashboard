@@ -160,7 +160,7 @@ describe('useDashboardConfig', () => {
     expect((global.fetch as Mock).mock.lastCall?.[1].headers['X-Expected-Revision']).toBe('8');
   });
 
-  it("prévient sans rien écraser quand un autre appareil a enregistré (409)", async () => {
+  it('prévient sans rien écraser quand un autre appareil a enregistré (409)', async () => {
     mockFetch({ message: 'No config found' });
 
     const { result } = renderHook(() => useDashboardConfig());
@@ -216,7 +216,7 @@ describe('useDashboardConfig', () => {
     expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'dashboard.repairedTitle' }));
   });
 
-  it('retombe sur une page par défaut si aucune page n\'est exploitable', async () => {
+  it("retombe sur une page par défaut si aucune page n'est exploitable", async () => {
     // Un dashboard vierge laisse au moins l'accès aux réglages — un écran
     // blanc, non.
     mockFetch({ version: 2, pages: [null, { pasDId: true }], layouts: {}, widgetConfigs: {} });

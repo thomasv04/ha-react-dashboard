@@ -112,7 +112,7 @@ test("épargne un fichier récent — il vient peut-être d'être choisi", () =>
   expect(fs.existsSync(path.join(dir, 'frais.png'))).toBe(true);
 });
 
-test('ne touche à rien tant aucune configuration n\'existe', () => {
+test("ne touche à rien tant aucune configuration n'existe", () => {
   seedOldFile('seul.png');
   expect(pruneOrphanUploads(db, dir)).toBe(0);
   expect(fs.existsSync(path.join(dir, 'seul.png'))).toBe(true);

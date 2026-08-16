@@ -583,7 +583,23 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
       canUndo,
       canRedo,
     }),
-    [layout, setLayout, addWidget, removeWidget, updateWidget, saveLayout, addWidgetByType, duplicateWidget, removeWidgets, packLayout, layouts, undo, redo, canUndo, canRedo]
+    [
+      layout,
+      setLayout,
+      addWidget,
+      removeWidget,
+      updateWidget,
+      saveLayout,
+      addWidgetByType,
+      duplicateWidget,
+      removeWidgets,
+      packLayout,
+      layouts,
+      undo,
+      redo,
+      canUndo,
+      canRedo,
+    ]
   );
 
   return (

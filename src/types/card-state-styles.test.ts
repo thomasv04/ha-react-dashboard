@@ -21,10 +21,7 @@ describe('matchStateStyle', () => {
   it("retient la **première** satisfaite — l'ordre est la priorité", () => {
     // L'utilisateur place le cas particulier en haut, comme dans une suite de
     // `if`. Prendre la dernière inverserait son intention.
-    const styles = [
-      rule('sensor.x', 'critique', { color: '#ef4444' }),
-      rule('sensor.x', 'critique', { color: '#3b82f6' }),
-    ];
+    const styles = [rule('sensor.x', 'critique', { color: '#ef4444' }), rule('sensor.x', 'critique', { color: '#3b82f6' })];
     expect(matchStateStyle(styles, 'lg', { 'sensor.x': 'critique' })?.color).toBe('#ef4444');
   });
 
@@ -35,7 +32,7 @@ describe('matchStateStyle', () => {
     expect(matchStateStyle(styles, 'lg', { 'light.salon': 'on' })?.color).toBe('#fff');
   });
 
-  it('cumule les conditions d\'une même règle', () => {
+  it("cumule les conditions d'une même règle", () => {
     const styles: CardStateStyle[] = [
       {
         when: [
@@ -51,7 +48,7 @@ describe('matchStateStyle', () => {
 });
 
 describe('stateStyleEntityIds', () => {
-  it('remonte les entités de toutes les règles, sans les conditions d\'écran', () => {
+  it("remonte les entités de toutes les règles, sans les conditions d'écran", () => {
     const styles: CardStateStyle[] = [
       rule('light.a', 'on'),
       { when: [{ condition: 'screen', breakpoints: ['lg'] }] },

@@ -77,7 +77,13 @@ export function pruneOrphanUploads(db, uploadsDir) {
 
   // L'historique compte : une image encore citée par un état archivé doit
   // survivre, sinon la restauration rendrait un dashboard aux cadres vides.
-  const haystack = [row.data, ...db.prepare('SELECT data FROM config_history').all().map(h => h.data)].join('');
+  const haystack = [
+    row.data,
+    ...db
+      .prepare('SELECT data FROM config_history')
+      .all()
+      .map(h => h.data),
+  ].join('');
   const cutoff = Date.now() - ORPHAN_GRACE_MS;
   let removed = 0;
 
