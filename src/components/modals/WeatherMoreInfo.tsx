@@ -15,25 +15,6 @@ interface ForecastEntry {
   precipitation_probability?: number;
 }
 
-function conditionLabel(condition: string): string {
-  const MAP: Record<string, string> = {
-    'clear-night': 'Nuit claire',
-    cloudy: 'Nuageux',
-    sunny: 'Ensoleillé',
-    rainy: 'Pluvieux',
-    snowy: 'Neigeux',
-    partlycloudy: 'Partiellement nuageux',
-    fog: 'Brouillard',
-    windy: 'Venteux',
-    lightning: 'Orageux',
-    'lightning-rainy': 'Orage pluvieux',
-    hail: 'Grêle',
-    exceptional: 'Exceptionnel',
-    pouring: 'Fortes pluies',
-  };
-  return MAP[condition] ?? condition.replace(/_/g, ' ');
-}
-
 function tempColor(temp: number): string {
   if (temp <= 0) return '#60a5fa';
   if (temp <= 10) return '#22d3ee';
@@ -43,16 +24,15 @@ function tempColor(temp: number): string {
 }
 
 export default function WeatherMoreInfo({ entityId }: { entityId: string; widgetId: string }) {
-  const { t } = useI18n();
+  const { t, tArray } = useI18n();
   const entity = useSafeEntity(entityId);
   const { connection } = useHass();
   const [forecastType, setForecastType] = useState<'hourly' | 'daily'>('hourly');
   const [forecasts, setForecasts] = useState<ForecastEntry[]>([]);
 
-  // Weather entity states are conditions (cloudy, sunny...) not numeric
-  // Try to find a linked temperature sensor for history graph
-  const tempSensorId = entityId.replace('weather.', 'sensor.') + '_temperature';
-  const { data: historyData } = useEntityHistory(tempSensorId, 24);
+  // Weather entity states are conditions (cloudy, sunny...) not numeric:
+  // graph the `temperature` attribute instead
+  const { data: historyData } = useEntityHistory(entityId, 24, undefined, 'temperature');
 
   // Fetch forecasts
   useEffect(() => {
@@ -82,8 +62,10 @@ export default function WeatherMoreInfo({ entityId }: { entityId: string; widget
   const windGust = entity.attributes.wind_gust_speed as number | undefined;
   const dewPoint = entity.attributes.dew_point as number | undefined;
   const precipitation = entity.attributes.precipitation as number | undefined;
-  const condition = entity.state;
   const color = temp != null ? tempColor(temp) : '#60a5fa';
+  const conditionKey = `widgets.weather.conditions.${entity.state}`;
+  const conditionLabel = t(conditionKey) !== conditionKey ? t(conditionKey) : entity.state.replace(/_/g, ' ');
+  const days = tArray('widgets.weather.days');
 
   const details = [
     { icon: Droplets, label: t('widgets.weather.humidity'), value: humidity != null ? `${humidity}%` : '—' },
@@ -99,7 +81,7 @@ export default function WeatherMoreInfo({ entityId }: { entityId: string; widget
       <MoreInfoHeader
         icon={Cloud}
         name={(entity.attributes.friendly_name as string) ?? entityId}
-        state={conditionLabel(condition)}
+        state={conditionLabel}
         stateColor={color}
       />
 
@@ -113,15 +95,15 @@ export default function WeatherMoreInfo({ entityId }: { entityId: string; widget
 
       {/* Toggle hourly/daily */}
       <div className='flex gap-1 bg-white/5 rounded-xl p-1 w-fit mt-4 mb-6'>
-        {(['hourly', 'daily'] as const).map(t => (
+        {(['hourly', 'daily'] as const).map(type => (
           <button
-            key={t}
-            onClick={() => setForecastType(t)}
+            key={type}
+            onClick={() => setForecastType(type)}
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-              forecastType === t ? 'bg-white/15 text-white' : 'text-white/40 hover:text-white/60'
+              forecastType === type ? 'bg-white/15 text-white' : 'text-white/40 hover:text-white/60'
             }`}
           >
-            {t === 'hourly' ? 'HORAIRE' : 'JOURNALIER'}
+            {t(`widgets.weather.${type}`)}
           </button>
         ))}
       </div>
@@ -133,7 +115,7 @@ export default function WeatherMoreInfo({ entityId }: { entityId: string; widget
             <HistoryGraph data={historyData} color={color} />
           ) : (
             <div className='flex items-center justify-center h-40 text-white/20 text-sm rounded-xl bg-white/[0.02]'>
-              Pas d&apos;historique de température disponible
+              {t('widgets.weather.noHistory')}
             </div>
           )}
 
@@ -142,10 +124,7 @@ export default function WeatherMoreInfo({ entityId }: { entityId: string; widget
             <div className='flex gap-2 overflow-x-auto pb-2 scrollbar-thin'>
               {forecasts.slice(0, 12).map(fc => {
                 const d = new Date(fc.datetime);
-                const label =
-                  forecastType === 'hourly'
-                    ? `${d.getHours().toString().padStart(2, '0')}h`
-                    : d.toLocaleDateString('fr-FR', { weekday: 'short' });
+                const label = forecastType === 'hourly' ? `${d.getHours().toString().padStart(2, '0')}h` : (days[d.getDay()] ?? '');
                 return (
                   <div
                     key={fc.datetime}
@@ -163,7 +142,7 @@ export default function WeatherMoreInfo({ entityId }: { entityId: string; widget
 
         {/* Right: Details (1 col) */}
         <div className='space-y-3'>
-          <h3 className='text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3'>Détails</h3>
+          <h3 className='text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3'>{t('widgets.weather.details')}</h3>
           {details.map(d => (
             <div key={d.label} className='flex items-center gap-3 text-sm'>
               <d.icon size={16} className='text-white/30 shrink-0' />

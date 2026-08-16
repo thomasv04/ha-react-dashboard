@@ -14,14 +14,23 @@ export interface EntityHistoryResult {
   error: string | null;
 }
 
-// HA >= 2022.12 minimal_response format
-type NewEntry = { s: string; lc?: number; lu?: number };
+// HA >= 2022.12 minimal_response format (`a` only present when attributes changed)
+type NewEntry = { s: string; lc?: number; lu?: number; a?: Record<string, unknown> };
 // HA < 2022.12 format
-type OldEntry = { state: string; last_changed: string };
+type OldEntry = { state: string; last_changed: string; attributes?: Record<string, unknown> };
 
 type HistoryResult = Record<string, NewEntry[]> | OldEntry[][];
 
-export function useEntityHistory(entityId: string, hours: number = 24, refreshInterval: number = 5 * 60 * 1000): EntityHistoryResult {
+/**
+ * @param attribute plot this numeric attribute instead of the state (e.g. `temperature`
+ *                  on a `weather.*` entity, whose state is a condition string)
+ */
+export function useEntityHistory(
+  entityId: string,
+  hours: number = 24,
+  refreshInterval: number = 5 * 60 * 1000,
+  attribute?: string
+): EntityHistoryResult {
   const [data, setData] = useState<HistoryPoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,18 +59,28 @@ export function useEntityHistory(entityId: string, hours: number = 24, refreshIn
           start_time: start.toISOString(),
           end_time: now.toISOString(),
           entity_ids: [entityId],
-          minimal_response: true,
-          significant_changes_only: true,
+          minimal_response: !attribute,
+          no_attributes: !attribute,
+          // an attribute can move while the state stays put (weather stays "cloudy")
+          significant_changes_only: !attribute,
         });
 
         let points: HistoryPoint[] = [];
+
+        // HA only repeats attributes when they change, so carry the last seen value forward
+        let lastAttr: unknown;
+        const readValue = (state: string, attrs?: Record<string, unknown>) => {
+          if (!attribute) return parseFloat(state);
+          if (attrs && attribute in attrs) lastAttr = attrs[attribute];
+          return parseFloat(String(lastAttr));
+        };
 
         if (Array.isArray(result)) {
           // Old HA format: array of arrays
           const entityData = result[0] as OldEntry[] | undefined;
           if (entityData) {
             points = entityData.map(e => ({
-              value: parseFloat(e.state),
+              value: readValue(e.state, e.attributes),
               time: new Date(e.last_changed),
               state: e.state,
             }));
@@ -78,9 +97,9 @@ export function useEntityHistory(entityId: string, hours: number = 24, refreshIn
 
             // Pass 1: assign known timestamps
             const raw = entityData.map((e, i) => ({
-              value: parseFloat(e.s),
+              value: readValue(e.s, e.a),
               state: e.s,
-              ts: e.lc ?? (i === 0 ? startTs : 0),
+              ts: e.lu ?? e.lc ?? (i === 0 ? startTs : 0),
             }));
 
             // Pass 2: fill gaps by spreading unknown timestamps evenly
@@ -116,6 +135,9 @@ export function useEntityHistory(entityId: string, hours: number = 24, refreshIn
           }
         }
 
+        // Drop unavailable/unknown states and attribute gaps
+        points = points.filter(p => Number.isFinite(p.value));
+
         // Downsample if too many points
         const maxPoints = 100;
         if (points.length > maxPoints) {
@@ -138,7 +160,7 @@ export function useEntityHistory(entityId: string, hours: number = 24, refreshIn
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [connection, entityId, hours, refreshInterval, ready]);
+  }, [connection, entityId, hours, refreshInterval, ready, attribute]);
 
   return { data, loading, error };
 }

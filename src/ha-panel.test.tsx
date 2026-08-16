@@ -39,10 +39,20 @@ describe('mountDashboard', () => {
     handleA.destroy();
     expect(b.firstElementChild).toBe(node);
 
-    // Départ définitif : là, on démonte pour de bon.
+    // Départ sans retour : on détache, on ne démonte **jamais**. `HassConnect`
+    // remet son magasin à zéro en se démontant mais ne retente jamais la
+    // connexion pour une URL déjà tentée dans la page — le dashboard revenait
+    // bloqué sur « Connexion à Home Assistant ».
     handleB.destroy();
     vi.runAllTimers();
-    expect(unmount).toHaveBeenCalledTimes(1);
+    expect(unmount).not.toHaveBeenCalled();
+    expect(b.firstElementChild).toBeNull();
+
+    // …et il repart sur un troisième hôte, avec la même racine React.
+    const c = document.createElement('div');
+    mountDashboard(c);
+    expect(c.firstElementChild).toBe(node);
+    expect(createRoot).toHaveBeenCalledTimes(1);
   });
 
   // Régression : sans scroller interne, le contenu débordait de la carte et

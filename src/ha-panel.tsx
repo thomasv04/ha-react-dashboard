@@ -97,13 +97,17 @@ export interface DashboardHandle {
  * pour une URL déjà tentée dans la page (`attemptedUrls`, module de @hakit).
  * On restait sur « Connexion à Home Assistant » jusqu'au rechargement complet.
  *
- * On garde donc l'arbre vivant et on déplace simplement son nœud d'accueil.
+ * On garde donc l'arbre vivant — **pour toute la vie de la page** — et on
+ * déplace simplement son nœud d'accueil. Il y avait ici un démontage différé de
+ * cinq secondes « au cas où la carte ne revienne pas » : c'était un pari sur le
+ * délai de reconstruction de HA, et il est perdu dès qu'on quitte l'onglet
+ * quelques minutes. Le dashboard revenait alors bloqué sur « Connexion à Home
+ * Assistant », sans autre issue qu'un rechargement complet.
  */
 let mountPoint: HTMLDivElement | null = null;
 let root: Root | null = null;
 /** Hôte qui détient l'arbre : une poignée périmée ne doit pas le détacher. */
 let owner: HTMLElement | null = null;
-let teardownTimer: number | null = null;
 
 let hassUrl = window.location.origin;
 let hassToken: string | undefined;
@@ -119,11 +123,6 @@ const render = () => root?.render(<PanelApp hassUrl={hassUrl} hassToken={hassTok
  * carte apparaît réellement à l'écran, jamais au chargement du frontend HA.
  */
 export function mountDashboard(host: HTMLElement): DashboardHandle {
-  if (teardownTimer !== null) {
-    clearTimeout(teardownTimer);
-    teardownTimer = null;
-  }
-
   if (!mountPoint) {
     mountPoint = document.createElement('div');
     // `overflow-y:auto` : le dashboard défile **dans** la carte. Sans ça son
@@ -190,16 +189,10 @@ export function mountDashboard(host: HTMLElement): DashboardHandle {
       // Un autre hôte a déjà repris l'arbre : cette poignée est périmée.
       if (owner !== host) return;
       owner = null;
-      // Détacher, pas démonter : la carte revient presque toujours. Le
-      // démontage réel n'a lieu que si personne ne la remonte — sinon les flux
-      // caméra continueraient de tourner dans un nœud détaché.
+      // Détacher, jamais démonter. Un nœud détaché ne coûte rien : les flux
+      // caméra s'arrêtent d'eux-mêmes, leur `IntersectionObserver` ne voit plus
+      // aucune intersection (`useStreamActive`).
       mountPoint?.remove();
-      teardownTimer = window.setTimeout(() => {
-        teardownTimer = null;
-        root?.unmount();
-        root = null;
-        mountPoint = null;
-      }, 5_000);
     },
   };
 }

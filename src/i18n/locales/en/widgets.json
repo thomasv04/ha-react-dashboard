@@ -10,6 +10,10 @@
     "gusts": "Gusts",
     "dewPoint": "Dew point",
     "precipitation": "Precip.",
+    "hourly": "HOURLY",
+    "daily": "DAILY",
+    "details": "Details",
+    "noHistory": "No temperature history available",
     "description": "Current weather conditions and multi-day forecasts.",
     "conditions": {
       "clear-night": "Clear night",

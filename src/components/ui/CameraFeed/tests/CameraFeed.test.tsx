@@ -108,6 +108,22 @@ describe('HLS — cible de l’observateur de visibilité', () => {
     // Le repli MJPEG s'affiche par-dessus en attendant.
     expect(container.querySelector('img')).toBeInTheDocument();
   });
+
+  it('redemande une URL de flux à chaque réactivation', () => {
+    // Régression : Home Assistant démonte le flux après quelques minutes sans
+    // requête. Rattacher hls.js sur l'URL gardée en cache — au retour sur
+    // l'onglet, ou quand la card revient à l'écran — donnait des 404 en boucle
+    // sur `master_playlist.m3u8` et une caméra définitivement grise.
+    const refresh = vi.fn().mockResolvedValue(undefined);
+    mockUseCamera.mockReturnValue({
+      stream: { url: 'https://ha/api/hls/token/master_playlist.m3u8', loading: false, error: undefined, refresh },
+      mjpeg: { url: undefined, shouldRenderMJPEG: false },
+      poster: { url: undefined },
+    });
+    render(<CameraFeed entityId='camera.front_door' streamMode='hls' />);
+
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('HLS — voile de chargement', () => {
