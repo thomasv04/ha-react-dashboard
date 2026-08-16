@@ -14,7 +14,7 @@ const AUTOMATION = `action:
 #   dismiss: true`;
 
 describe('toDevTools', () => {
-  it("ne garde que le contenu de event_data, désindenté, et rappelle le type", () => {
+  it('ne garde que le contenu de event_data, désindenté, et rappelle le type', () => {
     expect(toDevTools(AUTOMATION, 'ha_dashboard_notification')).toBe(
       `# Type d'événement : ha_dashboard_notification
 # Données d'événement :

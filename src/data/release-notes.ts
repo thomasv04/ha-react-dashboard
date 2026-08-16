@@ -50,10 +50,10 @@ export const RELEASE_NOTES: ReleaseNote[] = [
         tour: 'appearance',
       },
       {
-        text: "Les touches `e` et `c` ouvrent une barre de commande rapide : `e` cherche une entité et ouvre sa fiche, `c` va à une page ou ouvre un panneau.",
+        text: 'Les touches `e` et `c` ouvrent une barre de commande rapide : `e` cherche une entité et ouvre sa fiche, `c` va à une page ou ouvre un panneau.',
       },
       {
-        text: "Côté serveur : historique de la configuration avec restauration, détection de conflit quand deux appareils enregistrent en même temps, quota sur les fichiers envoyés, et écritures réservées aux administrateurs jusque dans le serveur.",
+        text: 'Côté serveur : historique de la configuration avec restauration, détection de conflit quand deux appareils enregistrent en même temps, quota sur les fichiers envoyés, et écritures réservées aux administrateurs jusque dans le serveur.',
       },
       {
         text: "Un widget qui plante n'emporte plus la page, ni le panneau qui le contient. Une configuration invalide est signalée au chargement au lieu d'échouer en silence.",
