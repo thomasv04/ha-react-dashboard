@@ -13,15 +13,23 @@ function mountFakeHomeAssistant() {
   const huiRoot = shadowHost('hui-root', '<div class="header"></div><div id="view"></div>');
   const lovelace = shadowHost('ha-panel-lovelace');
   lovelace.shadowRoot!.appendChild(huiRoot);
+  // `ha-drawer` garde la gouttière de la barre latérale dans sa propre shadow
+  // root (`div.sidebar-shell` + `div.app-content`), et c'est lui qui accueille
+  // le panneau Lovelace.
+  const drawer = shadowHost('ha-drawer', '<div class="sidebar-shell"></div><div class="app-content"></div>');
+  drawer.appendChild(lovelace);
   const main = shadowHost('home-assistant-main', '<ha-sidebar></ha-sidebar>');
-  main.shadowRoot!.appendChild(lovelace);
+  main.shadowRoot!.appendChild(drawer);
   const ha = shadowHost('home-assistant');
   ha.shadowRoot!.appendChild(main);
   document.body.appendChild(ha);
 
+  const text = (el: Element) => [...el.shadowRoot!.querySelectorAll('style')].map(s => s.textContent).join('');
   return {
     mainStyles: () => main.shadowRoot!.querySelectorAll('style').length,
     rootStyles: () => huiRoot.shadowRoot!.querySelectorAll('style').length,
+    mainCss: () => text(main),
+    drawerCss: () => text(drawer),
   };
 }
 
@@ -63,6 +71,20 @@ describe('mode plein écran', () => {
     setKiosk(false, false);
     expect(ha.mainStyles()).toBe(0);
     expect(ha.rootStyles()).toBe(0);
+  });
+
+  // Régression : masquer la barre latérale ne referme pas la gouttière que
+  // `ha-drawer` lui réserve — `.app-content { padding-inline-start:
+  // var(--ha-sidebar-width) }`. Sans cette mise à zéro, le dashboard démarrait
+  // 256 px trop à droite pendant que son fond, en `position:fixed`, couvrait
+  // bien tout l'écran.
+  it('referme la gouttière de la barre latérale, pas seulement la barre', () => {
+    const ha = mountFakeHomeAssistant();
+    setKiosk(true, false);
+
+    expect(ha.mainCss()).toMatch(/--ha-sidebar-width:\s*0px/); // HA ≥ 2026.8
+    expect(ha.mainCss()).toMatch(/--mdc-drawer-width:\s*0px/); // versions antérieures
+    expect(ha.drawerCss()).toMatch(/\.sidebar-shell/);
   });
 
   it('n’injecte pas deux fois si on réactive', () => {

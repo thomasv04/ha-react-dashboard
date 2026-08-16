@@ -44,4 +44,13 @@ describe('mountDashboard', () => {
     vi.runAllTimers();
     expect(unmount).toHaveBeenCalledTimes(1);
   });
+
+  // Régression : sans scroller interne, le contenu débordait de la carte et
+  // faisait défiler le document de HA — dont le `body` ne fait qu'un écran de
+  // haut. Passé ce premier écran, le fond du dashboard ne peignait plus.
+  it('fait défiler le dashboard dans la carte, pas le document de HA', () => {
+    const host = document.createElement('div');
+    mountDashboard(host);
+    expect((host.firstElementChild as HTMLElement).style.overflowY).toBe('auto');
+  });
 });

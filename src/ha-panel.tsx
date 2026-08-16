@@ -126,7 +126,13 @@ export function mountDashboard(host: HTMLElement): DashboardHandle {
 
   if (!mountPoint) {
     mountPoint = document.createElement('div');
-    mountPoint.style.cssText = 'width:100%;height:100%;position:absolute;inset:0;';
+    // `overflow-y:auto` : le dashboard défile **dans** la carte. Sans ça son
+    // contenu débordait de l'hôte (haut d'un écran) et faisait défiler le
+    // document de Home Assistant, dont le `body` ne fait qu'un écran de haut :
+    // passé ce premier écran, plus rien de l'application ne peignait et le fond
+    // laissait voir celui de HA — une bande sombre en bas. Le glisser-déposer
+    // suit tout seul, `findScroller` remonte au premier ancêtre scrollable.
+    mountPoint.style.cssText = 'width:100%;height:100%;position:absolute;inset:0;overflow-y:auto;';
     root = createRoot(mountPoint);
   }
 

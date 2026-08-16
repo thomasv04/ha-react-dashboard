@@ -22,16 +22,22 @@
 const STYLE_ID = 'ha-react-dashboard-kiosk';
 const STORAGE_KEY = 'ha-dashboard-kiosk';
 
+// `--ha-sidebar-width` : nom de la variable depuis HA 2026.8. C'est elle qui
+// pilote la gouttière `padding-inline-start` de `.app-content` dans la shadow
+// root de `ha-drawer` — masquer la barre latérale ne la referme pas, le
+// dashboard démarrait donc à x=256 alors que son fond, lui, couvrait tout
+// l'écran. `--mdc-drawer-width` reste pour les versions antérieures.
+// Les propriétés personnalisées héritent à travers les shadow roots : les
+// poser ici suffit, inutile d'aller les répéter plus bas.
 const MAIN_CSS = `
-  :host { --mdc-drawer-width: 0px !important; }
+  :host { --ha-sidebar-width: 0px !important; --mdc-drawer-width: 0px !important; }
   ha-sidebar, ha-drawer > ha-sidebar { display: none !important; }
   ha-drawer > .mdc-drawer-app-content { margin-left: 0 !important; margin-inline-start: 0 !important; }
 `;
 
 // `ha-drawer` réserve la place de la barre latérale avec un `div.sidebar-shell`
-// large de 256 px **dans sa propre shadow root** — `--mdc-drawer-width` ne le
-// pilote plus (HA 2026.8). Masquer la barre ne suffisait donc pas : la bande
-// restait à gauche, le dashboard commençait à x=256.
+// **dans sa propre shadow root** : la largeur zéro le réduit déjà à rien, on le
+// masque en plus pour qu'il ne capte aucun clic sur le bord gauche.
 const DRAWER_CSS = `
   .sidebar-shell { display: none !important; }
 `;
