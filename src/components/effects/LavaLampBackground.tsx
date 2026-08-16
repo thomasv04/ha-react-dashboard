@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useLowPowerMotion } from '@/hooks/useLowPowerMotion';
 import type { LavaConfig } from '@/config/themes';
+import { advanceParticle, DEFAULT_EDGE_BEHAVIOUR } from '@/lib/background-motion';
 
 const FRAME_INTERVAL_MS = 1000 / 30;
 const DPR_CAP = 1.5;
@@ -10,6 +11,9 @@ interface Blob {
   /** 0–1 normalized position */
   nx: number;
   ny: number;
+  /** Sens de parcours, inversé par le mode « aller-retour ». */
+  dirX: number;
+  dirY: number;
   vx: number;
   vy: number;
   radiusRatio: number;
@@ -46,6 +50,7 @@ export function LavaLampBackground({ config }: LavaLampBackgroundProps) {
     const sizeMult = config?.size ?? 1;
     const opacity = config?.opacity ?? 1;
     const swayMult = config?.sway ?? 1;
+    const edgeBehaviour = config?.edgeBehaviour ?? DEFAULT_EDGE_BEHAVIOUR;
 
     if (!motionAllowed) {
       const ctx = canvas.getContext('2d');
@@ -82,6 +87,8 @@ export function LavaLampBackground({ config }: LavaLampBackgroundProps) {
       blobs = colors.map(color => ({
         nx: Math.random(),
         ny: Math.random(),
+        dirX: 1,
+        dirY: 1,
         vx: (Math.random() - 0.5) * 0.15 * speedMult,
         vy: (Math.random() - 0.5) * 0.12 * speedMult,
         radiusRatio: (0.25 + Math.random() * 0.25) * sizeMult,
@@ -126,19 +133,17 @@ export function LavaLampBackground({ config }: LavaLampBackgroundProps) {
         blob.phaseX += blob.phaseSpeedX;
         blob.phaseY += blob.phaseSpeedY;
 
-        blob.nx += (blob.vx + Math.sin(blob.phaseX) * 0.4 * speedMult * swayMult) / w;
-        blob.ny += (blob.vy + Math.cos(blob.phaseY) * 0.3 * speedMult * swayMult) / h;
-
-        // Wrap using normalized coords
-        if (blob.nx < -0.2) blob.nx = 1.2;
-        if (blob.nx > 1.2) blob.nx = -0.2;
-        if (blob.ny < -0.2) blob.ny = 1.2;
-        if (blob.ny > 1.2) blob.ny = -0.2;
+        const edgeAlpha = advanceParticle(
+          blob,
+          (blob.vx + Math.sin(blob.phaseX) * 0.4 * speedMult * swayMult) / w,
+          (blob.vy + Math.cos(blob.phaseY) * 0.3 * speedMult * swayMult) / h,
+          edgeBehaviour
+        );
 
         const x = blob.nx * w;
         const y = blob.ny * h;
         const radius = minDim * blob.radiusRatio;
-        const op = 0.22 * opacity;
+        const op = 0.22 * opacity * edgeAlpha;
 
         const grad = g2d.createRadialGradient(x, y, 0, x, y, radius);
         grad.addColorStop(0, `${blob.color}${op})`);

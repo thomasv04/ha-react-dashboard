@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useLowPowerMotion } from '@/hooks/useLowPowerMotion';
 import type { AuroraConfig } from '@/config/themes';
+import { advanceParticle, DEFAULT_EDGE_BEHAVIOUR } from '@/lib/background-motion';
 
 const FRAME_INTERVAL_MS = 1000 / 30;
 const DPR_CAP = 1.5;
@@ -10,6 +11,9 @@ interface Orb {
   /** 0–1 normalized position */
   nx: number;
   ny: number;
+  /** Sens de parcours, inversé par le mode « aller-retour ». */
+  dirX: number;
+  dirY: number;
   vx: number;
   vy: number;
   radiusRatio: number;
@@ -48,6 +52,7 @@ export function AuroraBackground({ config }: AuroraBackgroundProps) {
     const sizeMult = config?.size ?? 1;
     const opacity = config?.opacity ?? 1;
     const swayMult = config?.sway ?? 1;
+    const edgeBehaviour = config?.edgeBehaviour ?? DEFAULT_EDGE_BEHAVIOUR;
 
     if (!motionAllowed) {
       const ctx = canvas.getContext('2d');
@@ -84,6 +89,8 @@ export function AuroraBackground({ config }: AuroraBackgroundProps) {
       orbs = colors.map(color => ({
         nx: Math.random(),
         ny: Math.random(),
+        dirX: 1,
+        dirY: 1,
         vx: (Math.random() - 0.5) * 0.4 * speedMult,
         vy: (Math.random() - 0.5) * 0.3 * speedMult,
         radiusRatio: (0.35 + Math.random() * 0.3) * sizeMult,
@@ -130,21 +137,19 @@ export function AuroraBackground({ config }: AuroraBackgroundProps) {
         orb.phaseX += orb.phaseSpeedX;
         orb.phaseY += orb.phaseSpeedY;
 
-        orb.nx += (orb.vx + Math.sin(orb.phaseX) * 0.5 * swayMult * speedMult) / w;
-        orb.ny += (orb.vy + Math.cos(orb.phaseY) * 0.4 * swayMult * speedMult) / h;
-
-        // Wrap around using normalized coords
-        if (orb.nx < -0.2) orb.nx = 1.2;
-        if (orb.nx > 1.2) orb.nx = -0.2;
-        if (orb.ny < -0.2) orb.ny = 1.2;
-        if (orb.ny > 1.2) orb.ny = -0.2;
+        const edgeAlpha = advanceParticle(
+          orb,
+          (orb.vx + Math.sin(orb.phaseX) * 0.5 * swayMult * speedMult) / w,
+          (orb.vy + Math.cos(orb.phaseY) * 0.4 * swayMult * speedMult) / h,
+          edgeBehaviour
+        );
 
         const x = orb.nx * w;
         const y = orb.ny * h;
         const radius = minDim * orb.radiusRatio;
 
         const grad = g2d.createRadialGradient(x, y, 0, x, y, radius);
-        grad.addColorStop(0, `${orb.color}${orb.opacity})`);
+        grad.addColorStop(0, `${orb.color}${orb.opacity * edgeAlpha})`);
         grad.addColorStop(1, `${orb.color}0)`);
 
         g2d.beginPath();
