@@ -65,13 +65,13 @@ function QuickBarPanel({ mode, onClose }: { mode: Mode; onClose: () => void }) {
         ...pages.map(p => ({
           id: `page:${p.id}`,
           label: p.label,
-          hint: t('quickBar.page'),
+          hint: t('dashboard.quickBar.page'),
           run: () => setCurrentPage(p.id),
         })),
         ...panels.map(p => ({
           id: `panel:${p.id}`,
           label: p.name,
-          hint: t('quickBar.panel'),
+          hint: t('dashboard.quickBar.panel'),
           run: () => openPanel(`custom:${p.id}`),
         })),
       ];
@@ -148,7 +148,7 @@ function QuickBarPanel({ mode, onClose }: { mode: Mode; onClose: () => void }) {
                 onClose();
               }
             }}
-            placeholder={t(mode === 'entity' ? 'quickBar.searchEntity' : 'quickBar.searchCommand')}
+            placeholder={t(mode === 'entity' ? 'dashboard.quickBar.searchEntity' : 'dashboard.quickBar.searchCommand')}
             className='flex-1 bg-transparent text-white/85 text-sm focus:outline-none placeholder:text-white/25'
           />
           <Search size={14} className='text-white/20' />

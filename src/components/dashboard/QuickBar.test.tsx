@@ -58,6 +58,25 @@ describe('QuickBar', () => {
     expect(screen.queryByText('Lampe du salon')).not.toBeInTheDocument();
   });
 
+  // Les chaînes vivent sous `dashboard.quickBar`, pas `quickBar` : demandées
+  // sans leur préfixe, `t()` renvoyait la clé et l'utilisateur lisait
+  // « quickBar.searchEntity » dans le champ.
+  //
+  // `t()` est remplacé par l'identité dans tout le banc d'essai (`test/setup`),
+  // donc aucun test ne peut comparer à du français — c'est précisément ce qui a
+  // laissé passer le défaut. Ce qui se vérifie ici, c'est la clé **complète**
+  // que le composant réclame.
+  it('demande ses chaînes sous leur chemin complet — mode entité', async () => {
+    await open('e');
+    expect(screen.getByRole('textbox')).toHaveAttribute('placeholder', 'dashboard.quickBar.searchEntity');
+  });
+
+  it('demande ses chaînes sous leur chemin complet — mode commande', async () => {
+    await open('c');
+    expect(screen.getByRole('textbox')).toHaveAttribute('placeholder', 'dashboard.quickBar.searchCommand');
+    expect(screen.getByText(/dashboard\.quickBar\.page/)).toBeInTheDocument();
+  });
+
   it("filtre sur le nom convivial comme sur l'identifiant", async () => {
     await open('e');
     const input = screen.getByRole('textbox');
