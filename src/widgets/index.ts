@@ -2,12 +2,9 @@ import React, { lazy, memo, Suspense, type ComponentType } from 'react';
 import { WIDGETS } from './registry';
 import type { WidgetDefinition } from './define-widget';
 
-import { LEGACY_WIDGET_COMPONENTS } from '@/config/widget-registry';
-import { LEGACY_WIDGET_META, type WidgetMeta } from '@/components/layout/AddWidgetModal/widget-meta';
-import { LEGACY_WIDGET_DISPOSITIONS, type WidgetDispositions } from '@/config/widget-dispositions';
-import { LEGACY_SIZE_PRESETS } from '@/config/size-presets';
-import { LEGACY_WIDGET_CATALOG, type WidgetCatalogEntry } from '@/config/widget-catalog';
-import { LEGACY_WIDGET_FIELD_DEFS, LEGACY_DEFAULT_WIDGET_CONFIGS } from '@/types/widget-fields';
+import type { WidgetMeta } from '@/components/layout/AddWidgetModal/widget-meta';
+import type { WidgetDispositions } from '@/config/widget-dispositions';
+import type { WidgetCatalogEntry } from '@/config/widget-catalog';
 import type { WidgetFieldDef } from '@/types/widget-fields';
 import type { WidgetConfig, WidgetConfigs } from '@/types/widget-types';
 import type { GridWidget, WidgetSizePresets } from '@/context/DashboardLayoutContext';
@@ -42,14 +39,12 @@ function lazyMemo(factory: () => Promise<{ default: ComponentType }>) {
 }
 
 export const WIDGET_COMPONENTS: Partial<Record<WidgetType, ComponentType>> = {
-  ...LEGACY_WIDGET_COMPONENTS,
   ...Object.fromEntries(defs.map(d => [d.type, lazyMemo(d.component)])),
 };
 
 // ── Méta du catalogue « Ajouter un widget » ──────────────────────────────────
 
 export const WIDGET_META: WidgetMeta[] = [
-  ...LEGACY_WIDGET_META.filter(m => !defs.some(d => d.type === m.type)),
   ...defs.map((d): WidgetMeta => ({
     type: d.type as WidgetType,
     label: d.meta.label,
@@ -64,7 +59,6 @@ export const WIDGET_META: WidgetMeta[] = [
 // ── Catalogue (tailles posées à l'ajout) ─────────────────────────────────────
 
 export const WIDGET_CATALOG: WidgetCatalogEntry[] = [
-  ...LEGACY_WIDGET_CATALOG.filter(c => !defs.some(d => d.type === c.type)),
   ...defs.map((d): WidgetCatalogEntry => ({
     type: d.type as WidgetType,
     // Le libellé du catalogue est une clé i18n pour les widgets déclarés,
@@ -79,7 +73,6 @@ export const WIDGET_CATALOG: WidgetCatalogEntry[] = [
 // ── Dispositions ─────────────────────────────────────────────────────────────
 
 export const WIDGET_DISPOSITIONS: WidgetDispositions = {
-  ...LEGACY_WIDGET_DISPOSITIONS,
   ...Object.fromEntries(
     defs
       .map(d => [
@@ -104,21 +97,18 @@ export const WIDGET_DISPOSITIONS: WidgetDispositions = {
 // ── Presets de taille ────────────────────────────────────────────────────────
 
 export const SIZE_PRESETS: WidgetSizePresets = {
-  ...LEGACY_SIZE_PRESETS,
   ...Object.fromEntries(defs.flatMap(d => (d.sizePresets ? [[d.type, d.sizePresets] as const] : []))),
 };
 
 // ── Champs d'édition ─────────────────────────────────────────────────────────
 
 export const WIDGET_FIELD_DEFS: Record<string, WidgetFieldDef[]> = {
-  ...LEGACY_WIDGET_FIELD_DEFS,
   ...Object.fromEntries(defs.flatMap(d => (d.fields ? [[d.type, d.fields] as const] : []))),
 };
 
 // ── Configurations par défaut ────────────────────────────────────────────────
 
 export const DEFAULT_WIDGET_CONFIGS: WidgetConfigs = {
-  ...LEGACY_DEFAULT_WIDGET_CONFIGS,
   ...Object.fromEntries(defs.map(d => [d.type, { type: d.type, ...d.defaults } as WidgetConfig])),
 };
 
