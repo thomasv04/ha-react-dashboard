@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
-import { DEFAULT_LAYOUT, type DashboardConfigV2, type DashboardLayout } from '@/context/DashboardLayoutContext';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { DEFAULT_LAYOUT, type DashboardConfigV2, type DashboardLayout, type GridWidget } from '@/context/DashboardLayoutContext';
 import type { WidgetConfigs } from '@/types/widget-configs';
 import { DEFAULT_WIDGET_CONFIGS } from '@/widgets';
 import { DEFAULT_PAGES, type Page } from '@/context/PageContext';
 import { DEFAULT_WALLPANEL_CONFIG, type WallPanelConfig } from '@/types/wallpanel';
 import type { CustomPanel } from '@/types/custom-panel';
 import { useToast } from '@/context/ToastContext';
+import { useI18n } from '@/i18n';
 import { apiFetch } from '@/lib/api-base';
 
 /** Au-delà, on considère le serveur injoignable et on rend depuis le cache. */
@@ -20,6 +21,76 @@ export type ConfigStatus =
   | 'ready' // config à jour venue du serveur
   | 'cached' // config affichée depuis le cache, serveur injoignable
   | 'defaults'; // aucune config nulle part, dashboard vierge
+
+// ── Validation ────────────────────────────────────────────────────────────────
+//
+// La config était consommée telle quelle après `JSON.parse`. Un fichier tronqué,
+// un import bricolé à la main ou une config écrite par une version future
+// suffisaient à faire lever une exception au rendu — écran blanc, sans message,
+// et sans moyen d'atteindre les réglages pour réparer.
+//
+// Une fonction de garde suffit : le schéma est petit et stable. `zod` ajouterait
+// une dépendance et une deuxième définition de la même forme.
+
+/** Position de repli d'un widget dont les coordonnées sont illisibles. */
+const FALLBACK_BOX = { x: 0, y: 0, w: 2, h: 2 };
+
+/**
+ * Rend un widget affichable, ou `null` s'il ne peut pas l'être.
+ *
+ * Deux traitements, parce que les défauts n'ont pas la même gravité :
+ *
+ * - **`id` ou `type` manquant** → écarté. La grille indexe par `id` et le rendu
+ *   choisit le composant par `type` : sans eux, il n'y a rien à afficher.
+ * - **coordonnée illisible** → réparée. Une carte mal placée reste une carte que
+ *   l'utilisateur a créée et configurée ; la supprimer pour un `x` corrompu
+ *   détruirait son travail là où un déplacement suffit à réparer.
+ */
+function sanitizeWidget(w: unknown): GridWidget | null {
+  if (!w || typeof w !== 'object') return null;
+  const g = w as Record<string, unknown>;
+  if (typeof g.id !== 'string' || typeof g.type !== 'string') return null;
+
+  const box: Record<string, number> = {};
+  for (const k of ['x', 'y', 'w', 'h'] as const) {
+    box[k] = typeof g[k] === 'number' && Number.isFinite(g[k]) ? (g[k] as number) : FALLBACK_BOX[k];
+  }
+  return { ...g, ...box } as unknown as GridWidget;
+}
+
+/**
+ * Écarte ce qui est inexploitable au lieu de laisser planter le rendu.
+ *
+ * Un widget cassé disparaît de la grille ; une page cassée disparaît de la
+ * barre d'onglets. Le reste du dashboard s'affiche. Renvoie le nombre
+ * d'éléments retirés, pour pouvoir le dire à l'utilisateur.
+ */
+function sanitizeConfig(config: DashboardConfigV2): { config: DashboardConfigV2; dropped: number } {
+  let dropped = 0;
+
+  const pages = Array.isArray(config.pages) ? config.pages.filter(p => p && typeof p.id === 'string') : [...DEFAULT_PAGES];
+  dropped += (Array.isArray(config.pages) ? config.pages.length : 0) - pages.length;
+
+  const layouts: Record<string, DashboardLayout> = {};
+  for (const [pageId, layout] of Object.entries(config.layouts ?? {})) {
+    const widgets = { lg: [], md: [], sm: [] } as DashboardLayout['widgets'];
+    for (const bp of ['lg', 'md', 'sm'] as const) {
+      const list = layout?.widgets?.[bp];
+      if (!Array.isArray(list)) continue;
+      const kept = list.map(sanitizeWidget).filter((w): w is GridWidget => w !== null);
+      dropped += list.length - kept.length;
+      widgets[bp] = kept;
+    }
+    layouts[pageId] = { ...layout, widgets };
+  }
+
+  // Aucune page valide : mieux vaut un dashboard vierge, où les réglages
+  // restent accessibles, qu'un écran sans rien du tout.
+  return {
+    config: { ...config, pages: pages.length ? pages : [...DEFAULT_PAGES], layouts },
+    dropped,
+  };
+}
 
 // ── Migration v1 → v2 ─────────────────────────────────────────────────────────
 function migrateConfig(data: unknown): DashboardConfigV2 {
@@ -97,6 +168,13 @@ export function useDashboardConfig() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const { addToast } = useToast();
+  const { t } = useI18n();
+
+  // Révision servie par le serveur au dernier chargement, renvoyée à
+  // l'enregistrement pour détecter qu'un autre appareil a écrit entre-temps.
+  // Une ref, pas un état : la valeur ne change rien à l'affichage, et un rendu
+  // supplémentaire à chaque sauvegarde ne servirait personne.
+  const revisionRef = useRef(0);
 
   // Load config from server — avec délai maximal et réessais en arrière-plan
   useEffect(() => {
@@ -128,12 +206,19 @@ export function useDashboardConfig() {
         const data: unknown = await res.json();
         if (cancelled) return;
 
+        revisionRef.current = Number(res.headers.get('X-Config-Revision') ?? 0);
+
         if (data && typeof data === 'object' && 'message' in data) {
           // Pas encore de config côté serveur : dashboard vierge, pas une erreur.
           setStatus(hadCache ? 'ready' : 'defaults');
         } else {
-          apply(migrateConfig(data));
+          const { config, dropped } = sanitizeConfig(migrateConfig(data));
+          apply(config);
           setStatus('ready');
+          if (dropped > 0) {
+            console.warn(`[config] ${dropped} élément(s) invalide(s) écarté(s)`);
+            addToast({ title: t('dashboard.repairedTitle'), description: t('dashboard.repairedDescription'), sound: false });
+          }
         }
         setError(null);
       } catch (err) {
@@ -148,7 +233,7 @@ export function useDashboardConfig() {
         // Un seul toast, au premier échec, et seulement sans cache — sinon le
         // dashboard est utilisable et l'alerte serait du bruit.
         if (attempt === 0 && !hadCache) {
-          addToast({ title: 'Hors ligne', description: 'Configuration indisponible, affichage par défaut', sound: false });
+          addToast({ title: t('dashboard.offlineTitle'), description: t('dashboard.offlineDescription'), sound: false });
         }
 
         const delay = RETRY_DELAYS_MS[Math.min(attempt, RETRY_DELAYS_MS.length - 1)];
@@ -172,10 +257,31 @@ export function useDashboardConfig() {
     try {
       const response = await apiFetch('/api/config', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          // Révision lue au dernier chargement. Le serveur refuse (409) si un
+          // autre appareil a enregistré entre-temps : sans cet en-tête, le
+          // dernier à cliquer effaçait le travail de l'autre sans un mot.
+          'X-Expected-Revision': String(revisionRef.current),
+        },
         body: JSON.stringify(config),
       });
+
+      if (response.status === 409) {
+        // Pas de fusion automatique : deux dispositions divergentes ne se
+        // recollent pas, et deviner produirait un résultat que personne n'a
+        // voulu. On prévient, l'utilisateur recharge et refait son geste.
+        addToast({
+          title: t('dashboard.conflictTitle'),
+          description: t('dashboard.conflictDescription'),
+          sound: false,
+        });
+        return;
+      }
+
       if (response.ok) {
+        const revision = response.headers.get('X-Config-Revision');
+        if (revision !== null) revisionRef.current = Number(revision);
         setPages(config.pages);
         setAllLayouts(config.layouts);
         setAllWidgetConfigs(config.widgetConfigs);
@@ -183,11 +289,11 @@ export function useDashboardConfig() {
       }
     } catch (err) {
       console.error('Erreur lors de la sauvegarde:', err);
-      addToast({ title: 'Erreur', description: 'Impossible de sauvegarder la configuration', sound: false });
+      addToast({ title: t('common.error'), description: t('dashboard.saveFailed'), sound: false });
     } finally {
       setIsSaving(false);
     }
-  }, []);
+  }, [t]);
 
   return {
     pages,

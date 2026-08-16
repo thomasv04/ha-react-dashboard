@@ -22,6 +22,8 @@ import { SoundTab } from './SoundTab';
 import { WIDGET_SOUND_ACTIONS } from '@/config/widget-sound-actions';
 import type { SoundPreset } from '@/lib/sounds';
 import { GroupWidgetsTab } from './GroupWidgetsTab';
+import { ActionsTab } from './ActionsTab';
+import { VisibilityTab } from './VisibilityTab';
 import { useI18n } from '@/i18n';
 
 export function WidgetEditModal() {
@@ -47,7 +49,7 @@ export function WidgetEditModal() {
   const isGroup = config?.type === 'group';
 
   // Tabs: config vs widgets (group) vs advanced vs layout vs sound
-  const [activeTab, setActiveTab] = useState<'config' | 'widgets' | 'advanced' | 'layout' | 'sound'>('config');
+  const [activeTab, setActiveTab] = useState<'config' | 'widgets' | 'advanced' | 'layout' | 'sound' | 'actions' | 'visibility'>('config');
 
   // Local draft so we can cancel
   const [draft, setDraft] = useState<Record<string, unknown> | null>(null);
@@ -210,6 +212,24 @@ export function WidgetEditModal() {
                   {t('layout.tabs.layout')}
                 </button>
               )}
+              <button
+                onClick={() => setActiveTab('actions')}
+                className={cn(
+                  'px-4 py-3 text-sm font-medium transition-colors cursor-pointer',
+                  activeTab === 'actions' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-white/40 hover:text-white/60'
+                )}
+              >
+                {t('layout.tabs.actions')}
+              </button>
+              <button
+                onClick={() => setActiveTab('visibility')}
+                className={cn(
+                  'px-4 py-3 text-sm font-medium transition-colors cursor-pointer',
+                  activeTab === 'visibility' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-white/40 hover:text-white/60'
+                )}
+              >
+                {t('layout.tabs.visibility')}
+              </button>
               {hasSounds && (
                 <button
                   onClick={() => setActiveTab('sound')}
@@ -386,6 +406,8 @@ export function WidgetEditModal() {
                       onChange={v => updateField(field.key, v)}
                     />
                   ))}
+              {activeTab === 'actions' && draft && <ActionsTab draft={draft as Record<string, unknown>} updateField={updateField} />}
+              {activeTab === 'visibility' && draft && <VisibilityTab draft={draft as Record<string, unknown>} updateField={updateField} widgetType={config?.type} />}
               {activeTab === 'layout' && hasDispositions && <CardLayoutTab widgetId={editingWidgetId} breakpoint={breakpoint} />}
               {activeTab === 'sound' && hasSounds && config && (
                 <SoundTab

@@ -1,5 +1,5 @@
 ﻿import { useDashboardLayout, useEditMode } from '@/context/DashboardLayoutContext';
-import { useState, useLayoutEffect, useRef, createContext, useContext, memo, useCallback, useMemo } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, createContext, useContext, memo, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { staggerGridContainer, staggerGridItem } from '@/lib/motion-variants';
@@ -10,9 +10,15 @@ import { useGridDragDrop } from '@/hooks/useGridDragDrop';
 import { GridItemOverlay } from './GridItemOverlay';
 import { WidgetErrorBoundary } from '@/components/ui/WidgetErrorBoundary';
 import { useMoreInfo } from '@/context/MoreInfoContext';
-import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useWidgetConfig, WidgetConfigOverride } from '@/context/WidgetConfigContext';
+import type { WidgetConfigs } from '@/types/widget-configs';
 import { MORE_INFO_WIDGET_TYPES } from '@/components/modals/more-info-registry';
 import { useLongPress } from '@/hooks/useLongPress';
+import { useCardActions } from '@/hooks/useCardActions';
+import type { CardActionsConfig } from '@/types/card-actions';
+import { isVisible, visibilityEntityIds, type CardVisibilityConfig } from '@/types/card-visibility';
+import { matchStateStyle, stateStyleEntityIds, type CardStateStylesConfig } from '@/types/card-state-styles';
+import { useEntities } from '@/hooks/useEntities';
 import { useTheme } from '@/context/ThemeContext';
 
 export type Breakpoint = 'lg' | 'md' | 'sm';
@@ -60,6 +66,24 @@ function useGridCtx() {
   const ctx = useContext(GridCtx);
   if (!ctx) throw new Error('useGridCtx must be used inside DashboardGrid');
   return ctx;
+}
+
+// ── Sélection multiple ───────────────────────────────────────────────────────
+//
+// `Shift`+clic ajoute une case à la sélection. Déplacer ou supprimer agit alors
+// sur tout le groupe — sans ça, réorganiser un bloc de six widgets demandait six
+// glissers successifs, chacun repoussant les autres.
+
+interface SelectionCtxValue {
+  selected: ReadonlySet<string>;
+  toggle: (id: string) => void;
+  clear: () => void;
+}
+
+const SelectionCtx = createContext<SelectionCtxValue>({ selected: new Set(), toggle: () => {}, clear: () => {} });
+
+export function useGridSelection() {
+  return useContext(SelectionCtx);
 }
 
 // ── Widget ID context — lets each card know its own widget id ─────────────────
@@ -228,11 +252,35 @@ export function DashboardGrid({ children, readonly, className }: { children: Rea
     [bp, draggingId, dropTargetId, ghostPosition, drag, startResize, motionAllowed]
   );
 
+  // ── Sélection multiple ─────────────────────────────────────
+  const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
+
+  const selectionValue = useMemo<SelectionCtxValue>(
+    () => ({
+      selected,
+      toggle: (id: string) =>
+        setSelected(prev => {
+          const next = new Set(prev);
+          if (!next.delete(id)) next.add(id);
+          return next;
+        }),
+      clear: () => setSelected(new Set()),
+    }),
+    [selected]
+  );
+
+  // Quitter le mode édition vide la sélection : un contour de sélection
+  // survivant en mode consultation n'aurait plus aucune action derrière lui.
+  useEffect(() => {
+    if (!isEditMode) setSelected(new Set());
+  }, [isEditMode]);
+
   // Extra rows for the grid background
   const displayRows = maxRow + 2;
 
   return (
     <GridCtx.Provider value={ctxValue}>
+      <SelectionCtx.Provider value={selectionValue}>
       <motion.div
         ref={outerRef}
         variants={motionAllowed ? staggerGridContainer : undefined}
@@ -295,8 +343,41 @@ export function DashboardGrid({ children, readonly, className }: { children: Rea
           />
         )}
       </motion.div>
+      </SelectionCtx.Provider>
     </GridCtx.Provider>
   );
+}
+
+/**
+ * Applique l'icône et la couleur d'une règle d'état, si l'une est satisfaite.
+ *
+ * Sans règle active, rend les enfants tels quels : pas de fournisseur inutile
+ * dans l'arbre pour les cards — la quasi-totalité — qui n'en configurent aucune.
+ */
+function StateStyled({
+  id,
+  override,
+  config,
+  children,
+}: {
+  id: string;
+  override: { icon?: string; color?: string } | null;
+  config: Record<string, unknown> | undefined;
+  children: ReactNode;
+}) {
+  const merged = useMemo(() => {
+    if (!override || !config) return null;
+    return {
+      [id]: {
+        ...config,
+        ...(override.icon ? { icon: override.icon } : {}),
+        ...(override.color ? { iconColor: override.color } : {}),
+      },
+    } as unknown as WidgetConfigs;
+  }, [id, override, config]);
+
+  if (!merged) return children;
+  return <WidgetConfigOverride configs={merged}>{children}</WidgetConfigOverride>;
 }
 
 // Memoized widget content
@@ -353,6 +434,7 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
   const { breakpoint, draggingId, dropTargetId, drag, startResize, motionAllowed } = useGridCtx();
   const { openMoreInfo, state: moreInfoState } = useMoreInfo();
   const { getWidgetConfig } = useWidgetConfig();
+  const selection = useGridSelection();
   const isEditMode = ctxEditMode && !readonly;
 
   const widget = layout.widgets[breakpoint]?.find(w => w.id === id);
@@ -372,16 +454,66 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
     [id, widget, getWidgetConfig, openMoreInfo]
   );
 
-  const memoOnClick = useMemo(
-    () => (!isEditMode && hasMoreInfo ? handleMoreInfoClick : undefined),
-    [isEditMode, hasMoreInfo, handleMoreInfoClick]
+  // ── Actions configurables (tap / hold) ──────────────────────────────────────
+  //
+  // Branché **ici**, et pas dans chaque card : les trente composants n'ont rien
+  // à savoir de la navigation ni des appels de service, et une action ajoutée à
+  // `useCardActions` vaut aussitôt pour tous.
+  const runAction = useCardActions();
+
+  const makeHandler = useCallback(
+    (which: 'tapAction' | 'holdAction') =>
+      (rect: DOMRect) => {
+        const config = getWidgetConfig(id) as (Record<string, unknown> & CardActionsConfig) | undefined;
+        const entityId = typeof config?.entityId === 'string' ? config.entityId : '';
+        // `false` = action non prise en charge (`default`, ou `more-info` qui a
+        // besoin du cadre de la card pour s'animer).
+        if (runAction(config?.[which], entityId)) return;
+        if (hasMoreInfo) handleMoreInfoClick(rect);
+      },
+    [id, getWidgetConfig, runAction, hasMoreInfo, handleMoreInfoClick]
   );
-  const memoOnLongPress = memoOnClick;
+
+  // ── Visibilité conditionnelle et styles d'état ──────────────────────────────
+  //
+  // Un seul abonnement pour les deux : ce sont le plus souvent les mêmes
+  // entités, et deux abonnements doubleraient les rendus sans rien apporter.
+  const conditionalConfig = getWidgetConfig(id) as (Record<string, unknown> & CardVisibilityConfig & CardStateStylesConfig) | undefined;
+  const visibility = conditionalConfig?.visibility;
+  const stateStyles = conditionalConfig?.stateStyles;
+
+  const watchedIds = useMemo(
+    () => [...new Set([...visibilityEntityIds(visibility), ...stateStyleEntityIds(stateStyles)])],
+    [visibility, stateStyles]
+  );
+  const watched = useEntities(watchedIds);
+  const states = useMemo(
+    () => Object.fromEntries(watchedIds.map(eid => [eid, watched[eid]?.state])),
+    [watchedIds, watched]
+  );
+
+  const visible = useMemo(() => isVisible(visibility, breakpoint, states), [visibility, breakpoint, states]);
+  const styleOverride = useMemo(() => matchStateStyle(stateStyles, breakpoint, states), [stateStyles, breakpoint, states]);
+
+  const config = getWidgetConfig(id) as CardActionsConfig | undefined;
+  // Un geste reste inerte si rien n'est configuré *et* que la card n'a pas de
+  // fiche : inutile de rendre le curseur cliquable pour rien.
+  const hasTap = hasMoreInfo || (config?.tapAction && config.tapAction.action !== 'default');
+  const hasHold = hasMoreInfo || (config?.holdAction && config.holdAction.action !== 'default');
+
+  const memoOnClick = useMemo(() => (!isEditMode && hasTap ? makeHandler('tapAction') : undefined), [isEditMode, hasTap, makeHandler]);
+  const memoOnLongPress = useMemo(() => (!isEditMode && hasHold ? makeHandler('holdAction') : undefined), [isEditMode, hasHold, makeHandler]);
 
   if (!widget) return null;
 
+  // Masquée par ses conditions — mais **jamais en mode édition** : une card
+  // invisible serait impossible à sélectionner pour corriger sa condition, et
+  // on ne saurait même pas qu'elle existe. En édition elle reste là, atténuée.
+  if (!visible && !isEditMode) return null;
+
   const isDragging = draggingId === id;
   const isDropTarget = dropTargetId === id;
+  const isSelected = selection.selected.has(id);
   const label = WIDGET_LABELS[widget.type] ?? widget.type;
   const isWidgetModalOpen = !isEditMode && moreInfoState?.widgetId === id;
   const isStatic = widget.static ?? false;
@@ -393,14 +525,16 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
     gridColumnEnd: `span ${widget.w}`,
     gridRowEnd: `span ${widget.h}`,
     transform: isDragging ? 'scale(1.05)' : 'none',
-    opacity: isDragging ? 0.6 : 1,
+    opacity: isDragging ? 0.6 : visible ? 1 : 0.35,
     zIndex: isDragging ? 50 : 1,
     transition: 'transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease',
     boxShadow: isDragging
       ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
       : isDropTarget
         ? '0 0 0 2px rgba(139, 92, 246, 0.6), 0 0 30px rgba(139, 92, 246, 0.3)'
-        : 'none',
+        : isSelected
+          ? '0 0 0 2px rgba(59, 130, 246, 0.9)'
+          : 'none',
   };
 
   return (
@@ -409,6 +543,15 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
       className='relative h-full'
       style={gridStyle}
       data-widget-id={id}
+      onClickCapture={e => {
+        // `Capture` : la case entière est un handle de glisser, et l'overlay
+        // avale les clics. Intercepter à la descente est le seul moyen de voir
+        // le geste avant eux.
+        if (!isEditMode || (!e.shiftKey && !e.ctrlKey && !e.metaKey)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        selection.toggle(id);
+      }}
       draggable={canDrag}
       onDragStart={e => {
         if (!canDrag) {
@@ -444,11 +587,17 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
       }}
     >
       <WidgetIdCtx.Provider value={id}>
-        <WidgetErrorBoundary label={label}>
+        {/* Style d'état : la config vue par la card est celle de l'utilisateur
+            avec l'icône et la couleur de la règle satisfaite par-dessus. Passer
+            par la surcharge de config déjà en place évite d'inventer un second
+            canal, et laisse les trente composants inchangés. */}
+        <StateStyled id={id} override={styleOverride} config={conditionalConfig}>
+          <WidgetErrorBoundary label={label}>
           <MemoChildren isEditMode={isEditMode} dimmed={isWidgetModalOpen} onClick={memoOnClick} onLongPress={memoOnLongPress}>
             {children}
           </MemoChildren>
-        </WidgetErrorBoundary>
+          </WidgetErrorBoundary>
+        </StateStyled>
       </WidgetIdCtx.Provider>
       {isEditMode && (
         <GridItemOverlay
