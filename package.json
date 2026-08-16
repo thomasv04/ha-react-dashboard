@@ -50,7 +50,7 @@
     "helmet": "^8.1.0",
     "hls.js": "^1.6.17",
     "jsdom": "^29.1.1",
-    "lucide-react": "^0.577.0",
+    "lucide-react": "^1.31.0",
     "multer": "^2.1.1",
     "nunjucks": "^3.2.4",
     "radix-ui": "^1.4.3",
