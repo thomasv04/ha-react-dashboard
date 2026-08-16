@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { adminWrites } from '../haAuth.js';
 
 /**
  * @param {import('better-sqlite3').Database} db
@@ -65,6 +66,43 @@ export function settingsRouter(db) {
     } catch (err) {
       console.error('[settings] Save error:', err.message);
       res.status(500).json({ error: 'Failed to save settings' });
+    }
+  });
+
+  // ── POST /api/settings/broadcast — Recopier sur tous les appareils ─────────
+  //
+  // Réserver aux administrateurs, contrairement au reste de ce routeur : écrire
+  // ses propres réglages n'engage que soi, les imposer à toute la maison est
+  // une autre affaire. C'est le seul point d'entrée de `/api/settings` protégé.
+  router.post('/broadcast', adminWrites, (req, res) => {
+    const { data } = req.body ?? {};
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      return res.status(400).json({ error: 'Invalid settings data' });
+    }
+
+    try {
+      const payload = JSON.stringify(data);
+      const devices = db.prepare('SELECT device_id FROM device_settings').all();
+
+      // Une transaction : à mi-parcours, la maison se retrouverait avec deux
+      // moitiés de configuration différentes.
+      const apply = db.transaction(() => {
+        const stmt = db.prepare(
+          `UPDATE device_settings
+           SET data = ?, revision = revision + 1, updated_at = datetime('now')
+           WHERE device_id = ?`
+        );
+        for (const { device_id } of devices) stmt.run(payload, device_id);
+      });
+      apply();
+
+      // La révision de chaque appareil est incrémentée : ceux qui ont une page
+      // ouverte verront un 409 à leur prochaine écriture et rechargeront, au
+      // lieu de réimposer silencieusement leurs anciens réglages.
+      res.json({ success: true, devices: devices.length });
+    } catch (err) {
+      console.error('[settings] Broadcast error:', err.message);
+      res.status(500).json({ error: 'Failed to broadcast settings' });
     }
   });
 

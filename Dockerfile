@@ -57,6 +57,6 @@ EXPOSE 8099
 # `fetch` est global depuis Node 18 : pas de wget/curl à installer, contrairement
 # à l'image Alpine où wget venait avec busybox.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD node -e "fetch('http://localhost:8099/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+  CMD node -e "fetch('http://localhost:8099/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
 
 CMD [ "node", "server.js" ]
