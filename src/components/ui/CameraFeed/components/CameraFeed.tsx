@@ -137,6 +137,44 @@ const HlsFeed = memo(function HlsFeed({ entityId, className, posterEntity, onPro
   const mjpegUrl = cam.mjpeg.url;
   const posterUrl = useEntityPicture(posterEntity);
 
+  /**
+   * Une URL de flux HLS ne survit pas à l'inactivité : Home Assistant démonte
+   * le flux au bout de quelques minutes sans requête, et l'URL gardée en cache
+   * par `useCamera` répond alors 404 — indéfiniment. C'est ce qu'on voyait au
+   * retour sur l'onglet : `master_playlist.m3u8` en 404 à la chaîne, caméra
+   * grise, repli MJPEG définitif.
+   *
+   * On en redemande donc une fraîche à chaque réactivation (retour au premier
+   * plan, card qui revient à l'écran), et on n'attache hls.js qu'après —
+   * l'attacher avant, c'est le lancer sur une URL qu'on sait périmée.
+   */
+  // Passe par une ref : l'identité de `refresh` change à chaque mise à jour de
+  // l'entité caméra, la mettre en dépendance relancerait le flux sans arrêt.
+  const refreshRef = useRef(cam.stream.refresh);
+  useEffect(() => {
+    refreshRef.current = cam.stream.refresh;
+  });
+  const [freshUrl, setFreshUrl] = useState(false);
+
+  useEffect(() => {
+    if (!active) {
+      setFreshUrl(false);
+      return;
+    }
+    // Une réactivation repart d'une ardoise propre : l'échec précédent venait
+    // d'une URL périmée, pas d'une caméra en panne.
+    setHlsFailed(false);
+    let cancelled = false;
+    // `Promise.resolve` : une caméra sans `refresh` (mock, version de @hakit
+    // plus ancienne) ne doit pas empêcher le flux de démarrer.
+    void Promise.resolve(refreshRef.current?.()).finally(() => {
+      if (!cancelled) setFreshUrl(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [active]);
+
   // Le badge doit refléter ce qui est affiché, pas ce qui est en train de se
   // charger. Le signaler depuis le corps du rendu déclenchait un `setState` du
   // parent pendant le rendu, et laissait « MJPEG » affiché une fois le flux HLS
@@ -152,7 +190,7 @@ const HlsFeed = memo(function HlsFeed({ entityId, className, posterEntity, onPro
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !streamUrl || !active) return;
+    if (!video || !streamUrl || !active || !freshUrl) return;
 
     let hls: { destroy: () => void } | null = null;
     let cancelled = false;
@@ -206,7 +244,7 @@ const HlsFeed = memo(function HlsFeed({ entityId, className, posterEntity, onPro
       hls?.destroy();
       hlsRef.current = null;
     };
-  }, [streamUrl, onProtocol, active]);
+  }, [streamUrl, onProtocol, active, freshUrl]);
 
   // Une nouvelle URL de flux repart d'une image noire : le voile de chargement
   // doit revenir, sinon on afficherait le dernier cadre de l'ancienne caméra.
