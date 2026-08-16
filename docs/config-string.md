@@ -8,7 +8,12 @@ Le dashboard permet d'**exporter** et d'**importer** toute la configuration via 
 
 1. Aller dans **Paramètres → Système**
 2. Cliquer sur **Générer la chaîne**
-3. La chaîne apparaît dans un champ texte — la copier avec le bouton **Copier** ou en sélectionnant le texte
+3. La chaîne apparaît dans un champ texte. Deux façons de la récupérer :
+   - **Copier** — pour un transfert court, d'appareil à appareil
+   - **Télécharger** — écrit un fichier `.hadash`. À préférer pour une vraie
+     sauvegarde : une configuration complète pèse vite plusieurs dizaines de
+     kilo-octets, et le trajet par le presse-papier peut la tronquer ou y
+     insérer des retours à la ligne.
 
 La chaîne contient :
 - **Thème** : thème actif, fond d'écran, opacité des cartes, performance, auto jour/nuit, disposition (gap, rayon, hauteur)
@@ -17,7 +22,10 @@ La chaîne contient :
 ### Import
 
 1. Aller dans **Paramètres → Système**
-2. Coller la chaîne dans le champ d'import
+2. Fournir la chaîne, au choix :
+   - la coller dans le champ d'import
+   - cliquer sur **Choisir un fichier** et sélectionner un `.hadash`
+   - déposer le fichier directement sur le champ de texte
 3. Cliquer sur **Importer**
 4. Une confirmation est demandée (la config actuelle sera écrasée)
 5. Cliquer à nouveau sur **Confirmer l'import**
@@ -109,3 +117,11 @@ const restored = await decodeConfig(str);   // → ConfigSnapshot
 // restored.theme   → paramètres de thème
 // restored.dashboard → config du dashboard
 ```
+
+## Historique de configuration
+
+L'export n'est pas le seul filet de sécurité. Depuis la 2.2.0, le serveur
+archive automatiquement les **20 derniers états** du dashboard à chaque
+enregistrement, et **Paramètres → Système → Historique de configuration**
+permet d'en restaurer un. C'est ce qui rattrape un import raté ou une
+disposition cassée en mode édition, sans avoir pensé à exporter avant.

@@ -171,16 +171,17 @@ const size = useWidgetSize(cardRef);   // { w, h, compact, squat }
 Ne jamais laisser une card déborder de sa case : le contenu serait rogné. Faire
 disparaître les blocs secondaires plutôt que de les laisser dépasser.
 
-### Registres historiques
+### Une seule façon de déclarer un widget
 
-Les widgets antérieurs à `defineWidget` déclarent encore leurs données dans les
-gros objets centraux (`LEGACY_WIDGET_META`, `LEGACY_WIDGET_CATALOG`,
+Depuis la 2.2.0, **tous** les widgets passent par un manifeste. Les sept
+registres centraux (`LEGACY_WIDGET_META`, `LEGACY_WIDGET_CATALOG`,
 `LEGACY_SIZE_PRESETS`, `LEGACY_WIDGET_DISPOSITIONS`, `LEGACY_WIDGET_FIELD_DEFS`,
-`LEGACY_DEFAULT_WIDGET_CONFIGS`, `LEGACY_WIDGET_COMPONENTS`). Ils continuent de
-fonctionner : `src/widgets/index.ts` applique les manifestes **par-dessus**.
+`LEGACY_DEFAULT_WIDGET_CONFIGS`, `LEGACY_WIDGET_COMPONENTS`) ont été supprimés,
+et avec eux la synchronisation manuelle qu'ils imposaient.
 
-Ne rien ajouter dans ces fichiers pour un nouveau widget. Migrer un widget
-existant = déplacer ses entrées dans un manifeste et les retirer des registres.
+`npm run check:widgets` vérifie ce qui reste à tenir en phase : chaque type de
+l'union `GridWidget['type']` a un manifeste importé, et aucun manifeste ne
+traîne sans import.
 
 ### Toujours importer depuis `@/widgets`
 
