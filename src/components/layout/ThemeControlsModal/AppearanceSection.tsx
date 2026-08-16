@@ -1,8 +1,12 @@
 import { Palette, Image, Sliders, Sun } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-import { THEMES, type ThemeId, type BackgroundMode, type EffectPalette } from '@/config/themes';
+import { THEMES, type ThemeId, type BuiltInThemeId, type BackgroundMode, type EffectPalette } from '@/config/themes';
 import { ImageBackgroundPicker } from './ImageBackgroundPicker';
 import { useI18n } from '@/i18n';
+import { DEFAULT_EDGE_BEHAVIOUR } from '@/lib/background-motion';
+import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
+import { DEFAULT_ILLUMINANCE_THRESHOLD } from '@/hooks/useAutoTheme';
+import { HAThemeImport } from './HAThemeImport';
 
 export function AppearanceSection() {
   const { t } = useI18n();
@@ -16,7 +20,7 @@ export function AppearanceSection() {
           <Palette size={12} /> {t('settings.appearance_section.theme')}
         </h3>
         <div className='grid grid-cols-3 gap-2'>
-          {(Object.entries(THEMES) as [ThemeId, (typeof THEMES)[ThemeId]][]).map(([id, theme]) => (
+          {(Object.entries(THEMES) as [BuiltInThemeId, (typeof THEMES)[BuiltInThemeId]][]).map(([id, theme]) => (
             <button
               key={id}
               onClick={() => setTheme(id)}
@@ -57,6 +61,9 @@ export function AppearanceSection() {
         </div>
       )}
 
+      {/* Thème repris de Home Assistant */}
+      <HAThemeImport />
+
       {/* Auto day/night theme */}
       <div>
         <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-3 flex items-center gap-2'>
@@ -83,7 +90,7 @@ export function AppearanceSection() {
                 onChange={e => setAutoTheme({ ...autoTheme, lightTheme: e.target.value as ThemeId })}
                 className='w-full bg-white/8 border border-white/12 rounded-lg px-2 py-1.5 text-white/70 text-xs'
               >
-                {(Object.keys(THEMES) as ThemeId[]).map(id => (
+                {(Object.keys(THEMES) as BuiltInThemeId[]).map(id => (
                   <option key={id} value={id}>
                     {THEMES[id].label}
                   </option>
@@ -99,13 +106,41 @@ export function AppearanceSection() {
                 onChange={e => setAutoTheme({ ...autoTheme, darkTheme: e.target.value as ThemeId })}
                 className='w-full bg-white/8 border border-white/12 rounded-lg px-2 py-1.5 text-white/70 text-xs'
               >
-                {(Object.keys(THEMES) as ThemeId[]).map(id => (
+                {(Object.keys(THEMES) as BuiltInThemeId[]).map(id => (
                   <option key={id} value={id}>
                     {THEMES[id].label}
                   </option>
                 ))}
               </select>
             </div>
+          </div>
+        )}
+
+        {/* Source de la bascule : le soleil, ou un capteur de luminosité. */}
+        {autoTheme.enabled && (
+          <div className='mt-4 flex flex-col gap-2.5'>
+            <span className='text-white/40 text-[10px] uppercase tracking-wider'>{t('settings.appearance_section.autoThemeSource')}</span>
+            <EntityPicker
+              label={t('settings.appearance_section.autoThemeSensor')}
+              domain='sensor'
+              value={autoTheme.illuminanceEntity ?? ''}
+              onChange={v => setAutoTheme({ ...autoTheme, illuminanceEntity: v })}
+            />
+            <p className='text-white/25 text-[11px] leading-relaxed'>{t('settings.appearance_section.autoThemeSensorDesc')}</p>
+
+            {autoTheme.illuminanceEntity && (
+              <div className='flex items-center gap-3'>
+                <label className='text-white/45 text-xs w-24'>{t('settings.appearance_section.autoThemeThreshold')}</label>
+                <input
+                  type='number'
+                  min={0}
+                  value={autoTheme.illuminanceThreshold ?? DEFAULT_ILLUMINANCE_THRESHOLD}
+                  onChange={e => setAutoTheme({ ...autoTheme, illuminanceThreshold: Math.max(0, parseInt(e.target.value, 10) || 0) })}
+                  className='w-24 bg-white/8 border border-white/12 rounded-lg px-2 py-1.5 text-white/70 text-xs'
+                />
+                <span className='text-white/25 text-[11px] flex-1'>{t('settings.appearance_section.autoThemeThresholdDesc')}</span>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -218,6 +253,7 @@ export function AppearanceSection() {
             const size = cfg.size ?? 1;
             const opacity = cfg.opacity ?? 1;
             const sway = cfg.sway ?? 1;
+            const edge = cfg.edgeBehaviour ?? DEFAULT_EDGE_BEHAVIOUR;
 
             const update = (patch: object) => {
               if (isAurora) {
@@ -332,6 +368,27 @@ export function AppearanceSection() {
                     className='flex-1 accent-blue-500'
                   />
                   <span className='text-white/40 text-xs w-8 tabular-nums text-right'>{Math.round(sway * 100)}%</span>
+                </div>
+
+                {/* Comportement au bord — ce qui arrive quand une bulle sort de l'écran */}
+                <div className='flex flex-col gap-1.5'>
+                  <label className='text-white/45 text-xs'>{t('settings.appearance_section.effectEdge')}</label>
+                  <div className='flex gap-1.5'>
+                    {(['fade', 'bounce', 'wrap'] as const).map(mode => (
+                      <button
+                        key={mode}
+                        onClick={() => update({ edgeBehaviour: mode })}
+                        className={`flex-1 px-2 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+                          edge === mode
+                            ? 'bg-blue-500/25 border-blue-500/40 text-blue-200'
+                            : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'
+                        }`}
+                      >
+                        {t(`settings.appearance_section.effectEdge_${mode}`)}
+                      </button>
+                    ))}
+                  </div>
+                  <p className='text-white/25 text-[11px]'>{t(`settings.appearance_section.effectEdgeHint_${edge}`)}</p>
                 </div>
               </div>
             );

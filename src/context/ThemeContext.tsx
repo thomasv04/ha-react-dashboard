@@ -1,11 +1,25 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
-import { THEMES, type ThemeId, type ThemeTokens, type BackgroundConfig } from '@/config/themes';
+import { THEMES, HA_THEME_ID, themeTokens, isKnownTheme, type ThemeId, type ThemeTokens, type BackgroundConfig } from '@/config/themes';
 import { useSettingsSync } from '@/hooks/useSettingsSync';
 
 export interface AutoThemeConfig {
   enabled: boolean;
   lightTheme: ThemeId;
   darkTheme: ThemeId;
+  /**
+   * Capteur de luminosité pilotant la bascule. Vide = on suit `sun.sun`.
+   *
+   * Le soleil ignore un ciel couvert, des volets fermés, une pièce sans
+   * fenêtre : un capteur reflète la lumière réellement présente.
+   */
+  illuminanceEntity?: string;
+  /**
+   * Seuil en lux au-dessus duquel on considère qu'il fait jour.
+   *
+   * Facultatif : une configuration exportée avant la 2.2.0 ne le contient pas,
+   * et l'exiger ferait échouer son import.
+   */
+  illuminanceThreshold?: number;
 }
 
 export interface PerfSettings {
@@ -37,10 +51,63 @@ const DEFAULT_LAYOUT_SETTINGS: LayoutSettings = {
   rowHeight: 80,
 };
 
+/** Thème repris de Home Assistant, résolu à l'exécution (cf. `ha-themes.ts`). */
+export interface ImportedTheme {
+  name: string;
+  tokens: ThemeTokens;
+}
+
 export interface SoundSettings {
   /** Enable sound feedback on user actions */
   enabled: boolean;
 }
+
+/**
+ * Formats régionaux.
+ *
+ * `'auto'` suit la langue de l'interface — ce que faisait implicitement chaque
+ * card jusqu'ici, en appelant `toLocaleString(language)`. Le réglage n'existe
+ * que pour les cas où la langue ne dit pas tout : un francophone qui préfère
+ * les degrés Fahrenheit, un anglophone qui veut le format 24 h.
+ */
+export interface RegionalSettings {
+  /** `auto` = selon la langue, sinon forcé. */
+  hourFormat: 'auto' | '12' | '24';
+  dateStyle: 'short' | 'medium' | 'long';
+  /** Unité de température. `auto` laisse Home Assistant décider. */
+  tempUnit: 'auto' | 'C' | 'F';
+  /** 0 = dimanche, 1 = lundi. `auto` suit la locale. */
+  firstDayOfWeek: 'auto' | 0 | 1;
+}
+
+export const DEFAULT_REGIONAL_SETTINGS: RegionalSettings = {
+  hourFormat: 'auto',
+  dateStyle: 'medium',
+  tempUnit: 'auto',
+  firstDayOfWeek: 'auto',
+};
+
+/** Comportements propres à un appareil — surtout utiles en tablette murale. */
+export interface BehaviourSettings {
+  /** Minutes d'inactivité avant retour à la première page. 0 = jamais. */
+  returnHomeAfter: number;
+  /** Supprime les notifications passagères. Écran de salon. */
+  doNotDisturb: boolean;
+  /**
+   * Code à 4 chiffres demandé avant d'entrer en mode édition. Vide = aucun.
+   *
+   * **Ce n'est pas une mesure de sécurité** : le code vit côté client, qui peut
+   * le lire. C'est un garde-fou contre le geste involontaire sur une tablette
+   * murale. La sécurité réelle, c'est `adminWrites` côté serveur.
+   */
+  editPin: string;
+}
+
+const DEFAULT_BEHAVIOUR_SETTINGS: BehaviourSettings = {
+  returnHomeAfter: 0,
+  doNotDisturb: false,
+  editPin: '',
+};
 
 const DEFAULT_SOUND_SETTINGS: SoundSettings = {
   enabled: false,
@@ -67,6 +134,15 @@ interface ThemeContextValue {
   /** Sound feedback settings */
   soundSettings: SoundSettings;
   setSoundSettings: (s: SoundSettings) => void;
+  /** Formats régionaux (heure, date, température) */
+  regionalSettings: RegionalSettings;
+  setRegionalSettings: (s: RegionalSettings) => void;
+  /** Comportements propres à l'appareil (retour accueil, ne pas déranger, PIN) */
+  behaviourSettings: BehaviourSettings;
+  setBehaviourSettings: (s: BehaviourSettings) => void;
+  /** Thème importé de Home Assistant, `null` si aucun */
+  importedTheme: ImportedTheme | null;
+  setImportedTheme: (t: ImportedTheme | null) => void;
 }
 
 export const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -74,6 +150,23 @@ export const ThemeContext = createContext<ThemeContextValue | null>(null);
 const STORAGE_KEY = 'ha-dashboard-theme';
 /** Bumped when a stored field changes meaning — see `loadSettings`. */
 const SETTINGS_VERSION = 2;
+
+/**
+ * Vrai si l'appareil est en « ne pas déranger ».
+ *
+ * Lu depuis le localStorage et non par un hook, comme `isSoundEnabled` : le
+ * fournisseur de notifications est monté **au-dessus** de `ThemeContext` et ne
+ * peut donc pas l'interroger.
+ */
+export function isDoNotDisturb(): boolean {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return JSON.parse(stored).behaviourSettings?.doNotDisturb === true;
+  } catch {
+    /* ignore */
+  }
+  return false;
+}
 
 /** Check if sound is enabled by reading localStorage directly (no hook needed) */
 export function isSoundEnabled(): boolean {
@@ -93,6 +186,10 @@ const DEFAULT_AUTO_THEME: AutoThemeConfig = {
   enabled: false,
   lightTheme: 'light',
   darkTheme: 'dark',
+  illuminanceEntity: '',
+  // ~50 lux : la frontière habituelle entre un intérieur éclairé le jour et une
+  // pièce à l'éclairage artificiel du soir.
+  illuminanceThreshold: 50,
 };
 
 function loadSettings(): {
@@ -103,6 +200,9 @@ function loadSettings(): {
   autoTheme: AutoThemeConfig;
   layoutSettings: LayoutSettings;
   soundSettings: SoundSettings;
+  regionalSettings: RegionalSettings;
+  behaviourSettings: BehaviourSettings;
+  importedTheme: ImportedTheme | null;
 } {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -116,6 +216,9 @@ function loadSettings(): {
         autoTheme?: Partial<AutoThemeConfig>;
         layoutSettings?: Partial<LayoutSettings>;
         soundSettings?: Partial<SoundSettings>;
+        regionalSettings?: Partial<RegionalSettings>;
+        behaviourSettings?: Partial<BehaviourSettings>;
+        importedTheme?: ImportedTheme | null;
       };
       const themeId = parsed.themeId ?? 'dark';
       // Avant la v2 le curseur d'opacité n'était branché sur rien : la valeur
@@ -124,7 +227,7 @@ function loadSettings(): {
       const cardOpacity =
         parsed.v === SETTINGS_VERSION && parsed.cardOpacity != null
           ? parsed.cardOpacity
-          : (THEMES[themeId]?.tokens.glassOpacity ?? THEMES.dark.tokens.glassOpacity);
+          : themeTokens(themeId).glassOpacity;
       return {
         themeId,
         background: parsed.background ?? { mode: 'solid' },
@@ -133,6 +236,9 @@ function loadSettings(): {
         autoTheme: { ...DEFAULT_AUTO_THEME, ...(parsed.autoTheme ?? {}) },
         layoutSettings: { ...DEFAULT_LAYOUT_SETTINGS, ...(parsed.layoutSettings ?? {}) },
         soundSettings: { ...DEFAULT_SOUND_SETTINGS, ...(parsed.soundSettings ?? {}) },
+        regionalSettings: { ...DEFAULT_REGIONAL_SETTINGS, ...(parsed.regionalSettings ?? {}) },
+        behaviourSettings: { ...DEFAULT_BEHAVIOUR_SETTINGS, ...(parsed.behaviourSettings ?? {}) },
+        importedTheme: parsed.importedTheme ?? null,
       };
     }
   } catch {
@@ -146,6 +252,9 @@ function loadSettings(): {
     autoTheme: DEFAULT_AUTO_THEME,
     layoutSettings: DEFAULT_LAYOUT_SETTINGS,
     soundSettings: DEFAULT_SOUND_SETTINGS,
+    regionalSettings: DEFAULT_REGIONAL_SETTINGS,
+    behaviourSettings: DEFAULT_BEHAVIOUR_SETTINGS,
+    importedTheme: null,
   };
 }
 
@@ -158,21 +267,27 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
   const [autoTheme, setAutoThemeState] = useState<AutoThemeConfig>(saved.autoTheme);
   const [layoutSettings, setLayoutSettingsState] = useState<LayoutSettings>(saved.layoutSettings);
   const [soundSettings, setSoundSettingsState] = useState<SoundSettings>(saved.soundSettings);
+  const [regionalSettings, setRegionalSettingsState] = useState<RegionalSettings>(saved.regionalSettings);
+  const [behaviourSettings, setBehaviourSettingsState] = useState<BehaviourSettings>(saved.behaviourSettings);
+  const [importedTheme, setImportedThemeState] = useState<ImportedTheme | null>(saved.importedTheme);
 
-  const tokens = THEMES[themeId].tokens;
+  // Le thème importé de Home Assistant n'a pas d'entrée dans `THEMES` : ses
+  // tokens viennent de l'installation, pas du build. Repli sur le thème sombre
+  // si l'import a été supprimé alors qu'il était sélectionné.
+  const tokens = themeId === HA_THEME_ID ? (importedTheme?.tokens ?? THEMES.dark.tokens) : themeTokens(themeId);
 
   // Sync settings with server (multi-device)
   const syncedSettings = useMemo(
-    () => ({ v: SETTINGS_VERSION, themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings }),
-    [themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings]
+    () => ({ v: SETTINGS_VERSION, themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings, regionalSettings, behaviourSettings, importedTheme }),
+    [themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings, regionalSettings, behaviourSettings, importedTheme]
   );
   const handleRemoteUpdate = useCallback((remote: typeof syncedSettings) => {
-    if (remote.themeId && THEMES[remote.themeId]) {
+    if (remote.themeId && isKnownTheme(remote.themeId)) {
       setThemeId(remote.themeId);
       // Même migration que dans `loadSettings` : une opacité venue d'un
       // enregistrement pré-v2 n'a jamais été appliquée, on ne la ressuscite pas.
       setCardOpacityState(
-        remote.v === SETTINGS_VERSION && remote.cardOpacity != null ? remote.cardOpacity : THEMES[remote.themeId].tokens.glassOpacity
+        remote.v === SETTINGS_VERSION && remote.cardOpacity != null ? remote.cardOpacity : themeTokens(remote.themeId).glassOpacity
       );
     }
     if (remote.background) setBackgroundState(remote.background);
@@ -180,6 +295,9 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     if (remote.autoTheme) setAutoThemeState({ ...DEFAULT_AUTO_THEME, ...remote.autoTheme });
     if (remote.layoutSettings) setLayoutSettingsState({ ...DEFAULT_LAYOUT_SETTINGS, ...remote.layoutSettings });
     if (remote.soundSettings) setSoundSettingsState({ ...DEFAULT_SOUND_SETTINGS, ...remote.soundSettings });
+    if (remote.regionalSettings) setRegionalSettingsState({ ...DEFAULT_REGIONAL_SETTINGS, ...remote.regionalSettings });
+    if (remote.behaviourSettings) setBehaviourSettingsState({ ...DEFAULT_BEHAVIOUR_SETTINGS, ...remote.behaviourSettings });
+    if (remote.importedTheme !== undefined) setImportedThemeState(remote.importedTheme);
   }, []);
   useSettingsSync(syncedSettings, handleRemoteUpdate);
 
@@ -242,13 +360,13 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ v: SETTINGS_VERSION, themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings })
+      JSON.stringify({ v: SETTINGS_VERSION, themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings, regionalSettings, behaviourSettings, importedTheme })
     );
-  }, [themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings]);
+  }, [themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings, soundSettings, regionalSettings, behaviourSettings, importedTheme]);
 
   const setTheme = useCallback((id: ThemeId) => {
     setThemeId(id);
-    setCardOpacityState(THEMES[id].tokens.glassOpacity);
+    setCardOpacityState(themeTokens(id).glassOpacity);
   }, []);
 
   const setBackground = useCallback((bg: BackgroundConfig) => setBackgroundState(bg), []);
@@ -257,6 +375,9 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
   const setAutoTheme = useCallback((cfg: AutoThemeConfig) => setAutoThemeState(cfg), []);
   const setLayoutSettings = useCallback((s: LayoutSettings) => setLayoutSettingsState(s), []);
   const setSoundSettings = useCallback((s: SoundSettings) => setSoundSettingsState(s), []);
+  const setRegionalSettings = useCallback((s: RegionalSettings) => setRegionalSettingsState(s), []);
+  const setBehaviourSettings = useCallback((s: BehaviourSettings) => setBehaviourSettingsState(s), []);
+  const setImportedTheme = useCallback((t: ImportedTheme | null) => setImportedThemeState(t), []);
 
   const value = useMemo(
     () => ({
@@ -275,6 +396,12 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
       setLayoutSettings,
       soundSettings,
       setSoundSettings,
+      regionalSettings,
+      setRegionalSettings,
+      behaviourSettings,
+      setBehaviourSettings,
+      importedTheme,
+      setImportedTheme,
     }),
     [
       themeId,
@@ -285,6 +412,9 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
       autoTheme,
       layoutSettings,
       soundSettings,
+      regionalSettings,
+      behaviourSettings,
+      importedTheme,
       setTheme,
       setBackground,
       setCardOpacity,
@@ -292,6 +422,9 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
       setAutoTheme,
       setLayoutSettings,
       setSoundSettings,
+      setRegionalSettings,
+      setBehaviourSettings,
+      setImportedTheme,
     ]
   );
 

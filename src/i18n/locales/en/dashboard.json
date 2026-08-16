@@ -25,6 +25,28 @@
     "continueOffline": "Continue anyway",
     "retry": "Retry"
   },
+  "offlineTitle": "Offline",
+  "offlineDescription": "Configuration unavailable, showing defaults",
+  "saveFailed": "Could not save the configuration",
+  "conflictTitle": "Changed elsewhere",
+  "conflictDescription": "Another device saved in the meantime. Reload the page before redoing your changes.",
   "pack": "Reflow",
-  "packTooltip": "Close gaps in the layout (current breakpoint only)"
+  "packTooltip": "Close gaps in the layout (current breakpoint only)",
+  "repairedTitle": "Configuration repaired",
+  "repairedDescription": "Unreadable items were dropped. The rest of the dashboard is intact.",
+  "undo": "Undo (Ctrl+Z)",
+  "redo": "Redo (Ctrl+Shift+Z)",
+  "quickBar": {
+    "searchEntity": "Search an entity…",
+    "searchCommand": "Go to a page or panel…",
+    "page": "Page",
+    "panel": "Panel"
+  },
+  "pinTitle": "Access code",
+  "pinDesc": "Enter the code to edit the dashboard.",
+  "pinWrong": "Wrong code.",
+  "selectionCount": "{value} selected",
+  "selectionDelete": "Delete selection",
+  "selectionClear": "Clear selection",
+  "selectionHint": "Shift+click to select multiple cards"
 }

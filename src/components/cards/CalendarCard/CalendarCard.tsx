@@ -11,6 +11,7 @@ import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 import type { CalendarCardConfig } from '@/types/widget-configs';
+import { useFormats } from '@/hooks/useFormats';
 
 /** Forme d'un évènement renvoyé par `calendar.get_events` */
 interface CalendarEvent {
@@ -32,7 +33,8 @@ const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDat
 const REFRESH_MS = 15 * 60 * 1000;
 
 export function CalendarCard() {
-  const { t, language } = useI18n();
+  const { t } = useI18n();
+  const formats = useFormats();
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<CalendarCardConfig>(widgetId || 'calendar');
@@ -75,9 +77,9 @@ export function CalendarCard() {
         ? t('widgets.calendar.today')
         : dayDiff === 1
           ? t('widgets.calendar.tomorrow')
-          : start.toLocaleDateString(language, { weekday: 'short', day: 'numeric', month: 'short' });
+          : formats.formatDate(start, 'medium');
     if (isAllDay(event)) return day;
-    return `${day} ${start.toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' })}`;
+    return `${day} ${formats.formatTime(start)}`;
   };
 
   return (

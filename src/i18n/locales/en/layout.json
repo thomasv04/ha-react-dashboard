@@ -29,7 +29,9 @@
     "advanced": "Advanced",
     "layout": "Layout",
     "sound": "Sound",
-    "widgets": "Widgets"
+    "widgets": "Widgets",
+    "actions": "Actions",
+    "visibility": "Visibility"
   },
   "soundTab": {
     "intro": "Choose the sound played for each action. Set to 'none' to mute an action.",
@@ -260,5 +262,53 @@
   "dockLabelsOff": "Labels off",
   "dockRemove": "Remove from dock",
   "dockAdd": "Add to dock",
-  "dockNoPanels": "No custom panel yet. Create one from the edit mode, then add it here."
+  "dockNoPanels": "No custom panel yet. Create one from the edit mode, then add it here.",
+  "duplicateWidget": "Duplicate widget",
+  "actions": {
+    "intro": "Choose what a tap or a long press does on this card. “Default” keeps the widget's usual behaviour.",
+    "tap": "Tap",
+    "hold": "Long press",
+    "target": "Destination",
+    "service": "Service",
+    "entity": "Target entity",
+    "entityHint": "Leave empty to use the card's own entity.",
+    "serviceData": "Data (JSON)",
+    "url": "Address",
+    "type": {
+      "default": "Default",
+      "more-info": "More info",
+      "navigate": "Navigate",
+      "call-service": "Call service",
+      "url": "Open link",
+      "none": "Nothing"
+    }
+  },
+  "visibility": {
+    "intro": "Only show this card when every condition below is met. In edit mode it stays visible, dimmed, so it remains editable.",
+    "empty": "No condition — the card is always shown.",
+    "add": "Add a condition",
+    "entity": "Entity",
+    "stateIs": "State equals",
+    "stateIsNot": "State differs from",
+    "kind": {
+      "state": "Entity state",
+      "screen": "Screen size"
+    },
+    "screen": {
+      "lg": "Desktop",
+      "md": "Tablet",
+      "sm": "Mobile"
+    }
+  },
+  "badges": {
+    "add": "Add a badge"
+  },
+  "stateStyles": {
+    "title": "Icon by state",
+    "intro": "Replace the icon or its color when a rule matches. The first matching rule wins — put the specific case on top.",
+    "rule": "Rule {value}",
+    "icon": "Icon",
+    "color": "Color",
+    "add": "Add a rule"
+  }
 }

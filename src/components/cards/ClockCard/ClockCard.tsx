@@ -7,6 +7,7 @@ import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 import type { ClockCardConfig } from '@/types/widget-configs';
+import { useFormats } from '@/hooks/useFormats';
 
 const ACCENT = '#a78bfa';
 
@@ -98,17 +99,20 @@ function AnalogFace({ date, size, id }: { date: Date; size: number; id: string }
 }
 
 export function ClockCard() {
-  const { t, language } = useI18n();
+  const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<ClockCardConfig>(widgetId || 'clock');
   const cardRef = useRef<HTMLDivElement>(null);
   const size = useWidgetSize(cardRef);
+  const formats = useFormats();
 
   const showSeconds = config?.showSeconds ?? false;
   const showDate = config?.showDate ?? true;
   const showAnalog = config?.showAnalog ?? true;
-  const hour12 = config?.hour12 ?? false;
+  // Le réglage propre à la card l'emporte ; sans lui, on suit le format
+  // régional. Les cards déjà configurées gardent donc leur affichage.
+  const hour12 = config?.hour12 ?? formats.hour12;
 
   // Le cadran a besoin de la trotteuse pour ne pas paraître arrêté.
   const now = useNow(showSeconds || showAnalog);
@@ -124,13 +128,13 @@ export function ClockCard() {
   const analog = showAnalog && tier === 'lg';
   const sideBySide = analog && (size.w === 'lg' || size.w === 'xl');
 
-  const time = now.toLocaleTimeString(language, {
+  const time = now.toLocaleTimeString(formats.locale, {
     hour: '2-digit',
     minute: '2-digit',
     ...(showSeconds ? { second: '2-digit' } : {}),
     hour12,
   });
-  const date = now.toLocaleDateString(language, { weekday: 'long', day: 'numeric', month: 'long' });
+  const date = formats.formatDate(now, 'long');
 
   const digital = (
     <div className={cn('min-w-0', sideBySide ? 'text-left' : 'text-center')}>

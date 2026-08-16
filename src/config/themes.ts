@@ -1,4 +1,31 @@
-export type ThemeId = 'dark' | 'light' | 'glass' | 'midnight' | 'emerald' | 'clay' | 'clay-dark';
+/** Thèmes livrés avec le dashboard, dont les tokens sont connus au build. */
+export type BuiltInThemeId = 'dark' | 'light' | 'glass' | 'midnight' | 'emerald' | 'clay' | 'clay-dark';
+
+/**
+ * `ha` désigne le thème importé de Home Assistant. Il n'a délibérément pas
+ * d'entrée dans `THEMES` : ses tokens viennent des `themes.yaml` de
+ * l'installation, pas du build. D'où la distinction avec `BuiltInThemeId`, qui
+ * garde `THEMES` exhaustif pour tous les autres.
+ */
+export type ThemeId = BuiltInThemeId | 'ha';
+
+export const HA_THEME_ID = 'ha' satisfies ThemeId;
+
+/**
+ * Tokens d'un thème, `ha` compris.
+ *
+ * Le thème importé n'a pas de tokens au build : on rend ceux du thème sombre,
+ * dont `haThemeToTokens` part de toute façon. L'appelant qui dispose du thème
+ * importé (le fournisseur de thème) applique les siens par-dessus.
+ */
+export function themeTokens(id: ThemeId): ThemeTokens {
+  return THEMES[id as BuiltInThemeId]?.tokens ?? THEMES.dark.tokens;
+}
+
+/** Vrai si l'identifiant désigne un thème que l'application sait rendre. */
+export function isKnownTheme(id: string): id is ThemeId {
+  return id === HA_THEME_ID || id in THEMES;
+}
 
 export type ThemeMode = 'glass' | 'clay';
 
@@ -50,7 +77,7 @@ export interface ThemeTokens {
   shadowHighlight?: string;
 }
 
-export const THEMES: Record<ThemeId, { label: string; tokens: ThemeTokens }> = {
+export const THEMES: Record<BuiltInThemeId, { label: string; tokens: ThemeTokens }> = {
   dark: {
     label: 'Sombre',
     tokens: {
@@ -215,6 +242,8 @@ export type BackgroundMode = 'solid' | 'gradient' | 'image' | 'aurora' | 'lavaLa
 
 export type EffectPalette = 'default' | 'warm' | 'cool' | 'nature' | 'mono';
 
+import type { EdgeBehaviour } from '@/lib/background-motion';
+
 export interface AuroraConfig {
   palette?: EffectPalette;
   orbCount?: number;
@@ -223,6 +252,8 @@ export interface AuroraConfig {
   opacity?: number;
   /** Amplitude of sinusoidal sway (0 = straight lines, 1 = default, 3 = very wavy) */
   sway?: number;
+  /** Ce qui arrive à une particule au bord de l'écran (cf. `background-motion.ts`). */
+  edgeBehaviour?: EdgeBehaviour;
 }
 
 export interface LavaConfig {
@@ -233,6 +264,8 @@ export interface LavaConfig {
   opacity?: number;
   /** Amplitude of sinusoidal sway (0 = straight lines, 1 = default, 3 = very wavy) */
   sway?: number;
+  /** Ce qui arrive à une particule au bord de l'écran (cf. `background-motion.ts`). */
+  edgeBehaviour?: EdgeBehaviour;
 }
 
 export interface BackgroundConfig {

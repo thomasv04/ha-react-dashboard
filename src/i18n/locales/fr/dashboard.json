@@ -25,6 +25,28 @@
     "continueOffline": "Continuer quand même",
     "retry": "Réessayer"
   },
+  "offlineTitle": "Hors ligne",
+  "offlineDescription": "Configuration indisponible, affichage par défaut",
+  "saveFailed": "Impossible de sauvegarder la configuration",
+  "conflictTitle": "Modifié ailleurs",
+  "conflictDescription": "Un autre appareil a enregistré entre-temps. Rechargez la page avant de refaire vos modifications.",
   "pack": "Réorganiser",
-  "packTooltip": "Referme les trous de la mise en page (breakpoint affiché uniquement)"
+  "packTooltip": "Referme les trous de la mise en page (breakpoint affiché uniquement)",
+  "repairedTitle": "Configuration réparée",
+  "repairedDescription": "Des éléments illisibles ont été écartés. Le reste du dashboard est intact.",
+  "undo": "Annuler (Ctrl+Z)",
+  "redo": "Rétablir (Ctrl+Maj+Z)",
+  "quickBar": {
+    "searchEntity": "Rechercher une entité…",
+    "searchCommand": "Aller à une page ou un panneau…",
+    "page": "Page",
+    "panel": "Panneau"
+  },
+  "pinTitle": "Code d'accès",
+  "pinDesc": "Saisissez le code pour modifier le dashboard.",
+  "pinWrong": "Code incorrect.",
+  "selectionCount": "{value} sélectionné(s)",
+  "selectionDelete": "Supprimer la sélection",
+  "selectionClear": "Désélectionner",
+  "selectionHint": "Maj+clic pour sélectionner plusieurs cartes"
 }
