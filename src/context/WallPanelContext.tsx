@@ -17,7 +17,7 @@ interface WallPanelContextValue {
   /** Indique si le wallpanel a déjà été configuré */
   isConfigured: boolean;
   /**
-   * Comme config.enabled, mais forcé à true si ?wp_enabled=true est dans l'URL.
+   * Comme config.enabled, mais forcé à true si ?hrd_screensaver=true est dans l'URL.
    * À utiliser partout à la place de config.enabled.
    */
   enabled: boolean;
@@ -26,6 +26,9 @@ interface WallPanelContextValue {
   enterWallPanelEditMode: () => void;
   exitWallPanelEditMode: () => void;
 }
+
+/** Paramètre d'URL qui force l'écran de veille. Voir `urlForced` plus bas. */
+export const SCREENSAVER_PARAM = 'hrd_screensaver';
 
 const WallPanelContext = createContext<WallPanelContextValue | null>(null);
 
@@ -43,8 +46,26 @@ export function WallPanelProvider({ children, initialConfig, initialLayout }: Wa
     initialLayout ?? { ...DEFAULT_LAYOUT, widgets: { lg: [], md: [], sm: [] } }
   );
 
-  // ?wp_enabled=true in the URL forces the screensaver on regardless of config.enabled
-  const urlForced = new URLSearchParams(window.location.search).get('wp_enabled') === 'true';
+  // La configuration servie arrive après le premier rendu : au démarrage, le
+  // dashboard se peint depuis son cache local, et la réponse du serveur ne
+  // tombe qu'ensuite. Sans cette adoption, l'écran de veille restait sur la
+  // configuration mise en cache — donc sur une ancienne liste d'images, alors
+  // que les widgets et les dispositions, eux, se mettaient à jour. C'est ce qui
+  // faisait défiler des photos qui n'étaient plus dans la bibliothèque choisie.
+  useEffect(() => {
+    if (initialConfig) setConfig(initialConfig);
+  }, [initialConfig]);
+
+  useEffect(() => {
+    if (initialLayout) setWallPanelLayout(initialLayout);
+  }, [initialLayout]);
+
+  // Force l'écran de veille quel que soit config.enabled.
+  //
+  // Le préfixe `hrd_` (ha-react-dashboard) et non `wp_` : le module WallPanel de
+  // Home Assistant lit `?wp_enabled=true` de son côté et posait alors son propre
+  // écran de veille par-dessus le nôtre — avec ses images, pas les nôtres.
+  const urlForced = new URLSearchParams(window.location.search).get(SCREENSAVER_PARAM) === 'true';
   const enabled = config.enabled || urlForced;
 
   const isConfigured = config.image_urls.length > 0 || wallPanelLayout.widgets.lg.length > 0;
@@ -63,7 +84,7 @@ export function WallPanelProvider({ children, initialConfig, initialLayout }: Wa
   }, []);
   const exitWallPanelEditMode = useCallback(() => setIsWallPanelEditMode(false), []);
 
-  // Activation forcée via URL param (?wp_enabled=true)
+  // Activation forcée via URL param (?hrd_screensaver=true)
   useEffect(() => {
     if (urlForced) setIsActive(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
