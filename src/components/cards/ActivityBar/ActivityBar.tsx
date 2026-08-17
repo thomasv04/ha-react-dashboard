@@ -11,6 +11,7 @@ import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { resolveIcon } from '@/lib/lucide-icon-map';
 import { useColorResolver } from '@/hooks/useColor';
 import { colorAlpha } from '@/lib/color-value';
+import { isActiveState, toggleService } from '@/lib/ha-service';
 import type { ActivityBarConfig, ActivityPill } from '@/types/widget-configs';
 
 type Translate = (key: string, params?: Record<string, string | number>) => string;
@@ -105,16 +106,6 @@ const MORE_INFO_TYPES: Record<string, string> = {
   automation: 'automation',
 };
 
-/**
- * Domaines dont la bascule n'est pas `homeassistant.toggle`.
- * ponytail: alarm_control_panel n'y est pas — armer/désarmer demande un code,
- * ça reste une fiche détail. À câbler si le besoin arrive.
- */
-const TOGGLE_SERVICES: Record<string, (state: string) => [string, string]> = {
-  lock: state => ['lock', state === 'locked' ? 'unlock' : 'lock'],
-  cover: state => ['cover', state === 'open' ? 'close_cover' : 'open_cover'],
-};
-
 /** `{state}` → état, `{attr.X}` → attribut X. */
 function renderTemplate(template: string, state: string, attributes: Record<string, unknown> | undefined) {
   return template.replace(/\{state\}/g, state).replace(/\{attr\.([\w.]+)\}/g, (_, key: string) => String(attributes?.[key] ?? ''));
@@ -194,7 +185,7 @@ export function ActivityBar() {
     }
     if (!helpers) return;
     const [serviceDomain, service] =
-      pill.action === 'service' ? (pill.service ?? '').split('.') : (TOGGLE_SERVICES[domain]?.(pill.state) ?? ['homeassistant', 'toggle']);
+      pill.action === 'service' ? (pill.service ?? '').split('.') : toggleService(domain, isActiveState(pill.state));
     if (!serviceDomain || !service) return;
     helpers.callService({
       domain: serviceDomain as never,

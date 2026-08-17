@@ -90,7 +90,7 @@ function ControlButton({ ctrl }: { ctrl: RoomControl }) {
 
   const iconName = ctrl.icon;
   const customIconUrl = iconName && isCustomIcon(iconName) ? getCustomIconUrl(iconName) : undefined;
-   
+
   const IconComp = !customIconUrl ? (resolveIcon(iconName) ?? FALLBACK_ICONS[iconName] ?? Lightbulb) : null;
 
   const { color, active } = useControlState(ctrl);

@@ -328,5 +328,11 @@
     "icon": "Icon",
     "color": "Color",
     "add": "Add a rule"
+  },
+  "areaControls": {
+    "none": "No area",
+    "add": "Controls",
+    "domains": "Domains",
+    "entities": "Entities"
   }
 }

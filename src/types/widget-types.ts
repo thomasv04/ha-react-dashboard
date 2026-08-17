@@ -143,8 +143,12 @@ export interface RoomControl {
   entityId?: string;
   /** If set, the button color reflects this entity's state (on/off) */
   stateEntity?: string;
-  /** Accent color when the entity is on (hex) */
+  /** Accent color when active — `#hex` or a Nunjucks template */
   color?: string;
+  /** Derived from an area: the service targets the whole area instead of one entity */
+  areaId?: string;
+  /** Derived from an area: the button is active as soon as one of these is */
+  stateEntities?: string[];
 }
 
 export interface RoomEntry {
@@ -435,6 +439,13 @@ export interface RoomCardConfig extends WidgetSoundOverrides {
   lightEntities?: string[];
   controls?: RoomControl[];
   panelId?: string;
+  /** HA area id — its entities feed the card, like the built-in area card */
+  area?: string;
+  /**
+   * Which controls the area contributes: `'light'` for a whole domain,
+   * `'light.kitchen_strip'` for a single entity. The dot tells them apart.
+   */
+  areaControls?: string[];
 }
 
 // ── Union type ────────────────────────────────────────────────────────────────

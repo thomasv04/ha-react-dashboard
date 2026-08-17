@@ -46,6 +46,7 @@ export default defineWidget({
   ],
 
   fields: [
+    { key: 'area', label: 'Zone Home Assistant', fieldType: 'area-controls' },
     { key: 'label', label: 'Nom de la pièce', fieldType: 'text' },
     { key: 'icon', label: 'Icône', fieldType: 'icon' },
     { key: 'iconBg', label: 'Dégradé icône', fieldType: 'gradient' },

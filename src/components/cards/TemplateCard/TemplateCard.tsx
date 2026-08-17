@@ -30,7 +30,7 @@ export function TemplateCard() {
 
   const iconName = iconTemplate && !iconTemplate.startsWith('[Erreur') ? resolveIconName(iconTemplate) : '';
   const customIconUrl = iconName && isCustomIcon(iconName) ? getCustomIconUrl(iconName) : undefined;
-   
+
   const IconComponent = iconName && !customIconUrl ? resolveIcon(iconName) : null;
   const imageUrl = imageTemplate && !imageTemplate.startsWith('[Erreur') ? imageTemplate : '';
 

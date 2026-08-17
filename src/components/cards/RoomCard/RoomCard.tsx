@@ -13,6 +13,7 @@ import { useI18n } from '@/i18n';
 import { useGroupEmbedded } from '@/components/cards/GroupCard/GroupCard';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useControlState } from '@/hooks/useControlState';
+import { useArea, useAreaControls } from '@/hooks/useAreaControls';
 import { colorAlpha } from '@/lib/color-value';
 import type { SoundPreset } from '@/lib/sounds';
 
@@ -32,7 +33,7 @@ function ControlButton({
 
   const iconName = ctrl.icon;
   const customIconUrl = iconName && isCustomIcon(iconName) ? getCustomIconUrl(iconName) : undefined;
-   
+
   const IconComp = !customIconUrl ? (resolveIcon(iconName) ?? Package) : null;
 
   const { color, active } = useControlState(ctrl);
@@ -42,8 +43,9 @@ function ControlButton({
     helpers.callService({
       domain: ctrl.domain as never,
       service: ctrl.service as never,
-      target: ctrl.entityId ? { entity_id: ctrl.entityId } : undefined,
-    });
+      // Un bouton de domaine vise la zone entière, un bouton d'entité son entité.
+      target: ctrl.areaId ? { area_id: ctrl.areaId } : ctrl.entityId ? { entity_id: ctrl.entityId } : undefined,
+    } as never);
     playFeedback('room_tap');
   };
 
@@ -130,20 +132,29 @@ export function RoomCard() {
   const config = getWidgetConfig<RoomCardConfig>(widgetId || 'room');
   const { openPanel } = usePanel();
 
-  const label = config?.label ?? 'Pièce';
   const iconName = config?.icon ?? 'Home';
   const iconBg = config?.iconBg ?? 'from-blue-500 to-sky-400';
   const panelId = config?.panelId;
   const lightEntities = config?.lightEntities ?? [];
-  const controls = config?.controls ?? [];
 
-  const sensorIds = [config?.tempEntity, config?.humidityEntity].filter(Boolean) as string[];
+  // Zone HA : ses boutons passent devant ceux saisis à la main, et ses capteurs
+  // de température et d'humidité servent de repli — c'est ce que HA déclare
+  // dans le registre des zones, autant s'en servir.
+  const area = useArea(config?.area);
+  const label = config?.label || area?.name || 'Pièce';
+  const areaControls = useAreaControls(config?.area, config?.areaControls);
+  const controls = [...areaControls, ...(config?.controls ?? [])];
+
+  const tempEntity = config?.tempEntity || area?.temperature_entity_id || undefined;
+  const humidityEntity = config?.humidityEntity || area?.humidity_entity_id || undefined;
+
+  const sensorIds = [tempEntity, humidityEntity].filter(Boolean) as string[];
   const sensors = useEntities(sensorIds);
 
-  const rawTemp = config?.tempEntity ? sensors?.[config.tempEntity]?.state : undefined;
+  const rawTemp = tempEntity ? sensors?.[tempEntity]?.state : undefined;
   const temp = rawTemp && rawTemp !== 'unavailable' ? Number(rawTemp) : null;
 
-  const rawHumidity = config?.humidityEntity ? sensors?.[config.humidityEntity]?.state : undefined;
+  const rawHumidity = humidityEntity ? sensors?.[humidityEntity]?.state : undefined;
   const humidity = rawHumidity && rawHumidity !== 'unavailable' ? Number(rawHumidity) : null;
 
   const customIconUrl = iconName && isCustomIcon(iconName) ? getCustomIconUrl(iconName) : undefined;
