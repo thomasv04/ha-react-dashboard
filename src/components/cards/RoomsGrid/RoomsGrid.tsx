@@ -17,7 +17,6 @@ import {
 import { useHass } from '@hakit/core';
 import { usePanel, type PanelId } from '@/context/PanelContext';
 import { useEntities } from '@/hooks/useEntities';
-import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { RoomsGridConfig, RoomEntry, RoomControl } from '@/types/widget-configs';
@@ -25,6 +24,8 @@ import { resolveIcon, isCustomIcon, getCustomIconUrl, useIconCatalog } from '@/l
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import { cn } from '@/lib/utils';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
+import { useControlState } from '@/hooks/useControlState';
+import { colorAlpha } from '@/lib/color-value';
 
 const FALLBACK_ICONS: Record<string, LucideIcon> = {
   UtensilsCrossed,
@@ -86,16 +87,13 @@ function ControlButton({ ctrl }: { ctrl: RoomControl }) {
   useIconCatalog();
   const { helpers } = useHass();
   const playFeedback = useSoundFeedback();
-  const stateEntity = useSafeEntity(ctrl.stateEntity ?? '');
-  const isOn = stateEntity ? stateEntity.state === 'on' : false;
 
   const iconName = ctrl.icon;
   const customIconUrl = iconName && isCustomIcon(iconName) ? getCustomIconUrl(iconName) : undefined;
-  // eslint-disable-next-line react-hooks/static-components
+   
   const IconComp = !customIconUrl ? (resolveIcon(iconName) ?? FALLBACK_ICONS[iconName] ?? Lightbulb) : null;
 
-  const color = ctrl.color ?? '#60a5fa';
-  const active = ctrl.stateEntity ? isOn : false;
+  const { color, active } = useControlState(ctrl);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -115,7 +113,7 @@ function ControlButton({ ctrl }: { ctrl: RoomControl }) {
       className='flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-2xl border transition-all duration-300'
       style={
         active
-          ? { background: `${color}18`, borderColor: `${color}30` }
+          ? { background: colorAlpha(color, 9), borderColor: colorAlpha(color, 19) }
           : { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }
       }
     >

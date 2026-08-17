@@ -3,7 +3,6 @@ import { Thermometer, Lightbulb, Droplets, ChevronRight, Package } from 'lucide-
 import { useHass } from '@hakit/core';
 import { usePanel, type PanelId } from '@/context/PanelContext';
 import { useEntities } from '@/hooks/useEntities';
-import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { RoomCardConfig, RoomControl } from '@/types/widget-configs';
@@ -13,7 +12,8 @@ import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { useGroupEmbedded } from '@/components/cards/GroupCard/GroupCard';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
-import { useColor } from '@/hooks/useColor';
+import { useControlState } from '@/hooks/useControlState';
+import { colorAlpha } from '@/lib/color-value';
 import type { SoundPreset } from '@/lib/sounds';
 
 // ── Control button ─────────────────────────────────────────────────────────────
@@ -29,16 +29,13 @@ function ControlButton({
 }) {
   const { helpers } = useHass();
   const playFeedback = useSoundFeedback('rooms', soundOverrides);
-  const stateEntity = useSafeEntity(ctrl.stateEntity ?? '');
-  const isOn = stateEntity ? stateEntity.state === 'on' : false;
 
   const iconName = ctrl.icon;
   const customIconUrl = iconName && isCustomIcon(iconName) ? getCustomIconUrl(iconName) : undefined;
-  // eslint-disable-next-line react-hooks/static-components
+   
   const IconComp = !customIconUrl ? (resolveIcon(iconName) ?? Package) : null;
 
-  const color = useColor(ctrl.color) ?? '#60a5fa';
-  const active = ctrl.stateEntity ? isOn : false;
+  const { color, active } = useControlState(ctrl);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -59,7 +56,7 @@ function ControlButton({
       style={{
         padding: embedded ? '6px 4px' : '8px 4px',
         ...(active
-          ? { background: `${color}18`, borderColor: `${color}30` }
+          ? { background: colorAlpha(color, 9), borderColor: colorAlpha(color, 19) }
           : { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }),
       }}
     >
