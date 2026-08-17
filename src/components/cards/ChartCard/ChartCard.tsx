@@ -10,6 +10,7 @@ import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useWidgetSize, type WidgetHeightClass } from '@/hooks/useWidgetSize';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
+import { useColor } from '@/hooks/useColor';
 import type { ChartCardConfig } from '@/types/widget-configs';
 
 /**
@@ -28,6 +29,8 @@ export function ChartCard() {
 
   const entityId = config?.entityId ?? '';
   const entity = useSafeEntity(entityId);
+  // Avant le retour anticipé : un hook ne se saute pas.
+  const color = useColor(config?.color) ?? '#60a5fa';
   const hours = config?.hours ?? 24;
   const { data, loading } = useEntityHistory(entityId, hours);
 
@@ -43,7 +46,6 @@ export function ChartCard() {
   const unit = (entity.attributes.unit_of_measurement as string | undefined) ?? '';
   // Une entité non numérique n'a pas de courbe : sa frise on/off la remplace.
   const variant = config?.variant ?? (Number.isNaN(parseFloat(entity.state)) ? 'timeline' : 'line');
-  const color = config?.color ?? '#60a5fa';
 
   return (
     <motion.div

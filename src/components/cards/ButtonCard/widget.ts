@@ -49,7 +49,7 @@ export default defineWidget({
     { key: 'label', label: 'Libellé du bouton', fieldType: 'text' },
     { key: 'subtitle', label: 'Sous-titre (optionnel)', fieldType: 'text' },
     { key: 'icon', label: 'Icône', fieldType: 'icon' },
-    { key: 'color', label: 'Couleur accent (hex)', fieldType: 'text' },
+    { key: 'color', label: 'Couleur accent (#hex ou template Jinja)', fieldType: 'text' },
     { key: 'domain', label: 'Domaine HA (ex: script, light)', fieldType: 'text' },
     { key: 'service', label: 'Service (ex: turn_on, toggle)', fieldType: 'text' },
     { key: 'entityId', label: 'Entité cible (optionnel)', fieldType: 'entity' },

@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { useGroupEmbedded } from '@/components/cards/GroupCard/GroupCard';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
+import { useColor } from '@/hooks/useColor';
 import type { SoundPreset } from '@/lib/sounds';
 
 // ── Control button ─────────────────────────────────────────────────────────────
@@ -36,7 +37,7 @@ function ControlButton({
   // eslint-disable-next-line react-hooks/static-components
   const IconComp = !customIconUrl ? (resolveIcon(iconName) ?? Package) : null;
 
-  const color = ctrl.color ?? '#60a5fa';
+  const color = useColor(ctrl.color) ?? '#60a5fa';
   const active = ctrl.stateEntity ? isOn : false;
 
   const handleClick = (e: React.MouseEvent) => {

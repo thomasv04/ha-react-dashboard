@@ -169,6 +169,22 @@ export function ListEditor({
                           </select>
                         </div>
                       );
+                    } else if (field.fieldType === 'boolean') {
+                      content = (
+                        <label className='flex items-center gap-3 cursor-pointer select-none py-1'>
+                          <div className='relative'>
+                            <input
+                              type='checkbox'
+                              checked={Boolean(item[field.key])}
+                              onChange={e => updateItem(idx, field.key, e.target.checked)}
+                              className='sr-only peer'
+                            />
+                            <div className='w-9 h-5 rounded-full bg-white/10 peer-checked:bg-blue-500/60 transition-colors' />
+                            <div className='absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-md transition-transform peer-checked:translate-x-4' />
+                          </div>
+                          <span className='text-xs text-white/60'>{field.label}</span>
+                        </label>
+                      );
                     } else if (field.fieldType === 'panel-select') {
                       content = (
                         <PanelSelectField

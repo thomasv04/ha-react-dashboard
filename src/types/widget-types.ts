@@ -19,8 +19,10 @@ export interface ActivityPill {
   icon?: string; // lucide icon name
   /** Template: {state} is replaced by entity state, {attr.X} by attribute X */
   template?: string;
-  /** Accent colour (hex) — overrides the state-derived colour */
+  /** Accent colour — `#hex` or a Nunjucks template; overrides the state-derived colour */
   color?: string;
+  /** Icon-only pill: hide the text entirely (like a Mushroom badge without `content`) */
+  hideLabel?: boolean;
   /** Click behaviour: nothing, detail sheet, entity toggle, or a HA service */
   action?: 'none' | 'more-info' | 'toggle' | 'service';
   /** action === 'service': 'domain.service', called on the pill entity */

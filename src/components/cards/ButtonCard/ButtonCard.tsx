@@ -11,6 +11,7 @@ import { resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-m
 import { useRipple, RippleLayer } from '@/components/ui/Ripple';
 import { useI18n } from '@/i18n';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
+import { useColor } from '@/hooks/useColor';
 
 type FeedbackState = 'idle' | 'confirming' | 'running' | 'success' | 'error';
 
@@ -27,7 +28,7 @@ export function ButtonCard() {
 
   const label = config?.label ?? t('widgets.button.label');
   const subtitle = config?.subtitle;
-  const color = config?.color ?? '#3b82f6';
+  const color = useColor(config?.color) ?? '#3b82f6';
   const domain = config?.domain ?? 'script';
   const service = config?.service ?? 'turn_on';
   const requireConfirm = config?.requireConfirm ?? false;
