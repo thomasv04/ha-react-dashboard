@@ -18,6 +18,7 @@ import { FieldInput } from './FieldInput';
 import { ListEditor } from './ListEditor';
 import { WeatherIconsEditor } from './WeatherIconsEditor';
 import { PanelSelectField } from './PanelSelectField';
+import { AreaControlsField } from './AreaControlsField';
 import { SoundTab } from './SoundTab';
 import { WIDGET_SOUND_ACTIONS } from '@/config/widget-sound-actions';
 import type { SoundPreset } from '@/lib/sounds';
@@ -321,6 +322,20 @@ export function WidgetEditModal() {
                           </div>
                           <span className='text-xs text-white/60'>{field.label}</span>
                         </label>
+                      );
+                    }
+                    if (field.fieldType === 'area-controls') {
+                      return (
+                        <AreaControlsField
+                          key={field.key}
+                          label={field.label}
+                          area={(draft.area as string) ?? ''}
+                          controls={(draft.areaControls as string[]) ?? []}
+                          onChange={next => {
+                            updateField('area', next.area);
+                            updateField('areaControls', next.controls);
+                          }}
+                        />
                       );
                     }
                     if (field.fieldType === 'panel-select') {

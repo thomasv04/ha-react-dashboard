@@ -14,7 +14,9 @@ export interface WidgetFieldDef {
     | 'select'
     | 'multiselect'
     | 'weather-icons'
-    | 'panel-select';
+    | 'panel-select'
+    /** Zone HA + commandes qu'elle apporte ; écrit `area` et `areaControls`. */
+    | 'area-controls';
   /** For entity fields: filter by domain (e.g. 'sensor', 'climate') */
   domain?: string;
   /** For list fields: sub-fields of each item */

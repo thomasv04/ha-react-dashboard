@@ -46,6 +46,7 @@ export default defineWidget({
   ],
 
   fields: [
+    { key: 'area', label: 'Zone Home Assistant', fieldType: 'area-controls' },
     { key: 'label', label: 'Nom de la pièce', fieldType: 'text' },
     { key: 'icon', label: 'Icône', fieldType: 'icon' },
     { key: 'iconBg', label: 'Dégradé icône', fieldType: 'gradient' },
@@ -64,7 +65,7 @@ export default defineWidget({
         { key: 'service', label: 'Service (ex: toggle)', fieldType: 'text' },
         { key: 'entityId', label: 'Entité cible', fieldType: 'entity' },
         { key: 'stateEntity', label: 'Entité état (couleur)', fieldType: 'entity' },
-        { key: 'color', label: 'Couleur active (hex)', fieldType: 'text' },
+        { key: 'color', label: 'Couleur active (#hex ou template Jinja)', fieldType: 'text' },
       ],
     },
   ],

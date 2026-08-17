@@ -110,14 +110,32 @@ export function useResolvedMediaUrls(urls: string[]): string[] {
       return;
     }
 
-    const resolveAll = async () => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const resolveAll = async (attempt: number) => {
       const groups = await Promise.all(
         urls.map(url => (url.startsWith('media-source://') ? resolveMediaSourceId(connection, url) : Promise.resolve([url])))
       );
-      setResolved(groups.flat());
+      if (cancelled) return;
+      const flat = groups.flat();
+      if (flat.length || attempt >= 5) {
+        setResolved(flat);
+        return;
+      }
+      // Zéro image alors qu'on en attendait : au réveil de l'appareil la socket
+      // est souvent encore coupée — c'est le « 3 » (ERR_CONNECTION_LOST) de la
+      // console, et c'est pourquoi une démo lancée à la main marchait quand le
+      // démarrage automatique, lui, restait noir. hakit se reconnecte seul, on
+      // lui laisse le temps et on rejoue.
+      timer = setTimeout(() => resolveAll(attempt + 1), Math.min(3000 * 2 ** attempt, 30000));
     };
 
-    resolveAll();
+    resolveAll(0);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlsKey, connection]);
 

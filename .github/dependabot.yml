@@ -1,17 +1,32 @@
-# Mises à jour de dépendances.
+# Mises à jour de dépendances — **alertes seulement**.
 #
-# Groupées et hebdomadaires : une PR par écosystème et par semaine. Dégroupées,
-# elles arrivaient à la douzaine et finissaient par être fusionnées sans être
-# lues — ce qui est pire que pas de Dependabot du tout.
+# `open-pull-requests-limit: 0` coupe les mises à jour de version : Dependabot
+# n'ouvre plus de PR de routine, et ne crée donc plus de branche dans le dépôt.
+#
+# Ce qui continue, et qui est justement ce qu'on veut garder :
+#   - les **alertes** de sécurité (onglet Security), qui ne dépendent pas de ce
+#     fichier mais des réglages du dépôt ;
+#   - les **mises à jour de sécurité**, explicitement non concernées par cette
+#     limite — une faille connue ouvrira toujours sa PR ;
+#   - `npm audit --audit-level=high` dans la CI, qui fait échouer la
+#     construction dès qu'une vulnérabilité sérieuse entre dans l'arbre.
+#
+# Les mises à jour de confort se font donc à la main (`npm outdated`, puis
+# `npm update` ou un bump ciblé), au moment choisi. Pour rendre la main à
+# Dependabot, remettre la limite à 5 : les groupes ci-dessous sont conservés
+# intacts pour que ce soit un changement d'une ligne.
+#
+# Historique : les PR étaient groupées et hebdomadaires parce que, dégroupées,
+# elles arrivaient à la douzaine et finissaient fusionnées sans être lues — ce
+# qui est pire que pas de Dependabot du tout. Le même raisonnement mène ici.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: '/'
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
     groups:
-      # Les correctifs de sécurité méritent leur propre PR, tout de suite.
       production:
         dependency-type: production
         update-types: ['minor', 'patch']
@@ -23,6 +38,7 @@ updates:
     directory: '/'
     schedule:
       interval: monthly
+    open-pull-requests-limit: 0
     groups:
       actions:
         patterns: ['*']

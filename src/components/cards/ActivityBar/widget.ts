@@ -55,8 +55,9 @@ export default defineWidget({
         { key: 'entityId', label: 'Entité', fieldType: 'entity' },
         { key: 'label', label: 'Label', fieldType: 'text' },
         { key: 'template', label: 'Template ({state}, {attr.X})', fieldType: 'text' },
+        { key: 'hideLabel', label: 'Icône seule (masquer le texte)', fieldType: 'boolean' },
         { key: 'icon', label: 'Icône', fieldType: 'icon' },
-        { key: 'color', label: 'Couleur (#hex, vide = auto)', fieldType: 'text' },
+        { key: 'color', label: 'Couleur (#hex, template Jinja, vide = auto)', fieldType: 'text' },
         {
           key: 'action',
           label: 'Au clic',

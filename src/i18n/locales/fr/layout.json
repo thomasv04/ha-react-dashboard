@@ -328,5 +328,11 @@
     "icon": "Icône",
     "color": "Couleur",
     "add": "Ajouter une règle"
+  },
+  "areaControls": {
+    "none": "Aucune zone",
+    "add": "Contrôles",
+    "domains": "Domaines",
+    "entities": "Entités"
   }
 }

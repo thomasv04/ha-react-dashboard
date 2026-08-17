@@ -19,8 +19,10 @@ export interface ActivityPill {
   icon?: string; // lucide icon name
   /** Template: {state} is replaced by entity state, {attr.X} by attribute X */
   template?: string;
-  /** Accent colour (hex) — overrides the state-derived colour */
+  /** Accent colour — `#hex` or a Nunjucks template; overrides the state-derived colour */
   color?: string;
+  /** Icon-only pill: hide the text entirely (like a Mushroom badge without `content`) */
+  hideLabel?: boolean;
   /** Click behaviour: nothing, detail sheet, entity toggle, or a HA service */
   action?: 'none' | 'more-info' | 'toggle' | 'service';
   /** action === 'service': 'domain.service', called on the pill entity */
@@ -141,8 +143,12 @@ export interface RoomControl {
   entityId?: string;
   /** If set, the button color reflects this entity's state (on/off) */
   stateEntity?: string;
-  /** Accent color when the entity is on (hex) */
+  /** Accent color when active — `#hex` or a Nunjucks template */
   color?: string;
+  /** Derived from an area: the service targets the whole area instead of one entity */
+  areaId?: string;
+  /** Derived from an area: the button is active as soon as one of these is */
+  stateEntities?: string[];
 }
 
 export interface RoomEntry {
@@ -433,6 +439,13 @@ export interface RoomCardConfig extends WidgetSoundOverrides {
   lightEntities?: string[];
   controls?: RoomControl[];
   panelId?: string;
+  /** HA area id — its entities feed the card, like the built-in area card */
+  area?: string;
+  /**
+   * Which controls the area contributes: `'light'` for a whole domain,
+   * `'light.kitchen_strip'` for a single entity. The dot tells them apart.
+   */
+  areaControls?: string[];
 }
 
 // ── Union type ────────────────────────────────────────────────────────────────

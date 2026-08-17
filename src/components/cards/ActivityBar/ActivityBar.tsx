@@ -9,6 +9,9 @@ import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useMoreInfoOptional } from '@/context/MoreInfoContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { resolveIcon } from '@/lib/lucide-icon-map';
+import { useColorResolver } from '@/hooks/useColor';
+import { colorAlpha } from '@/lib/color-value';
+import { isActiveState, toggleService } from '@/lib/ha-service';
 import type { ActivityBarConfig, ActivityPill } from '@/types/widget-configs';
 
 type Translate = (key: string, params?: Record<string, string | number>) => string;
@@ -103,16 +106,6 @@ const MORE_INFO_TYPES: Record<string, string> = {
   automation: 'automation',
 };
 
-/**
- * Domaines dont la bascule n'est pas `homeassistant.toggle`.
- * ponytail: alarm_control_panel n'y est pas — armer/désarmer demande un code,
- * ça reste une fiche détail. À câbler si le besoin arrive.
- */
-const TOGGLE_SERVICES: Record<string, (state: string) => [string, string]> = {
-  lock: state => ['lock', state === 'locked' ? 'unlock' : 'lock'],
-  cover: state => ['cover', state === 'open' ? 'close_cover' : 'open_cover'],
-};
-
 /** `{state}` → état, `{attr.X}` → attribut X. */
 function renderTemplate(template: string, state: string, attributes: Record<string, unknown> | undefined) {
   return template.replace(/\{state\}/g, state).replace(/\{attr\.([\w.]+)\}/g, (_, key: string) => String(attributes?.[key] ?? ''));
@@ -129,6 +122,7 @@ export function ActivityBar() {
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<ActivityBarConfig>(widgetId || 'activity');
+  const resolveColor = useColorResolver();
 
   // La barre ne s'abonne qu'à ses propres entités : la map complète la
   // re-rendait à chaque message WebSocket de la maison entière.
@@ -166,11 +160,13 @@ export function ActivityBar() {
       entityId: p.entityId,
       state: entity.state,
       icon: customIcon ? createElement(customIcon, { size: 14 }) : (preset?.icon ?? <Activity size={14} />),
-      label: preset?.label ?? (p.label ? `${p.label} ${generic}` : generic),
+      // `hideLabel` : pastille icône seule, comme un badge Mushroom sans
+      // `content`. Elle l'emporte sur le libellé du preset.
+      label: p.hideLabel ? '' : (preset?.label ?? (p.label ? `${p.label} ${generic}` : generic)),
       color: preset?.color ?? 'text-white/80',
       bgColor: preset?.bgColor ?? 'bg-white/5',
       hideOnMobile: preset?.hideOnMobile,
-      accent: p.color,
+      accent: resolveColor(p.color),
       action: p.action ?? 'none',
       service: p.service,
     });
@@ -189,7 +185,7 @@ export function ActivityBar() {
     }
     if (!helpers) return;
     const [serviceDomain, service] =
-      pill.action === 'service' ? (pill.service ?? '').split('.') : (TOGGLE_SERVICES[domain]?.(pill.state) ?? ['homeassistant', 'toggle']);
+      pill.action === 'service' ? (pill.service ?? '').split('.') : toggleService(domain, isActiveState(pill.state));
     if (!serviceDomain || !service) return;
     helpers.callService({
       domain: serviceDomain as never,
@@ -266,17 +262,19 @@ export function ActivityBar() {
               initial: { opacity: 0, scale: 0.9 },
               animate: { opacity: 1, scale: 1 },
               transition: { duration: DURATION_MEDIUM, delay: i * 0.05 },
-              className: `${pill.accent ? '' : pill.bgColor} rounded-full px-3 py-1.5 flex items-center gap-2 text-xs border border-white/10 backdrop-blur-sm${
+              className: `${pill.accent ? '' : pill.bgColor} rounded-full ${
+                pill.label ? 'px-3 gap-2' : 'px-2'
+              } py-1.5 flex items-center text-xs border border-white/10 backdrop-blur-sm${
                 clickable ? ' cursor-pointer hover:border-white/25' : ''
               }`,
-              style: pill.accent ? { backgroundColor: `${pill.accent}1a` } : undefined,
+              style: pill.accent ? { backgroundColor: colorAlpha(pill.accent) } : undefined,
             };
             const content = (
               <>
                 <span className={pill.accent ? undefined : pill.color} style={pill.accent ? { color: pill.accent } : undefined}>
                   {pill.icon}
                 </span>
-                <span className='text-white/90 font-medium text-xs'>{pill.label}</span>
+                {pill.label && <span className='text-white/90 font-medium text-xs'>{pill.label}</span>}
               </>
             );
             return clickable ? (

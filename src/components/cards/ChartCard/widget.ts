@@ -58,7 +58,7 @@ export default defineWidget({
         { value: 'timeline', label: 'Frise on/off' },
       ],
     },
-    { key: 'color', label: 'Couleur', fieldType: 'text' },
+    { key: 'color', label: 'Couleur (#hex ou template Jinja)', fieldType: 'text' },
   ],
 
   defaults: {

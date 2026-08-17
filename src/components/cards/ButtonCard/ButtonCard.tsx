@@ -11,6 +11,8 @@ import { resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-m
 import { useRipple, RippleLayer } from '@/components/ui/Ripple';
 import { useI18n } from '@/i18n';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
+import { useColor } from '@/hooks/useColor';
+import { colorAlpha } from '@/lib/color-value';
 
 type FeedbackState = 'idle' | 'confirming' | 'running' | 'success' | 'error';
 
@@ -27,7 +29,7 @@ export function ButtonCard() {
 
   const label = config?.label ?? t('widgets.button.label');
   const subtitle = config?.subtitle;
-  const color = config?.color ?? '#3b82f6';
+  const color = useColor(config?.color) ?? '#3b82f6';
   const domain = config?.domain ?? 'script';
   const service = config?.service ?? 'turn_on';
   const requireConfirm = config?.requireConfirm ?? false;
@@ -89,8 +91,8 @@ export function ButtonCard() {
   );
 
   // Derive colors from accent
-  const bgActive = `${color}18`;
-  const borderActive = `${color}30`;
+  const bgActive = colorAlpha(color, 9);
+  const borderActive = colorAlpha(color, 19);
   const bgIdle = 'rgba(255,255,255,0.05)';
   const borderIdle = 'rgba(255,255,255,0.08)';
 
@@ -103,7 +105,7 @@ export function ButtonCard() {
       transition={{ duration: DURATION_ENTRANCE }}
       className='gc rounded-3xl p-3.5 flex flex-col h-full relative overflow-hidden select-none'
     >
-      <RippleLayer ripples={ripples} color={`${color}22`} />
+      <RippleLayer ripples={ripples} color={colorAlpha(color, 13)} />
 
       {/* Confirm overlay */}
       <AnimatePresence>
@@ -163,7 +165,7 @@ export function ButtonCard() {
                 animate={{ rotate: 360 }}
                 transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
                 className='w-5 h-5 rounded-full border-2 border-t-transparent'
-                style={{ borderColor: `${color}60`, borderTopColor: color }}
+                style={{ borderColor: colorAlpha(color, 38), borderTopColor: color }}
               />
             </motion.div>
           )}

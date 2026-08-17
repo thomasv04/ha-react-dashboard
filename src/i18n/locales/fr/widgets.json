@@ -206,7 +206,20 @@
   },
   "room": {
     "label": "Pièce",
-    "description": "Carte pièce avec icône, température, humidité et contrôles."
+    "description": "Carte pièce avec icône, température, humidité et contrôles.",
+    "domains": {
+      "light": "Lumières",
+      "switch": "Interrupteurs",
+      "cover": "Volets",
+      "fan": "Ventilation",
+      "climate": "Chauffage",
+      "lock": "Serrures",
+      "media_player": "Médias",
+      "vacuum": "Aspirateurs",
+      "scene": "Scènes",
+      "script": "Scripts",
+      "input_boolean": "Booléens"
+    }
   },
   "button": {
     "label": "Bouton",

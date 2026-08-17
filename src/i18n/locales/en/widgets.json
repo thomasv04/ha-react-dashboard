@@ -206,7 +206,20 @@
   },
   "room": {
     "label": "Room",
-    "description": "Room card with icon, temperature, humidity and controls."
+    "description": "Room card with icon, temperature, humidity and controls.",
+    "domains": {
+      "light": "Lights",
+      "switch": "Switches",
+      "cover": "Covers",
+      "fan": "Fans",
+      "climate": "Climate",
+      "lock": "Locks",
+      "media_player": "Media",
+      "vacuum": "Vacuums",
+      "scene": "Scenes",
+      "script": "Scripts",
+      "input_boolean": "Toggles"
+    }
   },
   "button": {
     "label": "Button",
