@@ -206,8 +206,8 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                 <div className='p-3 rounded-xl border border-purple-500/15 bg-purple-500/5'>
                   <p className='text-white/40 text-xs leading-relaxed'>
                     <span className='text-purple-300/70 font-medium'>{t('layout.wallPanel.forcedActivation')}</span> — ajoutez
-                    <code className='mx-1 px-1.5 py-0.5 rounded bg-white/[0.08] text-purple-200/70 text-[10px]'>?wp_enabled=true</code>à
-                    l'URL pour activer immédiatement (utile pour tablette murale).
+                    <code className='mx-1 px-1.5 py-0.5 rounded bg-white/[0.08] text-purple-200/70 text-[10px]'>?hrd_screensaver=true</code>
+                    à l'URL pour activer immédiatement (utile pour tablette murale).
                   </p>
                 </div>
               </>

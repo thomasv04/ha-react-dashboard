@@ -41,6 +41,34 @@ function ErrorFallback({ label, messageKey, onRetry }: { label?: string; message
   );
 }
 
+const STALE_BUNDLE_KEY = 'ha-dashboard:stale-bundle-reload';
+/** Un rechargement toutes les dix minutes au plus : un chunk vraiment absent boucleraient sinon. */
+const STALE_BUNDLE_COOLDOWN = 10 * 60_000;
+
+/**
+ * Recharge la page quand un chunk demandé n'existe plus sur le serveur.
+ *
+ * C'est la signature d'un déploiement survenu pendant que la page tournait :
+ * l'index en mémoire réclame des chunks que le nouveau build a remplacés, et
+ * seuls les widgets modifiés par ce build échouent. Aucun nouveau rendu ne peut
+ * rattraper ça — il faut aller rechercher l'index à jour.
+ *
+ * Exporté pour être testable : un vrai rechargement dans un test emporterait le
+ * lanceur de tests avec lui.
+ */
+export function reloadIfStaleBundle(error: Error, now = Date.now()): boolean {
+  if (!/dynamically imported module|Importing a module script failed/i.test(error.message)) return false;
+  try {
+    const last = Number(sessionStorage.getItem(STALE_BUNDLE_KEY) ?? 0);
+    if (now - last < STALE_BUNDLE_COOLDOWN) return false;
+    sessionStorage.setItem(STALE_BUNDLE_KEY, String(now));
+  } catch {
+    // Stockage refusé (mode privé, iframe cloisonnée) : mieux vaut recharger
+    // une fois de trop que laisser la case morte.
+  }
+  return true;
+}
+
 /**
  * Frontière d'erreur de rendu.
  *
@@ -59,6 +87,7 @@ export class WidgetErrorBoundary extends React.Component<Props, State> {
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error(`[WidgetErrorBoundary] ${this.props.label ?? 'Widget'} crashed:`, error, info.componentStack);
+    if (reloadIfStaleBundle(error)) window.location.reload();
   }
 
   render() {

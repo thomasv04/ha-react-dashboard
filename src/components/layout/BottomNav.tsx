@@ -9,52 +9,26 @@ import { resolveIcon, useIconCatalog } from '@/lib/lucide-icon-map';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useI18n } from '@/i18n';
 
-const DOCK_STORAGE_KEY = 'ha-dashboard-dock-panels';
-const DOCK_LABELS_KEY = 'ha-dashboard-dock-labels';
-
-/** Ids de panneaux custom, dans l'ordre d'affichage. Vide au premier lancement. */
-function loadDockConfig(): string[] {
-  try {
-    const stored = localStorage.getItem(DOCK_STORAGE_KEY);
-    if (stored) {
-      const parsed: unknown = JSON.parse(stored);
-      if (Array.isArray(parsed)) return parsed.filter((v): v is string => typeof v === 'string');
-    }
-  } catch {
-    // ignore
-  }
-  return [];
-}
-
-function saveDockConfig(ids: string[]) {
-  localStorage.setItem(DOCK_STORAGE_KEY, JSON.stringify(ids));
-}
-
-function loadShowLabels(): boolean {
-  try {
-    const v = localStorage.getItem(DOCK_LABELS_KEY);
-    return v === null ? true : v === 'true';
-  } catch {
-    return true;
-  }
-}
-function saveShowLabels(v: boolean) {
-  localStorage.setItem(DOCK_LABELS_KEY, String(v));
-}
-
 export function BottomNav() {
   // Les icones hors du noyau arrivent avec le catalogue complet, charge a la
   // demande : sans cet abonnement elles resteraient sur leur icone de repli.
   useIconCatalog();
   const { t } = useI18n();
   const { openPanel, closePanel, activePanel } = usePanel();
-  const { panels } = useCustomPanels();
+  const { panels, dock, setDock } = useCustomPanels();
   const { isEditMode } = useEditMode();
   const isWideDock = !useIsMobile(1024);
   const [showDockEditor, setShowDockEditor] = useState(false);
-  const [showLabels, setShowLabels] = useState(() => loadShowLabels());
-  const [dockIds, setDockIds] = useState<string[]>(() => loadDockConfig());
   const editorRef = useRef<HTMLDivElement>(null);
+
+  // Le dock est enregistré avec la configuration du dashboard : composé ici, il
+  // apparaît tel quel sur les autres appareils au prochain chargement.
+  const dockIds = dock.panels;
+  const showLabels = dock.labels;
+  const setDockIds = (next: string[] | ((prev: string[]) => string[])) =>
+    setDock({ ...dock, panels: typeof next === 'function' ? next(dockIds) : next });
+  const setShowLabels = (next: boolean | ((prev: boolean) => boolean)) =>
+    setDock({ ...dock, labels: typeof next === 'function' ? next(showLabels) : next });
 
   useEffect(() => {
     if (!isEditMode) setShowDockEditor(false);
@@ -74,13 +48,6 @@ export function BottomNav() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [showDockEditor]);
-
-  useEffect(() => {
-    saveDockConfig(dockIds);
-  }, [dockIds]);
-  useEffect(() => {
-    saveShowLabels(showLabels);
-  }, [showLabels]);
 
   // Un panneau supprimé disparaît du dock sans laisser de trou.
   const dockPanels = dockIds.map(id => panels.find(p => p.id === id)).filter((p): p is (typeof panels)[number] => !!p);

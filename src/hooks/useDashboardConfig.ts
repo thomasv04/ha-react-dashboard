@@ -4,7 +4,7 @@ import type { WidgetConfigs } from '@/types/widget-configs';
 import { DEFAULT_WIDGET_CONFIGS } from '@/widgets';
 import { DEFAULT_PAGES, type Page } from '@/context/PageContext';
 import { DEFAULT_WALLPANEL_CONFIG, type WallPanelConfig } from '@/types/wallpanel';
-import type { CustomPanel } from '@/types/custom-panel';
+import type { CustomPanel, DockConfig } from '@/types/custom-panel';
 import { useToast } from '@/context/ToastContext';
 import { useI18n } from '@/i18n';
 import { apiFetch } from '@/lib/api-base';
@@ -162,6 +162,7 @@ export function useDashboardConfig() {
     cached?.wallPanel?.layout ?? { ...DEFAULT_LAYOUT, widgets: { lg: [], md: [], sm: [] } }
   );
   const [customPanels, setCustomPanels] = useState<CustomPanel[]>(cached?.customPanels ?? []);
+  const [dock, setDock] = useState<DockConfig | undefined>(cached?.dock);
 
   // Un cache présent = plus rien à attendre pour peindre : on démarre « prêt ».
   const [status, setStatus] = useState<ConfigStatus>(cached ? 'cached' : 'loading');
@@ -192,6 +193,7 @@ export function useDashboardConfig() {
         setWallPanelLayout(v2.wallPanel.layout);
       }
       if (v2.customPanels) setCustomPanels(v2.customPanels);
+      if (v2.dock) setDock(v2.dock);
       writeCache(v2);
     };
 
@@ -305,6 +307,7 @@ export function useDashboardConfig() {
     wallPanelConfig,
     wallPanelLayout,
     customPanels,
+    dock,
     status,
     /** Vrai uniquement tant qu'il n'y a strictement rien à afficher. */
     isLoading: status === 'loading',

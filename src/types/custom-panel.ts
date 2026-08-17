@@ -71,3 +71,9 @@ export interface CustomPanel {
   icon?: string;
   blocks: CustomBlock[];
 }
+
+/** Barre du bas : panneaux épinglés, dans l'ordre, et libellés sous les icônes. */
+export interface DockConfig {
+  panels: string[];
+  labels: boolean;
+}

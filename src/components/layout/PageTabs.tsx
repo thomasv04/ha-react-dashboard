@@ -1,5 +1,6 @@
 import { LayoutGrid, Music, Settings, Plus, X, Monitor, Layers } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useUser } from '@hakit/core';
 import { usePages, type PageType } from '@/context/PageContext';
 import { useEditMode } from '@/context/DashboardLayoutContext';
 import { useWallPanel } from '@/context/WallPanelContext';
@@ -27,6 +28,10 @@ export function PageTabs() {
   const { isEditMode } = useEditMode();
   const { isConfigured } = useWallPanel();
   const { panels } = useCustomPanels();
+  // Ces deux pastilles n'ouvrent que des éditeurs — écran de veille et panneaux
+  // personnalisés. Un non-administrateur n'a rien à y régler, et le bouton
+  // d'édition lui est déjà masqué : elles suivent la même règle.
+  const isAdmin = !!useUser()?.is_admin;
   const [showWpConfig, setShowWpConfig] = useState(false);
   const [showPanelsEditor, setShowPanelsEditor] = useState(false);
 
@@ -45,7 +50,7 @@ export function PageTabs() {
         className={cn('flex items-center gap-2 overflow-x-auto scrollbar-none py-2 mb-3 pl-12 pr-12', isEditMode && 'mt-14 lg:mt-0')}
       >
         {/* Bouton WallPanel — toujours à gauche */}
-        {(isEditMode || isConfigured) && (
+        {isAdmin && (isEditMode || isConfigured) && (
           <button
             onClick={() => setShowWpConfig(true)}
             data-tour='wallpanel'
@@ -62,7 +67,7 @@ export function PageTabs() {
         )}
 
         {/* Bouton Panneaux personnalisés */}
-        {(isEditMode || panels.length > 0) && (
+        {isAdmin && (isEditMode || panels.length > 0) && (
           <button
             onClick={() => setShowPanelsEditor(true)}
             data-tour='panels-button'

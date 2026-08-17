@@ -190,7 +190,7 @@ function DashboardContent() {
 }
 
 function Dashboard() {
-  const { isLoading, pages, allLayouts, allWidgetConfigs, wallPanelConfig, wallPanelLayout, customPanels } = useDashboardConfig();
+  const { isLoading, pages, allLayouts, allWidgetConfigs, wallPanelConfig, wallPanelLayout, customPanels, dock } = useDashboardConfig();
   // Échappatoire : passer outre l'attente et afficher le dashboard tel qu'il
   // peut l'être (cache ou valeurs par défaut). Le chargement continue derrière.
   const [skipped, setSkipped] = useState(false);
@@ -206,7 +206,7 @@ function Dashboard() {
       <WidgetConfigProvider initialAllWidgetConfigs={allWidgetConfigs}>
         <DashboardLayoutProvider initialLayouts={allLayouts}>
           <WallPanelProvider initialConfig={wallPanelConfig} initialLayout={wallPanelLayout}>
-            <CustomPanelProvider initialPanels={customPanels}>
+            <CustomPanelProvider initialPanels={customPanels} initialDock={dock}>
               <MoreInfoProvider>
                 <PanelProvider>
                   <DashboardContent />

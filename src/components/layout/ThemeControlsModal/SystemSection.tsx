@@ -29,7 +29,7 @@ export function SystemSection() {
     setAutoTheme,
     setLayoutSettings,
   } = useTheme();
-  const { pages, allLayouts, allWidgetConfigs, wallPanelConfig, wallPanelLayout, customPanels, saveConfig } = useDashboardConfig();
+  const { pages, allLayouts, allWidgetConfigs, wallPanelConfig, wallPanelLayout, customPanels, dock, saveConfig } = useDashboardConfig();
   const [exportString, setExportString] = useState('');
   const [importString, setImportString] = useState('');
   const [exportCopied, setExportCopied] = useState(false);
@@ -74,6 +74,7 @@ export function SystemSection() {
         widgetConfigs: allWidgetConfigs,
         wallPanel: { config: wallPanelConfig, layout: wallPanelLayout, widgetConfigs: {} },
         customPanels,
+        dock,
       },
     };
     const encoded = await encodeConfig(snapshot);
