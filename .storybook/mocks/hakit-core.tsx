@@ -90,6 +90,24 @@ export function useUser() {
   return { id: 'mock-user', name: 'Test User', is_admin: true, is_owner: true };
 }
 
+// ─── useAreas (RoomCard, AreaControlsField) ─────────────────────────────────
+// Le registre des zones n'a pas d'équivalent côté mock : aucune zone, donc
+// aucune commande dérivée. Les widgets configurés à la main restent intacts.
+export interface Area {
+  area_id: string;
+  name: string;
+  picture: string | null;
+  icon: string | null;
+  floor_id: string | null;
+  temperature_entity_id: string | null;
+  humidity_entity_id: string | null;
+  entities: { entity_id: string; state: string; attributes: Record<string, unknown> }[];
+}
+
+export function useAreas(): Area[] {
+  return [];
+}
+
 // ─── useCamera (CameraFeed component) ───────────────────────────────────────
 export function useCamera(_entityId: string, _options?: { poster?: boolean }) {
   return {
