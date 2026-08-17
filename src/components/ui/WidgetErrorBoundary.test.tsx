@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { WidgetErrorBoundary } from './WidgetErrorBoundary';
+import { WidgetErrorBoundary, reloadIfStaleBundle } from './WidgetErrorBoundary';
 
 // Suppress console.error noise from React error boundaries
 beforeEach(() => {
@@ -77,5 +77,26 @@ describe('WidgetErrorBoundary', () => {
     await userEvent.click(screen.getByRole('button', { name: /common.retry/ }));
 
     expect(screen.getByText('All good')).toBeInTheDocument();
+  });
+});
+
+describe('reloadIfStaleBundle', () => {
+  beforeEach(() => sessionStorage.clear());
+
+  it('recharge quand un chunk du build précédent a disparu', () => {
+    expect(reloadIfStaleBundle(new Error('Failed to fetch dynamically imported module: /chunks/RoomCard-abc.js'))).toBe(true);
+  });
+
+  it('laisse passer une erreur de rendu ordinaire', () => {
+    expect(reloadIfStaleBundle(new Error("Cannot read properties of undefined (reading 'state')"))).toBe(false);
+  });
+
+  it('ne recharge pas en boucle si le chunk manque vraiment', () => {
+    const err = new Error('Failed to fetch dynamically imported module: /chunks/RoomCard-abc.js');
+    const t0 = 1_700_000_000_000;
+    expect(reloadIfStaleBundle(err, t0)).toBe(true);
+    expect(reloadIfStaleBundle(err, t0 + 60_000)).toBe(false);
+    // Un déploiement plus tard dans la même session mérite pourtant son rechargement.
+    expect(reloadIfStaleBundle(err, t0 + 11 * 60_000)).toBe(true);
   });
 });
