@@ -31,7 +31,7 @@ export function EditButton() {
   const { allWidgetConfigsByPage } = useWidgetConfig();
   const { pages } = usePages();
   const { config: wpConfig, wallPanelLayout } = useWallPanel();
-  const { panels: customPanels } = useCustomPanels();
+  const { panels: customPanels, dock } = useCustomPanels();
   const selection = useGridSelection();
 
   const { saveConfig, isSaving } = useDashboardConfig();
@@ -78,6 +78,7 @@ export function EditButton() {
         widgetConfigs: {},
       },
       customPanels,
+      dock,
     });
     setEditMode(false);
   };

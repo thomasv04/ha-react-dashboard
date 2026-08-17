@@ -3,7 +3,7 @@ import type { WidgetConfigs } from '@/types/widget-configs';
 import { compactVertically, firstFreeSlot, packWidgets } from '@/lib/grid-utils';
 import { usePages, type Page } from '@/context/PageContext';
 import type { WallPanelConfig } from '@/types/wallpanel';
-import type { CustomPanel } from '@/types/custom-panel';
+import type { CustomPanel, DockConfig } from '@/types/custom-panel';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 // Registres dérivés des manifestes de widgets (cf. `src/widgets/index.ts`).
 import { DEFAULT_WIDGET_CONFIGS, WIDGET_DISPOSITIONS, WIDGET_CATALOG, SIZE_PRESETS } from '@/widgets';
@@ -99,6 +99,13 @@ export interface DashboardConfigV2 {
   };
   /** Panneaux personnalisés */
   customPanels?: CustomPanel[];
+  /**
+   * Barre du bas : panneaux épinglés et libellés. Ici plutôt que dans les
+   * réglages d'appareil — elle n'épingle que des panneaux personnalisés, qui
+   * sont eux-mêmes dans cette configuration, et une seule composition vaut pour
+   * toute la maison.
+   */
+  dock?: DockConfig;
 }
 
 // ── Context value types ────────────────────────────────────────────────────────
