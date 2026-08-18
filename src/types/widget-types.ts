@@ -485,6 +485,12 @@ export interface CalendarCardConfig {
   type: 'calendar';
   /** Agendas agrégés dans la card */
   entityIds?: string[];
+  /**
+   * Agenda unique, écrit par l'ajout de widget avant qu'il sache viser
+   * `entityIds`. Lu en repli : les cards déjà posées affichaient le message
+   * « choisir un agenda » alors qu'un agenda *avait* été choisi.
+   */
+  entityId?: string;
   name?: string;
   /** Horizon en jours */
   days?: number;

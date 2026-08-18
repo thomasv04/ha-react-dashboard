@@ -45,6 +45,11 @@ export interface WidgetDefinition {
     color: string;
     /** Domaine HA proposé en priorité dans le sélecteur d'entité */
     entityDomain?: string;
+    /**
+     * Clé de configuration qui reçoit l'entité choisie à l'ajout. Défaut
+     * `entityId` ; une card qui en agrège plusieurs vise sa propre liste.
+     */
+    entityConfigKey?: string;
     /** Mots-clés de recherche supplémentaires (hors label / description) */
     keywords?: string[];
   };

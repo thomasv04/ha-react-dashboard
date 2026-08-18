@@ -53,6 +53,7 @@ export const WIDGET_META: WidgetMeta[] = [
     icon: d.meta.icon,
     color: d.meta.color,
     entityDomain: d.meta.entityDomain,
+    entityConfigKey: d.meta.entityConfigKey,
   })),
 ];
 

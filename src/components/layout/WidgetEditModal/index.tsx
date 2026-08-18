@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import type { WidgetConfig } from '@/types/widget-configs';
 import { WIDGET_FIELD_DEFS } from '@/widgets';
+import { EntityListField } from './EntityListField';
 import { WIDGET_LABELS, resolveBreakpoint } from '@/components/layout/DashboardGrid';
 import { IconPicker, GradientPicker } from '@/components/layout/WidgetPickers';
 import { TemplateEditor } from '@/components/layout/TemplateField';
@@ -273,6 +274,17 @@ export function WidgetEditModal() {
                           onChange={v => updateField(field.key, v)}
                           domain={field.domain}
                           label={field.label}
+                        />
+                      );
+                    }
+                    if (field.fieldType === 'entity-list') {
+                      return (
+                        <EntityListField
+                          key={field.key}
+                          label={field.label}
+                          value={(draft[field.key] as string[]) ?? []}
+                          onChange={v => updateField(field.key, v)}
+                          domain={field.domain}
                         />
                       );
                     }

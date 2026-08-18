@@ -7,6 +7,7 @@ import type { GroupChild, WidgetConfig, WidgetFieldDef } from '@/types/widget-co
 import { WIDGET_META } from '@/widgets';
 import { IconPicker, GradientPicker } from '@/components/layout/WidgetPickers';
 import { EntityPicker } from './EntityPicker';
+import { EntityListField } from './EntityListField';
 import { FieldInput } from './FieldInput';
 import { ListEditor } from './ListEditor';
 import { PanelSelectField } from './PanelSelectField';
@@ -116,39 +117,14 @@ function ChildFieldRenderer({
     );
   }
   if (field.fieldType === 'entity-list') {
-    const list = (draft[field.key] as string[]) ?? [];
     return (
-      <div key={field.key}>
-        <label className='text-[11px] text-white/40 mb-1 block'>{field.label}</label>
-        {list.map((eid, eidx) => (
-          <div key={eidx} className='flex items-center gap-1 mb-1'>
-            <EntityPicker
-              value={eid}
-              onChange={v => {
-                const nl = [...list];
-                nl[eidx] = v;
-                updateField(field.key, nl);
-              }}
-              domain={field.domain}
-              label=''
-            />
-            <button
-              onClick={() =>
-                updateField(
-                  field.key,
-                  list.filter((_, i) => i !== eidx)
-                )
-              }
-              className='p-1 text-red-400/50 hover:text-red-400'
-            >
-              <Trash2 size={11} />
-            </button>
-          </div>
-        ))}
-        <button onClick={() => updateField(field.key, [...list, ''])} className='text-[11px] text-blue-400/60 hover:text-blue-400'>
-          + Ajouter entité
-        </button>
-      </div>
+      <EntityListField
+        key={field.key}
+        label={field.label}
+        value={(draft[field.key] as string[]) ?? []}
+        onChange={(v: string[]) => updateField(field.key, v)}
+        domain={field.domain}
+      />
     );
   }
   // default: text / number

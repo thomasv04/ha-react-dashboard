@@ -41,7 +41,10 @@ export function CalendarCard() {
   const cardRef = useRef<HTMLDivElement>(null);
   const size = useWidgetSize(cardRef);
 
-  const entityIds = config?.entityIds ?? [];
+  // `entityId` en repli : cf. `CalendarCardConfig`. Pas de mémo — `revision` et
+  // `useServiceResponse` ne dépendent que du *contenu* sérialisé de la liste,
+  // jamais de son identité.
+  const entityIds = config?.entityIds?.length ? config.entityIds : config?.entityId ? [config.entityId] : [];
   const days = config?.days ?? 7;
   const max = config?.max ?? 5;
 
