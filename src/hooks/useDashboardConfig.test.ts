@@ -1,6 +1,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { useDashboardConfig } from './useDashboardConfig';
+import { useDashboardConfig, wallPanelWidgetConfigsOf } from './useDashboardConfig';
+import type { DashboardConfigV2 } from '@/context/DashboardLayoutContext';
 
 // ── Mocks ───────────────────────────────────────────────────────────────────────
 
@@ -278,5 +279,47 @@ describe('useDashboardConfig', () => {
     expect(result.current.isLoading).toBe(false);
     expect(result.current.status).toBe('cached');
     expect(result.current.pages[0].label).toBe('Depuis le cache');
+  });
+});
+
+// ── Configs des widgets de l'écran de veille ────────────────────────────────
+
+const cfg = (entityId: string) => ({ type: 'weather', entityId }) as never;
+
+const base = (over: Partial<DashboardConfigV2>): DashboardConfigV2 =>
+  ({ version: 2, pages: [], layouts: {}, widgetConfigs: {}, ...over }) as DashboardConfigV2;
+
+const wallPanelWith = (widgetIds: string[], widgetConfigs = {}) => ({
+  config: {} as never,
+  layout: {
+    widgets: { lg: widgetIds.map(id => ({ id, type: 'weather', x: 0, y: 0, w: 2, h: 2 })), md: [], sm: [] },
+    cols: { lg: 12, md: 8, sm: 4 },
+  } as never,
+  widgetConfigs,
+});
+
+describe('wallPanelWidgetConfigsOf', () => {
+  it("reprend les configs des pages quand l'écran de veille n'en a pas", () => {
+    // Le cas d'un dashboard enregistré avant que la veille ait ses propres
+    // configs : elles ont atterri sur la page affichée à ce moment-là.
+    const v2 = base({
+      widgetConfigs: { home: { 'w-1': cfg('weather.home') }, salon: { 'w-2': cfg('light.salon') } },
+      wallPanel: wallPanelWith(['w-1']),
+    });
+
+    expect(wallPanelWidgetConfigsOf(v2)).toEqual({ 'w-1': cfg('weather.home') });
+  });
+
+  it('garde les configs déjà propres à la veille', () => {
+    const v2 = base({
+      widgetConfigs: { home: { 'w-1': cfg('weather.autre') } },
+      wallPanel: wallPanelWith(['w-1'], { 'w-1': cfg('weather.veille') }),
+    });
+
+    expect(wallPanelWidgetConfigsOf(v2)).toEqual({ 'w-1': cfg('weather.veille') });
+  });
+
+  it('renvoie un objet vide sans écran de veille', () => {
+    expect(wallPanelWidgetConfigsOf(base({}))).toEqual({});
   });
 });

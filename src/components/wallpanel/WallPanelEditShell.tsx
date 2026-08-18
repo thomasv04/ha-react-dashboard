@@ -3,38 +3,33 @@ import { AnimatePresence } from 'framer-motion';
 import { Plus, CloudUpload, X } from 'lucide-react';
 import { useWallPanel } from '@/context/WallPanelContext';
 import { PageProvider, type Page } from '@/context/PageContext';
+import { WidgetConfigProvider, useWidgetConfig } from '@/context/WidgetConfigContext';
 import { DashboardLayoutProvider, useDashboardLayout, useEditMode } from '@/context/DashboardLayoutContext';
 import { DashboardGrid, GridItem } from '@/components/layout/DashboardGrid';
 import { AddWidgetModal } from '@/components/layout/AddWidgetModal';
 import { WidgetEditModal } from '@/components/layout/WidgetEditModal';
-import { DEFAULT_WIDGET_CONFIGS } from '@/widgets';
+import { WIDGET_COMPONENTS } from '@/widgets';
 import { useI18n } from '@/i18n';
-import type { GridWidget } from '@/context/DashboardLayoutContext';
+import type { WidgetAnchor } from '@/types/wallpanel';
+import type { WidgetConfigs } from '@/types/widget-configs';
+import type { DashboardLayout } from '@/context/DashboardLayoutContext';
 
-// Widget components available on the overlay
-import { WeatherCard } from '@/components/cards/WeatherCard/WeatherCard';
-import { ClockWidget } from '@/components/cards/GreetingCard/GreetingCard';
-import { EnergyCard } from '@/components/cards/EnergyCard/EnergyCard';
-import { TempoCard } from '@/components/cards/TempoCard/TempoCard';
-import { ThermostatCard } from '@/components/cards/ThermostatCard/ThermostatCard';
-import { ActivityBar } from '@/components/cards/ActivityBar/ActivityBar';
-import { SensorCard } from '@/components/cards/SensorCard/SensorCard';
-import { LightCard } from '@/components/cards/LightCard/LightCard';
-import { PersonStatusCard } from '@/components/cards/PersonStatus/PersonStatusCard';
-import { TemplateCard } from '@/components/cards/TemplateCard/TemplateCard';
-
-const WP_WIDGET_COMPONENTS: Partial<Record<GridWidget['type'], React.ComponentType>> = {
-  weather: WeatherCard,
-  thermostat: ThermostatCard,
-  energy: EnergyCard,
-  tempo: TempoCard,
-  greeting: ClockWidget,
-  activity: ActivityBar,
-  sensor: SensorCard,
-  light: LightCard,
-  person: PersonStatusCard,
-  template: TemplateCard,
+/**
+ * Où la grille se pose sur l'overlay.
+ *
+ * Sur les cotes verticaux la bande prend la moitie de l'ecran : une colonne de
+ * cards a besoin de largeur, et laisser l'autre moitie a la photo est tout
+ * l'interet du reglage.
+ */
+const ANCHOR_CLASS: Record<WidgetAnchor, string> = {
+  top: 'absolute inset-x-0 top-0 max-w-[1440px] mx-auto px-5 pt-8',
+  bottom: 'absolute inset-x-0 bottom-0 max-w-[1440px] mx-auto px-5 pb-8',
+  left: 'absolute inset-y-0 left-0 w-[min(50%,620px)] px-5 py-8 overflow-y-auto',
+  right: 'absolute inset-y-0 right-0 w-[min(50%,620px)] px-5 py-8 overflow-y-auto',
 };
+
+/** Enregistre la disposition et les configs de l'ecran de veille sur le serveur. */
+export type WallPanelSave = (layout: DashboardLayout, widgetConfigs: WidgetConfigs) => void;
 
 // Single fake page used by the nested DashboardLayoutProvider
 const WALLPANEL_PAGES: Page[] = [{ id: 'wallpanel', label: 'WallPanel', type: 'grid', order: 0 }];
@@ -45,11 +40,12 @@ const WALLPANEL_PAGES: Page[] = [{ id: 'wallpanel', label: 'WallPanel', type: 'g
  *   - useDashboardLayout() → the wallpanel layout
  *   - useWallPanel()       → outer context to persist the result
  */
-function WallPanelEditActions() {
+function WallPanelEditActions({ onSave }: { onSave?: WallPanelSave }) {
   const { t } = useI18n();
   const { allLayouts } = useDashboardLayout();
+  const { allWidgetConfigsByPage } = useWidgetConfig();
   const { setEditMode } = useEditMode();
-  const { exitWallPanelEditMode, setWallPanelLayout } = useWallPanel();
+  const { exitWallPanelEditMode, setWallPanelLayout, setWallPanelWidgetConfigs } = useWallPanel();
   const [showAddModal, setShowAddModal] = useState(false);
 
   // Activate grid edit mode on mount
@@ -58,9 +54,16 @@ function WallPanelEditActions() {
     return () => setEditMode(false);
   }, [setEditMode]);
 
+  // « Enregistrer » n'ecrivait que dans le contexte : il fallait ensuite passer
+  // le dashboard en edition et l'enregistrer *aussi*, sans quoi la disposition
+  // de l'ecran de veille disparaissait au rechargement. `onSave` vient de
+  // l'overlay, qui a acces a la config complete.
   const handleSave = () => {
-    const wpLayout = allLayouts['wallpanel'];
+    const wpLayout = allLayouts['wallpanel'] ?? null;
+    const wpConfigs = allWidgetConfigsByPage['wallpanel'] ?? {};
     if (wpLayout) setWallPanelLayout(wpLayout);
+    setWallPanelWidgetConfigs(wpConfigs);
+    if (wpLayout) onSave?.(wpLayout, wpConfigs);
     exitWallPanelEditMode();
   };
 
@@ -112,7 +115,10 @@ function WallPanelGridWidgets() {
   return (
     <>
       {widgets.map(widget => {
-        const Component = WP_WIDGET_COMPONENTS[widget.type];
+        // `WIDGET_COMPONENTS`, comme la grille du dashboard : une liste propre
+        // a l'ecran de veille n'en connaissait que dix, et tout widget ajoute
+        // depuis — camera, volet, aspirateur… — disparaissait sans un mot.
+        const Component = WIDGET_COMPONENTS[widget.type];
         if (!Component) return null;
         return (
           <GridItem key={widget.id} id={widget.id}>
@@ -130,27 +136,36 @@ function WallPanelGridWidgets() {
  * wallpanel layout rather than the main dashboard layout.
  */
 export function WallPanelReadonlyShell() {
-  const { wallPanelLayout } = useWallPanel();
+  const { wallPanelLayout, wallPanelWidgetConfigs, config } = useWallPanel();
 
   const initialLayouts = useMemo(
     () => ({ wallpanel: wallPanelLayout }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
-  const initialAllWidgetConfigs = useMemo(() => ({ wallpanel: DEFAULT_WIDGET_CONFIGS }), []);
+  const initialWidgetConfigs = useMemo(
+    () => ({ wallpanel: wallPanelWidgetConfigs }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
   return (
     <PageProvider initialPages={WALLPANEL_PAGES}>
-      <DashboardLayoutProvider initialLayouts={initialLayouts} initialAllWidgetConfigs={initialAllWidgetConfigs}>
-        {/* `pointer-events-none` sur le conteneur, réactivé sur chaque card :
-            cette bande couvre toute la largeur, et en `auto` elle interceptait
-            les balayages destinés au fond entre deux cards. */}
-        <div className='pointer-events-none max-w-[1440px] mx-auto px-5 pt-8'>
-          <DashboardGrid readonly>
-            <WallPanelGridWidgets />
-          </DashboardGrid>
-        </div>
-      </DashboardLayoutProvider>
+      {/* Provider de configs **imbrique** : sans lui, les cards lisaient celles
+          du dashboard, indexees sur la page affichee au moment ou la veille
+          s'ouvre — donc vides une page sur deux. */}
+      <WidgetConfigProvider initialAllWidgetConfigs={initialWidgetConfigs}>
+        <DashboardLayoutProvider initialLayouts={initialLayouts}>
+          {/* `pointer-events-none` sur le conteneur, réactivé sur chaque card :
+              cette bande couvre toute la largeur, et en `auto` elle interceptait
+              les balayages destinés au fond entre deux cards. */}
+          <div className={`pointer-events-none ${ANCHOR_CLASS[config.widgetAnchor ?? 'top']}`}>
+            <DashboardGrid readonly>
+              <WallPanelGridWidgets />
+            </DashboardGrid>
+          </div>
+        </DashboardLayoutProvider>
+      </WidgetConfigProvider>
     </PageProvider>
   );
 }
@@ -159,8 +174,8 @@ export function WallPanelReadonlyShell() {
  * Provides a fully isolated PageProvider + DashboardLayoutProvider scoped to
  * the WallPanel overlay. Used when `isWallPanelEditMode` is true.
  */
-export function WallPanelEditShell() {
-  const { wallPanelLayout } = useWallPanel();
+export function WallPanelEditShell({ onSave }: { onSave?: WallPanelSave }) {
+  const { wallPanelLayout, wallPanelWidgetConfigs, config } = useWallPanel();
 
   // Stable references so DashboardLayoutProvider's sync useEffect doesn't loop
   const initialLayouts = useMemo(
@@ -168,18 +183,24 @@ export function WallPanelEditShell() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [] // only on mount — changes are saved back via setWallPanelLayout
   );
-  const initialAllWidgetConfigs = useMemo(() => ({ wallpanel: DEFAULT_WIDGET_CONFIGS }), []);
+  const initialWidgetConfigs = useMemo(
+    () => ({ wallpanel: wallPanelWidgetConfigs }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
   return (
     <PageProvider initialPages={WALLPANEL_PAGES}>
-      <DashboardLayoutProvider initialLayouts={initialLayouts} initialAllWidgetConfigs={initialAllWidgetConfigs}>
-        <WallPanelEditActions />
-        <div className='pointer-events-auto max-w-[1440px] mx-auto px-5 pt-8'>
-          <DashboardGrid>
-            <WallPanelGridWidgets />
-          </DashboardGrid>
-        </div>
-      </DashboardLayoutProvider>
+      <WidgetConfigProvider initialAllWidgetConfigs={initialWidgetConfigs}>
+        <DashboardLayoutProvider initialLayouts={initialLayouts}>
+          <WallPanelEditActions onSave={onSave} />
+          <div className={`pointer-events-auto ${ANCHOR_CLASS[config.widgetAnchor ?? 'top']}`}>
+            <DashboardGrid>
+              <WallPanelGridWidgets />
+            </DashboardGrid>
+          </div>
+        </DashboardLayoutProvider>
+      </WidgetConfigProvider>
     </PageProvider>
   );
 }

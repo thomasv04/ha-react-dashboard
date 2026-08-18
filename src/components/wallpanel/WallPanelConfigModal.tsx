@@ -6,7 +6,14 @@ import { useWallPanel } from '@/context/WallPanelContext';
 import { PanelSelectField } from '@/components/layout/WidgetEditModal/PanelSelectField';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
-import { gesturesOf, type ImageFit, type MediaOrder } from '@/types/wallpanel';
+import { gesturesOf, type ImageFit, type MediaOrder, type WidgetAnchor } from '@/types/wallpanel';
+
+const ANCHORS: Array<{ id: WidgetAnchor; labelKey: string }> = [
+  { id: 'top', labelKey: 'layout.wallPanel.anchorTop' },
+  { id: 'bottom', labelKey: 'layout.wallPanel.anchorBottom' },
+  { id: 'left', labelKey: 'layout.wallPanel.anchorLeft' },
+  { id: 'right', labelKey: 'layout.wallPanel.anchorRight' },
+];
 
 type Tab = 'activation' | 'background' | 'widgets' | 'style' | 'gestures';
 
@@ -314,6 +321,28 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
             {tab === 'widgets' && (
               <div className='space-y-3'>
                 <p className='text-white/35 text-xs leading-relaxed'>{t('layout.wallPanel.widgetsInfo')}</p>
+
+                <div>
+                  <p className='text-white/55 text-xs font-medium'>{t('layout.wallPanel.widgetAnchor')}</p>
+                  <p className='text-white/28 text-[10px] mt-0.5 mb-2'>{t('layout.wallPanel.widgetAnchorDesc')}</p>
+                  <div className='grid grid-cols-4 gap-2'>
+                    {ANCHORS.map(a => (
+                      <button
+                        key={a.id}
+                        onClick={() => updateConfig({ widgetAnchor: a.id })}
+                        className={cn(
+                          'px-2 py-2 rounded-xl text-[11px] font-medium border transition-colors',
+                          (config.widgetAnchor ?? 'top') === a.id
+                            ? 'bg-purple-500/20 text-purple-200 border-purple-500/40'
+                            : 'bg-white/5 text-white/45 border-white/[0.08] hover:text-white/70'
+                        )}
+                      >
+                        {t(a.labelKey)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className='p-3 rounded-xl border border-white/[0.08] bg-white/[0.03] text-center'>
                   <p className='text-white/22 text-xs mb-2'>
                     {wallPanelLayout.widgets.lg.length}{' '}

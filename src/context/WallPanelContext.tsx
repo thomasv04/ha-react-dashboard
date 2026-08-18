@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 import type { WallPanelConfig } from '@/types/wallpanel';
 import { DEFAULT_WALLPANEL_CONFIG } from '@/types/wallpanel';
 import type { DashboardLayout } from '@/context/DashboardLayoutContext';
+import type { WidgetConfigs } from '@/types/widget-configs';
 import { DEFAULT_LAYOUT } from '@/context/DashboardLayoutContext';
 
 interface WallPanelContextValue {
@@ -14,6 +15,16 @@ interface WallPanelContextValue {
   /** Layout des widgets affichés sur l'overlay */
   wallPanelLayout: DashboardLayout;
   setWallPanelLayout: (layout: DashboardLayout) => void;
+  /**
+   * Configs des widgets de l'overlay.
+   *
+   * À part de celles du dashboard : elles étaient jusqu'ici écrites dans
+   * `widgetConfigs[page affichée]`, si bien qu'un widget configuré depuis
+   * l'accueil n'affichait plus rien quand la veille s'ouvrait sur une autre
+   * page — l'entité était introuvable là où on la cherchait.
+   */
+  wallPanelWidgetConfigs: WidgetConfigs;
+  setWallPanelWidgetConfigs: (configs: WidgetConfigs) => void;
   /** Indique si le wallpanel a déjà été configuré */
   isConfigured: boolean;
   /**
@@ -36,15 +47,17 @@ interface WallPanelProviderProps {
   children: ReactNode;
   initialConfig?: WallPanelConfig;
   initialLayout?: DashboardLayout;
+  initialWidgetConfigs?: WidgetConfigs;
 }
 
-export function WallPanelProvider({ children, initialConfig, initialLayout }: WallPanelProviderProps) {
+export function WallPanelProvider({ children, initialConfig, initialLayout, initialWidgetConfigs }: WallPanelProviderProps) {
   const [config, setConfig] = useState<WallPanelConfig>(initialConfig ?? DEFAULT_WALLPANEL_CONFIG);
   const [isActive, setIsActive] = useState(false);
   const [isWallPanelEditMode, setIsWallPanelEditMode] = useState(false);
   const [wallPanelLayout, setWallPanelLayout] = useState<DashboardLayout>(
     initialLayout ?? { ...DEFAULT_LAYOUT, widgets: { lg: [], md: [], sm: [] } }
   );
+  const [wallPanelWidgetConfigs, setWallPanelWidgetConfigs] = useState<WidgetConfigs>(initialWidgetConfigs ?? {});
 
   // La configuration servie arrive après le premier rendu : au démarrage, le
   // dashboard se peint depuis son cache local, et la réponse du serveur ne
@@ -59,6 +72,10 @@ export function WallPanelProvider({ children, initialConfig, initialLayout }: Wa
   useEffect(() => {
     if (initialLayout) setWallPanelLayout(initialLayout);
   }, [initialLayout]);
+
+  useEffect(() => {
+    if (initialWidgetConfigs) setWallPanelWidgetConfigs(initialWidgetConfigs);
+  }, [initialWidgetConfigs]);
 
   // Force l'écran de veille quel que soit config.enabled.
   //
@@ -100,6 +117,8 @@ export function WallPanelProvider({ children, initialConfig, initialLayout }: Wa
         deactivate,
         wallPanelLayout,
         setWallPanelLayout,
+        wallPanelWidgetConfigs,
+        setWallPanelWidgetConfigs,
         isConfigured,
         enabled,
         isWallPanelEditMode,
