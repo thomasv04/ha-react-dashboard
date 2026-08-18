@@ -7,9 +7,8 @@ const callService = vi.fn();
 
 vi.mock('@hakit/core', () => ({ useHass: () => ({ helpers: { callService } }) }));
 vi.mock('@/context/MoreInfoContext', () => ({ useMoreInfo: () => ({ openMoreInfo }) }));
-vi.mock('@/hooks/useSafeEntity', () => ({
-  useSafeEntity: () => ({ state: 'open', attributes: { current_position: 15, friendly_name: 'Volet bureau' } }),
-}));
+const entity = { state: 'open', attributes: { current_position: 15, friendly_name: 'Volet bureau' } };
+vi.mock('@/hooks/useSafeEntity', () => ({ useSafeEntity: () => entity }));
 
 import { CoverRowBlockRenderer } from './CoverRowBlock';
 
@@ -45,5 +44,21 @@ describe('CoverRowBlockRenderer', () => {
     await userEvent.keyboard('{Enter}');
 
     expect(openMoreInfo).toHaveBeenCalled();
+  });
+});
+
+describe('CoverRowBlockRenderer, en carte', () => {
+  it('grise la commande qui ne mènerait nulle part', () => {
+    // Volet grand ouvert : « ouvrir » n'a plus rien à ouvrir. HA grise le
+    // bouton plutôt que d'envoyer un service sans effet.
+    entity.attributes.current_position = 100;
+    const { container } = render(<CoverRowBlockRenderer block={block} card />);
+
+    const [up, stop, down] = container.querySelectorAll('button');
+    expect(up).toBeDisabled();
+    expect(stop).not.toBeDisabled();
+    expect(down).not.toBeDisabled();
+
+    entity.attributes.current_position = 15;
   });
 });

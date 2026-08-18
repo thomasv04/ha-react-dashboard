@@ -221,7 +221,9 @@
     "blockTypeWidgetDesc": "Embarquer n'importe quelle card du dashboard — caméra, lumière, capteur, thermostat…",
     "widgetType": "Card",
     "widgetRows": "Hauteur (rangées)",
-    "widgetRowsHint": "Une rangée = 80 px. Les cards adaptent leur mise en page à la hauteur donnée."
+    "widgetRowsHint": "Une rangée = 80 px. Les cards adaptent leur mise en page à la hauteur donnée.",
+    "twoColumns": "Deux colonnes",
+    "twoColumnsDesc": "Blocs côte à côte ; les volets passent en cartes avec de gros boutons"
   },
   "wallPanel": {
     "subtitle": "Écran de veille avec widgets",
@@ -273,7 +275,13 @@
       "noQuickPanel": "Aucun panneau sélectionné",
       "noNotifications": "Aucune notification",
       "dismissAll": "Tout effacer"
-    }
+    },
+    "widgetAnchor": "Position de la grille",
+    "widgetAnchorDesc": "Bord de l'écran où les widgets se posent",
+    "anchorTop": "Haut",
+    "anchorBottom": "Bas",
+    "anchorLeft": "Gauche",
+    "anchorRight": "Droite"
   },
   "panelNoneCreated": "Aucun panneau pour l'instant — créez-en un depuis le mode édition.",
   "dockLabelsOn": "Libellés",

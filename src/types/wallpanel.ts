@@ -1,4 +1,6 @@
 export type MediaOrder = 'random' | 'sequential';
+/** Bord de l'écran où la grille de widgets se colle. */
+export type WidgetAnchor = 'top' | 'bottom' | 'left' | 'right';
 export type ImageFit = 'contain' | 'cover' | 'fill';
 
 export interface WallPanelStyle {
@@ -50,6 +52,12 @@ export interface WallPanelConfig {
   style: WallPanelStyle;
   /** Gestes tactiles. Absent dans les configs antérieures — lire via `gesturesOf`. */
   gestures?: WallPanelGestures;
+  /**
+   * Bord où poser la grille de widgets. Défaut `top`, la seule disposition
+   * possible jusqu'ici — sur une tablette en paysage, une bande de cards en
+   * haut recouvre justement la partie de la photo qu'on regarde.
+   */
+  widgetAnchor?: WidgetAnchor;
 }
 
 export const DEFAULT_GESTURES: WallPanelGestures = {
@@ -87,4 +95,5 @@ export const DEFAULT_WALLPANEL_CONFIG: WallPanelConfig = {
     containBlurBackground: false,
   },
   gestures: DEFAULT_GESTURES,
+  widgetAnchor: 'top',
 };

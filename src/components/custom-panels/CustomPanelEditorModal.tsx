@@ -179,6 +179,15 @@ function PanelEditor({ panel, onChange }: { panel: CustomPanel; onChange: (p: Cu
         <div className='w-44 flex-shrink-0'>
           <IconPicker value={panel.icon ?? ''} onChange={v => onChange({ ...panel, icon: v || undefined })} label='' />
         </div>
+        <label className='flex items-center gap-2 flex-shrink-0 cursor-pointer' title={t('layout.customPanel.twoColumnsDesc')}>
+          <input
+            type='checkbox'
+            checked={panel.columns === 2}
+            onChange={e => onChange({ ...panel, columns: e.target.checked ? 2 : undefined })}
+            className='w-4 h-4 accent-blue-500'
+          />
+          <span className='text-xs text-white/60'>{t('layout.customPanel.twoColumns')}</span>
+        </label>
       </div>
 
       {/* Ref badge */}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useMotionValue } from 'framer-motion';
 import { DURATION_HERO, EASE_OUT } from '@/lib/motion-tokens';
 import { PencilLine } from 'lucide-react';
@@ -13,8 +13,52 @@ import { NotificationSheet } from './NotificationSheet';
 import { NotificationBadge } from './NotificationBadge';
 import { useI18n } from '@/i18n';
 import { useUser } from '@hakit/core';
+import { usePages } from '@/context/PageContext';
+import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useCustomPanels } from '@/context/CustomPanelContext';
+import { useDashboardConfig } from '@/hooks/useDashboardConfig';
+import type { WallPanelSave } from './WallPanelEditShell';
 
 type Sheet = 'quick' | 'notifications';
+
+/**
+ * Coque d'édition, plus l'enregistrement sur le serveur.
+ *
+ * Montée seulement pendant une session d'édition : `useDashboardConfig` ouvre
+ * sa propre requête de configuration, inutile tant que personne n'édite. Ici et
+ * non dans la coque elle-même, dont les providers isolés masquent justement la
+ * configuration du dashboard (pages, dispositions, panneaux) qu'il faut
+ * réenregistrer avec.
+ */
+function WallPanelEditSession() {
+  const { config } = useWallPanel();
+  const { pages } = usePages();
+  const { allLayouts } = useDashboardLayout();
+  const { allWidgetConfigsByPage } = useWidgetConfig();
+  const { panels: customPanels, dock } = useCustomPanels();
+  const { saveConfig } = useDashboardConfig();
+
+  // « Enregistrer » n'écrivait que dans le contexte : il fallait ensuite
+  // repasser le dashboard en édition et l'enregistrer *aussi*, faute de quoi
+  // les widgets de la veille disparaissaient au rechargement.
+  const persist: WallPanelSave = useCallback(
+    (layout, widgetConfigs) => {
+      void saveConfig({
+        version: 2,
+        pages,
+        layouts: allLayouts,
+        widgetConfigs: allWidgetConfigsByPage,
+        wallPanel: { config, layout, widgetConfigs },
+        customPanels,
+        dock,
+      });
+    },
+    [saveConfig, pages, allLayouts, allWidgetConfigsByPage, config, customPanels, dock]
+  );
+
+  return <WallPanelEditShell onSave={persist} />;
+}
 
 export function WallPanelOverlay() {
   const { t } = useI18n();
@@ -146,7 +190,7 @@ export function WallPanelOverlay() {
             <div className='absolute inset-0 z-10 pointer-events-none' onClick={e => e.stopPropagation()}>
               {isWallPanelEditMode ? (
                 // Mode édition – layout provider isolé avec drag/resize/add
-                <WallPanelEditShell />
+                <WallPanelEditSession />
               ) : (
                 // Mode lecture seule – also needs its own provider so GridItem
                 // can look up widget positions from the wallpanel layout

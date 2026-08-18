@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { DEFAULT_LAYOUT, type DashboardConfigV2, type DashboardLayout, type GridWidget } from '@/context/DashboardLayoutContext';
 import type { WidgetConfigs } from '@/types/widget-configs';
 import { DEFAULT_WIDGET_CONFIGS } from '@/widgets';
@@ -14,6 +14,16 @@ const FETCH_TIMEOUT_MS = 8_000;
 /** Réessais en arrière-plan, sans jamais bloquer l'affichage. */
 const RETRY_DELAYS_MS = [2_000, 5_000, 15_000, 30_000];
 const CACHE_KEY = 'ha-dashboard-config-cache';
+
+/**
+ * Revision du document servi, partagee par tous les appelants du hook.
+ *
+ * Elle decrit le fichier cote serveur, pas un composant : gardee par instance,
+ * le deuxieme enregistreur (barre d'edition, ecran de veille…) partait avec une
+ * revision perimee des que l'autre avait ecrit, et se voyait refuser sa
+ * sauvegarde avec un message de conflit qui n'en etait pas un.
+ */
+let serverRevision = 0;
 
 /** Étape de chargement, consommée par l'écran de démarrage. */
 export type ConfigStatus =
@@ -92,6 +102,28 @@ function sanitizeConfig(config: DashboardConfigV2): { config: DashboardConfigV2;
   };
 }
 
+/**
+ * Configs des widgets de l'écran de veille, reprises des pages si besoin.
+ *
+ * Elles étaient écrites dans `widgetConfigs[page affichée]` faute d'un endroit
+ * à elles ; `wallPanel.widgetConfigs` était enregistré vide. Sans cette pêche
+ * au premier chargement, les widgets déjà posés sur la veille repartiraient
+ * sans entité — donc vides.
+ */
+export function wallPanelWidgetConfigsOf(v2: DashboardConfigV2): WidgetConfigs {
+  const saved = v2.wallPanel?.widgetConfigs;
+  if (saved && Object.keys(saved).length > 0) return saved;
+
+  const ids = new Set((v2.wallPanel?.layout?.widgets?.lg ?? []).map(w => w.id));
+  const harvested: WidgetConfigs = {};
+  for (const configs of Object.values(v2.widgetConfigs ?? {})) {
+    for (const [id, config] of Object.entries(configs)) {
+      if (ids.has(id)) harvested[id] = config;
+    }
+  }
+  return harvested;
+}
+
 // ── Migration v1 → v2 ─────────────────────────────────────────────────────────
 function migrateConfig(data: unknown): DashboardConfigV2 {
   // Already v2
@@ -161,6 +193,7 @@ export function useDashboardConfig() {
   const [wallPanelLayout, setWallPanelLayout] = useState<DashboardLayout>(
     cached?.wallPanel?.layout ?? { ...DEFAULT_LAYOUT, widgets: { lg: [], md: [], sm: [] } }
   );
+  const [wallPanelWidgetConfigs, setWallPanelWidgetConfigs] = useState<WidgetConfigs>(cached ? wallPanelWidgetConfigsOf(cached) : {});
   const [customPanels, setCustomPanels] = useState<CustomPanel[]>(cached?.customPanels ?? []);
   const [dock, setDock] = useState<DockConfig | undefined>(cached?.dock);
 
@@ -170,12 +203,6 @@ export function useDashboardConfig() {
   const [error, setError] = useState<Error | null>(null);
   const { addToast } = useToast();
   const { t } = useI18n();
-
-  // Révision servie par le serveur au dernier chargement, renvoyée à
-  // l'enregistrement pour détecter qu'un autre appareil a écrit entre-temps.
-  // Une ref, pas un état : la valeur ne change rien à l'affichage, et un rendu
-  // supplémentaire à chaque sauvegarde ne servirait personne.
-  const revisionRef = useRef(0);
 
   // Load config from server — avec délai maximal et réessais en arrière-plan
   useEffect(() => {
@@ -191,6 +218,7 @@ export function useDashboardConfig() {
       if (v2.wallPanel) {
         setWallPanelConfig(v2.wallPanel.config);
         setWallPanelLayout(v2.wallPanel.layout);
+        setWallPanelWidgetConfigs(wallPanelWidgetConfigsOf(v2));
       }
       if (v2.customPanels) setCustomPanels(v2.customPanels);
       if (v2.dock) setDock(v2.dock);
@@ -208,7 +236,7 @@ export function useDashboardConfig() {
         const data: unknown = await res.json();
         if (cancelled) return;
 
-        revisionRef.current = Number(res.headers.get('X-Config-Revision') ?? 0);
+        serverRevision = Number(res.headers.get('X-Config-Revision') ?? 0);
 
         if (data && typeof data === 'object' && 'message' in data) {
           // Pas encore de config côté serveur : dashboard vierge, pas une erreur.
@@ -265,7 +293,7 @@ export function useDashboardConfig() {
             // Révision lue au dernier chargement. Le serveur refuse (409) si un
             // autre appareil a enregistré entre-temps : sans cet en-tête, le
             // dernier à cliquer effaçait le travail de l'autre sans un mot.
-            'X-Expected-Revision': String(revisionRef.current),
+            'X-Expected-Revision': String(serverRevision),
           },
           body: JSON.stringify(config),
         });
@@ -284,7 +312,7 @@ export function useDashboardConfig() {
 
         if (response.ok) {
           const revision = response.headers.get('X-Config-Revision');
-          if (revision !== null) revisionRef.current = Number(revision);
+          if (revision !== null) serverRevision = Number(revision);
           setPages(config.pages);
           setAllLayouts(config.layouts);
           setAllWidgetConfigs(config.widgetConfigs);
@@ -306,6 +334,7 @@ export function useDashboardConfig() {
     allWidgetConfigs,
     wallPanelConfig,
     wallPanelLayout,
+    wallPanelWidgetConfigs,
     customPanels,
     dock,
     status,

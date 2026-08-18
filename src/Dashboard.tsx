@@ -124,7 +124,9 @@ function DashboardContent() {
   return (
     <LayoutGroup>
       <div className='min-h-screen w-full text-white overflow-x-hidden'>
-        <div className='max-w-[1440px] mx-auto px-2 sm:px-4 md:px-5 pt-4 sm:pt-5 pb-24 sm:pb-32 md:pb-36'>
+        {/* `pt-2` : l'en-tête (onglets, pastilles) mangeait un sixième de la hauteur
+            d'une tablette avant la première card. */}
+        <div className='max-w-[1440px] mx-auto px-2 sm:px-4 md:px-5 pt-2 sm:pt-3 pb-24 sm:pb-32 md:pb-36'>
           {/* Onglets de navigation entre pages */}
           <PageTabs />
 
@@ -190,7 +192,8 @@ function DashboardContent() {
 }
 
 function Dashboard() {
-  const { isLoading, pages, allLayouts, allWidgetConfigs, wallPanelConfig, wallPanelLayout, customPanels, dock } = useDashboardConfig();
+  const { isLoading, pages, allLayouts, allWidgetConfigs, wallPanelConfig, wallPanelLayout, wallPanelWidgetConfigs, customPanels, dock } =
+    useDashboardConfig();
   // Échappatoire : passer outre l'attente et afficher le dashboard tel qu'il
   // peut l'être (cache ou valeurs par défaut). Le chargement continue derrière.
   const [skipped, setSkipped] = useState(false);
@@ -205,7 +208,7 @@ function Dashboard() {
     <PageProvider initialPages={pages}>
       <WidgetConfigProvider initialAllWidgetConfigs={allWidgetConfigs}>
         <DashboardLayoutProvider initialLayouts={allLayouts}>
-          <WallPanelProvider initialConfig={wallPanelConfig} initialLayout={wallPanelLayout}>
+          <WallPanelProvider initialConfig={wallPanelConfig} initialLayout={wallPanelLayout} initialWidgetConfigs={wallPanelWidgetConfigs}>
             <CustomPanelProvider initialPanels={customPanels} initialDock={dock}>
               <MoreInfoProvider>
                 <PanelProvider>

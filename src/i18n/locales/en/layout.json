@@ -221,7 +221,9 @@
     "blockTypeWidgetDesc": "Embed any dashboard card — camera, light, sensor, thermostat…",
     "widgetType": "Card",
     "widgetRows": "Height (rows)",
-    "widgetRowsHint": "One row = 80 px. Cards adapt their layout to the height given."
+    "widgetRowsHint": "One row = 80 px. Cards adapt their layout to the height given.",
+    "twoColumns": "Two columns",
+    "twoColumnsDesc": "Blocks side by side; covers switch to cards with large buttons"
   },
   "wallPanel": {
     "subtitle": "Screensaver with widgets",
@@ -273,7 +275,13 @@
       "noQuickPanel": "No panel selected",
       "noNotifications": "No notifications",
       "dismissAll": "Dismiss all"
-    }
+    },
+    "widgetAnchor": "Grid position",
+    "widgetAnchorDesc": "Screen edge the widgets sit against",
+    "anchorTop": "Top",
+    "anchorBottom": "Bottom",
+    "anchorLeft": "Left",
+    "anchorRight": "Right"
   },
   "panelNoneCreated": "No panel yet — create one from the edit mode.",
   "dockLabelsOn": "Labels on",

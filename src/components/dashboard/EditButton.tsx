@@ -30,7 +30,7 @@ export function EditButton() {
   const breakpoint: 'lg' | 'md' | 'sm' = isNarrow ? 'sm' : isMedium ? 'md' : 'lg';
   const { allWidgetConfigsByPage } = useWidgetConfig();
   const { pages } = usePages();
-  const { config: wpConfig, wallPanelLayout } = useWallPanel();
+  const { config: wpConfig, wallPanelLayout, wallPanelWidgetConfigs } = useWallPanel();
   const { panels: customPanels, dock } = useCustomPanels();
   const selection = useGridSelection();
 
@@ -75,7 +75,7 @@ export function EditButton() {
       wallPanel: {
         config: wpConfig,
         layout: wallPanelLayout,
-        widgetConfigs: {},
+        widgetConfigs: wallPanelWidgetConfigs,
       },
       customPanels,
       dock,

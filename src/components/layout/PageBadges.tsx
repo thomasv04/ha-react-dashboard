@@ -95,7 +95,7 @@ export function PageBadges() {
   const set = (next: string[]) => updatePage(currentPage.id, { badges: next.length ? next : undefined });
 
   return (
-    <div className='flex flex-wrap items-center gap-1.5 mb-3'>
+    <div className='flex flex-wrap items-center gap-1.5 mb-1.5'>
       {badges.map(entityId => (
         <div key={entityId} className='relative'>
           <Badge entityId={entityId} state={entities[entityId]?.state} attributes={entities[entityId]?.attributes} />
