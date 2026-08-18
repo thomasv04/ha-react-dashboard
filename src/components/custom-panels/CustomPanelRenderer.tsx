@@ -16,18 +16,18 @@ import { WidgetErrorBoundary } from '@/components/ui/WidgetErrorBoundary';
  * une entité supprimée ou un champ mal rempli suffisent à faire lever une
  * exception au rendu.
  */
-export function SafeBlock({ block }: { block: CustomBlock }) {
+export function SafeBlock({ block, card = false }: { block: CustomBlock; card?: boolean }) {
   return (
     <WidgetErrorBoundary label={block.type}>
-      <BlockRenderer block={block} />
+      <BlockRenderer block={block} card={card} />
     </WidgetErrorBoundary>
   );
 }
 
-function BlockRenderer({ block }: { block: CustomBlock }) {
+function BlockRenderer({ block, card }: { block: CustomBlock; card: boolean }) {
   switch (block.type) {
     case 'cover-row':
-      return <CoverRowBlockRenderer block={block} />;
+      return <CoverRowBlockRenderer block={block} card={card} />;
     case 'button':
       return <ButtonBlockRenderer block={block} />;
     case 'button-row':
@@ -41,6 +41,9 @@ function BlockRenderer({ block }: { block: CustomBlock }) {
   }
 }
 
+/** Blocs qui gardent la pleine largeur même sur deux colonnes. */
+const FULL_WIDTH_BLOCKS: CustomBlock['type'][] = ['section-header', 'button-row'];
+
 export function CustomPanelRenderer({ panelId }: { panelId: string }) {
   const { getPanel } = useCustomPanels();
   const { t } = useI18n();
@@ -53,11 +56,20 @@ export function CustomPanelRenderer({ panelId }: { panelId: string }) {
 
   // eslint-disable-next-line react-hooks/static-components
   const panelIcon = IconComponent ? <IconComponent size={18} /> : undefined;
+
+  // Deux colonnes : la feuille s'élargit, sinon chaque colonne serait deux fois
+  // plus étroite qu'avant et on aurait échangé un scroll vertical contre des
+  // cartes illisibles. Titres et rangées de boutons gardent la pleine largeur —
+  // un intitulé de section au milieu d'une grille ne titre plus rien.
+  const twoCols = panel.columns === 2;
+
   return (
-    <Panel title={panel.name} icon={panelIcon}>
-      <div className='flex flex-col gap-2'>
+    <Panel title={panel.name} icon={panelIcon} wide={twoCols}>
+      <div className={twoCols ? 'grid grid-cols-1 sm:grid-cols-2 gap-2 items-start' : 'flex flex-col gap-2'}>
         {panel.blocks.map(block => (
-          <SafeBlock key={block.id} block={block} />
+          <div key={block.id} className={twoCols && FULL_WIDTH_BLOCKS.includes(block.type) ? 'sm:col-span-2' : undefined}>
+            <SafeBlock block={block} card={twoCols} />
+          </div>
         ))}
         {panel.blocks.length === 0 && <div className='text-white/30 text-sm text-center py-6'>{t('layout.customPanel.emptyPanel')}</div>}
       </div>
