@@ -47,7 +47,7 @@ export function PageTabs() {
           Panneaux). Le décalage tient donc jusqu'à `lg`, pas jusqu'à `sm`. */}
       <div
         data-tour='pages'
-        className={cn('flex items-center gap-2 overflow-x-auto scrollbar-none py-2 mb-3 pl-12 pr-12', isEditMode && 'mt-14 lg:mt-0')}
+        className={cn('flex items-center gap-2 overflow-x-auto scrollbar-none py-1 mb-1.5 pl-12 pr-12', isEditMode && 'mt-14 lg:mt-0')}
       >
         {/* Bouton WallPanel — toujours à gauche */}
         {isAdmin && (isEditMode || isConfigured) && (
