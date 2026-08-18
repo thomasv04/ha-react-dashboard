@@ -466,10 +466,23 @@ select {
   z-index: 0;
 }
 
-/* Content above pseudo-elements */
-.gc > * {
-  position: relative;
-  z-index: 2;
+/* Contenu au-dessus des pseudo-éléments.
+
+   Dans `@layer base`, que la couche `utilities` surclasse : hors couche, cette
+   règle gagnait à égalité de spécificité contre `.absolute` et remettait en flux
+   *tout* enfant direct d'une card censé être positionné. C'est ce qui poussait
+   la pluie du widget météo dans le flux, où elle décalait le contenu vers le bas
+   et faisait rogner les prévisions. */
+@layer base {
+  .gc > * {
+    position: relative;
+    z-index: 2;
+  }
+
+  .gc-light > * {
+    position: relative;
+    z-index: 1;
+  }
 }
 
 /* Lighter variant (used in nested contexts) */
@@ -480,11 +493,6 @@ select {
   backdrop-filter: blur(20px) saturate(160%);
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: var(--dash-elev-inner);
-}
-
-.gc-light > * {
-  position: relative;
-  z-index: 1;
 }
 
 /* Bottom nav bar */

@@ -24,7 +24,9 @@ const VITE_FOLDER_NAME = process.env.VITE_FOLDER_NAME || 'community/ha-react-das
 const basePath = isAddon ? './' : useRelativePaths ? './' : `/local/${VITE_FOLDER_NAME}/`;
 
 // Mock-HA mode: replace @hakit/* with local mocks for E2E testing
-const isMockHA = process.env.VITE_MOCK_HA === 'true';
+// `vite --mode mock` en plus de la variable d'environnement, même raison que
+// `panel` plus haut : travailler l'interface sans Home Assistant sous la main.
+const isMockHA = process.env.VITE_MOCK_HA === 'true' || process.argv.includes('mock');
 
 // Version gravée dans le bundle. Lue depuis `config.yaml` — c'est ce fichier que
 // `create-tag` bump, donc le seul qui suive le tag publié. `release-notes.ts`,
