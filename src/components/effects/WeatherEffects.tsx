@@ -26,9 +26,10 @@ export function getEffectType(condition: string | undefined): EffectType | null 
       return 'hail';
     case 'fog':
       return 'fog';
+    // `partly-cloudy` : la variante avec tiret que renvoient certaines
+    // intégrations, à côté de l'état canonique de Home Assistant.
     case 'cloudy':
     case 'partlycloudy':
-    // Certaines intégrations renvoient la variante avec tiret.
     case 'partly-cloudy':
       return 'clouds';
     case 'windy':
