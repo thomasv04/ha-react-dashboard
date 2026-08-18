@@ -21,6 +21,7 @@ export default defineWidget({
     icon: CalendarDays,
     color: '#a78bfa',
     entityDomain: 'calendar',
+    entityConfigKey: 'entityIds',
     keywords: ['agenda', 'calendrier', 'évènements', 'calendar'],
   },
 

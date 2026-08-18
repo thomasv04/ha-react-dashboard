@@ -52,7 +52,10 @@ export function AddWidgetModal({ onClose }: AddWidgetModalProps) {
     const id = addWidgetByType(type);
     if (id && entityId && entityConfigKey) {
       const defaultCfg = (DEFAULT_WIDGET_CONFIGS as Record<string, WidgetConfig>)[type] ?? {};
-      updateWidgetConfig(id, { ...defaultCfg, [entityConfigKey]: entityId } as WidgetConfig);
+      // Une card qui agrège (agenda, pièce) attend une liste : y poser la
+      // chaîne telle quelle laissait la card vide, avec une entité choisie.
+      const isList = Array.isArray((defaultCfg as unknown as Record<string, unknown>)[entityConfigKey]);
+      updateWidgetConfig(id, { ...defaultCfg, [entityConfigKey]: isList ? [entityId] : entityId } as WidgetConfig);
     }
     onClose();
     if (id) setEditingWidgetId(id);

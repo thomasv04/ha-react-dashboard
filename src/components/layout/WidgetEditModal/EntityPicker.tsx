@@ -38,7 +38,13 @@ export function EntityPicker({
   const handleToggle = () => {
     if (!open && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
-      setDropPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+      // Un identifiant d'entité fait facilement 30 caractères : sous ~260 px la
+      // liste ne montre plus que le début de chacun. Et une liste plus large
+      // que son déclencheur doit rester dans la fenêtre, sinon elle déborde par
+      // la droite — ou par la gauche une fois recalée.
+      const width = Math.max(rect.width, 260);
+      const left = Math.min(Math.max(8, rect.left), Math.max(8, window.innerWidth - width - 8));
+      setDropPos({ top: rect.bottom + 4, left, width });
     }
     setOpen(v => !v);
   };
@@ -73,7 +79,9 @@ export function EntityPicker({
 
   return (
     <div>
-      <label className='text-[11px] text-white/40 mb-1 block'>{label}</label>
+      {/* Pas d'étiquette vide : dans une rangée de liste, elle réservait sa
+          hauteur et décalait le sélecteur du bouton de suppression. */}
+      {label && <label className='text-[11px] text-white/40 mb-1 block'>{label}</label>}
       <div
         ref={triggerRef}
         className='flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:border-white/20 transition-colors'
