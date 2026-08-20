@@ -6,6 +6,8 @@ import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useMoreInfo } from '@/context/MoreInfoContext';
 import { useI18n } from '@/i18n';
+import { useLowPowerMotion } from '@/hooks/useLowPowerMotion';
+import { coverArrowMotion, type CoverDirection } from '@/lib/cover-motion';
 import { cn } from '@/lib/utils';
 import type { CoverRowBlock } from '@/types/custom-panel';
 
@@ -14,6 +16,7 @@ export function CoverRowBlockRenderer({ block, card = false }: { block: CoverRow
   const { helpers } = useHass();
   const { openMoreInfo } = useMoreInfo();
   const { t } = useI18n();
+  const motionAllowed = useLowPowerMotion();
   const rowRef = useRef<HTMLDivElement>(null);
 
   if (!cover) return null;
@@ -64,10 +67,16 @@ export function CoverRowBlockRenderer({ block, card = false }: { block: CoverRow
             ? t('widgets.cover.closing')
             : cover.state;
 
-    const controls: Array<{ icon: typeof ChevronsUp; service: string; disabled: boolean; label: string }> = [
-      { icon: ChevronsUp, service: 'open_cover', disabled: fullyOpen, label: t('widgets.cover.openAction') },
+    const controls: Array<{
+      icon: typeof ChevronsUp;
+      service: string;
+      disabled: boolean;
+      label: string;
+      direction?: CoverDirection;
+    }> = [
+      { icon: ChevronsUp, service: 'open_cover', disabled: fullyOpen, label: t('widgets.cover.openAction'), direction: 'up' },
       { icon: Square, service: 'stop_cover', disabled: false, label: t('common.stop') },
-      { icon: ChevronsDown, service: 'close_cover', disabled: fullyClosed, label: t('widgets.cover.closeAction') },
+      { icon: ChevronsDown, service: 'close_cover', disabled: fullyClosed, label: t('widgets.cover.closeAction'), direction: 'down' },
     ];
 
     return (
@@ -92,6 +101,7 @@ export function CoverRowBlockRenderer({ block, card = false }: { block: CoverRow
             <motion.button
               key={c.service}
               whileTap={{ scale: 0.95 }}
+              {...(c.direction ? coverArrowMotion(cover.state, c.direction, motionAllowed) : {})}
               onClick={() => call(c.service)}
               disabled={c.disabled}
               aria-label={c.label}
@@ -125,6 +135,7 @@ export function CoverRowBlockRenderer({ block, card = false }: { block: CoverRow
         <div className='flex gap-1'>
           <motion.button
             whileTap={{ scale: 0.9 }}
+            {...coverArrowMotion(cover.state, 'up', motionAllowed)}
             onClick={() => call('open_cover')}
             className='w-8 h-8 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 flex items-center justify-center'
           >
@@ -139,6 +150,7 @@ export function CoverRowBlockRenderer({ block, card = false }: { block: CoverRow
           </motion.button>
           <motion.button
             whileTap={{ scale: 0.9 }}
+            {...coverArrowMotion(cover.state, 'down', motionAllowed)}
             onClick={() => call('close_cover')}
             className='w-8 h-8 rounded-xl gc-btn text-white/60 flex items-center justify-center'
           >

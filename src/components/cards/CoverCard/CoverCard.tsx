@@ -12,6 +12,8 @@ import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
+import { useLowPowerMotion } from '@/hooks/useLowPowerMotion';
+import { coverArrowMotion } from '@/lib/cover-motion';
 
 export function CoverCard() {
   const { t } = useI18n();
@@ -29,6 +31,7 @@ export function CoverCard() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragPosition, setDragPosition] = useState<number | null>(null);
   const playFeedback = useSoundFeedback();
+  const motionAllowed = useLowPowerMotion();
 
   const openCover = useCallback(
     (e: React.MouseEvent) => {
@@ -233,6 +236,7 @@ export function CoverCard() {
         <div className='flex flex-col justify-center gap-2'>
           <motion.button
             whileTap={{ scale: 0.88 }}
+            {...coverArrowMotion(state, 'up', motionAllowed)}
             onClick={openCover}
             className={cn(
               'rounded-xl flex items-center justify-center border transition-all duration-200',
@@ -255,6 +259,7 @@ export function CoverCard() {
           </motion.button>
           <motion.button
             whileTap={{ scale: 0.88 }}
+            {...coverArrowMotion(state, 'down', motionAllowed)}
             onClick={closeCover}
             className={cn(
               'rounded-xl flex items-center justify-center border transition-all duration-200',
