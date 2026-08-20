@@ -37,6 +37,12 @@ export function PageTabs() {
 
   const sortedPages = [...pages].sort((a, b) => a.order - b.order);
 
+  // Une seule page et pas administrateur : la barre n'afficherait que l'onglet
+  // de la page en cours — les deux pastilles d'édition sont déjà masquées, et
+  // il n'y a nulle part où aller. Elle disparaît plutôt que de manger une
+  // rangée en haut de l'écran.
+  if (!isAdmin && !isEditMode && sortedPages.length <= 1) return null;
+
   return (
     <>
       {/* pl/pr : réserve la place des deux boutons flottants (réglages en haut à
