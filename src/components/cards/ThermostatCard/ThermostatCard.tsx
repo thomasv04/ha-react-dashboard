@@ -11,6 +11,7 @@ import { useElementBox } from '@/hooks/useWidgetSize';
 import type { ThermostatCardConfig } from '@/types/widget-configs';
 import { useI18n } from '@/i18n';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
+import { climateRange, snapTemp } from '@/lib/climate';
 
 // ─── SVG gauge constants ──────────────────────────────────────────────────────
 const CX = 135;
@@ -144,9 +145,6 @@ export function ThermostatCard() {
   useElementBox(cardRef, (w, h) => setIsLandscape(w / h > 1.7));
   const config = getWidgetConfig<ThermostatCardConfig>(widgetId || 'thermostat');
   const entityId = config?.entityId ?? 'climate.living_room';
-  const minT = config?.minTemp ?? MIN_T;
-  const maxT = config?.maxTemp ?? MAX_T;
-
   const thermostat = useSafeEntity(entityId);
   const helpers = useHass(s => s.helpers);
   const playFeedback = useSoundFeedback();
@@ -166,6 +164,12 @@ export function ThermostatCard() {
   }, [haTemp]);
 
   if (!thermostat) return null;
+
+  // La jauge ne doit jamais permettre de composer une consigne que Home
+  // Assistant refusera : `climateRange` intersecte la plage d'affichage voulue
+  // avec celle que l'entité accepte vraiment. Cf. `@/lib/climate`.
+  const range = climateRange(thermostat.attributes, config?.minTemp ?? MIN_T, config?.maxTemp ?? MAX_T);
+  const { min: minT, max: maxT } = range;
 
   const current = (thermostat.attributes.current_temperature as number | undefined) ?? 20;
   const action = (thermostat.attributes.hvac_action as string | undefined) ?? thermostat.state;
@@ -202,8 +206,7 @@ export function ThermostatCard() {
     }
 
     const frac = Math.max(0, Math.min(1, normalized / SWEEP_DEG));
-    const raw = minT + frac * (maxT - minT);
-    return Math.round(raw / 0.5) * 0.5;
+    return snapTemp(minT + frac * (maxT - minT), range);
   }
 
   function updateLocalTarget(t: number) {
