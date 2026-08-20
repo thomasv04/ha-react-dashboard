@@ -10,23 +10,29 @@ import { AddWidgetModal } from '@/components/layout/AddWidgetModal';
 import { WidgetEditModal } from '@/components/layout/WidgetEditModal';
 import { WIDGET_COMPONENTS } from '@/widgets';
 import { useI18n } from '@/i18n';
-import type { WidgetAnchor } from '@/types/wallpanel';
+import { widgetExtentOf, type WallPanelConfig, type WidgetAnchor } from '@/types/wallpanel';
 import type { WidgetConfigs } from '@/types/widget-configs';
 import type { DashboardLayout } from '@/context/DashboardLayoutContext';
 
-/**
- * Où la grille se pose sur l'overlay.
- *
- * Sur les cotes verticaux la bande prend la moitie de l'ecran : une colonne de
- * cards a besoin de largeur, et laisser l'autre moitie a la photo est tout
- * l'interet du reglage.
- */
+/** Où la grille se pose sur l'overlay. La largeur vient de `widgetExtentOf`. */
 const ANCHOR_CLASS: Record<WidgetAnchor, string> = {
-  top: 'absolute inset-x-0 top-0 max-w-[1440px] mx-auto px-5 pt-8',
-  bottom: 'absolute inset-x-0 bottom-0 max-w-[1440px] mx-auto px-5 pb-8',
-  left: 'absolute inset-y-0 left-0 w-[min(50%,620px)] px-5 py-8 overflow-y-auto',
-  right: 'absolute inset-y-0 right-0 w-[min(50%,620px)] px-5 py-8 overflow-y-auto',
+  top: 'absolute top-0 left-1/2 -translate-x-1/2 px-5 pt-8',
+  bottom: 'absolute bottom-0 left-1/2 -translate-x-1/2 px-5 pb-8',
+  left: 'absolute inset-y-0 left-0 px-5 py-8 overflow-y-auto',
+  right: 'absolute inset-y-0 right-0 px-5 py-8 overflow-y-auto',
 };
+
+/** Classe et largeur de la zone des widgets, pour une configuration donnée. */
+function anchorStyle(config: WallPanelConfig): { className: string; style: React.CSSProperties } {
+  const anchor = config.widgetAnchor ?? 'top';
+  const extent = widgetExtentOf(config);
+  return {
+    className: ANCHOR_CLASS[anchor],
+    // `maxWidth` seulement en haut et en bas : sur un côté, la bande *est* la
+    // part demandée, la borner à 1440 px n'aurait aucun sens sur un écran étroit.
+    style: anchor === 'left' || anchor === 'right' ? { width: `${extent}%` } : { width: `${extent}%`, maxWidth: 1440 },
+  };
+}
 
 /** Enregistre la disposition et les configs de l'ecran de veille sur le serveur. */
 export type WallPanelSave = (layout: DashboardLayout, widgetConfigs: WidgetConfigs) => void;
@@ -159,7 +165,7 @@ export function WallPanelReadonlyShell() {
           {/* `pointer-events-none` sur le conteneur, réactivé sur chaque card :
               cette bande couvre toute la largeur, et en `auto` elle interceptait
               les balayages destinés au fond entre deux cards. */}
-          <div className={`pointer-events-none ${ANCHOR_CLASS[config.widgetAnchor ?? 'top']}`}>
+          <div className={`pointer-events-none ${anchorStyle(config).className}`} style={anchorStyle(config).style}>
             <DashboardGrid readonly>
               <WallPanelGridWidgets />
             </DashboardGrid>
@@ -194,7 +200,7 @@ export function WallPanelEditShell({ onSave }: { onSave?: WallPanelSave }) {
       <WidgetConfigProvider initialAllWidgetConfigs={initialWidgetConfigs}>
         <DashboardLayoutProvider initialLayouts={initialLayouts}>
           <WallPanelEditActions onSave={onSave} />
-          <div className={`pointer-events-auto ${ANCHOR_CLASS[config.widgetAnchor ?? 'top']}`}>
+          <div className={`pointer-events-auto ${anchorStyle(config).className}`} style={anchorStyle(config).style}>
             <DashboardGrid>
               <WallPanelGridWidgets />
             </DashboardGrid>

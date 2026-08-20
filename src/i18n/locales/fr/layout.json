@@ -223,7 +223,9 @@
     "widgetRows": "Hauteur (rangées)",
     "widgetRowsHint": "Une rangée = 80 px. Les cards adaptent leur mise en page à la hauteur donnée.",
     "twoColumns": "Deux colonnes",
-    "twoColumnsDesc": "Blocs côte à côte ; les volets passent en cartes avec de gros boutons"
+    "twoColumnsDesc": "Blocs côte à côte ; les volets passent en cartes avec de gros boutons",
+    "headerButtons": "Boutons d'en-tête",
+    "headerButtonsDesc": "Restent visibles quand le panneau défile, à côté de la fermeture."
   },
   "wallPanel": {
     "subtitle": "Écran de veille avec widgets",
@@ -281,7 +283,14 @@
     "anchorTop": "Haut",
     "anchorBottom": "Bas",
     "anchorLeft": "Gauche",
-    "anchorRight": "Droite"
+    "anchorRight": "Droite",
+    "unsavedChanges": "Modifications non enregistrées",
+    "unsavedWarning": "Vous avez des modifications non enregistrées.",
+    "discard": "Fermer sans enregistrer",
+    "saved": "À jour",
+    "widgetSize": "Place des widgets",
+    "widgetSizeDesc": "Part de l'écran occupée par la grille",
+    "widgetSizeFull": "Plein"
   },
   "panelNoneCreated": "Aucun panneau pour l'instant — créez-en un depuis le mode édition.",
   "dockLabelsOn": "Libellés",

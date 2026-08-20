@@ -223,7 +223,9 @@
     "widgetRows": "Height (rows)",
     "widgetRowsHint": "One row = 80 px. Cards adapt their layout to the height given.",
     "twoColumns": "Two columns",
-    "twoColumnsDesc": "Blocks side by side; covers switch to cards with large buttons"
+    "twoColumnsDesc": "Blocks side by side; covers switch to cards with large buttons",
+    "headerButtons": "Header buttons",
+    "headerButtonsDesc": "Stay visible while the panel scrolls, next to the close button."
   },
   "wallPanel": {
     "subtitle": "Screensaver with widgets",
@@ -281,7 +283,14 @@
     "anchorTop": "Top",
     "anchorBottom": "Bottom",
     "anchorLeft": "Left",
-    "anchorRight": "Right"
+    "anchorRight": "Right",
+    "unsavedChanges": "Unsaved changes",
+    "unsavedWarning": "You have unsaved changes.",
+    "discard": "Close without saving",
+    "saved": "Up to date",
+    "widgetSize": "Widget area",
+    "widgetSizeDesc": "Share of the screen the grid takes",
+    "widgetSizeFull": "Full"
   },
   "panelNoneCreated": "No panel yet — create one from the edit mode.",
   "dockLabelsOn": "Labels on",
