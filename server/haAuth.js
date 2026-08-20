@@ -225,6 +225,35 @@ export function adminWrites(req, res, next) {
 }
 
 /**
+ * Réserve le jeton Home Assistant de longue durée aux administrateurs.
+ *
+ * Être authentifié ne suffit pas : ce jeton appartient à l'administrateur qui
+ * l'a créé et vaut un accès complet à la maison. En mode `standalone`,
+ * n'importe quel membre du foyer disposant d'un compte HA passait
+ * `haAuthMiddleware` et repartait avec — une élévation de privilège en une
+ * requête. Le mode ingress est déjà couvert par `panel_admin: true`, mais
+ * c'est une protection du superviseur, pas la nôtre : on la double ici.
+ *
+ * Répond 200 avec un jeton nul, et non 403 : le dashboard sait fonctionner
+ * sans jeton — il retombe sur le flux d'authentification de Home Assistant, où
+ * l'utilisateur s'identifie avec *ses* droits. Une erreur laisserait croire à
+ * une panne là où le repli est parfaitement normal.
+ *
+ * `!req.haUser` = aucune authentification configurée (développement local) ;
+ * c'est alors la garde de production, dans la route, qui tranche — même
+ * raisonnement que {@link adminWrites}.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+export function haTokenGuard(req, res, next) {
+  if (!req.haUser || req.haUser.isAdmin) return next();
+  console.warn('[ha-dashboard] Refusing to serve the HA token to a non-admin user.');
+  return res.json({ hassToken: null, reason: 'not_admin' });
+}
+
+/**
  * Interdit les écritures quand rien n'authentifie l'appelant.
  *
  * `HA_AUTH` est optionnel : sans lui, `PUT /api/config`, `/api/uploads` et

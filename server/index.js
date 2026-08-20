@@ -14,7 +14,7 @@ import { profilesRouter } from './routes/profiles.js';
 import { settingsRouter } from './routes/settings.js';
 import { uploadsRouter, pruneOrphanUploads } from './routes/uploads.js';
 import { translationsRouter } from './routes/translations.js';
-import { haAuthMiddleware, adminWrites, writeGuard } from './haAuth.js';
+import { haAuthMiddleware, adminWrites, writeGuard, haTokenGuard } from './haAuth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -165,7 +165,7 @@ app.use('/api/translations', adminWrites, translationsRouter(db));
  * hassToken comes from /data/options.json ha_token (user-configured long-lived token).
  * In ingress mode this endpoint is protected by haAuthMiddleware.
  */
-app.get('/api/system/ha-config', (_req, res) => {
+app.get('/api/system/ha-config', haTokenGuard, (_req, res) => {
   let hassToken = null;
 
   // Ce point d'entrée rend un jeton HA de longue durée, souvent créé par un
