@@ -285,6 +285,56 @@ Lecture :
 
 ---
 
+## 1 bis. Robustesse — appels de service
+
+### R1 — 46 appels à `callService`, aucun `catch` `[x]`
+
+Un refus de Home Assistant ne laissait qu'un `Uncaught (in promise)` dans la
+console. Sur une tablette murale personne ne la regarde : le geste semblait
+pris en compte, et rien ne bougeait.
+
+- [x] `useServiceErrorToast` (`src/hooks/useServiceErrorToast.ts`), branché dans
+  `HAToastBridge`. Un écouteur global `unhandledrejection` plutôt qu'un `catch`
+  par appel : c'est le seul endroit qui couvre les 46 sites **et** ceux qu'on
+  écrira demain. Filtre étroit — seuls les objets ayant la forme d'une erreur
+  de service HA sont convertis en toast ; un bug applicatif reste bruyant dans
+  la console, là où on le corrige. Vérifié en conditions réelles.
+
+### R2 — Consignes de température hors bornes `[x]`
+
+Cause du `service_validation_error` / `temp_out_of_range` observé. Les cards
+`climate` ignoraient `min_temp`, `max_temp` et `target_temp_step` de l'entité :
+`minTemp`/`maxTemp` de la configuration décrivent la **jauge**, pas l'appareil.
+
+Relevé sur l'installation :
+
+| Entité | Bornes réelles | Pas | Jauge par défaut |
+|---|---|---|---|
+| `climate.pellet` | 12 – 23 | 0,1 | 10 – 30 ❌ |
+| `climate.edilkamin_…` | 14 – 24 | (non publié) | 10 – 30 ❌ |
+
+- [x] `climateRange` / `snapTemp` (`src/lib/climate.ts`) : la plage d'affichage
+  est intersectée avec celle de l'entité, l'arrondi se fait au pas réel **puis**
+  se pince — arrondir un maximum de 24,3 au demi-degré donnerait 24,5, soit
+  exactement la valeur refusée. Utilisé par `ThermostatCard` et `PelletCard`.
+- [x] Effet de bord agréable : `climate.pellet` accepte enfin le dixième de
+  degré, que le pas figé à 0,5 rendait inatteignable.
+
+### R3 — `todo.get_items` introuvable `[ ]`
+
+Repéré en passant dans la console, **non corrigé** — hors sujet de ce lot :
+
+```
+[useServiceResponse] todo.get_items sur todo.liste_dachats : Service todo.get_items not found.
+```
+
+L'appel est bien rattrapé (pas de rejet non géré), mais la card Liste de tâches
+ne peut rien afficher. `todo.get_items` existe depuis Home Assistant 2024.4 :
+soit l'instance est plus ancienne, soit l'intégration `todo` n'expose pas ce
+service.
+
+---
+
 ## 2. Sécurité
 
 ### S1 — Le jeton HA de longue durée est servi à tout utilisateur authentifié `[x]`
