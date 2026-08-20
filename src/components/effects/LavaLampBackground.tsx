@@ -3,8 +3,27 @@ import { useLowPowerMotion } from '@/hooks/useLowPowerMotion';
 import type { LavaConfig } from '@/config/themes';
 import { advanceParticle, DEFAULT_EDGE_BEHAVIOUR } from '@/lib/background-motion';
 
-const FRAME_INTERVAL_MS = 1000 / 30;
-const DPR_CAP = 1.5;
+/**
+ * Cadence du fond, et non celle de la page — même raisonnement que pour
+ * l'aurora, cf. `AuroraBackground.tsx`.
+ *
+ * `backdrop-filter` échantillonne ce qui est peint derrière lui : chaque image
+ * de ce canvas oblige les cards de verre à **recalculer leur flou**. Sur une
+ * tablette murale c'est la cadence du fond, pas le coût de son dessin, qui
+ * mène la composition — le dessin lui-même a été mesuré à 0,04 ms par image.
+ */
+const FRAME_INTERVAL_MS = 1000 / 20;
+
+/**
+ * Les vitesses sont exprimées « par image » et réglées pour 30 images par
+ * seconde : sans ce facteur, baisser la cadence ralentirait simplement les
+ * blobs et `config.speed` n'aurait plus le même sens.
+ */
+const STEP_SCALE = (FRAME_INTERVAL_MS * 30) / 1000;
+
+/** Des blobs entièrement diffus : au-delà de la résolution physique, rien de plus à voir. */
+const DPR_CAP = 1;
+
 const RESIZE_DEBOUNCE_MS = 150;
 
 interface Blob {
@@ -130,13 +149,13 @@ export function LavaLampBackground({ config }: LavaLampBackgroundProps) {
       g2d.clearRect(0, 0, w, h);
 
       for (const blob of blobs) {
-        blob.phaseX += blob.phaseSpeedX;
-        blob.phaseY += blob.phaseSpeedY;
+        blob.phaseX += blob.phaseSpeedX * STEP_SCALE;
+        blob.phaseY += blob.phaseSpeedY * STEP_SCALE;
 
         const edgeAlpha = advanceParticle(
           blob,
-          (blob.vx + Math.sin(blob.phaseX) * 0.4 * speedMult * swayMult) / w,
-          (blob.vy + Math.cos(blob.phaseY) * 0.3 * speedMult * swayMult) / h,
+          ((blob.vx + Math.sin(blob.phaseX) * 0.4 * speedMult * swayMult) / w) * STEP_SCALE,
+          ((blob.vy + Math.cos(blob.phaseY) * 0.3 * speedMult * swayMult) / h) * STEP_SCALE,
           edgeBehaviour
         );
 

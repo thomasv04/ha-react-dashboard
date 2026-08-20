@@ -3,9 +3,69 @@ import { useLowPowerMotion } from '@/hooks/useLowPowerMotion';
 import type { AuroraConfig } from '@/config/themes';
 import { advanceParticle, DEFAULT_EDGE_BEHAVIOUR } from '@/lib/background-motion';
 
-const FRAME_INTERVAL_MS = 1000 / 30;
-const DPR_CAP = 1.5;
+/**
+ * Cadence du fond, et non celle de la page.
+ *
+ * `backdrop-filter` échantillonne ce qui est peint derrière lui : chaque image
+ * de ce canvas oblige les ~20 cards de verre à **recalculer leur flou**. La
+ * cadence du fond est donc un multiplicateur direct sur le coût de composition
+ * de tout le dashboard, pas seulement sur celui du canvas.
+ *
+ * Les orbes avancent d'environ 0,7 px par image : à 20 images par seconde le
+ * mouvement reste continu — il n'y a aucune arête dans un dégradé radial pour
+ * trahir la cadence — et on économise un tiers des recalculs de flou.
+ */
+const FRAME_INTERVAL_MS = 1000 / 20;
+
+/**
+ * On ne peint que des dégradés radiaux très diffus : les rendre au-delà de la
+ * résolution physique ne montre rien de plus. À 1.5 on remplissait 2,25 fois
+ * plus de pixels que nécessaire, à chaque image.
+ */
+const DPR_CAP = 1;
+
+/**
+ * Les vitesses des orbes sont exprimées « par image » et ont été réglées à
+ * 30 images par seconde. Baisser la cadence les ralentirait d'autant : ce
+ * facteur rend le mouvement indépendant de la cadence, pour que `config.speed`
+ * garde le sens qu'il avait.
+ */
+const STEP_SCALE = (FRAME_INTERVAL_MS * 30) / 1000;
+
 const RESIZE_DEBOUNCE_MS = 150;
+
+/**
+ * Côté du sprite d'orbe, en pixels.
+ *
+ * Un dégradé radial n'a aucun détail : l'agrandir de 128 px à son rayon réel
+ * (souvent 500 px) est invisible, le filtrage bilinéaire s'en charge. Le rendre
+ * à sa taille réelle coûterait ~4 Mo de texture par orbe.
+ */
+const ORB_SPRITE_PX = 128;
+
+/**
+ * Un orbe pré-rendu, opacité pleine.
+ *
+ * Le dégradé était recréé pour chaque orbe **à chaque image** — 100 objets
+ * gradient par seconde, chacun téléversé au GPU. La forme ne dépend pourtant
+ * que de la couleur : seule l'opacité varie, et `globalAlpha` la reproduit à
+ * l'identique puisque le dégradé est une rampe linéaire d'alpha.
+ */
+function makeOrbSprite(color: string): HTMLCanvasElement {
+  const sprite = document.createElement('canvas');
+  sprite.width = ORB_SPRITE_PX;
+  sprite.height = ORB_SPRITE_PX;
+  const c = sprite.getContext('2d');
+  if (c) {
+    const r = ORB_SPRITE_PX / 2;
+    const grad = c.createRadialGradient(r, r, 0, r, r, r);
+    grad.addColorStop(0, `${color}1)`);
+    grad.addColorStop(1, `${color}0)`);
+    c.fillStyle = grad;
+    c.fillRect(0, 0, ORB_SPRITE_PX, ORB_SPRITE_PX);
+  }
+  return sprite;
+}
 
 interface Orb {
   /** 0–1 normalized position */
@@ -85,6 +145,9 @@ export function AuroraBackground({ config }: AuroraBackgroundProps) {
 
     const colors = Array.from({ length: orbCount }, (_, i) => palette[i % palette.length]);
 
+    // Un sprite par couleur, pas par orbe : la palette n'en compte que cinq.
+    const sprites = new Map(palette.map(color => [color, makeOrbSprite(color)]));
+
     const initOrbs = () => {
       orbs = colors.map(color => ({
         nx: Math.random(),
@@ -134,13 +197,13 @@ export function AuroraBackground({ config }: AuroraBackgroundProps) {
       g2d.clearRect(0, 0, w, h);
 
       for (const orb of orbs) {
-        orb.phaseX += orb.phaseSpeedX;
-        orb.phaseY += orb.phaseSpeedY;
+        orb.phaseX += orb.phaseSpeedX * STEP_SCALE;
+        orb.phaseY += orb.phaseSpeedY * STEP_SCALE;
 
         const edgeAlpha = advanceParticle(
           orb,
-          (orb.vx + Math.sin(orb.phaseX) * 0.5 * swayMult * speedMult) / w,
-          (orb.vy + Math.cos(orb.phaseY) * 0.4 * swayMult * speedMult) / h,
+          ((orb.vx + Math.sin(orb.phaseX) * 0.5 * swayMult * speedMult) / w) * STEP_SCALE,
+          ((orb.vy + Math.cos(orb.phaseY) * 0.4 * swayMult * speedMult) / h) * STEP_SCALE,
           edgeBehaviour
         );
 
@@ -148,15 +211,14 @@ export function AuroraBackground({ config }: AuroraBackgroundProps) {
         const y = orb.ny * h;
         const radius = minDim * orb.radiusRatio;
 
-        const grad = g2d.createRadialGradient(x, y, 0, x, y, radius);
-        grad.addColorStop(0, `${orb.color}${orb.opacity * edgeAlpha})`);
-        grad.addColorStop(1, `${orb.color}0)`);
+        const sprite = sprites.get(orb.color);
+        if (!sprite) continue;
 
-        g2d.beginPath();
-        g2d.arc(x, y, radius, 0, Math.PI * 2);
-        g2d.fillStyle = grad;
-        g2d.fill();
+        g2d.globalAlpha = orb.opacity * edgeAlpha;
+        g2d.drawImage(sprite, x - radius, y - radius, radius * 2, radius * 2);
       }
+
+      g2d.globalAlpha = 1;
 
       animId = requestAnimationFrame(draw);
     }
