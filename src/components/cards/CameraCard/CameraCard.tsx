@@ -28,7 +28,7 @@ export function CameraCard() {
   const selectorEntity = config?.selectorEntity ?? '';
   const streamMode = config?.streamMode ?? 'auto';
 
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   const entities = useEntities([selectorEntity]);
   const playFeedback = useSoundFeedback();
 

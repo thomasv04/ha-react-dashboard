@@ -23,7 +23,7 @@ export function CoverCard() {
   const entityId = config?.entityId ?? 'cover.living_room';
 
   const entity = useSafeEntity(entityId);
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   const sliderRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const widgetSize = useWidgetSize(cardRef);

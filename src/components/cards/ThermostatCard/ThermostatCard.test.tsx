@@ -12,7 +12,12 @@ vi.mock('@/context/WidgetConfigContext', () => ({
 const callServiceMock = vi.fn();
 
 vi.mock('@hakit/core', () => ({
-  useHass: () => ({ helpers: { callService: callServiceMock } }),
+  // Le bouchon doit appliquer le sélecteur : le code de production passe
+  // `useHass(s => s.helpers)` pour ne pas s'abonner au store entier.
+  useHass: (selector?: (s: { helpers: { callService: typeof callServiceMock } }) => unknown) => {
+    const state = { helpers: { callService: callServiceMock } };
+    return typeof selector === 'function' ? selector(state) : state;
+  },
 }));
 
 vi.mock('@/hooks/useSafeEntity', () => ({

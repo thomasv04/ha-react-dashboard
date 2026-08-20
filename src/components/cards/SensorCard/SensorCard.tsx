@@ -60,7 +60,7 @@ export function SensorCard() {
   const variant = config?.variant ?? 'default';
 
   const entity = useSafeEntity(entityId);
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   const playFeedback = useSoundFeedback();
   const { data: historyData, loading: historyLoading } = useSensorHistory(variant === 'sparkline' || variant === 'bar' ? entityId : '', 24);
 

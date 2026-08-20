@@ -28,7 +28,7 @@ function ControlButton({
   embedded?: boolean;
   soundOverrides?: Record<string, SoundPreset>;
 }) {
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   const playFeedback = useSoundFeedback('rooms', soundOverrides);
 
   const iconName = ctrl.icon;
@@ -90,7 +90,7 @@ function LightToggle({
   soundOverrides?: Record<string, SoundPreset>;
 }) {
   const { t } = useI18n();
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   const playFeedback = useSoundFeedback('rooms', soundOverrides);
   const entities = useEntities(entityIds);
   const anyOn = entityIds.some(id => entities?.[id]?.state === 'on');

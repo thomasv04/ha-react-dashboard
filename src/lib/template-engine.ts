@@ -140,5 +140,32 @@ class HATemplateEngine {
   }
 }
 
+// ── Entités citées par un template ───────────────────────────────────────────
+
+/** Identifiants d'entité écrits en toutes lettres : `states('light.salon')`. */
+const LITERAL_ID_RE = /['"]([a-z_]+\.[a-z0-9_]+)['"]/g;
+
+/**
+ * Un appel dont le premier argument n'est **pas** une chaîne littérale —
+ * `states('light.' ~ nom)`. On ne peut alors pas savoir quelles entités le
+ * template lit, et rien ne permet de restreindre l'abonnement.
+ */
+const DYNAMIC_LOOKUP_RE = /(?:states|states_attr|state_attr|is_state|has_value)\(\s*[^'")\s]/;
+
+/**
+ * Les entités qu'un template consulte, pour n'écouter que celles-là.
+ *
+ * Sans ça, chaque card à template s'abonnait à la carte complète des entités et
+ * se re-rendait à chaque changement d'état de la maison — la même erreur que
+ * `useHass()` sans sélecteur, cf. `useEntities`.
+ *
+ * @returns la liste des identifiants, ou `null` quand le template les calcule
+ *          et qu'il faut donc tout écouter.
+ */
+export function templateEntityIds(template: string): string[] | null {
+  if (DYNAMIC_LOOKUP_RE.test(template)) return null;
+  return [...new Set(Array.from(template.matchAll(LITERAL_ID_RE), m => m[1]))];
+}
+
 /** Singleton — partagé par toute l'application */
 export const templateEngine = new HATemplateEngine();

@@ -5,7 +5,14 @@ const callService = vi.fn();
 const setCurrentPage = vi.fn();
 const openPanel = vi.fn();
 
-vi.mock('@hakit/core', () => ({ useHass: () => ({ helpers: { callService } }) }));
+vi.mock('@hakit/core', () => ({
+  // Le bouchon doit appliquer le sélecteur : le code de production passe
+  // `useHass(s => s.helpers)` pour ne pas s'abonner au store entier.
+  useHass: (selector?: (s: { helpers: { callService: typeof callService } }) => unknown) => {
+    const state = { helpers: { callService: callService } };
+    return typeof selector === 'function' ? selector(state) : state;
+  },
+}));
 vi.mock('@/context/PageContext', () => ({
   usePages: () => ({ setCurrentPage, pages: [{ id: 'home' }, { id: 'salon' }] }),
 }));

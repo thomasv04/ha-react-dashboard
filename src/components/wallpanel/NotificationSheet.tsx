@@ -53,7 +53,7 @@ function relativeTime(iso: string | undefined, language: string): string {
 
 function NotificationCard({ item, onDismiss }: { item: DashboardNotification; onDismiss: () => void }) {
   const { language, t } = useI18n();
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   const levelName = item.level ?? 'info';
   const level = LEVELS[levelName];
   const when = relativeTime(item.created_at, language);

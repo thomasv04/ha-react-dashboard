@@ -13,7 +13,7 @@ import type { CoverRowBlock } from '@/types/custom-panel';
 
 export function CoverRowBlockRenderer({ block, card = false }: { block: CoverRowBlock; card?: boolean }) {
   const cover = useSafeEntity(block.entityId);
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   const { openMoreInfo } = useMoreInfo();
   const { t } = useI18n();
   const motionAllowed = useLowPowerMotion();

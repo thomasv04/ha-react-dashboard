@@ -53,7 +53,12 @@ vi.mock('@/context/WidgetConfigContext', () => ({
 
 const mockCallService = vi.fn();
 vi.mock('@hakit/core', () => ({
-  useHass: () => ({ helpers: { callService: mockCallService } }),
+  // Le bouchon doit appliquer le sélecteur : le code de production passe
+  // `useHass(s => s.helpers)` pour ne pas s'abonner au store entier.
+  useHass: (selector?: (s: { helpers: { callService: typeof mockCallService } }) => unknown) => {
+    const state = { helpers: { callService: mockCallService } };
+    return typeof selector === 'function' ? selector(state) : state;
+  },
 }));
 
 // `attributes` toujours présent : c'est le contrat de `useSafeEntity`, qui

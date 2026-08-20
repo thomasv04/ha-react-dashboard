@@ -21,7 +21,7 @@ export function ButtonCard() {
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<ButtonCardConfig>(widgetId || 'button');
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   const { ripples, trigger: triggerRipple } = useRipple();
   const playFeedback = useSoundFeedback('button', config?.soundOverrides);
 

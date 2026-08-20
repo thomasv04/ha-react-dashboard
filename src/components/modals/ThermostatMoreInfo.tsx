@@ -25,7 +25,7 @@ export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: s
   const showInfoPanel = config?.showInfoPanel !== false;
   const [historyHours, setHistoryHours] = useState(24);
   const entity = useSafeEntity(entityId);
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
 
   const setHvacMode = useCallback(
     (mode: string) => {

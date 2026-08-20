@@ -298,7 +298,7 @@ export function MediaPlayerCard() {
   const entityId = config?.entityId ?? 'media_player.unknown';
 
   const entity = useSafeEntity(entityId);
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   const { ripples, trigger: triggerRipple } = useRipple();
   const playFeedback = useSoundFeedback();
 

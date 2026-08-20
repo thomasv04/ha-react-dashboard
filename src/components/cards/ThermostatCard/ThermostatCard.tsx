@@ -148,7 +148,7 @@ export function ThermostatCard() {
   const maxT = config?.maxTemp ?? MAX_T;
 
   const thermostat = useSafeEntity(entityId);
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   const playFeedback = useSoundFeedback();
 
   const svgRef = useRef<SVGSVGElement>(null);

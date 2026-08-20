@@ -19,7 +19,7 @@ export function PelletCard() {
   const config = getWidgetConfig<PelletCardConfig>(widgetId || 'pellet');
   const entityId = config?.entityId ?? 'climate.pellet_stove';
   const pellet = useSafeEntity(entityId);
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   const playFeedback = useSoundFeedback();
   if (!pellet) return null;
 

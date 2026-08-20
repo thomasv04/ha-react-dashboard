@@ -7,7 +7,7 @@ export function ButtonBlockRenderer({ block }: { block: ButtonBlock }) {
   // Les icones hors du noyau arrivent avec le catalogue complet, charge a la
   // demande : sans cet abonnement elles resteraient sur leur icone de repli.
   useIconCatalog();
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   // eslint-disable-next-line react-hooks/static-components
   const Icon = block.icon ? resolveIcon(block.icon) : undefined;
 

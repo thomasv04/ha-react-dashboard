@@ -17,7 +17,7 @@ import type { CardAction } from '@/types/card-actions';
  * comportement historique (ouvrir la fiche « more info », le plus souvent).
  */
 export function useCardActions() {
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   const { setCurrentPage, pages } = usePages();
   const { openPanel } = usePanel();
 

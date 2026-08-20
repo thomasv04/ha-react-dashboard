@@ -18,7 +18,7 @@ export default function LightMoreInfo({ entityId, widgetId }: { entityId: string
   const [historyHours, setHistoryHours] = useState(24);
   const [activeTab, setActiveTab] = useState<LightTab>('brightness');
   const entity = useSafeEntity(entityId);
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
 
   const handleToggle = useCallback(() => {
     helpers.callService({

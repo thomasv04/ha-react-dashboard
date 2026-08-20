@@ -27,7 +27,7 @@ export function AutomationCard() {
   const embedded = useGroupEmbedded();
 
   const entity = useSafeEntity(entityId);
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   const playFeedback = useSoundFeedback();
   const cardRef = useRef<HTMLDivElement>(null);
   const size = useWidgetSize(cardRef);
