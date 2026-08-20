@@ -7,7 +7,12 @@ let autoTheme: AutoThemeConfig;
 let themeId = 'dark';
 let entities: Record<string, { state?: string }> = {};
 
-vi.mock('@hakit/core', () => ({ useHass: () => ({ entities }) }));
+// `useAutoTheme` n'écoute plus que `sun.sun` ou le capteur configuré, via
+// `useEntities` : le bouchon reproduit ce contrat — il ne rend que les
+// entités demandées, pas la carte complète.
+vi.mock('@/hooks/useEntities', () => ({
+  useEntities: (ids: string[]) => Object.fromEntries(ids.map(id => [id, entities[id]])),
+}));
 vi.mock('@/context/ThemeContext', () => ({ useTheme: () => ({ autoTheme, setTheme, themeId }) }));
 
 import { useAutoTheme } from './useAutoTheme';

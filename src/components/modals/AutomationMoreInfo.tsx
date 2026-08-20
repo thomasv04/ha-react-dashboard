@@ -18,7 +18,7 @@ export default function AutomationMoreInfo({ entityId, widgetId }: { entityId: s
   const showInfoPanel = config?.showInfoPanel !== false;
   const [historyHours, setHistoryHours] = useState(24);
   const entity = useSafeEntity(entityId);
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   const { data } = useEntityHistory(entityId, historyHours);
 
   if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;

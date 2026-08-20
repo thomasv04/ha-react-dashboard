@@ -27,5 +27,6 @@
   "stop": "STOP",
   "widgetUnavailable": "Widget unavailable",
   "panelUnavailable": "Panel unavailable",
-  "retry": "Retry"
+  "retry": "Retry",
+  "serviceRejected": "Home Assistant rejected the command"
 }

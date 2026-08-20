@@ -6,6 +6,7 @@ import { ToastContainer } from '@/components/ui/Toast/components/Toast';
 import { useHAToast } from '@/hooks/useHAToast';
 import { useHAModal } from '@/hooks/useHAModal';
 import { useHANotification } from '@/hooks/useHANotification';
+import { useServiceErrorToast } from '@/hooks/useServiceErrorToast';
 import Dashboard from './Dashboard';
 import { ModalContainer } from './components/ui/Modal/components/Modal';
 import { ThemeContextProvider, useTheme } from '@/context/ThemeContext';
@@ -30,6 +31,9 @@ function HAToastBridge() {
   // n'apparaissait même pas dans les écouteurs actifs de Home Assistant.
   useHAModal();
   useHANotification();
+  // Rend visibles les commandes que HA refuse, au lieu de les laisser en
+  // `Uncaught (in promise)` dans une console que personne ne regarde.
+  useServiceErrorToast();
   return null;
 }
 

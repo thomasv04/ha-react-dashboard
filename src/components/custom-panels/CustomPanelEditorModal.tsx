@@ -126,6 +126,7 @@ function BlockItem({
 function PanelEditor({ panel, onChange }: { panel: CustomPanel; onChange: (p: CustomPanel) => void }) {
   const { t } = useI18n();
   const [expandedBlockId, setExpandedBlockId] = useState<string | null>(null);
+  const [showHeaderButtons, setShowHeaderButtons] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
 
   const updateBlock = (index: number, block: CustomBlock) => {
@@ -188,6 +189,31 @@ function PanelEditor({ panel, onChange }: { panel: CustomPanel; onChange: (p: Cu
           />
           <span className='text-xs text-white/60'>{t('layout.customPanel.twoColumns')}</span>
         </label>
+      </div>
+
+      {/* Boutons d'en-tête — repliés : la plupart des panneaux n'en ont pas. */}
+      <div className='px-4 py-2 border-b border-white/8 flex-shrink-0'>
+        <button
+          onClick={() => setShowHeaderButtons(v => !v)}
+          className='w-full flex items-center justify-between text-[11px] font-semibold text-white/40 uppercase tracking-wider hover:text-white/60 transition-colors'
+        >
+          <span>
+            {t('layout.customPanel.headerButtons')}
+            <span className='ml-2 normal-case tracking-normal text-white/20'>({panel.headerButtons?.length ?? 0})</span>
+          </span>
+          {showHeaderButtons ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+        </button>
+        {showHeaderButtons && (
+          <>
+            <p className='text-white/25 text-[11px] mt-1'>{t('layout.customPanel.headerButtonsDesc')}</p>
+            {/* Même éditeur que la rangée de boutons : c'est la même liste, à
+                l'endroit où elle s'affiche près. */}
+            <ButtonRowBlockForm
+              block={{ id: `${panel.id}-header`, type: 'button-row', buttons: panel.headerButtons ?? [] }}
+              onChange={b => onChange({ ...panel, headerButtons: b.buttons.length ? b.buttons : undefined })}
+            />
+          </>
+        )}
       </div>
 
       {/* Ref badge */}

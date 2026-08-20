@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { useHass } from '@hakit/core';
+import { useEffect, useMemo } from 'react';
+import { useEntities } from '@/hooks/useEntities';
 import { useTheme } from '@/context/ThemeContext';
 
 /**
@@ -23,12 +23,16 @@ export const DEFAULT_ILLUMINANCE_THRESHOLD = 50;
  */
 export function useAutoTheme() {
   const { autoTheme, setTheme, themeId } = useTheme();
-  const { entities } = useHass();
+
+  // Deux entités au plus, jamais tout le store : `useHass()` sans sélecteur
+  // rendait ce pont à chaque changement d'état de la maison.
+  const watched = useMemo(() => (autoTheme.illuminanceEntity ? [autoTheme.illuminanceEntity] : ['sun.sun']), [autoTheme.illuminanceEntity]);
+  const entities = useEntities(watched);
 
   useEffect(() => {
     if (!autoTheme.enabled) return;
 
-    const read = (id: string) => (entities[id as keyof typeof entities] as { state?: string } | undefined)?.state;
+    const read = (id: string) => entities[id]?.state;
 
     let isDay: boolean;
 

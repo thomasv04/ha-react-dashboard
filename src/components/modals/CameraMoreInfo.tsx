@@ -12,7 +12,7 @@ type CameraMode = 'stream' | 'snapshot';
 export default function CameraMoreInfo({ entityId, widgetId }: { entityId: string; widgetId: string }) {
   const { getWidgetConfig } = useWidgetConfig();
   const config = getWidgetConfig<CameraCardConfig>(widgetId);
-  const { connection } = useHass();
+  const connection = useHass(s => s.connection);
   const [mode, setMode] = useState<CameraMode>('stream');
   const [refreshKey, setRefreshKey] = useState(0);
 

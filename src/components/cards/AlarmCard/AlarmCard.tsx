@@ -233,7 +233,7 @@ interface AlarmKeypadModalProps {
 }
 
 function AlarmKeypadModal({ open, pendingMode, onClose, entityId, name, requireCode, visual, activeModes, t }: AlarmKeypadModalProps) {
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   const playFeedback = useSoundFeedback();
   const [code, setCode] = useState('');
   const [selected, setSelected] = useState<ArmMode>(pendingMode ?? 'disarm');

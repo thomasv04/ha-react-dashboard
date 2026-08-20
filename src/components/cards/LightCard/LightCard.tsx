@@ -67,7 +67,7 @@ export function LightCard() {
   const entityId = config?.entityId ?? 'light.salon';
 
   const entity = useSafeEntity(entityId);
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
 
   // Local state for sliders
   const haBrightness = entity?.attributes.brightness as number | undefined;

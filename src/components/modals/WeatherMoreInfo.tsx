@@ -26,7 +26,7 @@ function tempColor(temp: number): string {
 export default function WeatherMoreInfo({ entityId }: { entityId: string; widgetId: string }) {
   const { t, tArray } = useI18n();
   const entity = useSafeEntity(entityId);
-  const { connection } = useHass();
+  const connection = useHass(s => s.connection);
   const [forecastType, setForecastType] = useState<'hourly' | 'daily'>('hourly');
   const [forecasts, setForecasts] = useState<ForecastEntry[]>([]);
 

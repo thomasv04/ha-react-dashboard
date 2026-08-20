@@ -5,7 +5,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const openMoreInfo = vi.fn();
 const callService = vi.fn();
 
-vi.mock('@hakit/core', () => ({ useHass: () => ({ helpers: { callService } }) }));
+vi.mock('@hakit/core', () => ({
+  // Le bouchon doit appliquer le sélecteur : le code de production passe
+  // `useHass(s => s.helpers)` pour ne pas s'abonner au store entier.
+  useHass: (selector?: (s: { helpers: { callService: typeof callService } }) => unknown) => {
+    const state = { helpers: { callService: callService } };
+    return typeof selector === 'function' ? selector(state) : state;
+  },
+}));
 vi.mock('@/context/MoreInfoContext', () => ({ useMoreInfo: () => ({ openMoreInfo }) }));
 const entity = { state: 'open', attributes: { current_position: 15, friendly_name: 'Volet bureau' } };
 vi.mock('@/hooks/useSafeEntity', () => ({ useSafeEntity: () => entity }));

@@ -58,6 +58,15 @@ export interface WallPanelConfig {
    * haut recouvre justement la partie de la photo qu'on regarde.
    */
   widgetAnchor?: WidgetAnchor;
+  /**
+   * Part de l'écran occupée par la grille, en pourcentage de sa largeur.
+   *
+   * La grille couvrait toute la largeur disponible : sur une tablette murale,
+   * trois widgets suffisaient à masquer la photo. Réduire cette part rétrécit
+   * les cards d'autant — la grille garde ses douze colonnes, elles sont juste
+   * plus étroites.
+   */
+  widgetExtent?: number;
 }
 
 export const DEFAULT_GESTURES: WallPanelGestures = {
@@ -75,6 +84,17 @@ export const DEFAULT_GESTURES: WallPanelGestures = {
  * fonctionnalité restent valides : sans ce passage obligé, chaque lecture
  * devrait répéter le même jeu de valeurs par défaut.
  */
+/**
+ * Part de l'écran occupée par la grille, valeur par défaut comprise.
+ *
+ * Les ancrages latéraux gardaient la moitié de l'écran en dur : c'est ce que
+ * retrouvent les configurations qui ne portent pas encore le réglage.
+ */
+export function widgetExtentOf(config: WallPanelConfig): number {
+  const anchor = config.widgetAnchor ?? 'top';
+  return config.widgetExtent ?? (anchor === 'left' || anchor === 'right' ? 50 : 100);
+}
+
 export function gesturesOf(config: WallPanelConfig): WallPanelGestures {
   return { ...DEFAULT_GESTURES, ...config.gestures };
 }
@@ -96,4 +116,5 @@ export const DEFAULT_WALLPANEL_CONFIG: WallPanelConfig = {
   },
   gestures: DEFAULT_GESTURES,
   widgetAnchor: 'top',
+  widgetExtent: 100,
 };

@@ -23,7 +23,7 @@ function humanizeOption(raw: string): string {
 // ── Select entity dropdown control ────────────────────────────────────────────
 function VacuumSelectControl({ entityId, label }: VacuumSelectEntity) {
   const entity = useSafeEntity(entityId);
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const portalRef = useRef<HTMLDivElement>(null);
@@ -279,7 +279,7 @@ export function VacuumCard() {
   const entityId = config?.entityId ?? '';
 
   const vacuum = useSafeEntity(entityId);
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   const [step, setStep] = useState<'main' | 'rooms'>('main');
   const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
   const [sequentialMode, setSequentialMode] = useState(false);

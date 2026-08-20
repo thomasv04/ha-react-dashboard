@@ -85,7 +85,7 @@ function ControlButton({ ctrl }: { ctrl: RoomControl }) {
   // Les icones hors du noyau arrivent avec le catalogue complet, charge a la
   // demande : sans cet abonnement elles resteraient sur leur icone de repli.
   useIconCatalog();
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   const playFeedback = useSoundFeedback();
 
   const iconName = ctrl.icon;
@@ -136,7 +136,7 @@ function ControlButton({ ctrl }: { ctrl: RoomControl }) {
 // ── Default light controls derived from lightEntities ─────────────────────────
 
 function DefaultLightControls({ entityIds }: { entityIds: string[] }) {
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   const playFeedback = useSoundFeedback();
   const entities = useEntities(entityIds);
 

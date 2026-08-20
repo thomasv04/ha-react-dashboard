@@ -3,7 +3,7 @@ import { Panel } from '@/components/layout/Panel';
 import { resolveIcon } from '@/lib/lucide-icon-map';
 import { CoverRowBlockRenderer } from './CoverRowBlock';
 import { ButtonBlockRenderer } from './ButtonBlock';
-import { ButtonRowBlockRenderer } from './ButtonRowBlock';
+import { ButtonRowBlockRenderer, InlineButtonRenderer } from './ButtonRowBlock';
 import { SectionHeaderBlockRenderer } from './SectionHeaderBlock';
 import { WidgetBlockRenderer } from './WidgetBlock';
 import type { CustomBlock } from '@/types/custom-panel';
@@ -63,8 +63,16 @@ export function CustomPanelRenderer({ panelId }: { panelId: string }) {
   // un intitulé de section au milieu d'une grille ne titre plus rien.
   const twoCols = panel.columns === 2;
 
+  const headerButtons = panel.headerButtons?.length ? (
+    <div className='flex items-center gap-1.5'>
+      {panel.headerButtons.map(button => (
+        <InlineButtonRenderer key={button.id} btn={button} compact />
+      ))}
+    </div>
+  ) : undefined;
+
   return (
-    <Panel title={panel.name} icon={panelIcon} wide={twoCols}>
+    <Panel title={panel.name} icon={panelIcon} wide={twoCols} actions={headerButtons}>
       <div className={twoCols ? 'grid grid-cols-1 sm:grid-cols-2 gap-2 items-start' : 'flex flex-col gap-2'}>
         {panel.blocks.map(block => (
           <div key={block.id} className={twoCols && FULL_WIDTH_BLOCKS.includes(block.type) ? 'sm:col-span-2' : undefined}>

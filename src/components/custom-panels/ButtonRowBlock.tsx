@@ -3,11 +3,11 @@ import { useHass } from '@hakit/core';
 import { resolveIcon, useIconCatalog } from '@/lib/lucide-icon-map';
 import type { ButtonRowBlock, InlineButton } from '@/types/custom-panel';
 
-function InlineButtonRenderer({ btn }: { btn: InlineButton }) {
+export function InlineButtonRenderer({ btn, compact = false }: { btn: InlineButton; compact?: boolean }) {
   // Les icones hors du noyau arrivent avec le catalogue complet, charge a la
   // demande : sans cet abonnement elles resteraient sur leur icone de repli.
   useIconCatalog();
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   // eslint-disable-next-line react-hooks/static-components
   const Icon = btn.icon ? resolveIcon(btn.icon) : undefined;
 
@@ -23,13 +23,15 @@ function InlineButtonRenderer({ btn }: { btn: InlineButton }) {
     <motion.button
       whileTap={{ scale: 0.95 }}
       onClick={call}
-      className={`flex-1 py-2.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 min-w-0 ${
-        isPrimary ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400' : 'gc-btn text-white/60 hover:text-white/80'
-      }`}
+      // `compact` : la version d'en-tête, qui partage sa ligne avec le titre et
+      // la fermeture — elle se serre au lieu de prendre toute la largeur.
+      className={`rounded-2xl font-semibold flex items-center justify-center gap-2 min-w-0 ${
+        compact ? 'px-3 py-1.5 text-xs' : 'flex-1 py-2.5 text-sm'
+      } ${isPrimary ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400' : 'gc-btn text-white/60 hover:text-white/80'}`}
     >
       {/* eslint-disable-next-line react-hooks/static-components */}
-      {Icon && <Icon size={16} className='flex-shrink-0' />}
-      <span className='truncate'>{btn.label}</span>
+      {Icon && <Icon size={compact ? 13 : 16} className='flex-shrink-0' />}
+      {btn.label && <span className='truncate'>{btn.label}</span>}
     </motion.button>
   );
 }

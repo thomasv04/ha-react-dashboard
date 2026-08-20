@@ -15,7 +15,7 @@ export function useSensorHistory(
 ): { data: number[]; loading: boolean } {
   const [data, setData] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
-  const { connection } = useHass();
+  const connection = useHass(s => s.connection);
   const intervalRef = useRef<ReturnType<typeof setInterval>>(null);
 
   useEffect(() => {

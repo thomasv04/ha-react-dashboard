@@ -1,12 +1,20 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { EASE_OUT } from '@/lib/motion-tokens';
-import { X, Play, Plus, Trash2, Clock, Image, Layers, Settings2, Hand } from 'lucide-react';
+import { X, Play, Plus, Trash2, Clock, Image, Layers, Settings2, Hand, CloudUpload, Loader2 } from 'lucide-react';
 import { useWallPanel } from '@/context/WallPanelContext';
+import { usePages } from '@/context/PageContext';
+import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useCustomPanels } from '@/context/CustomPanelContext';
+import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 import { PanelSelectField } from '@/components/layout/WidgetEditModal/PanelSelectField';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
-import { gesturesOf, type ImageFit, type MediaOrder, type WidgetAnchor } from '@/types/wallpanel';
+import { gesturesOf, widgetExtentOf, type ImageFit, type MediaOrder, type WallPanelConfig, type WidgetAnchor } from '@/types/wallpanel';
+
+/** Parts d'écran proposées — de la pleine largeur au quart. */
+const EXTENTS = [100, 75, 50, 33, 25];
 
 const ANCHORS: Array<{ id: WidgetAnchor; labelKey: string }> = [
   { id: 'top', labelKey: 'layout.wallPanel.anchorTop' },
@@ -54,11 +62,60 @@ interface WallPanelConfigModalProps {
 
 export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
   const { t } = useI18n();
-  const { config, updateConfig, activate, wallPanelLayout } = useWallPanel();
+  const { config, updateConfig, activate, wallPanelLayout, wallPanelWidgetConfigs } = useWallPanel();
+  const { pages } = usePages();
+  const { allLayouts } = useDashboardLayout();
+  const { allWidgetConfigsByPage } = useWidgetConfig();
+  const { panels: customPanels, dock } = useCustomPanels();
+  const { saveConfig, isSaving } = useDashboardConfig();
+
   const [tab, setTab] = useState<Tab>('activation');
   const [newUrl, setNewUrl] = useState('');
 
-  const handleDemo = () => {
+  // Chaque réglage s'appliquait au contexte à la frappe, et n'atteignait le
+  // serveur que si l'on repassait le dashboard en édition pour l'enregistrer :
+  // fermer la modale donnait une configuration vivante mais perdue au
+  // rechargement. Elle édite maintenant un brouillon.
+  // Initialiseur paresseux plutôt qu'un ref : la valeur est lue au rendu pour
+  // savoir si le brouillon a bougé, et un ref n'a pas le droit de l'être.
+  const [initial] = useState(config);
+  const [draft, setDraft] = useState<WallPanelConfig>(config);
+  const [confirmClose, setConfirmClose] = useState(false);
+
+  const update = (partial: Partial<WallPanelConfig>) => setDraft(d => ({ ...d, ...partial }));
+  const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
+
+  const save = async (next: WallPanelConfig = draft) => {
+    updateConfig(next);
+    await saveConfig({
+      version: 2,
+      pages,
+      layouts: allLayouts,
+      widgetConfigs: allWidgetConfigsByPage,
+      wallPanel: { config: next, layout: wallPanelLayout, widgetConfigs: wallPanelWidgetConfigs },
+      customPanels,
+      dock,
+    });
+  };
+
+  const handleSave = async () => {
+    await save();
+    onClose();
+  };
+
+  /** Fermeture : rien ne sort d'ici sans un choix explicite. */
+  const requestClose = () => (dirty ? setConfirmClose(true) : onClose());
+
+  const discard = () => {
+    updateConfig(initial);
+    onClose();
+  };
+
+  // La démo enregistre d'abord : prévisualiser une configuration que la
+  // tablette ne gardera pas montrerait autre chose que ce qui l'attend.
+  const handleDemo = async () => {
+    if (dirty) await save();
+    else updateConfig(draft);
     onClose();
     setTimeout(activate, 300);
   };
@@ -66,12 +123,12 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
   const addImageUrl = () => {
     const trimmed = newUrl.trim();
     if (!trimmed) return;
-    updateConfig({ image_urls: [...config.image_urls, trimmed] });
+    update({ image_urls: [...draft.image_urls, trimmed] });
     setNewUrl('');
   };
 
   const removeImageUrl = (idx: number) => {
-    updateConfig({ image_urls: config.image_urls.filter((_, i) => i !== idx) });
+    update({ image_urls: draft.image_urls.filter((_, i) => i !== idx) });
   };
 
   type TabEntry = { id: Tab; label: string; icon: React.ComponentType<{ size?: number }> };
@@ -83,8 +140,8 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
     { id: 'gestures', label: t('layout.wallPanel.gestures.tab'), icon: Hand },
   ];
 
-  const gestures = gesturesOf(config);
-  const setGesture = (partial: Partial<typeof gestures>) => updateConfig({ gestures: { ...gestures, ...partial } });
+  const gestures = gesturesOf(draft);
+  const setGesture = (partial: Partial<typeof gestures>) => update({ gestures: { ...gestures, ...partial } });
 
   return (
     <>
@@ -94,7 +151,7 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        onClick={onClose}
+        onClick={requestClose}
       />
       <motion.div
         className='fixed inset-0 z-[111] flex items-center justify-center p-4 pointer-events-none'
@@ -131,7 +188,8 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                 {t('layout.wallPanel.demo')}
               </button>
               <button
-                onClick={onClose}
+                onClick={requestClose}
+                aria-label={t('common.close')}
                 className='p-1.5 rounded-xl text-white/25 hover:text-white/70 hover:bg-white/[0.08] transition-colors'
               >
                 <X size={15} />
@@ -170,25 +228,25 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                   </div>
                   <input
                     type='checkbox'
-                    checked={config.enabled}
-                    onChange={e => updateConfig({ enabled: e.target.checked })}
+                    checked={draft.enabled}
+                    onChange={e => update({ enabled: e.target.checked })}
                     className='w-4 h-4 accent-purple-500'
                   />
                 </label>
 
                 <div>
                   <label className='text-white/55 text-xs font-medium block mb-1.5'>
-                    {t('layout.wallPanel.idleDelay')} : <span className='text-white/80'>{config.idle_time}s</span>
+                    {t('layout.wallPanel.idleDelay')} : <span className='text-white/80'>{draft.idle_time}s</span>
                   </label>
                   <input
                     type='range'
                     min={30}
                     max={1800}
                     step={30}
-                    value={config.idle_time}
-                    onChange={e => updateConfig({ idle_time: Number(e.target.value) })}
+                    value={draft.idle_time}
+                    onChange={e => update({ idle_time: Number(e.target.value) })}
                     className='w-full accent-purple-500'
-                    disabled={!config.enabled}
+                    disabled={!draft.enabled}
                   />
                   <div className='flex justify-between text-white/18 text-[10px] mt-0.5'>
                     <span>30s</span>
@@ -202,8 +260,8 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                   <label className='text-white/55 text-xs font-medium block mb-1'>{t('layout.wallPanel.haEntity')}</label>
                   <input
                     type='text'
-                    value={config.screensaver_entity ?? ''}
-                    onChange={e => updateConfig({ screensaver_entity: e.target.value || undefined })}
+                    value={draft.screensaver_entity ?? ''}
+                    onChange={e => update({ screensaver_entity: e.target.value || undefined })}
                     placeholder='input_boolean.wallpanel_screensaver'
                     className='w-full px-3 py-2 rounded-xl bg-white/5 border border-white/[0.08] text-white/70 text-sm outline-none focus:border-white/20'
                   />
@@ -226,7 +284,7 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                 <div>
                   <p className='text-white/55 text-xs font-medium mb-2'>{t('layout.wallPanel.backgroundImages')}</p>
                   <div className='space-y-1.5 mb-2'>
-                    {config.image_urls.map((url, i) => (
+                    {draft.image_urls.map((url, i) => (
                       <div key={i} className='flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/[0.07] group'>
                         <span className='flex-1 truncate text-white/55 text-xs font-mono'>{url}</span>
                         <button
@@ -237,7 +295,7 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                         </button>
                       </div>
                     ))}
-                    {config.image_urls.length === 0 && (
+                    {draft.image_urls.length === 0 && (
                       <p className='text-white/18 text-xs text-center py-3'>{t('layout.wallPanel.noImages')}</p>
                     )}
                   </div>
@@ -263,22 +321,22 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                   <div>
                     <label className='text-white/55 text-xs font-medium block mb-1'>{t('layout.wallPanel.imageFit')}</label>
                     <select
-                      value={config.image_fit}
-                      onChange={e => updateConfig({ image_fit: e.target.value as ImageFit })}
+                      value={draft.image_fit}
+                      onChange={e => update({ image_fit: e.target.value as ImageFit })}
                       className='w-full px-3 py-2 rounded-xl bg-white/5 border border-white/[0.08] text-white/70 text-xs outline-none'
                     >
                       <option value='cover'>{t('layout.wallPanel.fitCover')}</option>
                       <option value='contain'>{t('layout.wallPanel.fitContain')}</option>
                       <option value='fill'>{t('layout.wallPanel.fitFill')}</option>
                     </select>
-                    {config.image_fit === 'contain' && (
+                    {draft.image_fit === 'contain' && (
                       <label className='flex items-center gap-2 mt-2 cursor-pointer select-none'>
                         <input
                           type='checkbox'
-                          checked={config.style.containBlurBackground ?? false}
+                          checked={draft.style.containBlurBackground ?? false}
                           onChange={e =>
-                            updateConfig({
-                              style: { ...config.style, containBlurBackground: e.target.checked },
+                            update({
+                              style: { ...draft.style, containBlurBackground: e.target.checked },
                             })
                           }
                           className='accent-purple-500 w-3.5 h-3.5'
@@ -290,8 +348,8 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                   <div>
                     <label className='text-white/55 text-xs font-medium block mb-1'>{t('layout.wallPanel.imageOrder')}</label>
                     <select
-                      value={config.media_order}
-                      onChange={e => updateConfig({ media_order: e.target.value as MediaOrder })}
+                      value={draft.media_order}
+                      onChange={e => update({ media_order: e.target.value as MediaOrder })}
                       className='w-full px-3 py-2 rounded-xl bg-white/5 border border-white/[0.08] text-white/70 text-xs outline-none'
                     >
                       <option value='random'>{t('layout.wallPanel.orderRandom')}</option>
@@ -302,15 +360,15 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
 
                 <div>
                   <label className='text-white/55 text-xs font-medium block mb-1.5'>
-                    {t('layout.wallPanel.imageDuration')} : <span className='text-white/80'>{config.image_duration}s</span>
+                    {t('layout.wallPanel.imageDuration')} : <span className='text-white/80'>{draft.image_duration}s</span>
                   </label>
                   <input
                     type='range'
                     min={5}
                     max={300}
                     step={5}
-                    value={config.image_duration}
-                    onChange={e => updateConfig({ image_duration: Number(e.target.value) })}
+                    value={draft.image_duration}
+                    onChange={e => update({ image_duration: Number(e.target.value) })}
                     className='w-full accent-purple-500'
                   />
                 </div>
@@ -329,15 +387,36 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                     {ANCHORS.map(a => (
                       <button
                         key={a.id}
-                        onClick={() => updateConfig({ widgetAnchor: a.id })}
+                        onClick={() => update({ widgetAnchor: a.id })}
                         className={cn(
                           'px-2 py-2 rounded-xl text-[11px] font-medium border transition-colors',
-                          (config.widgetAnchor ?? 'top') === a.id
+                          (draft.widgetAnchor ?? 'top') === a.id
                             ? 'bg-purple-500/20 text-purple-200 border-purple-500/40'
                             : 'bg-white/5 text-white/45 border-white/[0.08] hover:text-white/70'
                         )}
                       >
                         {t(a.labelKey)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className='text-white/55 text-xs font-medium'>{t('layout.wallPanel.widgetSize')}</p>
+                  <p className='text-white/28 text-[10px] mt-0.5 mb-2'>{t('layout.wallPanel.widgetSizeDesc')}</p>
+                  <div className='grid grid-cols-5 gap-2'>
+                    {EXTENTS.map(extent => (
+                      <button
+                        key={extent}
+                        onClick={() => update({ widgetExtent: extent })}
+                        className={cn(
+                          'px-2 py-2 rounded-xl text-[11px] font-medium border transition-colors',
+                          widgetExtentOf(draft) === extent
+                            ? 'bg-purple-500/20 text-purple-200 border-purple-500/40'
+                            : 'bg-white/5 text-white/45 border-white/[0.08] hover:text-white/70'
+                        )}
+                      >
+                        {extent === 100 ? t('layout.wallPanel.widgetSizeFull') : `${extent} %`}
                       </button>
                     ))}
                   </div>
@@ -365,17 +444,17 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
               <>
                 <div>
                   <label className='text-white/55 text-xs font-medium block mb-1.5'>
-                    {t('layout.wallPanel.backgroundBlur')} : <span className='text-white/80'>{config.style.backgroundBlur ?? 0}px</span>
+                    {t('layout.wallPanel.backgroundBlur')} : <span className='text-white/80'>{draft.style.backgroundBlur ?? 0}px</span>
                   </label>
                   <input
                     type='range'
                     min={0}
                     max={40}
                     step={2}
-                    value={config.style.backgroundBlur ?? 0}
+                    value={draft.style.backgroundBlur ?? 0}
                     onChange={e =>
-                      updateConfig({
-                        style: { ...config.style, backgroundBlur: Number(e.target.value) },
+                      update({
+                        style: { ...draft.style, backgroundBlur: Number(e.target.value) },
                       })
                     }
                     className='w-full accent-purple-500'
@@ -383,17 +462,17 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                 </div>
                 <div>
                   <label className='text-white/55 text-xs font-medium block mb-1.5'>
-                    {t('layout.wallPanel.infoBoxWidth')} : <span className='text-white/80'>{config.style.infoBoxWidth ?? 380}px</span>
+                    {t('layout.wallPanel.infoBoxWidth')} : <span className='text-white/80'>{draft.style.infoBoxWidth ?? 380}px</span>
                   </label>
                   <input
                     type='range'
                     min={200}
                     max={600}
                     step={10}
-                    value={config.style.infoBoxWidth ?? 380}
+                    value={draft.style.infoBoxWidth ?? 380}
                     onChange={e =>
-                      updateConfig({
-                        style: { ...config.style, infoBoxWidth: Number(e.target.value) },
+                      update({
+                        style: { ...draft.style, infoBoxWidth: Number(e.target.value) },
                       })
                     }
                     className='w-full accent-purple-500'
@@ -417,7 +496,7 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                     label={t('layout.wallPanel.gestures.photos')}
                     description={t('layout.wallPanel.gestures.photosDesc')}
                     checked={gestures.photos}
-                    disabled={!gestures.enabled || config.image_urls.length === 0}
+                    disabled={!gestures.enabled || draft.image_urls.length === 0}
                     onChange={photos => setGesture({ photos })}
                   />
 
@@ -451,6 +530,43 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                   <p className='text-white/40 text-xs leading-relaxed'>{t('layout.wallPanel.gestures.help')}</p>
                 </div>
               </>
+            )}
+          </div>
+
+          {/* Pied — l'enregistrement, et lui seul, écrit sur le serveur. */}
+          <div className='shrink-0 border-t border-white/[0.08] px-5 py-3'>
+            {confirmClose ? (
+              <div className='flex items-center justify-between gap-3'>
+                <p className='text-amber-200/80 text-xs'>{t('layout.wallPanel.unsavedWarning')}</p>
+                <div className='flex items-center gap-2 shrink-0'>
+                  <button
+                    onClick={discard}
+                    className='px-3 py-1.5 rounded-xl text-xs font-medium text-white/40 hover:text-white/70 hover:bg-white/[0.08] transition-colors'
+                  >
+                    {t('layout.wallPanel.discard')}
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    className='px-3 py-1.5 rounded-xl text-xs font-medium bg-purple-500/20 border border-purple-500/35 text-purple-200 hover:bg-purple-500/30 transition-colors'
+                  >
+                    {t('common.save')}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className='flex items-center justify-between gap-3'>
+                <p className={cn('text-[11px]', dirty ? 'text-amber-200/70' : 'text-white/20')}>
+                  {dirty ? t('layout.wallPanel.unsavedChanges') : t('layout.wallPanel.saved')}
+                </p>
+                <button
+                  onClick={handleSave}
+                  disabled={!dirty || isSaving}
+                  className='flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium bg-purple-500/20 border border-purple-500/35 text-purple-200 hover:bg-purple-500/30 disabled:opacity-35 disabled:pointer-events-none transition-colors'
+                >
+                  {isSaving ? <Loader2 size={12} className='animate-spin' /> : <CloudUpload size={12} />}
+                  {t('common.save')}
+                </button>
+              </div>
             )}
           </div>
         </div>

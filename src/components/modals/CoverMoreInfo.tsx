@@ -40,7 +40,7 @@ export default function CoverMoreInfo({ entityId, widgetId }: { entityId: string
   const [dragPosition, setDragPosition] = useState<number | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const entity = useSafeEntity(entityId);
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
 
   if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
 

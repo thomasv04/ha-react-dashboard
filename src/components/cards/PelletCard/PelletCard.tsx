@@ -3,6 +3,7 @@ import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { Flame, Minus, Plus } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
+import { climateRange, snapTemp } from '@/lib/climate';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { PelletCardConfig } from '@/types/widget-configs';
@@ -19,22 +20,33 @@ export function PelletCard() {
   const config = getWidgetConfig<PelletCardConfig>(widgetId || 'pellet');
   const entityId = config?.entityId ?? 'climate.pellet_stove';
   const pellet = useSafeEntity(entityId);
-  const { helpers } = useHass();
+  const helpers = useHass(s => s.helpers);
   const playFeedback = useSoundFeedback();
   if (!pellet) return null;
 
   const currentTemp = pellet.attributes.current_temperature as number | undefined;
   const targetTemp = pellet.attributes.temperature as number | undefined;
+  // Lue ici et non dans `setTemp` : une déclaration de fonction est hoistée,
+  // TypeScript y abandonne donc le rétrécissement de `pellet`.
+  const range = climateRange(pellet.attributes);
   const hvacMode = pellet.state; // 'heat' | 'off' | etc.
   const isOn = hvacMode !== 'off';
 
   function setTemp(delta: number) {
     if (targetTemp === undefined) return;
+
+    // Sans pincement, appuyer assez longtemps sortait des bornes de l'entité :
+    // Home Assistant rejetait la consigne (`temp_out_of_range`) et la promesse
+    // partait en erreur non rattrapée. Le poêle, lui, ne bougeait pas.
+    const next = snapTemp(targetTemp + delta, range);
+    // Déjà à la butée : ne pas envoyer un appel qui ne changerait rien.
+    if (next === targetTemp) return;
+
     helpers.callService({
       domain: 'climate',
       service: 'set_temperature',
       target: { entity_id: entityId },
-      serviceData: { temperature: targetTemp + delta },
+      serviceData: { temperature: next },
     });
     playFeedback(delta > 0 ? 'temperature_up' : 'temperature_down');
   }

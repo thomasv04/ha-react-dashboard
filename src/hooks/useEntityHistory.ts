@@ -34,7 +34,7 @@ export function useEntityHistory(
   const [data, setData] = useState<HistoryPoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { connection } = useHass();
+  const connection = useHass(s => s.connection);
   const intervalRef = useRef<ReturnType<typeof setInterval>>(null);
   // Defer fetching until the MoreInfo modal animation is complete (avoids setState during FLIP)
   const ready = useMoreInfoReady();

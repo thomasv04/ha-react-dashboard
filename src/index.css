@@ -485,6 +485,23 @@ select {
   }
 }
 
+/* Card réutilisée hors grille (modal « plus d'infos ») : pas de chrome de card */
+.gc-bare .gc {
+  background: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.gc-bare .gc:hover {
+  background: none;
+  box-shadow: none;
+  transform: none;
+}
+.gc-bare .gc::before,
+.gc-bare .gc::after {
+  display: none;
+}
+
 /* Lighter variant (used in nested contexts) */
 .gc-light {
   position: relative;
