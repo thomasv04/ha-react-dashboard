@@ -10,9 +10,11 @@ interface PanelProps {
   title: string;
   icon?: ReactNode;
   wide?: boolean;
+  /** Boutons de l'en-tête, posés avant la fermeture. */
+  actions?: ReactNode;
 }
 
-export function Panel({ children, title, icon, wide = false }: PanelProps) {
+export function Panel({ children, title, icon, wide = false, actions }: PanelProps) {
   const { closePanel, autoCloseMs } = usePanel();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -49,6 +51,7 @@ export function Panel({ children, title, icon, wide = false }: PanelProps) {
           <h2 className='text-lg font-semibold'>{title}</h2>
         </div>
         <div className='flex items-center gap-2'>
+          {actions}
           {/* Auto-close progress bar */}
           {autoCloseMs && (
             <div className='w-16 h-1 bg-white/10 rounded-full overflow-hidden'>

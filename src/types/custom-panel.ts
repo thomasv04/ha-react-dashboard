@@ -79,6 +79,14 @@ export interface CustomPanel {
    * qu'une colonne moitié moins large ne laisse plus la place à une ligne.
    */
   columns?: 1 | 2;
+  /**
+   * Boutons posés dans l'en-tête de la feuille, à côté de la fermeture.
+   *
+   * Ce qu'un bloc `button-row` ne fait pas : rester visible quand la liste
+   * défile, et ne pas coûter une rangée de contenu. Pour l'action qui va avec
+   * le panneau — tout éteindre, lancer une scène — plutôt que dans le panneau.
+   */
+  headerButtons?: InlineButton[];
 }
 
 /** Barre du bas : panneaux épinglés, dans l'ordre, et libellés sous les icônes. */
