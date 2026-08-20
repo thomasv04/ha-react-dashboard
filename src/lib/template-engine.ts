@@ -31,6 +31,20 @@ class HATemplateEngine {
   private getEntities: GetEntities = () => ({});
 
   constructor() {
+    // `autoescape: false` est un choix, pas un oubli — et il porte une
+    // contrainte.
+    //
+    // La sortie de ce moteur alimente du **texte**, jamais du HTML : elle finit
+    // dans un nœud JSX, que React échappe déjà. Activer l'échappement ici
+    // doublerait le travail et se verrait à l'écran — un état
+    // « Café & Thé <20° » sortirait « Café &amp; Thé &lt;20° ».
+    //
+    // En contrepartie : **ne jamais passer le résultat de `render()` à
+    // `dangerouslySetInnerHTML`.** Un template vient d'une configuration
+    // éditable et cite des états d'entités, souvent alimentés par une source
+    // externe ; ce serait une XSS stockée sur l'origine du dashboard. Le seul
+    // point d'entrée HTML de l'application est `RichText`, qui passe par
+    // DOMPurify — tout nouvel afficheur de HTML doit y passer aussi.
     this.env = new nunjucks.Environment(null, { autoescape: false });
     this.registerHAGlobals();
     this.registerHAFilters();

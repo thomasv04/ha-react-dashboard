@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Thermometer, Lightbulb, Droplets, ChevronRight, Package } from 'lucide-react';
 import { useHass } from '@hakit/core';
@@ -13,6 +14,9 @@ import { useI18n } from '@/i18n';
 import { useGroupEmbedded } from '@/components/cards/GroupCard/GroupCard';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useControlState } from '@/hooks/useControlState';
+import { useLongPress } from '@/hooks/useLongPress';
+import { useMoreInfoOptional } from '@/context/MoreInfoContext';
+import { modalTypeFor } from '@/components/modals/more-info-registry';
 import { useArea, useAreaControls } from '@/hooks/useAreaControls';
 import { colorAlpha } from '@/lib/color-value';
 import type { SoundPreset } from '@/lib/sounds';
@@ -38,23 +42,50 @@ function ControlButton({
 
   const { color, active } = useControlState(ctrl);
 
+  // Appui long : la fiche de l'entité pilotée. Un bouton de domaine en pilote
+  // plusieurs — ponytail: on ouvre la première, faute d'une fiche « groupe ».
+  const moreInfo = useMoreInfoOptional();
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const held = useRef(false);
+  const targetIds = ctrl.entityIds?.length ? ctrl.entityIds : ctrl.entityId ? [ctrl.entityId] : [];
+  const { handlers: longPress } = useLongPress(() => {
+    if (!moreInfo || !targetIds.length) return;
+    held.current = true;
+    moreInfo.openMoreInfo(targetIds[0], modalTypeFor(targetIds[0]), targetIds[0], btnRef.current?.getBoundingClientRect());
+  });
+
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    // L'appui long finit par un `click` : il ne doit pas piloter en plus d'ouvrir.
+    if (held.current) return;
     helpers.callService({
       domain: ctrl.domain as never,
       service: ctrl.service as never,
-      // Un bouton de domaine vise la zone entière, un bouton d'entité son entité.
-      target: ctrl.areaId ? { area_id: ctrl.areaId } : ctrl.entityId ? { entity_id: ctrl.entityId } : undefined,
+      target: targetIds.length ? { entity_id: targetIds } : undefined,
     } as never);
     playFeedback('room_tap');
   };
 
   return (
     <motion.button
+      ref={btnRef}
+      whileHover={{
+        scale: 1.04,
+        backgroundColor: active ? colorAlpha(color, 16) : 'rgba(255,255,255,0.10)',
+        borderColor: active ? colorAlpha(color, 30) : 'rgba(255,255,255,0.18)',
+      }}
       whileTap={{ scale: 0.88 }}
       onClick={handleClick}
+      {...longPress}
+      onPointerDown={e => {
+        // La card entière peut avoir son propre appui long : deux fiches
+        // s'ouvriraient. Le bouton garde le geste pour lui.
+        e.stopPropagation();
+        held.current = false;
+        longPress.onPointerDown(e);
+      }}
       title={ctrl.label}
-      className='flex-1 flex flex-col items-center justify-center gap-1 rounded-xl border transition-all duration-300'
+      className='flex-1 flex flex-col items-center justify-center gap-1 rounded-xl border cursor-pointer transition-colors duration-300'
       style={{
         padding: embedded ? '6px 4px' : '8px 4px',
         ...(active
@@ -105,9 +136,14 @@ function LightToggle({
 
   return (
     <motion.button
+      whileHover={{
+        scale: 1.04,
+        backgroundColor: anyOn ? 'rgba(251,191,36,0.22)' : 'rgba(255,255,255,0.10)',
+        borderColor: anyOn ? 'rgba(251,191,36,0.40)' : 'rgba(255,255,255,0.18)',
+      }}
       whileTap={{ scale: 0.88 }}
       onClick={handleToggleAll}
-      className='flex-1 flex flex-col items-center justify-center gap-1 rounded-xl border transition-all duration-300'
+      className='flex-1 flex flex-col items-center justify-center gap-1 rounded-xl border cursor-pointer transition-colors duration-300'
       style={{
         padding: embedded ? '6px 4px' : '8px 4px',
         ...(anyOn
@@ -168,12 +204,17 @@ export function RoomCard() {
   };
 
   // When embedded inside a GroupCard, we strip the gc class (no double glassmorphism)
-  const baseClass = embedded ? 'rounded-2xl flex flex-col overflow-hidden h-full' : 'gc rounded-2xl flex flex-col overflow-hidden h-full';
+  const baseClass = embedded
+    ? 'rounded-2xl flex flex-col overflow-hidden h-full cursor-default'
+    : 'gc rounded-2xl flex flex-col overflow-hidden h-full cursor-default';
 
   const bgStyle = embedded ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' } : undefined;
 
   return (
-    <div className={baseClass} style={bgStyle}>
+    // Le geste s'arrête à la card : elle n'agit que par ses boutons. Sans ça, un
+    // clic à côté d'un bouton déclenchait l'action de card, et un appui long
+    // ouvrait deux fiches — celle du bouton visé et celle de la card.
+    <div className={baseClass} style={bgStyle} onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
       {/* Header */}
       <div className={cn('flex items-start gap-2.5', embedded ? 'p-2.5' : 'p-3')}>
         {/* Icon */}

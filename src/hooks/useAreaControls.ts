@@ -76,8 +76,9 @@ export function buildAreaControls(
 
     const members = area.entities.filter(e => e.entity_id.startsWith(`${token}.`));
     if (!members.length) return [];
-    // Le bouton d'un domaine vise la zone entière : c'est ce que fait HA, et
-    // ça évite d'énumérer les entités dans chaque appel de service.
+    // Le bouton d'un domaine vise ses entités, pas la zone : `homeassistant.toggle`
+    // n'est pas cantonné à un domaine, et sur `area_id` il basculait tout ce que
+    // la zone contient — un clic sur « ventilation » ouvrait aussi les volets.
     const active = members.some(e => isActiveState(e.state));
     const [serviceDomain, service] = toggleService(token, active);
     return [
@@ -86,8 +87,7 @@ export function buildAreaControls(
         icon: CONTROL_DOMAINS[token] ?? 'Package',
         domain: serviceDomain,
         service,
-        areaId: area.area_id,
-        stateEntities: members.map(e => e.entity_id),
+        entityIds: members.map(e => e.entity_id),
       },
     ];
   });

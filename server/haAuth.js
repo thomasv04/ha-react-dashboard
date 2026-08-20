@@ -109,6 +109,54 @@ export function clearRoleCache() {
   roleCache.clear();
 }
 
+// ── Origine des requêtes d'ingress ───────────────────────────────────────────
+
+/**
+ * Adresse du superviseur, résolue une fois au démarrage. `null` tant qu'on ne
+ * la connaît pas — auquel cas on ne peut rien vérifier.
+ */
+let supervisorAddress = null;
+
+/** `::ffff:172.30.32.2` et `172.30.32.2` désignent le même hôte. */
+const normalizeAddress = a => (typeof a === 'string' ? a.replace(/^::ffff:/, '') : null);
+
+/** Renseigne l'adresse du superviseur (résolue par `initIngressTrust`, ou un test). */
+export function setSupervisorAddress(address) {
+  supervisorAddress = normalizeAddress(address);
+}
+
+/**
+ * Le porteur d'`x-ingress-path` est-il bien le superviseur ?
+ *
+ * `req.socket.remoteAddress` et non `req.ip` : ce dernier suit `X-Forwarded-For`
+ * dès que `trust proxy` est actif, or c'est précisément l'en-tête qu'un
+ * attaquant contrôle. On veut l'adresse du pair TCP, que personne ne choisit.
+ *
+ * @returns `'ok'` | `'unknown'` (adresse du superviseur inconnue) | `'mismatch'`
+ */
+export function ingressOrigin(req) {
+  if (!supervisorAddress) return 'unknown';
+  const from = normalizeAddress(req.socket?.remoteAddress);
+  return from === supervisorAddress ? 'ok' : 'mismatch';
+}
+
+/**
+ * Résout l'adresse du superviseur au démarrage.
+ *
+ * Résolution DNS plutôt qu'un `172.30.32.2` en dur : c'est bien l'adresse
+ * documentée du superviseur sur le réseau `hassio`, mais la coder en dur ferait
+ * silencieusement échouer la vérification le jour où elle change.
+ */
+export async function initIngressTrust(lookup) {
+  try {
+    const { address } = await lookup('supervisor');
+    setSupervisorAddress(address);
+    console.info(`[haAuth] Superviseur résolu en ${address} — origine des requêtes d'ingress vérifiable.`);
+  } catch {
+    console.warn("[haAuth] Impossible de résoudre « supervisor » : l'origine des requêtes d'ingress ne sera pas vérifiée.");
+  }
+}
+
 /**
  * @param {import('express').Request} req
  * @param {import('express').Response} res
@@ -120,6 +168,26 @@ export function haAuthMiddleware(req, res, next) {
   // Mode ingress : on fait confiance au header seulement si le mode est explicitement configuré
   if (authMode === 'ingress') {
     if (req.headers['x-ingress-path']) {
+      // `x-ingress-path` est un en-tête, pas une preuve. Sa seule présence
+      // donnait `isAdmin: true` — donc l'écriture de la configuration partagée
+      // *et* le jeton Home Assistant (cf. `haTokenGuard`). `config.yaml` ne
+      // publie aucun port, l'exposition se limite donc au réseau Docker
+      // `hassio` — mais tout autre add-on installé s'y trouve aussi, et n'avait
+      // qu'à forger l'en-tête.
+      //
+      // Par défaut on **journalise sans refuser** : un faux négatif rendrait le
+      // dashboard inaccessible depuis Home Assistant, ce qui est pire que le
+      // risque résiduel. Vérifier le journal, puis poser `INGRESS_STRICT=true`
+      // pour passer au refus.
+      const origin = ingressOrigin(req);
+      if (origin === 'mismatch') {
+        const from = normalizeAddress(req.socket?.remoteAddress);
+        console.error(`[haAuth] X-Ingress-Path reçu de ${from}, qui n'est pas le superviseur (${supervisorAddress}).`);
+        if (process.env.INGRESS_STRICT === 'true') {
+          return res.status(403).json({ error: 'Ingress header did not come from the supervisor' });
+        }
+      }
+
       // Le superviseur authentifie mais ne transmet pas le rôle. C'est
       // `panel_admin: true` (config.yaml) qui restreint l'accès au panneau :
       // obtenir une session d'ingress suppose donc déjà d'être administrateur.

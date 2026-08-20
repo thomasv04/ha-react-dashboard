@@ -88,6 +88,11 @@ export function CoverCard() {
     [isDragging]
   );
 
+  const handlePointerCancel = useCallback(() => {
+    setDragPosition(null);
+    setIsDragging(false);
+  }, []);
+
   const handlePointerUp = useCallback(() => {
     if (dragPosition !== null) {
       setPosition(dragPosition);
@@ -179,7 +184,7 @@ export function CoverCard() {
       <div className={cn('flex-1 flex items-stretch min-h-0', isCompact ? 'gap-1.5' : 'gap-3')}>
         <div
           ref={sliderRef}
-          className='flex-1 relative rounded-2xl overflow-hidden cursor-ns-resize select-none'
+          className='flex-1 relative rounded-2xl overflow-hidden cursor-ns-resize select-none touch-none'
           style={{
             background: 'linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
             border: '1px solid rgba(255,255,255,0.07)',
@@ -188,6 +193,7 @@ export function CoverCard() {
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerCancel}
         >
           {/* Lamelles en filigrane sur toute la hauteur — sans elles, un store
               grand ouvert n'était qu'un rectangle gris uni. */}

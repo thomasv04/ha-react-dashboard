@@ -145,10 +145,15 @@ export interface RoomControl {
   stateEntity?: string;
   /** Accent color when active — `#hex` or a Nunjucks template */
   color?: string;
-  /** Derived from an area: the service targets the whole area instead of one entity */
-  areaId?: string;
-  /** Derived from an area: the button is active as soon as one of these is */
-  stateEntities?: string[];
+  /**
+   * Derived from an area: the entities the button drives, and whose state
+   * colours it — actif dès que l'une l'est.
+   *
+   * Visées une par une, et non par `area_id` : la bascule d'un domaine passe
+   * par `homeassistant.toggle`, qui sur une zone entière bascule *toutes* ses
+   * entités — le bouton « ventilation » ouvrait aussi les volets.
+   */
+  entityIds?: string[];
 }
 
 export interface RoomEntry {
@@ -514,6 +519,7 @@ export interface FanCardConfig {
   name?: string;
   /** Masquer le bouton d'oscillation même si l'entité le gère */
   hideOscillate?: boolean;
+  showInfoPanel?: boolean;
 }
 
 export interface ClockCardConfig {

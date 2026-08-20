@@ -14,7 +14,8 @@ import { profilesRouter } from './routes/profiles.js';
 import { settingsRouter } from './routes/settings.js';
 import { uploadsRouter, pruneOrphanUploads } from './routes/uploads.js';
 import { translationsRouter } from './routes/translations.js';
-import { haAuthMiddleware, adminWrites, writeGuard, haTokenGuard } from './haAuth.js';
+import { haAuthMiddleware, adminWrites, writeGuard, haTokenGuard, initIngressTrust } from './haAuth.js';
+import { lookup } from 'dns/promises';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -98,31 +99,47 @@ app.get('/api/health', (_req, res) => {
 
 // ── Rate limiting ────────────────────────────────────────────────────────────
 //
-// Clé sur l'utilisateur, pas sur l'IP : derrière l'ingress, toutes les requêtes
-// portent l'adresse du superviseur. Un quota par IP était donc partagé par
-// toute la maison — une tablette bavarde bloquait tout le monde. On retombe sur
-// l'IP quand l'identité n'est pas connue (mode standalone sans en-tête, dev).
-// `ipKeyGenerator` en repli : une IPv6 nue laisserait un quota par adresse d'un
-// même préfixe /64, que n'importe quel client peut faire varier à volonté.
-const clientKey = req => req.headers['x-remote-user-id'] || req.headers['x-ha-user-id'] || req.query?.device_id || ipKeyGenerator(req.ip);
-
-const limiter = (max, windowMs = 60_000) =>
+// Deux étages, parce que les deux menaces ne sont pas les mêmes.
+//
+// **Avant l'authentification**, la clé ne peut être qu'une adresse : tout le
+// reste vient du client. Elle lisait `x-remote-user-id`, qu'il suffisait de
+// faire varier à chaque requête pour n'être jamais limité — or en mode
+// standalone chaque requête non authentifiée fait ouvrir un WebSocket vers
+// Home Assistant (`resolveRole`, cache manqué, jeton inconnu). Le quota
+// anonyme protège donc HA plus que nous : il est large, et n'est là que pour
+// couper cette amplification.
+//
+// **Après l'authentification**, `req.haUser.id` est posé par le middleware et
+// n'est plus falsifiable : c'est là que se joue l'équité entre appareils.
+// Elle ne peut pas se jouer avant : derrière l'ingress toutes les requêtes
+// portent l'adresse du superviseur, et un quota par IP y serait partagé par
+// toute la maison — une tablette bavarde bloquerait tout le monde.
+//
+// `ipKeyGenerator` plutôt que `req.ip` nu : une IPv6 brute laisserait un quota
+// par adresse d'un même préfixe /64, que n'importe quel client fait varier à
+// volonté.
+const limiter = (max, keyGenerator, windowMs = 60_000) =>
   rateLimit({
     windowMs,
     max,
-    keyGenerator: clientKey,
+    keyGenerator,
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: 'Too many requests, please try again later.' },
   });
 
-// Les lectures sont nombreuses et bon marché ; les écritures sont rares et
-// coûteuses (2 Mo de configuration, images). Deux quotas, pas un.
-app.use('/api/', limiter(300));
-app.use('/api/', (req, res, next) => (req.method === 'GET' ? next() : limiter(30)(req, res, next)));
+const byIp = req => ipKeyGenerator(req.ip);
+const byUser = req => req.haUser?.id || ipKeyGenerator(req.ip);
+
+// Étage anonyme : large, non contournable.
+app.use('/api/', limiter(1_200, byIp));
 
 // ── Authentification et rôle ─────────────────────────────────────────────────
 if (process.env.HA_AUTH === 'true') {
+  // Sans attendre : la résolution DNS prend quelques millisecondes et la
+  // première requête arrive bien plus tard. Tant qu'elle n'a pas abouti,
+  // `ingressOrigin` rend `unknown` et ne bloque rien.
+  if ((process.env.HA_AUTH_MODE || 'standalone') === 'ingress') initIngressTrust(lookup);
   app.use('/api/', haAuthMiddleware);
 } else if (isProduction) {
   // Aucune authentification configurée en production : lecture seule. Cf.
@@ -130,6 +147,12 @@ if (process.env.HA_AUTH === 'true') {
   console.error('[ha-dashboard] HA_AUTH is not enabled: the API is served read-only.');
   app.use('/api/', writeGuard);
 }
+
+// Étage authentifié : l'équité entre appareils, sur une identité que le
+// middleware vient de vérifier. Les lectures sont nombreuses et bon marché ;
+// les écritures sont rares et coûteuses (2 Mo de configuration, images).
+app.use('/api/', limiter(300, byUser));
+app.use('/api/', (req, res, next) => (req.method === 'GET' ? next() : limiter(30, byUser)(req, res, next)));
 
 // ── Uploads directory ────────────────────────────────────────────────────────
 const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, '..', 'data', 'uploads');

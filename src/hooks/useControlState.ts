@@ -13,7 +13,7 @@ import type { RoomControl } from '@/types/widget-configs';
 export function useControlState(ctrl: RoomControl): { color: string; active: boolean } {
   const stateEntity = useSafeEntity(ctrl.stateEntity ?? '');
   // Bouton dérivé d'un domaine de zone : actif dès qu'une de ses entités l'est.
-  const groupIds = ctrl.stateEntities ?? [];
+  const groupIds = ctrl.entityIds ?? [];
   const group = useEntities(groupIds);
   const color = useColor(ctrl.color) ?? '#60a5fa';
 

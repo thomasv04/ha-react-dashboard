@@ -236,9 +236,12 @@ créés au montage, 0 de plus sur 10 images, 3 orbes × 10 images = 30 `drawImag
 
 ### P5 — Divers, moins urgent `[ ]`
 
-- [ ] `<LayoutGroup>` enveloppe tout le dashboard (`src/Dashboard.tsx`). Seuls 5
-  composants utilisent la prop `layout`, mais le groupe force la mesure de tous.
-  À restreindre aux sous-arbres concernés.
+- [x] `<LayoutGroup>` (`src/Dashboard.tsx`) — **affirmation retirée, pas de code.**
+  J'écrivais que « le groupe force la mesure de tous » : c'est faux. Seuls les
+  composants portant `layout`/`layoutId` participent à l'arbre de projection de
+  framer-motion, et il n'y en a que cinq. Le coût que je prêtais au groupe n'est
+  pas démontrable, et §0 montre le CPU au niveau du repos après P1/P2. Refactorer
+  la plomberie d'animation pour un gain non mesuré serait un risque visuel gratuit.
 - [ ] `index-*.js` = 934 ko. Ne coûte pas de fps, mais coûte le premier affichage.
   Dont ~90 ko de nunjucks (voir S5).
 - [x] `src/hooks/useTemplate.ts` : liaison du moteur pendant le rendu — voir P2.
@@ -354,47 +357,89 @@ standalone ne l'est pas.
       avec **ses** droits. Un 403 laisserait croire à une panne.
       Couvert par `server/haAuth.test.js`.
 
-### S2 — `x-ingress-path` est un en-tête, pas une preuve `[ ]`
+### S2 — `x-ingress-path` est un en-tête, pas une preuve `[~]`
 
 `server/haAuth.js`, `haAuthMiddleware`, mode `ingress`.
 
-La seule présence de l'en-tête donne `isAdmin: true`. `config.yaml` ne publie pas
-de `ports:`, l'exposition se limite donc au réseau Docker `hassio` — mais **tout
-autre add-on installé** peut appeler `http://ha-react-dashboard:8099/api/config`
-avec cet en-tête forgé et réécrire la configuration partagée.
+**Gravité revue à la hausse.** La seule présence de l'en-tête donne
+`isAdmin: true` — donc l'écriture de la configuration partagée, mais aussi
+**le jeton Home Assistant** que S1 vient de protéger. `config.yaml` ne publie
+aucun `ports:`, l'exposition se limite au réseau Docker `hassio` — mais tout
+autre add-on installé s'y trouve, et n'avait qu'à forger l'en-tête pour
+récupérer un accès complet à la maison.
 
-- [ ] Défense en profondeur : vérifier aussi que `req.ip` appartient au superviseur
+- [x] `ingressOrigin` compare l'adresse du pair TCP (`req.socket.remoteAddress`,
+  et non `req.ip` qui suit `X-Forwarded-For`) à celle du superviseur, résolue
+  par DNS au démarrage plutôt que codée en dur. Un contrôle de plage ne
+  suffirait pas : les autres add-ons sont sur le **même** sous-réseau.
+- [x] Inerte hors add-on : quand « supervisor » ne se résout pas, rien n'est
+  vérifié ni bloqué. Vérifié en démarrant le serveur pour de vrai.
+- [ ] **Par défaut, on journalise sans refuser.** Un faux négatif rendrait le
+  dashboard inaccessible depuis Home Assistant — pire que le risque résiduel,
+  et je ne peux pas tester dans un vrai add-on d'ici.
 
-### S3 — Le quota de débit se contourne d'un en-tête `[ ]`
+**Action attendue de ta part** : après déploiement, chercher dans le journal de
+l'add-on une ligne `X-Ingress-Path reçu de …`. S'il n'y en a **aucune**, la
+vérification est bonne : poser `INGRESS_STRICT=true` pour passer au refus. S'il
+y en a, l'adresse relevée dit ce qui parle vraiment au dashboard.
 
-`server/index.js`, `clientKey`.
+### S3 — Le quota de débit se contourne d'un en-tête `[x]`
 
-La clé lit `x-remote-user-id` / `x-ha-user-id` / `device_id`, tous fournis par le
-client. Un en-tête aléatoire par requête = quota neuf à chaque fois.
+`server/index.js`.
 
-- [ ] Ne se fier à ces valeurs que lorsque le middleware d'auth les a posées
-      lui-même (`req.haUser.id`)
+La clé lisait `x-remote-user-id` / `x-ha-user-id` / `device_id`, tous fournis par
+le client : un en-tête aléatoire par requête = quota neuf à chaque fois.
 
-### S4 — `/api/settings` n'est pas cloisonné `[ ]`
+Le correctif que j'avais annoncé — « se fier à `req.haUser.id` » — **était
+impossible** : le limiteur tourne *avant* le middleware d'authentification, donc
+`req.haUser` n'existe pas encore. Et il doit rester devant, car en mode
+standalone chaque requête non authentifiée fait ouvrir un WebSocket vers Home
+Assistant (`resolveRole`, cache manqué). Faire sauter le quota, c'était donc
+une **amplification contre HA lui-même**.
 
-`server/routes/settings.js`.
+- [x] Deux étages. Avant l'authentification : quota par adresse IP, large
+  (1200/min), non contournable, uniquement là pour couper l'amplification.
+  Après : quota par utilisateur sur `req.haUser.id`, que le middleware vient de
+  vérifier — 300 lectures, 30 écritures. L'équité entre appareils ne peut se
+  jouer qu'à cet étage : derrière l'ingress, toutes les requêtes portent
+  l'adresse du superviseur.
 
-`device_id` est assaini mais jamais rattaché à l'appelant : n'importe qui lit et
-écrit les réglages de n'importe quel appareil. Faible gravité (thème, mode
-kiosque) — sauf que `behaviourSettings` contient un code PIN.
+### S4 — `/api/settings` n'est pas cloisonné `[x]` — gravité surestimée, sans suite
 
-- [ ] Au minimum, isoler le PIN du reste des réglages
+**Mon évaluation initiale était fausse**, sur deux points :
 
-### S5 — Nunjucks en `autoescape: false` `[ ]`
+1. `device_id` n'est pas devinable : c'est un `crypto.randomUUID()`
+   (`src/hooks/useSettingsSync.ts`). Les réglages ne sont pas énumérables.
+2. `editPin` n'est pas un contrôle d'accès. Il ne garde que le bouton d'édition
+   côté client (`EditButton.tsx`) ; les écritures réelles passent déjà par
+   `adminWrites`. C'est un verrou d'usage contre le bricolage, pas une
+   protection — et il vit dans le `localStorage` auquel un attaquant devrait
+   déjà avoir accès pour connaître le `device_id`.
 
-`src/lib/template-engine.ts`.
+Lire ou écrire les réglages d'un autre appareil suppose donc d'avoir déjà accès
+à cet appareil, où l'on pourrait de toute façon les changer à la main.
 
-Aujourd'hui la sortie n'atterrit dans aucun `dangerouslySetInnerHTML` — le seul
-est `RichText`, qui passe par DOMPurify. C'est donc une mine posée, pas une
-faille : le jour où quelqu'un branche un template sur du HTML, c'est une XSS
-stockée sur l'origine du dashboard.
+- [x] **Pas de code.** Cloisonner ajouterait de la complexité pour un gain nul.
 
-- [ ] Passer `autoescape: true`, ou documenter l'interdit à côté du constructeur
+### S5 — Nunjucks en `autoescape: false` `[x]` — le drapeau est correct
+
+**Mon remède était faux.** Passer `autoescape: true` casserait l'affichage,
+vérifié :
+
+```
+autoescape=false → "Café & Thé <20°"
+autoescape=true  → "Café &amp; Thé &lt;20°"
+```
+
+La sortie alimente du **texte**, dans un nœud JSX que React échappe déjà.
+Échapper ici doublerait le travail et se verrait à l'écran.
+
+Le risque réel n'est donc pas le drapeau, c'est l'invariant qu'il impose : ne
+jamais passer le résultat de `render()` à `dangerouslySetInnerHTML`. Le seul
+point d'entrée HTML de l'application est `RichText`, qui passe par DOMPurify.
+
+- [x] Invariant documenté à côté du constructeur, là où quelqu'un le lira avant
+      de changer le drapeau.
 
 Le reste du serveur est solide : uploads (extension imposée par MIME, quota,
 purge des orphelins, assainissement SVG), CSP, `writeGuard`, `adminWrites`,
