@@ -27,5 +27,6 @@
   "stop": "STOP",
   "widgetUnavailable": "Widget indisponible",
   "panelUnavailable": "Panneau indisponible",
-  "retry": "Réessayer"
+  "retry": "Réessayer",
+  "serviceRejected": "Commande refusée par Home Assistant"
 }
