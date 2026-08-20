@@ -46,6 +46,7 @@ export default defineWidget({
     { key: 'entityId', label: 'Ventilateur', fieldType: 'entity', domain: 'fan' },
     { key: 'name', label: 'Nom affiché', fieldType: 'text' },
     { key: 'hideOscillate', label: "Masquer l'oscillation", fieldType: 'boolean' },
+    { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
   ],
 
   defaults: {

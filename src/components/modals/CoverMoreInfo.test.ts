@@ -19,9 +19,9 @@ describe('positionFromPointer', () => {
     expect(at(9999)).toBe(0);
   });
 
-  it('arrondit au pas de 5 %', () => {
+  it('arrondit au pour cent', () => {
     expect(at(240)).toBe(50);
-    expect(at(243)).toBe(50);
+    expect(at(243)).toBe(49);
     expect(at(213)).toBe(60);
   });
 

@@ -330,7 +330,13 @@
     "notFound": "Fan not found",
     "on": "On",
     "off": "Off",
-    "oscillate": "Oscillate"
+    "oscillate": "Oscillate",
+    "speed": "Speed",
+    "presetMode": "Mode",
+    "forward": "Forward",
+    "reverse": "Reverse",
+    "info": "Information",
+    "state": "STATE"
   },
   "clock": {
     "label": "Clock",

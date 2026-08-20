@@ -330,7 +330,13 @@
     "notFound": "Ventilateur introuvable",
     "on": "Allumé",
     "off": "Éteint",
-    "oscillate": "Oscillation"
+    "oscillate": "Oscillation",
+    "speed": "Vitesse",
+    "presetMode": "Mode",
+    "forward": "Sens normal",
+    "reverse": "Sens inverse",
+    "info": "Informations",
+    "state": "ÉTAT"
   },
   "clock": {
     "label": "Horloge",

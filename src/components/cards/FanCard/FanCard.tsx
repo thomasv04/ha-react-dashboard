@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { Fan, RefreshCw } from 'lucide-react';
@@ -9,6 +9,7 @@ import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
+import { useFanSpeed } from '@/hooks/useFanSpeed';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 import type { FanCardConfig } from '@/types/widget-configs';
@@ -32,24 +33,7 @@ export function FanCard() {
   const helpers = useHass(s => s.helpers);
   const playFeedback = useSoundFeedback();
 
-  const haPercentage = entity?.attributes.percentage as number | undefined;
-  const [localPercentage, setLocalPercentage] = useState<number | null>(null);
-  // La valeur locale ne sert qu'à lisser le glissement : dès que HA confirme,
-  // c'est lui qui fait foi.
-  useEffect(() => setLocalPercentage(null), [haPercentage]);
-
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const sendPercentage = useCallback(
-    (percentage: number) => {
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(() => {
-        helpers.callService({ domain: 'fan', service: 'set_percentage', target: { entity_id: entityId }, serviceData: { percentage } });
-      }, 150);
-    },
-    [helpers, entityId]
-  );
-
-  useEffect(() => () => (timer.current ? clearTimeout(timer.current) : undefined), []);
+  const { percentage, setPercentage } = useFanSpeed(entityId, entity?.attributes.percentage as number | undefined);
 
   if (!entity) {
     return (
@@ -68,7 +52,6 @@ export function FanCard() {
   // `percentage_step` donne le nombre de crans réels : un ventilateur à trois
   // vitesses n'a pas à exposer un curseur au pourcent près.
   const step = (entity.attributes.percentage_step as number | undefined) ?? 1;
-  const percentage = localPercentage ?? haPercentage ?? 0;
 
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -89,9 +72,7 @@ export function FanCard() {
 
   const handleSpeed = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
-    const pct = parseInt(e.target.value, 10);
-    setLocalPercentage(pct);
-    sendPercentage(pct);
+    setPercentage(parseInt(e.target.value, 10));
   };
 
   return (

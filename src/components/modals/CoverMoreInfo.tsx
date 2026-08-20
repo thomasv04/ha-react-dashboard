@@ -21,14 +21,14 @@ const PRESET_KEYS = [
  * Position visée par un pointeur, en pourcentage d'ouverture.
  *
  * Le rectangle se remplit **par le haut** quand le volet se ferme : le bas
- * correspond donc à 0 % d'ouverture. Arrondi au pas de 5 % — au doigt, viser
- * le pourcentage exact ne veut rien dire, et chaque valeur intermédiaire est un
- * appel de service de plus.
+ * correspond donc à 0 % d'ouverture. Au pour cent près : le pas de 5 % rendait
+ * inatteignables les positions intermédiaires, et un seul appel de service part
+ * de toute façon, au relâchement.
  */
 export function positionFromPointer(clientY: number, top: number, height: number): number {
   if (height <= 0) return 0;
   const ratio = 1 - (clientY - top) / height;
-  return Math.round(Math.min(1, Math.max(0, ratio)) * 20) * 5;
+  return Math.round(Math.min(1, Math.max(0, ratio)) * 100);
 }
 
 export default function CoverMoreInfo({ entityId, widgetId }: { entityId: string; widgetId: string }) {
@@ -100,7 +100,7 @@ export default function CoverMoreInfo({ entityId, widgetId }: { entityId: string
             }}
             onPointerCancel={() => setDragPosition(null)}
             onKeyDown={e => {
-              const step = e.key === 'ArrowUp' ? 5 : e.key === 'ArrowDown' ? -5 : 0;
+              const step = e.key === 'ArrowUp' ? 1 : e.key === 'ArrowDown' ? -1 : 0;
               if (!step) return;
               e.preventDefault();
               callService('set_cover_position', { position: Math.min(100, Math.max(0, position + step)) });

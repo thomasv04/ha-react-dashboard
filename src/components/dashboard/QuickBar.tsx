@@ -9,31 +9,10 @@ import { usePanel } from '@/context/PanelContext';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { useMoreInfo } from '@/context/MoreInfoContext';
 import { useEditMode } from '@/context/DashboardLayoutContext';
-import { MORE_INFO_COMPONENTS } from '@/components/modals/more-info-registry';
+import { modalTypeFor } from '@/components/modals/more-info-registry';
 
 /** Nombre de résultats affichés — au-delà, la liste devient un scroll interminable. */
 const MAX_RESULTS = 40;
-
-/**
- * Domaines HA dont le nom diffère de la clé du registre de modales.
- * Les autres (`light`, `cover`, `sensor`, `camera`, `person`, `automation`…)
- * portent déjà le même nom.
- */
-const DOMAIN_TO_MODAL: Record<string, string> = {
-  climate: 'thermostat',
-  binary_sensor: 'sensor',
-  input_boolean: 'sensor',
-  switch: 'sensor',
-  media_player: 'sensor',
-  sun: 'sensor',
-};
-
-/** Modale la plus adaptée à une entité — `sensor` affiche état et historique par défaut. */
-function modalTypeFor(entityId: string): string {
-  const domain = entityId.split('.')[0];
-  const mapped = DOMAIN_TO_MODAL[domain] ?? domain;
-  return mapped in MORE_INFO_COMPONENTS ? mapped : 'sensor';
-}
 
 type Mode = 'entity' | 'command';
 

@@ -24,15 +24,16 @@ describe('buildAreaControls', () => {
     expect(buildAreaControls(AREA, [], label)).toEqual([]);
   });
 
-  it('un jeton de domaine vise la zone entière et regroupe ses entités', () => {
+  it('un jeton de domaine regroupe les entités de ce domaine, et elles seules', () => {
     const [ctrl] = buildAreaControls(AREA, ['light'], label);
     expect(ctrl).toMatchObject({
       label: '[light]',
       domain: 'homeassistant',
       service: 'toggle',
-      areaId: 'cuisine',
-      stateEntities: ['light.bandeau_led', 'light.plafond'],
+      entityIds: ['light.bandeau_led', 'light.plafond'],
     });
+    // Pas de cible `area_id` : `homeassistant.toggle` y basculerait aussi le volet.
+    expect(ctrl.entityIds).not.toContain('cover.volet');
     expect(ctrl.entityId).toBeUndefined();
   });
 

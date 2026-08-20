@@ -7,20 +7,7 @@ import { useEntities } from '@/hooks/useEntities';
 import { useMoreInfo } from '@/context/MoreInfoContext';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { resolveIcon, useIconCatalog } from '@/lib/lucide-icon-map';
-import { MORE_INFO_COMPONENTS } from '@/components/modals/more-info-registry';
-
-/** Domaines dont le nom diffère de la clé du registre de modales. */
-const DOMAIN_TO_MODAL: Record<string, string> = {
-  climate: 'thermostat',
-  binary_sensor: 'sensor',
-  switch: 'sensor',
-  input_boolean: 'sensor',
-};
-
-function modalTypeFor(entityId: string): string {
-  const mapped = DOMAIN_TO_MODAL[entityId.split('.')[0]] ?? entityId.split('.')[0];
-  return mapped in MORE_INFO_COMPONENTS ? mapped : 'sensor';
-}
+import { modalTypeFor } from '@/components/modals/more-info-registry';
 
 /**
  * Rend l'icône d'une pastille.
