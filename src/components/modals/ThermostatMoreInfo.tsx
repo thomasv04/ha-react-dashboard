@@ -4,6 +4,8 @@ import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { MoreInfoHeader } from './MoreInfoHeader';
+import { ThermostatCard } from '@/components/cards/ThermostatCard/ThermostatCard';
+import { WidgetIdProvider } from '@/components/layout/DashboardGrid';
 import { InfoSidebar, type SidebarModule } from './sidebar';
 import type { ThermostatCardConfig } from '@/types/widget-types';
 import { useI18n } from '@/i18n';
@@ -24,22 +26,6 @@ export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: s
   const [historyHours, setHistoryHours] = useState(24);
   const entity = useSafeEntity(entityId);
   const { helpers } = useHass();
-
-  const minTemp = config?.minTemp ?? (entity?.attributes.min_temp as number) ?? 10;
-  const maxTemp = config?.maxTemp ?? (entity?.attributes.max_temp as number) ?? 30;
-
-  const setTemp = useCallback(
-    (temp: number) => {
-      const clamped = Math.max(minTemp, Math.min(maxTemp, temp));
-      helpers.callService({
-        domain: 'climate',
-        service: 'set_temperature',
-        target: { entity_id: entityId },
-        serviceData: { temperature: clamped },
-      });
-    },
-    [helpers, entityId, minTemp, maxTemp]
-  );
 
   const setHvacMode = useCallback(
     (mode: string) => {
@@ -96,50 +82,11 @@ export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: s
       <div className={showInfoPanel ? 'lg:col-span-3' : ''}>
         <MoreInfoHeader icon={Thermometer} name={name} state={hvacMode.toUpperCase()} stateColor={actionColor} />
 
-        {/* Current temperature */}
-        {currentTemp != null && (
-          <p className='text-sm text-white/50 text-center mt-6'>
-            {t('widgets.thermostat.currentTemp')}: <span className='text-white font-medium'>{currentTemp}°C</span>
-          </p>
-        )}
-
-        {/* Target temperature - giant display */}
-        <div className='flex items-center justify-center gap-6 mt-4'>
-          <button
-            onClick={() => targetTemp != null && setTemp(targetTemp - 0.5)}
-            className='w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 text-white text-xl font-light flex items-center justify-center transition-colors'
-          >
-            −
-          </button>
-          <div className='text-center'>
-            <span className='text-7xl font-light italic text-white' style={{ textShadow: `0 0 60px ${actionColor}40` }}>
-              {targetTemp != null ? targetTemp.toFixed(1) : '—'}
-            </span>
-            <span className='text-2xl text-white/40 ml-1'>°C</span>
-          </div>
-          <button
-            onClick={() => targetTemp != null && setTemp(targetTemp + 0.5)}
-            className='w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 text-white text-xl font-light flex items-center justify-center transition-colors'
-          >
-            +
-          </button>
-        </div>
-
-        {/* Slider */}
-        <div className='mt-6 px-8'>
-          <input
-            type='range'
-            min={minTemp}
-            max={maxTemp}
-            step={0.5}
-            value={targetTemp ?? minTemp}
-            onChange={e => setTemp(Number(e.target.value))}
-            className='w-full accent-orange-400'
-          />
-          <div className='flex justify-between text-[10px] text-white/30 mt-1'>
-            <span>{minTemp}°</span>
-            <span>{maxTemp}°</span>
-          </div>
+        {/* Gauge — même cadran que la card, en grand */}
+        <div className='gc-bare mx-auto mt-6 w-full max-w-[380px] aspect-[1/1.18]'>
+          <WidgetIdProvider id={widgetId}>
+            <ThermostatCard />
+          </WidgetIdProvider>
         </div>
       </div>
 
