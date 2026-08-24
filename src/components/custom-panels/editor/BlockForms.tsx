@@ -508,38 +508,44 @@ function WidgetTypeField({ value, onChange }: { value: string; onChange: (v: str
   return (
     <div>
       <label className='text-[11px] text-white/40 block mb-1'>{t('layout.customPanel.widgetType')}</label>
-      <div
-        onClick={() => (open ? close() : setOpen(true))}
-        className={cn(
-          'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/5 border transition-colors cursor-pointer',
-          open ? 'border-blue-500/40 bg-white/8' : 'border-white/10 hover:border-white/20'
-        )}
-      >
-        {selected && !open ? (
-          <span
-            className='w-6 h-6 rounded-lg flex items-center justify-center shrink-0'
-            style={{ background: `${selected.color}20`, border: `1px solid ${selected.color}35` }}
-          >
-            <selected.icon size={13} style={{ color: selected.color }} />
-          </span>
-        ) : null}
-        {open ? (
+      {/* Fermé, c'est un vrai bouton — donc atteignable au clavier, ce qu'un
+          `<div>` cliquable n'est pas. Ouvert, il devient un conteneur : un
+          `<input>` ne peut pas vivre dans un `<button>`, et c'est l'input qui
+          prend alors le focus. */}
+      {open ? (
+        <div className='w-full flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/5 border border-blue-500/40'>
           <input
             autoFocus
             value={query}
             onChange={e => setQuery(e.target.value)}
-            onClick={e => e.stopPropagation()}
             onKeyDown={e => e.key === 'Escape' && close()}
             placeholder={t('layout.searchWidget')}
             className='flex-1 min-w-0 bg-transparent text-sm text-white/80 outline-none placeholder:text-white/30'
           />
-        ) : (
+          <button onClick={close} aria-label={t('common.close')} className='shrink-0 text-white/30 hover:text-white/60 transition-colors'>
+            <ChevronDown size={14} className='rotate-180' />
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => setOpen(true)}
+          aria-expanded={false}
+          className='w-full flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-white/20 transition-colors text-left'
+        >
+          {selected ? (
+            <span
+              className='w-6 h-6 rounded-lg flex items-center justify-center shrink-0'
+              style={{ background: `${selected.color}20`, border: `1px solid ${selected.color}35` }}
+            >
+              <selected.icon size={13} style={{ color: selected.color }} />
+            </span>
+          ) : null}
           <span className={cn('flex-1 text-sm truncate', selected ? 'text-white/80' : 'text-white/30')}>
             {selected ? t(selected.label) : t('layout.customPanel.widgetTypeNone')}
           </span>
-        )}
-        <ChevronDown size={14} className={cn('text-white/30 shrink-0 transition-transform', open && 'rotate-180')} />
-      </div>
+          <ChevronDown size={14} className='text-white/30 shrink-0' />
+        </button>
+      )}
 
       <AnimatePresence>
         {open && (
@@ -590,7 +596,7 @@ export function WidgetBlockForm({ block, onChange }: { block: WidgetBlock; onCha
   // `weather-icons` n'a pas d'éditeur ici — même exclusion que dans les groupes.
   const fields = (WIDGET_FIELD_DEFS[block.widgetType] ?? []).filter(f => f.fieldType !== 'weather-icons');
 
-  const updateField = (key: string, val: unknown) => onChange({ ...block, config: { ...block.config, [key]: val } });
+  const patch = (p: Record<string, unknown>) => onChange({ ...block, config: { ...block.config, ...p } });
 
   // Changer de type repart des valeurs par défaut du nouveau widget : garder
   // l'ancienne config, c'est laisser des clés qui n'ont plus de sens.
@@ -627,7 +633,7 @@ export function WidgetBlockForm({ block, onChange }: { block: WidgetBlock; onCha
         <div className='pt-3 border-t border-white/8 grid grid-cols-2 gap-x-3 gap-y-3'>
           {fields.map(field => (
             <div key={field.key} className={WIDE_FIELD_TYPES.includes(field.fieldType) ? 'col-span-2' : 'col-span-1'}>
-              <ChildFieldRenderer field={field} draft={block.config} updateField={updateField} />
+              <ChildFieldRenderer field={field} draft={block.config} onPatch={patch} />
             </div>
           ))}
         </div>

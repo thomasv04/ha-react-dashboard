@@ -11,6 +11,9 @@ import { EntityListField } from './EntityListField';
 import { FieldInput } from './FieldInput';
 import { ListEditor } from './ListEditor';
 import { PanelSelectField } from './PanelSelectField';
+import { AreaControlsField } from './AreaControlsField';
+import { MultiSelectField } from './MultiSelectField';
+import { TemplateEditor } from '@/components/layout/TemplateField';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 
@@ -29,18 +32,23 @@ export const WIDE_FIELD_TYPES: string[] = ['list', 'entity-list', 'multiselect',
 export function ChildFieldRenderer({
   field,
   draft,
-  updateField,
+  onPatch,
 }: {
   field: WidgetFieldDef;
   draft: Record<string, unknown>;
-  updateField: (key: string, val: unknown) => void;
+  /**
+   * Un correctif d'objet et non un couple clé/valeur : `area-controls` écrit
+   * deux clés d'un coup, et deux appels successifs partaient tous les deux du
+   * même brouillon — le premier était perdu.
+   */
+  onPatch: (patch: Record<string, unknown>) => void;
 }) {
   if (field.fieldType === 'entity') {
     return (
       <EntityPicker
         key={field.key}
         value={(draft[field.key] as string) ?? ''}
-        onChange={v => updateField(field.key, v)}
+        onChange={v => onPatch({ [field.key]: v })}
         domain={field.domain}
         label={field.label}
       />
@@ -51,7 +59,7 @@ export function ChildFieldRenderer({
       <IconPicker
         key={field.key}
         value={(draft[field.key] as string) ?? ''}
-        onChange={v => updateField(field.key, v)}
+        onChange={v => onPatch({ [field.key]: v })}
         label={field.label}
       />
     );
@@ -61,7 +69,7 @@ export function ChildFieldRenderer({
       <GradientPicker
         key={field.key}
         value={(draft[field.key] as string) ?? ''}
-        onChange={v => updateField(field.key, v)}
+        onChange={v => onPatch({ [field.key]: v })}
         label={field.label}
       />
     );
@@ -71,7 +79,7 @@ export function ChildFieldRenderer({
       <PanelSelectField
         key={field.key}
         value={(draft[field.key] as string) ?? ''}
-        onChange={v => updateField(field.key, v)}
+        onChange={v => onPatch({ [field.key]: v })}
         label={field.label}
       />
     );
@@ -83,7 +91,7 @@ export function ChildFieldRenderer({
           <input
             type='checkbox'
             checked={(draft[field.key] as boolean) ?? false}
-            onChange={e => updateField(field.key, e.target.checked)}
+            onChange={e => onPatch({ [field.key]: e.target.checked })}
             className='sr-only peer'
           />
           <div className='w-8 h-4 rounded-full bg-white/10 peer-checked:bg-blue-500/60 transition-colors' />
@@ -99,7 +107,7 @@ export function ChildFieldRenderer({
         <label className='text-[11px] text-white/40 mb-1 block'>{field.label}</label>
         <select
           value={(draft[field.key] as string) ?? field.options[0].value}
-          onChange={e => updateField(field.key, e.target.value)}
+          onChange={e => onPatch({ [field.key]: e.target.value })}
           className='w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 outline-none focus:border-blue-500/50 cursor-pointer'
           style={{ colorScheme: 'dark' }}
         >
@@ -117,7 +125,7 @@ export function ChildFieldRenderer({
       <ListEditor
         key={field.key}
         items={(draft[field.key] as Record<string, unknown>[]) ?? []}
-        onChange={v => updateField(field.key, v)}
+        onChange={v => onPatch({ [field.key]: v })}
         itemFields={field.itemFields}
         label={field.label}
         twoCol
@@ -130,8 +138,43 @@ export function ChildFieldRenderer({
         key={field.key}
         label={field.label}
         value={(draft[field.key] as string[]) ?? []}
-        onChange={(v: string[]) => updateField(field.key, v)}
+        onChange={(v: string[]) => onPatch({ [field.key]: v })}
         domain={field.domain}
+      />
+    );
+  }
+  if (field.fieldType === 'area-controls') {
+    // Deux clés jumelles : la zone HA et les commandes qu'elle apporte.
+    return (
+      <AreaControlsField
+        key={field.key}
+        label={field.label}
+        area={(draft.area as string) ?? ''}
+        controls={(draft.areaControls as string[]) ?? []}
+        onChange={next => onPatch({ area: next.area, areaControls: next.controls })}
+      />
+    );
+  }
+  if (field.fieldType === 'template') {
+    return (
+      <div key={field.key} className='space-y-1'>
+        <label className='block text-[11px] text-white/40'>{field.label}</label>
+        <TemplateEditor
+          value={(draft[field.key] as string) ?? ''}
+          onChange={v => onPatch({ [field.key]: v })}
+          entityId={draft.entityId as string | undefined}
+        />
+      </div>
+    );
+  }
+  if (field.fieldType === 'multiselect' && field.options) {
+    return (
+      <MultiSelectField
+        key={field.key}
+        label={field.label}
+        options={field.options}
+        value={draft[field.key] as string[] | undefined}
+        onChange={v => onPatch({ [field.key]: v })}
       />
     );
   }
@@ -140,7 +183,7 @@ export function ChildFieldRenderer({
     <FieldInput
       key={field.key}
       value={(draft[field.key] as string | number) ?? ''}
-      onChange={v => updateField(field.key, v)}
+      onChange={v => onPatch({ [field.key]: v })}
       label={field.label}
       type={field.fieldType === 'number' ? 'number' : 'text'}
     />
@@ -161,8 +204,8 @@ function ChildRow({ child, onRemove }: { child: GroupChild; onRemove: () => void
   const childConfig = getWidgetConfig(child.id) ?? ({} as Record<string, unknown>);
   const [draft, setDraft] = useState<Record<string, unknown>>({ ...(childConfig as Record<string, unknown>) });
 
-  const updateField = (key: string, val: unknown) => {
-    const next = { ...draft, [key]: val };
+  const patch = (p: Record<string, unknown>) => {
+    const next = { ...draft, ...p };
     setDraft(next);
     // Le brouillon est un sac de clés dynamiques : le passage par `unknown` est
     // requis, les deux types ne se recouvrent pas assez pour un cast direct.
@@ -239,7 +282,7 @@ function ChildRow({ child, onRemove }: { child: GroupChild; onRemove: () => void
                   const isWide = WIDE_FIELD_TYPES.includes(field.fieldType);
                   return (
                     <div key={field.key} className={isWide ? 'col-span-2' : 'col-span-1'}>
-                      <ChildFieldRenderer field={field} draft={draft} updateField={updateField} />
+                      <ChildFieldRenderer field={field} draft={draft} onPatch={patch} />
                     </div>
                   );
                 })}

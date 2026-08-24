@@ -20,6 +20,7 @@ import { ListEditor } from './ListEditor';
 import { WeatherIconsEditor } from './WeatherIconsEditor';
 import { PanelSelectField } from './PanelSelectField';
 import { AreaControlsField } from './AreaControlsField';
+import { MultiSelectField } from './MultiSelectField';
 import { SoundTab } from './SoundTab';
 import { WIDGET_SOUND_ACTIONS } from '@/config/widget-sound-actions';
 import type { SoundPreset } from '@/lib/sounds';
@@ -362,35 +363,14 @@ export function WidgetEditModal() {
                       );
                     }
                     if (field.fieldType === 'multiselect' && field.options) {
-                      const current: string[] = (draft[field.key] as string[]) ?? field.options.map(o => o.value);
                       return (
-                        <div key={field.key}>
-                          <label className='text-[11px] text-white/40 mb-2 block'>{field.label}</label>
-                          <div className='flex flex-wrap gap-1.5'>
-                            {field.options.map(opt => {
-                              const active = current.includes(opt.value);
-                              return (
-                                <button
-                                  key={opt.value}
-                                  type='button'
-                                  onClick={() => {
-                                    const next = active ? current.filter(v => v !== opt.value) : [...current, opt.value];
-                                    updateField(field.key, next);
-                                  }}
-                                  className={cn(
-                                    'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all',
-                                    active
-                                      ? 'bg-blue-500/20 border-blue-500/40 text-blue-300'
-                                      : 'bg-white/5 border-white/10 text-white/40 hover:border-white/20 hover:text-white/60'
-                                  )}
-                                >
-                                  {opt.icon && <span>{opt.icon}</span>}
-                                  {opt.label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
+                        <MultiSelectField
+                          key={field.key}
+                          label={field.label}
+                          options={field.options}
+                          value={draft[field.key] as string[] | undefined}
+                          onChange={v => updateField(field.key, v)}
+                        />
                       );
                     }
                     if (field.fieldType === 'select' && field.options) {
