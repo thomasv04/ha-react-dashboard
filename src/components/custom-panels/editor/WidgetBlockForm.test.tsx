@@ -7,6 +7,14 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('@/components/layout/WidgetEditModal/EntityPicker', () => ({
   EntityPicker: ({ label }: { label: string }) => <div>entity-picker:{label}</div>,
 }));
+// Le sélecteur de zone interroge le registre HA : hors sujet ici.
+vi.mock('@/components/layout/WidgetEditModal/AreaControlsField', () => ({
+  AreaControlsField: ({ label, onChange }: { label: string; onChange: (v: { area: string; controls: string[] }) => void }) => (
+    <button onClick={() => onChange({ area: 'salon', controls: ['light'] })}>area-field:{label}</button>
+  ),
+}));
+
+vi.mock('@/context/CustomPanelContext', () => ({ useCustomPanels: () => ({ panels: [] }) }));
 
 import { WidgetBlockForm } from './BlockForms';
 import type { WidgetBlock } from '@/types/custom-panel';
@@ -47,5 +55,26 @@ describe('WidgetBlockForm', () => {
     await userEvent.type(screen.getByPlaceholderText('layout.searchWidget'), 'light');
     expect(screen.getByText('widgets.light.label')).toBeInTheDocument();
     expect(screen.queryByText('widgets.clock.label')).not.toBeInTheDocument();
+  });
+
+  // Le champ « Zone Home Assistant » de la card Pièce est de type
+  // `area-controls` : le renderer ne le connaissait pas et retombait sur une
+  // zone de texte libre, où l'on ne pouvait rien saisir d'utile.
+  it('rend un vrai sélecteur pour une zone Home Assistant', () => {
+    render(<WidgetBlockForm block={{ ...block, widgetType: 'room' }} onChange={() => {}} />);
+    expect(screen.getByText(/area-field:/)).toBeInTheDocument();
+  });
+
+  // Deux clés écrites d'un coup : avec l'ancien contrat clé/valeur, le second
+  // appel repartait du même brouillon et effaçait le premier.
+  it('écrit la zone et ses commandes en une seule fois', async () => {
+    const onChange = vi.fn();
+    render(<WidgetBlockForm block={{ ...block, widgetType: 'room' }} onChange={onChange} />);
+
+    await userEvent.click(screen.getByText(/area-field:/));
+
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ config: expect.objectContaining({ area: 'salon', areaControls: ['light'] }) })
+    );
   });
 });
