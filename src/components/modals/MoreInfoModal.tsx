@@ -50,6 +50,7 @@ export function MoreInfoModal() {
       {state && MORE_INFO_COMPONENTS[state.widgetType] && (
         <motion.div
           key='more-info-overlay'
+          data-overlay
           className='fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6'
           onClick={closeMoreInfo}
           initial={{ opacity: 0 }}

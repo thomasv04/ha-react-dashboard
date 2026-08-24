@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { Search, RotateCcw, Check } from 'lucide-react';
 import { useI18n, SUPPORTED_LANGUAGES, getDefaultTranslations } from '@/i18n';
+import { SECTION_HEADING } from './typography';
+import { cn } from '@/lib/utils';
 
 export function LanguageSection() {
   const { t, language, setLanguage, overrides, setOverride, removeOverride } = useI18n();
@@ -39,9 +41,7 @@ export function LanguageSection() {
     <div className='flex flex-col gap-5'>
       {/* Language picker */}
       <div>
-        <p className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-3'>
-          {t('settings.language_section.languageLabel')}
-        </p>
+        <p className={cn(SECTION_HEADING, 'mb-3')}>{t('settings.language_section.languageLabel')}</p>
         <div className='flex gap-2'>
           {SUPPORTED_LANGUAGES.map(lang => (
             <button
@@ -62,9 +62,7 @@ export function LanguageSection() {
       {/* Overrides */}
       <div className='flex flex-col gap-3'>
         <div>
-          <p className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-1'>
-            {t('settings.language_section.overridesTitle')}
-          </p>
+          <p className={cn(SECTION_HEADING, 'mb-1')}>{t('settings.language_section.overridesTitle')}</p>
           <p className='text-white/30 text-[11px] leading-relaxed'>{t('settings.language_section.overridesDescription')}</p>
         </div>
 

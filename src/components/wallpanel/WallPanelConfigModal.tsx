@@ -146,6 +146,7 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
   return (
     <>
       <motion.div
+        data-overlay
         className='fixed inset-0 z-[110] bg-black/60'
         style={{ backdropFilter: 'blur(6px)' }}
         initial={{ opacity: 0 }}

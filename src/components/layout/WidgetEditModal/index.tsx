@@ -106,6 +106,7 @@ export function WidgetEditModal() {
       {/* Backdrop */}
       <motion.div
         key='widget-edit-backdrop'
+        data-overlay
         className='fixed inset-0 z-[70] bg-black/60'
         style={{ backdropFilter: 'blur(8px)' }}
         initial={{ opacity: 0 }}

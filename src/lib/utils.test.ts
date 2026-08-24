@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cn } from './utils';
+import { cn, isTypingTarget } from './utils';
 
 describe('cn()', () => {
   it('retourne une chaîne vide sans arguments', () => {
@@ -33,5 +33,46 @@ describe('cn()', () => {
 
   it('conserve le prefixe responsive (ex: sm:hidden)', () => {
     expect(cn('hidden', 'sm:block')).toBe('hidden sm:block');
+  });
+});
+
+describe('isTypingTarget()', () => {
+  /** Écoute sur `window` et rend ce que le garde a vu du dernier événement. */
+  function guardSaw(dispatch: () => void): boolean {
+    let seen = false;
+    const onKeyDown = (e: Event) => {
+      seen = isTypingTarget(e);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    dispatch();
+    window.removeEventListener('keydown', onKeyDown);
+    return seen;
+  }
+
+  it('reconnaît un champ de saisie', () => {
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    expect(guardSaw(() => input.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true })))).toBe(true);
+    input.remove();
+  });
+
+  it('laisse passer une frappe hors champ', () => {
+    const div = document.createElement('div');
+    document.body.appendChild(div);
+    expect(guardSaw(() => div.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true })))).toBe(false);
+    div.remove();
+  });
+
+  // Le cas qui cassait : sous Home Assistant le dashboard vit dans une shadow
+  // root, et `e.target` vu depuis `window` est l'hôte, pas l'`<input>`. Taper
+  // « c » dans le nom d'un panneau ouvrait la barre de commande.
+  it("voit l'input même à travers une shadow root", () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const input = document.createElement('input');
+    host.attachShadow({ mode: 'open' }).appendChild(input);
+
+    expect(guardSaw(() => input.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true, composed: true })))).toBe(true);
+    host.remove();
   });
 });

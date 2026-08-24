@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { History, RotateCcw, AlertTriangle } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import { apiFetch } from '@/lib/api-base';
+import { SECTION_HEADING } from './typography';
+import { cn } from '@/lib/utils';
 
 interface HistoryEntry {
   id: number;
@@ -69,7 +71,7 @@ export function ConfigHistorySection() {
 
   return (
     <div>
-      <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-3 flex items-center gap-2'>
+      <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
         <History size={12} /> {t('settings.system_section.historyTitle')}
       </h3>
       <p className='text-white/40 text-xs mb-4 leading-relaxed'>{t('settings.system_section.historyDesc')}</p>

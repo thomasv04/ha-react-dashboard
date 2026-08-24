@@ -1,8 +1,13 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION_FAST } from '@/lib/motion-tokens';
-import { X, Plus, Trash2, ChevronUp, ChevronDown, Layers } from 'lucide-react';
+import { X, Plus, Trash2, ChevronUp, ChevronDown, Layers, Loader2 } from 'lucide-react';
 import { useCustomPanels } from '@/context/CustomPanelContext';
+import { usePages } from '@/context/PageContext';
+import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useWallPanel } from '@/context/WallPanelContext';
+import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 import { IconPicker } from '@/components/layout/WidgetPickers';
 import { resolveIcon } from '@/lib/lucide-icon-map';
 import { cn } from '@/lib/utils';
@@ -381,11 +386,23 @@ function PanelListItem({
 
 export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
-  const { panels, upsertPanel, deletePanel } = useCustomPanels();
+  const { panels, upsertPanel, deletePanel, dock } = useCustomPanels();
+  const { pages } = usePages();
+  const { allLayouts } = useDashboardLayout();
+  const { allWidgetConfigsByPage } = useWidgetConfig();
+  const { config: wpConfig, wallPanelLayout, wallPanelWidgetConfigs } = useWallPanel();
+  const { saveConfig, isSaving } = useDashboardConfig();
 
   // Local copy — synced to context on close
   const [localPanels, setLocalPanels] = useState<CustomPanel[]>(() => [...panels]);
   const [selectedId, setSelectedId] = useState<string | null>(panels[0]?.id ?? null);
+  // Instantané d'ouverture, initialiseur paresseux : il sert à savoir si le
+  // brouillon a bougé, donc il est lu au rendu — ce qu'un ref n'a pas le droit
+  // d'être.
+  const [initial] = useState(() => JSON.stringify(panels));
+  const [confirmClose, setConfirmClose] = useState(false);
+
+  const dirty = JSON.stringify(localPanels) !== initial;
 
   const selectedPanel = localPanels.find(p => p.id === selectedId) ?? null;
 
@@ -401,10 +418,28 @@ export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
     [panels, upsertPanel, deletePanel]
   );
 
-  const handleClose = () => {
+  // Les panneaux ne vivaient que dans le contexte : ils n'atteignaient le
+  // serveur que par le bouton Sauvegarder du dashboard, absent hors édition —
+  // et l'éditeur s'ouvre aussi hors édition. Un panneau composé là était perdu
+  // au rechargement. Il s'enregistre maintenant depuis ici.
+  const handleClose = async () => {
     syncToContext(localPanels);
+    await saveConfig({
+      version: 2,
+      pages,
+      layouts: allLayouts,
+      widgetConfigs: allWidgetConfigsByPage,
+      wallPanel: { config: wpConfig, layout: wallPanelLayout, widgetConfigs: wallPanelWidgetConfigs },
+      // La liste locale, pas celle du contexte : `syncToContext` passe par des
+      // `setState` qui n'ont pas encore été rendus.
+      customPanels: localPanels,
+      dock,
+    });
     onClose();
   };
+
+  /** Fermeture : un brouillon modifié ne sort pas d'ici sans un choix explicite. */
+  const requestClose = () => (dirty ? setConfirmClose(true) : onClose());
 
   const createPanel = () => {
     const id = genId();
@@ -431,9 +466,10 @@ export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        data-overlay
         className='fixed inset-0 z-[80] bg-black/60'
         style={{ backdropFilter: 'blur(8px)' }}
-        onClick={handleClose}
+        onClick={requestClose}
       />
 
       {/* Modal */}
@@ -459,7 +495,7 @@ export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
               <p className='text-white/30 text-[11px]'>{t('layout.customPanel.subtitle')}</p>
             </div>
             <button
-              onClick={handleClose}
+              onClick={requestClose}
               aria-label={t('common.close')}
               className='ml-auto p-1.5 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/10 transition-colors'
             >
@@ -514,13 +550,31 @@ export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
 
           {/* Footer */}
           <div className='flex items-center justify-between px-5 py-3 border-t border-white/8 flex-shrink-0'>
-            <p className='text-[11px] text-white/25'>{t('layout.customPanel.footerNote')}</p>
-            <button
-              onClick={handleClose}
-              className='px-4 py-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 text-blue-300 text-sm font-medium transition-colors'
-            >
-              {t('layout.customPanel.close')}
-            </button>
+            {confirmClose ? (
+              <p className='text-amber-200/80 text-xs'>{t('layout.customPanel.unsavedWarning')}</p>
+            ) : (
+              <p className={cn('text-[11px]', dirty ? 'text-amber-200/70' : 'text-white/25')}>
+                {dirty ? t('layout.customPanel.unsavedChanges') : t('layout.customPanel.footerNote')}
+              </p>
+            )}
+            <div className='flex items-center gap-2 shrink-0'>
+              {confirmClose && (
+                <button
+                  onClick={onClose}
+                  className='px-3 py-2 rounded-xl text-sm font-medium text-white/40 hover:text-white/70 hover:bg-white/[0.08] transition-colors'
+                >
+                  {t('layout.customPanel.discard')}
+                </button>
+              )}
+              <button
+                onClick={handleClose}
+                disabled={isSaving}
+                className='flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 text-blue-300 text-sm font-medium transition-colors disabled:opacity-50'
+              >
+                {isSaving && <Loader2 size={14} className='animate-spin' />}
+                {t('layout.customPanel.saveAndClose')}
+              </button>
+            </div>
           </div>
         </div>
       </motion.div>

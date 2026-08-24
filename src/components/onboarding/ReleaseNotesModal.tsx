@@ -54,6 +54,7 @@ export function ReleaseNotesModal({ onClose }: { onClose: () => void }) {
   return (
     <>
       <motion.div
+        data-overlay
         className='fixed inset-0 z-[60] bg-black/60'
         style={{ backdropFilter: 'blur(4px)' }}
         initial={{ opacity: 0 }}

@@ -3,6 +3,8 @@ import { Clock, Home, BellOff, Lock, MonitorSmartphone, AlertTriangle } from 'lu
 import { useI18n } from '@/i18n';
 import { useTheme } from '@/context/ThemeContext';
 import { apiFetch } from '@/lib/api-base';
+import { SECTION_HEADING } from './typography';
+import { cn } from '@/lib/utils';
 
 const inputClass =
   'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white/80 text-sm focus:outline-none focus:border-blue-500/40 placeholder:text-white/20';
@@ -65,7 +67,7 @@ export function RegionalSection() {
     <div className='flex flex-col gap-7'>
       {/* ── Formats ── */}
       <div className='flex flex-col gap-4'>
-        <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase flex items-center gap-2'>
+        <h3 className={cn(SECTION_HEADING, 'flex items-center gap-2')}>
           <Clock size={12} /> {t('settings.regional_section.formats')}
         </h3>
         <p className='text-white/40 text-xs leading-relaxed'>{t('settings.regional_section.intro')}</p>
@@ -121,7 +123,7 @@ export function RegionalSection() {
 
       {/* ── Retour automatique à l'accueil ── */}
       <div className='flex flex-col gap-3'>
-        <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase flex items-center gap-2'>
+        <h3 className={cn(SECTION_HEADING, 'flex items-center gap-2')}>
           <Home size={12} /> {t('settings.regional_section.returnHome')}
         </h3>
         <p className='text-white/40 text-xs leading-relaxed'>{t('settings.regional_section.returnHomeDesc')}</p>
@@ -145,7 +147,7 @@ export function RegionalSection() {
 
       {/* ── Ne pas déranger ── */}
       <div className='flex flex-col gap-3'>
-        <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase flex items-center gap-2'>
+        <h3 className={cn(SECTION_HEADING, 'flex items-center gap-2')}>
           <BellOff size={12} /> {t('settings.regional_section.dnd')}
         </h3>
         <label className='flex items-start gap-3 cursor-pointer'>
@@ -161,7 +163,7 @@ export function RegionalSection() {
 
       {/* ── Code de verrouillage ── */}
       <div className='flex flex-col gap-3'>
-        <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase flex items-center gap-2'>
+        <h3 className={cn(SECTION_HEADING, 'flex items-center gap-2')}>
           <Lock size={12} /> {t('settings.regional_section.pin')}
         </h3>
         <p className='text-white/40 text-xs leading-relaxed'>{t('settings.regional_section.pinDesc')}</p>
@@ -228,7 +230,7 @@ function BroadcastButton() {
 
   return (
     <div className='flex flex-col gap-3'>
-      <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase flex items-center gap-2'>
+      <h3 className={cn(SECTION_HEADING, 'flex items-center gap-2')}>
         <MonitorSmartphone size={12} /> {t('settings.regional_section.broadcast')}
       </h3>
       <p className='text-white/40 text-xs leading-relaxed'>{t('settings.regional_section.broadcastDesc')}</p>

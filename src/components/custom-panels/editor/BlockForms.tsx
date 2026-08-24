@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, Search, Check, X, Copy, ChevronUp, ChevronDown } from 'lucide-react';
-import { WIDGET_META } from '@/widgets';
+import { WIDGET_META, WIDGET_FIELD_DEFS, DEFAULT_WIDGET_CONFIGS } from '@/widgets';
+import { ChildFieldRenderer, WIDE_FIELD_TYPES } from '@/components/layout/WidgetEditModal/GroupWidgetsTab';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { IconPicker } from '@/components/layout/WidgetPickers';
 import { cn } from '@/lib/utils';
@@ -480,31 +481,131 @@ export function SectionHeaderBlockForm({ block, onChange }: { block: SectionHead
 // ── Widget block ──────────────────────────────────────────────────────────────
 
 /**
- * Choix de la card et de sa hauteur.
+ * Choix de la card : une grille de vignettes, pas un `<select>`.
  *
- * La configuration fine (entité, options) se fait dans le panneau lui-même :
- * une card embarquée s'édite comme sur la grille, via son propre formulaire.
- * Dupliquer ici les champs de vingt-quatre cards n'apporterait rien.
+ * Le menu déroulant natif sort du thème — le navigateur le peint en blanc, avec
+ * ses propres surlignages, au milieu d'une modale sombre. Et une liste de vingt
+ * cards sans leur icône ne se parcourt pas. Même vignette que le sélecteur de
+ * widgets d'un groupe : icône du manifeste, à la couleur du manifeste.
  */
+function WidgetTypeField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const selected = WIDGET_META.find(m => m.type === value);
+
+  // Une vingtaine de cards : la liste ne tient pas sous les yeux, et on connaît
+  // le nom de celle qu'on cherche. Le type est cherché aussi — c'est ce qui
+  // s'écrit dans la config, et « thermostat » y est plus parlant que « Clim ».
+  const q = query.trim().toLowerCase();
+  const matching = q ? WIDGET_META.filter(m => t(m.label).toLowerCase().includes(q) || m.type.includes(q)) : WIDGET_META;
+
+  const close = () => {
+    setOpen(false);
+    setQuery('');
+  };
+
+  return (
+    <div>
+      <label className='text-[11px] text-white/40 block mb-1'>{t('layout.customPanel.widgetType')}</label>
+      <div
+        onClick={() => (open ? close() : setOpen(true))}
+        className={cn(
+          'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/5 border transition-colors cursor-pointer',
+          open ? 'border-blue-500/40 bg-white/8' : 'border-white/10 hover:border-white/20'
+        )}
+      >
+        {selected && !open ? (
+          <span
+            className='w-6 h-6 rounded-lg flex items-center justify-center shrink-0'
+            style={{ background: `${selected.color}20`, border: `1px solid ${selected.color}35` }}
+          >
+            <selected.icon size={13} style={{ color: selected.color }} />
+          </span>
+        ) : null}
+        {open ? (
+          <input
+            autoFocus
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onClick={e => e.stopPropagation()}
+            onKeyDown={e => e.key === 'Escape' && close()}
+            placeholder={t('layout.searchWidget')}
+            className='flex-1 min-w-0 bg-transparent text-sm text-white/80 outline-none placeholder:text-white/30'
+          />
+        ) : (
+          <span className={cn('flex-1 text-sm truncate', selected ? 'text-white/80' : 'text-white/30')}>
+            {selected ? t(selected.label) : t('layout.customPanel.widgetTypeNone')}
+          </span>
+        )}
+        <ChevronDown size={14} className={cn('text-white/30 shrink-0 transition-transform', open && 'rotate-180')} />
+      </div>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.18 }}
+            className='overflow-hidden'
+          >
+            <div className='grid grid-cols-2 gap-1.5 pt-1.5'>
+              {matching.map(meta => (
+                <button
+                  key={meta.type}
+                  onClick={() => {
+                    onChange(meta.type);
+                    close();
+                  }}
+                  className={cn(
+                    'flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left',
+                    meta.type === value
+                      ? 'border-blue-500/40 bg-blue-500/10'
+                      : 'border-white/8 bg-white/3 hover:bg-white/6 hover:border-white/14'
+                  )}
+                >
+                  <span
+                    className='w-7 h-7 rounded-xl flex items-center justify-center shrink-0'
+                    style={{ background: `${meta.color}20`, border: `1px solid ${meta.color}35` }}
+                  >
+                    <meta.icon size={14} style={{ color: meta.color }} />
+                  </span>
+                  <span className='text-white/65 text-xs font-medium leading-tight'>{t(meta.label)}</span>
+                </button>
+              ))}
+              {matching.length === 0 && <p className='col-span-2 py-4 text-center text-xs text-white/30'>{t('common.noResults')}</p>}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/** Choix de la card, de sa hauteur, et de ses propres réglages. */
+
 export function WidgetBlockForm({ block, onChange }: { block: WidgetBlock; onChange: (b: WidgetBlock) => void }) {
   const { t } = useI18n();
+  // `weather-icons` n'a pas d'éditeur ici — même exclusion que dans les groupes.
+  const fields = (WIDGET_FIELD_DEFS[block.widgetType] ?? []).filter(f => f.fieldType !== 'weather-icons');
+
+  const updateField = (key: string, val: unknown) => onChange({ ...block, config: { ...block.config, [key]: val } });
+
+  // Changer de type repart des valeurs par défaut du nouveau widget : garder
+  // l'ancienne config, c'est laisser des clés qui n'ont plus de sens.
+  const changeType = (widgetType: string) =>
+    onChange({
+      ...block,
+      widgetType,
+      config: {
+        ...((DEFAULT_WIDGET_CONFIGS[widgetType as keyof typeof DEFAULT_WIDGET_CONFIGS] ?? {}) as unknown as Record<string, unknown>),
+      },
+    });
+
   return (
     <div className='pt-3 border-t border-white/8 flex flex-col gap-3'>
-      <div>
-        <label className='text-[11px] text-white/40 block mb-1'>{t('layout.customPanel.widgetType')}</label>
-        <select
-          value={block.widgetType}
-          onChange={e => onChange({ ...block, widgetType: e.target.value })}
-          className='w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 outline-none focus:border-blue-500/50'
-        >
-          <option value=''>—</option>
-          {WIDGET_META.map(m => (
-            <option key={m.type} value={m.type}>
-              {t(m.label)}
-            </option>
-          ))}
-        </select>
-      </div>
+      <WidgetTypeField value={block.widgetType} onChange={changeType} />
       <div>
         <label className='text-[11px] text-white/40 block mb-1'>{t('layout.customPanel.widgetRows')}</label>
         <input
@@ -517,6 +618,20 @@ export function WidgetBlockForm({ block, onChange }: { block: WidgetBlock; onCha
         />
         <p className='text-[10px] text-white/25 mt-1'>{t('layout.customPanel.widgetRowsHint')}</p>
       </div>
+
+      {/* Les réglages propres à la card. Mêmes champs que dans la modale
+          d'édition de la grille — ils viennent du manifeste du widget. Sans eux
+          le bloc affichait une card qu'on ne pouvait pas configurer : pas
+          d'entité, pas de nom, rien. */}
+      {fields.length > 0 && (
+        <div className='pt-3 border-t border-white/8 grid grid-cols-2 gap-x-3 gap-y-3'>
+          {fields.map(field => (
+            <div key={field.key} className={WIDE_FIELD_TYPES.includes(field.fieldType) ? 'col-span-2' : 'col-span-1'}>
+              <ChildFieldRenderer field={field} draft={block.config} updateField={updateField} />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

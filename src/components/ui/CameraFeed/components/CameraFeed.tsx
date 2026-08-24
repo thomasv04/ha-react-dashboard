@@ -248,7 +248,9 @@ const HlsFeed = memo(function HlsFeed({ entityId, className, posterEntity, onPro
 
   // Une nouvelle URL de flux repart d'une image noire : le voile de chargement
   // doit revenir, sinon on afficherait le dernier cadre de l'ancienne caméra.
-  useEffect(() => setReady(false), [streamUrl]);
+  useEffect(() => {
+    setReady(false);
+  }, [streamUrl]);
 
   /**
    * Chien de garde : un flux HLS peut se figer sans lever d'erreur — segment

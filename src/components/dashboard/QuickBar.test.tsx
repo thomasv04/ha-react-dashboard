@@ -140,6 +140,21 @@ describe('QuickBar', () => {
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
 
+  // Le garde de saisie ne couvrait que les champs : le focus posé sur un bouton
+  // d'une modale, « c » ouvrait la palette par-dessus l'éditeur de panneaux.
+  it("ne s'ouvre pas par-dessus une modale", async () => {
+    render(
+      <>
+        <div data-overlay>
+          <button>un bouton de la modale</button>
+        </div>
+        <QuickBar />
+      </>
+    );
+    await userEvent.keyboard('c');
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+  });
+
   it('ne se déclenche pas depuis un champ de saisie', async () => {
     render(
       <>

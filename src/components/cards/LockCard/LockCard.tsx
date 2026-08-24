@@ -43,7 +43,9 @@ export function LockCard() {
   const state = entity?.state ?? 'unknown';
 
   // La confirmation ne survit pas à un changement d'état venu de la serrure.
-  useEffect(() => setConfirming(false), [state]);
+  useEffect(() => {
+    setConfirming(false);
+  }, [state]);
 
   if (!entity) {
     return (

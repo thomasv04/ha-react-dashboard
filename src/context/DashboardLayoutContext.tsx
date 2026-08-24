@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from 'react';
 import type { WidgetConfigs } from '@/types/widget-configs';
 import { compactVertically, firstFreeSlot, packWidgets } from '@/lib/grid-utils';
+import { isTypingTarget } from '@/lib/utils';
 import { usePages, type Page } from '@/context/PageContext';
 import type { WallPanelConfig } from '@/types/wallpanel';
 import type { CustomPanel, DockConfig } from '@/types/custom-panel';
@@ -303,8 +304,7 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
     if (!isEditMode) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'z') return;
-      const el = e.target as HTMLElement | null;
-      if (el?.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el?.tagName ?? '')) return;
+      if (isTypingTarget(e)) return;
       e.preventDefault();
       (e.shiftKey ? redo : undo)();
     };

@@ -7,6 +7,8 @@ import { useTheme } from '@/context/ThemeContext';
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 import { encodeConfig, decodeConfig, type ConfigSnapshot } from '@/lib/config-string';
 import { ConfigHistorySection } from './ConfigHistorySection';
+import { SECTION_HEADING } from './typography';
+import { cn } from '@/lib/utils';
 
 export function SystemSection() {
   const { t } = useI18n();
@@ -167,9 +169,7 @@ export function SystemSection() {
           build 2.1.4 s'annonçait 2.1.3 et faisait croire à une mise à jour HACS
           qui n'était jamais arrivée. */}
       <div className='flex items-baseline gap-2'>
-        <span className='text-white/45 text-[11px] font-semibold tracking-widest uppercase'>
-          {t('settings.system_section.buildVersion')}
-        </span>
+        <span className={SECTION_HEADING}>{t('settings.system_section.buildVersion')}</span>
         <code data-testid='build-version' className='text-white/70 text-xs font-mono'>
           {__BUILD_VERSION__}
         </code>
@@ -177,7 +177,7 @@ export function SystemSection() {
 
       {/* ── Visite guidée ── */}
       <div>
-        <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-3 flex items-center gap-2'>
+        <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
           <Compass size={12} /> {t('tour.title')}
         </h3>
         <p className='text-white/40 text-xs mb-4 leading-relaxed'>{t('tour.replayDesc')}</p>
@@ -191,7 +191,7 @@ export function SystemSection() {
 
       {/* ── Ingress URL ── */}
       <div>
-        <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-3 flex items-center gap-2'>
+        <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
           <Server size={12} /> {t('settings.system_section.ingressTitle')}
         </h3>
         <p className='text-white/40 text-xs mb-4 leading-relaxed'>{t('settings.system_section.ingressDesc')}</p>
@@ -218,7 +218,7 @@ export function SystemSection() {
 
       {/* ── Export config ── */}
       <div>
-        <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-3 flex items-center gap-2'>
+        <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
           <Download size={12} /> {t('settings.system_section.configExportTitle')}
         </h3>
         <p className='text-white/40 text-xs mb-4 leading-relaxed'>{t('settings.system_section.configExportDesc')}</p>
@@ -263,7 +263,7 @@ export function SystemSection() {
 
       {/* ── Import config ── */}
       <div>
-        <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-3 flex items-center gap-2'>
+        <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
           <Upload size={12} /> {t('settings.system_section.configImportTitle')}
         </h3>
         <p className='text-white/40 text-xs mb-4 leading-relaxed'>{t('settings.system_section.configImportDesc')}</p>
