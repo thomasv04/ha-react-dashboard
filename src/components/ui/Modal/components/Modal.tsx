@@ -109,6 +109,7 @@ function ModalCard({ modal, onClose }: ModalCardProps) {
       initial='hidden'
       animate='visible'
       exit='exit'
+      data-overlay
       className='fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/45 backdrop-blur-sm'
       onClick={modal.dismissible ? onClose : undefined}
     >

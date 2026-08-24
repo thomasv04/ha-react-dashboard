@@ -5,6 +5,8 @@ import { useI18n } from '@/i18n';
 import { useTheme } from '@/context/ThemeContext';
 import { HA_THEME_ID } from '@/config/themes';
 import { fetchHAThemes, type HAThemeSummary } from '@/lib/ha-themes';
+import { SECTION_HEADING } from './typography';
+import { cn } from '@/lib/utils';
 
 /**
  * Reprend un thème défini dans `themes.yaml` de Home Assistant.
@@ -50,7 +52,7 @@ export function HAThemeImport() {
 
   return (
     <div>
-      <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-3 flex items-center gap-2'>
+      <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
         <Download size={12} /> {t('settings.appearance_section.haThemeTitle')}
       </h3>
       <p className='text-white/30 text-[11px] mb-3 leading-relaxed'>{t('settings.appearance_section.haThemeDesc')}</p>

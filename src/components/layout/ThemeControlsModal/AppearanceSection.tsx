@@ -7,6 +7,8 @@ import { DEFAULT_EDGE_BEHAVIOUR } from '@/lib/background-motion';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { DEFAULT_ILLUMINANCE_THRESHOLD } from '@/hooks/useAutoTheme';
 import { HAThemeImport } from './HAThemeImport';
+import { FIELD_LABEL, SECTION_HEADING } from './typography';
+import { cn } from '@/lib/utils';
 
 export function AppearanceSection() {
   const { t } = useI18n();
@@ -16,7 +18,7 @@ export function AppearanceSection() {
     <div className='flex flex-col gap-7'>
       {/* Theme selector */}
       <div>
-        <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-3 flex items-center gap-2'>
+        <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
           <Palette size={12} /> {t('settings.appearance_section.theme')}
         </h3>
         <div className='grid grid-cols-3 gap-2'>
@@ -44,7 +46,7 @@ export function AppearanceSection() {
       {/* Card opacity (hidden in clay mode — cards are opaque) */}
       {tokens.mode !== 'clay' && (
         <div>
-          <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-3 flex items-center gap-2'>
+          <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
             <Sliders size={12} /> {t('settings.appearance_section.cardOpacity')}
           </h3>
           <div className='flex items-center gap-3'>
@@ -66,7 +68,7 @@ export function AppearanceSection() {
 
       {/* Auto day/night theme */}
       <div>
-        <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-3 flex items-center gap-2'>
+        <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
           <Sun size={12} /> {t('settings.appearance_section.autoTheme')}
         </h3>
         <p className='text-white/30 text-[11px] mb-3'>{t('settings.appearance_section.autoThemeDesc')}</p>
@@ -82,9 +84,7 @@ export function AppearanceSection() {
         {autoTheme.enabled && (
           <div className='grid grid-cols-2 gap-3'>
             <div>
-              <span className='text-white/40 text-[10px] uppercase tracking-wider block mb-1.5'>
-                {t('settings.appearance_section.autoThemeLight')}
-              </span>
+              <span className={cn(FIELD_LABEL, 'block mb-1.5')}>{t('settings.appearance_section.autoThemeLight')}</span>
               <select
                 value={autoTheme.lightTheme}
                 onChange={e => setAutoTheme({ ...autoTheme, lightTheme: e.target.value as ThemeId })}
@@ -98,9 +98,7 @@ export function AppearanceSection() {
               </select>
             </div>
             <div>
-              <span className='text-white/40 text-[10px] uppercase tracking-wider block mb-1.5'>
-                {t('settings.appearance_section.autoThemeDark')}
-              </span>
+              <span className={cn(FIELD_LABEL, 'block mb-1.5')}>{t('settings.appearance_section.autoThemeDark')}</span>
               <select
                 value={autoTheme.darkTheme}
                 onChange={e => setAutoTheme({ ...autoTheme, darkTheme: e.target.value as ThemeId })}
@@ -119,7 +117,7 @@ export function AppearanceSection() {
         {/* Source de la bascule : le soleil, ou un capteur de luminosité. */}
         {autoTheme.enabled && (
           <div className='mt-4 flex flex-col gap-2.5'>
-            <span className='text-white/40 text-[10px] uppercase tracking-wider'>{t('settings.appearance_section.autoThemeSource')}</span>
+            <span className={FIELD_LABEL}>{t('settings.appearance_section.autoThemeSource')}</span>
             <EntityPicker
               label={t('settings.appearance_section.autoThemeSensor')}
               domain='sensor'
@@ -147,7 +145,7 @@ export function AppearanceSection() {
 
       {/* Background */}
       <div>
-        <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-3 flex items-center gap-2'>
+        <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
           <Image size={12} /> {t('settings.appearance_section.background')}
         </h3>
         <div className='flex flex-wrap gap-2 mb-4'>
@@ -275,9 +273,7 @@ export function AppearanceSection() {
               <div className='flex flex-col gap-3 mt-1'>
                 {/* Palette */}
                 <div>
-                  <span className='text-white/40 text-[10px] uppercase tracking-wider block mb-1.5'>
-                    {t('settings.appearance_section.effectPalette')}
-                  </span>
+                  <span className={cn(FIELD_LABEL, 'block mb-1.5')}>{t('settings.appearance_section.effectPalette')}</span>
                   <div className='flex flex-wrap gap-1.5'>
                     {palettes.map(p => (
                       <button

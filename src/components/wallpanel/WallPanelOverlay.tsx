@@ -139,6 +139,7 @@ export function WallPanelOverlay() {
           {/* ── Phase 1 : dim layer — fades in first for a nice page transition ── */}
           <motion.div
             key='wallpanel-dim'
+            data-overlay
             className='fixed inset-0 z-[199] bg-black pointer-events-none'
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.9 }}

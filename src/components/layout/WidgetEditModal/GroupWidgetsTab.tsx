@@ -16,9 +16,17 @@ import { useI18n } from '@/i18n';
 
 const EXCLUDED_TYPES = new Set(['group', 'activity', 'camera']);
 
+/**
+ * Champs qui prennent la ligne entière dans une grille à deux colonnes.
+ *
+ * Partagée avec l'éditeur de blocs des panneaux, qui rendait les mêmes champs
+ * avec sa propre copie de la liste — et les deux avaient déjà divergé.
+ */
+export const WIDE_FIELD_TYPES: string[] = ['list', 'entity-list', 'multiselect', 'weather-icons', 'template'];
+
 // ── Inline field renderer (mirrors WidgetEditModal field rendering) ─────────────
 
-function ChildFieldRenderer({
+export function ChildFieldRenderer({
   field,
   draft,
   updateField,
@@ -228,7 +236,7 @@ function ChildRow({ child, onRemove }: { child: GroupChild; onRemove: () => void
               {/* Simple fields in 2-col grid, complex ones full width */}
               <div className='grid grid-cols-2 gap-x-3 gap-y-3'>
                 {fields.map(field => {
-                  const isWide = ['list', 'entity-list', 'multiselect', 'weather-icons', 'template'].includes(field.fieldType);
+                  const isWide = WIDE_FIELD_TYPES.includes(field.fieldType);
                   return (
                     <div key={field.key} className={isWide ? 'col-span-2' : 'col-span-1'}>
                       <ChildFieldRenderer field={field} draft={draft} updateField={updateField} />

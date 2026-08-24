@@ -5,6 +5,8 @@ import { useI18n } from '@/i18n';
 import { isPanelMode } from '@/lib/api-base';
 import { isKioskEnabled, setKiosk } from '@/lib/kiosk';
 import { PerfToggle } from './PerfToggle';
+import { SECTION_HEADING } from './typography';
+import { cn } from '@/lib/utils';
 
 const DEFAULT_LAYOUT: LayoutSettings = {
   gridGap: 16,
@@ -73,7 +75,7 @@ function KioskToggle() {
 
   return (
     <div>
-      <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-4 flex items-center gap-2'>
+      <h3 className={cn(SECTION_HEADING, 'mb-4 flex items-center gap-2')}>
         <Monitor size={12} /> {t('settings.layout_section.display')}
       </h3>
       <PerfToggle
@@ -106,7 +108,7 @@ export function LayoutSection() {
 
       {/* Grid section */}
       <div>
-        <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-4 flex items-center gap-2'>
+        <h3 className={cn(SECTION_HEADING, 'mb-4 flex items-center gap-2')}>
           <LayoutGrid size={12} /> {t('settings.layout_section.grid')}
         </h3>
         <div className='flex flex-col gap-5'>
@@ -132,7 +134,7 @@ export function LayoutSection() {
 
       {/* Cards section */}
       <div>
-        <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-4 flex items-center gap-2'>
+        <h3 className={cn(SECTION_HEADING, 'mb-4 flex items-center gap-2')}>
           <Square size={12} /> {t('settings.layout_section.cards')}
         </h3>
         <div className='flex flex-col gap-5'>
@@ -149,7 +151,7 @@ export function LayoutSection() {
 
       {/* Preview */}
       <div>
-        <h3 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-3'>Preview</h3>
+        <h3 className={cn(SECTION_HEADING, 'mb-3')}>{t('layout.preview')}</h3>
         <div
           className='p-3 rounded-xl bg-white/[0.03] border border-white/6'
           style={{ gap: `${layoutSettings.gridGap}px`, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}

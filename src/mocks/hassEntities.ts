@@ -177,4 +177,33 @@ export const MOCK_ENTITIES: Record<string, MockEntityState> = {
   'person.user_1': entity('person.user_1', 'home', { friendly_name: 'Utilisateur', entity_picture: '' }),
   'automation.example': entity('automation.example', 'on', { friendly_name: "Exemple d'automatisation" }),
   'vacuum.robot': entity('vacuum.robot', 'docked', { battery_level: 85, status: 'Charging', friendly_name: 'Aspirateur' }),
+
+  // ─── Domaines sans échantillon : leurs cards n'avaient rien à montrer ───────
+  // Serrure, ventilateur, agenda, liste de tâches… L'aperçu du catalogue tombait
+  // sur « Entité introuvable » là où l'utilisateur attend un exemple.
+  'lock.front_door': entity('lock.front_door', 'locked', { friendly_name: "Porte d'entrée" }),
+  'lock.garage': entity('lock.garage', 'unlocked', { friendly_name: 'Garage' }),
+  'fan.bedroom': entity('fan.bedroom', 'on', {
+    percentage: 66,
+    preset_modes: ['eco', 'auto'],
+    supported_features: 1,
+    friendly_name: 'Chambre',
+  }),
+  'fan.living_room': entity('fan.living_room', 'off', { percentage: 0, supported_features: 1, friendly_name: 'Salon' }),
+  'calendar.famille': entity('calendar.famille', 'on', {
+    friendly_name: 'Famille',
+    message: 'Rendez-vous médecin',
+    start_time: new Date(Date.now() + 3600000).toISOString(),
+    end_time: new Date(Date.now() + 7200000).toISOString(),
+  }),
+  'calendar.travail': entity('calendar.travail', 'off', {
+    friendly_name: 'Travail',
+    message: 'Réunion équipe',
+    start_time: new Date(Date.now() + 86400000).toISOString(),
+    end_time: new Date(Date.now() + 90000000).toISOString(),
+  }),
+  'todo.courses': entity('todo.courses', '3', { friendly_name: 'Courses' }),
+  'todo.maison': entity('todo.maison', '1', { friendly_name: 'Maison' }),
+  'select.mode_maison': entity('select.mode_maison', 'Jour', { options: ['Jour', 'Nuit', 'Absent'], friendly_name: 'Mode maison' }),
+  'script.bonne_nuit': entity('script.bonne_nuit', 'off', { friendly_name: 'Bonne nuit' }),
 };

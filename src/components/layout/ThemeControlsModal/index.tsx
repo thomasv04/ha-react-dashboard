@@ -40,6 +40,7 @@ export function ThemeControlsModal() {
             {/* Backdrop */}
             <motion.div
               key='settings-modal-backdrop'
+              data-overlay
               className='fixed inset-0 z-[60] bg-black/60'
               style={{ backdropFilter: 'blur(4px)' }}
               initial={{ opacity: 0 }}
@@ -57,8 +58,8 @@ export function ThemeControlsModal() {
               transition={{ duration: DURATION_FAST }}
             >
               <div
-                className='gc-overlay pointer-events-auto w-full max-w-2xl rounded-2xl overflow-hidden'
-                style={{ height: 'min(85vh, 560px)' }}
+                className='gc-overlay pointer-events-auto w-full max-w-3xl rounded-2xl overflow-hidden'
+                style={{ height: 'min(88vh, 640px)' }}
               >
                 <SettingsContent onClose={() => setIsOpen(false)} />
               </div>

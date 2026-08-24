@@ -63,7 +63,13 @@ export function BackgroundSlideshow({ config, ref, onCountChange }: BackgroundSl
     setNextIdx(Math.min(1, urls.length - 1));
   }, [resolvedUrls, config.media_order]);
 
-  useEffect(() => onCountChange?.(resolvedUrls.length), [resolvedUrls.length, onCountChange]);
+  // Accolades, pas une expression : ce que renvoie le corps d'un effet, React
+  // le prend pour la fonction de nettoyage et l'appelle au démontage. Ici c'est
+  // le retour d'un rappel fourni par l'appelant — personne ne garantit qu'il ne
+  // renvoie rien.
+  useEffect(() => {
+    onCountChange?.(resolvedUrls.length);
+  }, [resolvedUrls.length, onCountChange]);
 
   /**
    * Avance ou recule d'une image. Le modulo est ramené dans le positif :

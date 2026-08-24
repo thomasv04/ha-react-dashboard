@@ -4,6 +4,7 @@ import { useHass } from '@hakit/core';
 import { Search, LayoutGrid, Zap } from 'lucide-react';
 import { DURATION_FAST } from '@/lib/motion-tokens';
 import { useI18n } from '@/i18n';
+import { isTypingTarget } from '@/lib/utils';
 import { usePages } from '@/context/PageContext';
 import { usePanel } from '@/context/PanelContext';
 import { useCustomPanels } from '@/context/CustomPanelContext';
@@ -36,7 +37,12 @@ function QuickBarPanel({ mode, onClose }: { mode: Mode; onClose: () => void }) {
   const { panels } = useCustomPanels();
   const { openMoreInfo } = useMoreInfo();
 
-  useEffect(() => inputRef.current?.focus(), []);
+  // Corps entre accolades, pas une expression : un effet dont le corps *renvoie*
+  // quelque chose voit React prendre cette valeur pour la fonction de nettoyage
+  // et l'appeler au démontage — « l is not a function » si ce n'en est pas une.
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   const items = useMemo<Item[]>(() => {
     if (mode === 'command') {
@@ -76,7 +82,9 @@ function QuickBarPanel({ mode, onClose }: { mode: Mode; onClose: () => void }) {
 
   // Les flèches peuvent emmener le curseur au-delà de la zone visible : sans
   // ça, la sélection continue de descendre mais l'écran ne suit pas.
-  useEffect(() => activeRef.current?.scrollIntoView({ block: 'nearest' }), [active]);
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [active]);
 
   const choose = (item: Item | undefined) => {
     if (!item) return;
@@ -173,6 +181,17 @@ function QuickBarPanel({ mode, onClose }: { mode: Mode; onClose: () => void }) {
 export function QuickBar() {
   const [mode, setMode] = useState<Mode | null>(null);
   const { isEditMode } = useEditMode();
+  // Ancre toujours montée : elle sert à retrouver la racine de l'application.
+  // Sous Home Assistant c'est une shadow root, que `document.querySelector` ne
+  // traverse pas — les modales y seraient invisibles depuis le document.
+  const anchorRef = useRef<HTMLSpanElement>(null);
+
+  const overlayOpen = () => {
+    const root = anchorRef.current?.getRootNode() as ParentNode | undefined;
+    // Le document en plus de la racine : les menus portés le sont sur `body`,
+    // donc hors de la shadow root.
+    return !!root?.querySelector('[data-overlay]') || !!document.querySelector('[data-overlay]');
+  };
 
   useEffect(() => {
     // En mode édition, `e` et `c` n'ont pas à ouvrir quoi que ce soit : on y
@@ -181,8 +200,12 @@ export function QuickBar() {
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-      const el = e.target as HTMLElement | null;
-      if (el?.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el?.tagName ?? '')) return;
+      if (isTypingTarget(e)) return;
+      // Une modale est ouverte : la palette n'a rien à faire par-dessus. Le
+      // garde de saisie ne suffisait pas — dès que le focus était sur un bouton
+      // de la modale et non dans un champ, « c » ouvrait la palette au-dessus.
+      // Interrogé au moment de la frappe, donc jamais désynchronisé d'un état.
+      if (overlayOpen()) return;
 
       const key = e.key.toLowerCase();
       if (key !== 'e' && key !== 'c') return;
@@ -194,6 +217,10 @@ export function QuickBar() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isEditMode]);
 
-  if (!mode) return null;
-  return <QuickBarPanel mode={mode} onClose={() => setMode(null)} />;
+  return (
+    <>
+      <span ref={anchorRef} hidden />
+      {mode && <QuickBarPanel mode={mode} onClose={() => setMode(null)} />}
+    </>
+  );
 }

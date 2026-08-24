@@ -54,7 +54,7 @@ export function LoadingScreen({ stage, onSkip, onRetry }: LoadingScreenProps) {
     // Fond transparent : `BackgroundLayer` est monté en amont et peint déjà la
     // nappe ambiante du thème. Poser ici un fond opaque le masquait — et
     // provoquait un changement de fond au moment où le dashboard prend la main.
-    <div className='fixed inset-0 z-[300] flex items-center justify-center p-6 bg-black/35' role='status' aria-live='polite'>
+    <div data-overlay className='fixed inset-0 z-[300] flex items-center justify-center p-6 bg-black/35' role='status' aria-live='polite'>
       <motion.div
         initial={{ opacity: 0, y: 12, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}

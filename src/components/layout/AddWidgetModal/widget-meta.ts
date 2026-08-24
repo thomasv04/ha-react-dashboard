@@ -3,11 +3,16 @@ import type { GridWidget } from '@/context/DashboardLayoutContext';
 
 // ── Preview dimension engine ──────────────────────────────────────────────────
 
-const COL_PX = 90;
-const ROW_PX = 90;
-const PREVIEW_MAX_W = 390;
-const PREVIEW_MAX_H = 265;
-const MAX_SCALE = 1.5;
+// Dimensions d'une case de la grille `lg`, pas des chiffres ronds : une rangée
+// y fait 80 px et une colonne une centaine. À 90 × 90 l'aperçu montrait des
+// cards plus hautes et plus étroites qu'elles ne le seront sur le dashboard —
+// et les cards s'adaptent à leur case, donc elles n'y montraient pas la même
+// mise en page qu'une fois posées.
+const COL_PX = 110;
+const ROW_PX = 80;
+const PREVIEW_MAX_W = 480;
+const PREVIEW_MAX_H = 300;
+const MAX_SCALE = 1.25;
 
 const PREVIEW_LG_SIZES: Partial<Record<GridWidget['type'], { w: number; h: number }>> = {
   camera: { w: 6, h: 3 },

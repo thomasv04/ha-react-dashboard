@@ -7,8 +7,11 @@ import { MOCK_ENTITIES } from '@/mocks/hassEntities';
 import type { GridWidget } from '@/context/DashboardLayoutContext';
 import { WIDGET_CATALOG } from '@/widgets';
 import { WidgetIdProvider } from '@/components/layout/DashboardGrid';
+import { WidgetConfigOverride } from '@/context/WidgetConfigContext';
+import type { WidgetConfigs } from '@/types/widget-configs';
 import { WIDGET_COMPONENTS } from '@/widgets';
 import { type WidgetMeta, getPreviewDims } from './widget-meta';
+import { previewConfig } from './preview-config';
 
 // ── Mock HA wrapper ──────────────────────────────────────────────────────────
 // Temporarily merges mock entities into the Zustand store so widget previews
@@ -92,7 +95,7 @@ function EntityPickerStep({ meta, onBack, onConfirm }: { meta: WidgetMeta; onBac
             autoFocus
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder={`Rechercher ${meta.entityDomain}...`}
+            placeholder={t('layout.searchInDomain', { domain: meta.entityDomain ?? '' })}
             className='bg-transparent text-xs text-white/80 outline-none flex-1 placeholder:text-white/22'
           />
         </div>
@@ -169,12 +172,10 @@ export function PreviewPanel({
   const catalogEntry = meta ? WIDGET_CATALOG.find(c => c.type === meta.type) : null;
   const Component = meta ? WIDGET_COMPONENTS[meta.type] : null;
   const dims = meta ? getPreviewDims(meta.type) : null;
-
-  // Reset step when widget selection changes
-  const handleMetaChange = (newMeta: WidgetMeta | null) => {
-    if (newMeta?.type !== meta?.type) setStep('info');
-  };
-  void handleMetaChange; // used via key below
+  const previewConfigs = useMemo(
+    () => (meta ? ({ [meta.type]: previewConfig(meta.type, meta.entityDomain) } as unknown as WidgetConfigs) : null),
+    [meta]
+  );
 
   const handleAddClick = () => {
     if (!meta) return;
@@ -221,90 +222,75 @@ export function PreviewPanel({
             className='flex flex-col h-full'
           >
             {/* ── Live widget preview ─────────────────────────────── */}
+            {/* `flex-1` : l'aperçu était calé en haut avec sa hauteur exacte, et
+                laissait sous lui un grand vide avant la description. Il occupe
+                maintenant la place disponible et s'y centre. */}
             {dims && (
-              <div className='flex items-center justify-center shrink-0 mx-5 mt-5' style={{ minHeight: dims.displayH }}>
-                <div
-                  className='relative overflow-hidden rounded-2xl'
-                  style={{
-                    width: dims.displayW,
-                    height: dims.displayH,
-                    background: 'rgba(0,0,0,0.3)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                  }}
-                >
-                  {Component ? (
-                    <div
-                      style={{
-                        width: dims.renderW,
-                        height: dims.renderH,
-                        transform: `scale(${dims.scale})`,
-                        transformOrigin: 'top left',
-                        pointerEvents: 'none',
-                      }}
-                    >
-                      <MockHassWrapper>
-                        <WidgetIdProvider id={meta.type}>
-                          <PreviewErrorBoundary>
-                            <Component />
-                          </PreviewErrorBoundary>
-                        </WidgetIdProvider>
-                      </MockHassWrapper>
-                    </div>
-                  ) : (
-                    <div className='h-full flex items-center justify-center'>
-                      <span className='text-white/15 text-xs'>{t('layout.noPreview')}</span>
-                    </div>
-                  )}
-                  {/* Aperçu badge */}
+              <div className='flex flex-1 items-center justify-center min-h-0 px-6 pt-8 pb-2'>
+                {/* Étiquette posée sur le conteneur et non sur le cadre : dans
+                    le cadre, qui rogne, elle passait par-dessus le coin de la
+                    card — sur l'aspirateur, elle recouvrait la batterie. */}
+                <div className='relative shrink-0' style={{ width: dims.displayW }}>
+                  <span className='absolute -top-6 right-0 px-2 py-0.5 rounded-full text-[10px] font-medium text-white/25 bg-white/5 border border-white/8'>
+                    {t('layout.preview')}
+                  </span>
                   <div
-                    className='absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-medium'
+                    className='relative overflow-hidden rounded-2xl'
                     style={{
-                      background: 'rgba(0,0,0,0.55)',
-                      border: '1px solid rgba(255,255,255,0.10)',
-                      color: 'rgba(255,255,255,0.35)',
-                      backdropFilter: 'blur(8px)',
+                      width: dims.displayW,
+                      height: dims.displayH,
+                      background: 'rgba(0,0,0,0.3)',
+                      border: '1px solid rgba(255,255,255,0.08)',
                     }}
                   >
-                    {t('layout.preview')}
+                    {Component ? (
+                      <div
+                        style={{
+                          width: dims.renderW,
+                          height: dims.renderH,
+                          transform: `scale(${dims.scale})`,
+                          transformOrigin: 'top left',
+                          pointerEvents: 'none',
+                        }}
+                      >
+                        <MockHassWrapper>
+                          <WidgetConfigOverride configs={previewConfigs!}>
+                            <WidgetIdProvider id={meta.type}>
+                              <PreviewErrorBoundary>
+                                <Component />
+                              </PreviewErrorBoundary>
+                            </WidgetIdProvider>
+                          </WidgetConfigOverride>
+                        </MockHassWrapper>
+                      </div>
+                    ) : (
+                      <div className='h-full flex items-center justify-center'>
+                        <span className='text-white/15 text-xs'>{t('layout.noPreview')}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             )}
 
             {/* ── Widget info ─────────────────────────────────────── */}
-            <div className='px-5 pt-4 space-y-3 flex-1 min-h-0'>
-              <div className='flex items-center gap-3'>
-                <div className='p-2.5 rounded-xl shrink-0' style={{ background: `${meta.color}20`, border: `1px solid ${meta.color}35` }}>
-                  <meta.icon size={18} color={meta.color} />
-                </div>
-                <div>
-                  <h3 className='text-white font-semibold text-sm'>{t(meta.label)}</h3>
-                  {catalogEntry && (
-                    <span className='text-white/22 text-[10px] font-mono'>
-                      {catalogEntry.lg.w} col × {catalogEntry.lg.h} row{catalogEntry.lg.h > 1 ? 's' : ''}
-                    </span>
-                  )}
-                </div>
+            <div className='px-6 pt-2 shrink-0 space-y-2'>
+              <div className='flex items-center gap-2.5'>
+                <h3 className='text-white font-semibold text-[15px] truncate'>{t(meta.label)}</h3>
+                {catalogEntry && (
+                  <span className='shrink-0 px-2 py-0.5 rounded-md bg-white/5 text-white/30 text-[10px] font-mono'>
+                    {catalogEntry.lg.w}×{catalogEntry.lg.h}
+                  </span>
+                )}
               </div>
-              <p className='text-white/35 text-[12px] leading-relaxed'>{t(meta.description)}</p>
+              <p className='text-white/40 text-[12.5px] leading-relaxed'>{t(meta.description)}</p>
             </div>
 
             {/* ── Add button ──────────────────────────────────────── */}
-            <div className='px-5 pb-5 pt-3 shrink-0'>
+            <div className='px-6 pb-6 pt-4 shrink-0'>
               <button
                 onClick={handleAddClick}
-                className='w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-colors'
-                style={{
-                  background: 'rgba(59,130,246,0.25)',
-                  border: '1px solid rgba(59,130,246,0.4)',
-                  color: '#93c5fd',
-                }}
-                onMouseEnter={e => {
-                  (e.currentTarget as HTMLButtonElement).style.background = 'rgba(59,130,246,0.42)';
-                }}
-                onMouseLeave={e => {
-                  (e.currentTarget as HTMLButtonElement).style.background = 'rgba(59,130,246,0.25)';
-                }}
+                className='w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-colors bg-blue-500/25 hover:bg-blue-500/40 border border-blue-500/40 text-blue-300'
               >
                 <Plus size={14} strokeWidth={2.5} />
                 {meta.entityDomain ? t('layout.chooseEntityArrow') : t('layout.addToDashboard')}
