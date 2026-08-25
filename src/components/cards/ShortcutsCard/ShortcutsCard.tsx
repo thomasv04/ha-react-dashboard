@@ -9,6 +9,7 @@ import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { ShortcutsCardConfig } from '@/types/widget-configs';
 import { resolveIcon, isCustomIcon, getCustomIconUrl, useIconCatalog } from '@/lib/lucide-icon-map';
+import { gradientAccent } from '@/lib/gradient';
 
 const FALLBACK_ICON_MAP: Record<string, LucideIcon> = {
   Blinds,
@@ -20,39 +21,29 @@ const FALLBACK_ICON_MAP: Record<string, LucideIcon> = {
   Camera,
 };
 
-/** Map gradient class prefix to accent colors for bg and text */
-function gradientToAccent(gradient: string): { bg: string; bgHover: string; text: string } {
-  // Extract the "from-xxx-500" part to derive the color family
-  const match = gradient.match(/from-(\w+)-/);
-  const color = match?.[1] ?? 'blue';
-  return {
-    bg: `bg-${color}-500/15`,
-    bgHover: `hover:bg-${color}-500/25`,
-    text: `text-${color}-400`,
-  };
-}
-
 interface ResolvedShortcut {
   id: PanelId | null;
   Icon: LucideIcon | null;
   customIconUrl?: string;
   label: string;
-  accentBg: string;
-  accentText: string;
+  /** Couleur d'accent, en hexadécimal — pas une classe. */
+  accent: string;
   statusEntity?: string;
 }
 
 function resolveShortcuts(config: ShortcutsCardConfig | undefined): ResolvedShortcut[] {
   if (!config?.shortcuts?.length) return [];
   return config.shortcuts.map(s => {
-    const accent = gradientToAccent(s.color);
+    // `gradientAccent` et non des classes composées à l'exécution : le code
+    // fabriquait `bg-${color}-500/15`, que Tailwind ne génère jamais faute de
+    // le trouver dans les sources — aucun raccourci n'était teinté.
+    const accent = gradientAccent(s.color);
     return {
       id: (s.panelId as PanelId) ?? null,
       Icon: isCustomIcon(s.icon) ? null : (resolveIcon(s.icon) ?? FALLBACK_ICON_MAP[s.icon] ?? Cpu),
       customIconUrl: isCustomIcon(s.icon) ? getCustomIconUrl(s.icon) : undefined,
       label: s.label,
-      accentBg: `${accent.bg} ${accent.bgHover}`,
-      accentText: accent.text,
+      accent,
       statusEntity: s.statusEntity,
     };
   });
@@ -104,9 +95,9 @@ export function ShortcutsCard() {
               onClick={() => s.id !== null && openPanel(s.id)}
               className={cn(
                 'rounded-2xl px-4 py-3 flex items-center gap-3 text-left transition-all duration-200',
-                'border border-white/8 hover:border-white/15',
-                s.accentBg
+                'border border-white/8 hover:border-white/15'
               )}
+              style={{ background: `color-mix(in srgb, ${s.accent} 15%, transparent)` }}
             >
               <motion.div
                 className={cn('w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/10')}
@@ -117,7 +108,7 @@ export function ShortcutsCard() {
                 {s.customIconUrl ? (
                   <img src={s.customIconUrl} alt='' className='w-[18px] h-[18px] object-contain' />
                 ) : s.Icon ? (
-                  <s.Icon size={18} className={s.accentText} />
+                  <s.Icon size={18} style={{ color: s.accent }} />
                 ) : null}
               </motion.div>
               <div className='flex flex-col min-w-0'>
@@ -127,7 +118,8 @@ export function ShortcutsCard() {
                     initial={{ opacity: 0, x: -4 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                    className={cn('text-[10px] leading-tight mt-0.5', s.accentText)}
+                    className='text-[10px] leading-tight mt-0.5'
+                    style={{ color: s.accent }}
                   >
                     {entityState}
                   </motion.span>

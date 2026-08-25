@@ -18,6 +18,7 @@ import { useLongPress } from '@/hooks/useLongPress';
 import { useMoreInfoOptional } from '@/context/MoreInfoContext';
 import { modalTypeFor } from '@/components/modals/more-info-registry';
 import { useArea, useAreaControls, areaEntityIds, areaSensor } from '@/hooks/useAreaControls';
+import { gradientCss } from '@/lib/gradient';
 import { colorAlpha } from '@/lib/color-value';
 import type { SoundPreset } from '@/lib/sounds';
 
@@ -221,12 +222,17 @@ export function RoomCard() {
       {/* Header */}
       <div className={cn('flex items-start gap-2.5', embedded ? 'p-2.5' : 'p-3')}>
         {/* Icon */}
+        {/* `background` en style quand la valeur est connue : les classes
+            Tailwind ne couvrent que les dégradés écrits dans les sources, pas
+            un dégradé composé à la main. `iconBg` reste en classe pour les
+            anciennes configurations qu'on ne sait pas relire. */}
         <div
           className={cn(
             'rounded-xl flex items-center justify-center shrink-0 shadow-md bg-gradient-to-br',
-            iconBg,
+            !gradientCss(iconBg) && iconBg,
             embedded ? 'w-8 h-8' : 'w-9 h-9'
           )}
+          style={{ backgroundImage: gradientCss(iconBg) }}
         >
           {customIconUrl ? (
             <img src={customIconUrl} alt='' className='w-4 h-4 object-contain' />

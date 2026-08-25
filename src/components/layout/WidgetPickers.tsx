@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, ChevronDown, ChevronUp, Upload, Trash2 } from 'lucide-react';
 import { resolveIcon, isCustomIcon, getCustomIconUrl, useIconNames } from '@/lib/lucide-icon-map';
+import { GRADIENT_PRESETS, gradientCss, gradientColors, customGradient, isCustomGradient } from '@/lib/gradient';
 import { apiFetch, assetUrl } from '@/lib/api-base';
 import { useI18n } from '@/i18n';
 
@@ -342,24 +343,6 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
 // ── Gradient / Color Picker ──────────────────────────────────────────────────
 
 /** Pre-defined gradient palette used in the dashboard */
-const GRADIENT_PRESETS: { label: string; value: string; from: string; to: string }[] = [
-  { label: 'Rouge → Orange', value: 'from-red-500 to-orange-400', from: '#ef4444', to: '#fb923c' },
-  { label: 'Rose → Pink', value: 'from-pink-500 to-rose-400', from: '#ec4899', to: '#fb7185' },
-  { label: 'Orange → Amber', value: 'from-orange-500 to-amber-400', from: '#f97316', to: '#fbbf24' },
-  { label: 'Jaune → Amber', value: 'from-yellow-500 to-amber-400', from: '#eab308', to: '#fbbf24' },
-  { label: 'Lime → Vert', value: 'from-lime-500 to-green-400', from: '#84cc16', to: '#4ade80' },
-  { label: 'Vert → Émeraude', value: 'from-green-500 to-emerald-400', from: '#22c55e', to: '#34d399' },
-  { label: 'Émeraude → Teal', value: 'from-emerald-500 to-teal-400', from: '#10b981', to: '#2dd4bf' },
-  { label: 'Teal → Cyan', value: 'from-teal-500 to-cyan-400', from: '#14b8a6', to: '#22d3ee' },
-  { label: 'Cyan → Bleu clair', value: 'from-cyan-500 to-sky-400', from: '#06b6d4', to: '#38bdf8' },
-  { label: 'Bleu → Cyan', value: 'from-blue-500 to-cyan-400', from: '#3b82f6', to: '#22d3ee' },
-  { label: 'Bleu ciel → Bleu', value: 'from-sky-500 to-blue-400', from: '#0ea5e9', to: '#60a5fa' },
-  { label: 'Indigo → Bleu', value: 'from-indigo-500 to-blue-400', from: '#6366f1', to: '#60a5fa' },
-  { label: 'Violet → Indigo', value: 'from-violet-500 to-indigo-400', from: '#8b5cf6', to: '#818cf8' },
-  { label: 'Purple → Violet', value: 'from-purple-500 to-violet-400', from: '#a855f7', to: '#a78bfa' },
-  { label: 'Fuchsia → Pink', value: 'from-fuchsia-500 to-pink-400', from: '#d946ef', to: '#f472b6' },
-  { label: 'Slate → Gris', value: 'from-slate-500 to-gray-400', from: '#64748b', to: '#9ca3af' },
-];
 
 export function GradientPicker({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
   const [open, setOpen] = useState(false);
@@ -377,6 +360,9 @@ export function GradientPicker({ value, onChange, label }: { value: string; onCh
   }, [open]);
 
   const current = GRADIENT_PRESETS.find(g => g.value === value);
+  // Les deux sélecteurs de couleur partent du dégradé courant : on règle celui
+  // qu'on a sous les yeux plutôt que de repartir d'un noir arbitraire.
+  const custom = gradientColors(value) ?? { from: '#6366f1', to: '#60a5fa' };
 
   return (
     <div className='relative' ref={containerRef}>
@@ -386,18 +372,9 @@ export function GradientPicker({ value, onChange, label }: { value: string; onCh
         onClick={() => setOpen(!open)}
       >
         {/* Preview swatch */}
-        <div
-          className='w-5 h-5 rounded-md shrink-0'
-          style={{
-            background: current
-              ? `linear-gradient(135deg, ${current.from}, ${current.to})`
-              : value
-                ? 'linear-gradient(135deg, #6366f1, #60a5fa)'
-                : 'rgba(255,255,255,0.1)',
-          }}
-        />
+        <div className='w-5 h-5 rounded-md shrink-0' style={{ background: gradientCss(value) ?? 'rgba(255,255,255,0.1)' }} />
         <span className={`text-sm flex-1 truncate ${value ? 'text-white/80' : 'text-white/30'}`}>
-          {current?.label ?? (value || 'Choisir un dégradé...')}
+          {current?.label ?? (isCustomGradient(value) ? 'Sur mesure' : value || 'Choisir un dégradé...')}
         </span>
         {open ? <ChevronUp size={14} className='text-white/30' /> : <ChevronDown size={14} className='text-white/30' />}
       </div>
@@ -433,15 +410,28 @@ export function GradientPicker({ value, onChange, label }: { value: string; onCh
             </div>
           </div>
 
-          {/* Custom input */}
+          {/* Sur mesure — deux sélecteurs de couleur natifs plutôt qu'un champ de
+              classes Tailwind : ces classes-là n'étaient jamais générées, et le
+              dégradé saisi ne peignait rien. */}
           <div className='border-t border-white/8 p-2'>
-            <label className='text-[10px] text-white/30 mb-1 block'>Personnalisé (classes Tailwind)</label>
-            <input
-              value={value}
-              onChange={e => onChange(e.target.value)}
-              className='w-full px-2.5 py-1.5 rounded-md bg-white/5 border border-white/10 text-xs text-white/70 outline-none focus:border-blue-500/50'
-              placeholder='from-xxx-500 to-yyy-400'
-            />
+            <label className='text-[10px] text-white/30 mb-1.5 block'>Sur mesure</label>
+            <div className='flex items-center gap-2'>
+              <input
+                type='color'
+                aria-label='Couleur de départ'
+                value={custom.from}
+                onChange={e => onChange(customGradient(e.target.value, custom.to))}
+                className='w-8 h-8 rounded-md bg-transparent border border-white/10 cursor-pointer'
+              />
+              <div className='flex-1 h-8 rounded-md' style={{ background: `linear-gradient(135deg, ${custom.from}, ${custom.to})` }} />
+              <input
+                type='color'
+                aria-label="Couleur d'arrivée"
+                value={custom.to}
+                onChange={e => onChange(customGradient(custom.from, e.target.value))}
+                className='w-8 h-8 rounded-md bg-transparent border border-white/10 cursor-pointer'
+              />
+            </div>
           </div>
         </div>
       )}

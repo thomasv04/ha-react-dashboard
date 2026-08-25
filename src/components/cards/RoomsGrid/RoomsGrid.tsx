@@ -21,6 +21,7 @@ import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { RoomsGridConfig, RoomEntry, RoomControl } from '@/types/widget-configs';
 import { resolveIcon, isCustomIcon, getCustomIconUrl, useIconCatalog } from '@/lib/lucide-icon-map';
+import { gradientCss } from '@/lib/gradient';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import { cn } from '@/lib/utils';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
@@ -211,7 +212,13 @@ function RoomCard({ room, index }: { room: RoomEntry; index: number }) {
       {/* Header: icon + name + temp */}
       <div className='flex items-start gap-2.5'>
         {/* Colored icon */}
-        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${room.iconBg} flex items-center justify-center shrink-0 shadow-md`}>
+        <div
+          className={cn(
+            'w-9 h-9 rounded-xl bg-gradient-to-br flex items-center justify-center shrink-0 shadow-md',
+            !gradientCss(room.iconBg) && room.iconBg
+          )}
+          style={{ backgroundImage: gradientCss(room.iconBg) }}
+        >
           {customIconUrl ? (
             <img src={customIconUrl} alt='' className='w-4.5 h-4.5 object-contain' />
           ) : IconComp ? (
