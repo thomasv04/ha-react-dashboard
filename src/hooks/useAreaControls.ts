@@ -37,6 +37,24 @@ export function areaDomains(area: Area | undefined): string[] {
   return Object.keys(CONTROL_DOMAINS).filter(d => present.has(d));
 }
 
+/** Toutes les entités d'un domaine que la zone contient. */
+export function areaEntityIds(area: Area | undefined, domain: string): string[] {
+  return (area?.entities ?? []).filter(e => e.entity_id.startsWith(`${domain}.`)).map(e => e.entity_id);
+}
+
+/**
+ * Capteur de la zone pour une classe donnée.
+ *
+ * Repli quand la zone ne déclare pas explicitement son capteur
+ * (`temperature_entity_id` / `humidity_entity_id`, renseignés dans les réglages
+ * de la zone côté HA) : on cherche alors dans ce qu'elle contient. Sans ça, une
+ * zone parfaitement équipée n'affichait aucune température tant que personne
+ * n'était allé la désigner à la main, des deux côtés.
+ */
+export function areaSensor(area: Area | undefined, deviceClass: string): string | undefined {
+  return (area?.entities ?? []).find(e => e.entity_id.startsWith('sensor.') && e.attributes?.device_class === deviceClass)?.entity_id;
+}
+
 /**
  * Boutons dérivés d'une zone Home Assistant, comme la card « zone » native :
  * un jeton de domaine devient un bouton qui pilote toute la zone, un jeton

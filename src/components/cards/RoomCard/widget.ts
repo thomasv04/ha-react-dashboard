@@ -47,12 +47,12 @@ export default defineWidget({
 
   fields: [
     { key: 'area', label: 'Zone Home Assistant', fieldType: 'area-controls' },
-    { key: 'label', label: 'Nom de la pièce', fieldType: 'text' },
+    { key: 'label', label: 'Nom de la pièce (sinon celui de la zone)', fieldType: 'text' },
     { key: 'icon', label: 'Icône', fieldType: 'icon' },
     { key: 'iconBg', label: 'Dégradé icône', fieldType: 'gradient' },
-    { key: 'tempEntity', label: 'Capteur température', fieldType: 'entity', domain: 'sensor' },
-    { key: 'humidityEntity', label: 'Capteur humidité', fieldType: 'entity', domain: 'sensor' },
-    { key: 'lightEntities', label: 'Lumières (toggle auto)', fieldType: 'entity-list', domain: 'light' },
+    { key: 'tempEntity', label: 'Capteur température (sinon celui de la zone)', fieldType: 'entity', domain: 'sensor' },
+    { key: 'humidityEntity', label: 'Capteur humidité (sinon celui de la zone)', fieldType: 'entity', domain: 'sensor' },
+    { key: 'lightEntities', label: 'Lumières (sinon celles de la zone)', fieldType: 'entity-list', domain: 'light' },
     { key: 'panelId', label: 'Panneau lié (→)', fieldType: 'panel-select' },
     {
       key: 'controls',
