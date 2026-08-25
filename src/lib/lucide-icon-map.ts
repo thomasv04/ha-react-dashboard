@@ -18,7 +18,7 @@
  *    re-rendent une fois le catalogue arrivé. Entre-temps ils affichent leur
  *    icône de repli, comme ils le faisaient déjà pour un nom inconnu.
  */
-import { useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import {
   Activity,
@@ -133,6 +133,15 @@ let loading: Promise<void> | null = null;
 const listeners = new Set<() => void>();
 /** Change d'identité à chaque chargement : sert d'instantané au store. */
 let revision = 0;
+/**
+ * Instantané des noms disponibles.
+ *
+ * Une valeur stable, et non un appel qui trie à chaque rendu : c'est ce que
+ * `useSyncExternalStore` exige, et ça évite au sélecteur d'icônes une
+ * dépendance de mémoïsation que ni ESLint ni le compilateur React ne peuvent
+ * relier au module.
+ */
+let namesSnapshot: string[] = Object.keys(CORE).sort();
 
 function isIconComponent(mod: unknown): boolean {
   return mod != null && (typeof mod === 'function' || (typeof mod === 'object' && '$$typeof' in (mod as object)));
@@ -148,6 +157,7 @@ export function loadIconCatalog(): Promise<void> {
         if (/^[A-Z]/.test(name) && isIconComponent(value)) map[name] = value as LucideIcon;
       }
       fullMap = map;
+      namesSnapshot = Object.keys(map).sort();
       revision++;
       listeners.forEach(l => l());
     });
@@ -173,9 +183,23 @@ export function useIconCatalog(): number {
   );
 }
 
-/** Liste triée de tous les noms — attend le catalogue complet. */
-export function getIconNames(): string[] {
-  return fullMap ? Object.keys(fullMap).sort() : Object.keys(CORE).sort();
+/**
+ * Liste triée des noms d'icônes, catalogue complet dès qu'il est arrivé.
+ *
+ * Déclenche elle-même le téléchargement : le sélecteur d'icônes appelait
+ * `getIconNames()` une fois pour toutes au montage et n'affichait donc jamais
+ * que les 49 icônes du noyau, personne n'ayant demandé le reste.
+ */
+export function useIconNames(): string[] {
+  const names = useSyncExternalStore(
+    subscribe,
+    () => namesSnapshot,
+    () => namesSnapshot
+  );
+  useEffect(() => {
+    void loadIconCatalog();
+  }, []);
+  return names;
 }
 
 /** Résout un nom d'icône, ou `undefined` — les appelants ont tous un repli. */

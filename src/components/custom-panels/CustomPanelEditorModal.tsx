@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION_FAST } from '@/lib/motion-tokens';
-import { X, Plus, Trash2, ChevronUp, ChevronDown, Layers, Loader2 } from 'lucide-react';
+import { X, Plus, Trash2, ChevronUp, ChevronDown, Layers, Loader2, PanelRight } from 'lucide-react';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { usePages } from '@/context/PageContext';
 import { useDashboardLayout } from '@/context/DashboardLayoutContext';
@@ -10,6 +10,7 @@ import { useWallPanel } from '@/context/WallPanelContext';
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 import { IconPicker } from '@/components/layout/WidgetPickers';
 import { resolveIcon } from '@/lib/lucide-icon-map';
+import { CustomPanelBlocks } from './CustomPanelRenderer';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import type { CustomPanel, CustomBlock } from '@/types/custom-panel';
@@ -331,6 +332,48 @@ function PanelEditor({ panel, onChange }: { panel: CustomPanel; onChange: (p: Cu
   );
 }
 
+// ── Aperçu ────────────────────────────────────────────────────────────────────
+
+/**
+ * Le panneau tel qu'il s'affichera, à côté de son formulaire.
+ *
+ * Rendu depuis le brouillon et non depuis le contexte : c'est tout l'intérêt,
+ * voir l'effet d'un bloc avant de l'enregistrer.
+ *
+ * Inerte : les blocs appellent de vrais services Home Assistant, et un aperçu
+ * qui ferme le volet du salon quand on le regarde n'est pas un aperçu. Le
+ * `pointer-events-none` porte sur le contenu, pas sur le conteneur, pour que le
+ * défilement continue de fonctionner.
+ */
+function PanelPreview({ panel }: { panel: CustomPanel }) {
+  const { t } = useI18n();
+
+  const Icon = panel.icon ? resolveIcon(panel.icon) : null;
+
+  return (
+    <div className='w-[440px] shrink-0 border-l border-white/8 flex flex-col min-h-0' style={{ background: 'rgba(0, 0, 0, 0.18)' }}>
+      <div className='flex items-center gap-2 px-4 py-2.5 border-b border-white/8 shrink-0'>
+        <span className='text-[11px] font-semibold text-white/40 uppercase tracking-wider'>{t('layout.preview')}</span>
+      </div>
+
+      <div className='flex-1 overflow-y-auto p-4 min-h-0'>
+        <div className='rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden'>
+          <div className='flex items-center gap-2.5 px-4 py-3 border-b border-white/8 text-white'>
+            {Icon ? (
+              // eslint-disable-next-line react-hooks/static-components
+              <Icon size={16} className='text-white/70' />
+            ) : null}
+            <h3 className='text-sm font-semibold truncate'>{panel.name}</h3>
+          </div>
+          <div className='p-3 pointer-events-none'>
+            <CustomPanelBlocks panel={panel} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Panel list item ───────────────────────────────────────────────────────────
 
 function PanelListItem({
@@ -345,7 +388,7 @@ function PanelListItem({
   onDelete: () => void;
 }) {
   const { t } = useI18n();
-  // eslint-disable-next-line react-hooks/static-components
+
   const Icon = panel.icon ? resolveIcon(panel.icon) : null;
 
   return (
@@ -401,6 +444,7 @@ export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
   // d'être.
   const [initial] = useState(() => JSON.stringify(panels));
   const [confirmClose, setConfirmClose] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   const dirty = JSON.stringify(localPanels) !== initial;
 
@@ -481,8 +525,12 @@ export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
         className='fixed inset-0 z-[81] flex items-center justify-center p-4 pointer-events-none'
       >
         <div
-          className='pointer-events-auto w-full max-w-4xl h-[88vh] max-h-[920px] rounded-2xl border border-white/12 shadow-2xl flex flex-col overflow-hidden'
-          style={{ background: 'rgba(12, 16, 40, 0.97)', backdropFilter: 'blur(20px)' }}
+          className='pointer-events-auto w-full h-[88vh] max-h-[920px] rounded-2xl border border-white/12 shadow-2xl flex flex-col overflow-hidden transition-[max-width] duration-300'
+          // La fenêtre s'élargit pour loger l'aperçu plutôt que de rogner le
+          // formulaire. Largeur en style et non en classe : `max-w-7xl` ne
+          // figurait pas dans la feuille générée et se résolvait en `none` — la
+          // fenêtre prenait toute la place disponible.
+          style={{ background: 'rgba(12, 16, 40, 0.97)', backdropFilter: 'blur(20px)', maxWidth: showPreview ? 1400 : 896 }}
           onClick={e => e.stopPropagation()}
         >
           {/* Header */}
@@ -495,9 +543,23 @@ export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
               <p className='text-white/30 text-[11px]'>{t('layout.customPanel.subtitle')}</p>
             </div>
             <button
+              onClick={() => setShowPreview(v => !v)}
+              aria-label={t('layout.preview')}
+              aria-pressed={showPreview}
+              title={t('layout.preview')}
+              className={cn(
+                'ml-auto p-1.5 rounded-lg border transition-colors',
+                showPreview
+                  ? 'bg-blue-500/15 border-blue-500/30 text-blue-200'
+                  : 'border-transparent text-white/40 hover:text-white/70 hover:bg-white/10'
+              )}
+            >
+              <PanelRight size={16} />
+            </button>
+            <button
               onClick={requestClose}
               aria-label={t('common.close')}
-              className='ml-auto p-1.5 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/10 transition-colors'
+              className='p-1.5 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/10 transition-colors'
             >
               <X size={16} />
             </button>
@@ -530,7 +592,7 @@ export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
               </div>
             </div>
 
-            {/* Right — editor */}
+            {/* Middle — editor */}
             <div className='flex-1 overflow-hidden min-w-0'>
               {selectedPanel ? (
                 <PanelEditor panel={selectedPanel} onChange={handlePanelChange} />
@@ -546,6 +608,9 @@ export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
                 </div>
               )}
             </div>
+
+            {/* Right — aperçu, replié par défaut */}
+            {showPreview && selectedPanel && <PanelPreview panel={selectedPanel} />}
           </div>
 
           {/* Footer */}

@@ -17,7 +17,7 @@ import { useControlState } from '@/hooks/useControlState';
 import { useLongPress } from '@/hooks/useLongPress';
 import { useMoreInfoOptional } from '@/context/MoreInfoContext';
 import { modalTypeFor } from '@/components/modals/more-info-registry';
-import { useArea, useAreaControls } from '@/hooks/useAreaControls';
+import { useArea, useAreaControls, areaEntityIds, areaSensor } from '@/hooks/useAreaControls';
 import { colorAlpha } from '@/lib/color-value';
 import type { SoundPreset } from '@/lib/sounds';
 
@@ -171,18 +171,21 @@ export function RoomCard() {
   const iconName = config?.icon ?? 'Home';
   const iconBg = config?.iconBg ?? 'from-blue-500 to-sky-400';
   const panelId = config?.panelId;
-  const lightEntities = config?.lightEntities ?? [];
 
-  // Zone HA : ses boutons passent devant ceux saisis à la main, et ses capteurs
-  // de température et d'humidité servent de repli — c'est ce que HA déclare
-  // dans le registre des zones, autant s'en servir.
+  // Zone HA : tout ce que la card affiche en découle, et les champs de
+  // l'éditeur ne sont que des surcharges. Une entité ajoutée à la zone dans
+  // Home Assistant apparaît ici sans que personne ait à revenir la désigner.
   const area = useArea(config?.area);
   const label = config?.label || area?.name || 'Pièce';
   const areaControls = useAreaControls(config?.area, config?.areaControls);
   const controls = [...areaControls, ...(config?.controls ?? [])];
 
-  const tempEntity = config?.tempEntity || area?.temperature_entity_id || undefined;
-  const humidityEntity = config?.humidityEntity || area?.humidity_entity_id || undefined;
+  // Pas de `useMemo` : le compilateur React s'en charge, et sa mémoïsation
+  // manuelle est justement ce qu'il refuse de préserver ici.
+  const lightEntities = config?.lightEntities?.length ? config.lightEntities : areaEntityIds(area, 'light');
+
+  const tempEntity = config?.tempEntity || area?.temperature_entity_id || areaSensor(area, 'temperature');
+  const humidityEntity = config?.humidityEntity || area?.humidity_entity_id || areaSensor(area, 'humidity');
 
   const sensorIds = [tempEntity, humidityEntity].filter(Boolean) as string[];
   const sensors = useEntities(sensorIds);

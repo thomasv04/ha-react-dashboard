@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, ChevronDown, ChevronUp, Upload, Trash2 } from 'lucide-react';
-import { getIconNames, resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-map';
+import { resolveIcon, isCustomIcon, getCustomIconUrl, useIconNames } from '@/lib/lucide-icon-map';
 import { apiFetch, assetUrl } from '@/lib/api-base';
 import { useI18n } from '@/i18n';
 
@@ -113,7 +113,10 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
     };
   }, [open]);
 
-  const allNames = useMemo(() => getIconNames(), []);
+  // Le catalogue complet arrive de façon asynchrone ; ce hook le demande et
+  // re-rend à son arrivée. Auparavant le sélecteur lisait la liste une fois au
+  // montage et n'affichait donc jamais que les 49 icônes du noyau.
+  const allNames = useIconNames();
 
   const filtered = useMemo(() => {
     if (!search) return allNames;
