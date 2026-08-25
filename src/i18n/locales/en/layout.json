@@ -219,6 +219,7 @@
     "moveBlockUp": "Move block up",
     "moveBlockDown": "Move block down",
     "deleteBlock": "Delete block",
+    "duplicateBlock": "Duplicate block",
     "deletePanel": "Delete panel",
     "removeEntity": "Remove entity",
     "removeButton": "Remove button",

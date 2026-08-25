@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION_FAST } from '@/lib/motion-tokens';
-import { X, Plus, Trash2, ChevronUp, ChevronDown, Layers, Loader2, PanelRight } from 'lucide-react';
+import { X, Plus, Trash2, Copy, ChevronUp, ChevronDown, Layers, Loader2, PanelRight } from 'lucide-react';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { usePages } from '@/context/PageContext';
 import { useDashboardLayout } from '@/context/DashboardLayoutContext';
@@ -34,6 +34,7 @@ function BlockItem({
   onToggle,
   onUpdate,
   onMove,
+  onDuplicate,
   onDelete,
 }: {
   block: CustomBlock;
@@ -43,6 +44,7 @@ function BlockItem({
   onToggle: () => void;
   onUpdate: (b: CustomBlock) => void;
   onMove: (dir: -1 | 1) => void;
+  onDuplicate: () => void;
   onDelete: () => void;
 }) {
   const { t } = useI18n();
@@ -89,6 +91,14 @@ function BlockItem({
 
         {/* Delete */}
         <div className='flex items-center gap-1 flex-shrink-0' onClick={e => e.stopPropagation()}>
+          <button
+            onClick={onDuplicate}
+            aria-label={t('layout.customPanel.duplicateBlock')}
+            title={t('layout.customPanel.duplicateBlock')}
+            className='p-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/10 transition-colors'
+          >
+            <Copy size={13} />
+          </button>
           <button
             onClick={onDelete}
             aria-label={t('layout.customPanel.deleteBlock')}
@@ -147,6 +157,20 @@ function PanelEditor({ panel, onChange }: { panel: CustomPanel; onChange: (p: Cu
     if (target < 0 || target >= next.length) return;
     [next[index], next[target]] = [next[target], next[index]];
     onChange({ ...panel, blocks: next });
+  };
+
+  const duplicateBlock = (index: number) => {
+    // `genId()` sur la copie, et sur ses boutons : deux blocs de même
+    // identifiant, c'est une clé React en double et un éditeur qui modifie les
+    // deux à la fois.
+    const source = panel.blocks[index];
+    const copy = structuredClone(source);
+    copy.id = genId();
+    if (copy.type === 'button-row') copy.buttons = copy.buttons.map(b => ({ ...b, id: genId() }));
+    const next = [...panel.blocks];
+    next.splice(index + 1, 0, copy);
+    onChange({ ...panel, blocks: next });
+    setExpandedBlockId(copy.id);
   };
 
   const deleteBlock = (index: number) => {
@@ -256,6 +280,7 @@ function PanelEditor({ panel, onChange }: { panel: CustomPanel; onChange: (p: Cu
             onToggle={() => setExpandedBlockId(prev => (prev === block.id ? null : block.id))}
             onUpdate={b => updateBlock(i, b)}
             onMove={dir => moveBlock(i, dir)}
+            onDuplicate={() => duplicateBlock(i)}
             onDelete={() => deleteBlock(i)}
           />
         ))}

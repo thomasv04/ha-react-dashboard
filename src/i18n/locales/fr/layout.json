@@ -219,6 +219,7 @@
     "moveBlockUp": "Déplacer le bloc vers le haut",
     "moveBlockDown": "Déplacer le bloc vers le bas",
     "deleteBlock": "Supprimer le bloc",
+    "duplicateBlock": "Dupliquer le bloc",
     "deletePanel": "Supprimer le panneau",
     "removeEntity": "Retirer l'entité",
     "removeButton": "Retirer le bouton",
