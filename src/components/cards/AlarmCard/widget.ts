@@ -62,7 +62,6 @@ export default defineWidget({
         { value: 'vacation', label: 'Vacances', icon: '✈️' },
       ],
     },
-    { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
   ],
 
   defaults: {

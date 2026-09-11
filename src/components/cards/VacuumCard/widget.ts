@@ -69,7 +69,6 @@ export default defineWidget({
         { key: 'label', label: 'Libellé personnalisé', fieldType: 'text' },
       ],
     },
-    { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
   ],
 
   defaults: {

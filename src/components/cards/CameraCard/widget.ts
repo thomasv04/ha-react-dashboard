@@ -67,7 +67,6 @@ export default defineWidget({
         { value: 'hls', label: 'HLS (flux RTSP, fluide)' },
       ],
     },
-    { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
   ],
 
   defaults: {

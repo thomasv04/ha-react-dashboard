@@ -56,7 +56,6 @@ export default defineWidget({
 
   fields: [
     { key: 'entityId', label: 'Entité météo', fieldType: 'entity', domain: 'weather' },
-    { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
     { key: 'customIcons', label: 'Icônes personnalisées', fieldType: 'weather-icons' },
   ],
 
