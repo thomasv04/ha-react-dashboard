@@ -71,7 +71,6 @@ export default defineWidget({
   ],
 
   defaults: {
-    type: 'room',
     label: 'Pièce',
     icon: 'Home',
     iconBg: 'from-blue-500 to-sky-400',

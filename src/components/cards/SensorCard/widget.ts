@@ -77,7 +77,6 @@ export default defineWidget({
   ],
 
   defaults: {
-    type: 'sensor',
     entityId: 'sensor.bedroom_temperature',
     name: 'Chambre',
     variant: 'default',

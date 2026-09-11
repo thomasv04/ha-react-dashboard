@@ -59,7 +59,6 @@ export default defineWidget({
   ],
 
   defaults: {
-    type: 'person',
     persons: [{ entityId: 'person.user_1', name: 'User 1' }],
   } satisfies WidgetDefaults<WidgetConfig>,
 });

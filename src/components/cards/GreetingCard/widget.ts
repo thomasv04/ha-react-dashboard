@@ -48,7 +48,6 @@ export default defineWidget({
   fields: [{ key: 'locale', label: 'Locale (fr-FR, en-US...)', fieldType: 'text' }],
 
   defaults: {
-    type: 'greeting',
     locale: 'fr-FR',
   } satisfies WidgetDefaults<WidgetConfig>,
 });

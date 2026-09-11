@@ -59,7 +59,6 @@ export default defineWidget({
   ],
 
   defaults: {
-    type: 'button',
     label: 'Mon bouton',
     domain: 'script',
     service: 'turn_on',

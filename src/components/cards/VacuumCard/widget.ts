@@ -73,7 +73,6 @@ export default defineWidget({
   ],
 
   defaults: {
-    type: 'vacuum',
     entityId: 'vacuum.robot',
     rooms: [],
   } satisfies WidgetDefaults<WidgetConfig>,

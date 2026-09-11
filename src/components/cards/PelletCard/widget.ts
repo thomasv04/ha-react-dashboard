@@ -52,7 +52,6 @@ export default defineWidget({
   ],
 
   defaults: {
-    type: 'pellet',
     entityId: 'climate.pellet_stove',
   } satisfies WidgetDefaults<WidgetConfig>,
 });

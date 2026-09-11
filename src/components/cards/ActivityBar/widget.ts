@@ -84,7 +84,6 @@ export default defineWidget({
   ],
 
   defaults: {
-    type: 'activity',
     pills: [
       { id: 'alarm', entityId: 'alarm_control_panel.home_alarm', label: 'Alarme', template: '{state}' },
       { id: 'heater', entityId: 'climate.living_room', label: 'Chauffage', template: '{state}' },

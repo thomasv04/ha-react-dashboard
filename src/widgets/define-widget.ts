@@ -2,7 +2,7 @@ import type { ComponentType } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import type { WidgetDisposition } from '@/config/widget-dispositions';
 import type { WidgetFieldDef } from '@/types/widget-fields';
-import type { SizePreset } from '@/config/size-presets';
+import type { SizePreset } from '@/context/DashboardLayoutContext';
 import type { Category } from '@/components/layout/AddWidgetModal/widget-meta';
 
 export type Breakpoint = 'lg' | 'md' | 'sm';

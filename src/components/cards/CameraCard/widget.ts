@@ -71,7 +71,6 @@ export default defineWidget({
   ],
 
   defaults: {
-    type: 'camera',
     cameras: [
       { entityId: 'camera.front_door', name: 'Entrée' },
       { entityId: 'camera.kitchen', name: 'Cuisine' },

@@ -55,7 +55,6 @@ export default defineWidget({
   ],
 
   defaults: {
-    type: 'tempo',
     currentColorEntity: 'sensor.tempo_current_color',
     nextColorEntity: 'sensor.tempo_next_color',
     offPeakEntity: 'binary_sensor.tempo_off_peak',

@@ -60,7 +60,6 @@ export default defineWidget({
   ],
 
   defaults: {
-    type: 'thermostat',
     entityId: 'climate.living_room',
     minTemp: 10,
     maxTemp: 30,

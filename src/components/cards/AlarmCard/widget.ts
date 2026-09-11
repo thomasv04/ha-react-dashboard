@@ -66,7 +66,6 @@ export default defineWidget({
   ],
 
   defaults: {
-    type: 'alarm',
     entityId: 'alarm_control_panel.home_alarm',
     requireCode: true,
   } satisfies WidgetDefaults<WidgetConfig>,

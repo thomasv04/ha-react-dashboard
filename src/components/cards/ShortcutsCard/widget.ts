@@ -62,7 +62,6 @@ export default defineWidget({
   ],
 
   defaults: {
-    type: 'shortcuts',
     // Vide : les raccourcis pointent vers des panneaux que l'utilisateur crée.
     shortcuts: [],
   } satisfies WidgetDefaults<WidgetConfig>,

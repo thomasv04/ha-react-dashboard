@@ -60,7 +60,6 @@ export default defineWidget({
   ],
 
   defaults: {
-    type: 'group',
     title: '',
     columns: 2,
     children: [],

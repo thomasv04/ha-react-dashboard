@@ -56,7 +56,6 @@ export default defineWidget({
   ],
 
   defaults: {
-    type: 'template',
     primaryInfo: 'Hello, {{user}}',
     secondaryInfo: "{{ states('sensor.bedroom_temperature') }}°C",
     icon: 'mdi:home',

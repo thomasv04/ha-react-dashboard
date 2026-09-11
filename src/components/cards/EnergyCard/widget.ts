@@ -55,7 +55,6 @@ export default defineWidget({
   ],
 
   defaults: {
-    type: 'energy',
     batteryLevelEntity: 'sensor.battery_level',
     batteryStateEntity: 'sensor.battery_state',
     gridInputPowerEntity: 'sensor.grid_power',

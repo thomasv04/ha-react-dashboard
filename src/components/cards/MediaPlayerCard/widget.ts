@@ -70,7 +70,6 @@ export default defineWidget({
   ],
 
   defaults: {
-    type: 'media_player',
     entityId: 'media_player.salon',
     disposition: 'horizontal',
   } satisfies WidgetDefaults<WidgetConfig>,

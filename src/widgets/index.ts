@@ -16,18 +16,18 @@ export { WIDGETS } from './registry';
 type WidgetType = GridWidget['type'];
 
 /**
- * Registres dérivés.
- *
- * Chaque registre part des données historiques (les gros objets centraux, un
- * par facette) et applique par-dessus ce que déclarent les manifestes. Un
- * widget migré vers `defineWidget` fait donc autorité sur son entrée ; les
- * autres continuent de fonctionner sans changement.
+ * Registres dérivés : chaque facette (composants, méta, catalogue, tailles,
+ * dispositions, champs, valeurs par défaut) se calcule depuis `WIDGETS`.
  *
  * Conséquence pratique : **un nouveau widget ne touche aucun fichier central**
- * hors `registry.ts` et l'union de types. Cf. `CLAUDE.md` § « Créer un widget ».
+ * hors `registry.ts`. Cf. `CLAUDE.md` § « Créer un widget ».
  */
 
-const defs = WIDGETS as readonly WidgetDefinition[];
+// Élargi à `WidgetDefinition` pour lire les champs facultatifs (`minSize`,
+// `dispositions`…) : absents d'un manifeste qui ne les déclare pas, ils ne sont
+// pas lisibles sur l'union des littéraux. `type` garde en revanche son type
+// étroit — c'est lui que `GridWidget['type']` reprend.
+const defs: readonly (Omit<WidgetDefinition, 'type'> & { type: WidgetType })[] = WIDGETS;
 
 // ── Composants (lazy + memo, un chunk par card) ──────────────────────────────
 
@@ -38,91 +38,83 @@ function lazyMemo(factory: () => Promise<{ default: ComponentType }>) {
   });
 }
 
-export const WIDGET_COMPONENTS: Partial<Record<WidgetType, ComponentType>> = {
-  ...Object.fromEntries(defs.map(d => [d.type, lazyMemo(d.component)])),
-};
+export const WIDGET_COMPONENTS: Partial<Record<WidgetType, ComponentType>> = Object.fromEntries(
+  defs.map(d => [d.type, lazyMemo(d.component)])
+);
 
 // ── Méta du catalogue « Ajouter un widget » ──────────────────────────────────
 
-export const WIDGET_META: WidgetMeta[] = [
-  ...defs.map((d): WidgetMeta => ({
-    type: d.type as WidgetType,
-    label: d.meta.label,
-    description: d.meta.description,
-    category: d.meta.category,
-    icon: d.meta.icon,
-    color: d.meta.color,
-    entityDomain: d.meta.entityDomain,
-    entityConfigKey: d.meta.entityConfigKey,
-  })),
-];
+export const WIDGET_META: WidgetMeta[] = defs.map((d): WidgetMeta => ({
+  type: d.type,
+  label: d.meta.label,
+  description: d.meta.description,
+  category: d.meta.category,
+  icon: d.meta.icon,
+  color: d.meta.color,
+  entityDomain: d.meta.entityDomain,
+  entityConfigKey: d.meta.entityConfigKey,
+}));
 
 // ── Catalogue (tailles posées à l'ajout) ─────────────────────────────────────
 
-export const WIDGET_CATALOG: WidgetCatalogEntry[] = [
-  ...defs.map((d): WidgetCatalogEntry => ({
-    type: d.type as WidgetType,
-    // Le libellé du catalogue est une clé i18n pour les widgets déclarés,
-    // là où l'historique stockait du français en dur.
-    label: d.meta.label,
-    lg: d.defaultSize.lg,
-    md: d.defaultSize.md,
-    sm: d.defaultSize.sm,
-  })),
-];
+export const WIDGET_CATALOG: WidgetCatalogEntry[] = defs.map((d): WidgetCatalogEntry => ({
+  type: d.type,
+  // Le libellé du catalogue est une clé i18n pour les widgets déclarés,
+  // là où l'historique stockait du français en dur.
+  label: d.meta.label,
+  lg: d.defaultSize.lg,
+  md: d.defaultSize.md,
+  sm: d.defaultSize.sm,
+}));
 
 // ── Dispositions ─────────────────────────────────────────────────────────────
 
-export const WIDGET_DISPOSITIONS: WidgetDispositions = {
-  ...Object.fromEntries(
-    defs
-      .map(d => [
-        d.type,
-        d.dispositions ?? [
-          {
-            id: 'default',
-            label: 'Par défaut',
-            minSize: {
-              lg: d.minSize?.lg ?? d.defaultSize.lg,
-              md: d.minSize?.md ?? d.defaultSize.md,
-              sm: d.minSize?.sm ?? d.defaultSize.sm,
-            },
-            defaultSize: d.defaultSize,
-          },
-        ],
-      ])
-      .filter(Boolean)
-  ),
-};
+export const WIDGET_DISPOSITIONS: WidgetDispositions = Object.fromEntries(
+  defs.map(d => [
+    d.type,
+    d.dispositions ?? [
+      {
+        id: 'default',
+        label: 'Par défaut',
+        minSize: {
+          lg: d.minSize?.lg ?? d.defaultSize.lg,
+          md: d.minSize?.md ?? d.defaultSize.md,
+          sm: d.minSize?.sm ?? d.defaultSize.sm,
+        },
+        defaultSize: d.defaultSize,
+      },
+    ],
+  ])
+);
 
 // ── Presets de taille ────────────────────────────────────────────────────────
 
-export const SIZE_PRESETS: WidgetSizePresets = {
-  ...Object.fromEntries(defs.flatMap(d => (d.sizePresets ? [[d.type, d.sizePresets] as const] : []))),
-};
+export const SIZE_PRESETS: WidgetSizePresets = Object.fromEntries(
+  defs.flatMap(d => (d.sizePresets ? [[d.type, d.sizePresets] as const] : []))
+);
 
 // ── Champs d'édition ─────────────────────────────────────────────────────────
 
-export const WIDGET_FIELD_DEFS: Record<string, WidgetFieldDef[]> = {
-  ...Object.fromEntries(defs.flatMap(d => (d.fields ? [[d.type, d.fields] as const] : []))),
-};
+export const WIDGET_FIELD_DEFS: Record<string, WidgetFieldDef[]> = Object.fromEntries(
+  defs.flatMap(d => (d.fields ? [[d.type, d.fields] as const] : []))
+);
 
 // ── Configurations par défaut ────────────────────────────────────────────────
 
-export const DEFAULT_WIDGET_CONFIGS: WidgetConfigs = {
-  ...Object.fromEntries(defs.map(d => [d.type, { type: d.type, ...d.defaults } as WidgetConfig])),
-};
+export const DEFAULT_WIDGET_CONFIGS: WidgetConfigs = Object.fromEntries(
+  defs.map(d => [d.type, { type: d.type, ...d.defaults } as WidgetConfig])
+);
 
 // ── Aperçu du catalogue ──────────────────────────────────────────────────────
 
 /** Dimensions de l'aperçu, en unités de grille. */
-export function getPreviewSize(type: string, legacy: { w: number; h: number } | undefined) {
+export function getPreviewSize(type: string, fallback: { w: number; h: number } | undefined) {
   const def = defs.find(d => d.type === type);
-  if (!def) return legacy;
+  if (!def) return fallback;
   return def.previewSize ?? def.defaultSize.lg;
 }
 
-/** Le manifeste d'un type, s'il a été migré vers `defineWidget`. */
+/** Le manifeste d'un type. */
 export function getWidgetDefinition(type: string): WidgetDefinition | undefined {
   return defs.find(d => d.type === type);
 }

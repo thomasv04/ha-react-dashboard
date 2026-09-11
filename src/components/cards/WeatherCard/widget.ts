@@ -61,7 +61,6 @@ export default defineWidget({
   ],
 
   defaults: {
-    type: 'weather',
     entityId: 'weather.home',
   } satisfies WidgetDefaults<WidgetConfig>,
 });

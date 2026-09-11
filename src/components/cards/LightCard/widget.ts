@@ -64,7 +64,6 @@ export default defineWidget({
   ],
 
   defaults: {
-    type: 'light',
     entityId: 'light.living_room',
     name: 'Salon',
   } satisfies WidgetDefaults<WidgetConfig>,

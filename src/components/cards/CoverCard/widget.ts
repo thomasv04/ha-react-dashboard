@@ -54,7 +54,6 @@ export default defineWidget({
   ],
 
   defaults: {
-    type: 'cover',
     entityId: 'cover.living_room',
     name: 'Volet Salon',
   } satisfies WidgetDefaults<WidgetConfig>,
