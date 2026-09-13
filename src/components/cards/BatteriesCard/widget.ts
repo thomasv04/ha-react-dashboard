@@ -43,10 +43,10 @@ export default defineWidget({
   },
 
   fields: [
-    { key: 'name', label: 'Titre', fieldType: 'text' },
-    { key: 'threshold', label: "Seuil d'alerte (%)", fieldType: 'number' },
-    { key: 'onlyLow', label: 'Afficher seulement les batteries faibles', fieldType: 'boolean' },
-    { key: 'exclude', label: 'Entités à ignorer', fieldType: 'entity-list' },
+    { key: 'name', label: 'widgets.batteries.fields.name.label', fieldType: 'text' },
+    { key: 'threshold', label: 'widgets.batteries.fields.threshold.label', fieldType: 'number' },
+    { key: 'onlyLow', label: 'widgets.batteries.fields.onlyLow.label', fieldType: 'boolean' },
+    { key: 'exclude', label: 'widgets.batteries.fields.exclude.label', fieldType: 'entity-list' },
   ],
 
   defaults: {

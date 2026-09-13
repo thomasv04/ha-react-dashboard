@@ -83,8 +83,8 @@ export function CardLayoutTab({ widgetId, breakpoint }: CardLayoutTabProps) {
                     </div>
                   )}
                 </div>
-                <div className='text-sm font-medium text-white/80'>{disp.label}</div>
-                {disp.description && <div className='text-[11px] text-white/30 mt-1'>{disp.description}</div>}
+                <div className='text-sm font-medium text-white/80'>{t(disp.label)}</div>
+                {disp.description && <div className='text-[11px] text-white/30 mt-1'>{t(disp.description)}</div>}
               </button>
             ))}
           </div>

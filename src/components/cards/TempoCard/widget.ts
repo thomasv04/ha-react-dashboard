@@ -39,19 +39,19 @@ export default defineWidget({
   dispositions: [
     {
       id: 'default',
-      label: 'Standard',
+      label: 'widgets.tempo.dispositions.default.label',
       minSize: { lg: { w: 2, h: 1 }, md: { w: 4, h: 1 }, sm: { w: 4, h: 1 } },
       defaultSize: { lg: { w: 4, h: 2 }, md: { w: 8, h: 2 }, sm: { w: 4, h: 2 } },
     },
   ],
 
   fields: [
-    { key: 'currentColorEntity', label: 'Couleur actuelle', fieldType: 'entity', domain: 'sensor' },
-    { key: 'nextColorEntity', label: 'Prochaine couleur', fieldType: 'entity', domain: 'sensor' },
-    { key: 'offPeakEntity', label: 'Heures creuses', fieldType: 'entity', domain: 'binary_sensor' },
-    { key: 'remainingBlueEntity', label: 'Jours bleu restants', fieldType: 'entity', domain: 'sensor' },
-    { key: 'remainingWhiteEntity', label: 'Jours blanc restants', fieldType: 'entity', domain: 'sensor' },
-    { key: 'remainingRedEntity', label: 'Jours rouge restants', fieldType: 'entity', domain: 'sensor' },
+    { key: 'currentColorEntity', label: 'widgets.tempo.fields.currentColorEntity.label', fieldType: 'entity', domain: 'sensor' },
+    { key: 'nextColorEntity', label: 'widgets.tempo.fields.nextColorEntity.label', fieldType: 'entity', domain: 'sensor' },
+    { key: 'offPeakEntity', label: 'widgets.tempo.fields.offPeakEntity.label', fieldType: 'entity', domain: 'binary_sensor' },
+    { key: 'remainingBlueEntity', label: 'widgets.tempo.fields.remainingBlueEntity.label', fieldType: 'entity', domain: 'sensor' },
+    { key: 'remainingWhiteEntity', label: 'widgets.tempo.fields.remainingWhiteEntity.label', fieldType: 'entity', domain: 'sensor' },
+    { key: 'remainingRedEntity', label: 'widgets.tempo.fields.remainingRedEntity.label', fieldType: 'entity', domain: 'sensor' },
   ],
 
   defaults: {

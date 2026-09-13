@@ -39,19 +39,19 @@ export default defineWidget({
   dispositions: [
     {
       id: 'default',
-      label: 'Standard',
+      label: 'widgets.energy.dispositions.default.label',
       minSize: { lg: { w: 2, h: 1 }, md: { w: 4, h: 1 }, sm: { w: 4, h: 1 } },
       defaultSize: { lg: { w: 4, h: 2 }, md: { w: 8, h: 2 }, sm: { w: 4, h: 2 } },
     },
   ],
 
   fields: [
-    { key: 'batteryLevelEntity', label: 'Niveau batterie', fieldType: 'entity', domain: 'sensor' },
-    { key: 'batteryStateEntity', label: 'État batterie', fieldType: 'entity', domain: 'sensor' },
-    { key: 'gridInputPowerEntity', label: 'Puissance réseau', fieldType: 'entity', domain: 'sensor' },
-    { key: 'homeOutputPowerEntity', label: 'Puissance maison', fieldType: 'entity', domain: 'sensor' },
-    { key: 'solarProductionEntity', label: 'Production solaire', fieldType: 'entity', domain: 'sensor' },
-    { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
+    { key: 'batteryLevelEntity', label: 'widgets.energy.fields.batteryLevelEntity.label', fieldType: 'entity', domain: 'sensor' },
+    { key: 'batteryStateEntity', label: 'widgets.energy.fields.batteryStateEntity.label', fieldType: 'entity', domain: 'sensor' },
+    { key: 'gridInputPowerEntity', label: 'widgets.energy.fields.gridInputPowerEntity.label', fieldType: 'entity', domain: 'sensor' },
+    { key: 'homeOutputPowerEntity', label: 'widgets.energy.fields.homeOutputPowerEntity.label', fieldType: 'entity', domain: 'sensor' },
+    { key: 'solarProductionEntity', label: 'widgets.energy.fields.solarProductionEntity.label', fieldType: 'entity', domain: 'sensor' },
+    { key: 'showInfoPanel', label: 'widgets.energy.fields.showInfoPanel.label', fieldType: 'boolean' },
   ],
 
   defaults: {

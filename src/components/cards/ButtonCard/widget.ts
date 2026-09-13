@@ -39,23 +39,23 @@ export default defineWidget({
   dispositions: [
     {
       id: 'default',
-      label: 'Standard',
+      label: 'widgets.button.dispositions.default.label',
       minSize: { lg: { w: 1, h: 1 }, md: { w: 1, h: 1 }, sm: { w: 1, h: 1 } },
       defaultSize: { lg: { w: 2, h: 2 }, md: { w: 2, h: 2 }, sm: { w: 2, h: 2 } },
     },
   ],
 
   fields: [
-    { key: 'label', label: 'Libellé du bouton', fieldType: 'text' },
-    { key: 'subtitle', label: 'Sous-titre (optionnel)', fieldType: 'text' },
-    { key: 'icon', label: 'Icône', fieldType: 'icon' },
-    { key: 'color', label: 'Couleur accent (#hex ou template Jinja)', fieldType: 'text' },
-    { key: 'domain', label: 'Domaine HA (ex: script, light)', fieldType: 'text' },
-    { key: 'service', label: 'Service (ex: turn_on, toggle)', fieldType: 'text' },
-    { key: 'entityId', label: 'Entité cible (optionnel)', fieldType: 'entity' },
-    { key: 'serviceData', label: 'Données service (JSON)', fieldType: 'text' },
-    { key: 'requireConfirm', label: 'Demander confirmation', fieldType: 'boolean' },
-    { key: 'confirmText', label: 'Message de confirmation', fieldType: 'text' },
+    { key: 'label', label: 'widgets.button.fields.label.label', fieldType: 'text' },
+    { key: 'subtitle', label: 'widgets.button.fields.subtitle.label', fieldType: 'text' },
+    { key: 'icon', label: 'widgets.button.fields.icon.label', fieldType: 'icon' },
+    { key: 'color', label: 'widgets.button.fields.color.label', fieldType: 'text' },
+    { key: 'domain', label: 'widgets.button.fields.domain.label', fieldType: 'text' },
+    { key: 'service', label: 'widgets.button.fields.service.label', fieldType: 'text' },
+    { key: 'entityId', label: 'widgets.button.fields.entityId.label', fieldType: 'entity' },
+    { key: 'serviceData', label: 'widgets.button.fields.serviceData.label', fieldType: 'text' },
+    { key: 'requireConfirm', label: 'widgets.button.fields.requireConfirm.label', fieldType: 'boolean' },
+    { key: 'confirmText', label: 'widgets.button.fields.confirmText.label', fieldType: 'text' },
   ],
 
   defaults: {

@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 
 /**
  * Choix multiple sous forme de pastilles.
@@ -19,6 +20,7 @@ export function MultiSelectField({
   value?: string[];
   onChange: (next: string[]) => void;
 }) {
+  const { t } = useI18n();
   const current = value ?? options.map(o => o.value);
 
   return (
@@ -40,7 +42,7 @@ export function MultiSelectField({
               )}
             >
               {opt.icon && <span>{opt.icon}</span>}
-              {opt.label}
+              {t(opt.label)}
             </button>
           );
         })}

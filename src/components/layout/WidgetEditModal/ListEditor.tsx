@@ -5,6 +5,7 @@ import { IconPicker, GradientPicker } from '@/components/layout/WidgetPickers';
 import { EntityPicker } from './EntityPicker';
 import { FieldInput } from './FieldInput';
 import { PanelSelectField } from './PanelSelectField';
+import { useI18n } from '@/i18n';
 
 export function ListEditor({
   items,
@@ -19,6 +20,7 @@ export function ListEditor({
   label: string;
   twoCol?: boolean;
 }) {
+  const { t } = useI18n();
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
 
   const addItem = () => {
@@ -93,14 +95,14 @@ export function ListEditor({
                           value={(item[field.key] as string) ?? ''}
                           onChange={v => updateItem(idx, field.key, v)}
                           domain={field.domain}
-                          label={field.label}
+                          label={t(field.label)}
                         />
                       );
                     } else if (field.fieldType === 'entity-list') {
                       const list = (item[field.key] as string[]) ?? [];
                       content = (
                         <div>
-                          <label className='text-[11px] text-white/40 mb-1 block'>{field.label}</label>
+                          <label className='text-[11px] text-white/40 mb-1 block'>{t(field.label)}</label>
                           {list.map((eid, eidx) => (
                             <div key={eidx} className='flex items-center gap-1 mb-1'>
                               <EntityPicker
@@ -140,7 +142,7 @@ export function ListEditor({
                         <IconPicker
                           value={(item[field.key] as string) ?? ''}
                           onChange={v => updateItem(idx, field.key, v)}
-                          label={field.label}
+                          label={t(field.label)}
                         />
                       );
                     } else if (field.fieldType === 'gradient') {
@@ -148,13 +150,13 @@ export function ListEditor({
                         <GradientPicker
                           value={(item[field.key] as string) ?? ''}
                           onChange={v => updateItem(idx, field.key, v)}
-                          label={field.label}
+                          label={t(field.label)}
                         />
                       );
                     } else if (field.fieldType === 'select' && field.options) {
                       content = (
                         <div>
-                          <label className='text-[11px] text-white/40 mb-1 block'>{field.label}</label>
+                          <label className='text-[11px] text-white/40 mb-1 block'>{t(field.label)}</label>
                           <select
                             value={(item[field.key] as string) || field.options[0].value}
                             onChange={e => updateItem(idx, field.key, e.target.value)}
@@ -163,7 +165,7 @@ export function ListEditor({
                           >
                             {field.options.map(opt => (
                               <option key={opt.value} value={opt.value} className='bg-[#0c1028]'>
-                                {opt.label}
+                                {t(opt.label)}
                               </option>
                             ))}
                           </select>
@@ -182,7 +184,7 @@ export function ListEditor({
                             <div className='w-9 h-5 rounded-full bg-white/10 peer-checked:bg-blue-500/60 transition-colors' />
                             <div className='absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-md transition-transform peer-checked:translate-x-4' />
                           </div>
-                          <span className='text-xs text-white/60'>{field.label}</span>
+                          <span className='text-xs text-white/60'>{t(field.label)}</span>
                         </label>
                       );
                     } else if (field.fieldType === 'panel-select') {
@@ -190,7 +192,7 @@ export function ListEditor({
                         <PanelSelectField
                           value={(item[field.key] as string) ?? ''}
                           onChange={v => updateItem(idx, field.key, v)}
-                          label={field.label}
+                          label={t(field.label)}
                         />
                       );
                     } else {
@@ -198,7 +200,7 @@ export function ListEditor({
                         <FieldInput
                           value={(item[field.key] as string | number) ?? ''}
                           onChange={v => updateItem(idx, field.key, v)}
-                          label={field.label}
+                          label={t(field.label)}
                           type={field.fieldType === 'number' ? 'number' : 'text'}
                         />
                       );

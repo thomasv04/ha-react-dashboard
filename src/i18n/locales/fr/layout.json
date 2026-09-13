@@ -358,5 +358,10 @@
     "add": "Contrôles",
     "domains": "Domaines",
     "entities": "Entités"
-  }
+  },
+  "weatherIconsTitle": "Icônes météo personnalisées",
+  "weatherIconsHint": "Personnalisez l’icône de chaque condition. Laissez vide pour l’icône par défaut.",
+  "weatherIconsCount": "{count} personnalisée",
+  "weatherIconsCountPlural": "{count} personnalisées",
+  "dispositionDefault": "Par défaut"
 }

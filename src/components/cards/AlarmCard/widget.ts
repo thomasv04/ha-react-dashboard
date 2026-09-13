@@ -40,26 +40,26 @@ export default defineWidget({
   dispositions: [
     {
       id: 'default',
-      label: 'Standard',
+      label: 'widgets.alarm.dispositions.default.label',
       minSize: { lg: { w: 2, h: 2 }, md: { w: 2, h: 2 }, sm: { w: 2, h: 2 } },
       defaultSize: { lg: { w: 3, h: 3 }, md: { w: 4, h: 3 }, sm: { w: 4, h: 3 } },
     },
   ],
 
   fields: [
-    { key: 'entityId', label: 'Alarme', fieldType: 'entity', domain: 'alarm_control_panel' },
-    { key: 'name', label: 'Nom affiché', fieldType: 'text' },
-    { key: 'requireCode', label: 'Code PIN requis', fieldType: 'boolean' },
+    { key: 'entityId', label: 'widgets.alarm.fields.entityId.label', fieldType: 'entity', domain: 'alarm_control_panel' },
+    { key: 'name', label: 'widgets.alarm.fields.name.label', fieldType: 'text' },
+    { key: 'requireCode', label: 'widgets.alarm.fields.requireCode.label', fieldType: 'boolean' },
     {
       key: 'armModes',
-      label: 'Boutons affichés',
+      label: 'widgets.alarm.fields.armModes.label',
       fieldType: 'multiselect',
       options: [
-        { value: 'disarm', label: 'Désarmer', icon: '🔓' },
-        { value: 'home', label: 'Domicile', icon: '🏠' },
-        { value: 'away', label: 'Absent', icon: '🔴' },
-        { value: 'night', label: 'Nuit', icon: '🌙' },
-        { value: 'vacation', label: 'Vacances', icon: '✈️' },
+        { value: 'disarm', label: 'widgets.alarm.fields.armModes.options.disarm', icon: '🔓' },
+        { value: 'home', label: 'widgets.alarm.fields.armModes.options.home', icon: '🏠' },
+        { value: 'away', label: 'widgets.alarm.fields.armModes.options.away', icon: '🔴' },
+        { value: 'night', label: 'widgets.alarm.fields.armModes.options.night', icon: '🌙' },
+        { value: 'vacation', label: 'widgets.alarm.fields.armModes.options.vacation', icon: '✈️' },
       ],
     },
   ],

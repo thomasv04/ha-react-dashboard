@@ -75,7 +75,7 @@ export const WIDGET_DISPOSITIONS: WidgetDispositions = Object.fromEntries(
     d.dispositions ?? [
       {
         id: 'default',
-        label: 'Par défaut',
+        label: 'layout.dispositionDefault',
         minSize: {
           lg: d.minSize?.lg ?? d.defaultSize.lg,
           md: d.minSize?.md ?? d.defaultSize.md,

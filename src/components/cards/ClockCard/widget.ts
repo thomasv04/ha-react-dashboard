@@ -30,11 +30,11 @@ export default defineWidget({
   },
 
   fields: [
-    { key: 'name', label: 'Nom affiché', fieldType: 'text' },
-    { key: 'showAnalog', label: 'Cadran analogique', fieldType: 'boolean' },
-    { key: 'showDate', label: 'Afficher la date', fieldType: 'boolean' },
-    { key: 'showSeconds', label: 'Afficher les secondes', fieldType: 'boolean' },
-    { key: 'hour12', label: 'Format 12 h (AM/PM)', fieldType: 'boolean' },
+    { key: 'name', label: 'widgets.clock.fields.name.label', fieldType: 'text' },
+    { key: 'showAnalog', label: 'widgets.clock.fields.showAnalog.label', fieldType: 'boolean' },
+    { key: 'showDate', label: 'widgets.clock.fields.showDate.label', fieldType: 'boolean' },
+    { key: 'showSeconds', label: 'widgets.clock.fields.showSeconds.label', fieldType: 'boolean' },
+    { key: 'hour12', label: 'widgets.clock.fields.hour12.label', fieldType: 'boolean' },
   ],
 
   defaults: {

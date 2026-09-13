@@ -40,23 +40,23 @@ export default defineWidget({
   dispositions: [
     {
       id: 'horizontal',
-      label: 'Horizontale',
+      label: 'widgets.thermostat.dispositions.horizontal.label',
       minSize: { lg: { w: 3, h: 2 }, md: { w: 4, h: 2 }, sm: { w: 4, h: 2 } },
       defaultSize: { lg: { w: 3, h: 3 }, md: { w: 4, h: 2 }, sm: { w: 4, h: 2 } },
     },
     {
       id: 'vertical',
-      label: 'Verticale',
+      label: 'widgets.thermostat.dispositions.vertical.label',
       minSize: { lg: { w: 2, h: 3 }, md: { w: 2, h: 3 }, sm: { w: 2, h: 3 } },
       defaultSize: { lg: { w: 2, h: 4 }, md: { w: 2, h: 4 }, sm: { w: 2, h: 4 } },
     },
   ],
 
   fields: [
-    { key: 'entityId', label: 'Entité climate', fieldType: 'entity', domain: 'climate' },
-    { key: 'minTemp', label: 'Température min', fieldType: 'number' },
-    { key: 'maxTemp', label: 'Température max', fieldType: 'number' },
-    { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
+    { key: 'entityId', label: 'widgets.thermostat.fields.entityId.label', fieldType: 'entity', domain: 'climate' },
+    { key: 'minTemp', label: 'widgets.thermostat.fields.minTemp.label', fieldType: 'number' },
+    { key: 'maxTemp', label: 'widgets.thermostat.fields.maxTemp.label', fieldType: 'number' },
+    { key: 'showInfoPanel', label: 'widgets.thermostat.fields.showInfoPanel.label', fieldType: 'boolean' },
   ],
 
   defaults: {

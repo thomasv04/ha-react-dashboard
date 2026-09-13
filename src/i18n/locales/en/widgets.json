@@ -32,7 +32,25 @@
       "windy": "Windy",
       "windy-variant": "Very windy"
     },
-    "days": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    "days": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "dispositions": {
+      "horizontal": {
+        "label": "Horizontal",
+        "description": "Temperature and forecast side by side"
+      },
+      "vertical": {
+        "label": "Vertical",
+        "description": "Temperature on top, forecast below"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Weather entity"
+      },
+      "customIcons": {
+        "label": "Custom icons"
+      }
+    }
   },
   "thermostat": {
     "label": "Thermostat",
@@ -45,7 +63,29 @@
     "off": "OFF",
     "fan_only": "FAN ONLY",
     "drying": "DRYING",
-    "preheating": "PREHEATING"
+    "preheating": "PREHEATING",
+    "dispositions": {
+      "horizontal": {
+        "label": "Horizontal"
+      },
+      "vertical": {
+        "label": "Vertical"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Climate entity"
+      },
+      "minTemp": {
+        "label": "Min temperature"
+      },
+      "maxTemp": {
+        "label": "Max temperature"
+      },
+      "showInfoPanel": {
+        "label": "Info panel (More Info)"
+      }
+    }
   },
   "light": {
     "label": "Light",
@@ -57,7 +97,41 @@
     "on": "On",
     "off": "Off",
     "warm": "Warm",
-    "cold": "Cold"
+    "cold": "Cold",
+    "dispositions": {
+      "horizontal": {
+        "label": "Horizontal"
+      },
+      "vertical": {
+        "label": "Vertical"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Light entity"
+      },
+      "name": {
+        "label": "Display name"
+      },
+      "icon": {
+        "label": "Icon"
+      },
+      "isGroup": {
+        "label": "Light group"
+      },
+      "showBrightness": {
+        "label": "Brightness control"
+      },
+      "showColorTemp": {
+        "label": "Colour temperature control"
+      },
+      "showColor": {
+        "label": "Hue control (RGB)"
+      },
+      "showInfoPanel": {
+        "label": "Info panel (More Info)"
+      }
+    }
   },
   "sensor": {
     "label": "Sensor",
@@ -67,7 +141,52 @@
     "justNow": "just now",
     "stale": "stale",
     "active": "Active",
-    "inactive": "Inactive"
+    "inactive": "Inactive",
+    "dispositions": {
+      "horizontal": {
+        "label": "Horizontal",
+        "description": "Icon and value side by side"
+      },
+      "vertical": {
+        "label": "Vertical",
+        "description": "Icon on top, value below"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Entity"
+      },
+      "name": {
+        "label": "Display name"
+      },
+      "icon": {
+        "label": "Icon"
+      },
+      "variant": {
+        "label": "Variant",
+        "options": {
+          "default": "Default (bar)",
+          "gauge": "Half-circle gauge",
+          "sparkline": "Line (SparkLine)",
+          "bar": "Histogram (BarChart)"
+        }
+      },
+      "min": {
+        "label": "Min value"
+      },
+      "max": {
+        "label": "Max value"
+      },
+      "showInfoPanel": {
+        "label": "Info panel (More Info)"
+      },
+      "staleBadge": {
+        "label": "\"Last updated\" badge"
+      },
+      "staleThresholdMinutes": {
+        "label": "Stale threshold (minutes)"
+      }
+    }
   },
   "cover": {
     "label": "Cover",
@@ -86,7 +205,26 @@
     "info": "Information",
     "state": "STATE",
     "position": "POSITION",
-    "deviceClass": "CLASS"
+    "deviceClass": "CLASS",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Cover entity"
+      },
+      "name": {
+        "label": "Display name"
+      },
+      "icon": {
+        "label": "Icon"
+      },
+      "showInfoPanel": {
+        "label": "Info panel (More Info)"
+      }
+    }
   },
   "media_player": {
     "label": "Media",
@@ -95,7 +233,33 @@
     "paused": "Paused",
     "idle": "Idle",
     "off": "Off",
-    "notFound": "Player not found"
+    "notFound": "Player not found",
+    "dispositions": {
+      "horizontal": {
+        "label": "Horizontal",
+        "description": "Cover and details side by side"
+      },
+      "vertical": {
+        "label": "Vertical",
+        "description": "Cover on top, controls below"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Media player"
+      },
+      "name": {
+        "label": "Display name"
+      },
+      "disposition": {
+        "label": "Layout",
+        "options": {
+          "horizontal": "Horizontal (cover and details)",
+          "vertical": "Vertical (large cover)",
+          "compact": "Compact (1 row)"
+        }
+      }
+    }
   },
   "person": {
     "label": "People",
@@ -103,7 +267,28 @@
     "description": "Shows the presence and location of household members.",
     "home": "HOME",
     "away": "AWAY",
-    "noPeople": "No people configured"
+    "noPeople": "No people configured",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "persons": {
+        "label": "People",
+        "item": {
+          "entityId": {
+            "label": "Person entity"
+          },
+          "name": {
+            "label": "Display name"
+          }
+        }
+      },
+      "showInfoPanel": {
+        "label": "Info panel (More Info)"
+      }
+    }
   },
   "alarm": {
     "label": "Alarm",
@@ -123,7 +308,33 @@
     "modeNight": "Night",
     "modeVacation": "Vacation",
     "selectMode": "Select mode",
-    "backspace": "Backspace"
+    "backspace": "Backspace",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Alarm"
+      },
+      "name": {
+        "label": "Display name"
+      },
+      "requireCode": {
+        "label": "PIN code required"
+      },
+      "armModes": {
+        "label": "Visible buttons",
+        "options": {
+          "disarm": "Disarm",
+          "home": "Home",
+          "away": "Away",
+          "night": "Night",
+          "vacation": "Holiday"
+        }
+      }
+    }
   },
   "camera": {
     "label": "Camera",
@@ -131,7 +342,39 @@
     "streamMode": "Stream mode",
     "mjpeg": "MJPEG (low latency)",
     "hls": "HLS (better compression)",
-    "empty": "No camera configured. Edit this widget to add one."
+    "empty": "No camera configured. Edit this widget to add one.",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "selectorEntity": {
+        "label": "Selector entity"
+      },
+      "cameras": {
+        "label": "Cameras",
+        "item": {
+          "entityId": {
+            "label": "Camera entity"
+          },
+          "name": {
+            "label": "Name"
+          },
+          "posterEntity": {
+            "label": "Placeholder image (snapshot entity)"
+          }
+        }
+      },
+      "streamMode": {
+        "label": "Streaming mode",
+        "options": {
+          "auto": "Auto (HLS when the camera supports it)",
+          "mjpeg": "MJPEG (natively MJPEG cameras)",
+          "hls": "HLS (RTSP stream, smooth)"
+        }
+      }
+    }
   },
   "energy": {
     "label": "Energy",
@@ -142,7 +385,32 @@
     "discharging": "Discharging",
     "standby": "Standby",
     "flowIn": "W in",
-    "flowOut": "W out"
+    "flowOut": "W out",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "batteryLevelEntity": {
+        "label": "Battery level"
+      },
+      "batteryStateEntity": {
+        "label": "Battery state"
+      },
+      "gridInputPowerEntity": {
+        "label": "Grid power"
+      },
+      "homeOutputPowerEntity": {
+        "label": "House power"
+      },
+      "solarProductionEntity": {
+        "label": "Solar production"
+      },
+      "showInfoPanel": {
+        "label": "Info panel (More Info)"
+      }
+    }
   },
   "tempo": {
     "label": "Tempo EDF",
@@ -153,7 +421,32 @@
     "tomorrow": "Tomorrow",
     "blue": "Blue",
     "white": "White",
-    "red": "Red"
+    "red": "Red",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "currentColorEntity": {
+        "label": "Current colour"
+      },
+      "nextColorEntity": {
+        "label": "Next colour"
+      },
+      "offPeakEntity": {
+        "label": "Off-peak hours"
+      },
+      "remainingBlueEntity": {
+        "label": "Blue days remaining"
+      },
+      "remainingWhiteEntity": {
+        "label": "White days remaining"
+      },
+      "remainingRedEntity": {
+        "label": "Red days remaining"
+      }
+    }
   },
   "shortcuts": {
     "label": "Shortcuts",
@@ -161,24 +454,133 @@
     "header": "Shortcuts",
     "armed": "Armed",
     "disarmed": "Disarmed",
-    "empty": "No shortcut configured. Edit this widget to add one."
+    "empty": "No shortcut configured. Edit this widget to add one.",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "shortcuts": {
+        "label": "Shortcuts",
+        "item": {
+          "id": {
+            "label": "Identifier"
+          },
+          "label": {
+            "label": "Display name"
+          },
+          "icon": {
+            "label": "Icon"
+          },
+          "panelId": {
+            "label": "Linked panel"
+          },
+          "color": {
+            "label": "Colour"
+          },
+          "statusEntity": {
+            "label": "Status entity"
+          }
+        }
+      }
+    }
   },
   "pellet": {
     "label": "Pellet stove",
     "title": "Pellet stove",
     "description": "Controls a pellet stove (climate): target temperature, on/off.",
-    "current": "Current: "
+    "current": "Current: ",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Climate entity"
+      },
+      "name": {
+        "label": "Display name"
+      }
+    }
   },
   "greeting": {
     "label": "Clock",
     "goodMorning": "Good morning",
     "goodAfternoon": "Good afternoon",
     "goodEvening": "Good evening",
-    "goodNight": "Good night"
+    "goodNight": "Good night",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "locale": {
+        "label": "Locale (fr-FR, en-US…)"
+      }
+    }
   },
   "activity": {
     "label": "Activity bar",
-    "description": "Quick status strip: alarm, stove, battery, Tempo..."
+    "description": "Quick status strip: alarm, stove, battery, Tempo...",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "pills": {
+        "label": "Indicators",
+        "item": {
+          "id": {
+            "label": "Identifier"
+          },
+          "entityId": {
+            "label": "Entity"
+          },
+          "label": {
+            "label": "Label"
+          },
+          "template": {
+            "label": "Template ({state}, {attr.X})"
+          },
+          "hideLabel": {
+            "label": "Icon only (hide the text)"
+          },
+          "icon": {
+            "label": "Icon"
+          },
+          "color": {
+            "label": "Colour (#hex, Jinja template, empty = auto)"
+          },
+          "action": {
+            "label": "On tap",
+            "options": {
+              "none": "Nothing",
+              "more-info": "Open the more-info panel",
+              "toggle": "Toggle the entity",
+              "service": "Call a service"
+            }
+          },
+          "service": {
+            "label": "Service (domain.service)"
+          }
+        }
+      },
+      "persons": {
+        "label": "Visible users",
+        "item": {
+          "entityId": {
+            "label": "Person entity"
+          },
+          "name": {
+            "label": "Display name"
+          }
+        }
+      }
+    }
   },
   "automation": {
     "label": "Automation",
@@ -188,7 +590,26 @@
     "inactive": "Inactive",
     "neverTriggered": "Never triggered",
     "justTriggered": "just now",
-    "triggeredAgo": "{value} ago"
+    "triggeredAgo": "{value} ago",
+    "dispositions": {
+      "horizontal": {
+        "label": "Horizontal"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Automation"
+      },
+      "name": {
+        "label": "Display name"
+      },
+      "icon": {
+        "label": "Icon"
+      },
+      "showInfoPanel": {
+        "label": "Info panel (More Info)"
+      }
+    }
   },
   "group": {
     "label": "Group",
@@ -202,7 +623,25 @@
     "addWidget": "Add a widget",
     "dragToReorder": "Drag to reorder",
     "empty": "Empty group",
-    "clickToAdd": "Open settings to add widgets"
+    "clickToAdd": "Open settings to add widgets",
+    "dispositions": {
+      "default": {
+        "label": "Group"
+      }
+    },
+    "fields": {
+      "title": {
+        "label": "Group title"
+      },
+      "columns": {
+        "label": "Columns",
+        "options": {
+          "1": "1 column",
+          "2": "2 columns",
+          "3": "3 columns"
+        }
+      }
+    }
   },
   "room": {
     "label": "Room",
@@ -219,6 +658,63 @@
       "scene": "Scenes",
       "script": "Scripts",
       "input_boolean": "Toggles"
+    },
+    "dispositions": {
+      "default": {
+        "label": "Room"
+      }
+    },
+    "fields": {
+      "area": {
+        "label": "Home Assistant area"
+      },
+      "label": {
+        "label": "Room name (defaults to the area's)"
+      },
+      "icon": {
+        "label": "Icon"
+      },
+      "iconBg": {
+        "label": "Icon gradient"
+      },
+      "tempEntity": {
+        "label": "Temperature sensor (defaults to the area's)"
+      },
+      "humidityEntity": {
+        "label": "Humidity sensor (defaults to the area's)"
+      },
+      "lightEntities": {
+        "label": "Lights (defaults to the area's)"
+      },
+      "panelId": {
+        "label": "Linked panel (→)"
+      },
+      "controls": {
+        "label": "Custom buttons",
+        "item": {
+          "label": {
+            "label": "Label"
+          },
+          "icon": {
+            "label": "Icon"
+          },
+          "domain": {
+            "label": "Domain (e.g. light)"
+          },
+          "service": {
+            "label": "Service (e.g. toggle)"
+          },
+          "entityId": {
+            "label": "Target entity"
+          },
+          "stateEntity": {
+            "label": "State entity (colour)"
+          },
+          "color": {
+            "label": "Active colour (#hex or Jinja template)"
+          }
+        }
+      }
     }
   },
   "button": {
@@ -228,11 +724,76 @@
     "error": "Error",
     "cancel": "Cancel",
     "confirm": "Confirm",
-    "confirmDefault": "Are you sure you want to run this action?"
+    "confirmDefault": "Are you sure you want to run this action?",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "label": {
+        "label": "Button label"
+      },
+      "subtitle": {
+        "label": "Subtitle (optional)"
+      },
+      "icon": {
+        "label": "Icon"
+      },
+      "color": {
+        "label": "Accent colour (#hex or Jinja template)"
+      },
+      "domain": {
+        "label": "HA domain (e.g. script, light)"
+      },
+      "service": {
+        "label": "Service (e.g. turn_on, toggle)"
+      },
+      "entityId": {
+        "label": "Target entity (optional)"
+      },
+      "serviceData": {
+        "label": "Service data (JSON)"
+      },
+      "requireConfirm": {
+        "label": "Ask for confirmation"
+      },
+      "confirmText": {
+        "label": "Confirmation message"
+      }
+    }
   },
   "template": {
     "label": "Template",
-    "description": "Fully customizable widget with Jinja2/Nunjucks templates."
+    "description": "Fully customizable widget with Jinja2/Nunjucks templates.",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Entity (context)"
+      },
+      "primaryInfo": {
+        "label": "Primary information"
+      },
+      "secondaryInfo": {
+        "label": "Secondary information"
+      },
+      "icon": {
+        "label": "Icon"
+      },
+      "iconColor": {
+        "label": "Icon colour"
+      },
+      "image": {
+        "label": "Image (URL)"
+      },
+      "showInfoPanel": {
+        "label": "Info panel (More Info)"
+      }
+    }
   },
   "vacuum": {
     "label": "Vacuum",
@@ -261,7 +822,48 @@
     "sequentialMode": "Sequential cleaning",
     "sequentialDesc": "Clean rooms one at a time",
     "sequentialNote": "Rooms will be cleaned one by one in the selected order.",
-    "queueProgress": "Room {current}/{total}"
+    "queueProgress": "Room {current}/{total}",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Vacuum"
+      },
+      "name": {
+        "label": "Display name"
+      },
+      "rooms": {
+        "label": "Rooms (Roborock map)",
+        "item": {
+          "id": {
+            "label": "Segment ID"
+          },
+          "name": {
+            "label": "Room name"
+          },
+          "segmentId": {
+            "label": "Segment ID (numeric)"
+          },
+          "icon": {
+            "label": "Icon"
+          }
+        }
+      },
+      "selects": {
+        "label": "Select controls (fan speed, mop intensity…)",
+        "item": {
+          "entityId": {
+            "label": "Select entity"
+          },
+          "label": {
+            "label": "Custom label"
+          }
+        }
+      }
+    }
   },
   "automation_list": {
     "label": "Automation list",
@@ -269,7 +871,26 @@
     "empty": "No automation configured",
     "active": "Active",
     "inactive": "Inactive",
-    "emptyHint": "Edit the widget to add automations"
+    "emptyHint": "Edit the widget to add automations",
+    "fields": {
+      "name": {
+        "label": "Title"
+      },
+      "automations": {
+        "label": "Automations",
+        "item": {
+          "entityId": {
+            "label": "Automation"
+          },
+          "name": {
+            "label": "Display name"
+          },
+          "icon": {
+            "label": "Icon"
+          }
+        }
+      }
+    }
   },
   "energy_flow": {
     "label": "Energy flow",
@@ -278,19 +899,77 @@
     "home": "Home",
     "battery": "Battery",
     "grid": "Grid",
-    "selfUse": "SELF-USE"
+    "selfUse": "SELF-USE",
+    "fields": {
+      "name": {
+        "label": "Title"
+      },
+      "solarProductionEntity": {
+        "label": "Solar production"
+      },
+      "homeOutputPowerEntity": {
+        "label": "House power"
+      },
+      "gridInputPowerEntity": {
+        "label": "Grid power"
+      },
+      "batteryLevelEntity": {
+        "label": "Battery level"
+      },
+      "batteryStateEntity": {
+        "label": "Battery state"
+      },
+      "gridInvert": {
+        "label": "Invert the grid sign"
+      }
+    }
   },
   "chart": {
     "label": "Chart",
     "description": "History of any entity, as a curve or an on/off timeline.",
-    "notFound": "Entity not found"
+    "notFound": "Entity not found",
+    "fields": {
+      "entityId": {
+        "label": "Entity"
+      },
+      "name": {
+        "label": "Display name"
+      },
+      "hours": {
+        "label": "History window (hours)"
+      },
+      "variant": {
+        "label": "Rendering",
+        "options": {
+          "line": "Line",
+          "timeline": "On/off timeline"
+        }
+      },
+      "color": {
+        "label": "Colour (#hex or Jinja template)"
+      }
+    }
   },
   "batteries": {
     "label": "Batteries",
     "description": "Every battery in the house, lowest first.",
     "lowCount": "{count} below {threshold}%",
     "empty": "No battery detected",
-    "allHealthy": "All batteries are fine"
+    "allHealthy": "All batteries are fine",
+    "fields": {
+      "name": {
+        "label": "Title"
+      },
+      "threshold": {
+        "label": "Alert threshold (%)"
+      },
+      "onlyLow": {
+        "label": "Only show low batteries"
+      },
+      "exclude": {
+        "label": "Entities to ignore"
+      }
+    }
   },
   "lock": {
     "label": "Lock",
@@ -303,7 +982,18 @@
     "opening": "Opening...",
     "jammed": "Jammed",
     "confirmUnlock": "Tap to confirm",
-    "openAction": "OPEN"
+    "openAction": "OPEN",
+    "fields": {
+      "entityId": {
+        "label": "Lock"
+      },
+      "name": {
+        "label": "Display name"
+      },
+      "confirmUnlock": {
+        "label": "Confirm unlocking"
+      }
+    }
   },
   "calendar": {
     "label": "Calendar",
@@ -313,7 +1003,21 @@
     "error": "Calendar unavailable",
     "today": "Today",
     "tomorrow": "Tomorrow",
-    "noCalendarHint": "Edit the widget to link a calendar"
+    "noCalendarHint": "Edit the widget to link a calendar",
+    "fields": {
+      "entityIds": {
+        "label": "Calendars"
+      },
+      "name": {
+        "label": "Title"
+      },
+      "days": {
+        "label": "Horizon (days)"
+      },
+      "max": {
+        "label": "Number of events"
+      }
+    }
   },
   "todo": {
     "label": "To-do list",
@@ -322,7 +1026,21 @@
     "empty": "Nothing to do",
     "error": "List unavailable",
     "addPlaceholder": "Add...",
-    "notFoundHint": "Edit the widget to link a list"
+    "notFoundHint": "Edit the widget to link a list",
+    "fields": {
+      "entityId": {
+        "label": "List"
+      },
+      "name": {
+        "label": "Title"
+      },
+      "showCompleted": {
+        "label": "Show completed tasks"
+      },
+      "allowAdd": {
+        "label": "Add field"
+      }
+    }
   },
   "fan": {
     "label": "Fan",
@@ -336,10 +1054,41 @@
     "forward": "Forward",
     "reverse": "Reverse",
     "info": "Information",
-    "state": "STATE"
+    "state": "STATE",
+    "fields": {
+      "entityId": {
+        "label": "Fan"
+      },
+      "name": {
+        "label": "Display name"
+      },
+      "hideOscillate": {
+        "label": "Hide oscillation"
+      },
+      "showInfoPanel": {
+        "label": "Info panel (More Info)"
+      }
+    }
   },
   "clock": {
     "label": "Clock",
-    "description": "Local time — analog face on large cards, digital on small ones."
+    "description": "Local time — analog face on large cards, digital on small ones.",
+    "fields": {
+      "name": {
+        "label": "Display name"
+      },
+      "showAnalog": {
+        "label": "Analog dial"
+      },
+      "showDate": {
+        "label": "Show date"
+      },
+      "showSeconds": {
+        "label": "Show seconds"
+      },
+      "hour12": {
+        "label": "12-hour format (AM/PM)"
+      }
+    }
   }
 }

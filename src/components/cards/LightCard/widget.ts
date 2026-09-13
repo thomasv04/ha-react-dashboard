@@ -40,27 +40,27 @@ export default defineWidget({
   dispositions: [
     {
       id: 'horizontal',
-      label: 'Horizontale',
+      label: 'widgets.light.dispositions.horizontal.label',
       minSize: { lg: { w: 2, h: 1 }, md: { w: 2, h: 1 }, sm: { w: 2, h: 1 } },
       defaultSize: { lg: { w: 3, h: 2 }, md: { w: 4, h: 2 }, sm: { w: 2, h: 2 } },
     },
     {
       id: 'vertical',
-      label: 'Verticale',
+      label: 'widgets.light.dispositions.vertical.label',
       minSize: { lg: { w: 1, h: 2 }, md: { w: 1, h: 2 }, sm: { w: 1, h: 2 } },
       defaultSize: { lg: { w: 2, h: 3 }, md: { w: 2, h: 3 }, sm: { w: 2, h: 3 } },
     },
   ],
 
   fields: [
-    { key: 'entityId', label: 'Entité lumière', fieldType: 'entity', domain: 'light' },
-    { key: 'name', label: 'Nom affiché', fieldType: 'text' },
-    { key: 'icon', label: 'Icône', fieldType: 'icon' },
-    { key: 'isGroup', label: 'Groupe de lumières', fieldType: 'boolean' },
-    { key: 'showBrightness', label: 'Contrôle luminosité', fieldType: 'boolean' },
-    { key: 'showColorTemp', label: 'Contrôle température couleur', fieldType: 'boolean' },
-    { key: 'showColor', label: 'Contrôle teinte (RGB)', fieldType: 'boolean' },
-    { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
+    { key: 'entityId', label: 'widgets.light.fields.entityId.label', fieldType: 'entity', domain: 'light' },
+    { key: 'name', label: 'widgets.light.fields.name.label', fieldType: 'text' },
+    { key: 'icon', label: 'widgets.light.fields.icon.label', fieldType: 'icon' },
+    { key: 'isGroup', label: 'widgets.light.fields.isGroup.label', fieldType: 'boolean' },
+    { key: 'showBrightness', label: 'widgets.light.fields.showBrightness.label', fieldType: 'boolean' },
+    { key: 'showColorTemp', label: 'widgets.light.fields.showColorTemp.label', fieldType: 'boolean' },
+    { key: 'showColor', label: 'widgets.light.fields.showColor.label', fieldType: 'boolean' },
+    { key: 'showInfoPanel', label: 'widgets.light.fields.showInfoPanel.label', fieldType: 'boolean' },
   ],
 
   defaults: {

@@ -40,23 +40,23 @@ export default defineWidget({
   dispositions: [
     {
       id: 'horizontal',
-      label: 'Horizontale',
-      description: 'Température + prévisions côte à côte',
+      label: 'widgets.weather.dispositions.horizontal.label',
+      description: 'widgets.weather.dispositions.horizontal.description',
       minSize: { lg: { w: 3, h: 2 }, md: { w: 4, h: 2 }, sm: { w: 4, h: 2 } },
       defaultSize: { lg: { w: 3, h: 3 }, md: { w: 4, h: 2 }, sm: { w: 4, h: 2 } },
     },
     {
       id: 'vertical',
-      label: 'Verticale',
-      description: 'Température au-dessus, prévisions en dessous',
+      label: 'widgets.weather.dispositions.vertical.label',
+      description: 'widgets.weather.dispositions.vertical.description',
       minSize: { lg: { w: 2, h: 3 }, md: { w: 2, h: 3 }, sm: { w: 2, h: 3 } },
       defaultSize: { lg: { w: 2, h: 4 }, md: { w: 2, h: 4 }, sm: { w: 2, h: 4 } },
     },
   ],
 
   fields: [
-    { key: 'entityId', label: 'Entité météo', fieldType: 'entity', domain: 'weather' },
-    { key: 'customIcons', label: 'Icônes personnalisées', fieldType: 'weather-icons' },
+    { key: 'entityId', label: 'widgets.weather.fields.entityId.label', fieldType: 'entity', domain: 'weather' },
+    { key: 'customIcons', label: 'widgets.weather.fields.customIcons.label', fieldType: 'weather-icons' },
   ],
 
   defaults: {

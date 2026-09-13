@@ -45,15 +45,20 @@ export default defineWidget({
   },
 
   fields: [
-    { key: 'name', label: 'Titre', fieldType: 'text' },
+    { key: 'name', label: 'widgets.automation_list.fields.name.label', fieldType: 'text' },
     {
       key: 'automations',
-      label: 'Automatisations',
+      label: 'widgets.automation_list.fields.automations.label',
       fieldType: 'list',
       itemFields: [
-        { key: 'entityId', label: 'Automatisation', fieldType: 'entity', domain: 'automation' },
-        { key: 'name', label: 'Nom affiché', fieldType: 'text' },
-        { key: 'icon', label: 'Icône', fieldType: 'icon' },
+        {
+          key: 'entityId',
+          label: 'widgets.automation_list.fields.automations.item.entityId.label',
+          fieldType: 'entity',
+          domain: 'automation',
+        },
+        { key: 'name', label: 'widgets.automation_list.fields.automations.item.name.label', fieldType: 'text' },
+        { key: 'icon', label: 'widgets.automation_list.fields.automations.item.icon.label', fieldType: 'icon' },
       ],
     },
   ],

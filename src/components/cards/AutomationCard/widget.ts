@@ -46,17 +46,17 @@ export default defineWidget({
   dispositions: [
     {
       id: 'horizontal',
-      label: 'Horizontale',
+      label: 'widgets.automation.dispositions.horizontal.label',
       minSize: { lg: { w: 2, h: 1 }, md: { w: 2, h: 1 }, sm: { w: 2, h: 1 } },
       defaultSize: { lg: { w: 3, h: 1 }, md: { w: 4, h: 1 }, sm: { w: 4, h: 1 } },
     },
   ],
 
   fields: [
-    { key: 'entityId', label: 'Automatisation', fieldType: 'entity', domain: 'automation' },
-    { key: 'name', label: 'Nom affiché', fieldType: 'text' },
-    { key: 'icon', label: 'Icône', fieldType: 'icon' },
-    { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
+    { key: 'entityId', label: 'widgets.automation.fields.entityId.label', fieldType: 'entity', domain: 'automation' },
+    { key: 'name', label: 'widgets.automation.fields.name.label', fieldType: 'text' },
+    { key: 'icon', label: 'widgets.automation.fields.icon.label', fieldType: 'icon' },
+    { key: 'showInfoPanel', label: 'widgets.automation.fields.showInfoPanel.label', fieldType: 'boolean' },
   ],
 
   defaults: {

@@ -32,7 +32,25 @@
       "windy": "Venteux",
       "windy-variant": "Très venteux"
     },
-    "days": ["dim", "lun", "mar", "mer", "jeu", "ven", "sam"]
+    "days": ["dim", "lun", "mar", "mer", "jeu", "ven", "sam"],
+    "dispositions": {
+      "horizontal": {
+        "label": "Horizontale",
+        "description": "Température + prévisions côte à côte"
+      },
+      "vertical": {
+        "label": "Verticale",
+        "description": "Température au-dessus, prévisions en dessous"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Entité météo"
+      },
+      "customIcons": {
+        "label": "Icônes personnalisées"
+      }
+    }
   },
   "thermostat": {
     "label": "Thermostat",
@@ -45,7 +63,29 @@
     "off": "ÉTEINT",
     "fan_only": "VENTILATION",
     "drying": "SÉCHAGE",
-    "preheating": "PRÉCHAUFFE"
+    "preheating": "PRÉCHAUFFE",
+    "dispositions": {
+      "horizontal": {
+        "label": "Horizontale"
+      },
+      "vertical": {
+        "label": "Verticale"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Entité climate"
+      },
+      "minTemp": {
+        "label": "Température min"
+      },
+      "maxTemp": {
+        "label": "Température max"
+      },
+      "showInfoPanel": {
+        "label": "Panneau info (More Info)"
+      }
+    }
   },
   "light": {
     "label": "Lumière",
@@ -57,7 +97,41 @@
     "on": "Allumé",
     "off": "Éteint",
     "warm": "Chaud",
-    "cold": "Froid"
+    "cold": "Froid",
+    "dispositions": {
+      "horizontal": {
+        "label": "Horizontale"
+      },
+      "vertical": {
+        "label": "Verticale"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Entité lumière"
+      },
+      "name": {
+        "label": "Nom affiché"
+      },
+      "icon": {
+        "label": "Icône"
+      },
+      "isGroup": {
+        "label": "Groupe de lumières"
+      },
+      "showBrightness": {
+        "label": "Contrôle luminosité"
+      },
+      "showColorTemp": {
+        "label": "Contrôle température couleur"
+      },
+      "showColor": {
+        "label": "Contrôle teinte (RGB)"
+      },
+      "showInfoPanel": {
+        "label": "Panneau info (More Info)"
+      }
+    }
   },
   "sensor": {
     "label": "Capteur",
@@ -67,7 +141,52 @@
     "justNow": "à l'instant",
     "stale": "périmé",
     "active": "Actif",
-    "inactive": "Inactif"
+    "inactive": "Inactif",
+    "dispositions": {
+      "horizontal": {
+        "label": "Horizontale",
+        "description": "Icône + valeur côte à côte"
+      },
+      "vertical": {
+        "label": "Verticale",
+        "description": "Icône au-dessus, valeur en dessous"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Entité"
+      },
+      "name": {
+        "label": "Nom affiché"
+      },
+      "icon": {
+        "label": "Icône"
+      },
+      "variant": {
+        "label": "Variante",
+        "options": {
+          "default": "Défaut (barre)",
+          "gauge": "Jauge demi-cercle",
+          "sparkline": "Courbe (SparkLine)",
+          "bar": "Histogramme (BarChart)"
+        }
+      },
+      "min": {
+        "label": "Valeur min"
+      },
+      "max": {
+        "label": "Valeur max"
+      },
+      "showInfoPanel": {
+        "label": "Panneau info (More Info)"
+      },
+      "staleBadge": {
+        "label": "Badge \"dernière mise à jour\""
+      },
+      "staleThresholdMinutes": {
+        "label": "Seuil périmé (minutes)"
+      }
+    }
   },
   "cover": {
     "label": "Volet",
@@ -86,7 +205,26 @@
     "info": "Informations",
     "state": "ÉTAT",
     "position": "POSITION",
-    "deviceClass": "CLASSE"
+    "deviceClass": "CLASSE",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Entité volet"
+      },
+      "name": {
+        "label": "Nom affiché"
+      },
+      "icon": {
+        "label": "Icône"
+      },
+      "showInfoPanel": {
+        "label": "Panneau info (More Info)"
+      }
+    }
   },
   "media_player": {
     "label": "Média",
@@ -95,7 +233,33 @@
     "paused": "Pause",
     "idle": "En attente",
     "off": "Éteint",
-    "notFound": "Lecteur introuvable"
+    "notFound": "Lecteur introuvable",
+    "dispositions": {
+      "horizontal": {
+        "label": "Horizontale",
+        "description": "Cover + infos côte à côte"
+      },
+      "vertical": {
+        "label": "Verticale",
+        "description": "Cover au-dessus, contrôles en dessous"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Lecteur multimédia"
+      },
+      "name": {
+        "label": "Nom affiché"
+      },
+      "disposition": {
+        "label": "Mise en page",
+        "options": {
+          "horizontal": "Horizontale (cover + infos)",
+          "vertical": "Verticale (cover en grand)",
+          "compact": "Compacte (1 ligne)"
+        }
+      }
+    }
   },
   "person": {
     "label": "Personnes",
@@ -103,7 +267,28 @@
     "description": "Affiche la présence et localisation des personnes du foyer.",
     "home": "MAISON",
     "away": "ABSENT",
-    "noPeople": "Aucune personne configurée"
+    "noPeople": "Aucune personne configurée",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "persons": {
+        "label": "Personnes",
+        "item": {
+          "entityId": {
+            "label": "Entité personne"
+          },
+          "name": {
+            "label": "Nom affiché"
+          }
+        }
+      },
+      "showInfoPanel": {
+        "label": "Panneau info (More Info)"
+      }
+    }
   },
   "alarm": {
     "label": "Alarme",
@@ -123,7 +308,33 @@
     "modeNight": "Nuit",
     "modeVacation": "Vacances",
     "selectMode": "Choisir un mode",
-    "backspace": "Effacer"
+    "backspace": "Effacer",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Alarme"
+      },
+      "name": {
+        "label": "Nom affiché"
+      },
+      "requireCode": {
+        "label": "Code PIN requis"
+      },
+      "armModes": {
+        "label": "Boutons affichés",
+        "options": {
+          "disarm": "Désarmer",
+          "home": "Domicile",
+          "away": "Absent",
+          "night": "Nuit",
+          "vacation": "Vacances"
+        }
+      }
+    }
   },
   "camera": {
     "label": "Caméra",
@@ -131,7 +342,39 @@
     "streamMode": "Mode de streaming",
     "mjpeg": "MJPEG (faible latence)",
     "hls": "HLS (meilleure compression)",
-    "empty": "Aucune caméra configurée. Modifiez ce widget pour en ajouter une."
+    "empty": "Aucune caméra configurée. Modifiez ce widget pour en ajouter une.",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "selectorEntity": {
+        "label": "Entité sélection"
+      },
+      "cameras": {
+        "label": "Caméras",
+        "item": {
+          "entityId": {
+            "label": "Entité caméra"
+          },
+          "name": {
+            "label": "Nom"
+          },
+          "posterEntity": {
+            "label": "Image d'attente (entité instantané)"
+          }
+        }
+      },
+      "streamMode": {
+        "label": "Mode de streaming",
+        "options": {
+          "auto": "Auto (HLS si la caméra le supporte)",
+          "mjpeg": "MJPEG (caméras nativement MJPEG)",
+          "hls": "HLS (flux RTSP, fluide)"
+        }
+      }
+    }
   },
   "energy": {
     "label": "Énergie",
@@ -142,7 +385,32 @@
     "discharging": "En décharge",
     "standby": "Veille",
     "flowIn": "W entrant",
-    "flowOut": "W sortant"
+    "flowOut": "W sortant",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "batteryLevelEntity": {
+        "label": "Niveau batterie"
+      },
+      "batteryStateEntity": {
+        "label": "État batterie"
+      },
+      "gridInputPowerEntity": {
+        "label": "Puissance réseau"
+      },
+      "homeOutputPowerEntity": {
+        "label": "Puissance maison"
+      },
+      "solarProductionEntity": {
+        "label": "Production solaire"
+      },
+      "showInfoPanel": {
+        "label": "Panneau info (More Info)"
+      }
+    }
   },
   "tempo": {
     "label": "Tempo EDF",
@@ -153,7 +421,32 @@
     "tomorrow": "Demain",
     "blue": "Bleu",
     "white": "Blanc",
-    "red": "Rouge"
+    "red": "Rouge",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "currentColorEntity": {
+        "label": "Couleur actuelle"
+      },
+      "nextColorEntity": {
+        "label": "Prochaine couleur"
+      },
+      "offPeakEntity": {
+        "label": "Heures creuses"
+      },
+      "remainingBlueEntity": {
+        "label": "Jours bleu restants"
+      },
+      "remainingWhiteEntity": {
+        "label": "Jours blanc restants"
+      },
+      "remainingRedEntity": {
+        "label": "Jours rouge restants"
+      }
+    }
   },
   "shortcuts": {
     "label": "Raccourcis",
@@ -161,24 +454,133 @@
     "header": "Raccourcis",
     "armed": "Armée",
     "disarmed": "Désarmée",
-    "empty": "Aucun raccourci configuré. Modifiez ce widget pour en ajouter."
+    "empty": "Aucun raccourci configuré. Modifiez ce widget pour en ajouter.",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "shortcuts": {
+        "label": "Raccourcis",
+        "item": {
+          "id": {
+            "label": "Identifiant"
+          },
+          "label": {
+            "label": "Nom affiché"
+          },
+          "icon": {
+            "label": "Icône"
+          },
+          "panelId": {
+            "label": "Panneau lié"
+          },
+          "color": {
+            "label": "Couleur"
+          },
+          "statusEntity": {
+            "label": "Entité statut"
+          }
+        }
+      }
+    }
   },
   "pellet": {
     "label": "Feu à pellet",
     "title": "Feu à pellet",
     "description": "Contrôle un poêle à pellets (climate) : température cible, allumage/extinction.",
-    "current": "Actuel : "
+    "current": "Actuel : ",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Entité climate"
+      },
+      "name": {
+        "label": "Nom affiché"
+      }
+    }
   },
   "greeting": {
     "label": "Horloge",
     "goodMorning": "Bonjour",
     "goodAfternoon": "Bon après-midi",
     "goodEvening": "Bonsoir",
-    "goodNight": "Bonne nuit"
+    "goodNight": "Bonne nuit",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "locale": {
+        "label": "Locale (fr-FR, en-US...)"
+      }
+    }
   },
   "activity": {
     "label": "Barre d'activité",
-    "description": "Bandeau d'états rapides : alarme, poêle, batterie, Tempo..."
+    "description": "Bandeau d'états rapides : alarme, poêle, batterie, Tempo...",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "pills": {
+        "label": "Indicateurs",
+        "item": {
+          "id": {
+            "label": "Identifiant"
+          },
+          "entityId": {
+            "label": "Entité"
+          },
+          "label": {
+            "label": "Label"
+          },
+          "template": {
+            "label": "Template ({state}, {attr.X})"
+          },
+          "hideLabel": {
+            "label": "Icône seule (masquer le texte)"
+          },
+          "icon": {
+            "label": "Icône"
+          },
+          "color": {
+            "label": "Couleur (#hex, template Jinja, vide = auto)"
+          },
+          "action": {
+            "label": "Au clic",
+            "options": {
+              "none": "Rien",
+              "more-info": "Ouvrir la fiche détail",
+              "toggle": "Basculer l'entité",
+              "service": "Appeler un service"
+            }
+          },
+          "service": {
+            "label": "Service (domain.service)"
+          }
+        }
+      },
+      "persons": {
+        "label": "Utilisateurs affichés",
+        "item": {
+          "entityId": {
+            "label": "Entité personne"
+          },
+          "name": {
+            "label": "Nom affiché"
+          }
+        }
+      }
+    }
   },
   "automation": {
     "label": "Automatisation",
@@ -188,7 +590,26 @@
     "inactive": "Inactif",
     "neverTriggered": "Jamais déclenchée",
     "justTriggered": "à l'instant",
-    "triggeredAgo": "il y a {value}"
+    "triggeredAgo": "il y a {value}",
+    "dispositions": {
+      "horizontal": {
+        "label": "Horizontale"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Automatisation"
+      },
+      "name": {
+        "label": "Nom affiché"
+      },
+      "icon": {
+        "label": "Icône"
+      },
+      "showInfoPanel": {
+        "label": "Panneau info (More Info)"
+      }
+    }
   },
   "group": {
     "label": "Groupe",
@@ -202,7 +623,25 @@
     "addWidget": "Ajouter un widget",
     "dragToReorder": "Glisser pour réordonner",
     "empty": "Groupe vide",
-    "clickToAdd": "Ouvrez les réglages pour ajouter des widgets"
+    "clickToAdd": "Ouvrez les réglages pour ajouter des widgets",
+    "dispositions": {
+      "default": {
+        "label": "Groupe"
+      }
+    },
+    "fields": {
+      "title": {
+        "label": "Titre du groupe"
+      },
+      "columns": {
+        "label": "Colonnes",
+        "options": {
+          "1": "1 colonne",
+          "2": "2 colonnes",
+          "3": "3 colonnes"
+        }
+      }
+    }
   },
   "room": {
     "label": "Pièce",
@@ -219,6 +658,63 @@
       "scene": "Scènes",
       "script": "Scripts",
       "input_boolean": "Booléens"
+    },
+    "dispositions": {
+      "default": {
+        "label": "Pièce"
+      }
+    },
+    "fields": {
+      "area": {
+        "label": "Zone Home Assistant"
+      },
+      "label": {
+        "label": "Nom de la pièce (sinon celui de la zone)"
+      },
+      "icon": {
+        "label": "Icône"
+      },
+      "iconBg": {
+        "label": "Dégradé icône"
+      },
+      "tempEntity": {
+        "label": "Capteur température (sinon celui de la zone)"
+      },
+      "humidityEntity": {
+        "label": "Capteur humidité (sinon celui de la zone)"
+      },
+      "lightEntities": {
+        "label": "Lumières (sinon celles de la zone)"
+      },
+      "panelId": {
+        "label": "Panneau lié (→)"
+      },
+      "controls": {
+        "label": "Boutons personnalisés",
+        "item": {
+          "label": {
+            "label": "Libellé"
+          },
+          "icon": {
+            "label": "Icône"
+          },
+          "domain": {
+            "label": "Domaine (ex: light)"
+          },
+          "service": {
+            "label": "Service (ex: toggle)"
+          },
+          "entityId": {
+            "label": "Entité cible"
+          },
+          "stateEntity": {
+            "label": "Entité état (couleur)"
+          },
+          "color": {
+            "label": "Couleur active (#hex ou template Jinja)"
+          }
+        }
+      }
     }
   },
   "button": {
@@ -228,11 +724,76 @@
     "error": "Erreur",
     "cancel": "Annuler",
     "confirm": "Confirmer",
-    "confirmDefault": "Confirmer l'exécution de cette action ?"
+    "confirmDefault": "Confirmer l'exécution de cette action ?",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "label": {
+        "label": "Libellé du bouton"
+      },
+      "subtitle": {
+        "label": "Sous-titre (optionnel)"
+      },
+      "icon": {
+        "label": "Icône"
+      },
+      "color": {
+        "label": "Couleur accent (#hex ou template Jinja)"
+      },
+      "domain": {
+        "label": "Domaine HA (ex: script, light)"
+      },
+      "service": {
+        "label": "Service (ex: turn_on, toggle)"
+      },
+      "entityId": {
+        "label": "Entité cible (optionnel)"
+      },
+      "serviceData": {
+        "label": "Données service (JSON)"
+      },
+      "requireConfirm": {
+        "label": "Demander confirmation"
+      },
+      "confirmText": {
+        "label": "Message de confirmation"
+      }
+    }
   },
   "template": {
     "label": "Template",
-    "description": "Widget entièrement personnalisable avec templates Jinja2/Nunjucks."
+    "description": "Widget entièrement personnalisable avec templates Jinja2/Nunjucks.",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Entité (contexte)"
+      },
+      "primaryInfo": {
+        "label": "Information principale"
+      },
+      "secondaryInfo": {
+        "label": "Information secondaire"
+      },
+      "icon": {
+        "label": "Icône"
+      },
+      "iconColor": {
+        "label": "Couleur icône"
+      },
+      "image": {
+        "label": "Image (URL)"
+      },
+      "showInfoPanel": {
+        "label": "Panneau info (More Info)"
+      }
+    }
   },
   "vacuum": {
     "label": "Aspirateur",
@@ -261,7 +822,48 @@
     "sequentialMode": "Nettoyage séquentiel",
     "sequentialDesc": "Nettoyer les pièces une par une",
     "sequentialNote": "Les pièces seront nettoyées une par une dans l'ordre sélectionné.",
-    "queueProgress": "Pièce {current}/{total}"
+    "queueProgress": "Pièce {current}/{total}",
+    "dispositions": {
+      "default": {
+        "label": "Standard"
+      }
+    },
+    "fields": {
+      "entityId": {
+        "label": "Aspirateur"
+      },
+      "name": {
+        "label": "Nom affiché"
+      },
+      "rooms": {
+        "label": "Pièces (map Roborock)",
+        "item": {
+          "id": {
+            "label": "ID segment"
+          },
+          "name": {
+            "label": "Nom de la pièce"
+          },
+          "segmentId": {
+            "label": "Segment ID (numérique)"
+          },
+          "icon": {
+            "label": "Icône"
+          }
+        }
+      },
+      "selects": {
+        "label": "Contrôles select (vitesse ventilateur, intensité lavage…)",
+        "item": {
+          "entityId": {
+            "label": "Entité select"
+          },
+          "label": {
+            "label": "Libellé personnalisé"
+          }
+        }
+      }
+    }
   },
   "automation_list": {
     "label": "Liste d'automatisations",
@@ -269,7 +871,26 @@
     "empty": "Aucune automatisation configurée",
     "active": "Actif",
     "inactive": "Inactif",
-    "emptyHint": "Modifier le widget pour ajouter des automatisations"
+    "emptyHint": "Modifier le widget pour ajouter des automatisations",
+    "fields": {
+      "name": {
+        "label": "Titre"
+      },
+      "automations": {
+        "label": "Automatisations",
+        "item": {
+          "entityId": {
+            "label": "Automatisation"
+          },
+          "name": {
+            "label": "Nom affiché"
+          },
+          "icon": {
+            "label": "Icône"
+          }
+        }
+      }
+    }
   },
   "energy_flow": {
     "label": "Flux d'énergie",
@@ -278,19 +899,77 @@
     "home": "Maison",
     "battery": "Batterie",
     "grid": "Réseau",
-    "selfUse": "AUTOCONSO"
+    "selfUse": "AUTOCONSO",
+    "fields": {
+      "name": {
+        "label": "Titre"
+      },
+      "solarProductionEntity": {
+        "label": "Production solaire"
+      },
+      "homeOutputPowerEntity": {
+        "label": "Puissance maison"
+      },
+      "gridInputPowerEntity": {
+        "label": "Puissance réseau"
+      },
+      "batteryLevelEntity": {
+        "label": "Niveau batterie"
+      },
+      "batteryStateEntity": {
+        "label": "État batterie"
+      },
+      "gridInvert": {
+        "label": "Inverser le signe du réseau"
+      }
+    }
   },
   "chart": {
     "label": "Graphique",
     "description": "Historique d'une entité, en courbe ou en frise on/off.",
-    "notFound": "Entité introuvable"
+    "notFound": "Entité introuvable",
+    "fields": {
+      "entityId": {
+        "label": "Entité"
+      },
+      "name": {
+        "label": "Nom affiché"
+      },
+      "hours": {
+        "label": "Fenêtre d'historique (heures)"
+      },
+      "variant": {
+        "label": "Rendu",
+        "options": {
+          "line": "Courbe",
+          "timeline": "Frise on/off"
+        }
+      },
+      "color": {
+        "label": "Couleur (#hex ou template Jinja)"
+      }
+    }
   },
   "batteries": {
     "label": "Batteries",
     "description": "Toutes les batteries de la maison, la plus faible en tête.",
     "lowCount": "{count} sous {threshold}%",
     "empty": "Aucune batterie détectée",
-    "allHealthy": "Toutes les batteries vont bien"
+    "allHealthy": "Toutes les batteries vont bien",
+    "fields": {
+      "name": {
+        "label": "Titre"
+      },
+      "threshold": {
+        "label": "Seuil d'alerte (%)"
+      },
+      "onlyLow": {
+        "label": "Afficher seulement les batteries faibles"
+      },
+      "exclude": {
+        "label": "Entités à ignorer"
+      }
+    }
   },
   "lock": {
     "label": "Serrure",
@@ -303,7 +982,18 @@
     "opening": "Ouverture...",
     "jammed": "Bloquée",
     "confirmUnlock": "Appuyer pour confirmer",
-    "openAction": "OUVRIR"
+    "openAction": "OUVRIR",
+    "fields": {
+      "entityId": {
+        "label": "Serrure"
+      },
+      "name": {
+        "label": "Nom affiché"
+      },
+      "confirmUnlock": {
+        "label": "Confirmer le déverrouillage"
+      }
+    }
   },
   "calendar": {
     "label": "Agenda",
@@ -313,7 +1003,21 @@
     "error": "Agenda inaccessible",
     "today": "Aujourd'hui",
     "tomorrow": "Demain",
-    "noCalendarHint": "Modifier le widget pour lier un agenda"
+    "noCalendarHint": "Modifier le widget pour lier un agenda",
+    "fields": {
+      "entityIds": {
+        "label": "Agendas"
+      },
+      "name": {
+        "label": "Titre"
+      },
+      "days": {
+        "label": "Horizon (jours)"
+      },
+      "max": {
+        "label": "Nombre d'évènements"
+      }
+    }
   },
   "todo": {
     "label": "Liste de tâches",
@@ -322,7 +1026,21 @@
     "empty": "Rien à faire",
     "error": "Liste inaccessible",
     "addPlaceholder": "Ajouter...",
-    "notFoundHint": "Modifier le widget pour lier une liste"
+    "notFoundHint": "Modifier le widget pour lier une liste",
+    "fields": {
+      "entityId": {
+        "label": "Liste"
+      },
+      "name": {
+        "label": "Titre"
+      },
+      "showCompleted": {
+        "label": "Afficher les tâches terminées"
+      },
+      "allowAdd": {
+        "label": "Champ d'ajout"
+      }
+    }
   },
   "fan": {
     "label": "Ventilateur",
@@ -336,10 +1054,41 @@
     "forward": "Sens normal",
     "reverse": "Sens inverse",
     "info": "Informations",
-    "state": "ÉTAT"
+    "state": "ÉTAT",
+    "fields": {
+      "entityId": {
+        "label": "Ventilateur"
+      },
+      "name": {
+        "label": "Nom affiché"
+      },
+      "hideOscillate": {
+        "label": "Masquer l'oscillation"
+      },
+      "showInfoPanel": {
+        "label": "Panneau info (More Info)"
+      }
+    }
   },
   "clock": {
     "label": "Horloge",
-    "description": "L'heure locale : cadran analogique sur les grandes cards, numérique sur les petites."
+    "description": "L'heure locale : cadran analogique sur les grandes cards, numérique sur les petites.",
+    "fields": {
+      "name": {
+        "label": "Nom affiché"
+      },
+      "showAnalog": {
+        "label": "Cadran analogique"
+      },
+      "showDate": {
+        "label": "Afficher la date"
+      },
+      "showSeconds": {
+        "label": "Afficher les secondes"
+      },
+      "hour12": {
+        "label": "Format 12 h (AM/PM)"
+      }
+    }
   }
 }

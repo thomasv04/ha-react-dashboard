@@ -40,15 +40,15 @@ export default defineWidget({
   dispositions: [
     {
       id: 'default',
-      label: 'Standard',
+      label: 'widgets.pellet.dispositions.default.label',
       minSize: { lg: { w: 2, h: 2 }, md: { w: 2, h: 2 }, sm: { w: 2, h: 2 } },
       defaultSize: { lg: { w: 2, h: 3 }, md: { w: 3, h: 3 }, sm: { w: 4, h: 3 } },
     },
   ],
 
   fields: [
-    { key: 'entityId', label: 'Entité climate', fieldType: 'entity', domain: 'climate' },
-    { key: 'name', label: 'Nom affiché', fieldType: 'text' },
+    { key: 'entityId', label: 'widgets.pellet.fields.entityId.label', fieldType: 'entity', domain: 'climate' },
+    { key: 'name', label: 'widgets.pellet.fields.name.label', fieldType: 'text' },
   ],
 
   defaults: {
