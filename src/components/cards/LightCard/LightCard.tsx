@@ -161,7 +161,6 @@ export function LightCard() {
   // Custom icon
   const iconName = config?.icon;
   const customIconUrl = iconName && isCustomIcon(iconName) ? getCustomIconUrl(iconName) : undefined;
-  // eslint-disable-next-line react-hooks/static-components
   const CustomIcon = iconName && !isCustomIcon(iconName) ? resolveIcon(iconName) : undefined;
 
   const visibleTabs: Tab[] = [

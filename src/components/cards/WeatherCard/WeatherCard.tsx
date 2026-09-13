@@ -26,7 +26,6 @@ function getConditionStyle(condition: string, size = 32, customIcons?: Partial<R
       );
     } else {
       const CustomLucide = resolveIcon(customValue);
-      // eslint-disable-next-line react-hooks/static-components
       iconNode = CustomLucide ? <CustomLucide size={size} className='text-white/80' /> : <Sun size={size} className='text-yellow-300' />;
     }
     return { icon: iconNode, bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.10)' };

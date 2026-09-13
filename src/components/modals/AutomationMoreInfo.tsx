@@ -28,7 +28,6 @@ export default function AutomationMoreInfo({ entityId, widgetId }: { entityId: s
   const name = config?.name ?? (entity.attributes.friendly_name as string) ?? entityId;
   const lastTriggered = entity.attributes.last_triggered as string | undefined;
   const mode = entity.attributes.mode as string | undefined;
-  // eslint-disable-next-line react-hooks/static-components
   const IconComp = resolveIcon(config?.icon) ?? Workflow;
 
   const handleToggle = () => {

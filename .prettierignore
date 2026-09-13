@@ -5,3 +5,11 @@
 **/*.css
 **/*.md
 **/*.mjs
+
+# Sorties générées — `prebuild` lance `prettier --write .` sur tout le dépôt
+/storybook-static
+/test-results
+/playwright-report
+/playwright-report-dashboard
+/custom_components/ha_react_dashboard/www
+/.venv-*
