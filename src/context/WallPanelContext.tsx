@@ -104,6 +104,8 @@ export function WallPanelProvider({ children, initialConfig, initialLayout, init
   // Activation forcée via URL param (?hrd_screensaver=true)
   useEffect(() => {
     if (urlForced) setIsActive(true);
+    // Au montage seulement : le paramètre d'URL demande l'activation une fois.
+    // Le suivre en dépendance rallumerait l'économiseur à chaque sortie.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

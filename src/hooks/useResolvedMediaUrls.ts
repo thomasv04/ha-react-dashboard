@@ -136,6 +136,9 @@ export function useResolvedMediaUrls(urls: string[]): string[] {
       cancelled = true;
       clearTimeout(timer);
     };
+    // `urlsKey` est la sérialisation du tableau d'URLs : il change exactement
+    // quand son contenu change, là où le tableau lui-même est neuf à chaque
+    // rendu et relancerait la résolution en boucle.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlsKey, connection]);
 

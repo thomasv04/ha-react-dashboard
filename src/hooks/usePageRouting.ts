@@ -16,6 +16,9 @@ export function usePageRouting() {
     if (hash && pages.some(p => p.id === hash)) {
       setCurrentPage(hash);
     }
+    // Au montage seulement : c'est le lien d'entrée qui décide de la page.
+    // Rejouer sur `pages` ramènerait l'utilisateur au hash à chaque
+    // rechargement de la liste, en écrasant sa navigation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

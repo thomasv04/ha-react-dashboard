@@ -67,6 +67,8 @@ export function WidgetEditModal() {
       setDraft(null);
     }
     setActiveTab(config?.type === 'group' ? 'widgets' : 'config');
+    // `config` seul : le brouillon se réinitialise quand on ouvre un autre
+    // widget, pas quand l'aperçu que ce même effet alimente se met à jour.
   }, [config]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Push draft into preview config whenever it changes → live preview
