@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useDropdownPortal } from '@/hooks/useDropdownPortal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, Search, Check, X, Copy, ChevronUp, ChevronDown } from 'lucide-react';
 import { WIDGET_META, WIDGET_FIELD_DEFS, DEFAULT_WIDGET_CONFIGS } from '@/widgets';
@@ -61,10 +62,7 @@ export function ServicePicker({
 }) {
   const { t } = useI18n();
   const [search, setSearch] = useState('');
-  const [open, setOpen] = useState(false);
-  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const dropRef = useRef<HTMLDivElement>(null);
+  const { open, close, toggle: handleOpen, triggerRef, dropRef, dropStyle } = useDropdownPortal<HTMLButtonElement>();
 
   const current = domain && service ? `${domain}.${service}` : '';
   const currentPreset = SERVICE_PRESETS.find(p => p.domain === domain && p.service === service);
@@ -76,24 +74,6 @@ export function ServicePicker({
       )
     : SERVICE_PRESETS;
 
-  const handleOpen = () => {
-    if (!open && triggerRef.current) {
-      const r = triggerRef.current.getBoundingClientRect();
-      setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
-    }
-    setOpen(v => !v);
-  };
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (triggerRef.current?.contains(e.target as Node) || dropRef.current?.contains(e.target as Node)) return;
-      setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
   const dropdown =
     open &&
     createPortal(
@@ -101,9 +81,7 @@ export function ServicePicker({
         ref={dropRef}
         className='fixed rounded-xl border border-white/12 shadow-2xl overflow-hidden'
         style={{
-          top: dropPos.top,
-          left: dropPos.left,
-          width: dropPos.width,
+          ...dropStyle,
           zIndex: 9999,
           background: 'rgba(12, 16, 40, 0.98)',
           backdropFilter: 'blur(20px)',
@@ -127,7 +105,7 @@ export function ServicePicker({
                 key={`${p.domain}.${p.service}`}
                 onClick={() => {
                   onChange(p.domain, p.service);
-                  setOpen(false);
+                  close();
                   setSearch('');
                 }}
                 className={cn(

@@ -5,6 +5,7 @@ import { resolveIcon, isCustomIcon, getCustomIconUrl, useIconNames } from '@/lib
 import { GRADIENT_PRESETS, gradientCss, gradientColors, customGradient, isCustomGradient } from '@/lib/gradient';
 import { apiFetch, assetUrl } from '@/lib/api-base';
 import { useI18n } from '@/i18n';
+import { useDropdownPortal } from '@/hooks/useDropdownPortal';
 
 interface UploadedIcon {
   filename: string;
@@ -20,24 +21,21 @@ interface UploadedIcon {
  */
 export function IconPicker({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
   const { t } = useI18n();
-  const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<'lucide' | 'custom'>(() => (isCustomIcon(value) ? 'custom' : 'lucide'));
-  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
+
   const [customIcons, setCustomIcons] = useState<UploadedIcon[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const triggerRef = useRef<HTMLDivElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const {
+    open,
+    setOpen,
+    toggle: handleToggle,
+    triggerRef,
+    dropRef: dropdownRef,
+    dropStyle,
+  } = useDropdownPortal<HTMLDivElement>({ minWidth: 320 });
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleToggle = () => {
-    if (!open && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setDropPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
-    }
-    setOpen(v => !v);
-  };
 
   // Fetch custom icons when opening on the custom tab
   const fetchCustomIcons = useCallback(async () => {
@@ -85,34 +83,6 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
       /* ignore */
     }
   }
-
-  // Close on outside click
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (triggerRef.current?.contains(t) || dropdownRef.current?.contains(t)) return;
-      setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  // Close on scroll outside dropdown, or resize
-  useEffect(() => {
-    if (!open) return;
-    const onScroll = (e: Event) => {
-      if (dropdownRef.current?.contains(e.target as Node)) return;
-      setOpen(false);
-    };
-    const onResize = () => setOpen(false);
-    window.addEventListener('resize', onResize);
-    window.addEventListener('scroll', onScroll, true);
-    return () => {
-      window.removeEventListener('resize', onResize);
-      window.removeEventListener('scroll', onScroll, true);
-    };
-  }, [open]);
 
   // Le catalogue complet arrive de façon asynchrone ; ce hook le demande et
   // re-rend à son arrivée. Auparavant le sélecteur lisait la liste une fois au
@@ -175,9 +145,7 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
             ref={dropdownRef}
             style={{
               position: 'fixed',
-              top: dropPos.top,
-              left: dropPos.left,
-              width: Math.max(dropPos.width, 320),
+              ...dropStyle,
               zIndex: 9999,
               background: 'rgba(12, 16, 40, 0.98)',
               backdropFilter: 'blur(20px)',

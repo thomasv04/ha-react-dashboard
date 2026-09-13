@@ -1,8 +1,9 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useI18n } from '@/i18n';
+import { useDropdownPortal } from '@/hooks/useDropdownPortal';
 
 export function EntityPicker({
   value,
@@ -18,10 +19,14 @@ export function EntityPicker({
   const allEntities = useHass(s => s.entities);
   const { t } = useI18n();
   const [search, setSearch] = useState('');
-  const [open, setOpen] = useState(false);
-  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
-  const triggerRef = useRef<HTMLDivElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const {
+    open,
+    setOpen,
+    toggle: handleToggle,
+    triggerRef,
+    dropRef: dropdownRef,
+    dropStyle,
+  } = useDropdownPortal<HTMLDivElement>({ minWidth: 260 });
 
   const entities = useMemo(() => {
     const list = Object.keys(allEntities ?? {}).sort();
@@ -34,48 +39,6 @@ export function EntityPicker({
     const q = search.toLowerCase();
     return entities.filter(id => id.toLowerCase().includes(q)).slice(0, 50);
   }, [entities, search]);
-
-  const handleToggle = () => {
-    if (!open && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      // Un identifiant d'entité fait facilement 30 caractères : sous ~260 px la
-      // liste ne montre plus que le début de chacun. Et une liste plus large
-      // que son déclencheur doit rester dans la fenêtre, sinon elle déborde par
-      // la droite — ou par la gauche une fois recalée.
-      const width = Math.max(rect.width, 260);
-      const left = Math.min(Math.max(8, rect.left), Math.max(8, window.innerWidth - width - 8));
-      setDropPos({ top: rect.bottom + 4, left, width });
-    }
-    setOpen(v => !v);
-  };
-
-  // Close on outside click
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (triggerRef.current?.contains(t) || dropdownRef.current?.contains(t)) return;
-      setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  // Close on scroll outside dropdown, or resize
-  useEffect(() => {
-    if (!open) return;
-    const onScroll = (e: Event) => {
-      if (dropdownRef.current?.contains(e.target as Node)) return;
-      setOpen(false);
-    };
-    const onResize = () => setOpen(false);
-    window.addEventListener('resize', onResize);
-    window.addEventListener('scroll', onScroll, true);
-    return () => {
-      window.removeEventListener('resize', onResize);
-      window.removeEventListener('scroll', onScroll, true);
-    };
-  }, [open]);
 
   return (
     <div>
@@ -97,9 +60,7 @@ export function EntityPicker({
             ref={dropdownRef}
             style={{
               position: 'fixed',
-              top: dropPos.top,
-              left: dropPos.left,
-              width: dropPos.width,
+              ...dropStyle,
               zIndex: 9999,
               background: 'rgba(12, 16, 40, 0.98)',
               backdropFilter: 'blur(20px)',

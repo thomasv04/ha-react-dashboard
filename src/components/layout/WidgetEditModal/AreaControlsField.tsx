@@ -1,5 +1,6 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { useDropdownPortal } from '@/hooks/useDropdownPortal';
 import { ChevronDown, ChevronUp, Search, X, Plus } from 'lucide-react';
 import { useAreas } from '@hakit/core';
 import { useI18n } from '@/i18n';
@@ -27,11 +28,15 @@ export function AreaControlsField({
   const { t } = useI18n();
   const areas = useAreas();
   const selectedArea = useArea(area);
-  const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const {
+    open,
+    setOpen,
+    toggle: handleToggle,
+    triggerRef,
+    dropRef: dropdownRef,
+    dropStyle,
+  } = useDropdownPortal<HTMLButtonElement>({ minWidth: 280 });
 
   const domains = useMemo(() => areaDomains(selectedArea), [selectedArea]);
   const entities = useMemo(() => selectedArea?.entities ?? [], [selectedArea]);
@@ -57,25 +62,6 @@ export function AreaControlsField({
     setOpen(false);
     setSearch('');
   };
-
-  const handleToggle = () => {
-    if (!open && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setDropPos({ top: rect.bottom + 4, left: rect.left, width: Math.max(rect.width, 280) });
-    }
-    setOpen(v => !v);
-  };
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (triggerRef.current?.contains(target) || dropdownRef.current?.contains(target)) return;
-      setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
 
   return (
     <div className='space-y-2'>
@@ -133,9 +119,7 @@ export function AreaControlsField({
             ref={dropdownRef}
             style={{
               position: 'fixed',
-              top: dropPos.top,
-              left: dropPos.left,
-              width: dropPos.width,
+              ...dropStyle,
               zIndex: 9999,
               background: 'rgba(12, 16, 40, 0.98)',
               backdropFilter: 'blur(20px)',
