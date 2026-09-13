@@ -72,14 +72,28 @@ setup('amorce la configuration du dashboard de test', async ({ request }) => {
 /**
  * Préchauffage du serveur de dev.
  *
- * Playwright considère le serveur prêt dès que le port répond, mais Vite
- * réoptimise ses dépendances et compile tout le graphe de modules à la première
- * navigation — plusieurs minutes après un changement de configuration. Sans ce
- * préchauffage, ce sont les premiers tests qui encaissent l'attente et
- * expirent, alors que les suivants passent en moins d'une seconde.
+ * Playwright considère le serveur prêt dès que le port répond, mais Vite ouvre
+ * son port **avant** d'avoir fini de pré-bundler ses dépendances : il annonce
+ * « ready in 1 s », puis fait patienter chaque requête de module derrière
+ * l'optimiseur esbuild. Sans ce préchauffage, ce sont les premiers tests qui
+ * encaissent l'attente et expirent, alors que les suivants passent en moins
+ * d'une seconde.
+ *
+ * Le délai est large **à dessein**. Mesuré cache purgé (`node_modules/.vite`)
+ * sur une machine Windows : 8 à 13 minutes jusqu'au premier widget rendu. À
+ * 10 minutes, le plafond tombait au milieu de cette plage et la suite entière
+ * échouait une fois sur deux — 37 tests non lancés pour une raison qui n'avait
+ * rien à voir avec eux. Ça ne coûte rien de viser large : l'étape rend la main
+ * dès que `[data-widget-id]` apparaît, donc une machine rapide n'attend pas.
+ *
+ * `domcontentloaded` n'aide pas à raccourcir : `main.tsx` est un module, et un
+ * script de module diffère `DOMContentLoaded` jusqu'à ce que tout son graphe
+ * soit chargé. C'est donc bien `goto` qui encaisse les treize minutes.
  */
+const WARMUP_TIMEOUT = 25 * 60_000;
+
 setup('préchauffe le serveur de développement', async ({ page }) => {
-  setup.setTimeout(600_000);
-  await page.goto('/', { timeout: 600_000, waitUntil: 'domcontentloaded' });
+  setup.setTimeout(WARMUP_TIMEOUT + 60_000);
+  await page.goto('/', { timeout: WARMUP_TIMEOUT, waitUntil: 'domcontentloaded' });
   await page.waitForSelector('[data-widget-id]', { timeout: 120_000 });
 });
