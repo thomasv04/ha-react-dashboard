@@ -66,7 +66,7 @@ describe('templateEngine.render', () => {
 
   it("retourne un message d'erreur sur syntaxe invalide", () => {
     const result = templateEngine.render('{% if unclosed %}');
-    expect(result).toContain('[Erreur template:');
+    expect(result).toContain('[Template error:');
   });
 
   it('résout iif()', () => {

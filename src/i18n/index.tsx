@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { apiFetch } from '@/lib/api-base';
+import { templateEngine } from '@/lib/template-engine';
 
 // EN
 import enCommon from './locales/en/common.json';
@@ -141,6 +142,12 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     },
     [language, overrides]
   );
+
+  // Le moteur de templates est un singleton hors de React : il ne peut pas
+  // appeler `t()` lui-même, on lui pose son message d'erreur ici.
+  useEffect(() => {
+    templateEngine.setErrorTemplate(t('widgets.template.error'));
+  }, [t]);
 
   const tArray = useCallback(
     (key: string): string[] => {

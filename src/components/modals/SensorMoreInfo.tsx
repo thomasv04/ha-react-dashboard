@@ -4,6 +4,7 @@ import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useEntityHistory } from '@/hooks/useEntityHistory';
 import { MoreInfoHeader } from './MoreInfoHeader';
+import { MoreInfoLayout } from './MoreInfoLayout';
 import { InfoSidebar, type SidebarModule } from './sidebar';
 import { HistoryGraph } from '@/components/charts/HistoryGraph';
 import { BinaryTimeline } from '@/components/charts/BinaryTimeline';
@@ -38,22 +39,15 @@ export default function SensorMoreInfo({ entityId, widgetId }: { entityId: strin
   ];
 
   return (
-    <div className={`p-8 md:p-12 ${showInfoPanel ? 'lg:grid lg:grid-cols-5 lg:gap-8' : ''}`}>
-      <div className={showInfoPanel ? 'lg:col-span-3' : ''}>
-        <MoreInfoHeader
-          icon={IconComp}
-          name={name}
-          state={entity.state}
-          unit={unit}
-          stateColor={isNumeric ? '#60a5fa' : entity.state === 'on' ? '#10b981' : '#6b7280'}
-        />
-        <div className='mt-6'>{isNumeric ? <HistoryGraph data={data} color='#60a5fa' /> : <BinaryTimeline data={data} />}</div>
-      </div>
-      {showInfoPanel && (
-        <div className='lg:col-span-2 mt-8 lg:mt-0'>
-          <InfoSidebar modules={sidebarModules} />
-        </div>
-      )}
-    </div>
+    <MoreInfoLayout showPanel={showInfoPanel} sidebar={<InfoSidebar modules={sidebarModules} />}>
+      <MoreInfoHeader
+        icon={IconComp}
+        name={name}
+        state={entity.state}
+        unit={unit}
+        stateColor={isNumeric ? '#60a5fa' : entity.state === 'on' ? '#10b981' : '#6b7280'}
+      />
+      <div className='mt-6'>{isNumeric ? <HistoryGraph data={data} color='#60a5fa' /> : <BinaryTimeline data={data} />}</div>
+    </MoreInfoLayout>
   );
 }

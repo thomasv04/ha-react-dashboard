@@ -20,6 +20,9 @@ vi.mock('@/components/layout/DashboardGrid', () => ({
 
 vi.mock('@/hooks/useTemplate', () => ({
   useTemplate: (tpl: string) => tpl,
+  // `null` sur template vide : c'est ce que rend la vraie implémentation, et
+  // c'est ce qui distingue « rien à afficher » de « chaîne rendue vide ».
+  useOptionalTemplate: (tpl: string) => tpl || null,
 }));
 
 import { TemplateCard } from './TemplateCard';

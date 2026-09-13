@@ -793,7 +793,8 @@
       "showInfoPanel": {
         "label": "Panneau info (More Info)"
       }
-    }
+    },
+    "error": "[Erreur template : {message}]"
   },
   "vacuum": {
     "label": "Aspirateur",

@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
-import { useTemplate } from '@/hooks/useTemplate';
+import { useOptionalTemplate } from '@/hooks/useTemplate';
 import { useColor } from '@/hooks/useColor';
 import { colorAlpha } from '@/lib/color-value';
 import type { TemplateCardConfig } from '@/types/widget-configs';
@@ -22,20 +22,22 @@ export function TemplateCard() {
   const widgetId = useWidgetId();
   const config = getWidgetConfig<TemplateCardConfig>(widgetId || 'template');
 
-  const primaryInfo = useTemplate(config?.primaryInfo ?? '');
-  const secondaryInfo = useTemplate(config?.secondaryInfo ?? '');
-  const iconTemplate = useTemplate(config?.icon ?? '');
+  // `useOptionalTemplate` : un template cassé doit laisser la card dans son
+  // état par défaut, pas peindre « [Erreur template… ] » à la place de l'icône.
+  const primaryInfo = useOptionalTemplate(config?.primaryInfo ?? '');
+  const secondaryInfo = useOptionalTemplate(config?.secondaryInfo ?? '');
+  const iconTemplate = useOptionalTemplate(config?.icon ?? '');
   const iconColor = useColor(config?.iconColor);
-  const imageTemplate = useTemplate(config?.image ?? '');
+  const imageTemplate = useOptionalTemplate(config?.image ?? '');
 
-  const iconName = iconTemplate && !iconTemplate.startsWith('[Erreur') ? resolveIconName(iconTemplate) : '';
+  const iconName = iconTemplate ? resolveIconName(iconTemplate) : '';
   const customIconUrl = iconName && isCustomIcon(iconName) ? getCustomIconUrl(iconName) : undefined;
 
   const IconComponent = iconName && !customIconUrl ? resolveIcon(iconName) : null;
-  const imageUrl = imageTemplate && !imageTemplate.startsWith('[Erreur') ? imageTemplate : '';
+  const imageUrl = imageTemplate ?? '';
 
-  const hasPrimary = primaryInfo && !primaryInfo.startsWith('[Erreur');
-  const hasSecondary = secondaryInfo && !secondaryInfo.startsWith('[Erreur');
+  const hasPrimary = !!primaryInfo;
+  const hasSecondary = !!secondaryInfo;
 
   return (
     <motion.div
