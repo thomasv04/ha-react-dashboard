@@ -15,7 +15,7 @@ import { BackgroundLayer } from '@/components/layout/BackgroundLayer';
 import { MotionConfig } from 'framer-motion';
 import { useState, useEffect, type ReactNode } from 'react';
 import { useAutoTheme } from '@/hooks/useAutoTheme';
-import { apiFetch } from '@/lib/api-base';
+import { apiFetch, isPanelMode } from '@/lib/api-base';
 import { HAThrottlePatch } from '@/components/HAThrottlePatch';
 import { LoadingScreen } from '@/components/layout/LoadingScreen';
 
@@ -73,6 +73,12 @@ function App({ hassUrl: propHassUrl, hassToken: propHassToken }: AppProps = {}) 
   // Only runs when no token was provided via props/env.
   useEffect(() => {
     if (hassToken) return;
+    // `/api/system/*` n'existe que sur le serveur Express de l'add-on ;
+    // l'intégration Python ne sert pas ces routes. En carte Lovelace, le jeton
+    // arrive de toute façon en propriété (`ha-panel.tsx`) — au premier rendu il
+    // manque encore, et cet appel partait alors chercher un 404 à chaque
+    // montage. Même garde que `SystemSection` pour `/api/system/ingress-url`.
+    if (isPanelMode()) return;
     // Délai maximal : sans lui, un serveur qui ne répond pas laissait la
     // promesse en suspens et le jeton n'arrivait jamais — HassConnect restait
     // sur son écran d'attente sans que rien ne l'indique.

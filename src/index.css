@@ -1,10 +1,4 @@
-/* `source(".")` : Tailwind v4 détecte ses sources tout seul depuis la racine du
-   projet, en s'appuyant sur `.gitignore`. Il balayait donc `.venv-ha2026/`
-   (~20 000 fichiers) et servait `index.css` en 107 s en dev — `main.tsx`
-   l'importe en premier, la page restait blanche deux minutes. Ici on désigne
-   les deux seuls dossiers qui portent des classes. */
-@import "tailwindcss" source(".");
-@source "../.storybook";
+@import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
