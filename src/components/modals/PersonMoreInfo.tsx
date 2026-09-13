@@ -7,6 +7,7 @@ import { MoreInfoLayout } from './MoreInfoLayout';
 import { InfoSidebar, type SidebarModule } from './sidebar';
 import type { PersonStatusConfig } from '@/types/widget-types';
 import { useI18n } from '@/i18n';
+import { friendlyName } from '@/lib/ha-service';
 
 export default function PersonMoreInfo({ entityId, widgetId }: { entityId: string; widgetId: string }) {
   const { t } = useI18n();
@@ -21,7 +22,7 @@ export default function PersonMoreInfo({ entityId, widgetId }: { entityId: strin
 
   if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
 
-  const name = config?.persons?.[0]?.name ?? (entity.attributes.friendly_name as string) ?? personEntityId;
+  const name = config?.persons?.[0]?.name ?? friendlyName(entity) ?? personEntityId;
   const state = entity.state;
   const isHome = state === 'home';
   const lat = entity.attributes.latitude as number | undefined;

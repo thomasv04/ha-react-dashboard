@@ -11,6 +11,7 @@ import { BinaryTimeline } from '@/components/charts/BinaryTimeline';
 import { resolveIcon } from '@/lib/lucide-icon-map';
 import type { SensorCardConfig } from '@/types/widget-types';
 import { useI18n } from '@/i18n';
+import { friendlyName } from '@/lib/ha-service';
 
 const BINARY_DOMAINS = ['binary_sensor', 'switch', 'automation', 'cover', 'light'];
 
@@ -27,7 +28,7 @@ export default function SensorMoreInfo({ entityId, widgetId }: { entityId: strin
 
   const domain = entityId.split('.')[0];
   const isNumeric = !isNaN(parseFloat(entity.state)) && !BINARY_DOMAINS.includes(domain);
-  const name = config?.name ?? (entity.attributes.friendly_name as string) ?? entityId;
+  const name = config?.name ?? friendlyName(entity) ?? entityId;
   const unit = entity.attributes.unit_of_measurement as string | undefined;
   const IconComp = resolveIcon(config?.icon) ?? Activity;
 

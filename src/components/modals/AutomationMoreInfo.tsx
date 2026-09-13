@@ -11,6 +11,7 @@ import { BinaryTimeline } from '@/components/charts/BinaryTimeline';
 import { resolveIcon } from '@/lib/lucide-icon-map';
 import type { AutomationCardConfig } from '@/types/widget-types';
 import { useI18n } from '@/i18n';
+import { friendlyName } from '@/lib/ha-service';
 
 export default function AutomationMoreInfo({ entityId, widgetId }: { entityId: string; widgetId: string }) {
   const { t } = useI18n();
@@ -25,7 +26,7 @@ export default function AutomationMoreInfo({ entityId, widgetId }: { entityId: s
   if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
 
   const isOn = entity.state === 'on';
-  const name = config?.name ?? (entity.attributes.friendly_name as string) ?? entityId;
+  const name = config?.name ?? friendlyName(entity) ?? entityId;
   const lastTriggered = entity.attributes.last_triggered as string | undefined;
   const mode = entity.attributes.mode as string | undefined;
   const IconComp = resolveIcon(config?.icon) ?? Workflow;

@@ -10,6 +10,7 @@ import { ProgressBar } from '@/components/charts/ProgressBar';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 import type { BatteriesCardConfig } from '@/types/widget-configs';
+import { friendlyName } from '@/lib/ha-service';
 
 interface Battery {
   id: string;
@@ -37,7 +38,7 @@ function useBatteries(): Battery[] {
       // Une batterie binaire (`binary_sensor`, on = faible) n'a pas de niveau :
       // la barre n'aurait rien à afficher.
       if (Number.isNaN(level)) continue;
-      next.push({ id, name: (attributes.friendly_name as string | undefined) ?? id, level });
+      next.push({ id, name: friendlyName({ attributes }) ?? id, level });
     }
     next.sort((a, b) => a.level - b.level);
 

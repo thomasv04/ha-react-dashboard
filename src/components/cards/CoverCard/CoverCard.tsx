@@ -14,6 +14,7 @@ import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useLowPowerMotion } from '@/hooks/useLowPowerMotion';
 import { coverArrowMotion } from '@/lib/cover-motion';
+import { friendlyName } from '@/lib/ha-service';
 
 export function CoverCard() {
   const { t } = useI18n();
@@ -109,7 +110,7 @@ export function CoverCard() {
     );
   }
 
-  const name = config?.name ?? (entity.attributes.friendly_name as string) ?? entityId;
+  const name = config?.name ?? friendlyName(entity) ?? entityId;
   const state = entity.state;
   const position = (entity.attributes.current_position as number | undefined) ?? 0;
   const isOpen = state === 'open' || position > 0;

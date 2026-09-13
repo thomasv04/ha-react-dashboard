@@ -11,6 +11,7 @@ import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 import type { LockCardConfig } from '@/types/widget-configs';
+import { friendlyName } from '@/lib/ha-service';
 
 /** `LockEntityFeature.OPEN` — le pêne peut être escamoté (gâche électrique) */
 const FEATURE_OPEN = 1;
@@ -55,7 +56,7 @@ export function LockCard() {
     );
   }
 
-  const name = config?.name ?? (entity.attributes.friendly_name as string | undefined) ?? entityId;
+  const name = config?.name ?? friendlyName(entity) ?? entityId;
   const isLocked = state === 'locked';
   const isJammed = state === 'jammed';
   const isMoving = state === 'locking' || state === 'unlocking' || state === 'opening';

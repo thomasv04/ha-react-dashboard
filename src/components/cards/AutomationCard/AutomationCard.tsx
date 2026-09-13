@@ -15,6 +15,7 @@ import type { AutomationCardConfig } from '@/types/widget-configs';
 import { useI18n } from '@/i18n';
 import { useGroupEmbedded } from '@/components/cards/GroupCard/GroupCard';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
+import { friendlyName } from '@/lib/ha-service';
 
 const ACCENT = '#4ade80';
 
@@ -42,7 +43,7 @@ export function AutomationCard() {
   }
 
   const isOn = entity.state === 'on';
-  const name = config?.name ?? (entity.attributes.friendly_name as string | undefined) ?? entityId;
+  const name = config?.name ?? friendlyName(entity) ?? entityId;
 
   // Seule information qui manquait vraiment sur une automatisation : quand
   // elle s'est déclenchée pour la dernière fois.

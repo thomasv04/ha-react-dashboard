@@ -12,7 +12,7 @@ import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 // `helpers.callService` est typé sur les domaines connus de l'instance HA au
 // moment de la génération des types ; `todo` n'y figure pas encore.
-import { callHAService } from '@/lib/ha-service';
+import { callHAService, friendlyName } from '@/lib/ha-service';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 import type { TodoCardConfig } from '@/types/widget-configs';
@@ -58,7 +58,7 @@ export function TodoCard() {
   });
 
   const items = useMemo(() => Object.values(data ?? {}).flatMap(r => r?.items ?? []), [data]);
-  const name = config?.name ?? (entity?.attributes.friendly_name as string | undefined) ?? t('widgets.todo.label');
+  const name = config?.name ?? friendlyName(entity) ?? t('widgets.todo.label');
   const remaining = items.filter(i => i.status !== 'completed').length;
 
   const toggleItem = (item: TodoItem) => {

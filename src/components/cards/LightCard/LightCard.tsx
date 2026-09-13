@@ -15,6 +15,7 @@ import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-map';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
+import { friendlyName } from '@/lib/ha-service';
 
 /** Convert HA color_temp (mireds) to a 0-100 slider value (warm=0, cool=100) */
 function miredsToSlider(mireds: number, min: number, max: number): number {
@@ -111,7 +112,7 @@ export function LightCard() {
   }
 
   const isOn = entity.state === 'on';
-  const name = config?.name ?? (entity.attributes.friendly_name as string) ?? entityId;
+  const name = config?.name ?? friendlyName(entity) ?? entityId;
   const currentBrightness = localBrightness ?? (haBrightness != null ? Math.round((haBrightness / 255) * 100) : 0);
   const colorModes = entity.attributes.supported_color_modes as string[] | undefined;
   const isDimmable = colorModes ? colorModes.some(m => !['onoff'].includes(m)) : haBrightness !== undefined;

@@ -20,6 +20,7 @@ import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useRipple, RippleLayer } from '@/components/ui/Ripple';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useRelativeTime, JUST_NOW } from '@/hooks/useRelativeTime';
+import { friendlyName } from '@/lib/ha-service';
 
 const DOMAIN_ICONS: Record<string, string> = {
   sensor: 'Activity',
@@ -84,7 +85,7 @@ export function SensorCard() {
   }
 
   const domain = entityId.split('.')[0];
-  const name = config?.name ?? (entity.attributes.friendly_name as string) ?? entityId;
+  const name = config?.name ?? friendlyName(entity) ?? entityId;
   const unit = entity.attributes.unit_of_measurement as string | undefined;
   const state = entity.state;
   const numericValue = parseFloat(state);

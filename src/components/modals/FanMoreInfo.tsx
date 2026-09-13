@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Fan, RefreshCw, RotateCcw, RotateCw } from 'lucide-react';
 import { useHass } from '@hakit/core';
-import { callHAService } from '@/lib/ha-service';
+import { callHAService, friendlyName } from '@/lib/ha-service';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useFanSpeed } from '@/hooks/useFanSpeed';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -35,7 +35,7 @@ export default function FanMoreInfo({ entityId, widgetId }: { entityId: string; 
   const call = (service: string, data?: Record<string, unknown>) => callHAService(helpers, 'fan', service, { entity_id: entityId }, data);
 
   const isOn = entity.state === 'on';
-  const name = config?.name ?? (entity.attributes.friendly_name as string) ?? entityId;
+  const name = config?.name ?? friendlyName(entity) ?? entityId;
   const features = (entity.attributes.supported_features as number | undefined) ?? 0;
   const supportsSpeed = (features & FEATURE_SET_SPEED) !== 0;
   const supportsOscillate = (features & FEATURE_OSCILLATE) !== 0;

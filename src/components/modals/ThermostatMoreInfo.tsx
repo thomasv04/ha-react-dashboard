@@ -10,6 +10,7 @@ import { WidgetIdProvider } from '@/components/layout/DashboardGrid';
 import { InfoSidebar, type SidebarModule } from './sidebar';
 import type { ThermostatCardConfig } from '@/types/widget-types';
 import { useI18n } from '@/i18n';
+import { friendlyName } from '@/lib/ha-service';
 
 const HVAC_COLORS: Record<string, string> = {
   heating: '#f97316',
@@ -66,7 +67,7 @@ export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: s
 
   if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
 
-  const name = (entity.attributes.friendly_name as string) ?? entityId;
+  const name = friendlyName(entity) ?? entityId;
   const currentTemp = entity.attributes.current_temperature as number | undefined;
   const targetTemp = entity.attributes.temperature as number | undefined;
   const hvacAction = (entity.attributes.hvac_action as string) ?? 'idle';

@@ -12,6 +12,7 @@ import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { useColor } from '@/hooks/useColor';
 import type { ChartCardConfig } from '@/types/widget-configs';
+import { friendlyName } from '@/lib/ha-service';
 
 /**
  * Hauteur du tracé selon la place disponible. `useWidgetSize` ne rend qu'une
@@ -42,7 +43,7 @@ export function ChartCard() {
     );
   }
 
-  const name = config?.name ?? (entity.attributes.friendly_name as string | undefined) ?? entityId;
+  const name = config?.name ?? friendlyName(entity) ?? entityId;
   const unit = (entity.attributes.unit_of_measurement as string | undefined) ?? '';
   // Une entité non numérique n'a pas de courbe : sa frise on/off la remplace.
   const variant = config?.variant ?? (Number.isNaN(parseFloat(entity.state)) ? 'timeline' : 'line');

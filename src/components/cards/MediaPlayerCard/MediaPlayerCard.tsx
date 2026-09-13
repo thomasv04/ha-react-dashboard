@@ -12,6 +12,7 @@ import { useI18n } from '@/i18n';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { cn } from '@/lib/utils';
+import { friendlyName } from '@/lib/ha-service';
 
 // ── Compact layout (small widget, ≤ 2 rows) ────────────────────────────────────
 function CompactLayout({
@@ -329,7 +330,7 @@ export function MediaPlayerCard() {
   const position = (attrs.media_position as number | undefined) ?? 0;
   const duration = (attrs.media_duration as number | undefined) ?? 0;
   const volume = localVolume ?? haVolume;
-  const name = config?.name ?? (attrs.friendly_name as string) ?? entityId;
+  const name = config?.name ?? friendlyName({ attributes: attrs }) ?? entityId;
 
   const handleToggle = () => {
     helpers.callService({ domain: 'media_player', service: 'media_play_pause', target: { entity_id: entityId } });

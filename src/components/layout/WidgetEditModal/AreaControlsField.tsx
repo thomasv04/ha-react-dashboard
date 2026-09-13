@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, Search, X, Plus } from 'lucide-react';
 import { useAreas } from '@hakit/core';
 import { useI18n } from '@/i18n';
 import { useArea, areaDomains, isEntityToken } from '@/hooks/useAreaControls';
+import { friendlyName } from '@/lib/ha-service';
 
 /**
  * Choix d'une zone Home Assistant et des commandes qu'elle apporte : un domaine
@@ -37,7 +38,7 @@ export function AreaControlsField({
 
   const q = search.toLowerCase();
   const domainLabel = (d: string) => t(`widgets.room.domains.${d}`);
-  const entityLabel = (id: string) => (entities.find(e => e.entity_id === id)?.attributes.friendly_name as string | undefined) ?? id;
+  const entityLabel = (id: string) => friendlyName(entities.find(e => e.entity_id === id)) ?? id;
 
   const availableDomains = domains.filter(d => !controls.includes(d) && domainLabel(d).toLowerCase().includes(q));
   const availableEntities = entities
@@ -177,9 +178,7 @@ export function AreaControlsField({
               )}
               {availableEntities.map(e => (
                 <button key={e.entity_id} onClick={() => add(e.entity_id)} className='w-full text-left px-3 py-1.5 hover:bg-white/8 group'>
-                  <span className='block text-sm text-white/60 group-hover:text-white/90 truncate'>
-                    {(e.attributes.friendly_name as string | undefined) ?? e.entity_id}
-                  </span>
+                  <span className='block text-sm text-white/60 group-hover:text-white/90 truncate'>{friendlyName(e) ?? e.entity_id}</span>
                   <span className='block text-[10px] text-white/25 font-mono truncate'>{e.entity_id}</span>
                 </button>
               ))}

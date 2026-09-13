@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { ArrowUpDown, ChevronUp, Square, ChevronDown } from 'lucide-react';
 import { useHass } from '@hakit/core';
-import { callHAService } from '@/lib/ha-service';
+import { callHAService, friendlyName } from '@/lib/ha-service';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { MoreInfoHeader } from './MoreInfoHeader';
@@ -45,7 +45,7 @@ export default function CoverMoreInfo({ entityId, widgetId }: { entityId: string
 
   if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
 
-  const name = config?.name ?? (entity.attributes.friendly_name as string) ?? entityId;
+  const name = config?.name ?? friendlyName(entity) ?? entityId;
   const position = (entity.attributes.current_position as number | undefined) ?? 0;
   const state = entity.state;
   const stateColor = state === 'open' ? '#10b981' : state === 'closed' ? '#6b7280' : '#f59e0b';

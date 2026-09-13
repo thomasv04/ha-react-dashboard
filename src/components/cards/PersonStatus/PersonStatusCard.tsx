@@ -7,6 +7,7 @@ import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { PersonStatusConfig, PersonEntry } from '@/types/widget-configs';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
+import { friendlyName } from '@/lib/ha-service';
 
 // ── Zone normalization ────────────────────────────────────────────────────────
 function normalizeZone(zone: string | undefined): string {
@@ -32,7 +33,7 @@ function PersonPill({ entry, haBaseUrl }: { entry: PersonEntry; haBaseUrl: strin
 
   if (!entity) return null;
 
-  const name = entry.name ?? (entity.attributes.friendly_name as string) ?? entry.entityId;
+  const name = entry.name ?? friendlyName(entity) ?? entry.entityId;
   const zone = entity.state;
   const isHome = normalizeZone(zone) === 'home';
   const rawPicture = entity.attributes.entity_picture as string | undefined;

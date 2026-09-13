@@ -9,6 +9,7 @@ import { MoreInfoLayout } from './MoreInfoLayout';
 import { InfoSidebar, type SidebarModule } from './sidebar';
 import { HistoryGraph } from '@/components/charts/HistoryGraph';
 import type { TemplateCardConfig } from '@/types/widget-types';
+import { friendlyName } from '@/lib/ha-service';
 
 export default function TemplateMoreInfo({ entityId, widgetId }: { entityId: string; widgetId: string }) {
   const { getWidgetConfig } = useWidgetConfig();
@@ -24,7 +25,7 @@ export default function TemplateMoreInfo({ entityId, widgetId }: { entityId: str
   const secondaryInfo = useTemplate(config?.secondaryInfo ?? '');
 
   const isNumeric = entity ? !isNaN(parseFloat(entity.state)) : false;
-  const name = (entity?.attributes.friendly_name as string) ?? (primaryInfo || templateEntityId || 'Template');
+  const name = friendlyName(entity) ?? (primaryInfo || templateEntityId || 'Template');
 
   return (
     <MoreInfoLayout

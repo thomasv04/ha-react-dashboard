@@ -12,6 +12,7 @@ import type { AutomationListCardConfig, AutomationItem } from '@/types/widget-co
 import { useI18n } from '@/i18n';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import type { SoundPreset } from '@/lib/sounds';
+import { friendlyName } from '@/lib/ha-service';
 
 function AutomationRow({
   item,
@@ -40,7 +41,7 @@ function AutomationRow({
     playFeedback(isOn ? 'toggle_off' : 'toggle_on');
   };
 
-  const name = item.name ?? entity?.attributes.friendly_name ?? item.entityId;
+  const name = item.name ?? friendlyName(entity) ?? item.entityId;
 
   return (
     <motion.div

@@ -13,6 +13,7 @@ import { useFanSpeed } from '@/hooks/useFanSpeed';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 import type { FanCardConfig } from '@/types/widget-configs';
+import { friendlyName } from '@/lib/ha-service';
 
 /** `FanEntityFeature` — bits utilisés ici */
 const FEATURE_SET_SPEED = 1;
@@ -44,7 +45,7 @@ export function FanCard() {
   }
 
   const isOn = entity.state === 'on';
-  const name = config?.name ?? (entity.attributes.friendly_name as string | undefined) ?? entityId;
+  const name = config?.name ?? friendlyName(entity) ?? entityId;
   const features = (entity.attributes.supported_features as number | undefined) ?? 0;
   const supportsSpeed = (features & FEATURE_SET_SPEED) !== 0;
   const supportsOscillate = (features & FEATURE_OSCILLATE) !== 0 && !(config?.hideOscillate ?? false);

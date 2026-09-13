@@ -12,6 +12,7 @@ import type { WidgetConfigs } from '@/types/widget-configs';
 import { WIDGET_COMPONENTS } from '@/widgets';
 import { type WidgetMeta, getPreviewDims } from './widget-meta';
 import { previewConfig } from './preview-config';
+import { friendlyName } from '@/lib/ha-service';
 
 // ── Mock HA wrapper ──────────────────────────────────────────────────────────
 // Temporarily merges mock entities into the Zustand store so widget previews
@@ -60,7 +61,7 @@ function EntityPickerStep({ meta, onBack, onConfirm }: { meta: WidgetMeta; onBac
     const domain = meta.entityDomain!;
     const list = Object.entries(allEntities ?? {})
       .filter(([id]) => id.startsWith(`${domain}.`))
-      .map(([id, e]) => ({ id, name: (e.attributes?.friendly_name as string | undefined) ?? id }))
+      .map(([id, e]) => ({ id, name: friendlyName(e) ?? id }))
       .sort((a, b) => a.name.localeCompare(b.name));
     if (!search) return list;
     const q = search.toLowerCase();
