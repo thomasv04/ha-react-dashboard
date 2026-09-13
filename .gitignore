@@ -31,8 +31,9 @@ data/uploads/
 # dans le zip de release HACS, jamais versionné (23 Mo de chunks).
 custom_components/ha_react_dashboard/www/
 
-# Python — environnement de test de l'intégration
+# Python — environnements de l'intégration
 .venv-test/
+.venv-ha2026/
 __pycache__/
 .pytest_cache/
 

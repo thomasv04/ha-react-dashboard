@@ -52,7 +52,7 @@ export function ListEditor({
           onClick={addItem}
           className='flex items-center gap-1 px-2 py-1 rounded-md bg-blue-500/15 hover:bg-blue-500/25 text-blue-400 text-[11px]'
         >
-          <Plus size={11} /> Ajouter
+          <Plus size={11} /> {t('common.add')}
         </button>
       </div>
       <div className='space-y-1'>
@@ -133,7 +133,7 @@ export function ListEditor({
                             onClick={() => updateItem(idx, field.key, [...list, ''])}
                             className='text-[11px] text-blue-400/60 hover:text-blue-400'
                           >
-                            + Ajouter entité
+                            + {t('layout.addEntityBtn')}
                           </button>
                         </div>
                       );
