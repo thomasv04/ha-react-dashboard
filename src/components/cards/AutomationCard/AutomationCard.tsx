@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { motion } from 'framer-motion';
-import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
+import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { Workflow, Clock } from 'lucide-react';
 import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
@@ -68,9 +68,7 @@ export function AutomationCard() {
   return (
     <motion.div
       ref={cardRef}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: DURATION_ENTRANCE }}
+      {...CARD_ENTRANCE}
       onClick={handleToggle}
       className={cn(
         'h-full relative overflow-hidden flex items-center justify-between gap-3 cursor-pointer transition-all duration-300 select-none',

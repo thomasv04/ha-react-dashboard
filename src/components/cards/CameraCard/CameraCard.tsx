@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
-import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
+import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { useHass } from '@hakit/core';
 import { useEntities } from '@/hooks/useEntities';
 import { CameraFeed } from '@/components/ui/CameraFeed/components/CameraFeed';
@@ -114,13 +114,7 @@ export function CameraCard() {
   }
 
   return (
-    <motion.div
-      ref={cardRef}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: DURATION_ENTRANCE }}
-      className='gc rounded-3xl p-3 flex gap-3 h-full'
-    >
+    <motion.div ref={cardRef} {...CARD_ENTRANCE} className='gc rounded-3xl p-3 flex gap-3 h-full'>
       {/* ── Single camera feed ── */}
       <div className='flex-1 min-w-0 relative rounded-2xl overflow-hidden bg-black/50'>
         <CameraFeed

@@ -1,11 +1,11 @@
 import { useRef } from 'react';
 import { motion } from 'framer-motion';
-import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
+import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { SensorCardConfig } from '@/types/widget-configs';
-import { cn } from '@/lib/utils';
+import { cn, clamp } from '@/lib/utils';
 import { resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-map';
 import { Power, Activity } from 'lucide-react';
 import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
@@ -101,7 +101,7 @@ export function SensorCard() {
 
   const gaugeMin = config?.min ?? 0;
   const gaugeMax = config?.max ?? 100;
-  const gaugePercent = Math.max(0, Math.min(100, ((numericValue - gaugeMin) / (gaugeMax - gaugeMin || 1)) * 100));
+  const gaugePercent = clamp(((numericValue - gaugeMin) / (gaugeMax - gaugeMin || 1)) * 100, 0, 100);
 
   // eslint-disable-next-line react-hooks/purity
   const isStale = showStaleBadge && lastUpdated ? Date.now() - new Date(lastUpdated).getTime() > staleThreshold : false;
@@ -162,9 +162,7 @@ export function SensorCard() {
   return (
     <motion.div
       ref={cardRef}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: DURATION_ENTRANCE }}
+      {...CARD_ENTRANCE}
       onPointerDown={isToggleable ? triggerRipple : undefined}
       onClick={isToggleable ? handleToggle : undefined}
       className={cn(

@@ -49,6 +49,7 @@ export const WIDGET_LABELS: Record<string, string> = {
 // Handlers passed via context so GridItem can use them (like Tunet getDragProps)
 
 import type { GhostPosition, DragHandlers } from '@/hooks/useGridDragDrop';
+import { clamp } from '@/lib/utils';
 
 interface GridCtxValue {
   breakpoint: Breakpoint;
@@ -152,7 +153,7 @@ export function DashboardGrid({ children, readonly, className }: { children: Rea
     (widgetId: string, col: number, row: number) => {
       const widget = widgets.find(w => w.id === widgetId);
       if (!widget) return;
-      const clampedCol = Math.max(0, Math.min(cols - widget.w, col));
+      const clampedCol = clamp(col, 0, cols - widget.w);
       const newWidgets = placeWidgetAt(
         widget,
         clampedCol,
@@ -214,7 +215,7 @@ export function DashboardGrid({ children, readonly, className }: { children: Rea
         const w = widgets.find(wi => wi.id === resizeRef.current!.widgetId);
         if (!w) return;
         const minS = getMinSize(w.type, bp, w.disposition);
-        const newW = Math.max(minS.w, Math.min(cols - w.x, resizeRef.current.startW + deltaW));
+        const newW = clamp(resizeRef.current.startW + deltaW, minS.w, cols - w.x);
         const newH = Math.max(minS.h, resizeRef.current.startH + deltaH);
 
         setLayout({

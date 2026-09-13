@@ -8,7 +8,7 @@ import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { CoverCardConfig } from '@/types/widget-configs';
-import { cn } from '@/lib/utils';
+import { cn, clamp } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
@@ -82,7 +82,7 @@ export function CoverCard() {
     (e: React.PointerEvent) => {
       if (!isDragging || !sliderRef.current) return;
       const rect = sliderRef.current.getBoundingClientRect();
-      const pct = Math.max(0, Math.min(100, ((rect.bottom - e.clientY) / rect.height) * 100));
+      const pct = clamp(((rect.bottom - e.clientY) / rect.height) * 100, 0, 100);
       setDragPosition(pct);
     },
     [isDragging]

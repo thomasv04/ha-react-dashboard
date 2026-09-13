@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useLowPowerMotion } from '@/hooks/useLowPowerMotion';
 import type { LavaConfig } from '@/config/themes';
 import { advanceParticle, DEFAULT_EDGE_BEHAVIOUR } from '@/lib/background-motion';
+import { clamp } from '@/lib/utils';
 
 /**
  * Cadence du fond, et non celle de la page — même raisonnement que pour
@@ -64,7 +65,7 @@ export function LavaLampBackground({ config }: LavaLampBackgroundProps) {
     if (!canvas) return;
 
     const palette = PALETTES[config?.palette ?? 'default'] ?? PALETTES.default;
-    const blobCount = Math.max(1, Math.min(12, config?.blobCount ?? 5));
+    const blobCount = clamp(config?.blobCount ?? 5, 1, 12);
     const speedMult = config?.speed ?? 1;
     const sizeMult = config?.size ?? 1;
     const opacity = config?.opacity ?? 1;

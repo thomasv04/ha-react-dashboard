@@ -1,6 +1,6 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
+import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { Lightbulb, Palette, Thermometer } from 'lucide-react';
 import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useRipple, RippleLayer } from '@/components/ui/Ripple';
@@ -12,22 +12,9 @@ import type { LightCardConfig } from '@/types/widget-configs';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
+import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-map';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
-
-function useDebouncedCallback<T extends (...args: never[]) => void>(fn: T, delay: number): T {
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Arrow inline en premier argument : le compilateur React refuse une
-  // expression `function` castée, il ne peut pas en analyser les dépendances.
-  const debounced = useCallback(
-    (...args: Parameters<T>) => {
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(() => fn(...args), delay);
-    },
-    [fn, delay]
-  );
-  return debounced as unknown as T;
-}
 
 /** Convert HA color_temp (mireds) to a 0-100 slider value (warm=0, cool=100) */
 function miredsToSlider(mireds: number, min: number, max: number): number {
@@ -210,9 +197,7 @@ export function LightCard() {
   return (
     <motion.div
       ref={cardRef}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: DURATION_ENTRANCE }}
+      {...CARD_ENTRANCE}
       onPointerDown={triggerRipple}
       className={cn(
         'gc rounded-3xl flex h-full relative overflow-hidden select-none',

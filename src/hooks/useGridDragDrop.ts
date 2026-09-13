@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { buildOccupancyMap, canPlace, pixelToGrid, placeWidgetAt } from '@/lib/grid-utils';
 import type { GridWidget } from '@/context/DashboardLayoutContext';
 import type { DashboardLayout } from '@/context/DashboardLayoutContext';
+import { clamp } from '@/lib/utils';
 
 export interface GhostPosition {
   col: number;
@@ -88,7 +89,7 @@ export function useGridDragDrop({
       const widget = widgets.find(w => w.id === dragSourceRef.current!.id);
       if (!widget) return;
       const { col, row } = pixelToGrid(clientX, clientY, containerRect, cols, rowHeight, gap);
-      const clampedCol = Math.max(0, Math.min(cols - widget.w, col));
+      const clampedCol = clamp(col, 0, cols - widget.w);
       const maxRow = widgets.reduce((max, w) => Math.max(max, w.y + w.h), 0) + 5;
       const map = buildOccupancyMap(widgets, cols, maxRow, widget.id);
       const valid = canPlace(map, clampedCol, row, widget.w, widget.h, cols);

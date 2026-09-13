@@ -6,7 +6,7 @@ import { WIDGET_META, WIDGET_FIELD_DEFS, DEFAULT_WIDGET_CONFIGS } from '@/widget
 import { ChildFieldRenderer, WIDE_FIELD_TYPES } from '@/components/layout/WidgetEditModal/GroupWidgetsTab';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { IconPicker } from '@/components/layout/WidgetPickers';
-import { cn } from '@/lib/utils';
+import { cn, clamp } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { genId } from './block-meta';
 import type { ButtonBlock, ButtonRowBlock, InlineButton, CoverRowBlock, SectionHeaderBlock, WidgetBlock } from '@/types/custom-panel';
@@ -619,7 +619,7 @@ export function WidgetBlockForm({ block, onChange }: { block: WidgetBlock; onCha
           min={1}
           max={12}
           value={block.rows ?? 4}
-          onChange={e => onChange({ ...block, rows: Math.max(1, Math.min(12, Number(e.target.value) || 4)) })}
+          onChange={e => onChange({ ...block, rows: clamp(Number(e.target.value) || 4, 1, 12) })}
           className='w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 outline-none focus:border-blue-500/50'
         />
         <p className='text-[10px] text-white/25 mt-1'>{t('layout.customPanel.widgetRowsHint')}</p>

@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Power, Home, Moon, Sun } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
-import { cn } from '@/lib/utils';
+import { cn, clamp } from '@/lib/utils';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useElementBox } from '@/hooks/useWidgetSize';
@@ -177,11 +177,11 @@ export function ThermostatCard() {
   const isOff = thermostat.state === 'off';
   const actionLabel = ACTION_KEYS[action] ? t(ACTION_KEYS[action]) : action.toUpperCase();
 
-  const fraction = Math.max(0, Math.min(1, (localTarget - minT) / (maxT - minT)));
+  const fraction = clamp((localTarget - minT) / (maxT - minT), 0, 1);
   const endDeg = START_DEG + Math.max(1, fraction * SWEEP_DEG);
   const dot = gaugePoint(endDeg);
 
-  const currentFraction = Math.max(0, Math.min(1, (current - minT) / (maxT - minT)));
+  const currentFraction = clamp((current - minT) / (maxT - minT), 0, 1);
   const currentDeg = START_DEG + Math.max(1, currentFraction * SWEEP_DEG);
 
   const tempInt = Math.floor(localTarget);
@@ -205,7 +205,7 @@ export function ThermostatCard() {
       return localTargetRef.current;
     }
 
-    const frac = Math.max(0, Math.min(1, normalized / SWEEP_DEG));
+    const frac = clamp(normalized / SWEEP_DEG, 0, 1);
     return snapTemp(minT + frac * (maxT - minT), range);
   }
 

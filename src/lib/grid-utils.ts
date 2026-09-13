@@ -1,4 +1,5 @@
 import type { GridWidget } from '@/context/DashboardLayoutContext';
+import { clamp } from '@/lib/utils';
 
 /**
  * Matrice d'occupation de la grille.
@@ -59,7 +60,7 @@ export function pixelToGrid(
   const cellPlusGapW = cellWidth + gap;
   const cellPlusGapH = rowHeight + gap;
 
-  const col = Math.max(0, Math.min(cols - 1, Math.floor(relX / cellPlusGapW)));
+  const col = clamp(Math.floor(relX / cellPlusGapW), 0, cols - 1);
   const row = Math.max(0, Math.floor(relY / cellPlusGapH));
 
   return { col, row };
