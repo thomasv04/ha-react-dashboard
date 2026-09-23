@@ -264,6 +264,7 @@ export function FloorplanView() {
             // la taille de la maquette.
             range: (g.size / 100) * MODEL_SIZE * 2,
             room: rooms.find(r => pointInPolygon(g.anchor![0], g.anchor![2], r.points))?.points,
+            hidden: !isEditMode && occluded.has(g.id),
           },
         ];
       })
@@ -677,6 +678,7 @@ export function FloorplanView() {
                   // ni quand la boussole oriente la maison.
                   idleRotate={!!floorplan?.idleRotate && motionAllowed && !isEditMode && !compass}
                   compass={compass && isPhone && !isEditMode}
+                  lampGlow={!!floorplan?.lampGlow}
                   lamps={lamps}
                   parts={partsProp}
                   outline={outline}
@@ -963,6 +965,7 @@ export function FloorplanView() {
                   {checkbox(t('layout.floorplan.cutaway'), floorplan?.cutaway !== false, checked => setFloorplan({ cutaway: checked }))}
                   {checkbox(t('layout.floorplan.idleRotate'), !!floorplan?.idleRotate, checked => setFloorplan({ idleRotate: checked }))}
                   {checkbox(t('layout.floorplan.sky'), floorplan?.sky !== false, checked => setFloorplan({ sky: checked }))}
+                  {checkbox(t('layout.floorplan.lampGlow'), !!floorplan?.lampGlow, checked => setFloorplan({ lampGlow: checked }))}
                 </div>
               )}
               {model && (

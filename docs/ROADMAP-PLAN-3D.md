@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **18 tâches sur 21** — phases A à F, `G1` et `G2`. `F1` reste à essayer sur un vrai Android.
+**État global** : **19 tâches sur 21** — phases A à G. Restent `H1` et `H2` ; `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -331,7 +331,16 @@ Le reste est indépendant.
 - **Quoi** : un détecteur de mouvement ou de présence déclenché fait pulser
   un halo sous sa pastille (CSS, en 2D comme en 3D).
 
-### [ ] G3 — Lueur des lampes
+### [x] G3 — Lueur des lampes
+
+> **Fait** : option « Lueur des lampes » (activée dans la démo). Une tache
+> douce de la couleur de la lampe, posée au point de sa pastille, qui déborde
+> tout autour — son cœur est sous la pastille. Additive, hors du rendu tonal :
+> elle se voit surtout la nuit, comme une vraie. Sans test de profondeur,
+> sinon la surface où elle est posée la couperait en deux ; elle disparaît
+> avec sa pastille quand la maquette la cache (`E2`). Une première version,
+> à la hauteur de la lumière, flottait loin au-dessus de la pastille, sur un
+> mur déjà éclairé : on ne la voyait pas.
 
 - **Quoi** : option : une lueur autour de chaque lampe allumée, de sa
   couleur.

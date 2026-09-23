@@ -122,7 +122,7 @@ export function withDemoFloorplan(config: DashboardConfigV2): DashboardConfigV2 
         icon: 'Home',
         type: 'floorplan',
         order: Math.max(-1, ...config.pages.map(p => p.order)) + 1,
-        floorplan: { image: '', model: MODEL, idleRotate: true, parts: PARTS, rooms: ROOMS },
+        floorplan: { image: '', model: MODEL, idleRotate: true, lampGlow: true, parts: PARTS, rooms: ROOMS },
       },
     ],
     layouts: { ...config.layouts, [ID]: { widgets: { lg: WIDGETS, md: WIDGETS, sm: WIDGETS }, cols: { lg: 12, md: 8, sm: 4 } } },

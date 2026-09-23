@@ -1,7 +1,9 @@
 import { useEffect, useImperativeHandle, useLayoutEffect, useRef, type Ref } from 'react';
 import {
   ACESFilmicToneMapping,
+  AdditiveBlending,
   Box3,
+  CanvasTexture,
   DirectionalLight,
   HemisphereLight,
   PCFShadowMap,
@@ -24,6 +26,8 @@ import {
   ShapeGeometry,
   Sphere,
   Spherical,
+  Sprite,
+  SpriteMaterial,
   Vector2,
   Vector3,
   WebGLRenderer,
@@ -82,6 +86,8 @@ export interface Lamp {
   range: number;
   /** Contour (x, z) de sa pièce, dans les coordonnées de la maquette : elle n'éclaire qu'elle. */
   room?: [number, number][];
+  /** Sa pastille est cachée par la maquette : sa lueur aussi. */
+  hidden?: boolean;
 }
 
 /** Tracé au sol de la maquette : une pièce, ou celle qu'on dessine. */
@@ -132,6 +138,8 @@ interface Floorplan3DProps {
   cutaway: boolean;
   /** Tourner lentement après une minute sans geste. */
   idleRotate: boolean;
+  /** Une lueur autour de chaque lampe allumée, de sa couleur. */
+  lampGlow: boolean;
   /** Boussole : la maison tourne avec le téléphone — ce qui est en haut de l'écran est devant soi. */
   compass?: boolean;
   lamps: Lamp[];
@@ -166,6 +174,8 @@ const FOV = 35;
 const LAMP_LIFT = 1.5;
 /** Intensité d'une lampe à pleine luminosité (candela, éclairage physique de three.js). */
 const LAMP_POWER = 30;
+/** Diamètre de la lueur d'une lampe, en unités de scène : assez pour déborder de sa pastille, qui la recouvre. */
+const GLOW_SIZE = MODEL_SIZE * 0.16;
 /** En deçà (px), un appui relâché est un clic ; au-delà, c'était une rotation. */
 const CLICK_TOLERANCE = 5;
 /**
@@ -244,6 +254,9 @@ interface Stage {
   /** Ombres de la maquette, retouchées comme elle — à libérer avec elle. */
   depth: Material | null;
   lamps: Map<string, PointLight>;
+  lampGlow: boolean;
+  /** Tache douce de la lueur des lampes, partagée par toutes — créée au premier besoin. */
+  glowMap: CanvasTexture | null;
   parts: Map<string, PartEntry>;
   /** Rectangle en cours de dessin, créé au premier besoin. */
   outline: Group | null;
@@ -403,6 +416,27 @@ function applyView(s: Stage, view: FloorplanView3D | undefined) {
   s.controls.update(); // émet `change`, donc un rendu
 }
 
+/** Une tache blanche, douce ; chaque lueur la teinte de sa lampe. */
+function glowMap(s: Stage) {
+  if (!s.glowMap) {
+    const canvas = Object.assign(document.createElement('canvas'), { width: 64, height: 64 });
+    const context = canvas.getContext('2d');
+    if (context) {
+      const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
+      // Le cœur est sous la pastille : c'est l'anneau autour qui se voit.
+      gradient.addColorStop(0, 'rgba(255,255,255,1)');
+      gradient.addColorStop(0.35, 'rgba(255,255,255,0.6)');
+      gradient.addColorStop(0.7, 'rgba(255,255,255,0.18)');
+      gradient.addColorStop(1, 'rgba(255,255,255,0)');
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, 64, 64);
+    }
+    s.glowMap = new CanvasTexture(canvas);
+    s.glowMap.colorSpace = SRGBColorSpace;
+  }
+  return s.glowMap;
+}
+
 function placeLamps(s: Stage, lamps: Lamp[]) {
   const seen = new Set<string>();
   for (const lamp of lamps) {
@@ -412,11 +446,25 @@ function placeLamps(s: Stage, lamps: Lamp[]) {
       // Créée une fois, éteinte ensuite par son intensité : ajouter ou retirer
       // une lumière fait recompiler tous les matériaux de la scène.
       light = new PointLight(0xffffff, 0, 0, 2);
+      // Sa lueur, là où est posée sa pastille : elle déborde tout autour.
+      // Additive, elle éclaire ce qu'elle recouvre et se voit surtout la nuit,
+      // comme une vraie ; hors du rendu tonal, qui l'éteindrait. Sans test de
+      // profondeur : posée sur une surface, elle y serait coupée en deux.
+      const glow = new Sprite(
+        new SpriteMaterial({ map: glowMap(s), blending: AdditiveBlending, depthTest: false, depthWrite: false, toneMapped: false })
+      );
+      glow.position.y = -LAMP_LIFT;
+      glow.scale.setScalar(GLOW_SIZE);
+      light.add(glow);
       s.scene.add(light);
       s.lamps.set(lamp.id, light);
     }
     if (lamp.color) light.color.setRGB(lamp.color[0] / 255, lamp.color[1] / 255, lamp.color[2] / 255, SRGBColorSpace);
     light.intensity = lamp.color ? LAMP_POWER * Math.max(0.15, lamp.brightness) : 0;
+    const glow = light.children[0] as Sprite;
+    glow.visible = s.lampGlow && !!lamp.color && !lamp.hidden;
+    glow.material.color.copy(light.color);
+    glow.material.opacity = 0.4 + 0.6 * lamp.brightness;
     const at = new Vector3(...lamp.anchor);
     if (s.root) s.root.localToWorld(at);
     light.position.set(at.x, at.y + LAMP_LIFT, at.z);
@@ -428,6 +476,7 @@ function placeLamps(s: Stage, lamps: Lamp[]) {
   for (const [id, light] of s.lamps) {
     if (seen.has(id)) continue;
     s.scene.remove(light);
+    (light.children[0] as Sprite).material.dispose();
     light.dispose();
     s.lamps.delete(id);
   }
@@ -696,6 +745,7 @@ export default function Floorplan3D({
   shadows,
   cutaway,
   idleRotate,
+  lampGlow,
   compass,
   lamps,
   parts,
@@ -836,6 +886,8 @@ export default function Floorplan3D({
       root: null,
       depth: null,
       lamps: new Map(),
+      lampGlow: false,
+      glowMap: null,
       parts: new Map(),
       outline: null,
       floors: new Group(),
@@ -1008,9 +1060,10 @@ export default function Floorplan3D({
   useEffect(() => {
     const s = stage.current;
     if (!s) return;
+    s.lampGlow = lampGlow;
     placeLamps(s, latest.current.lamps);
     s.render();
-  }, [lampsKey]);
+  }, [lampsKey, lampGlow]);
 
   // ── Portes, fenêtres, volets ───────────────────────────────────────────────
   const partsKey = JSON.stringify(parts);
