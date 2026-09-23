@@ -6,6 +6,7 @@ import {
   HemisphereLight,
   PCFShadowMap,
   PerspectiveCamera,
+  Color,
   PointLight,
   Raycaster,
   SRGBColorSpace,
@@ -16,6 +17,7 @@ import {
   WebGLRenderer,
   type Material,
   type Mesh,
+  type MeshStandardMaterial,
   type Object3D,
   type Texture,
 } from 'three';
@@ -27,12 +29,15 @@ import {
   cutLimit,
   isCutAway,
   MODEL_SIZE,
+  partFrame,
   sunLighting,
   type Cutaway,
+  type FloorplanPart,
   type Sides,
   type Vec3,
 } from '@/lib/floorplan';
-import { createModelUniforms, materialsOf, patchModel, setCutawaySides, type ModelUniforms } from './modelPatch';
+import { createModelUniforms, materialsOf, patchModel, setCuts, setCutawaySides, type ModelUniforms } from './modelPatch';
+import { buildPart, type PartObject } from './parts3d';
 
 /**
  * La maquette 3D d'une page plan : un `.glb`/`.gltf` exporté de Sweet Home 3D,
@@ -63,6 +68,9 @@ export interface Lamp {
   range: number;
 }
 
+/** Porte, fenêtre ou volet, et son ouverture de l'instant (0 à 1). */
+export type PartProp = FloorplanPart & { open: number };
+
 export interface Floorplan3DHandle {
   /** Point de la maquette → position à l'écran, en % du canevas ; `null` s'il est derrière la caméra. */
   project(anchor: Vec3): { x: number; y: number } | null;
@@ -73,6 +81,10 @@ export interface Floorplan3DHandle {
   resetView(): void;
   /** Redessine — après un changement qui ne vient pas de la caméra. */
   invalidate(): void;
+  /** Couleur de la maquette en ce point, vu de la caméra : de quoi habiller un élément généré. */
+  colorAt(point: Vec3): string | null;
+  /** Côté du rectangle (a, b) tourné vers la caméra — celui qu'on voit en le dessinant. */
+  facing(a: Vec3, b: Vec3): 1 | -1;
 }
 
 interface Floorplan3DProps {
@@ -88,6 +100,7 @@ interface Floorplan3DProps {
   /** Tourner lentement après une minute sans geste. */
   idleRotate: boolean;
   lamps: Lamp[];
+  parts: PartProp[];
   /** Après chaque image : la caméra a pu bouger, les pastilles se recalent. */
   onFrame: () => void;
   /** Clic — pas un glisser, qui fait tourner — sur la maquette. */
@@ -121,6 +134,8 @@ const BACK_WALL_MARGIN = MODEL_SIZE * 0.025;
 const AMBIENT_BOOST = 1.5;
 /** Tranche peinte sous la coupe d'un matériau à double face : de quoi remplir l'épaisseur d'un mur vue d'en haut. */
 const CAP_DEPTH = MODEL_SIZE * 0.02;
+/** Une porte qui s'ouvre, un volet qui descend : durée du mouvement, en ms. */
+const SWING_MS = 900;
 /** Un mur qui monte ou descend glisse : constante de temps, en ms (posé aux trois quarts en 150 ms). */
 const WALL_SLIDE_MS = 110;
 
@@ -135,6 +150,17 @@ interface CutState extends Cutaway {
   sliding: boolean;
 }
 
+interface PartEntry {
+  obj: PartObject;
+  /** Forme de l'élément : reconstruit quand elle change, pas quand il s'ouvre. */
+  key: string;
+  /** Ombres de l'élément, retouchées comme lui. */
+  depth: Material;
+  /** Ouverture de l'instant, et celle vers laquelle il va. */
+  value: number;
+  target: number;
+}
+
 interface Stage {
   renderer: WebGLRenderer;
   scene: Scene;
@@ -146,6 +172,7 @@ interface Stage {
   /** Ombres de la maquette, retouchées comme elle — à libérer avec elle. */
   depth: Material | null;
   lamps: Map<string, PointLight>;
+  parts: Map<string, PartEntry>;
   /** Retouches des matériaux de la maquette (coupe, découpes), partagées par tous. */
   uniforms: ModelUniforms;
   cutaway: boolean;
@@ -230,11 +257,16 @@ function placeLamps(s: Stage, lamps: Lamp[]) {
   }
 }
 
+function cutawaySides(s: Stage, on: boolean) {
+  if (s.root) setCutawaySides(s.root, on);
+  for (const entry of s.parts.values()) setCutawaySides(entry.obj.object, on);
+}
+
 /** Murs en coupe (cf. `modelPatch`) : activés ou non, et la caméra qui peut descendre avec. */
 function applyCutaway(s: Stage) {
   // Activée : les faces arrière tout de suite, pour la tranche. Désactivée :
   // une fois les murs remontés (`slideWalls`).
-  if (s.cutaway && s.root) setCutawaySides(s.root, true);
+  if (s.cutaway) cutawaySides(s, true);
   s.controls.maxPolarAngle = s.cutaway ? MAX_POLAR.cutaway : MAX_POLAR.plain;
   s.controls.update();
 }
@@ -270,7 +302,7 @@ function slideWalls(s: Stage, c: CutState) {
     s.render();
     if (!moving) {
       c.sliding = false;
-      if (!s.cutaway && s.root) setCutawaySides(s.root, false);
+      if (!s.cutaway) cutawaySides(s, false);
     }
     return moving;
   });
@@ -283,6 +315,94 @@ function updateCutaway(s: Stage) {
   c.back = backSides(s.camera.position.toArray() as Vec3, s.controls.target.toArray() as Vec3, c.back);
   const target = wallTargets(s, c);
   if (target.height !== c.height || target.sides.some((goal, i) => goal !== c.sides[i])) slideWalls(s, c);
+}
+
+/** Éléments animés : construits à leur forme, puis mus vers leur ouverture. */
+function placeParts(s: Stage, parts: PartProp[]) {
+  if (!s.root) return;
+  const seen = new Set<string>();
+  for (const { open, ...part } of parts) {
+    seen.add(part.id);
+    const key = JSON.stringify(part);
+    let entry = s.parts.get(part.id);
+    if (entry && entry.key !== key) {
+      removePart(s, part.id, entry);
+      entry = undefined;
+    }
+    if (!entry) {
+      const obj = buildPart(part, s.root);
+      if (!obj) continue;
+      // Coupé par les murets comme la maquette, mais pas par les découpes :
+      // il occupe justement celle de l'original.
+      const depth = patchModel(obj.object, s.uniforms, false);
+      if (s.cutaway) setCutawaySides(obj.object, true);
+      obj.apply(open);
+      s.scene.add(obj.object);
+      entry = { obj, key, depth, value: open, target: open };
+      s.parts.set(part.id, entry);
+    }
+    if (entry.target !== open) {
+      entry.target = open;
+      s.animate(swing(s, entry));
+    }
+  }
+  for (const [id, entry] of s.parts) if (!seen.has(id)) removePart(s, id, entry);
+  setCuts(
+    s.uniforms,
+    [...s.parts.values()].flatMap(entry => (entry.obj.cut ? [entry.obj.cut] : []))
+  );
+  s.render();
+}
+
+function removePart(s: Stage, id: string, entry: PartEntry) {
+  s.scene.remove(entry.obj.object);
+  entry.obj.dispose();
+  entry.depth.dispose();
+  s.parts.delete(id);
+}
+
+/** Une porte s'ouvre, un volet descend : en douceur, jusqu'à l'ouverture demandée. */
+function swing(s: Stage, entry: PartEntry) {
+  const from = entry.value;
+  const to = entry.target;
+  let start = 0;
+  return (now: number) => {
+    // Remplacé par un mouvement plus récent, ou retiré de la scène.
+    if (entry.target !== to || !entry.obj.object.parent) return false;
+    start ||= now;
+    const t = Math.min(1, (now - start) / SWING_MS);
+    entry.value = from + (to - from) * (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2);
+    entry.obj.apply(entry.value);
+    s.render();
+    return t < 1;
+  };
+}
+
+/** Couleur de la maquette sous ce point, vu de la caméra : texture moyennée autour, teinte du matériau. */
+let sampler: CanvasRenderingContext2D | null = null;
+function colorAt(s: Stage, local: Vec3): string | null {
+  if (!s.root) return null;
+  const target = s.root.localToWorld(new Vector3(...local));
+  raycaster.set(s.camera.position, target.clone().sub(s.camera.position).normalize());
+  const hit = raycaster.intersectObject(s.root, true).find(h => !isCut(s, h.point));
+  if (!hit) return null;
+  const material = materialsOf(hit.object)[hit.face?.materialIndex ?? 0] as MeshStandardMaterial | undefined;
+  const color = material?.color?.clone() ?? new Color(1, 1, 1);
+  const image = material?.map?.image as (CanvasImageSource & { width: number; height: number }) | undefined;
+  if (image?.width && hit.uv) {
+    sampler ??= Object.assign(document.createElement('canvas'), { width: 5, height: 5 }).getContext('2d', { willReadFrequently: true });
+    if (sampler) {
+      // Un carré de 5 × 5 pixels : un seul tomberait sur une veine du bois.
+      const x = Math.floor((hit.uv.x - Math.floor(hit.uv.x)) * image.width) - 2;
+      const y = Math.floor((hit.uv.y - Math.floor(hit.uv.y)) * image.height) - 2;
+      sampler.clearRect(0, 0, 5, 5);
+      sampler.drawImage(image, x, y, 5, 5, 0, 0, 5, 5);
+      const data = sampler.getImageData(0, 0, 5, 5).data;
+      const mean = [0, 1, 2].map(c => data.filter((_, i) => i % 4 === c).reduce((a, b) => a + b, 0) / 25 / 255);
+      color.multiply(new Color().setRGB(mean[0], mean[1], mean[2], SRGBColorSpace));
+    }
+  }
+  return `#${color.getHexString()}`;
 }
 
 function disposeTree(root: Object3D) {
@@ -308,6 +428,7 @@ export default function Floorplan3D({
   cutaway,
   idleRotate,
   lamps,
+  parts,
   onFrame,
   onPick,
   onLoad,
@@ -317,9 +438,9 @@ export default function Floorplan3D({
   const stage = useRef<Stage | null>(null);
 
   // Dernières valeurs, lues par des écouteurs posés une fois pour toutes.
-  const latest = useRef({ camera, lamps, onFrame, onPick, onLoad, onError });
+  const latest = useRef({ camera, lamps, parts, onFrame, onPick, onLoad, onError });
   useLayoutEffect(() => {
-    latest.current = { camera, lamps, onFrame, onPick, onLoad, onError };
+    latest.current = { camera, lamps, parts, onFrame, onPick, onLoad, onError };
   });
 
   // ── Scène, caméra, rendu ───────────────────────────────────────────────────
@@ -415,6 +536,7 @@ export default function Floorplan3D({
       root: null,
       depth: null,
       lamps: new Map(),
+      parts: new Map(),
       uniforms: createModelUniforms(),
       cutaway: false,
       cut: null,
@@ -448,6 +570,7 @@ export default function Floorplan3D({
       renderer.domElement.removeEventListener('pointerup', onUp);
       disposeTree(scene);
       s.depth?.dispose();
+      for (const entry of s.parts.values()) entry.depth.dispose();
       renderer.dispose();
       // Rendre le contexte tout de suite : un navigateur n'en garde qu'une
       // poignée, et changer de page en boucle finirait par les épuiser.
@@ -507,6 +630,9 @@ export default function Floorplan3D({
         s.uniforms.fpBox.value.set(...s.cut.box);
         s.uniforms.fpSides.value.set(...s.cut.sides);
         applyCutaway(s);
+        // Placés d'après la maquette : tous reconstruits sur la nouvelle.
+        for (const [id, entry] of s.parts) removePart(s, id, entry);
+        placeParts(s, latest.current.parts);
         placeLamps(s, latest.current.lamps);
         applyView(s, latest.current.camera);
         // `applyView` ne redessine que si la caméra a bougé : une autre
@@ -555,6 +681,13 @@ export default function Floorplan3D({
     placeLamps(s, latest.current.lamps);
     s.render();
   }, [lampsKey]);
+
+  // ── Portes, fenêtres, volets ───────────────────────────────────────────────
+  const partsKey = JSON.stringify(parts);
+  useEffect(() => {
+    const s = stage.current;
+    if (s) placeParts(s, latest.current.parts);
+  }, [partsKey]);
 
   // ── Murs en coupe ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -624,6 +757,15 @@ export default function Floorplan3D({
       },
       invalidate() {
         stage.current?.render();
+      },
+      colorAt: point => (stage.current ? colorAt(stage.current, point) : null),
+      facing(a, b) {
+        const s = stage.current;
+        const frame = partFrame(a, b);
+        if (!s?.root || !frame) return 1;
+        const middle = s.root.localToWorld(new Vector3((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2));
+        const toCamera = s.camera.position.clone().sub(middle);
+        return toCamera.x * frame.n[0] + toCamera.z * frame.n[2] >= 0 ? 1 : -1;
       },
     }),
     []

@@ -1,4 +1,5 @@
 import type { DashboardConfigV2, GridWidget } from '@/context/DashboardLayoutContext';
+import type { FloorplanPart } from '@/lib/floorplan';
 import type { WidgetConfigs } from '@/types/widget-configs';
 
 /**
@@ -43,6 +44,40 @@ const CONFIGS = {
   'demo-meteo': { type: 'weather', entityId: 'weather.home' },
 } as WidgetConfigs;
 
+/** Portes, fenêtres et volets dessinés sur la maquette. */
+const PARTS: FloorplanPart[] = [
+  // La porte du mur du fond, près de la cuisine : ouverte.
+  {
+    id: 'demo-porte-cellier',
+    kind: 'door',
+    entityId: 'binary_sensor.porte_cellier',
+    a: [-13.016, 0.246, -2.196],
+    b: [-13.037, 2.09, -1.603],
+    side: -1,
+    color: '#8d6b51',
+  },
+  // La fenêtre de la cuisine, son volet à mi-hauteur (côté pièce : on le voit).
+  {
+    id: 'demo-volet-cuisine',
+    kind: 'shutter',
+    entityId: 'cover.volet_baie_salon',
+    a: [-13.029, 1.016, 1.298],
+    b: [-13.215, 2.336, -0.405],
+    side: 1,
+    color: '#c9cbcc',
+  },
+  // Une fenêtre du fond, ouverte.
+  {
+    id: 'demo-fenetre-chambre',
+    kind: 'window',
+    entityId: 'binary_sensor.fenetre_chambre',
+    a: [-9.062, 0.83, -6.837],
+    b: [-8.215, 2.362, -6.942],
+    side: 1,
+    color: '#987358',
+  },
+];
+
 /** Ajoute la page de démonstration si elle n'y est pas déjà. */
 export function withDemoFloorplan(config: DashboardConfigV2): DashboardConfigV2 {
   if (config.pages.some(p => p.id === ID)) return config;
@@ -56,7 +91,7 @@ export function withDemoFloorplan(config: DashboardConfigV2): DashboardConfigV2 
         icon: 'Home',
         type: 'floorplan',
         order: Math.max(-1, ...config.pages.map(p => p.order)) + 1,
-        floorplan: { image: '', model: MODEL, idleRotate: true },
+        floorplan: { image: '', model: MODEL, idleRotate: true, parts: PARTS },
       },
     ],
     layouts: { ...config.layouts, [ID]: { widgets: { lg: WIDGETS, md: WIDGETS, sm: WIDGETS }, cols: { lg: 12, md: 8, sm: 4 } } },

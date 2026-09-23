@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **2 tâches sur 20** — `E1` et `G1`, passées en priorité.
+**État global** : **7 tâches sur 21** — `E1` et `G1`, passées en priorité, puis la phase A.
 
 ---
 
@@ -52,11 +52,13 @@ Le reste est indépendant.
 
 ## Phase A — Portes, fenêtres et volets animés
 
-### [ ] A1 — Socle : animations et découpe de la maquette
+### [x] A1 — Socle : animations et découpe de la maquette
 
-> **En partie en place**, livré avec `E1` et `G1` : la boucle d'animation, et
-> les découpes dans [modelPatch.ts](../src/components/floorplan/modelPatch.ts).
-> Reste à les vérifier sur une vraie porte, avec `A3`.
+> **Fait** : la boucle d'animation (livrée avec `G1`), et les découpes de
+> [modelPatch.ts](../src/components/floorplan/modelPatch.ts) — vérifiées sur une
+> porte, une fenêtre et une porte de garage de la maquette de test. L'original
+> découpé ne porte plus d'ombre ; un élément généré est coupé par les murets
+> comme la maquette, mais pas par sa propre découpe.
 
 - **Où** : [Floorplan3D.tsx](../src/components/floorplan/Floorplan3D.tsx)
 - **Quoi** :
@@ -68,7 +70,13 @@ Le reste est indépendant.
 - **Fait quand** : une découpe posée à la main fait disparaître un morceau de
   mur dans le mock, sans toucher au reste.
 
-### [ ] A2 — Poser un élément animé
+### [x] A2 — Poser un élément animé
+
+> **Fait.** La fenêtre de réglage s'ouvre à côté de l'élément, pas dessus : on
+> voit l'aperçu, entrouvert, pendant qu'on choisit. L'entité d'abord — le type
+> en est deviné (`device_class`) ; le côté part de celui qu'on regarde ; la
+> couleur est prise sur la maquette, au centre de l'ouverture. Interface dans
+> [FloorplanParts.tsx](../src/components/floorplan/FloorplanParts.tsx).
 
 - **Où** : [FloorplanView.tsx](../src/components/floorplan/FloorplanView.tsx), [PageContext.tsx](../src/context/PageContext.tsx)
 - **Quoi** : en édition, un outil « Porte / volet » à côté de « Pastille ».
@@ -80,7 +88,11 @@ Le reste est indépendant.
 - **Fait quand** : poser, voir l'aperçu, enregistrer, recharger — l'élément
   est toujours là ; une config mal formée est ignorée, pas fatale.
 
-### [ ] A3 — Portes et fenêtres qui s'ouvrent
+### [x] A3 — Portes et fenêtres qui s'ouvrent
+
+> **Fait** ([parts3d.ts](../src/components/floorplan/parts3d.ts)) : porte avec
+> ses poignées, fenêtre avec son cadre et sa vitre, pivotant sur les gonds du
+> premier coin cliqué, en 0,9 s. Vérifié ouverte et fermée sur la maquette.
 
 - **Quoi** : un battant généré, de la couleur de la maquette à l'endroit
   cliqué (verre teinté pour une fenêtre) ; l'original est découpé. Le battant
@@ -88,7 +100,11 @@ Le reste est indépendant.
   la position d'un `cover`. Transition douce, ombres portées.
 - **Fait quand** : basculer le capteur dans le mock ouvre et ferme la porte.
 
-### [ ] A4 — Volets roulants et porte de garage
+### [x] A4 — Volets roulants et porte de garage
+
+> **Fait** : lames d'une texture générée, qui gardent leur taille quand le
+> tablier s'enroule ; coffre au-dessus du volet. Garage : larges lames, dans
+> l'ouverture découpée.
 
 - **Quoi** : un tablier à lames devant l'ouverture, qui descend selon
   `current_position` (coffre en haut). Porte de garage : l'original est
@@ -96,10 +112,24 @@ Le reste est indépendant.
 - **Fait quand** : régler la position d'un volet du mock le fait descendre
   d'autant.
 
-### [ ] A5 — Démonstration et test
+### [x] A5 — Démonstration et test
+
+> **Fait**, à un écart près : le mock ne sait pas changer l'état d'une entité
+> pendant un test. Le test E2E dessine donc une porte, vérifie le type deviné et
+> la retrouve dans la config enregistrée ; l'ouverture et la fermeture ont été
+> vérifiées à l'écran. Démo : une porte ouverte, un volet à mi-hauteur, une
+> fenêtre ouverte.
 
 - **Quoi** : la maison du mock reçoit une porte, une fenêtre et un volet ; un
   test E2E pose un élément et le voit changer d'état.
+
+### [ ] A6 — Viser les coins sans tâtonner
+
+- **Pourquoi** : révélé en testant. Deux clics au jugé tombent vite à côté —
+  sur le frigo devant la porte, sur le mur au-dessus. Le battant est alors trop
+  grand, ou la découpe mord dans le mur.
+- **Quoi** : pendant le dessin, le rectangle suit la souris entre le premier
+  coin et le pointeur ; une fois posé, ses coins se reprennent à la souris.
 
 ---
 

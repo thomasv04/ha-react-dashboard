@@ -96,6 +96,7 @@ uniform vec3 fpCapColor;`;
 // Découpes : repère de chacune, x le long de sa largeur (u), z le long de sa
 // normale (−u.z, u.x). Puis la coupe des murs, et sa tranche.
 const DISCARD = /* glsl */ `
+#ifdef FP_BOXES
 for ( int i = 0; i < ${MAX_CUTS}; i ++ ) {
   if ( i >= fpCutCount ) break;
   vec4 c = fpCuts[ 2 * i ];
@@ -103,6 +104,7 @@ for ( int i = 0; i < ${MAX_CUTS}; i ++ ) {
   vec3 d = vFpWorld - c.xyz;
   if ( abs( d.x * k.x + d.z * k.y ) < k.z && abs( d.y ) < k.w && abs( d.z * k.x - d.x * k.y ) < c.w ) discard;
 }
+#endif
 bool fpCap = false;
 // Hauteur de la maquette en ce point : celle des murs abaissés, ou celle d'un
 // mur du fond — qui glisse quand la caméra tourne.
@@ -133,15 +135,19 @@ const CAP = /* glsl */ `
 if ( fpCap ) gl_FragColor = vec4( fpCapColor, 1.0 );
 #endif`;
 
-/** Variante de retouche d'un matériau : tranche peinte (opaque), face unique à l'origine. */
-type Variant = { caps: boolean; front: boolean };
+/**
+ * Variante de retouche d'un matériau : tranche peinte (opaque), face unique à
+ * l'origine, découpes appliquées — pas à un élément généré, qui occupe
+ * justement la découpe.
+ */
+type Variant = { caps: boolean; front: boolean; boxes: boolean };
 
-function inject(shader: WebGLProgramParametersWithUniforms, uniforms: ModelUniforms, { caps, front }: Variant) {
+function inject(shader: WebGLProgramParametersWithUniforms, uniforms: ModelUniforms, { caps, front, boxes }: Variant) {
   Object.assign(shader.uniforms, uniforms);
   shader.vertexShader = shader.vertexShader
     .replace('#include <common>', '#include <common>\nvarying vec3 vFpWorld;')
     .replace('#include <project_vertex>', `#include <project_vertex>${VERTEX}`);
-  const defines = `${caps ? '#define FP_CAPS\n' : ''}${front ? '#define FP_FRONT\n' : ''}`;
+  const defines = [caps && 'FP_CAPS', front && 'FP_FRONT', boxes && 'FP_BOXES'].map(d => (d ? `#define ${d}\n` : '')).join('');
   shader.fragmentShader = `${defines}${shader.fragmentShader}`
     .replace('#include <common>', `#include <common>${DECLARATIONS}`)
     .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>${DISCARD}`)
@@ -149,27 +155,28 @@ function inject(shader: WebGLProgramParametersWithUniforms, uniforms: ModelUnifo
 }
 
 /**
- * Branche les retouches sur la maquette, et sur ses ombres. Renvoie le
- * matériau d'ombre, à libérer avec elle.
+ * Branche les retouches sur la maquette — ou sur un élément généré, sans les
+ * découpes (`boxes`) — et sur ses ombres. Renvoie le matériau d'ombre, à
+ * libérer avec elle.
  *
  * Pas de tranche peinte sur une vitre : on verrait une plaque sombre au
  * travers. Un matériau à face unique ne dessine ses faces arrière que pendant
  * la coupe (`setCutawaySides`).
  */
-export function patchModel(root: Object3D, uniforms: ModelUniforms): Material {
+export function patchModel(root: Object3D, uniforms: ModelUniforms, boxes = true): Material {
   const depth = new MeshDepthMaterial({ depthPacking: RGBADepthPacking });
-  depth.onBeforeCompile = shader => inject(shader, uniforms, { caps: false, front: false });
-  depth.customProgramCacheKey = () => 'fp-depth';
+  depth.onBeforeCompile = shader => inject(shader, uniforms, { caps: false, front: false, boxes });
+  depth.customProgramCacheKey = () => `fp-depth${+boxes}`;
 
   root.traverse(o => {
     if ((o as Mesh).isMesh) (o as Mesh).customDepthMaterial = depth;
     for (const material of materialsOf(o)) {
-      const variant = { caps: !material.transparent, front: material.side === FrontSide && !material.transparent };
+      const variant = { caps: !material.transparent, front: material.side === FrontSide && !material.transparent, boxes };
       material.userData.fpFront = variant.front;
       material.onBeforeCompile = shader => inject(shader, uniforms, variant);
       // Une clé par variante : le texte de la fonction étant le même partout,
       // three.js confondrait sinon leurs programmes.
-      material.customProgramCacheKey = () => `fp-${+variant.caps}${+variant.front}`;
+      material.customProgramCacheKey = () => `fp-${+variant.caps}${+variant.front}${+boxes}`;
       material.needsUpdate = true;
     }
   });

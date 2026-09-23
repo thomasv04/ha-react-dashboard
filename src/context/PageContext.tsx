@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import type { FloorplanPart } from '@/lib/floorplan';
 
 export type PageType = 'grid' | 'media' | 'settings' | 'floorplan';
 
@@ -21,6 +22,8 @@ export interface FloorplanConfig {
   cutaway?: boolean;
   /** La maison tourne lentement après une minute sans geste. */
   idleRotate?: boolean;
+  /** Portes, fenêtres et volets dessinés sur la maquette, mus par leur entité. */
+  parts?: FloorplanPart[];
 }
 
 export interface Page {

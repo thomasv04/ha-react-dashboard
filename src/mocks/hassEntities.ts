@@ -66,6 +66,11 @@ export const MOCK_ENTITIES: Record<string, MockEntityState> = {
     friendly_name: 'Mouvement couloir',
   }),
   'binary_sensor.porte_entree': entity('binary_sensor.porte_entree', 'off', { device_class: 'door', friendly_name: "Porte d'entrée" }),
+  'binary_sensor.porte_cellier': entity('binary_sensor.porte_cellier', 'on', { device_class: 'door', friendly_name: 'Porte du cellier' }),
+  'binary_sensor.fenetre_chambre': entity('binary_sensor.fenetre_chambre', 'on', {
+    device_class: 'window',
+    friendly_name: 'Fenêtre chambre',
+  }),
 
   // Camera selector
   'input_select.camera_selecter': entity('input_select.camera_selecter', 'Sonnette', {}),

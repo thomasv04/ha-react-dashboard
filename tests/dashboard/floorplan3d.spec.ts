@@ -153,6 +153,40 @@ test('in edit mode, a click on the model places a chip anchored where it landed'
   await page.screenshot({ path: testInfo.outputPath('floorplan3d-edit.png'), animations: 'disabled' });
 });
 
+test('in edit mode, two clicks draw a door, which is kept once saved', async ({ page, request }) => {
+  await openModel(page);
+  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
+  await page.getByRole('button', { name: 'Porte · volet' }).click();
+  await expect(page.getByText(/côté gonds/)).toBeVisible();
+  await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
+
+  // Un pan du mur du fond, entre deux fenêtres : le coin bas, puis le coin haut opposé.
+  const box = (await page.locator('[data-floorplan-3d] canvas').boundingBox())!;
+  await page.mouse.click(box.x + box.width * 0.511, box.y + box.height * 0.21);
+  await expect(page.getByText(/coin haut opposé de l'ouverture/)).toBeVisible();
+  await page.mouse.click(box.x + box.width * 0.529, box.y + box.height * 0.134);
+
+  const dialog = page.getByRole('dialog', { name: 'Élément animé' });
+  await page.getByPlaceholder('Rechercher...').fill('porte_entree');
+  await page.getByRole('button', { name: 'binary_sensor.porte_entree', exact: true }).click();
+  // Deviné d'après l'entité : un capteur de porte, une porte.
+  await expect(dialog.getByRole('button', { name: 'Porte', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await dialog.getByRole('button', { name: 'Ajouter' }).click();
+  await expect(dialog).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Maquette 3D' }).click();
+  await expect(page.getByText("Porte d'entrée")).toBeVisible();
+
+  await page.getByRole('button', { name: 'Sauvegarder' }).click();
+  await expect
+    .poll(async () => {
+      const config = await (await request.get(`${API}/api/config`)).json();
+      const parts = config.pages.find((p: { id: string }) => p.id === 'maison')?.floorplan?.parts ?? [];
+      return parts.map((p: { kind: string; entityId: string }) => `${p.kind} ${p.entityId}`);
+    })
+    .toEqual(['door binary_sensor.porte_entree']);
+});
+
 test('in edit mode, a .glb file is uploaded as the model, and its bin deletes it', async ({ page, request }) => {
   await page.goto('/#vierge');
   await page.getByRole('button', { name: 'Modifier le dashboard' }).click();

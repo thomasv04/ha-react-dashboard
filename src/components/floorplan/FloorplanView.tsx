@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Box as BoxIcon, Image as ImageIcon, Map as MapIcon, RotateCcw, X } from 'lucide-react';
+import { Box as BoxIcon, DoorOpen, Image as ImageIcon, Map as MapIcon, MapPin, RotateCcw, X } from 'lucide-react';
 import { usePages, type FloorplanConfig } from '@/context/PageContext';
 import { useDashboardLayout, useEditMode, type FloorplanPos, type GridWidget } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -16,12 +16,26 @@ import { staggerGridContainer } from '@/lib/motion-variants';
 import { assetUrl } from '@/lib/api-base';
 import { colorAlpha } from '@/lib/color-value';
 import { useTheme } from '@/context/ThemeContext';
-import { containSize, isNightDimmed, lightColor, lightGlow, MODEL_SIZE, normalizeAnchor, normalizePos, type Vec3 } from '@/lib/floorplan';
+import {
+  containSize,
+  isNightDimmed,
+  lightColor,
+  lightGlow,
+  MODEL_SIZE,
+  normalizeAnchor,
+  normalizeParts,
+  normalizePos,
+  openness,
+  partFrame,
+  type FloorplanPart,
+  type Vec3,
+} from '@/lib/floorplan';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import type { ChipCardConfig, WidgetConfig } from '@/types/widget-configs';
-import type { Floorplan3DHandle, Lamp } from './Floorplan3D';
+import type { Floorplan3DHandle, Lamp, PartProp } from './Floorplan3D';
 import { FloorplanItem } from './FloorplanItem';
+import { PartList, PartPopover } from './FloorplanParts';
 import { ModelPicker } from './ModelPicker';
 
 // three.js ne se télécharge que pour une page qui a une maquette.
@@ -31,6 +45,14 @@ const Floorplan3D = lazy(() => import('./Floorplan3D'));
 const DEFAULT_ASPECT = 16 / 9;
 
 type Projection = { x: number; y: number } | null;
+
+/** Porte, fenêtre ou volet en cours de dessin : son premier coin (et où il est à l'écran, en %), puis l'élément entier. */
+type PartDraft = { a: Vec3; from: { x: number; y: number }; part?: FloorplanPart; around?: { left: number; right: number; y: number } };
+
+/** Aperçu entrouvert d'un élément dessiné : on voit de quel côté s'ouvre la porte, où descend le volet. */
+const DRAFT_OPENNESS = 0.35;
+/** Clé, parmi les projections, du premier coin d'un élément en cours de dessin. */
+const DRAFT_MARK = '__draft';
 
 /**
  * Page `floorplan` : une image de la maison — ou une maquette 3D — et les
@@ -64,6 +86,9 @@ export function FloorplanView() {
   /** Point cliqué, en % du plan — et de la maquette, s'il y en a une — où poser la prochaine pastille. */
   const [adding, setAdding] = useState<{ x: number; y: number; anchor?: Vec3 } | null>(null);
   const [panel, setPanel] = useState<'image' | 'model' | null>(null);
+  /** Maquette : ce que pose un clic — une pastille, ou un coin de porte, de fenêtre, de volet. */
+  const [tool, setTool] = useState<'chip' | 'part'>('chip');
+  const [draft, setDraft] = useState<PartDraft | null>(null);
 
   // Maquette : chargée (sinon les pastilles accrochées n'ont pas encore de
   // position), en échec, et projection de chaque point d'accroche à l'écran.
@@ -84,6 +109,7 @@ export function FloorplanView() {
     setSelectedId(null);
     setAdding(null);
     setPanel(null);
+    setDraft(null);
   }
 
   useEffect(() => {
@@ -92,6 +118,7 @@ export function FloorplanView() {
       if (e.key !== 'Escape') return;
       setAdding(null);
       setSelectedId(null);
+      setDraft(null);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -128,6 +155,14 @@ export function FloorplanView() {
       })
     : [];
 
+  // ── Portes, fenêtres, volets ───────────────────────────────────────────────
+  const parts = normalizeParts(floorplan?.parts);
+  const partEntities = useEntities(parts.map(p => p.entityId));
+  const partsProp: PartProp[] = [
+    ...parts.map(p => ({ ...p, open: openness(partEntities[p.entityId]?.state, partEntities[p.entityId]?.attributes) })),
+    ...(draft?.part ? [{ ...draft.part, open: DRAFT_OPENNESS }] : []),
+  ];
+
   /** Après chaque image de la maquette : où tombe chaque point d'accroche. */
   const onFrame = () => {
     const handle = three.current;
@@ -137,12 +172,14 @@ export function FloorplanView() {
       const anchor = normalizeAnchor(w.pos?.anchor);
       if (anchor) next[w.id] = handle.project(anchor);
     }
+    // Le premier coin d'un élément en cours de dessin, marqué d'un point.
+    if (draft && !draft.part) next[DRAFT_MARK] = handle.project(draft.a);
     setProjections(next);
   };
 
   // Une pastille accrochée ou déplacée sans que la caméra bouge : redessiner,
   // pour que sa nouvelle position soit projetée.
-  const anchorsKey = model ? JSON.stringify(widgets.map(w => w.pos?.anchor ?? null)) : '';
+  const anchorsKey = model ? JSON.stringify([widgets.map(w => w.pos?.anchor ?? null), draft?.a ?? null]) : '';
   useEffect(() => {
     three.current?.invalidate();
   }, [anchorsKey]);
@@ -162,8 +199,27 @@ export function FloorplanView() {
   const onModelPick = (anchor: Vec3, clientX: number, clientY: number) => {
     const rect = planRef.current?.getBoundingClientRect();
     if (!rect) return;
+    const at = { x: ((clientX - rect.left) / rect.width) * 100, y: ((clientY - rect.top) / rect.height) * 100 };
     setSelectedId(null);
-    setAdding({ x: ((clientX - rect.left) / rect.width) * 100, y: ((clientY - rect.top) / rect.height) * 100, anchor });
+    if (tool === 'chip') return setAdding({ ...at, anchor });
+    // Deux coins : le bas côté gonds, puis le haut opposé. Un second clic trop
+    // proche du premier — ou un nouveau dessin — repart de ce point.
+    if (!draft || draft.part || !partFrame(draft.a, anchor)) return setDraft({ a: anchor, from: at });
+    const handle = three.current;
+    const color = handle?.colorAt(draft.a.map((v, i) => (v + anchor[i]) / 2) as Vec3);
+    setDraft({
+      ...draft,
+      around: { left: Math.min(draft.from.x, at.x), right: Math.max(draft.from.x, at.x), y: (draft.from.y + at.y) / 2 },
+      part: {
+        id: `part-${Date.now().toString(36)}`,
+        kind: 'door',
+        entityId: '',
+        a: draft.a,
+        b: anchor,
+        side: handle?.facing(draft.a, anchor) ?? 1,
+        ...(color && { color }),
+      },
+    });
   };
 
   const placeChip = (entityId: string) => {
@@ -280,6 +336,26 @@ export function FloorplanView() {
     </button>
   );
 
+  const toolButton = (id: 'chip' | 'part', Icon: typeof MapPin, label: string) => (
+    <button
+      onClick={() => {
+        setTool(id);
+        setDraft(null);
+        setAdding(null);
+      }}
+      aria-pressed={tool === id}
+      className={cn(
+        'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors',
+        tool === id ? 'bg-blue-500/20 text-blue-300' : 'text-white/45 hover:text-white/70'
+      )}
+    >
+      <Icon size={12} /> {label}
+    </button>
+  );
+
+  // Ce qu'un clic fera, selon l'outil — et, en cours de dessin, ce qui reste à cliquer.
+  const hint = !model ? 'clickToAdd' : tool === 'chip' ? 'clickToAdd3d' : draft && !draft.part ? 'partHintNext' : 'partHint';
+
   const checkbox = (label: string, checked: boolean, onChange: (checked: boolean) => void) => (
     <label className='flex items-center gap-1.5 text-xs text-white/60 cursor-pointer select-none'>
       <input type='checkbox' checked={checked} onChange={e => onChange(e.target.checked)} className='accent-blue-500' />
@@ -317,6 +393,7 @@ export function FloorplanView() {
                   // Ni en édition, où l'on règle la vue, ni en économie d'énergie.
                   idleRotate={!!floorplan?.idleRotate && motionAllowed && !isEditMode}
                   lamps={lamps}
+                  parts={partsProp}
                   onFrame={onFrame}
                   onPick={isEditMode ? onModelPick : undefined}
                   onLoad={() => setLoadedModel(model)}
@@ -331,6 +408,24 @@ export function FloorplanView() {
             )}
             {items}
             {addPopover}
+            {draft && !draft.part && projections[DRAFT_MARK] && (
+              <span
+                className='absolute w-3 h-3 rounded-full bg-amber-400 ring-4 ring-amber-400/30 pointer-events-none'
+                style={{ left: `${projections[DRAFT_MARK].x}%`, top: `${projections[DRAFT_MARK].y}%`, translate: '-50% -50%' }}
+              />
+            )}
+            {draft?.part && draft.around && (
+              <PartPopover
+                part={draft.part}
+                around={draft.around}
+                onChange={part => setDraft({ ...draft, part })}
+                onAdd={() => {
+                  if (draft.part) setFloorplan({ parts: [...parts, draft.part] });
+                  setDraft(null);
+                }}
+                onCancel={() => setDraft(null)}
+              />
+            )}
             {loaded && !isEditMode && (
               <button
                 onClick={() => three.current?.resetView()}
@@ -449,9 +544,20 @@ export function FloorplanView() {
                   {checkbox(t('layout.floorplan.idleRotate'), !!floorplan?.idleRotate, checked => setFloorplan({ idleRotate: checked }))}
                 </div>
               )}
+              {model && <PartList parts={parts} onRemove={id => setFloorplan({ parts: parts.filter(p => p.id !== id) })} />}
             </div>
           )}
-          <p className='text-[11px] text-white/40 px-0.5'>{t(model ? 'layout.floorplan.clickToAdd3d' : 'layout.floorplan.clickToAdd')}</p>
+          {model && (
+            <div
+              role='group'
+              aria-label={t('layout.floorplan.tool')}
+              className='flex gap-1 p-0.5 rounded-lg bg-white/5 border border-white/10 w-fit'
+            >
+              {toolButton('chip', MapPin, t('layout.floorplan.toolChip'))}
+              {toolButton('part', DoorOpen, t('layout.floorplan.toolPart'))}
+            </div>
+          )}
+          <p className='text-[11px] text-white/40 px-0.5'>{t(`layout.floorplan.${hint}`)}</p>
         </div>
       )}
     </div>
