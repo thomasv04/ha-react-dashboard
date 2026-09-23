@@ -389,6 +389,7 @@
     "idleRotate": "Rotate when idle",
     "sky": "Sky",
     "lampGlow": "Lamp glow",
+    "mockSun": "Sun (demo)",
     "weather": "Weather",
     "tool": "Place",
     "toolChip": "Chip",

@@ -25,6 +25,7 @@ import type { BackgroundConfig } from '@/config/themes';
 import { DEFAULT_WIDGET_CONFIGS } from '@/widgets';
 import { useEntities } from '@/hooks/useEntities';
 import { useElementBox } from '@/hooks/useWidgetSize';
+import { useFormats } from '@/hooks/useFormats';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useLowPowerMotion } from '@/hooks/useLowPowerMotion';
 import { staggerGridContainer } from '@/lib/motion-variants';
@@ -49,6 +50,7 @@ import {
   polygonCentroid,
   precipitation,
   skyColors,
+  sunPosition,
   temperatureOf,
   thermalColor,
   type FloorplanPart,
@@ -65,6 +67,10 @@ import { ModelPicker } from './ModelPicker';
 
 // three.js ne se télécharge que pour une page qui a une maquette.
 const Floorplan3D = lazy(() => import('./Floorplan3D'));
+
+/** `vite --mode mock` : de quoi essayer la page sans Home Assistant. */
+const MOCK = import.meta.env.MODE === 'mock';
+const HOUR_MS = 3_600_000;
 
 /** Proportions supposées tant que l'image n'est pas chargée. */
 const DEFAULT_ASPECT = 16 / 9;
@@ -127,6 +133,7 @@ export function FloorplanView() {
   const { getWidgetConfig, updateWidgetConfig } = useWidgetConfig();
   const motionAllowed = useLowPowerMotion();
   const { tokens, perfSettings } = useTheme();
+  const { formatTime } = useFormats();
 
   const areaRef = useRef<HTMLDivElement>(null);
   const planRef = useRef<HTMLDivElement>(null);
@@ -234,7 +241,15 @@ export function FloorplanView() {
   const lights = useEntities(glows.map(g => g.entityId));
   const sunEntity = useEntities(['sun.sun'])['sun.sun'];
   const dimmed = isNightDimmed(sunEntity?.state, floorplan?.dimAtNight);
-  const sunElevation = sunEntity?.attributes?.elevation as number | undefined;
+  // Mode mock : l'heure du soleil se règle au curseur (panneau « Maquette 3D »),
+  // pour voir la maquette de nuit, à l'aube, à midi. Le soleil d'aujourd'hui, au
+  // lieu que donne la configuration de HA.
+  const place = useHass(s => s.config);
+  const [today] = useState(() => new Date().setHours(0, 0, 0, 0));
+  const [mockHour, setMockHour] = useState(14);
+  const simulated = MOCK && place ? sunPosition(new Date(today + mockHour * HOUR_MS), place.latitude, place.longitude) : null;
+  const sunElevation = simulated?.elevation ?? (sunEntity?.attributes?.elevation as number | undefined);
+  const sunAzimuth = simulated?.azimuth ?? (sunEntity?.attributes?.azimuth as number | undefined);
   // La météo voile le soleil et grise le ciel : l'entité choisie, ou la première trouvée.
   const firstWeather = useHass(s => Object.keys(s.entities ?? {}).find(id => id.startsWith('weather.')));
   const weatherId = floorplan?.weather || firstWeather || '';
@@ -669,7 +684,7 @@ export function FloorplanView() {
                   model={assetUrl(model)}
                   camera={floorplan?.camera}
                   sunElevation={sunElevation}
-                  sunAzimuth={sunEntity?.attributes?.azimuth as number | undefined}
+                  sunAzimuth={sunAzimuth}
                   north={floorplan?.north ?? 0}
                   cloudiness={clouds}
                   shadows={!perfSettings.disableShadows}
@@ -967,6 +982,21 @@ export function FloorplanView() {
                   {checkbox(t('layout.floorplan.sky'), floorplan?.sky !== false, checked => setFloorplan({ sky: checked }))}
                   {checkbox(t('layout.floorplan.lampGlow'), !!floorplan?.lampGlow, checked => setFloorplan({ lampGlow: checked }))}
                 </div>
+              )}
+              {model && MOCK && (
+                <label className='flex items-center gap-2 text-xs text-white/60'>
+                  {t('layout.floorplan.mockSun')}
+                  <input
+                    type='range'
+                    min={0}
+                    max={23.75}
+                    step={0.25}
+                    value={mockHour}
+                    onChange={e => setMockHour(Number(e.target.value))}
+                    className='flex-1 min-w-0 accent-amber-400'
+                  />
+                  <span className='w-11 text-right tabular-nums text-white/80'>{formatTime(new Date(today + mockHour * HOUR_MS))}</span>
+                </label>
               )}
               {model && (
                 <EntityPicker
