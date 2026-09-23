@@ -190,6 +190,43 @@ test('a chip hidden by the model fades out once the camera stops', async ({ page
   await expect(lamp).toHaveCSS('opacity', '1');
 });
 
+test('the replay plays the last 24 hours back, the sun with them', async ({ page }) => {
+  await openModel(page);
+  await page.getByRole('button', { name: 'Rejouer les dernières 24 heures' }).click();
+  const slider = page.getByRole('slider', { name: 'Heure rejouée' });
+  await expect(slider).toBeVisible();
+  // Rejouée, la maison montre le passé : pastilles et cards, qui montrent le présent, s'estompent.
+  await expect(page.locator('[data-floorplan-item="weather-3d"]')).toHaveCSS('opacity', '0.2');
+
+  // La lecture part d'il y a 24 heures : en pause, on choisit l'heure.
+  await page.getByRole('button', { name: 'Pause' }).click();
+  const { min } = await slider.evaluate(el => ({ min: Number((el as HTMLInputElement).min) }));
+  /** L'instant de la période qui tombe à cette heure UTC. */
+  const at = (utcHour: number) => {
+    const day = 86_400_000;
+    const time = Math.floor(min / day) * day + utcHour * 3_600_000;
+    return String(time < min ? time + day : time);
+  };
+  // Clarté du haut du ciel, derrière la maquette.
+  const sky = () =>
+    page.locator('[data-floorplan-plan]').evaluate(el => {
+      const [, r, g, b] = getComputedStyle(el)
+        .backgroundImage.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/)!
+        .map(Number);
+      return r + g + b;
+    });
+  // Le mock place la maison à Paris : à 1 h UTC, il fait nuit ; à midi, grand jour.
+  await slider.fill(at(1));
+  await expect.poll(sky).toBeLessThan(150);
+  await slider.fill(at(12));
+  await expect.poll(sky).toBeGreaterThan(300);
+
+  // Échap revient au direct.
+  await page.keyboard.press('Escape');
+  await expect(slider).toBeHidden();
+  await expect(page.locator('[data-floorplan-item="weather-3d"]')).toHaveCSS('opacity', '1');
+});
+
 test.describe('on a phone', () => {
   test.use({ viewport: { width: 390, height: 780 } });
 
@@ -198,7 +235,8 @@ test.describe('on a phone', () => {
     // Le téléphone tourné vers `alpha`, comme Android le dit.
     const face = (alpha: number) =>
       page.evaluate(
-        a => window.dispatchEvent(new DeviceOrientationEvent('deviceorientationabsolute', { alpha: a, beta: 40, gamma: 0, absolute: true })),
+        a =>
+          window.dispatchEvent(new DeviceOrientationEvent('deviceorientationabsolute', { alpha: a, beta: 40, gamma: 0, absolute: true })),
         alpha
       );
     const compass = page.getByRole('button', { name: 'Boussole' });

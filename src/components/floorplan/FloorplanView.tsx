@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   Compass,
   DoorOpen,
+  History as HistoryIcon,
   Image as ImageIcon,
   Map as MapIcon,
   MapPin,
@@ -50,6 +51,7 @@ import {
   polygonCentroid,
   precipitation,
   skyColors,
+  stateAt,
   sunPosition,
   temperatureOf,
   thermalColor,
@@ -62,7 +64,9 @@ import type { ChipCardConfig, WidgetConfig } from '@/types/widget-configs';
 import type { FloorOverlay, Floorplan3DHandle, Lamp, PartProp } from './Floorplan3D';
 import { FloorplanItem } from './FloorplanItem';
 import { PartList, PartPopover } from './FloorplanParts';
+import { ReplayBar } from './FloorplanReplay';
 import { RoomList, RoomNamePopover } from './FloorplanRooms';
+import { useReplay } from './useReplay';
 import { ModelPicker } from './ModelPicker';
 
 // three.js ne se télécharge que pour une page qui a une maquette.
@@ -175,6 +179,21 @@ export function FloorplanView() {
   const model = floorplan?.model;
   const widgets = layout.widgets.lg;
 
+  // ── Rejouer la journée ─────────────────────────────────────────────────────
+  // Lampes et éléments animés, que l'historique rejoue.
+  const glows = widgets.flatMap(w => {
+    if (w.type !== 'chip') return [];
+    const config = getWidgetConfig<ChipCardConfig>(w.id);
+    const entityId = config?.entityId ?? '';
+    if (!entityId.startsWith('light.') || config?.glow === false) return [];
+    return [{ id: w.id, entityId, pos: normalizePos(w.pos, false), anchor: normalizeAnchor(w.pos?.anchor), size: config?.glowSize ?? 12 }];
+  });
+  const parts = normalizeParts(floorplan?.parts);
+  const replay = useReplay([...glows.map(g => g.entityId), ...parts.map(p => p.entityId)]);
+  const closeReplay = replay.close;
+  /** État d'une entité à l'instant rejoué — `undefined` en direct, ou sans historique. */
+  const replayed = (entityId: string) => (replay.span ? stateAt(replay.history[entityId], replay.time) : undefined);
+
   // Entrer en édition ou en sortir, changer de page : on referme ce qui n'avait
   // de sens qu'avant — pendant le rendu plutôt que dans un effet, qui
   // peindrait d'abord l'état périmé.
@@ -189,6 +208,7 @@ export function FloorplanView() {
     setRoomDraft(null);
     setFocusId(null);
     setCompass(false);
+    closeReplay();
   }
 
   useEffect(() => {
@@ -219,37 +239,36 @@ export function FloorplanView() {
     return () => window.removeEventListener('deviceorientationabsolute', onOrientation);
   }, [isPhone, model, compassReady]);
 
-  // Échap ramène à toute la maison — sauf s'il referme d'abord la fiche d'une pastille.
+  // Échap referme la relecture, puis ramène à toute la maison — sauf s'il
+  // referme d'abord la fiche d'une pastille.
   const sheetOpen = !!useMoreInfoOptional()?.state;
+  const replaying = !!replay.span;
   useEffect(() => {
-    if (!focusId || sheetOpen) return;
+    if ((!focusId && !replaying) || sheetOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setFocusId(null);
+      if (e.key !== 'Escape') return;
+      if (replaying) closeReplay();
+      else setFocusId(null);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [focusId, sheetOpen]);
+  }, [focusId, replaying, sheetOpen, closeReplay]);
 
   // ── Lampes : halos du plan, lumières de la maquette ────────────────────────
-  const glows = widgets.flatMap(w => {
-    if (w.type !== 'chip') return [];
-    const config = getWidgetConfig<ChipCardConfig>(w.id);
-    const entityId = config?.entityId ?? '';
-    if (!entityId.startsWith('light.') || config?.glow === false) return [];
-    return [{ id: w.id, entityId, pos: normalizePos(w.pos, false), anchor: normalizeAnchor(w.pos?.anchor), size: config?.glowSize ?? 12 }];
-  });
   const lights = useEntities(glows.map(g => g.entityId));
   const sunEntity = useEntities(['sun.sun'])['sun.sun'];
   const dimmed = isNightDimmed(sunEntity?.state, floorplan?.dimAtNight);
   // Mode mock : l'heure du soleil se règle au curseur (panneau « Maquette 3D »),
   // pour voir la maquette de nuit, à l'aube, à midi. Le soleil d'aujourd'hui, au
   // lieu que donne la configuration de HA.
+  // Pendant une relecture, c'est le soleil de l'instant rejoué.
   const place = useHass(s => s.config);
   const [today] = useState(() => new Date().setHours(0, 0, 0, 0));
   const [mockHour, setMockHour] = useState(14);
-  const simulated = MOCK && place ? sunPosition(new Date(today + mockHour * HOUR_MS), place.latitude, place.longitude) : null;
-  const sunElevation = simulated?.elevation ?? (sunEntity?.attributes?.elevation as number | undefined);
-  const sunAzimuth = simulated?.azimuth ?? (sunEntity?.attributes?.azimuth as number | undefined);
+  const sunAt = replay.span ? replay.time : MOCK ? today + mockHour * HOUR_MS : null;
+  const computedSun = sunAt !== null && place ? sunPosition(new Date(sunAt), place.latitude, place.longitude) : null;
+  const sunElevation = computedSun?.elevation ?? (sunEntity?.attributes?.elevation as number | undefined);
+  const sunAzimuth = computedSun?.azimuth ?? (sunEntity?.attributes?.azimuth as number | undefined);
   // La météo voile le soleil et grise le ciel : l'entité choisie, ou la première trouvée.
   const firstWeather = useHass(s => Object.keys(s.entities ?? {}).find(id => id.startsWith('weather.')));
   const weatherId = floorplan?.weather || firstWeather || '';
@@ -267,7 +286,7 @@ export function FloorplanView() {
   const lamps: Lamp[] = model
     ? glows.flatMap(g => {
         if (!g.anchor) return [];
-        const entity = lights[g.entityId];
+        const entity = replayed(g.entityId) ?? lights[g.entityId];
         const brightness = entity?.attributes?.brightness;
         return [
           {
@@ -286,10 +305,12 @@ export function FloorplanView() {
     : [];
 
   // ── Portes, fenêtres, volets ───────────────────────────────────────────────
-  const parts = normalizeParts(floorplan?.parts);
   const partEntities = useEntities(parts.map(p => p.entityId));
   const partsProp: PartProp[] = [
-    ...parts.map(p => ({ ...p, open: openness(partEntities[p.entityId]?.state, partEntities[p.entityId]?.attributes) })),
+    ...parts.map(p => {
+      const entity = replayed(p.entityId) ?? partEntities[p.entityId];
+      return { ...p, open: openness(entity?.state, entity?.attributes) };
+    }),
     ...(draft?.part ? [{ ...draft.part, open: DRAFT_OPENNESS }] : []),
   ];
 
@@ -312,7 +333,8 @@ export function FloorplanView() {
     const mean = (key: 'value' | 'celsius') => readings.reduce((sum, r) => sum + r[key], 0) / readings.length;
     return { value: mean('value'), celsius: mean('celsius') };
   });
-  const showThermal = thermal && !isEditMode;
+  // Rejouée, la maison n'a que l'historique de ses lampes et de ses portes : pas de températures.
+  const showThermal = thermal && !isEditMode && !replaying;
   /** Pastilles d'un détecteur de mouvement ou de présence déclenché : une lueur respire dessous. */
   const present = new Set(
     widgets.flatMap(w => {
@@ -571,7 +593,8 @@ export function FloorplanView() {
               projected={projected ?? undefined}
               onCommit={model && w.type === 'chip' ? reanchor(w) : undefined}
               // Vol vers une pièce : les pastilles des autres pièces s'estompent.
-              faded={!!anchor && !!focusRoom && !pointInPolygon(anchor[0], anchor[2], focusRoom.points)}
+              // Rejouée, tout s'estompe : pastilles et cards montrent le présent.
+              faded={replaying || (!!anchor && !!focusRoom && !pointInPolygon(anchor[0], anchor[2], focusRoom.points))}
               hidden={!isEditMode && occluded.has(w.id)}
               breathing={present.has(w.id)}
             />
@@ -818,7 +841,17 @@ export function FloorplanView() {
               />
             )}
             {loaded && !isEditMode && (
-              <div className='absolute right-3 bottom-3 z-30 flex gap-2'>
+              <div className={cn('absolute right-3 bottom-3 z-30 flex gap-2', replay.span && 'left-3')}>
+                {replay.span && (
+                  <ReplayBar
+                    start={replay.span.start}
+                    end={replay.span.end}
+                    time={replay.time}
+                    running={replay.running}
+                    onSeek={replay.seek}
+                    onToggle={replay.toggle}
+                  />
+                )}
                 {compassReady && isPhone && (
                   <button
                     onClick={() => setCompass(on => !on)}
@@ -833,7 +866,7 @@ export function FloorplanView() {
                     <Compass size={16} />
                   </button>
                 )}
-                {roomTemperatures.some(Boolean) && (
+                {roomTemperatures.some(Boolean) && !replaying && (
                   <button
                     onClick={() => setThermal(on => !on)}
                     aria-pressed={thermal}
@@ -847,6 +880,18 @@ export function FloorplanView() {
                     <Thermometer size={16} />
                   </button>
                 )}
+                <button
+                  onClick={() => (replaying ? closeReplay() : replay.open())}
+                  aria-pressed={replaying}
+                  title={t('layout.floorplan.replay')}
+                  aria-label={t('layout.floorplan.replay')}
+                  className={cn(
+                    'p-2.5 rounded-xl gc-overlay transition-colors',
+                    replaying ? 'text-sky-300' : 'text-white/60 hover:text-white'
+                  )}
+                >
+                  <HistoryIcon size={16} />
+                </button>
                 <button
                   onClick={() => {
                     setFocusId(null);

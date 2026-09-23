@@ -23,11 +23,13 @@ import {
   resizePos,
   shortestTurn,
   skyColors,
+  stateAt,
   sunLighting,
   sunPosition,
   temperatureOf,
   thermalColor,
   DEFAULT_WIDGET_SIZE,
+  type HistoryEntry,
   type Vec3,
 } from './floorplan';
 
@@ -294,6 +296,28 @@ describe('cloudiness', () => {
   it('assumes a clear sky for an unknown or missing state', () => {
     expect(cloudiness('unavailable')).toBe(0);
     expect(cloudiness(undefined)).toBe(0);
+  });
+});
+
+describe('stateAt', () => {
+  const history: HistoryEntry[] = [
+    { s: 'off', a: { friendly_name: 'Lampe' }, lu: 1000 },
+    { s: 'on', a: { brightness: 120 }, lu: 2000 },
+    // L'état seul : HA ne répète pas des attributs inchangés.
+    { s: 'on', lu: 3000 },
+    { s: 'off', a: {}, lu: 4000 },
+  ];
+
+  it('replays the last change up to that time, attributes carried forward', () => {
+    expect(stateAt(history, 2_500_000)).toEqual({ state: 'on', attributes: { brightness: 120 } });
+    expect(stateAt(history, 3_500_000)).toEqual({ state: 'on', attributes: { brightness: 120 } });
+    expect(stateAt(history, 4_000_000)).toEqual({ state: 'off', attributes: {} });
+  });
+
+  it('keeps the first known state before any change, and nothing without history', () => {
+    expect(stateAt(history, 0)?.state).toBe('off');
+    expect(stateAt(undefined, 0)).toBeUndefined();
+    expect(stateAt([], 0)).toBeUndefined();
   });
 });
 

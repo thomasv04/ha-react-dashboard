@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **20 tâches sur 21** — phases A à G, et `H1`. Reste `H2` ; `F1` reste à essayer sur un vrai Android.
+**État global** : **21 tâches sur 21** — toutes les phases. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -365,7 +365,21 @@ Le reste est indépendant.
   de Home Assistant, pour n'importe quelle heure. Testée contre des valeurs de
   référence.
 
-### [ ] H2 — Le curseur des 24 heures
+### [x] H2 — Le curseur des 24 heures
+
+> **Fait** : un bouton « Rejouer les dernières 24 heures », à côté de
+> « Recentrer », ouvre une barre de lecture : lecture accélérée (une
+> demi-heure par seconde, la journée en 48 s), curseur, heure. Le soleil est
+> celui de l'instant rejoué, calculé au lieu de HA (`H1`) : ciel, ombres et
+> étoiles suivent. Lampes, portes, fenêtres et volets rejouent leur historique
+> (`history/history_during_period`, attributs compris : luminosité,
+> position) — lu par `stateAt`, testée ; sans historique, ils restent dans
+> leur état du moment. Pendant la relecture, pastilles et cards, qui montrent
+> le présent, s'estompent, et la vue thermique se retire. Échap ou le bouton
+> reviennent au direct. Mock : une journée simulée — lampes au réveil et le
+> soir, porte ouverte à midi, volet fermé la nuit. En mode mock toujours, un
+> curseur « Soleil (démo) », dans « Maquette 3D », règle l'heure du soleil
+> sans relecture (demandé en cours de route).
 
 - **Quoi** : un curseur rejoue les 24 dernières heures d'après l'historique
   (`history/history_during_period`) : soleil, ombres, lampes, portes,

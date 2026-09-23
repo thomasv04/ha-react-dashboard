@@ -514,6 +514,41 @@ const SUN_COLORS: { at: number; color: Rgb }[] = [
   { at: 25, color: [255, 241, 220] },
 ];
 
+// ── Rejouer la journée ───────────────────────────────────────────────────────
+
+/**
+ * Un changement d'état dans l'historique de HA (`history/history_during_period`,
+ * format compressé) : l'état, les attributs quand ils ont changé, l'instant en
+ * secondes.
+ */
+export interface HistoryEntry {
+  s: string;
+  a?: Record<string, unknown>;
+  lu?: number;
+  lc?: number;
+}
+
+/**
+ * État d'une entité à l'instant `time` (ms), d'après son historique : le
+ * dernier changement survenu d'ici là. HA ne répète les attributs que quand
+ * ils changent : on garde les derniers vus. Avant le premier changement
+ * connu, le premier état — celui du début de la période.
+ */
+export function stateAt(
+  entries: HistoryEntry[] | undefined,
+  time: number
+): { state: string; attributes: Record<string, unknown> } | undefined {
+  if (!entries?.length) return undefined;
+  let state = entries[0].s;
+  let attributes = entries[0].a ?? {};
+  for (const entry of entries) {
+    if ((entry.lu ?? entry.lc ?? 0) * 1000 > time) break;
+    state = entry.s;
+    if (entry.a) attributes = entry.a;
+  }
+  return { state, attributes };
+}
+
 const RAD = Math.PI / 180;
 /** Inclinaison de l'axe de la Terre sur son orbite. */
 const OBLIQUITY = 23.4397 * RAD;
