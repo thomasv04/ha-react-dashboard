@@ -145,6 +145,10 @@ interface Floorplan3DProps {
   floors?: FloorOverlay[];
   /** Pièce vers laquelle la caméra vole ; `null` : retour à la vue d'où elle est partie. */
   focus?: Pick<FloorplanRoom, 'y' | 'points'> | null;
+  /** Points d'accroche à vérifier, par identifiant : la maquette les cache-t-elle ? */
+  anchors?: Record<string, Vec3>;
+  /** Scène posée, vérification faite : les points d'accroche que la maquette cache. */
+  onOcclusion?: (hidden: Set<string>) => void;
   onLoad: () => void;
   onError: (kind: 'webgl' | 'model') => void;
 }
@@ -182,6 +186,17 @@ const WALL_SLIDE_MS = 110;
 const FLY_MS = 1000;
 /** Une pièce n'est jamais vue plus à plat que la maison depuis la vue d'accueil : on y plonge. */
 const FOCUS_MAX_POLAR = Math.acos(DEFAULT_DIRECTION.y);
+
+/** Sans nouvelle image depuis ce temps (ms), la scène est posée : on vérifie ce que la maquette cache. */
+const SETTLE_MS = 250;
+/**
+ * Lancers de rayon de la vérification, par image : pas plus de ce temps (ms).
+ * Un rayon traverse toute la maquette — plusieurs ms sur une tablette, pour
+ * chaque pastille : tous d'un coup, l'écran se figerait.
+ */
+const OCCLUSION_BUDGET_MS = 4;
+/** Un obstacle plus près que ça d'un point d'accroche n'en est pas un : c'est la surface où il est posé. */
+const OCCLUSION_MARGIN = MODEL_SIZE * 0.01;
 
 /** Départ et arrivée en douceur. */
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2);
@@ -244,6 +259,37 @@ const pointer = new Vector2();
 /** Point de la scène retiré par la coupe des murs — invisible, donc ni cliquable ni support de pastille. */
 function isCut(s: Stage, point: Vector3) {
   return !!s.cut && isCutAway(point.toArray() as Vec3, s.cut);
+}
+
+/** Dans la découpe d'un élément animé : l'original qu'il remplace, que la maquette ne dessine plus (cf. `modelPatch`). */
+function inPartCut(s: Stage, p: Vector3) {
+  return [...s.parts.values()].some(({ obj: { cut: c } }) => {
+    if (!c) return false;
+    const dx = p.x - c.center[0];
+    const dz = p.z - c.center[2];
+    return (
+      Math.abs(dx * c.u[0] + dz * c.u[1]) < c.half[0] &&
+      Math.abs(p.y - c.center[1]) < c.half[1] &&
+      Math.abs(dz * c.u[0] - dx * c.u[1]) < c.half[2]
+    );
+  });
+}
+
+/** Point d'accroche, dans la scène. En haut d'un mur coupé : posé sur ce qu'il en reste, plutôt que de flotter dans le vide. */
+function anchorPoint(s: Stage, root: Object3D, local: Vec3) {
+  const point = root.localToWorld(new Vector3(...local));
+  if (s.cut && isCut(s, point)) point.y = cutLimit(point.toArray() as Vec3, s.cut);
+  return point;
+}
+
+/** Point d'accroche caché par ce que la maquette dessine — ni les murs abaissés, ni les originaux découpés. */
+function occluded(s: Stage, root: Object3D, local: Vec3) {
+  const toward = anchorPoint(s, root, local).sub(s.camera.position);
+  raycaster.set(s.camera.position, toward.clone().normalize());
+  raycaster.far = toward.length() - OCCLUSION_MARGIN;
+  const hidden = raycaster.intersectObject(root, true).some(h => !isCut(s, h.point) && !inPartCut(s, h.point));
+  raycaster.far = Infinity;
+  return hidden;
 }
 
 /** Le rayon de la caméra vers ce point de l'écran. */
@@ -648,6 +694,8 @@ export default function Floorplan3D({
   outline,
   floors,
   focus,
+  anchors,
+  onOcclusion,
   onLoad,
   onError,
 }: Floorplan3DProps) {
@@ -655,9 +703,9 @@ export default function Floorplan3D({
   const stage = useRef<Stage | null>(null);
 
   // Dernières valeurs, lues par des écouteurs posés une fois pour toutes.
-  const latest = useRef({ camera, lamps, parts, floors, onFrame, onPick, onHover, onLoad, onError });
+  const latest = useRef({ camera, lamps, parts, floors, anchors, onFrame, onPick, onHover, onOcclusion, onLoad, onError });
   useLayoutEffect(() => {
-    latest.current = { camera, lamps, parts, floors, onFrame, onPick, onHover, onLoad, onError };
+    latest.current = { camera, lamps, parts, floors, anchors, onFrame, onPick, onHover, onOcclusion, onLoad, onError };
   });
 
   // ── Scène, caméra, rendu ───────────────────────────────────────────────────
@@ -710,6 +758,26 @@ export default function Floorplan3D({
     let frame = 0;
     let dirty = false;
     const animators = new Set<(now: number) => boolean>();
+    // Ce que la maquette cache : vérifié une fois la scène posée, quelques
+    // rayons par image ; une nouvelle image annule la vérification en cours.
+    let settle = 0;
+    let checking = 0;
+    const checkOcclusion = () => {
+      const root = s.root;
+      if (!root || !latest.current.anchors || !latest.current.onOcclusion) return;
+      const queue = Object.entries(latest.current.anchors);
+      const hidden = new Set<string>();
+      const step = () => {
+        const until = performance.now() + OCCLUSION_BUDGET_MS;
+        while (queue.length && performance.now() < until) {
+          const [id, anchor] = queue.pop()!;
+          if (occluded(s, root, anchor)) hidden.add(id);
+        }
+        if (queue.length) checking = requestAnimationFrame(step);
+        else latest.current.onOcclusion?.(hidden);
+      };
+      step();
+    };
     const tick = (now: number) => {
       // Pendant le tick, une demande de rendu ne planifie rien : on décide à la fin.
       frame = -1;
@@ -719,6 +787,9 @@ export default function Floorplan3D({
         updateCutaway(s);
         renderer.render(scene, cam);
         latest.current.onFrame();
+        window.clearTimeout(settle);
+        cancelAnimationFrame(checking);
+        settle = window.setTimeout(checkOcclusion, SETTLE_MS);
       }
       frame = animators.size || dirty ? requestAnimationFrame(tick) : 0;
     };
@@ -798,6 +869,8 @@ export default function Floorplan3D({
     return () => {
       cancelAnimationFrame(frame);
       cancelAnimationFrame(hoverFrame);
+      cancelAnimationFrame(checking);
+      window.clearTimeout(settle);
       observer.disconnect();
       controls.dispose();
       renderer.domElement.removeEventListener('pointerdown', onDown);
@@ -1003,11 +1076,7 @@ export default function Floorplan3D({
       project(anchor) {
         const s = stage.current;
         if (!s?.root) return null;
-        const point = s.root.localToWorld(new Vector3(...anchor));
-        // Accrochée en haut d'un mur coupé : posée sur ce qu'il en reste,
-        // plutôt que de flotter dans le vide.
-        if (s.cut && isCut(s, point)) point.y = cutLimit(point.toArray() as Vec3, s.cut);
-        const v = point.project(s.camera);
+        const v = anchorPoint(s, s.root, anchor).project(s.camera);
         if (v.z < -1 || v.z > 1) return null;
         return { x: (v.x + 1) * 50, y: (1 - v.y) * 50 };
       },

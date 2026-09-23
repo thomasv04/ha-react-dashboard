@@ -22,6 +22,8 @@ interface FloorplanItemProps {
   onCommit?: (next: FloorplanPos, clientX: number, clientY: number) => void;
   /** Estompé, et inerte : le toucher passe au travers, jusqu'à la maquette. */
   faded?: boolean;
+  /** Caché par la maquette : effacé, et inerte. */
+  hidden?: boolean;
 }
 
 /**
@@ -31,7 +33,7 @@ interface FloorplanItemProps {
  * actions, visibilité conditionnelle, styles d'état et frontière d'erreur
  * compris. En édition, le widget est inerte sous un calque qui le déplace.
  */
-export function FloorplanItem({ widget, isEditMode, selected, onSelect, planRef, projected, onCommit, faded }: FloorplanItemProps) {
+export function FloorplanItem({ widget, isEditMode, selected, onSelect, planRef, projected, onCommit, faded, hidden }: FloorplanItemProps) {
   const { t } = useI18n();
   const { updateWidget, removeWidget } = useDashboardLayout();
   const { setEditingWidgetId } = useWidgetConfig();
@@ -86,8 +88,8 @@ export function FloorplanItem({ widget, isEditMode, selected, onSelect, planRef,
       // Le calque des éléments laisse passer les clics vers le plan ; chaque
       // élément les reprend. Le clic s'arrête ici : sinon, sur le plan, il
       // poserait une pastille en plus.
-      className={cn('absolute pointer-events-auto transition-opacity duration-500', faded && 'opacity-20')}
-      inert={faded}
+      className={cn('absolute pointer-events-auto transition-opacity duration-500', faded && 'opacity-20', hidden && 'opacity-0')}
+      inert={faded || hidden}
       onClick={e => e.stopPropagation()}
       style={{
         left: `${pos.x}%`,

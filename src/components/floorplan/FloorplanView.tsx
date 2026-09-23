@@ -145,6 +145,8 @@ export function FloorplanView() {
   const [thermal, setThermal] = useState(false);
   /** Pièce vers laquelle la caméra a volé, hors édition. */
   const [focusId, setFocusId] = useState<string | null>(null);
+  /** Pastilles que la maquette cache — vérifié quand la caméra s'arrête. */
+  const [occluded, setOccluded] = useState<Set<string>>(() => new Set());
   /** Point sous le pointeur, entre les deux clics d'un dessin. */
   const [hover, setHover] = useState<Vec3 | null>(null);
   /** Coin d'un élément dessiné repris à la souris, le temps du glisser. */
@@ -296,6 +298,16 @@ export function FloorplanView() {
             : []),
         ]
       : [];
+
+  /** Hors édition, les pastilles que la maquette cache s'effacent : leurs points d'accroche, à vérifier. */
+  const anchors = isEditMode
+    ? undefined
+    : Object.fromEntries(
+        widgets.flatMap(w => {
+          const anchor = normalizeAnchor(w.pos?.anchor);
+          return anchor ? [[w.id, anchor]] : [];
+        })
+      );
 
   /** Après chaque image de la maquette : où tombe chaque point d'accroche. */
   const onFrame = () => {
@@ -518,6 +530,7 @@ export function FloorplanView() {
               onCommit={model && w.type === 'chip' ? reanchor(w) : undefined}
               // Vol vers une pièce : les pastilles des autres pièces s'estompent.
               faded={!!anchor && !!focusRoom && !pointInPolygon(anchor[0], anchor[2], focusRoom.points)}
+              hidden={!isEditMode && occluded.has(w.id)}
             />
           );
         })}
@@ -640,6 +653,8 @@ export function FloorplanView() {
                   outline={outline}
                   floors={floors}
                   focus={focusRoom ?? null}
+                  anchors={anchors}
+                  onOcclusion={setOccluded}
                   onFrame={onFrame}
                   onPick={isEditMode ? onModelPick : onViewPick}
                   onHover={isEditMode && ((draft && !draft.part) || (roomDraft && !roomDraft.naming)) ? setHover : undefined}

@@ -33,7 +33,7 @@ const WIDGETS: GridWidget[] = [
   chip('demo-temperature', [-11.2, 0.5, -4.6]),
   // Un capteur de température par pièce : la vue thermique les retrouve.
   chip('demo-temp-sejour', [-6.5, 0.5, 1.8]),
-  chip('demo-temp-cuisine', [-11.5, 0.5, 0.8]),
+  chip('demo-temp-cuisine', [-11.4, 0.92, 0.2]),
   chip('demo-temp-bain', [-7.1, 0.5, -5]),
   chip('demo-temp-amis', [-2.4, 0.5, -4.2]),
   // Une card n'est pas accrochée : elle reste posée en % de l'écran.

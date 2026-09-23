@@ -178,6 +178,18 @@ test('a tap on a room flies the camera to it, and Escape brings it back', async 
   await expect(page.locator('[data-floorplan-item="lamp-kitchen"]')).toHaveCSS('opacity', '1');
 });
 
+test('a chip hidden by the model fades out once the camera stops', async ({ page }) => {
+  await openModel(page);
+  const lamp = page.locator('[data-floorplan-item="lamp-kitchen"]');
+  await expect(lamp).toHaveCSS('opacity', '1');
+  // Un demi-tour : son point d'accroche, au sol contre une cloison, passe derrière le muret.
+  const { height } = (await page.locator('[data-floorplan-3d] canvas').boundingBox())!;
+  await orbit(page, height / 2);
+  await expect(lamp).toHaveCSS('opacity', '0');
+  await page.getByRole('button', { name: 'Recentrer' }).click();
+  await expect(lamp).toHaveCSS('opacity', '1');
+});
+
 test('in edit mode, a click on the model places a chip anchored where it landed', async ({ page }, testInfo) => {
   await openModel(page);
   await page.getByRole('button', { name: 'Modifier le dashboard' }).click();

@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **15 tâches sur 21** — phases A à D, et `E1` et `G1`, passées en priorité.
+**État global** : **16 tâches sur 21** — phases A à E, et `G1`, passée en priorité.
 
 ---
 
@@ -261,7 +261,18 @@ Le reste est indépendant.
   caméra. Aucune reconnaissance des murs nécessaire : ça marche sur toute
   maquette. Option par page ; la caméra peut alors descendre plus bas.
 
-### [ ] E2 — Les pastilles se cachent derrière les murs
+### [x] E2 — Les pastilles se cachent derrière les murs
+
+> **Fait** : une fois la scène posée (¼ s sans nouvelle image), un rayon par
+> pastille, de la caméra à son point d'accroche ; ce que la maquette ne dessine
+> plus — murs abaissés, originaux des portes remplacées — ne cache rien. Une
+> pastille cachée s'efface en fondu et laisse passer le toucher. Un rayon
+> traverse toute la maquette (5 ms sur un PC, davantage sur une tablette) :
+> ils sont répartis sur plusieurs images, 4 ms au plus par image. Pendant la
+> rotation au repos, la caméra ne s'arrête jamais : l'état reste celui du
+> dernier arrêt. Rien ne se cache en édition, où il faut tout pouvoir
+> attraper. Démo : la pastille de la cuisine, posée dans l'îlot, remontée
+> dessus.
 
 - **Quoi** : une pastille dont le point est masqué par la maquette (hors
   partie coupée) disparaît. Recalculé quand la caméra s'arrête, pas à chaque
