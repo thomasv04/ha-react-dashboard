@@ -21,6 +21,8 @@ import {
   resizePos,
   skyColors,
   sunLighting,
+  temperatureOf,
+  thermalColor,
   DEFAULT_WIDGET_SIZE,
   type Vec3,
 } from './floorplan';
@@ -372,5 +374,23 @@ describe('rooms', () => {
     const [x, z] = polygonCentroid(L);
     expect(x).toBeCloseTo(5 / 3);
     expect(z).toBeCloseTo(5 / 3);
+  });
+});
+
+describe('thermal view', () => {
+  it('reads a temperature, in Celsius or Fahrenheit, and nothing else', () => {
+    expect(temperatureOf('21.5', { unit_of_measurement: '°C' })).toEqual({ value: 21.5, celsius: 21.5 });
+    expect(temperatureOf('68', { unit_of_measurement: '°F' })).toEqual({ value: 68, celsius: 20 });
+    expect(temperatureOf('19', { device_class: 'temperature' })).toEqual({ value: 19, celsius: 19 });
+    expect(temperatureOf('55', { unit_of_measurement: '%' })).toBeNull();
+    expect(temperatureOf('unavailable', { unit_of_measurement: '°C' })).toBeNull();
+  });
+
+  it('colours a room from cold blue to hot red', () => {
+    expect(thermalColor(10)).toBe('#3b82f6');
+    expect(thermalColor(20)).toBe('#4ade80');
+    expect(thermalColor(30)).toBe('#ef4444');
+    // Entre deux repères, un mélange des deux.
+    expect(thermalColor(21)).not.toBe(thermalColor(20));
   });
 });

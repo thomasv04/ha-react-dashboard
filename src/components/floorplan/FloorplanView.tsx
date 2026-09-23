@@ -1,7 +1,17 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useHass } from '@hakit/core';
-import { Box as BoxIcon, DoorOpen, Image as ImageIcon, Map as MapIcon, MapPin, RotateCcw, SquareDashed, X } from 'lucide-react';
+import {
+  Box as BoxIcon,
+  DoorOpen,
+  Image as ImageIcon,
+  Map as MapIcon,
+  MapPin,
+  RotateCcw,
+  SquareDashed,
+  Thermometer,
+  X,
+} from 'lucide-react';
 import { usePages, type FloorplanConfig } from '@/context/PageContext';
 import { useDashboardLayout, useEditMode, type FloorplanPos, type GridWidget } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -34,6 +44,8 @@ import {
   polygonCentroid,
   precipitation,
   skyColors,
+  temperatureOf,
+  thermalColor,
   type FloorplanPart,
   type Vec3,
 } from '@/lib/floorplan';
@@ -127,6 +139,8 @@ export function FloorplanView() {
   /** Pièce en cours de dessin : ses sommets au sol, sa hauteur de sol, puis son nom. */
   const [roomDraft, setRoomDraft] = useState<{ points: [number, number][]; y: number; naming?: boolean } | null>(null);
   const [draft, setDraft] = useState<PartDraft | null>(null);
+  /** Vue thermique : chaque pièce colorée selon sa température. */
+  const [thermal, setThermal] = useState(false);
   /** Point sous le pointeur, entre les deux clics d'un dessin. */
   const [hover, setHover] = useState<Vec3 | null>(null);
   /** Coin d'un élément dessiné repris à la souris, le temps du glisser. */
@@ -224,18 +238,45 @@ export function FloorplanView() {
   ];
 
   // ── Pièces ─────────────────────────────────────────────────────────────────
+  // Température de chaque pièce : la moyenne des capteurs de température posés dedans.
+  const chipEntities = useEntities(
+    widgets.flatMap(w => (w.type === 'chip' ? [getWidgetConfig<ChipCardConfig>(w.id)?.entityId ?? ''] : []))
+  );
+  /** Pastilles de température rattachées à une pièce : en vue thermique, la pièce affiche leur valeur à leur place. */
+  const thermometers = new Set<string>();
+  const roomTemperatures = rooms.map(room => {
+    const readings = widgets.flatMap(w => {
+      const anchor = normalizeAnchor(w.pos?.anchor);
+      const entity = w.type === 'chip' ? chipEntities[getWidgetConfig<ChipCardConfig>(w.id)?.entityId ?? ''] : undefined;
+      const reading = anchor && pointInPolygon(anchor[0], anchor[2], room.points) ? temperatureOf(entity?.state, entity?.attributes) : null;
+      if (reading) thermometers.add(w.id);
+      return reading ? [reading] : [];
+    });
+    if (!readings.length) return null;
+    const mean = (key: 'value' | 'celsius') => readings.reduce((sum, r) => sum + r[key], 0) / readings.length;
+    return { value: mean('value'), celsius: mean('celsius') };
+  });
+  const showThermal = thermal && !isEditMode;
+
   /** Contour de la pièce en cours de dessin, jusqu'au pointeur tant qu'elle n'est pas fermée. */
   const roomPoints: [number, number][] = roomDraft
     ? [...roomDraft.points, ...(!roomDraft.naming && hover ? [[hover[0], hover[2]] as [number, number]] : [])]
     : [];
-  const floors: FloorOverlay[] = isEditMode
-    ? [
-        ...rooms.map(r => ({ id: r.id, y: r.y, points: r.points, color: ROOM_COLOR, fill: 0.12, closed: true })),
-        ...(roomDraft
-          ? [{ id: '__room', y: roomDraft.y, points: roomPoints, color: DRAW_COLOR, fill: 0.18, closed: roomPoints.length >= 3 }]
-          : []),
-      ]
-    : [];
+  const floors: FloorOverlay[] = showThermal
+    ? rooms.flatMap((r, i) => {
+        const temperature = roomTemperatures[i];
+        return temperature
+          ? [{ id: r.id, y: r.y, points: r.points, color: thermalColor(temperature.celsius), fill: 0.42, closed: true }]
+          : [];
+      })
+    : isEditMode
+      ? [
+          ...rooms.map(r => ({ id: r.id, y: r.y, points: r.points, color: ROOM_COLOR, fill: 0.12, closed: true })),
+          ...(roomDraft
+            ? [{ id: '__room', y: roomDraft.y, points: roomPoints, color: DRAW_COLOR, fill: 0.18, closed: roomPoints.length >= 3 }]
+            : []),
+        ]
+      : [];
 
   /** Après chaque image de la maquette : où tombe chaque point d'accroche. */
   const onFrame = () => {
@@ -256,7 +297,7 @@ export function FloorplanView() {
     }
     // Pièces : leur nom au centre, en édition ; le premier sommet de celle
     // qu'on dessine — y recliquer la ferme — puis son centre, pour la nommer.
-    if (isEditMode) {
+    if (isEditMode || showThermal) {
       for (const room of rooms) {
         const [x, z] = polygonCentroid(room.points);
         next[roomKey(room.id)] = handle.project([x, room.y, z]);
@@ -288,7 +329,7 @@ export function FloorplanView() {
         draft?.a ?? null,
         draft?.part?.a ?? null,
         draft?.part?.b ?? null,
-        isEditMode && rooms.map(r => r.id),
+        (isEditMode || showThermal) && rooms.map(r => r.id),
         roomDraft,
       ])
     : '';
@@ -425,6 +466,7 @@ export function FloorplanView() {
         animate='visible'
       >
         {widgets.map(w => {
+          if (showThermal && thermometers.has(w.id)) return null;
           const anchored = !!model && !!normalizeAnchor(w.pos?.anchor);
           const projected = anchored ? projections[w.id] : undefined;
           // Accrochée à la maquette : rien à montrer tant qu'elle n'est pas
@@ -594,6 +636,28 @@ export function FloorplanView() {
                   )
                 );
               })}
+            {showThermal &&
+              rooms.map((room, i) => {
+                const at = projections[roomKey(room.id)];
+                const temperature = roomTemperatures[i];
+                return (
+                  at &&
+                  temperature && (
+                    <span
+                      key={room.id}
+                      className='absolute px-2.5 py-1 rounded-full text-sm font-semibold text-white shadow-lg pointer-events-none tabular-nums'
+                      style={{
+                        left: `${at.x}%`,
+                        top: `${at.y}%`,
+                        translate: '-50% -50%',
+                        background: colorAlpha(thermalColor(temperature.celsius), 85),
+                      }}
+                    >
+                      {temperature.value.toFixed(1)}°
+                    </span>
+                  )
+                );
+              })}
             {roomDraft && !roomDraft.naming && projections[ROOM_FIRST] && (
               <span
                 className='absolute w-3 h-3 rounded-full bg-amber-400 ring-4 ring-amber-400/30 pointer-events-none'
@@ -651,6 +715,20 @@ export function FloorplanView() {
                 }}
                 onCancel={() => setDraft(null)}
               />
+            )}
+            {loaded && !isEditMode && roomTemperatures.some(Boolean) && (
+              <button
+                onClick={() => setThermal(on => !on)}
+                aria-pressed={thermal}
+                title={t('layout.floorplan.thermal')}
+                aria-label={t('layout.floorplan.thermal')}
+                className={cn(
+                  'absolute right-16 bottom-3 z-30 p-2.5 rounded-xl gc-overlay transition-colors',
+                  thermal ? 'text-orange-300' : 'text-white/60 hover:text-white'
+                )}
+              >
+                <Thermometer size={16} />
+              </button>
             )}
             {loaded && !isEditMode && (
               <button

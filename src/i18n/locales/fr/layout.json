@@ -412,6 +412,7 @@
     "roomDefault": "Pièce {n}",
     "rooms": "Pièces",
     "roomRemove": "Retirer la pièce",
+    "thermal": "Températures des pièces",
     "saveView": "Garder cette vue",
     "resetView": "Recentrer",
     "loading": "Chargement de la maquette…",

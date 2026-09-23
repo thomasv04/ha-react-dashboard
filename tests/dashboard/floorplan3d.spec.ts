@@ -51,7 +51,28 @@ test.beforeAll(async ({ request }) => {
     layouts: Record<string, unknown>;
     widgetConfigs: Record<string, unknown>;
   };
-  config.pages.push({ id: 'maison', label: 'Maison', icon: 'Home', type: 'floorplan', order: 99, floorplan: { image: '', model: MODEL } });
+  // Une pièce autour du capteur de température, pour la vue thermique.
+  const rooms = [
+    {
+      id: 'chambre',
+      name: 'Chambre',
+      y: 0,
+      points: [
+        [-3, -4],
+        [0, -4],
+        [0, -1],
+        [-3, -1],
+      ],
+    },
+  ];
+  config.pages.push({
+    id: 'maison',
+    label: 'Maison',
+    icon: 'Home',
+    type: 'floorplan',
+    order: 99,
+    floorplan: { image: '', model: MODEL, rooms },
+  });
   // Un plan encore vide, où téléverser une maquette.
   config.pages.push({ id: 'vierge', label: 'Vierge', icon: 'Home', type: 'floorplan', order: 100, floorplan: { image: '' } });
   config.layouts.maison = { widgets: { lg: WIDGETS, md: WIDGETS, sm: WIDGETS }, cols: { lg: 12, md: 8, sm: 4 } };
@@ -122,6 +143,14 @@ test('anchored chips follow the camera, and the reset button brings it back', as
 
   await page.getByRole('button', { name: 'Recentrer' }).click();
   await expect.poll(() => at(page, 'temp')).toBe(home);
+});
+
+test('the thermal view colours a room with the temperature measured in it', async ({ page }) => {
+  await openModel(page);
+  await page.getByRole('button', { name: 'Températures des pièces' }).click();
+  await expect(page.getByText('20.4°', { exact: true })).toBeVisible();
+  // La pastille du capteur s'efface : sa valeur est au centre de la pièce.
+  await expect(page.getByText('20.4 °C')).toHaveCount(0);
 });
 
 test('in edit mode, a click on the model places a chip anchored where it landed', async ({ page }, testInfo) => {
@@ -217,7 +246,7 @@ test('in edit mode, clicks on the floor draw a named room, which is kept once sa
       const rooms = config.pages.find((p: { id: string }) => p.id === 'maison')?.floorplan?.rooms ?? [];
       return rooms.map((r: { name: string; points: unknown[] }) => `${r.name} ${r.points.length}`);
     })
-    .toEqual(['Salle à manger 3']);
+    .toEqual(['Chambre 4', 'Salle à manger 3']);
 });
 
 test('in edit mode, a .glb file is uploaded as the model, and its bin deletes it', async ({ page, request }) => {

@@ -412,6 +412,7 @@
     "roomDefault": "Room {n}",
     "rooms": "Rooms",
     "roomRemove": "Remove the room",
+    "thermal": "Room temperatures",
     "saveView": "Keep this view",
     "resetView": "Reset view",
     "loading": "Loading the model…",

@@ -59,6 +59,16 @@ export const MOCK_ENTITIES: Record<string, MockEntityState> = {
   // Room temperatures
   'sensor.temperature_chambre_temperature': entity('sensor.temperature_chambre_temperature', '20.4', { unit_of_measurement: '°C' }),
   'sensor.temperature_chambre_humidity': entity('sensor.temperature_chambre_humidity', '55', { unit_of_measurement: '%' }),
+  'sensor.temperature_sejour': entity('sensor.temperature_sejour', '21.6', { device_class: 'temperature', unit_of_measurement: '°C' }),
+  'sensor.temperature_cuisine': entity('sensor.temperature_cuisine', '22.9', { device_class: 'temperature', unit_of_measurement: '°C' }),
+  'sensor.temperature_salle_de_bain': entity('sensor.temperature_salle_de_bain', '23.8', {
+    device_class: 'temperature',
+    unit_of_measurement: '°C',
+  }),
+  'sensor.temperature_chambre_amis': entity('sensor.temperature_chambre_amis', '17.4', {
+    device_class: 'temperature',
+    unit_of_measurement: '°C',
+  }),
 
   // Soleil : début d'après-midi, plein sud-sud-ouest (ciel et ombres de la page plan)
   'sun.sun': entity('sun.sun', 'above_horizon', { elevation: 40, azimuth: 200, friendly_name: 'Soleil' }),

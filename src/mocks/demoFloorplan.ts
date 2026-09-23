@@ -30,7 +30,12 @@ const WIDGETS: GridWidget[] = [
   chip('demo-salon', [-4.34, 0.39, -0.64]),
   chip('demo-chambre', [-2.88, 0.63, -6.58]),
   chip('demo-couloir', [-6.02, 1.63, -6.71]),
-  chip('demo-temperature', [-1.01, 3.05, -2.54]),
+  chip('demo-temperature', [-11.2, 0.5, -4.6]),
+  // Un capteur de température par pièce : la vue thermique les retrouve.
+  chip('demo-temp-sejour', [-6.5, 0.5, 1.8]),
+  chip('demo-temp-cuisine', [-11.5, 0.5, 0.8]),
+  chip('demo-temp-bain', [-7.1, 0.5, -5]),
+  chip('demo-temp-amis', [-2.4, 0.5, -4.2]),
   // Une card n'est pas accrochée : elle reste posée en % de l'écran.
   { id: 'demo-meteo', type: 'weather', x: 0, y: 0, w: 2, h: 1, pos: { x: 88, y: 22, w: 20, h: 32 } },
 ];
@@ -41,6 +46,10 @@ const CONFIGS = {
   'demo-chambre': { type: 'chip', entityId: 'light.chambre', glow: true, glowSize: 12 },
   'demo-couloir': { type: 'chip', entityId: 'binary_sensor.couloir_mouvement' },
   'demo-temperature': { type: 'chip', entityId: 'sensor.temperature_chambre_temperature' },
+  'demo-temp-sejour': { type: 'chip', entityId: 'sensor.temperature_sejour' },
+  'demo-temp-cuisine': { type: 'chip', entityId: 'sensor.temperature_cuisine' },
+  'demo-temp-bain': { type: 'chip', entityId: 'sensor.temperature_salle_de_bain' },
+  'demo-temp-amis': { type: 'chip', entityId: 'sensor.temperature_chambre_amis' },
   'demo-meteo': { type: 'weather', entityId: 'weather.home' },
 } as WidgetConfigs;
 

@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **13 tâches sur 21** — `E1` et `G1`, passées en priorité, puis la phase A.
+**État global** : **14 tâches sur 21** — `E1` et `G1`, passées en priorité, puis la phase A.
 
 ---
 
@@ -205,7 +205,13 @@ Le reste est indépendant.
   d'accroche — fin du débordement à travers les murs. Même socle que `A1`
   (matériaux modifiés).
 
-### [ ] C3 — Vue thermique
+### [x] C3 — Vue thermique
+
+> **Fait** : un bouton thermomètre, à côté de « Recentrer », dès qu'une pièce
+> a une température — la moyenne des capteurs de température posés dedans
+> (classe `temperature`, °C ou °F). Pièces colorées du bleu (16°) au rouge
+> (26°), valeur au centre ; les pastilles de ces capteurs s'effacent le temps
+> de la vue, leur valeur est dans la pièce. Démo : un capteur par pièce.
 
 - **Quoi** : un bouton en consultation colore chaque pièce selon sa
   température (le capteur posé dans la pièce, détecté), du bleu au rouge, la

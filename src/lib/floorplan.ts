@@ -286,6 +286,21 @@ export function polygonCentroid(points: [number, number][]): [number, number] {
   return [cx / (3 * area), cz / (3 * area)];
 }
 
+/**
+ * Température d'une entité, si c'en est une (classe `temperature`, ou en °C ou
+ * °F) : sa valeur telle qu'affichée, et en degrés Celsius pour la colorer.
+ */
+export function temperatureOf(
+  state: string | undefined,
+  attributes: Record<string, unknown> | undefined
+): { value: number; celsius: number } | null {
+  const unit = attributes?.unit_of_measurement;
+  if (attributes?.device_class !== 'temperature' && unit !== '°C' && unit !== '°F') return null;
+  const value = parseFloat(state ?? '');
+  if (!Number.isFinite(value)) return null;
+  return { value, celsius: unit === '°F' ? ((value - 32) * 5) / 9 : value };
+}
+
 // ── Murs en coupe ────────────────────────────────────────────────────────────
 
 /** Hauteur de coupe, en part de la hauteur de la maquette : des murets, juste au-dessus des plans de travail. */
@@ -447,6 +462,22 @@ const PRECIPITATION: Record<string, { rain: number; snow: number; lightning: boo
 /** Pluie, neige et éclairs d'après l'état d'une entité `weather` — par défaut, rien. */
 export function precipitation(state: string | undefined): { rain: number; snow: number; lightning: boolean } {
   return PRECIPITATION[state ?? ''] ?? { rain: 0, snow: 0, lightning: false };
+}
+
+/** Couleur d'une pièce selon sa température (°C) : du bleu froid au rouge chaud. */
+const THERMAL: { at: number; color: Rgb }[] = [
+  { at: 16, color: [59, 130, 246] },
+  { at: 18, color: [34, 211, 238] },
+  { at: 20, color: [74, 222, 128] },
+  { at: 22, color: [250, 204, 21] },
+  { at: 24, color: [251, 146, 60] },
+  { at: 26, color: [239, 68, 68] },
+];
+
+/** Couleur de la vue thermique pour une température, en degrés Celsius. */
+export function thermalColor(celsius: number): string {
+  const [from, to, t] = between(THERMAL, celsius);
+  return hex(mix(from.color, to.color, t));
 }
 
 /** Couleur du soleil selon sa hauteur : orangé à l'horizon, doré, puis blanc chaud. */
