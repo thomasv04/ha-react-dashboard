@@ -376,6 +376,17 @@
     "dimAtNight": "Dim at night",
     "clickToAdd": "Click the floorplan to place a chip; drag an element to move it.",
     "addHere": "Chip to place here",
-    "resize": "Resize"
+    "resize": "Resize",
+    "model": "3D model",
+    "modelPlaceholder": "/local/home.glb",
+    "modelHint": "A .glb or .gltf file (Sweet Home 3D, Blender, Sketchfab…). Copy it into /config/www, then enter /local/file-name.glb. Clear the field to go back to the image.",
+    "orModel": "…or a 3D model",
+    "north": "North (°)",
+    "saveView": "Keep this view",
+    "resetView": "Reset view",
+    "loading": "Loading the model…",
+    "modelError": "Could not load the model: check the file address.",
+    "webglError": "3D is not available on this device.",
+    "clickToAdd3d": "Click the model to place a chip; drag in the empty space to rotate it."
   }
 }

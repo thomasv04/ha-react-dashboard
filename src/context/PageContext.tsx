@@ -8,6 +8,15 @@ export interface FloorplanConfig {
   image: string;
   /** Assombrir le plan quand le soleil est couché (`sun.sun`). Actif par défaut. */
   dimAtNight?: boolean;
+  /**
+   * Maquette 3D (`.glb`, `.gltf`). Renseignée, elle remplace l'image : la page
+   * devient une maison qu'on fait tourner, éclairée par le soleil et les lampes.
+   */
+  model?: string;
+  /** Vue d'accueil de la maquette, réglée en édition. */
+  camera?: { position: [number, number, number]; target: [number, number, number] };
+  /** Orientation du nord dans la maquette, en degrés — pour placer le soleil. */
+  north?: number;
 }
 
 export interface Page {

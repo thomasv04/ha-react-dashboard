@@ -376,6 +376,17 @@
     "dimAtNight": "Assombrir la nuit",
     "clickToAdd": "Cliquez sur le plan pour y poser une pastille ; faites glisser un élément pour le déplacer.",
     "addHere": "Pastille à poser ici",
-    "resize": "Redimensionner"
+    "resize": "Redimensionner",
+    "model": "Maquette 3D",
+    "modelPlaceholder": "/local/maison.glb",
+    "modelHint": "Un fichier .glb ou .gltf (Sweet Home 3D, Blender, Sketchfab…). Copiez-le dans /config/www, puis indiquez /local/nom-du-fichier.glb. Videz le champ pour revenir à l'image.",
+    "orModel": "…ou une maquette 3D",
+    "north": "Nord (°)",
+    "saveView": "Garder cette vue",
+    "resetView": "Recentrer",
+    "loading": "Chargement de la maquette…",
+    "modelError": "Impossible de charger la maquette : vérifiez l'adresse du fichier.",
+    "webglError": "La 3D n'est pas disponible sur cet appareil.",
+    "clickToAdd3d": "Cliquez sur la maquette pour y poser une pastille ; glissez dans le vide pour la faire tourner."
   }
 }

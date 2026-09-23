@@ -16,6 +16,10 @@ interface FloorplanItemProps {
   onSelect: (id: string) => void;
   /** Le plan : les gestes se mesurent en % de sa taille */
   planRef: RefObject<HTMLDivElement | null>;
+  /** Position imposée, en % — la projection d'un point de la maquette 3D. */
+  projected?: { x: number; y: number };
+  /** Fin de glisser ; par défaut la position est enregistrée telle quelle. */
+  onCommit?: (next: FloorplanPos, clientX: number, clientY: number) => void;
 }
 
 /**
@@ -25,13 +29,13 @@ interface FloorplanItemProps {
  * actions, visibilité conditionnelle, styles d'état et frontière d'erreur
  * compris. En édition, le widget est inerte sous un calque qui le déplace.
  */
-export function FloorplanItem({ widget, isEditMode, selected, onSelect, planRef }: FloorplanItemProps) {
+export function FloorplanItem({ widget, isEditMode, selected, onSelect, planRef, projected, onCommit }: FloorplanItemProps) {
   const { t } = useI18n();
   const { updateWidget, removeWidget } = useDashboardLayout();
   const { setEditingWidgetId } = useWidgetConfig();
   // Une pastille prend la taille de son contenu ; un widget a la sienne.
   const sized = widget.type !== 'chip';
-  const saved = normalizePos(widget.pos, sized);
+  const saved = { ...normalizePos(widget.pos, sized), ...projected };
   // Pendant un geste la position vit ici, et n'est validée qu'au relâchement :
   // un geste égale un point d'annulation, pas un par pixel.
   const [live, setLive] = useState<FloorplanPos | null>(null);
@@ -57,13 +61,17 @@ export function FloorplanItem({ widget, isEditMode, selected, onSelect, planRef 
       last = apply(saved, ev.clientX - x0, ev.clientY - y0, rect);
       setLive(last);
     };
-    const onEnd = () => {
+    const onEnd = (ev: PointerEvent) => {
       target.removeEventListener('pointermove', onMove);
       target.removeEventListener('pointerup', onEnd);
       target.removeEventListener('pointercancel', onEnd);
       setLive(null);
       // Un simple clic sélectionne sans rien écrire.
-      if (last !== saved) updateWidget(widget.id, { pos: last }, 'lg');
+      if (last === saved) return;
+      // `...widget.pos` : garde le point d'accroche d'une maquette 3D, que le
+      // plan en image ne connaît pas.
+      if (onCommit) onCommit(last, ev.clientX, ev.clientY);
+      else updateWidget(widget.id, { pos: { ...widget.pos, ...last } }, 'lg');
     };
     target.addEventListener('pointermove', onMove);
     target.addEventListener('pointerup', onEnd);

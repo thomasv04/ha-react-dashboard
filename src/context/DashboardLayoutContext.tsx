@@ -46,6 +46,11 @@ export interface FloorplanPos {
   y: number;
   w?: number;
   h?: number;
+  /**
+   * Maquette 3D : point de la maquette où la pastille est accrochée, dans ses
+   * propres coordonnées. `x/y` ne servent alors que de repli.
+   */
+  anchor?: [number, number, number];
 }
 
 export type { WidgetCatalogEntry } from '@/config/widget-catalog';

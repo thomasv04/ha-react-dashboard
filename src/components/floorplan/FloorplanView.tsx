@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Image as ImageIcon, Map as MapIcon, X } from 'lucide-react';
+import { Box as BoxIcon, Image as ImageIcon, Map as MapIcon, RotateCcw, X } from 'lucide-react';
 import { usePages, type FloorplanConfig } from '@/context/PageContext';
-import { useDashboardLayout, useEditMode } from '@/context/DashboardLayoutContext';
+import { useDashboardLayout, useEditMode, type FloorplanPos, type GridWidget } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { FreeGridScope } from '@/components/layout/DashboardGrid';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
@@ -16,21 +16,32 @@ import { staggerGridContainer } from '@/lib/motion-variants';
 import { assetUrl } from '@/lib/api-base';
 import { colorAlpha } from '@/lib/color-value';
 import { useTheme } from '@/context/ThemeContext';
-import { containSize, isNightDimmed, lightGlow, normalizePos } from '@/lib/floorplan';
+import { containSize, isNightDimmed, lightColor, lightGlow, MODEL_SIZE, normalizeAnchor, normalizePos, type Vec3 } from '@/lib/floorplan';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import type { ChipCardConfig, WidgetConfig } from '@/types/widget-configs';
+import type { Floorplan3DHandle, Lamp } from './Floorplan3D';
 import { FloorplanItem } from './FloorplanItem';
+
+// three.js ne se télécharge que pour une page qui a une maquette.
+const Floorplan3D = lazy(() => import('./Floorplan3D'));
 
 /** Proportions supposées tant que l'image n'est pas chargée. */
 const DEFAULT_ASPECT = 16 / 9;
 
+type Projection = { x: number; y: number } | null;
+
 /**
- * Page `floorplan` : une image de la maison, et les widgets posés dessus.
+ * Page `floorplan` : une image de la maison — ou une maquette 3D — et les
+ * widgets posés dessus.
  *
- * Le plan occupe la place restante de l'écran, image entière (`contain`). Les
- * éléments y sont placés en % : ils restent sur la bonne pièce quelle que soit
- * la taille de l'écran. Couches, de bas en haut : image, halos, éléments.
+ * Image : le plan occupe la place restante de l'écran, entier (`contain`), et
+ * les éléments y sont placés en % pour rester sur la bonne pièce quelle que
+ * soit la taille de l'écran. Couches, de bas en haut : image, halos, éléments.
+ *
+ * Maquette : elle remplit la place, on la fait tourner. Les pastilles y sont
+ * accrochées à un point de la maquette et suivent la caméra ; les cards
+ * restent posées en % de l'écran, par-dessus.
  */
 export function FloorplanView() {
   const { t } = useI18n();
@@ -39,21 +50,29 @@ export function FloorplanView() {
   const { isEditMode } = useEditMode();
   const { getWidgetConfig, updateWidgetConfig } = useWidgetConfig();
   const motionAllowed = useLowPowerMotion();
-  const { tokens } = useTheme();
+  const { tokens, perfSettings } = useTheme();
 
   const areaRef = useRef<HTMLDivElement>(null);
   const planRef = useRef<HTMLDivElement>(null);
+  const three = useRef<Floorplan3DHandle>(null);
   const [area, setArea] = useState({ w: 0, h: 0 });
   useElementBox(areaRef, (w, h) => setArea({ w, h }));
   const [aspect, setAspect] = useState(DEFAULT_ASPECT);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  /** Point cliqué sur le plan, en %, où poser la prochaine pastille. */
-  const [adding, setAdding] = useState<{ x: number; y: number } | null>(null);
-  const [panelOpen, setPanelOpen] = useState(false);
+  /** Point cliqué, en % du plan — et de la maquette, s'il y en a une — où poser la prochaine pastille. */
+  const [adding, setAdding] = useState<{ x: number; y: number; anchor?: Vec3 } | null>(null);
+  const [panel, setPanel] = useState<'image' | 'model' | null>(null);
+
+  // Maquette : chargée (sinon les pastilles accrochées n'ont pas encore de
+  // position), en échec, et projection de chaque point d'accroche à l'écran.
+  const [loadedModel, setLoadedModel] = useState<string | null>(null);
+  const [failure, setFailure] = useState<{ model: string; kind: 'webgl' | 'model' } | null>(null);
+  const [projections, setProjections] = useState<Record<string, Projection>>({});
 
   const floorplan = currentPage?.floorplan;
   const image = floorplan?.image;
+  const model = floorplan?.model;
   const widgets = layout.widgets.lg;
 
   // Quitter l'édition referme ce qui n'a de sens qu'en édition — pendant le
@@ -63,7 +82,7 @@ export function FloorplanView() {
     setWasEditing(isEditMode);
     setSelectedId(null);
     setAdding(null);
-    setPanelOpen(false);
+    setPanel(null);
   }
 
   useEffect(() => {
@@ -77,17 +96,55 @@ export function FloorplanView() {
     return () => window.removeEventListener('keydown', onKey);
   }, [isEditMode]);
 
-  // ── Halos et nuit ──────────────────────────────────────────────────────────
+  // ── Lampes : halos du plan, lumières de la maquette ────────────────────────
   const glows = widgets.flatMap(w => {
     if (w.type !== 'chip') return [];
     const config = getWidgetConfig<ChipCardConfig>(w.id);
     const entityId = config?.entityId ?? '';
     if (!entityId.startsWith('light.') || config?.glow === false) return [];
-    return [{ id: w.id, entityId, pos: normalizePos(w.pos, false), size: config?.glowSize ?? 12 }];
+    return [{ id: w.id, entityId, pos: normalizePos(w.pos, false), anchor: normalizeAnchor(w.pos?.anchor), size: config?.glowSize ?? 12 }];
   });
   const lights = useEntities(glows.map(g => g.entityId));
-  const sun = useEntities(['sun.sun'])['sun.sun']?.state;
-  const dimmed = isNightDimmed(sun, floorplan?.dimAtNight);
+  const sunEntity = useEntities(['sun.sun'])['sun.sun'];
+  const dimmed = isNightDimmed(sunEntity?.state, floorplan?.dimAtNight);
+
+  const lamps: Lamp[] = model
+    ? glows.flatMap(g => {
+        if (!g.anchor) return [];
+        const entity = lights[g.entityId];
+        const brightness = entity?.attributes?.brightness;
+        return [
+          {
+            id: g.id,
+            anchor: g.anchor,
+            color: lightColor(entity?.state, entity?.attributes),
+            brightness: typeof brightness === 'number' ? brightness / 255 : 1,
+            // Même réglage que le halo du plan — un % de sa largeur — ramené à
+            // la taille de la maquette.
+            range: (g.size / 100) * MODEL_SIZE * 2,
+          },
+        ];
+      })
+    : [];
+
+  /** Après chaque image de la maquette : où tombe chaque point d'accroche. */
+  const onFrame = () => {
+    const handle = three.current;
+    if (!handle) return;
+    const next: Record<string, Projection> = {};
+    for (const w of widgets) {
+      const anchor = normalizeAnchor(w.pos?.anchor);
+      if (anchor) next[w.id] = handle.project(anchor);
+    }
+    setProjections(next);
+  };
+
+  // Une pastille accrochée ou déplacée sans que la caméra bouge : redessiner,
+  // pour que sa nouvelle position soit projetée.
+  const anchorsKey = model ? JSON.stringify(widgets.map(w => w.pos?.anchor ?? null)) : '';
+  useEffect(() => {
+    three.current?.invalidate();
+  }, [anchorsKey]);
 
   const setFloorplan = (patch: Partial<FloorplanConfig>) => {
     if (!currentPage) return;
@@ -101,6 +158,13 @@ export function FloorplanView() {
     setAdding({ x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100 });
   };
 
+  const onModelPick = (anchor: Vec3, clientX: number, clientY: number) => {
+    const rect = planRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setSelectedId(null);
+    setAdding({ x: ((clientX - rect.left) / rect.width) * 100, y: ((clientY - rect.top) / rect.height) * 100, anchor });
+  };
+
   const placeChip = (entityId: string) => {
     const at = adding;
     setAdding(null);
@@ -109,7 +173,16 @@ export function FloorplanView() {
     if (!id) return;
     updateWidgetConfig(id, { ...DEFAULT_WIDGET_CONFIGS.chip, entityId } as WidgetConfig);
     // Rapproché de l'ajout : un seul point d'annulation pour les deux.
-    updateWidget(id, { pos: at }, 'lg');
+    updateWidget(id, { pos: { x: at.x, y: at.y, ...(at.anchor && { anchor: at.anchor }) } }, 'lg');
+  };
+
+  /** Une pastille lâchée sur la maquette s'y raccroche là où elle tombe. */
+  const reanchor = (w: GridWidget) => (next: FloorplanPos, clientX: number, clientY: number) => {
+    const anchor = three.current?.pick(clientX, clientY);
+    if (anchor) updateWidget(w.id, { pos: { ...w.pos, ...next, anchor } }, 'lg');
+    // Lâchée dans le vide : une pastille accrochée reste où elle était, une
+    // pastille libre prend sa nouvelle place à l'écran.
+    else if (!w.pos?.anchor) updateWidget(w.id, { pos: { ...w.pos, ...next } }, 'lg');
   };
 
   const picker = (
@@ -117,6 +190,26 @@ export function FloorplanView() {
       background={{ mode: 'image', imageUrl: image ?? '' } as BackgroundConfig}
       setBackground={bg => setFloorplan({ image: bg.imageUrl ?? '' })}
     />
+  );
+
+  // Validé à la sortie du champ : à chaque frappe, la maquette serait
+  // rechargée depuis une adresse incomplète.
+  const modelField = (
+    <div className='flex flex-col gap-1.5'>
+      <input
+        key={model ?? ''}
+        defaultValue={model ?? ''}
+        placeholder={t('layout.floorplan.modelPlaceholder')}
+        aria-label={t('layout.floorplan.model')}
+        onBlur={e => {
+          const next = e.target.value.trim() || undefined;
+          if (next !== model) setFloorplan({ model: next });
+        }}
+        onKeyDown={e => e.key === 'Enter' && e.currentTarget.blur()}
+        className='w-full px-3 py-2 rounded-lg text-xs bg-white/8 border border-white/15 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/60'
+      />
+      <p className='text-white/35 text-[10px] leading-snug'>{t('layout.floorplan.modelHint')}</p>
+    </div>
   );
 
   /**
@@ -133,19 +226,141 @@ export function FloorplanView() {
 
   const plan = containSize(area.w, area.h, aspect);
   // Plus large que la place disponible (téléphone) : on fait défiler le plan.
-  const pan = !!image && plan.w > area.w + 1;
+  const pan = !model && !!image && plan.w > area.w + 1;
+  const loaded = !!model && loadedModel === model;
+  const failed = failure && failure.model === model ? failure.kind : null;
+
+  const items = (
+    <FreeGridScope>
+      {/* `pointer-events-none` : entre les éléments, le clic atteint le plan. */}
+      <motion.div
+        className='absolute inset-0 pointer-events-none'
+        variants={motionAllowed ? staggerGridContainer : undefined}
+        initial={motionAllowed ? 'hidden' : false}
+        animate='visible'
+      >
+        {widgets.map(w => {
+          const anchored = !!model && !!normalizeAnchor(w.pos?.anchor);
+          const projected = anchored ? projections[w.id] : undefined;
+          // Accrochée à la maquette : rien à montrer tant qu'elle n'est pas
+          // chargée, ni quand le point est derrière la caméra.
+          if (anchored && !projected) return null;
+          return (
+            <FloorplanItem
+              key={w.id}
+              widget={w}
+              isEditMode={isEditMode}
+              selected={selectedId === w.id}
+              onSelect={setSelectedId}
+              planRef={planRef}
+              projected={projected ?? undefined}
+              onCommit={model && w.type === 'chip' ? reanchor(w) : undefined}
+            />
+          );
+        })}
+      </motion.div>
+    </FreeGridScope>
+  );
+
+  const addPopover = adding && (
+    // Remonté à chaque point : le sélecteur ne s'ouvre seul qu'au montage.
+    <div key={`${adding.x}:${adding.y}`}>
+      <span
+        className='absolute w-3 h-3 rounded-full bg-blue-400 ring-4 ring-blue-400/30 pointer-events-none'
+        style={{ left: `${adding.x}%`, top: `${adding.y}%`, translate: '-50% -50%' }}
+      />
+      <div
+        onClick={e => e.stopPropagation()}
+        className='absolute z-30 w-64 mt-3 p-2 rounded-xl gc-overlay cursor-default'
+        style={{ left: `clamp(8rem, ${adding.x}%, calc(100% - 8rem))`, top: `${adding.y}%`, translate: '-50% 0' }}
+      >
+        <div className='flex items-center justify-between mb-1.5 px-1'>
+          <span className='text-[11px] text-white/50'>{t('layout.floorplan.addHere')}</span>
+          <button onClick={() => setAdding(null)} aria-label={t('common.cancel')} className='p-0.5 rounded text-white/40 hover:text-white'>
+            <X size={12} />
+          </button>
+        </div>
+        <EntityPicker autoOpen label='' value='' onChange={placeChip} />
+      </div>
+    </div>
+  );
+
+  const panelButton = (id: 'image' | 'model', Icon: typeof ImageIcon, label: string) => (
+    <button
+      onClick={() => setPanel(p => (p === id ? null : id))}
+      className={cn(
+        'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors',
+        panel === id ? 'bg-blue-500/20 border-blue-500/40 text-blue-200' : 'bg-white/5 border-white/10 text-white/70 hover:text-white'
+      )}
+    >
+      <Icon size={13} /> {label}
+    </button>
+  );
 
   return (
     <div className='relative flex-1 min-h-0'>
       {/* La zone reste montée sans image : `useElementBox` ne la mesure qu'au
           montage, et le plan choisi ensuite n'aurait jamais eu de taille. */}
       <div ref={areaRef} className={cn('absolute inset-0 flex', pan && 'overflow-x-auto')}>
-        {!image ? (
+        {model ? (
+          <div
+            ref={planRef}
+            data-floorplan-plan
+            className='absolute inset-0 select-none'
+            style={{ containerType: 'inline-size', ...surface }}
+          >
+            {failed ? (
+              <p className='m-auto absolute inset-0 h-fit w-fit max-w-sm px-4 py-3 rounded-2xl gc-overlay text-sm text-white/70 text-center'>
+                {t(failed === 'webgl' ? 'layout.floorplan.webglError' : 'layout.floorplan.modelError')}
+              </p>
+            ) : (
+              <Suspense fallback={null}>
+                <Floorplan3D
+                  ref={three}
+                  model={model}
+                  camera={floorplan?.camera}
+                  sunElevation={sunEntity?.attributes?.elevation as number | undefined}
+                  sunAzimuth={sunEntity?.attributes?.azimuth as number | undefined}
+                  north={floorplan?.north ?? 0}
+                  shadows={!perfSettings.disableShadows}
+                  lamps={lamps}
+                  onFrame={onFrame}
+                  onPick={isEditMode ? onModelPick : undefined}
+                  onLoad={() => setLoadedModel(model)}
+                  onError={kind => setFailure({ model, kind })}
+                />
+              </Suspense>
+            )}
+            {!loaded && !failed && (
+              <p className='absolute inset-0 m-auto h-fit w-fit text-sm text-white/45 pointer-events-none'>
+                {t('layout.floorplan.loading')}
+              </p>
+            )}
+            {items}
+            {addPopover}
+            {loaded && !isEditMode && (
+              <button
+                onClick={() => three.current?.resetView()}
+                title={t('layout.floorplan.resetView')}
+                aria-label={t('layout.floorplan.resetView')}
+                className='absolute right-3 bottom-3 z-30 p-2.5 rounded-xl gc-overlay text-white/60 hover:text-white transition-colors'
+              >
+                <RotateCcw size={16} />
+              </button>
+            )}
+          </div>
+        ) : !image ? (
           <div className='m-auto w-full max-w-sm flex flex-col items-center gap-3 p-6 rounded-3xl gc-overlay text-center'>
             <MapIcon size={28} className='text-white/40' />
             <h2 className='text-white/85 font-semibold'>{t('layout.floorplan.emptyTitle')}</h2>
             <p className='text-white/45 text-sm'>{isEditMode ? t('layout.floorplan.imageHint') : t('layout.floorplan.emptyView')}</p>
-            {isEditMode && <div className='w-full text-left'>{picker}</div>}
+            {isEditMode && (
+              <div className='w-full flex flex-col gap-3 text-left'>
+                {picker}
+                <p className='text-white/45 text-xs text-center'>{t('layout.floorplan.orModel')}</p>
+                {modelField}
+              </div>
+            )}
           </div>
         ) : (
           <div
@@ -170,7 +385,7 @@ export function FloorplanView() {
             />
 
             {/* Un seul calque en `screen` plutôt qu'un par halo : les halos
-              s'additionnent entre eux, puis éclaircissent le plan en une fois. */}
+                s'additionnent entre eux, puis éclaircissent le plan en une fois. */}
             <div className='absolute inset-0 pointer-events-none' style={{ mixBlendMode: 'screen' }}>
               {glows.map(g => {
                 const glow = lightGlow(lights[g.entityId]?.state, lights[g.entityId]?.attributes);
@@ -193,81 +408,60 @@ export function FloorplanView() {
               })}
             </div>
 
-            <FreeGridScope>
-              {/* `pointer-events-none` : entre les éléments, le clic atteint le plan. */}
-              <motion.div
-                className='absolute inset-0 pointer-events-none'
-                variants={motionAllowed ? staggerGridContainer : undefined}
-                initial={motionAllowed ? 'hidden' : false}
-                animate='visible'
-              >
-                {widgets.map(w => (
-                  <FloorplanItem
-                    key={w.id}
-                    widget={w}
-                    isEditMode={isEditMode}
-                    selected={selectedId === w.id}
-                    onSelect={setSelectedId}
-                    planRef={planRef}
-                  />
-                ))}
-              </motion.div>
-            </FreeGridScope>
-
-            {adding && (
-              // Remonté à chaque point : le sélecteur ne s'ouvre seul qu'au montage.
-              <div key={`${adding.x}:${adding.y}`}>
-                <span
-                  className='absolute w-3 h-3 rounded-full bg-blue-400 ring-4 ring-blue-400/30 pointer-events-none'
-                  style={{ left: `${adding.x}%`, top: `${adding.y}%`, translate: '-50% -50%' }}
-                />
-                <div
-                  onClick={e => e.stopPropagation()}
-                  className='absolute z-30 w-64 mt-3 p-2 rounded-xl gc-overlay cursor-default'
-                  style={{ left: `clamp(8rem, ${adding.x}%, calc(100% - 8rem))`, top: `${adding.y}%`, translate: '-50% 0' }}
-                >
-                  <div className='flex items-center justify-between mb-1.5 px-1'>
-                    <span className='text-[11px] text-white/50'>{t('layout.floorplan.addHere')}</span>
-                    <button
-                      onClick={() => setAdding(null)}
-                      aria-label={t('common.cancel')}
-                      className='p-0.5 rounded text-white/40 hover:text-white'
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
-                  <EntityPicker autoOpen label='' value='' onChange={placeChip} />
-                </div>
-              </div>
-            )}
+            {items}
+            {addPopover}
           </div>
         )}
       </div>
 
-      {isEditMode && image && (
+      {isEditMode && (image || model) && (
         <div className='absolute left-2 top-2 z-30 w-72 max-w-[calc(100%-1rem)] flex flex-col gap-2 p-2.5 rounded-2xl gc-overlay'>
-          <div className='flex items-center gap-2'>
-            <button
-              onClick={() => setPanelOpen(v => !v)}
-              className={cn(
-                'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors',
-                panelOpen ? 'bg-blue-500/20 border-blue-500/40 text-blue-200' : 'bg-white/5 border-white/10 text-white/70 hover:text-white'
-              )}
-            >
-              <ImageIcon size={13} /> {t('layout.floorplan.image')}
-            </button>
-            <label className='flex items-center gap-1.5 text-xs text-white/60 cursor-pointer select-none'>
-              <input
-                type='checkbox'
-                checked={floorplan?.dimAtNight !== false}
-                onChange={e => setFloorplan({ dimAtNight: e.target.checked })}
-                className='accent-blue-500'
-              />
-              {t('layout.floorplan.dimAtNight')}
-            </label>
+          <div className='flex flex-wrap items-center gap-2'>
+            {panelButton('image', ImageIcon, t('layout.floorplan.image'))}
+            {panelButton('model', BoxIcon, t('layout.floorplan.model'))}
+            {!model && (
+              <label className='flex items-center gap-1.5 text-xs text-white/60 cursor-pointer select-none'>
+                <input
+                  type='checkbox'
+                  checked={floorplan?.dimAtNight !== false}
+                  onChange={e => setFloorplan({ dimAtNight: e.target.checked })}
+                  className='accent-blue-500'
+                />
+                {t('layout.floorplan.dimAtNight')}
+              </label>
+            )}
           </div>
-          {panelOpen && picker}
-          <p className='text-[11px] text-white/40 px-0.5'>{t('layout.floorplan.clickToAdd')}</p>
+          {panel === 'image' && picker}
+          {panel === 'model' && (
+            <div className='flex flex-col gap-2'>
+              {modelField}
+              {model && (
+                <div className='flex items-center gap-2'>
+                  <label className='flex items-center gap-1.5 text-xs text-white/60'>
+                    {t('layout.floorplan.north')}
+                    <input
+                      type='number'
+                      step={15}
+                      value={floorplan?.north ?? 0}
+                      onChange={e => setFloorplan({ north: Number(e.target.value) || 0 })}
+                      className='w-16 px-2 py-1 rounded-md text-xs bg-white/8 border border-white/15 text-white focus:outline-none focus:border-blue-500/60'
+                    />
+                  </label>
+                  <button
+                    onClick={() => {
+                      const view = three.current?.view();
+                      if (view) setFloorplan({ camera: view });
+                    }}
+                    disabled={!loaded}
+                    className='ml-auto px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 text-white/70 hover:text-white disabled:opacity-40'
+                  >
+                    {t('layout.floorplan.saveView')}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+          <p className='text-[11px] text-white/40 px-0.5'>{t(model ? 'layout.floorplan.clickToAdd3d' : 'layout.floorplan.clickToAdd')}</p>
         </div>
       )}
     </div>
