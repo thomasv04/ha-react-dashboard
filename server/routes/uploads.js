@@ -34,6 +34,14 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const MAX_ICON_SIZE = 2 * 1024 * 1024; // 2 MB (pre-resize)
 const ICON_MAX_DIM = 128; // max width/height after resize
 
+/** Maquette 3D d'une page plan : une maison texturée pèse vite plusieurs dizaines de Mo. */
+const MAX_MODEL_SIZE = 50 * 1024 * 1024;
+/**
+ * En-tête de tout `.glb`. Le type déclaré ne dit rien : peu de systèmes
+ * connaissent l'extension, le navigateur envoie alors `application/octet-stream`.
+ */
+const GLB_MAGIC = Buffer.from('glTF');
+
 /**
  * Volume total autorisé pour les fichiers téléversés.
  *
@@ -170,6 +178,42 @@ export function uploadsRouter(db, uploadsDir) {
     `
     ).run(file.filename, file.originalname, file.mimetype, file.size);
 
+    return res.status(201).json({ url: `/uploads/${file.filename}` });
+  });
+
+  // ── POST /api/uploads/model ───────────────────────────────────────────────
+  // Rangée avec les images : même quota, même ménage des orphelins, et la
+  // suppression passe par `DELETE /background/:filename`.
+  const modelUpload = multer({
+    storage: multer.diskStorage({
+      destination: (_req, _file, cb) => cb(null, uploadsDir),
+      filename: (_req, _file, cb) => cb(null, `${randomUUID()}.glb`),
+    }),
+    limits: { fileSize: MAX_MODEL_SIZE },
+  });
+
+  router.post('/model', modelUpload.single('model'), (req, res) => {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ error: 'No file received.' });
+    }
+    const filePath = path.join(uploadsDir, file.filename);
+    const head = Buffer.alloc(GLB_MAGIC.length);
+    const fd = fs.openSync(filePath, 'r');
+    fs.readSync(fd, head, 0, head.length, 0);
+    fs.closeSync(fd);
+    if (!head.equals(GLB_MAGIC)) {
+      fs.unlinkSync(filePath);
+      return res.status(400).json({ error: 'Not a .glb file.' });
+    }
+    if (enforceQuota(file, res)) return;
+
+    db.prepare('INSERT INTO uploaded_images (filename, original_name, mime_type, size) VALUES (?, ?, ?, ?)').run(
+      file.filename,
+      file.originalname,
+      'model/gltf-binary',
+      file.size
+    );
     return res.status(201).json({ url: `/uploads/${file.filename}` });
   });
 

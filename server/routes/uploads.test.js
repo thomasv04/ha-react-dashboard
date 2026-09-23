@@ -66,6 +66,26 @@ test('un type non autorisé est refusé', async () => {
   expect(res.status).toBe(400);
 });
 
+test('une maquette .glb est acceptée, quel que soit le type annoncé', async () => {
+  const glb = Buffer.concat([Buffer.from('glTF'), Buffer.from([2, 0, 0, 0, 12, 0, 0, 0])]);
+  const res = await request(app)
+    .post('/api/uploads/model')
+    .attach('model', glb, { filename: 'maison.glb', contentType: 'application/octet-stream' });
+
+  expect(res.status).toBe(201);
+  expect(res.body.url).toMatch(/^\/uploads\/[\w-]+\.glb$/);
+  expect(fs.readFileSync(path.join(dir, path.basename(res.body.url)))).toEqual(glb);
+});
+
+test("un fichier qui n'est pas un .glb est refusé, et n'est pas gardé", async () => {
+  const res = await request(app)
+    .post('/api/uploads/model')
+    .attach('model', Buffer.from('<script>alert(1)</script>'), { filename: 'maison.glb', contentType: 'model/gltf-binary' });
+
+  expect(res.status).toBe(400);
+  expect(fs.readdirSync(dir).filter(f => f.endsWith('.glb'))).toHaveLength(0);
+});
+
 test('la suppression refuse une traversée de chemin', async () => {
   const res = await request(app).delete('/api/uploads/background/..%2F..%2Fdashboard.db');
   expect(res.status).toBeGreaterThanOrEqual(400);

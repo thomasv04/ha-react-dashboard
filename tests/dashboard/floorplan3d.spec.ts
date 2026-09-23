@@ -52,6 +52,8 @@ test.beforeAll(async ({ request }) => {
     widgetConfigs: Record<string, unknown>;
   };
   config.pages.push({ id: 'maison', label: 'Maison', icon: 'Home', type: 'floorplan', order: 99, floorplan: { image: '', model: MODEL } });
+  // Un plan encore vide, où téléverser une maquette.
+  config.pages.push({ id: 'vierge', label: 'Vierge', icon: 'Home', type: 'floorplan', order: 100, floorplan: { image: '' } });
   config.layouts.maison = { widgets: { lg: WIDGETS, md: WIDGETS, sm: WIDGETS }, cols: { lg: 12, md: 8, sm: 4 } };
   config.widgetConfigs.maison = CONFIGS;
   expect((await request.put(`${API}/api/config`, { data: config })).ok()).toBeTruthy();
@@ -138,4 +140,25 @@ test('in edit mode, a click on the model places a chip anchored where it landed'
   await expect.poll(() => at(page, added!)).not.toBe(before);
 
   await page.screenshot({ path: testInfo.outputPath('floorplan3d-edit.png'), animations: 'disabled' });
+});
+
+test('in edit mode, a .glb file is uploaded as the model, and its bin deletes it', async ({ page, request }) => {
+  await page.goto('/#vierge');
+  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
+
+  const picker = page.getByRole('group', { name: 'Maquette 3D' });
+  await picker.getByRole('button', { name: 'Fichier' }).click();
+  const uploaded = page.waitForResponse(r => r.url().includes('/api/uploads/model'));
+  await picker.locator('input[type=file]').setInputFiles(MODEL);
+  const { url } = await (await uploaded).json();
+
+  // La maquette téléversée s'affiche à la place de l'état vide.
+  await expect(page.getByText('Pas encore de plan')).toHaveCount(0);
+  await expect(page.locator('[data-floorplan-3d] canvas')).toBeVisible();
+  await expect(page.getByText('Chargement de la maquette…')).toHaveCount(0, { timeout: 60_000 });
+
+  await page.getByRole('button', { name: 'Maquette 3D' }).click();
+  await page.getByRole('button', { name: 'Supprimer la maquette' }).click();
+  await expect(page.getByText('Pas encore de plan')).toBeVisible();
+  expect((await request.get(`${API}${url}`)).status()).toBe(404);
 });

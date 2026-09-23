@@ -22,6 +22,7 @@ import { useI18n } from '@/i18n';
 import type { ChipCardConfig, WidgetConfig } from '@/types/widget-configs';
 import type { Floorplan3DHandle, Lamp } from './Floorplan3D';
 import { FloorplanItem } from './FloorplanItem';
+import { ModelPicker } from './ModelPicker';
 
 // three.js ne se télécharge que pour une page qui a une maquette.
 const Floorplan3D = lazy(() => import('./Floorplan3D'));
@@ -192,25 +193,7 @@ export function FloorplanView() {
     />
   );
 
-  // Validé à la sortie du champ : à chaque frappe, la maquette serait
-  // rechargée depuis une adresse incomplète.
-  const modelField = (
-    <div className='flex flex-col gap-1.5'>
-      <input
-        key={model ?? ''}
-        defaultValue={model ?? ''}
-        placeholder={t('layout.floorplan.modelPlaceholder')}
-        aria-label={t('layout.floorplan.model')}
-        onBlur={e => {
-          const next = e.target.value.trim() || undefined;
-          if (next !== model) setFloorplan({ model: next });
-        }}
-        onKeyDown={e => e.key === 'Enter' && e.currentTarget.blur()}
-        className='w-full px-3 py-2 rounded-lg text-xs bg-white/8 border border-white/15 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/60'
-      />
-      <p className='text-white/35 text-[10px] leading-snug'>{t('layout.floorplan.modelHint')}</p>
-    </div>
-  );
+  const modelField = <ModelPicker model={model} onChange={next => setFloorplan({ model: next })} />;
 
   /**
    * Surface des cards sur le plan. Le verre des thèmes est réglé pour un fond
@@ -317,7 +300,7 @@ export function FloorplanView() {
               <Suspense fallback={null}>
                 <Floorplan3D
                   ref={three}
-                  model={model}
+                  model={assetUrl(model)}
                   camera={floorplan?.camera}
                   sunElevation={sunEntity?.attributes?.elevation as number | undefined}
                   sunAzimuth={sunEntity?.attributes?.azimuth as number | undefined}
