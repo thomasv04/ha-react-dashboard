@@ -24,6 +24,7 @@ import {
   shortestTurn,
   skyColors,
   sunLighting,
+  sunPosition,
   temperatureOf,
   thermalColor,
   DEFAULT_WIDGET_SIZE,
@@ -293,6 +294,30 @@ describe('cloudiness', () => {
   it('assumes a clear sky for an unknown or missing state', () => {
     expect(cloudiness('unavailable')).toBe(0);
     expect(cloudiness(undefined)).toBe(0);
+  });
+});
+
+describe('sunPosition', () => {
+  // Références : astral 2.2, la bibliothèque dont Home Assistant tire `sun.sun`,
+  // sans réfraction.
+  const cases: [string, string, number, number, number, number][] = [
+    ["Paris, solstice d'été, midi", '2024-06-21T12:00:00Z', 48.8566, 2.3522, 64.538, 183.995],
+    ["Paris, solstice d'hiver, matin", '2024-12-21T10:00:00Z', 48.8566, 2.3522, 13.726, 154.407],
+    ['Paris, équinoxe, nuit', '2024-03-20T20:00:00Z', 48.8566, 2.3522, -19.317, 294.145],
+    ["Paris, soir d'été", '2024-07-14T18:30:00Z', 48.8566, 2.3522, 10.789, 290.442],
+    ['Sydney, été austral, soleil au nord', '2024-01-15T02:00:00Z', -33.8688, 151.2093, 77.335, 4.513],
+    ['Tromsø, soleil de minuit', '2024-06-21T23:00:00Z', 69.6492, 18.9553, 3.117, 3.169],
+  ];
+
+  it.each(cases)('%s', (_, at, latitude, longitude, elevation, azimuth) => {
+    const sun = sunPosition(new Date(at), latitude, longitude);
+    expect(sun.elevation).toBeCloseTo(elevation, 0);
+    expect(sun.azimuth).toBeCloseTo(azimuth, 0);
+  });
+
+  it('finds the sun near the zenith at the equator on an equinox', () => {
+    // L'azimut, lui, ne veut plus rien dire si près du zénith : pas comparé.
+    expect(sunPosition(new Date('2025-09-22T17:00:00Z'), -0.1807, -78.4678).elevation).toBeCloseTo(88.375, 0);
   });
 });
 

@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **19 tâches sur 21** — phases A à G. Restent `H1` et `H2` ; `F1` reste à essayer sur un vrai Android.
+**État global** : **20 tâches sur 21** — phases A à G, et `H1`. Reste `H2` ; `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -349,7 +349,17 @@ Le reste est indépendant.
 
 ## Phase H — Rejouer la journée
 
-### [ ] H1 — Le soleil calculé
+### [x] H1 — Le soleil calculé
+
+> **Fait** : `sunPosition(date, latitude, longitude)`, dans
+> [floorplan.ts](../src/lib/floorplan.ts) — l'algorithme de SunCalc, élévation
+> et azimut comme `sun.sun`. Comparée à astral 2.2, la bibliothèque dont HA
+> tire `sun.sun`, sur sept cas (jour, nuit, hémisphère sud, soleil de minuit,
+> équateur) : à 0,15° près en élévation, 0,4° en azimut — sauf près du
+> zénith, où l'azimut ne veut plus rien dire. Sans la réfraction, qu'ajoute
+> HA : un quart de degré au ras de l'horizon. La latitude et la longitude de
+> HA sont lues par `H2`, qui s'en sert ; pas de repli quand `sun.sun` manque,
+> l'intégration fait partie de `default_config`.
 
 - **Quoi** : position du soleil calculée depuis la latitude et la longitude
   de Home Assistant, pour n'importe quelle heure. Testée contre des valeurs de

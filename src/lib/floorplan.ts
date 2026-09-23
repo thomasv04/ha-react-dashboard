@@ -514,6 +514,33 @@ const SUN_COLORS: { at: number; color: Rgb }[] = [
   { at: 25, color: [255, 241, 220] },
 ];
 
+const RAD = Math.PI / 180;
+/** Inclinaison de l'axe de la Terre sur son orbite. */
+const OBLIQUITY = 23.4397 * RAD;
+
+/**
+ * Position du soleil vue d'un lieu, à un instant quelconque : élévation
+ * au-dessus de l'horizon et azimut depuis le nord, dans le sens horaire, en
+ * degrés — comme `sun.sun`. Algorithme de SunCalc (V. Agafonkin, d'après les
+ * formules de J. Meeus), à deux dixièmes de degré près. Sans la réfraction de
+ * l'atmosphère, que HA ajoute : un quart de degré au ras de l'horizon.
+ */
+export function sunPosition(date: Date, latitude: number, longitude: number): { elevation: number; azimuth: number } {
+  // Jours depuis le 1er janvier 2000 à midi (J2000).
+  const days = date.getTime() / 86_400_000 - 10_957.5;
+  const anomaly = RAD * (357.5291 + 0.98560028 * days);
+  const center = RAD * (1.9148 * Math.sin(anomaly) + 0.02 * Math.sin(2 * anomaly) + 0.0003 * Math.sin(3 * anomaly));
+  const ecliptic = anomaly + center + RAD * 102.9372 + Math.PI;
+  const declination = Math.asin(Math.sin(OBLIQUITY) * Math.sin(ecliptic));
+  const ascension = Math.atan2(Math.sin(ecliptic) * Math.cos(OBLIQUITY), Math.cos(ecliptic));
+  const hour = RAD * (280.16 + 360.9856235 * days) + RAD * longitude - ascension;
+  const phi = RAD * latitude;
+  const elevation = Math.asin(Math.sin(phi) * Math.sin(declination) + Math.cos(phi) * Math.cos(declination) * Math.cos(hour));
+  // Mesuré depuis le sud, vers l'ouest : on le ramène au nord.
+  const azimuth = Math.atan2(Math.sin(hour), Math.cos(hour) * Math.sin(phi) - Math.tan(declination) * Math.cos(phi));
+  return { elevation: elevation / RAD, azimuth: (azimuth / RAD + 540) % 360 };
+}
+
 /** Soleil supposé quand `sun.sun` manque : début d'après-midi, une lumière flatteuse. */
 const DEFAULT_SUN = { elevation: 40, azimuth: 200 };
 
