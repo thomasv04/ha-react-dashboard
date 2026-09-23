@@ -21,7 +21,18 @@ import {
 } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { MODEL_SIZE, sunLighting, type Vec3 } from '@/lib/floorplan';
+import {
+  backSides,
+  CUTAWAY_HEIGHT,
+  cutLimit,
+  isCutAway,
+  MODEL_SIZE,
+  sunLighting,
+  type Cutaway,
+  type Sides,
+  type Vec3,
+} from '@/lib/floorplan';
+import { createModelUniforms, materialsOf, patchModel, setCutawaySides, type ModelUniforms } from './modelPatch';
 
 /**
  * La maquette 3D d'une page plan : un `.glb`/`.gltf` exporté de Sweet Home 3D,
@@ -72,6 +83,10 @@ interface Floorplan3DProps {
   sunAzimuth?: number;
   north: number;
   shadows: boolean;
+  /** Murs en coupe, façon Les Sims : seuls les murs du fond restent debout. */
+  cutaway: boolean;
+  /** Tourner lentement après une minute sans geste. */
+  idleRotate: boolean;
   lamps: Lamp[];
   /** Après chaque image : la caméra a pu bouger, les pastilles se recalent. */
   onFrame: () => void;
@@ -91,6 +106,34 @@ const LAMP_LIFT = 1.5;
 const LAMP_POWER = 30;
 /** En deçà (px), un appui relâché est un clic ; au-delà, c'était une rotation. */
 const CLICK_TOLERANCE = 5;
+/**
+ * Inclinaison maximale de la caméra. Sans coupe, toujours en surplomb : plus
+ * bas, on ne voit plus que des murs, et les pastilles — jamais masquées —
+ * flottent devant eux. Avec la coupe, les murs du premier plan s'abaissent :
+ * la caméra peut descendre.
+ */
+const MAX_POLAR = { plain: Math.PI * 0.35, cutaway: Math.PI * 0.45 };
+/** Sans geste pendant ce temps, la maison se met à tourner (option de la page). */
+const IDLE_MS = 60_000;
+/** Murs en coupe : épaisseur gardée le long des murs du fond — le mur, l'appui de ses fenêtres. */
+const BACK_WALL_MARGIN = MODEL_SIZE * 0.025;
+/** Lumière du ciel, au-delà de l'éclairage réaliste : un intérieur vu d'en haut resterait sinon dans la pénombre. */
+const AMBIENT_BOOST = 1.5;
+/** Tranche peinte sous la coupe d'un matériau à double face : de quoi remplir l'épaisseur d'un mur vue d'en haut. */
+const CAP_DEPTH = MODEL_SIZE * 0.02;
+/** Un mur qui monte ou descend glisse : constante de temps, en ms (posé aux trois quarts en 150 ms). */
+const WALL_SLIDE_MS = 110;
+
+/** Murs en coupe, à l'instant : les hauteurs glissent vers celles que demande la caméra. */
+interface CutState extends Cutaway {
+  /** Haut de la maquette — un mur debout y monte, sans rien y couper. */
+  top: number;
+  /** Hauteur des murs abaissés. */
+  low: number;
+  /** Côtés du fond, d'après la caméra. */
+  back: Sides<boolean>;
+  sliding: boolean;
+}
 
 interface Stage {
   renderer: WebGLRenderer;
@@ -100,19 +143,35 @@ interface Stage {
   sun: DirectionalLight;
   hemi: HemisphereLight;
   root: Object3D | null;
+  /** Ombres de la maquette, retouchées comme elle — à libérer avec elle. */
+  depth: Material | null;
   lamps: Map<string, PointLight>;
+  /** Retouches des matériaux de la maquette (coupe, découpes), partagées par tous. */
+  uniforms: ModelUniforms;
+  cutaway: boolean;
+  /** Géométrie de la coupe — `null` tant qu'aucune maquette n'est chargée. */
+  cut: CutState | null;
   render: () => void;
+  /** Une image par frame tant que `step` rend `true` — le temps d'une animation. */
+  animate: (step: (now: number) => boolean) => void;
 }
 
 const raycaster = new Raycaster();
 const pointer = new Vector2();
+
+/** Point de la scène retiré par la coupe des murs — invisible, donc ni cliquable ni support de pastille. */
+function isCut(s: Stage, point: Vector3) {
+  return !!s.cut && isCutAway(point.toArray() as Vec3, s.cut);
+}
 
 function pick(s: Stage, clientX: number, clientY: number): Vec3 | null {
   if (!s.root) return null;
   const rect = s.renderer.domElement.getBoundingClientRect();
   pointer.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
   raycaster.setFromCamera(pointer, s.camera);
-  const hit = raycaster.intersectObject(s.root, true)[0];
+  // Le lancer de rayon ignore la coupe, faite dans les shaders : sans ce tri,
+  // un clic tomberait sur un mur qu'on ne voit plus.
+  const hit = raycaster.intersectObject(s.root, true).find(h => !isCut(s, h.point));
   // Coordonnées de la maquette elle-même, pas de la scène : elles survivent à
   // un changement de taille ou de centrage au prochain chargement.
   return hit ? (s.root.worldToLocal(hit.point.clone()).toArray() as Vec3) : null;
@@ -171,9 +230,59 @@ function placeLamps(s: Stage, lamps: Lamp[]) {
   }
 }
 
-function materialsOf(object: Object3D): Material[] {
-  const material = (object as Mesh).material;
-  return Array.isArray(material) ? material : material ? [material] : [];
+/** Murs en coupe (cf. `modelPatch`) : activés ou non, et la caméra qui peut descendre avec. */
+function applyCutaway(s: Stage) {
+  // Activée : les faces arrière tout de suite, pour la tranche. Désactivée :
+  // une fois les murs remontés (`slideWalls`).
+  if (s.cutaway && s.root) setCutawaySides(s.root, true);
+  s.controls.maxPolarAngle = s.cutaway ? MAX_POLAR.cutaway : MAX_POLAR.plain;
+  s.controls.update();
+}
+
+/** Hauteurs vers lesquelles glissent les murs : celles de la coupe, ou tout debout. */
+function wallTargets(s: Stage, c: CutState) {
+  return {
+    height: s.cutaway ? c.low : c.top,
+    sides: c.back.map(back => (s.cutaway && !back ? c.low : c.top)) as Sides<number>,
+  };
+}
+
+/** Un mur ne paraît ni ne disparaît d'un coup : il monte ou descend, en glissant vers sa hauteur. */
+function slideWalls(s: Stage, c: CutState) {
+  if (c.sliding) return;
+  c.sliding = true;
+  let last = 0;
+  s.animate(now => {
+    const k = 1 - Math.exp(-(last ? now - last : 16) / WALL_SLIDE_MS);
+    last = now;
+    const target = wallTargets(s, c);
+    let moving = false;
+    const toward = (value: number, goal: number) => {
+      const next = value + (goal - value) * k;
+      if (Math.abs(goal - next) < 1e-3) return goal;
+      moving = true;
+      return next;
+    };
+    c.height = toward(c.height, target.height);
+    c.sides = c.sides.map((value, i) => toward(value, target.sides[i])) as Sides<number>;
+    s.uniforms.fpCutaway.value.x = c.height;
+    s.uniforms.fpSides.value.set(...c.sides);
+    s.render();
+    if (!moving) {
+      c.sliding = false;
+      if (!s.cutaway && s.root) setCutawaySides(s.root, false);
+    }
+    return moving;
+  });
+}
+
+/** Les murs du fond changent quand la caméra tourne : ils glissent vers leur nouvelle hauteur. */
+function updateCutaway(s: Stage) {
+  const c = s.cut;
+  if (!c) return;
+  c.back = backSides(s.camera.position.toArray() as Vec3, s.controls.target.toArray() as Vec3, c.back);
+  const target = wallTargets(s, c);
+  if (target.height !== c.height || target.sides.some((goal, i) => goal !== c.sides[i])) slideWalls(s, c);
 }
 
 function disposeTree(root: Object3D) {
@@ -196,6 +305,8 @@ export default function Floorplan3D({
   sunAzimuth,
   north,
   shadows,
+  cutaway,
+  idleRotate,
   lamps,
   onFrame,
   onPick,
@@ -225,6 +336,9 @@ export default function Floorplan3D({
     }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.toneMapping = ACESFilmicToneMapping;
+    // Un cran plus clair que le rendu neutre : ACES assombrit les tons moyens,
+    // et l'on regarde surtout des intérieurs.
+    renderer.toneMappingExposure = 1.2;
     renderer.shadowMap.type = PCFShadowMap;
     renderer.domElement.style.display = 'block';
     host.appendChild(renderer.domElement);
@@ -232,12 +346,13 @@ export default function Floorplan3D({
     const scene = new Scene();
     const cam = new PerspectiveCamera(FOV, 1, 0.1, MODEL_SIZE * 20);
     const controls = new OrbitControls(cam, renderer.domElement);
-    // Toujours en surplomb : une maquette sans toit se lit d'en haut. Plus bas,
-    // on ne voit plus que des murs, et les pastilles — qui ne sont jamais
-    // masquées — flottent devant eux. Ni si près ou si loin qu'on s'y perde.
-    controls.maxPolarAngle = Math.PI * 0.35;
+    // Ni si près ou si loin qu'on s'y perde. L'inclinaison dépend de la coupe
+    // des murs (`applyCutaway`).
     controls.minDistance = MODEL_SIZE * 0.25;
     controls.maxDistance = MODEL_SIZE * 3;
+    // Au repos : un tour en deux minutes, la caméra mise à jour 30 fois par
+    // seconde (cf. la rotation au repos).
+    controls.autoRotateSpeed = 1;
 
     const hemi = new HemisphereLight(0xdde6ff, 0x3b3328, 1);
     const sun = new DirectionalLight(0xfff1dc, 3);
@@ -251,15 +366,31 @@ export default function Floorplan3D({
     // Rendu à la demande : une maison immobile n'a pas à être redessinée
     // soixante fois par seconde — sur une tablette murale, c'est de la
     // chaleur et de la batterie pour rien. Une seule image par frame, même si
-    // plusieurs changements arrivent ensemble.
+    // plusieurs changements arrivent ensemble. Une animation, elle, demande
+    // des frames tant qu'elle dure — et n'est redessinée que si elle a changé
+    // quelque chose.
     let frame = 0;
-    const render = () => {
-      if (frame) return;
-      frame = requestAnimationFrame(() => {
-        frame = 0;
+    let dirty = false;
+    const animators = new Set<(now: number) => boolean>();
+    const tick = (now: number) => {
+      // Pendant le tick, une demande de rendu ne planifie rien : on décide à la fin.
+      frame = -1;
+      for (const step of animators) if (!step(now)) animators.delete(step);
+      if (dirty) {
+        dirty = false;
+        updateCutaway(s);
         renderer.render(scene, cam);
         latest.current.onFrame();
-      });
+      }
+      frame = animators.size || dirty ? requestAnimationFrame(tick) : 0;
+    };
+    const render = () => {
+      dirty = true;
+      if (!frame) frame = requestAnimationFrame(tick);
+    };
+    const animate = (step: (now: number) => boolean) => {
+      animators.add(step);
+      if (!frame) frame = requestAnimationFrame(tick);
     };
     controls.addEventListener('change', render);
 
@@ -274,7 +405,22 @@ export default function Floorplan3D({
     const observer = new ResizeObserver(resize);
     observer.observe(host);
 
-    const s: Stage = { renderer, scene, camera: cam, controls, sun, hemi, root: null, lamps: new Map(), render };
+    const s: Stage = {
+      renderer,
+      scene,
+      camera: cam,
+      controls,
+      sun,
+      hemi,
+      root: null,
+      depth: null,
+      lamps: new Map(),
+      uniforms: createModelUniforms(),
+      cutaway: false,
+      cut: null,
+      render,
+      animate,
+    };
     stage.current = s;
     resize();
 
@@ -301,6 +447,7 @@ export default function Floorplan3D({
       renderer.domElement.removeEventListener('pointerdown', onDown);
       renderer.domElement.removeEventListener('pointerup', onUp);
       disposeTree(scene);
+      s.depth?.dispose();
       renderer.dispose();
       // Rendre le contexte tout de suite : un navigateur n'en garde qu'une
       // poignée, et changer de page en boucle finirait par les épuiser.
@@ -337,9 +484,29 @@ export default function Floorplan3D({
         if (s.root) {
           s.scene.remove(s.root);
           disposeTree(s.root);
+          s.depth?.dispose();
         }
         s.scene.add(root);
         s.root = root;
+        s.depth = patchModel(root, s.uniforms);
+        // Emprise, une fois la maquette posée au sol et centrée. Les murs
+        // partent debout, et s'abaissent en glissant : la maison s'ouvre.
+        const { min, max } = new Box3().setFromObject(root);
+        const top = max.y + 0.01;
+        s.cut = {
+          height: top,
+          box: [min.x, min.z, max.x, max.z],
+          sides: [top, top, top, top],
+          margin: BACK_WALL_MARGIN,
+          top,
+          low: (max.y - min.y) * CUTAWAY_HEIGHT,
+          back: [true, true, true, true],
+          sliding: false,
+        };
+        s.uniforms.fpCutaway.value.set(top, top, BACK_WALL_MARGIN, CAP_DEPTH);
+        s.uniforms.fpBox.value.set(...s.cut.box);
+        s.uniforms.fpSides.value.set(...s.cut.sides);
+        applyCutaway(s);
         placeLamps(s, latest.current.lamps);
         applyView(s, latest.current.camera);
         // `applyView` ne redessine que si la caméra a bougé : une autre
@@ -364,7 +531,9 @@ export default function Floorplan3D({
     const light = sunLighting({ elevation: sunElevation, azimuth: sunAzimuth }, north);
     s.sun.position.set(...light.dir).multiplyScalar(MODEL_SIZE * 2);
     s.sun.intensity = light.sun;
-    s.hemi.intensity = light.ambient;
+    // Les pièces, qu'on voit par-dessus les murets, ne reçoivent guère que
+    // cette lumière-là : plus généreuse que le soleil ne le voudrait.
+    s.hemi.intensity = light.ambient * AMBIENT_BOOST;
     const cast = shadows && light.sun > 0;
     if (s.renderer.shadowMap.enabled !== cast) {
       s.renderer.shadowMap.enabled = cast;
@@ -387,13 +556,61 @@ export default function Floorplan3D({
     s.render();
   }, [lampsKey]);
 
+  // ── Murs en coupe ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    const s = stage.current;
+    if (!s) return;
+    s.cutaway = cutaway;
+    applyCutaway(s);
+    s.render();
+  }, [cutaway]);
+
+  // ── Rotation au repos ──────────────────────────────────────────────────────
+  // Le moindre geste, n'importe où sur la page, l'arrête et relance l'attente.
+  useEffect(() => {
+    const s = stage.current;
+    if (!s || !idleRotate) return;
+    let spinning = false;
+    let timer = 0;
+    let frames = 0;
+    const spin = () => {
+      spinning = true;
+      s.controls.autoRotate = true;
+      s.animate(() => {
+        // Une image sur deux : une maison qui tourne lentement n'a pas besoin
+        // de soixante images par seconde, et la tablette chauffe moins.
+        if (spinning && ++frames % 2 === 0) s.controls.update();
+        return spinning;
+      });
+    };
+    const wake = () => {
+      spinning = false;
+      s.controls.autoRotate = false;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(spin, IDLE_MS);
+    };
+    const events = ['pointerdown', 'wheel', 'keydown'] as const;
+    for (const event of events) window.addEventListener(event, wake, { passive: true });
+    wake();
+    return () => {
+      for (const event of events) window.removeEventListener(event, wake);
+      window.clearTimeout(timer);
+      spinning = false;
+      s.controls.autoRotate = false;
+    };
+  }, [idleRotate]);
+
   useImperativeHandle(
     ref,
     () => ({
       project(anchor) {
         const s = stage.current;
         if (!s?.root) return null;
-        const v = s.root.localToWorld(new Vector3(...anchor)).project(s.camera);
+        const point = s.root.localToWorld(new Vector3(...anchor));
+        // Accrochée en haut d'un mur coupé : posée sur ce qu'il en reste,
+        // plutôt que de flotter dans le vide.
+        if (s.cut && isCut(s, point)) point.y = cutLimit(point.toArray() as Vec3, s.cut);
+        const v = point.project(s.camera);
         if (v.z < -1 || v.z > 1) return null;
         return { x: (v.x + 1) * 50, y: (1 - v.y) * 50 };
       },

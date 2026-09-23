@@ -17,6 +17,10 @@ export interface FloorplanConfig {
   camera?: { position: [number, number, number]; target: [number, number, number] };
   /** Orientation du nord dans la maquette, en degrés — pour placer le soleil. */
   north?: number;
+  /** Murs en coupe : le côté caméra est abaissé à environ un mètre. Actif par défaut. */
+  cutaway?: boolean;
+  /** La maison tourne lentement après une minute sans geste. */
+  idleRotate?: boolean;
 }
 
 export interface Page {

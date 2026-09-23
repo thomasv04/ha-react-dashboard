@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   containSize,
+  backSides,
+  cutLimit,
+  isCutAway,
   guessPartKind,
   isNightDimmed,
   lightGlow,
@@ -13,7 +16,10 @@ import {
   resizePos,
   sunLighting,
   DEFAULT_WIDGET_SIZE,
+  type Vec3,
 } from './floorplan';
+
+type Sides = [number, number, number, number];
 
 const RECT = { width: 1000, height: 500 };
 
@@ -206,5 +212,44 @@ describe('guessPartKind', () => {
     expect(guessPartKind('binary_sensor.garage', 'garage_door')).toBe('garage');
     expect(guessPartKind('binary_sensor.fenetre', 'window')).toBe('window');
     expect(guessPartKind('binary_sensor.porte', 'door')).toBe('door');
+  });
+});
+
+describe('backSides', () => {
+  it('keeps the two far walls when looking across a corner', () => {
+    // Caméra en x+, z+ : les murs du fond sont ceux de x− et de z−.
+    expect(backSides([10, 8, 10], [0, 0, 0])).toEqual([true, true, false, false]);
+  });
+
+  it('cuts the side walls when looking straight along them', () => {
+    expect(backSides([0, 8, -10], [0, 0, 0])).toEqual([false, false, false, true]);
+  });
+
+  it('keeps every wall when looking straight down', () => {
+    expect(backSides([2, 20, 2], [2, 0, 2])).toEqual([true, true, true, true]);
+  });
+
+  it('does not flicker around the threshold', () => {
+    // Côté x− vu à 0,2 de profil : juste sous le seuil pour se lever, au-dessus pour rester debout.
+    const camera: Vec3 = [2, 8, 9.8];
+    expect(backSides(camera, [0, 0, 0])[0]).toBe(false);
+    expect(backSides(camera, [0, 0, 0], [true, true, false, false])[0]).toBe(true);
+  });
+});
+
+describe('cutLimit', () => {
+  const cut = { height: 1, box: [-8, -5, 8, 5] as Sides, sides: [4, 4, 1, 1] as Sides, margin: 0.5 };
+
+  it('lowers everything to the cut height, except along the far walls', () => {
+    expect(cutLimit([0, 0, 0], cut)).toBe(1); // cloison au milieu
+    expect(cutLimit([7.8, 0, 0], cut)).toBe(1); // mur de devant, x+
+    expect(cutLimit([-7.8, 0, 0], cut)).toBe(4); // mur du fond, x−
+    expect(cutLimit([0, 0, -4.7], cut)).toBe(4); // mur du fond, z−
+  });
+
+  it('follows a wall as it slides', () => {
+    expect(cutLimit([-7.8, 0, 0], { ...cut, sides: [2.5, 4, 1, 1] })).toBe(2.5);
+    expect(isCutAway([-7.8, 3, 0], { ...cut, sides: [2.5, 4, 1, 1] })).toBe(true);
+    expect(isCutAway([-7.8, 2, 0], { ...cut, sides: [2.5, 4, 1, 1] })).toBe(false);
   });
 });

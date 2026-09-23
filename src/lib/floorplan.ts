@@ -224,6 +224,68 @@ export function guessPartKind(entityId: string, deviceClass: unknown): PartKind 
   return 'door';
 }
 
+// ── Murs en coupe ────────────────────────────────────────────────────────────
+
+/** Hauteur de coupe, en part de la hauteur de la maquette : des murets, juste au-dessus des plans de travail. */
+export const CUTAWAY_HEIGHT = 0.38;
+
+/** Une valeur par côté de l'emprise : x−, z−, x+, z+. */
+export type Sides<T> = [T, T, T, T];
+
+/**
+ * Murs en coupe, façon Les Sims : au-dessus de `height`, seuls les murs du
+ * fond restent debout. Faute de savoir où sont les murs dans une maquette
+ * quelconque, « le fond » est une bande le long des côtés de l'emprise
+ * tournés dos à la caméra — les murs extérieurs qu'on voit de l'intérieur.
+ *
+ * Les hauteurs sont celles de l'instant : un mur qui monte ou descend glisse
+ * de l'une à l'autre.
+ */
+export interface Cutaway {
+  /** Hauteur des murs abaissés. Au-dessus du haut de la maquette : rien n'est coupé. */
+  height: number;
+  /** Emprise de la maquette : x−, z−, x+, z+. */
+  box: Sides<number>;
+  /** Hauteur de chaque côté de l'emprise (x−, z−, x+, z+) : celle d'un mur du fond debout, ou `height`. */
+  sides: Sides<number>;
+  /** Épaisseur de la bande gardée le long d'un côté du fond : le mur, ses fenêtres. */
+  margin: number;
+}
+
+/**
+ * Côtés de l'emprise tournés dos à la caméra, dont les murs restent debout.
+ * Un côté vu presque de profil est coupé : on regarde alors le long de lui.
+ * `previous` : les côtés de l'instant d'avant — autour du seuil, un côté ne
+ * bascule qu'après l'avoir franchi franchement, sans quoi un mur monterait
+ * et descendrait sans fin sous une caméra qui tourne lentement.
+ * Caméra à la verticale : aucun mur ne cache rien, tous restent.
+ */
+export function backSides(camera: Vec3, target: Vec3, previous?: Sides<boolean>): Sides<boolean> {
+  const dx = camera[0] - target[0];
+  const dz = camera[2] - target[2];
+  const length = Math.hypot(dx, dz);
+  if (length < 1e-6) return [true, true, true, true];
+  // Tournés dos à la caméra, dans l'ordre x−, z−, x+, z+.
+  const facing = [dx / length, dz / length, -dx / length, -dz / length];
+  return facing.map((f, i) => f > (previous?.[i] ? 0.12 : 0.28)) as Sides<boolean>;
+}
+
+/** Hauteur au-dessus de laquelle la maquette n'est pas dessinée en ce point. */
+export function cutLimit(p: Vec3, c: Cutaway): number {
+  const [x0, z0, x1, z1] = c.box;
+  let limit = c.height;
+  if (p[0] < x0 + c.margin) limit = Math.max(limit, c.sides[0]);
+  if (p[2] < z0 + c.margin) limit = Math.max(limit, c.sides[1]);
+  if (p[0] > x1 - c.margin) limit = Math.max(limit, c.sides[2]);
+  if (p[2] > z1 - c.margin) limit = Math.max(limit, c.sides[3]);
+  return limit;
+}
+
+/** Ce point, dans la scène, est-il retiré par la coupe ? */
+export function isCutAway(p: Vec3, c: Cutaway): boolean {
+  return p[1] > cutLimit(p, c);
+}
+
 /** Soleil supposé quand `sun.sun` manque : début d'après-midi, une lumière flatteuse. */
 const DEFAULT_SUN = { elevation: 40, azimuth: 200 };
 

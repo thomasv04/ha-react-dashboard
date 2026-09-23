@@ -385,6 +385,8 @@
     "modelDelete": "Supprimer la maquette",
     "orModel": "…ou une maquette 3D",
     "north": "Nord (°)",
+    "cutaway": "Murs en coupe",
+    "idleRotate": "Tourner au repos",
     "saveView": "Garder cette vue",
     "resetView": "Recentrer",
     "loading": "Chargement de la maquette…",

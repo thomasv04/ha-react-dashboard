@@ -280,6 +280,13 @@ export function FloorplanView() {
     </button>
   );
 
+  const checkbox = (label: string, checked: boolean, onChange: (checked: boolean) => void) => (
+    <label className='flex items-center gap-1.5 text-xs text-white/60 cursor-pointer select-none'>
+      <input type='checkbox' checked={checked} onChange={e => onChange(e.target.checked)} className='accent-blue-500' />
+      {label}
+    </label>
+  );
+
   return (
     <div className='relative flex-1 min-h-0'>
       {/* La zone reste montée sans image : `useElementBox` ne la mesure qu'au
@@ -306,6 +313,9 @@ export function FloorplanView() {
                   sunAzimuth={sunEntity?.attributes?.azimuth as number | undefined}
                   north={floorplan?.north ?? 0}
                   shadows={!perfSettings.disableShadows}
+                  cutaway={floorplan?.cutaway !== false}
+                  // Ni en édition, où l'on règle la vue, ni en économie d'énergie.
+                  idleRotate={!!floorplan?.idleRotate && motionAllowed && !isEditMode}
                   lamps={lamps}
                   onFrame={onFrame}
                   onPick={isEditMode ? onModelPick : undefined}
@@ -402,17 +412,8 @@ export function FloorplanView() {
           <div className='flex flex-wrap items-center gap-2'>
             {panelButton('image', ImageIcon, t('layout.floorplan.image'))}
             {panelButton('model', BoxIcon, t('layout.floorplan.model'))}
-            {!model && (
-              <label className='flex items-center gap-1.5 text-xs text-white/60 cursor-pointer select-none'>
-                <input
-                  type='checkbox'
-                  checked={floorplan?.dimAtNight !== false}
-                  onChange={e => setFloorplan({ dimAtNight: e.target.checked })}
-                  className='accent-blue-500'
-                />
-                {t('layout.floorplan.dimAtNight')}
-              </label>
-            )}
+            {!model &&
+              checkbox(t('layout.floorplan.dimAtNight'), floorplan?.dimAtNight !== false, checked => setFloorplan({ dimAtNight: checked }))}
           </div>
           {panel === 'image' && picker}
           {panel === 'model' && (
@@ -440,6 +441,12 @@ export function FloorplanView() {
                   >
                     {t('layout.floorplan.saveView')}
                   </button>
+                </div>
+              )}
+              {model && (
+                <div className='flex flex-wrap items-center gap-x-3 gap-y-1.5'>
+                  {checkbox(t('layout.floorplan.cutaway'), floorplan?.cutaway !== false, checked => setFloorplan({ cutaway: checked }))}
+                  {checkbox(t('layout.floorplan.idleRotate'), !!floorplan?.idleRotate, checked => setFloorplan({ idleRotate: checked }))}
                 </div>
               )}
             </div>

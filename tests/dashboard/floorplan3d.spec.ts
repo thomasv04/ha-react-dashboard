@@ -67,15 +67,26 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('ha-dashboard-tour-done', 'true'));
 });
 
-/** Ouvre la page et attend la maquette : les pastilles accrochées n'apparaissent qu'une fois projetées. */
-async function openModel(page: Page) {
-  await page.goto('/#maison');
-  await expect(page.getByText('20.4 °C')).toBeVisible({ timeout: 60_000 });
-}
-
 /** Position à l'écran d'un élément du plan, en % (style `left` / `top`). */
 const at = (page: Page, id: string) =>
   page.locator(`[data-floorplan-item="${id}"]`).evaluate(el => [(el as HTMLElement).style.left, (el as HTMLElement).style.top].join(' '));
+
+/**
+ * Ouvre la page et attend la maquette : les pastilles accrochées n'apparaissent
+ * qu'une fois projetées. Puis que la maison ait fini de s'ouvrir — les murs
+ * coupés descendent en glissant, et la pastille posée sur l'un d'eux avec.
+ */
+async function openModel(page: Page) {
+  await page.goto('/#maison');
+  await expect(page.getByText('20.4 °C')).toBeVisible({ timeout: 60_000 });
+  await expect
+    .poll(async () => {
+      const before = await at(page, 'temp');
+      await page.waitForTimeout(250);
+      return before === (await at(page, 'temp'));
+    })
+    .toBe(true);
+}
 
 /**
  * Glisser sur le canevas : la caméra tourne. En bas à gauche, loin de ce qui

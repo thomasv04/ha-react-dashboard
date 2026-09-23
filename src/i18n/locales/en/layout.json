@@ -385,6 +385,8 @@
     "modelDelete": "Delete the model",
     "orModel": "…or a 3D model",
     "north": "North (°)",
+    "cutaway": "Cutaway walls",
+    "idleRotate": "Rotate when idle",
     "saveView": "Keep this view",
     "resetView": "Reset view",
     "loading": "Loading the model…",

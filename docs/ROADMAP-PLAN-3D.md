@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **0 tâche sur 20.**
+**État global** : **2 tâches sur 20** — `E1` et `G1`, passées en priorité.
 
 ---
 
@@ -53,6 +53,10 @@ Le reste est indépendant.
 ## Phase A — Portes, fenêtres et volets animés
 
 ### [ ] A1 — Socle : animations et découpe de la maquette
+
+> **En partie en place**, livré avec `E1` et `G1` : la boucle d'animation, et
+> les découpes dans [modelPatch.ts](../src/components/floorplan/modelPatch.ts).
+> Reste à les vérifier sur une vraie porte, avec `A3`.
 
 - **Où** : [Floorplan3D.tsx](../src/components/floorplan/Floorplan3D.tsx)
 - **Quoi** :
@@ -156,7 +160,21 @@ Le reste est indépendant.
 
 ## Phase E — Murs en coupe
 
-### [ ] E1 — Les murs côté caméra s'abaissent
+### [x] E1 — Les murs côté caméra s'abaissent
+
+> **Fait**, façon Les Sims plutôt qu'en coupe plane : une première version
+> tranchait la maison par un plan passant par son centre — murs creux, bouts
+> de cadres de fenêtres, cloison coupée net au milieu d'une pièce. Désormais,
+> seuls les deux murs extérieurs du fond (les côtés de l'emprise tournés dos à
+> la caméra) restent debout ; tout le reste est abaissé à 38 % de la hauteur,
+> juste au-dessus des plans de travail — plus bas, tables et plans de travail
+> étaient coupés aussi : la maquette de test fond murs et meubles, un objet
+> par matière. La tranche est peinte d'un gris bleuté sombre. Les murs
+> **glissent** (≈ 0,4 s) quand la caméra tourne, avec une marge au seuil pour
+> ne pas osciller ; la maison « s'ouvre » au chargement. Coupe faite dans les
+> shaders ([modelPatch.ts](../src/components/floorplan/modelPatch.ts)), ombres
+> comprises. Activée par défaut, décochable dans « Maquette 3D ». Au passage,
+> l'ambiance est un peu plus claire : on voit désormais l'intérieur des pièces.
 
 - **Quoi** : tout ce qui dépasse d'environ un mètre, du côté de la caméra,
   n'est pas dessiné (plans de coupe natifs de three.js) ; la coupe suit la
@@ -187,7 +205,11 @@ Le reste est indépendant.
 
 ## Phase G — Petits plus
 
-### [ ] G1 — La maison tourne au repos
+### [x] G1 — La maison tourne au repos
+
+> **Fait** : un tour en deux minutes, une image sur deux (30 par seconde) pour
+> ménager la tablette. Option « Tourner au repos », activée dans la démo du
+> mock ; jamais en édition ni en économie d'énergie.
 
 - **Quoi** : option : après une minute sans toucher, la maison tourne
   lentement ; le moindre geste l'arrête. Coupé en économie d'énergie.
