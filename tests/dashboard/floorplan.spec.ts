@@ -144,8 +144,9 @@ test('in edit mode, a click on the plan places a chip, and dragging moves it', a
   const box = (await page.locator('[data-floorplan-plan]').boundingBox())!;
   await page.mouse.click(box.x + box.width * 0.3, box.y + box.height * 0.75);
 
-  // La liste des entités s'ouvre d'elle-même, champ de recherche actif.
-  await page.keyboard.type('light.living_room');
+  // La liste des entités s'ouvre d'elle-même ; son champ de recherche arrive
+  // une image plus tard : taper avant, c'était écrire dans le vide.
+  await page.getByPlaceholder('Rechercher...').fill('light.living_room');
   await page.getByRole('button', { name: 'light.living_room', exact: true }).click();
   const items = page.locator('[data-floorplan-item]');
   await expect(items).toHaveCount(WIDGETS.length + 1);
