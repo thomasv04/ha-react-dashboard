@@ -29,6 +29,7 @@ import {
   normalizePos,
   openness,
   partFrame,
+  precipitation,
   skyColors,
   type FloorplanPart,
   type Vec3,
@@ -164,7 +165,10 @@ export function FloorplanView() {
   // La météo voile le soleil et grise le ciel : l'entité choisie, ou la première trouvée.
   const firstWeather = useHass(s => Object.keys(s.entities ?? {}).find(id => id.startsWith('weather.')));
   const weatherId = floorplan?.weather || firstWeather || '';
-  const clouds = cloudiness(useEntities([weatherId])[weatherId]?.state);
+  const weatherState = useEntities([weatherId])[weatherId]?.state;
+  const clouds = cloudiness(weatherState);
+  // Pluie, neige, éclairs : animés en CSS, jamais en économie d'énergie.
+  const falling = model && motionAllowed ? precipitation(weatherState) : null;
   // Derrière la maquette : le ciel de l'heure, sauf si la page garde le fond du thème.
   const sky = model && floorplan?.sky !== false ? skyColors(sunElevation, clouds) : null;
 
@@ -482,6 +486,9 @@ export function FloorplanView() {
                 {t('layout.floorplan.loading')}
               </p>
             )}
+            {falling && falling.rain > 0 && <div className='fp-rain' style={{ opacity: falling.rain }} />}
+            {falling && falling.snow > 0 && <div className='fp-snow' style={{ opacity: falling.snow }} />}
+            {falling?.lightning && <div className='fp-lightning' />}
             {items}
             {addPopover}
             {draft && !draft.part && projections[DRAFT_MARK] && (

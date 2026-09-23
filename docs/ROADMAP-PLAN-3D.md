@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **10 tâches sur 21** — `E1` et `G1`, passées en priorité, puis la phase A.
+**État global** : **11 tâches sur 21** — `E1` et `G1`, passées en priorité, puis la phase A.
 
 ---
 
@@ -165,7 +165,12 @@ Le reste est indépendant.
   ombres adoucies, ambiance plus diffuse. Entité météo choisie, ou la
   première trouvée.
 
-### [ ] B3 — Pluie, neige, orage
+### [x] B3 — Pluie, neige, orage
+
+> **Fait** : tuiles SVG que le compositeur fait défiler (un cycle = une tuile,
+> dans la pente des gouttes : la boucle ne se voit pas) ; flocons qui
+> tanguent ; deux éclairs rapprochés toutes les neuf secondes. Coupé en
+> économie d'énergie, en mouvement réduit, et par `.perf-no-animations`.
 
 - **Quoi** : une couche animée en CSS par-dessus la maquette — la maquette,
   elle, n'est pas redessinée. Éclairs par temps d'orage. Coupée en économie

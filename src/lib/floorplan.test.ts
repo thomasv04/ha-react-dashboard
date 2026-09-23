@@ -14,6 +14,7 @@ import {
   normalizePos,
   openness,
   partFrame,
+  precipitation,
   resizePos,
   skyColors,
   sunLighting,
@@ -308,5 +309,24 @@ describe('sunLighting, colour and weather', () => {
   it('greys the sky and hides the stars under clouds', () => {
     expect(skyColors(40, 1).top).not.toBe(skyColors(40).top);
     expect(skyColors(-20, 1).stars).toBe(0);
+  });
+});
+
+describe('precipitation', () => {
+  it('rains harder when it pours, and flashes during a storm', () => {
+    expect(precipitation('pouring').rain).toBeGreaterThan(precipitation('rainy').rain);
+    expect(precipitation('lightning-rainy')).toMatchObject({ lightning: true });
+    expect(precipitation('rainy').lightning).toBe(false);
+  });
+
+  it('snows, and mixes both for sleet', () => {
+    expect(precipitation('snowy')).toMatchObject({ rain: 0 });
+    expect(precipitation('snowy-rainy').rain).toBeGreaterThan(0);
+    expect(precipitation('snowy-rainy').snow).toBeGreaterThan(0);
+  });
+
+  it('lets nothing fall otherwise', () => {
+    expect(precipitation('sunny')).toEqual({ rain: 0, snow: 0, lightning: false });
+    expect(precipitation(undefined)).toEqual({ rain: 0, snow: 0, lightning: false });
   });
 });

@@ -371,6 +371,22 @@ export function cloudiness(state: string | undefined): number {
   return CLOUDS[state ?? ''] ?? 0;
 }
 
+/** Ce qui tombe du ciel, par état d'une entité `weather` : pluie et neige de 0 à 1, éclairs. */
+const PRECIPITATION: Record<string, { rain: number; snow: number; lightning: boolean }> = {
+  rainy: { rain: 0.6, snow: 0, lightning: false },
+  pouring: { rain: 1, snow: 0, lightning: false },
+  hail: { rain: 0.8, snow: 0, lightning: false },
+  lightning: { rain: 0, snow: 0, lightning: true },
+  'lightning-rainy': { rain: 0.8, snow: 0, lightning: true },
+  snowy: { rain: 0, snow: 0.8, lightning: false },
+  'snowy-rainy': { rain: 0.4, snow: 0.5, lightning: false },
+};
+
+/** Pluie, neige et éclairs d'après l'état d'une entité `weather` — par défaut, rien. */
+export function precipitation(state: string | undefined): { rain: number; snow: number; lightning: boolean } {
+  return PRECIPITATION[state ?? ''] ?? { rain: 0, snow: 0, lightning: false };
+}
+
 /** Couleur du soleil selon sa hauteur : orangé à l'horizon, doré, puis blanc chaud. */
 const SUN_COLORS: { at: number; color: Rgb }[] = [
   { at: 0, color: [255, 120, 60] },
