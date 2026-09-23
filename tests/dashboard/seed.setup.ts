@@ -79,18 +79,18 @@ setup('amorce la configuration du dashboard de test', async ({ request }) => {
  * encaissent l'attente et expirent, alors que les suivants passent en moins
  * d'une seconde.
  *
- * Le délai est large **à dessein**. Mesuré cache purgé (`node_modules/.vite`)
- * sur une machine Windows : 8 à 13 minutes jusqu'au premier widget rendu. À
- * 10 minutes, le plafond tombait au milieu de cette plage et la suite entière
- * échouait une fois sur deux — 37 tests non lancés pour une raison qui n'avait
- * rien à voir avec eux. Ça ne coûte rien de viser large : l'étape rend la main
- * dès que `[data-widget-id]` apparaît, donc une machine rapide n'attend pas.
+ * Mesuré cache purgé (`node_modules/.vite`) sur une machine Windows : 13 s
+ * jusqu'au premier widget rendu. Ce chiffre a longtemps été de 8 à 13 minutes,
+ * et le plafond était monté à 25 minutes pour le couvrir : le watcher de Vite
+ * parcourait les venvs Python du dépôt (cf. `server.watch` dans
+ * `vite.config.ts`). Le plafond reste large, mais assez bas pour qu'une
+ * régression de ce genre fasse échouer la suite au lieu de passer inaperçue.
  *
  * `domcontentloaded` n'aide pas à raccourcir : `main.tsx` est un module, et un
  * script de module diffère `DOMContentLoaded` jusqu'à ce que tout son graphe
- * soit chargé. C'est donc bien `goto` qui encaisse les treize minutes.
+ * soit chargé. C'est donc bien `goto` qui encaisse l'attente.
  */
-const WARMUP_TIMEOUT = 25 * 60_000;
+const WARMUP_TIMEOUT = 3 * 60_000;
 
 setup('préchauffe le serveur de développement', async ({ page }) => {
   setup.setTimeout(WARMUP_TIMEOUT + 60_000);
