@@ -8,6 +8,7 @@ import type { CustomPanel, DockConfig } from '@/types/custom-panel';
 import { useToast } from '@/context/ToastContext';
 import { useI18n } from '@/i18n';
 import { apiFetch } from '@/lib/api-base';
+import { withDemoFloorplan } from '@/mocks/demoFloorplan';
 
 /** Au-delà, on considère le serveur injoignable et on rend depuis le cache. */
 const FETCH_TIMEOUT_MS = 8_000;
@@ -171,6 +172,13 @@ function readCache(): DashboardConfigV2 | null {
   }
 }
 
+/**
+ * Mode mock (`vite --mode mock`) : la maison 3D de démonstration s'ajoute à
+ * toute config affichée — cache, défauts ou serveur. Enregistrer avec l'API
+ * lancée l'écrit donc aussi dans la base de développement.
+ */
+const withDemo = (config: DashboardConfigV2) => (import.meta.env.MODE === 'mock' ? withDemoFloorplan(config) : config);
+
 function writeCache(config: DashboardConfigV2) {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(config));
@@ -183,12 +191,18 @@ export function useDashboardConfig() {
   // Initialiseur paresseux de `useState` plutôt qu'un ref : lu une seule fois,
   // stable pour la vie du hook, et légitimement consultable pendant le rendu.
   const [cached] = useState(readCache);
-
-  const [pages, setPages] = useState<Page[]>(cached?.pages ?? DEFAULT_PAGES);
-  const [allLayouts, setAllLayouts] = useState<Record<string, DashboardLayout>>(cached?.layouts ?? { home: DEFAULT_LAYOUT });
-  const [allWidgetConfigs, setAllWidgetConfigs] = useState<Record<string, WidgetConfigs>>(
-    cached?.widgetConfigs ?? { home: DEFAULT_WIDGET_CONFIGS }
+  const [initial] = useState(() =>
+    withDemo({
+      version: 2,
+      pages: cached?.pages ?? DEFAULT_PAGES,
+      layouts: cached?.layouts ?? { home: DEFAULT_LAYOUT },
+      widgetConfigs: cached?.widgetConfigs ?? { home: DEFAULT_WIDGET_CONFIGS },
+    })
   );
+
+  const [pages, setPages] = useState<Page[]>(initial.pages);
+  const [allLayouts, setAllLayouts] = useState<Record<string, DashboardLayout>>(initial.layouts);
+  const [allWidgetConfigs, setAllWidgetConfigs] = useState<Record<string, WidgetConfigs>>(initial.widgetConfigs);
   const [wallPanelConfig, setWallPanelConfig] = useState<WallPanelConfig>(cached?.wallPanel?.config ?? DEFAULT_WALLPANEL_CONFIG);
   const [wallPanelLayout, setWallPanelLayout] = useState<DashboardLayout>(
     cached?.wallPanel?.layout ?? { ...DEFAULT_LAYOUT, widgets: { lg: [], md: [], sm: [] } }
@@ -211,7 +225,8 @@ export function useDashboardConfig() {
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
     const hadCache = cached !== null;
 
-    const apply = (v2: DashboardConfigV2) => {
+    const apply = (loaded: DashboardConfigV2) => {
+      const v2 = withDemo(loaded);
       setPages(v2.pages);
       setAllLayouts(v2.layouts);
       setAllWidgetConfigs(v2.widgetConfigs);
