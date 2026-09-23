@@ -27,8 +27,13 @@ const RESERVED = new Set(['type', 'id']);
 function validateType(v: string): true | string {
   if (!/^[a-z][a-z0-9_]*$/.test(v)) return 'minuscules, chiffres et _ uniquement, commençant par une lettre';
   if (RESERVED.has(v)) return `« ${v} » est réservé`;
-  const types = fs.readFileSync(p('src/context/DashboardLayoutContext.tsx'), 'utf8');
-  if (new RegExp(`\\|\\s*'${v}'`).test(types)) return `le type « ${v} » existe déjà`;
+  // L'union des types est dérivée des manifestes : c'est là qu'un doublon se voit.
+  const cards = p('src/components/cards');
+  const taken = fs.readdirSync(cards).some(d => {
+    const manifest = path.join(cards, d, 'widget.ts');
+    return fs.existsSync(manifest) && fs.readFileSync(manifest, 'utf8').includes(`type: '${v}'`);
+  });
+  if (taken) return `le type « ${v} » existe déjà`;
   return true;
 }
 
@@ -215,10 +220,8 @@ async function main() {
     }
   }
 
-  // 3. Union des types de widgets
-  insertBefore('src/context/DashboardLayoutContext.tsx', "\n    | 'pellet';", `\n    | '${type}'`);
-
-  // 4. Interface de config + union
+  // 3. Interface de config + union. L'union `GridWidget['type']`, elle, se
+  // dérive du manifeste enregistré à l'étape 2.
   insertBefore(
     'src/types/widget-types.ts',
     'export type WidgetConfig =',
@@ -227,14 +230,14 @@ async function main() {
   insertBefore('src/types/widget-types.ts', '\n  | RoomsGridConfig;', `\n  | ${name}Config`);
   insertBefore('src/types/widget-configs.ts', '\n  WidgetConfig,\n  WidgetConfigs,', `\n  ${name}Config,`);
 
-  // 5. i18n (fr + en)
+  // 4. i18n (fr + en)
   addI18n(type, label, description);
 
   console.info(chalk.green(`\n✅ Widget « ${type} » créé.\n`));
   console.info(`   ${chalk.dim('composant  ')} src/components/cards/${name}/${name}.tsx`);
   console.info(`   ${chalk.dim('manifeste  ')} src/components/cards/${name}/widget.ts`);
   console.info(`   ${chalk.dim('enregistré ')} src/widgets/registry.ts`);
-  console.info(`   ${chalk.dim('types      ')} src/types/widget-types.ts, src/context/DashboardLayoutContext.tsx`);
+  console.info(`   ${chalk.dim('types      ')} src/types/widget-types.ts`);
   console.info(`   ${chalk.dim('i18n       ')} src/i18n/locales/{fr,en}/widgets.json`);
   console.info(`\n   Vérifier : ${chalk.cyan('npm run check:widgets && npm run type-check')}\n`);
 }
