@@ -384,3 +384,47 @@ Le reste est indépendant.
 - **Quoi** : un curseur rejoue les 24 dernières heures d'après l'historique
   (`history/history_during_period`) : soleil, ombres, lampes, portes,
   volets. Lecture accélérée. Historique simulé dans le mock.
+
+---
+
+## Phase I — L'énergie qui circule *(proposée, à valider)*
+
+Idée venue d'une capture de référence : panneaux solaires, borne et batterie
+reliés par des flux animés. Là-bas, des traits plats posés sur une image ;
+ici, des câbles tracés sur la maquette elle-même, qui suivent le sol, les
+murs, le toit, tournent avec la maison et passent derrière les murs.
+
+### [ ] I1 — Tracer un câble
+
+- **Quoi** : un outil « Câble » en édition. Clics successifs sur la maquette
+  (sol, murs, toit), Entrée pour finir ; l'entité de puissance (W ou kW), le
+  type (solaire, réseau, batterie, voiture, maison) qui en fixe la couleur,
+  le sens. Liste, suppression. Stocké dans `floorplan.cables`.
+
+### [ ] I2 — L'énergie circule
+
+- **Quoi** : le câble, un fin tube posé sur la maquette, porte des impulsions
+  lumineuses qui avancent dans le sens du flux (signe de la puissance),
+  d'autant plus vite et serrées que la puissance est forte ; éteint à 0 W. La
+  valeur en clair, au milieu du câble.
+- **Attention** : c'est la seule animation continue — le soleil produit toute
+  la journée. Vingt images par seconde, sans recalculer les ombres ; figée en
+  économie d'énergie.
+
+### [ ] I3 — Panneaux solaires
+
+- **Quoi** : un élément « panneau solaire », dessiné comme une porte (deux
+  coins, sur le toit ou au sol) : un champ de cellules généré, qui s'illumine
+  avec la production. Pour une maquette qui n'a pas les siens.
+
+### [ ] I4 — Rejouer l'énergie
+
+- **Quoi** : la relecture des 24 heures (`H2`) rejoue aussi les flux, d'après
+  l'historique des capteurs de puissance — la production qui monte à midi.
+
+### [ ] I5 — Les sources du tableau Énergie
+
+- **Quoi** : proposer d'abord les entités déclarées dans le tableau Énergie
+  de HA (`energy/get_prefs`) : solaire, réseau, batterie.
+- **Démo** : un circuit dans le mock — panneaux à côté de la maison, batterie,
+  borne de recharge.
