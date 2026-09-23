@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **7 tâches sur 21** — `E1` et `G1`, passées en priorité, puis la phase A.
+**État global** : **8 tâches sur 21** — `E1` et `G1`, passées en priorité, puis la phase A.
 
 ---
 
@@ -123,7 +123,12 @@ Le reste est indépendant.
 - **Quoi** : la maison du mock reçoit une porte, une fenêtre et un volet ; un
   test E2E pose un élément et le voit changer d'état.
 
-### [ ] A6 — Viser les coins sans tâtonner
+### [x] A6 — Viser les coins sans tâtonner
+
+> **Fait** : un rectangle ambre suit la souris du premier coin au pointeur,
+> dessiné par-dessus tout ; une fois l'élément posé, deux poignées reprennent
+> ses coins — le rectangle suit le glisser, l'élément se redessine au lâcher.
+> La fenêtre de réglage passe au-dessus de la barre d'outils.
 
 - **Pourquoi** : révélé en testant. Deux clics au jugé tombent vite à côté —
   sur le frigo devant la porte, sur le mur au-dessus. Le battant est alors trop

@@ -42,7 +42,7 @@ export function PartPopover({
       role='dialog'
       aria-label={t('layout.floorplan.partTitle')}
       onClick={e => e.stopPropagation()}
-      className='absolute z-30 w-64 p-2 rounded-xl gc-overlay cursor-default flex flex-col gap-2'
+      className='absolute z-40 w-64 p-2 rounded-xl gc-overlay cursor-default flex flex-col gap-2'
       style={{
         ...(toRight ? { left: `calc(${around.right}% + 2rem)` } : { right: `calc(${100 - around.left}% + 2rem)` }),
         top: `clamp(0.5rem, calc(${around.y}% - 6rem), calc(100% - 15rem))`,

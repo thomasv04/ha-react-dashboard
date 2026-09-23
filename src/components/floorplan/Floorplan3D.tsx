@@ -6,7 +6,15 @@ import {
   HemisphereLight,
   PCFShadowMap,
   PerspectiveCamera,
+  BufferGeometry,
   Color,
+  DoubleSide,
+  Float32BufferAttribute,
+  Group,
+  LineBasicMaterial,
+  LineLoop,
+  Mesh,
+  MeshBasicMaterial,
   PointLight,
   Raycaster,
   SRGBColorSpace,
@@ -16,7 +24,6 @@ import {
   Vector3,
   WebGLRenderer,
   type Material,
-  type Mesh,
   type MeshStandardMaterial,
   type Object3D,
   type Texture,
@@ -105,6 +112,10 @@ interface Floorplan3DProps {
   onFrame: () => void;
   /** Clic — pas un glisser, qui fait tourner — sur la maquette. */
   onPick?: (anchor: Vec3, clientX: number, clientY: number) => void;
+  /** Point de la maquette sous le pointeur, quand il bouge — pour dessiner. */
+  onHover?: (anchor: Vec3 | null) => void;
+  /** Rectangle en cours de dessin : deux coins opposés, dans les coordonnées de la maquette. */
+  outline?: [Vec3, Vec3] | null;
   onLoad: () => void;
   onError: (kind: 'webgl' | 'model') => void;
 }
@@ -173,6 +184,8 @@ interface Stage {
   depth: Material | null;
   lamps: Map<string, PointLight>;
   parts: Map<string, PartEntry>;
+  /** Rectangle en cours de dessin, créé au premier besoin. */
+  outline: Group | null;
   /** Retouches des matériaux de la maquette (coupe, découpes), partagées par tous. */
   uniforms: ModelUniforms;
   cutaway: boolean;
@@ -405,6 +418,39 @@ function colorAt(s: Stage, local: Vec3): string | null {
   return `#${color.getHexString()}`;
 }
 
+/**
+ * Le rectangle qu'on dessine, par-dessus tout — il suit la souris jusqu'au
+ * second coin : on vise l'ouverture, pas au jugé.
+ */
+function placeOutline(s: Stage, corners: [Vec3, Vec3] | null | undefined) {
+  if (!corners || !s.root) {
+    if (s.outline?.visible) {
+      s.outline.visible = false;
+      s.render();
+    }
+    return;
+  }
+  const a = s.root.localToWorld(new Vector3(...corners[0]));
+  const b = s.root.localToWorld(new Vector3(...corners[1]));
+  const bottom = Math.min(a.y, b.y);
+  const top = Math.max(a.y, b.y);
+  const points = new Float32BufferAttribute([a.x, bottom, a.z, b.x, bottom, b.z, b.x, top, b.z, a.x, top, a.z], 3);
+  if (!s.outline) {
+    const overlay = { depthTest: false, transparent: true, color: 0xfbbf24 };
+    const fill = new BufferGeometry().setIndex([0, 1, 2, 0, 2, 3]);
+    s.outline = new Group().add(
+      new Mesh(fill, new MeshBasicMaterial({ ...overlay, opacity: 0.22, side: DoubleSide })),
+      new LineLoop(new BufferGeometry(), new LineBasicMaterial(overlay))
+    );
+    s.outline.renderOrder = 10;
+    s.outline.children.forEach(child => (child.renderOrder = 10));
+    s.scene.add(s.outline);
+  }
+  for (const child of s.outline.children) (child as Mesh).geometry.setAttribute('position', points);
+  s.outline.visible = true;
+  s.render();
+}
+
 function disposeTree(root: Object3D) {
   root.traverse(o => {
     (o as Mesh).geometry?.dispose();
@@ -431,6 +477,8 @@ export default function Floorplan3D({
   parts,
   onFrame,
   onPick,
+  onHover,
+  outline,
   onLoad,
   onError,
 }: Floorplan3DProps) {
@@ -438,9 +486,9 @@ export default function Floorplan3D({
   const stage = useRef<Stage | null>(null);
 
   // Dernières valeurs, lues par des écouteurs posés une fois pour toutes.
-  const latest = useRef({ camera, lamps, parts, onFrame, onPick, onLoad, onError });
+  const latest = useRef({ camera, lamps, parts, onFrame, onPick, onHover, onLoad, onError });
   useLayoutEffect(() => {
-    latest.current = { camera, lamps, parts, onFrame, onPick, onLoad, onError };
+    latest.current = { camera, lamps, parts, onFrame, onPick, onHover, onLoad, onError };
   });
 
   // ── Scène, caméra, rendu ───────────────────────────────────────────────────
@@ -537,6 +585,7 @@ export default function Floorplan3D({
       depth: null,
       lamps: new Map(),
       parts: new Map(),
+      outline: null,
       uniforms: createModelUniforms(),
       cutaway: false,
       cut: null,
@@ -561,13 +610,26 @@ export default function Floorplan3D({
     };
     renderer.domElement.addEventListener('pointerdown', onDown);
     renderer.domElement.addEventListener('pointerup', onUp);
+    // Survol : un lancer de rayon par image au plus, et seulement pendant un dessin.
+    let hoverFrame = 0;
+    const onMove = (e: PointerEvent) => {
+      if (!latest.current.onHover || hoverFrame) return;
+      const { clientX, clientY } = e;
+      hoverFrame = requestAnimationFrame(() => {
+        hoverFrame = 0;
+        latest.current.onHover?.(pick(s, clientX, clientY));
+      });
+    };
+    renderer.domElement.addEventListener('pointermove', onMove);
 
     return () => {
       cancelAnimationFrame(frame);
+      cancelAnimationFrame(hoverFrame);
       observer.disconnect();
       controls.dispose();
       renderer.domElement.removeEventListener('pointerdown', onDown);
       renderer.domElement.removeEventListener('pointerup', onUp);
+      renderer.domElement.removeEventListener('pointermove', onMove);
       disposeTree(scene);
       s.depth?.dispose();
       for (const entry of s.parts.values()) entry.depth.dispose();
@@ -688,6 +750,12 @@ export default function Floorplan3D({
     const s = stage.current;
     if (s) placeParts(s, latest.current.parts);
   }, [partsKey]);
+
+  const outlineKey = JSON.stringify(outline ?? null);
+  useEffect(() => {
+    if (stage.current) placeOutline(stage.current, outline);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- clé sérialisée
+  }, [outlineKey]);
 
   // ── Murs en coupe ──────────────────────────────────────────────────────────
   useEffect(() => {

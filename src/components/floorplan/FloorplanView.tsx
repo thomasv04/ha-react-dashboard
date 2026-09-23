@@ -51,8 +51,9 @@ type PartDraft = { a: Vec3; from: { x: number; y: number }; part?: FloorplanPart
 
 /** Aperçu entrouvert d'un élément dessiné : on voit de quel côté s'ouvre la porte, où descend le volet. */
 const DRAFT_OPENNESS = 0.35;
-/** Clé, parmi les projections, du premier coin d'un élément en cours de dessin. */
+/** Clés, parmi les projections, du premier coin d'un élément en cours de dessin, puis de ses deux coins. */
 const DRAFT_MARK = '__draft';
+const DRAFT_CORNERS = { a: '__draft-a', b: '__draft-b' } as const;
 
 /**
  * Page `floorplan` : une image de la maison — ou une maquette 3D — et les
@@ -89,6 +90,10 @@ export function FloorplanView() {
   /** Maquette : ce que pose un clic — une pastille, ou un coin de porte, de fenêtre, de volet. */
   const [tool, setTool] = useState<'chip' | 'part'>('chip');
   const [draft, setDraft] = useState<PartDraft | null>(null);
+  /** Point sous le pointeur, entre les deux clics d'un dessin. */
+  const [hover, setHover] = useState<Vec3 | null>(null);
+  /** Coin d'un élément dessiné repris à la souris, le temps du glisser. */
+  const [adjust, setAdjust] = useState<{ corner: 'a' | 'b'; point: Vec3 } | null>(null);
 
   // Maquette : chargée (sinon les pastilles accrochées n'ont pas encore de
   // position), en échec, et projection de chaque point d'accroche à l'écran.
@@ -172,14 +177,29 @@ export function FloorplanView() {
       const anchor = normalizeAnchor(w.pos?.anchor);
       if (anchor) next[w.id] = handle.project(anchor);
     }
-    // Le premier coin d'un élément en cours de dessin, marqué d'un point.
+    // Le premier coin d'un élément en cours de dessin, marqué d'un point ; puis
+    // ses deux coins, qu'on peut reprendre — le coin repris suit le pointeur.
     if (draft && !draft.part) next[DRAFT_MARK] = handle.project(draft.a);
+    if (draft?.part) {
+      for (const corner of ['a', 'b'] as const) {
+        next[DRAFT_CORNERS[corner]] = handle.project(adjust?.corner === corner ? adjust.point : draft.part[corner]);
+      }
+    }
     setProjections(next);
   };
 
+  /** Rectangle ambre du dessin : du premier coin au pointeur, ou avec le coin qu'on reprend. */
+  const outline: [Vec3, Vec3] | null = !draft
+    ? null
+    : !draft.part
+      ? hover && [draft.a, hover]
+      : adjust && (adjust.corner === 'a' ? [adjust.point, draft.part.b] : [draft.part.a, adjust.point]);
+
   // Une pastille accrochée ou déplacée sans que la caméra bouge : redessiner,
   // pour que sa nouvelle position soit projetée.
-  const anchorsKey = model ? JSON.stringify([widgets.map(w => w.pos?.anchor ?? null), draft?.a ?? null]) : '';
+  const anchorsKey = model
+    ? JSON.stringify([widgets.map(w => w.pos?.anchor ?? null), draft?.a ?? null, draft?.part?.a ?? null, draft?.part?.b ?? null])
+    : '';
   useEffect(() => {
     three.current?.invalidate();
   }, [anchorsKey]);
@@ -204,7 +224,10 @@ export function FloorplanView() {
     if (tool === 'chip') return setAdding({ ...at, anchor });
     // Deux coins : le bas côté gonds, puis le haut opposé. Un second clic trop
     // proche du premier — ou un nouveau dessin — repart de ce point.
-    if (!draft || draft.part || !partFrame(draft.a, anchor)) return setDraft({ a: anchor, from: at });
+    if (!draft || draft.part || !partFrame(draft.a, anchor)) {
+      setHover(null);
+      return setDraft({ a: anchor, from: at });
+    }
     const handle = three.current;
     const color = handle?.colorAt(draft.a.map((v, i) => (v + anchor[i]) / 2) as Vec3);
     setDraft({
@@ -231,6 +254,22 @@ export function FloorplanView() {
     updateWidgetConfig(id, { ...DEFAULT_WIDGET_CONFIGS.chip, entityId } as WidgetConfig);
     // Rapproché de l'ajout : un seul point d'annulation pour les deux.
     updateWidget(id, { pos: { x: at.x, y: at.y, ...(at.anchor && { anchor: at.anchor }) } }, 'lg');
+  };
+
+  /** Un coin repris suit le pointeur, sur la maquette. */
+  const dragCorner = (corner: 'a' | 'b') => (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+    const point = three.current?.pick(e.clientX, e.clientY);
+    if (point) setAdjust({ corner, point });
+  };
+
+  /** Coin repris, lâché : l'élément se redessine à sa nouvelle forme — le temps du glisser, seul le rectangle suivait. */
+  const commitCorner = () => {
+    if (adjust && draft?.part) {
+      const part = { ...draft.part, [adjust.corner]: adjust.point };
+      if (partFrame(part.a, part.b)) setDraft({ ...draft, part });
+    }
+    setAdjust(null);
   };
 
   /** Une pastille lâchée sur la maquette s'y raccroche là où elle tombe. */
@@ -394,8 +433,10 @@ export function FloorplanView() {
                   idleRotate={!!floorplan?.idleRotate && motionAllowed && !isEditMode}
                   lamps={lamps}
                   parts={partsProp}
+                  outline={outline}
                   onFrame={onFrame}
                   onPick={isEditMode ? onModelPick : undefined}
+                  onHover={isEditMode && draft && !draft.part ? setHover : undefined}
                   onLoad={() => setLoadedModel(model)}
                   onError={kind => setFailure({ model, kind })}
                 />
@@ -414,6 +455,27 @@ export function FloorplanView() {
                 style={{ left: `${projections[DRAFT_MARK].x}%`, top: `${projections[DRAFT_MARK].y}%`, translate: '-50% -50%' }}
               />
             )}
+            {draft?.part &&
+              (['a', 'b'] as const).map(corner => {
+                const at = projections[DRAFT_CORNERS[corner]];
+                if (!at) return null;
+                return (
+                  <button
+                    key={corner}
+                    type='button'
+                    aria-label={t('layout.floorplan.partCorner')}
+                    title={t('layout.floorplan.partCorner')}
+                    className='absolute z-20 w-4 h-4 rounded-full bg-amber-400 ring-4 ring-amber-400/30 cursor-move touch-none'
+                    style={{ left: `${at.x}%`, top: `${at.y}%`, translate: '-50% -50%' }}
+                    onPointerDown={e => {
+                      e.stopPropagation();
+                      e.currentTarget.setPointerCapture(e.pointerId);
+                    }}
+                    onPointerMove={dragCorner(corner)}
+                    onPointerUp={commitCorner}
+                  />
+                );
+              })}
             {draft?.part && draft.around && (
               <PartPopover
                 part={draft.part}

@@ -400,6 +400,7 @@
       "garage": "Garage"
     },
     "partFlip": "Flip side",
+    "partCorner": "Move this corner",
     "parts": "Doors, windows and shutters",
     "partRemove": "Remove",
     "saveView": "Keep this view",
