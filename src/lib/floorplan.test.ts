@@ -14,6 +14,7 @@ import {
   openness,
   partFrame,
   resizePos,
+  skyColors,
   sunLighting,
   DEFAULT_WIDGET_SIZE,
   type Vec3,
@@ -251,5 +252,22 @@ describe('cutLimit', () => {
     expect(cutLimit([-7.8, 0, 0], { ...cut, sides: [2.5, 4, 1, 1] })).toBe(2.5);
     expect(isCutAway([-7.8, 3, 0], { ...cut, sides: [2.5, 4, 1, 1] })).toBe(true);
     expect(isCutAway([-7.8, 2, 0], { ...cut, sides: [2.5, 4, 1, 1] })).toBe(false);
+  });
+});
+
+describe('skyColors', () => {
+  it('shows a starry night, and no stars by day', () => {
+    expect(skyColors(-30)).toEqual({ top: '#070b1a', horizon: '#121a33', stars: 1 });
+    expect(skyColors(40).stars).toBe(0);
+  });
+
+  it('warms the horizon around sunset', () => {
+    expect(skyColors(-1)).toEqual({ top: '#22305c', horizon: '#d67856', stars: expect.closeTo(0.15) });
+    // À mi-chemin entre le coucher (−1°) et l'heure dorée (5°).
+    expect(skyColors(2).horizon).toBe('#e49568');
+  });
+
+  it('assumes an afternoon sky when sun.sun is missing', () => {
+    expect(skyColors(undefined)).toEqual(skyColors(40));
   });
 });

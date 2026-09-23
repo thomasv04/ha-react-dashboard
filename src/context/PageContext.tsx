@@ -22,6 +22,8 @@ export interface FloorplanConfig {
   cutaway?: boolean;
   /** La maison tourne lentement après une minute sans geste. */
   idleRotate?: boolean;
+  /** Un ciel qui suit le soleil derrière la maquette, plutôt que le fond du thème. Actif par défaut. */
+  sky?: boolean;
   /** Portes, fenêtres et volets dessinés sur la maquette, mus par leur entité. */
   parts?: FloorplanPart[];
 }

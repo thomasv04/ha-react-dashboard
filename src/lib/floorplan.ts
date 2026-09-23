@@ -286,6 +286,42 @@ export function isCutAway(p: Vec3, c: Cutaway): boolean {
   return p[1] > cutLimit(p, c);
 }
 
+// ── Ciel ─────────────────────────────────────────────────────────────────────
+
+type Rgb = [number, number, number];
+
+/**
+ * Le ciel au fil de l'élévation du soleil (degrés) : couleur du haut, de
+ * l'horizon, et présence des étoiles. Entre deux repères, on interpole.
+ */
+const SKY: { elevation: number; top: Rgb; horizon: Rgb; stars: number }[] = [
+  { elevation: -12, top: [7, 11, 26], horizon: [18, 26, 51], stars: 1 }, // nuit
+  { elevation: -6, top: [14, 22, 51], horizon: [62, 44, 78], stars: 0.7 }, // crépuscule, violet
+  { elevation: -1, top: [34, 48, 92], horizon: [214, 120, 86], stars: 0.15 }, // soleil couchant
+  { elevation: 5, top: [60, 100, 165], horizon: [242, 178, 122], stars: 0 }, // heure dorée
+  { elevation: 15, top: [52, 120, 210], horizon: [168, 206, 240], stars: 0 }, // jour
+  { elevation: 50, top: [42, 112, 214], horizon: [190, 222, 250], stars: 0 }, // plein jour
+];
+
+const hex = (c: Rgb) => `#${c.map(v => Math.round(clamp(v, 0, 255)).toString(16).padStart(2, '0')).join('')}`;
+const mix = (a: Rgb, b: Rgb, t: number): Rgb => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+
+/**
+ * Couleurs du ciel derrière la maquette, d'après l'élévation du soleil
+ * (`sun.sun` ; absente, celle d'un début d'après-midi).
+ */
+export function skyColors(elevation: number | undefined): { top: string; horizon: string; stars: number } {
+  const e = clamp(elevation ?? DEFAULT_SUN.elevation, SKY[0].elevation, SKY[SKY.length - 1].elevation);
+  const i = Math.max(0, SKY.findIndex(k => k.elevation >= e) - 1);
+  const [from, to] = [SKY[i], SKY[i + 1] ?? SKY[i]];
+  const t = to.elevation === from.elevation ? 0 : (e - from.elevation) / (to.elevation - from.elevation);
+  return {
+    top: hex(mix(from.top, to.top, t)),
+    horizon: hex(mix(from.horizon, to.horizon, t)),
+    stars: from.stars + (to.stars - from.stars) * t,
+  };
+}
+
 /** Soleil supposé quand `sun.sun` manque : début d'après-midi, une lumière flatteuse. */
 const DEFAULT_SUN = { elevation: 40, azimuth: 200 };
 

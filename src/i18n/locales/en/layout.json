@@ -387,6 +387,7 @@
     "north": "North (°)",
     "cutaway": "Cutaway walls",
     "idleRotate": "Rotate when idle",
+    "sky": "Sky",
     "tool": "Place",
     "toolChip": "Chip",
     "toolPart": "Door · shutter",

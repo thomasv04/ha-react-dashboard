@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **8 tâches sur 21** — `E1` et `G1`, passées en priorité, puis la phase A.
+**État global** : **9 tâches sur 21** — `E1` et `G1`, passées en priorité, puis la phase A.
 
 ---
 
@@ -140,7 +140,12 @@ Le reste est indépendant.
 
 ## Phase B — Un ciel vivant
 
-### [ ] B1 — Le ciel suit le soleil
+### [x] B1 — Le ciel suit le soleil
+
+> **Fait** : dégradé et étoiles en CSS, derrière le canevas transparent — rien
+> de plus à dessiner pour WebGL. Vérifié de nuit, au crépuscule, à l'heure
+> dorée et de jour. Option « Ciel », active par défaut. Le mock a désormais un
+> `sun.sun` (début d'après-midi).
 
 - **Quoi** : derrière la maquette, un dégradé qui dépend de l'élévation du
   soleil : nuit, aube orangée, jour, crépuscule — et des étoiles la nuit.

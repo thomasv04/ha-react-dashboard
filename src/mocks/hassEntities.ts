@@ -60,6 +60,9 @@ export const MOCK_ENTITIES: Record<string, MockEntityState> = {
   'sensor.temperature_chambre_temperature': entity('sensor.temperature_chambre_temperature', '20.4', { unit_of_measurement: '°C' }),
   'sensor.temperature_chambre_humidity': entity('sensor.temperature_chambre_humidity', '55', { unit_of_measurement: '%' }),
 
+  // Soleil : début d'après-midi, plein sud-sud-ouest (ciel et ombres de la page plan)
+  'sun.sun': entity('sun.sun', 'above_horizon', { elevation: 40, azimuth: 200, friendly_name: 'Soleil' }),
+
   // Ouvrants et présence (pastilles de la page plan)
   'binary_sensor.couloir_mouvement': entity('binary_sensor.couloir_mouvement', 'on', {
     device_class: 'motion',

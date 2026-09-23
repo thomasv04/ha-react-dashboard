@@ -27,6 +27,7 @@ import {
   normalizePos,
   openness,
   partFrame,
+  skyColors,
   type FloorplanPart,
   type Vec3,
 } from '@/lib/floorplan';
@@ -51,6 +52,23 @@ type PartDraft = { a: Vec3; from: { x: number; y: number }; part?: FloorplanPart
 
 /** Aperçu entrouvert d'un élément dessiné : on voit de quel côté s'ouvre la porte, où descend le volet. */
 const DRAFT_OPENNESS = 0.35;
+/**
+ * Étoiles du ciel de nuit : quelques points par tuile, deux tailles de tuile
+ * pour que la répétition ne se voie pas. Fixes : rien à animer, rien à payer.
+ */
+const STARS = {
+  backgroundImage: [
+    'radial-gradient(1px 1px at 12% 18%, #fff 60%, transparent)',
+    'radial-gradient(1px 1px at 37% 64%, #fff 60%, transparent)',
+    'radial-gradient(1.5px 1.5px at 58% 27%, #fff 60%, transparent)',
+    'radial-gradient(1px 1px at 81% 72%, #dfe7ff 60%, transparent)',
+    'radial-gradient(1px 1px at 69% 9%, #fff 60%, transparent)',
+    'radial-gradient(1.5px 1.5px at 23% 88%, #fff 60%, transparent)',
+    'radial-gradient(1px 1px at 91% 41%, #cfd9ff 60%, transparent)',
+  ].join(', '),
+  backgroundSize: [...Array(4).fill('230px 230px'), ...Array(3).fill('370px 370px')].join(', '),
+};
+
 /** Clés, parmi les projections, du premier coin d'un élément en cours de dessin, puis de ses deux coins. */
 const DRAFT_MARK = '__draft';
 const DRAFT_CORNERS = { a: '__draft-a', b: '__draft-b' } as const;
@@ -140,6 +158,9 @@ export function FloorplanView() {
   const lights = useEntities(glows.map(g => g.entityId));
   const sunEntity = useEntities(['sun.sun'])['sun.sun'];
   const dimmed = isNightDimmed(sunEntity?.state, floorplan?.dimAtNight);
+  const sunElevation = sunEntity?.attributes?.elevation as number | undefined;
+  // Derrière la maquette : le ciel de l'heure, sauf si la page garde le fond du thème.
+  const sky = model && floorplan?.sky !== false ? skyColors(sunElevation) : null;
 
   const lamps: Lamp[] = model
     ? glows.flatMap(g => {
@@ -412,8 +433,13 @@ export function FloorplanView() {
             ref={planRef}
             data-floorplan-plan
             className='absolute inset-0 select-none'
-            style={{ containerType: 'inline-size', ...surface }}
+            style={{
+              containerType: 'inline-size',
+              ...surface,
+              ...(sky && { background: `linear-gradient(to bottom, ${sky.top}, ${sky.horizon})`, borderRadius: '1.25rem' }),
+            }}
           >
+            {sky && sky.stars > 0 && <div className='absolute inset-0 rounded-[1.25rem] pointer-events-none' style={{ ...STARS, opacity: sky.stars }} />}
             {failed ? (
               <p className='m-auto absolute inset-0 h-fit w-fit max-w-sm px-4 py-3 rounded-2xl gc-overlay text-sm text-white/70 text-center'>
                 {t(failed === 'webgl' ? 'layout.floorplan.webglError' : 'layout.floorplan.modelError')}
@@ -424,7 +450,7 @@ export function FloorplanView() {
                   ref={three}
                   model={assetUrl(model)}
                   camera={floorplan?.camera}
-                  sunElevation={sunEntity?.attributes?.elevation as number | undefined}
+                  sunElevation={sunElevation}
                   sunAzimuth={sunEntity?.attributes?.azimuth as number | undefined}
                   north={floorplan?.north ?? 0}
                   shadows={!perfSettings.disableShadows}
@@ -604,6 +630,7 @@ export function FloorplanView() {
                 <div className='flex flex-wrap items-center gap-x-3 gap-y-1.5'>
                   {checkbox(t('layout.floorplan.cutaway'), floorplan?.cutaway !== false, checked => setFloorplan({ cutaway: checked }))}
                   {checkbox(t('layout.floorplan.idleRotate'), !!floorplan?.idleRotate, checked => setFloorplan({ idleRotate: checked }))}
+                  {checkbox(t('layout.floorplan.sky'), floorplan?.sky !== false, checked => setFloorplan({ sky: checked }))}
                 </div>
               )}
               {model && <PartList parts={parts} onRemove={id => setFloorplan({ parts: parts.filter(p => p.id !== id) })} />}
