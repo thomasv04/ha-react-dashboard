@@ -19,6 +19,7 @@ import {
   polygonCentroid,
   precipitation,
   resizePos,
+  shortestTurn,
   skyColors,
   sunLighting,
   temperatureOf,
@@ -374,6 +375,16 @@ describe('rooms', () => {
     const [x, z] = polygonCentroid(L);
     expect(x).toBeCloseTo(5 / 3);
     expect(z).toBeCloseTo(5 / 3);
+  });
+});
+
+describe('shortestTurn', () => {
+  it('turns the short way, across ±π too', () => {
+    expect(shortestTurn(0, 0.5)).toBeCloseTo(0.5);
+    expect(shortestTurn(0, (3 * Math.PI) / 2)).toBeCloseTo(-Math.PI / 2);
+    expect(shortestTurn(3, -3)).toBeCloseTo(2 * Math.PI - 6);
+    expect(shortestTurn(-3, 3)).toBeCloseTo(6 - 2 * Math.PI);
+    expect(shortestTurn(1, 1 + 4 * Math.PI)).toBeCloseTo(0);
   });
 });
 

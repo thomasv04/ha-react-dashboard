@@ -413,6 +413,7 @@
     "rooms": "Pièces",
     "roomRemove": "Retirer la pièce",
     "thermal": "Températures des pièces",
+    "focusBack": "Revenir à toute la maison",
     "saveView": "Garder cette vue",
     "resetView": "Recentrer",
     "loading": "Chargement de la maquette…",

@@ -20,6 +20,8 @@ interface FloorplanItemProps {
   projected?: { x: number; y: number };
   /** Fin de glisser ; par défaut la position est enregistrée telle quelle. */
   onCommit?: (next: FloorplanPos, clientX: number, clientY: number) => void;
+  /** Estompé, et inerte : le toucher passe au travers, jusqu'à la maquette. */
+  faded?: boolean;
 }
 
 /**
@@ -29,7 +31,7 @@ interface FloorplanItemProps {
  * actions, visibilité conditionnelle, styles d'état et frontière d'erreur
  * compris. En édition, le widget est inerte sous un calque qui le déplace.
  */
-export function FloorplanItem({ widget, isEditMode, selected, onSelect, planRef, projected, onCommit }: FloorplanItemProps) {
+export function FloorplanItem({ widget, isEditMode, selected, onSelect, planRef, projected, onCommit, faded }: FloorplanItemProps) {
   const { t } = useI18n();
   const { updateWidget, removeWidget } = useDashboardLayout();
   const { setEditingWidgetId } = useWidgetConfig();
@@ -84,7 +86,8 @@ export function FloorplanItem({ widget, isEditMode, selected, onSelect, planRef,
       // Le calque des éléments laisse passer les clics vers le plan ; chaque
       // élément les reprend. Le clic s'arrête ici : sinon, sur le plan, il
       // poserait une pastille en plus.
-      className='absolute pointer-events-auto'
+      className={cn('absolute pointer-events-auto transition-opacity duration-500', faded && 'opacity-20')}
+      inert={faded}
       onClick={e => e.stopPropagation()}
       style={{
         left: `${pos.x}%`,

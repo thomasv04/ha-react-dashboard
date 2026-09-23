@@ -153,6 +153,31 @@ test('the thermal view colours a room with the temperature measured in it', asyn
   await expect(page.getByText('20.4 °C')).toHaveCount(0);
 });
 
+test('a tap on a room flies the camera to it, and Escape brings it back', async ({ page }) => {
+  await openModel(page);
+  // En vue thermique, la valeur de la pièce marque son centre — et laisse passer le toucher.
+  await page.getByRole('button', { name: 'Températures des pièces' }).click();
+  const label = page.getByText('20.4°', { exact: true });
+  const centre = () =>
+    label.evaluate(el => [(el as HTMLElement).style.left, (el as HTMLElement).style.top].map(v => Math.round(parseFloat(v))));
+  const home = await centre();
+  const box = (await label.boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+
+  const back = page.getByRole('button', { name: 'Chambre', exact: true });
+  await expect(back).toBeVisible();
+  // La caméra vise la pièce : son centre arrive au milieu de l'écran.
+  await expect.poll(centre).toEqual([50, 50]);
+  // Les pastilles des autres pièces s'estompent ; la card, posée sur l'écran, reste.
+  await expect(page.locator('[data-floorplan-item="lamp-kitchen"]')).toHaveCSS('opacity', '0.2');
+  await expect(page.locator('[data-floorplan-item="weather-3d"]')).toHaveCSS('opacity', '1');
+
+  await page.keyboard.press('Escape');
+  await expect(back).toBeHidden();
+  await expect.poll(centre).toEqual(home);
+  await expect(page.locator('[data-floorplan-item="lamp-kitchen"]')).toHaveCSS('opacity', '1');
+});
+
 test('in edit mode, a click on the model places a chip anchored where it landed', async ({ page }, testInfo) => {
   await openModel(page);
   await page.getByRole('button', { name: 'Modifier le dashboard' }).click();

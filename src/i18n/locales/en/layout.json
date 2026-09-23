@@ -413,6 +413,7 @@
     "rooms": "Rooms",
     "roomRemove": "Remove the room",
     "thermal": "Room temperatures",
+    "focusBack": "Back to the whole house",
     "saveView": "Keep this view",
     "resetView": "Reset view",
     "loading": "Loading the model…",

@@ -23,6 +23,7 @@ import {
   Shape,
   ShapeGeometry,
   Sphere,
+  Spherical,
   Vector2,
   Vector3,
   WebGLRenderer,
@@ -40,9 +41,11 @@ import {
   isCutAway,
   MODEL_SIZE,
   partFrame,
+  shortestTurn,
   sunLighting,
   type Cutaway,
   type FloorplanPart,
+  type FloorplanRoom,
   type Sides,
   type Vec3,
 } from '@/lib/floorplan';
@@ -101,6 +104,8 @@ export interface Floorplan3DHandle {
   project(anchor: Vec3): { x: number; y: number } | null;
   /** Point de la maquette sous ce point de l'écran, ou `null` s'il n'y a que du vide. */
   pick(clientX: number, clientY: number): Vec3 | null;
+  /** Point (x, z) du sol à la hauteur `y` sous ce point de l'écran, comme si meubles et murs étaient transparents. */
+  floorAt(clientX: number, clientY: number, y: number): [number, number] | null;
   /** Vue courante — `null` tant que rien n'est affiché. */
   view(): FloorplanView3D | null;
   resetView(): void;
@@ -130,14 +135,16 @@ interface Floorplan3DProps {
   parts: PartProp[];
   /** Après chaque image : la caméra a pu bouger, les pastilles se recalent. */
   onFrame: () => void;
-  /** Clic — pas un glisser, qui fait tourner — sur la maquette. */
-  onPick?: (anchor: Vec3, clientX: number, clientY: number) => void;
+  /** Clic — pas un glisser, qui fait tourner — sur la maquette, ou à côté (`null`). */
+  onPick?: (anchor: Vec3 | null, clientX: number, clientY: number) => void;
   /** Point de la maquette sous le pointeur, quand il bouge — pour dessiner. */
   onHover?: (anchor: Vec3 | null) => void;
   /** Rectangle en cours de dessin : deux coins opposés, dans les coordonnées de la maquette. */
   outline?: [Vec3, Vec3] | null;
   /** Tracés au sol : pièces, pièce en cours de dessin. */
   floors?: FloorOverlay[];
+  /** Pièce vers laquelle la caméra vole ; `null` : retour à la vue d'où elle est partie. */
+  focus?: Pick<FloorplanRoom, 'y' | 'points'> | null;
   onLoad: () => void;
   onError: (kind: 'webgl' | 'model') => void;
 }
@@ -171,6 +178,13 @@ const CAP_DEPTH = MODEL_SIZE * 0.02;
 const SWING_MS = 900;
 /** Un mur qui monte ou descend glisse : constante de temps, en ms (posé aux trois quarts en 150 ms). */
 const WALL_SLIDE_MS = 110;
+/** Vol de la caméra vers une pièce, ou retour : durée, en ms. */
+const FLY_MS = 1000;
+/** Une pièce n'est jamais vue plus à plat que la maison depuis la vue d'accueil : on y plonge. */
+const FOCUS_MAX_POLAR = Math.acos(DEFAULT_DIRECTION.y);
+
+/** Départ et arrivée en douceur. */
+const easeInOut = (t: number) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2);
 
 /** Murs en coupe, à l'instant : les hauteurs glissent vers celles que demande la caméra. */
 interface CutState extends Cutaway {
@@ -215,6 +229,10 @@ interface Stage {
   cutaway: boolean;
   /** Géométrie de la coupe — `null` tant qu'aucune maquette n'est chargée. */
   cut: CutState | null;
+  /** Vue d'avant le vol vers une pièce : le retour y ramène. */
+  home: FloorplanView3D | null;
+  /** Numéro du vol en cours : un vol plus récent, un geste ou un recentrage l'interrompt. */
+  flight: number;
   render: () => void;
   /** Une image par frame tant que `step` rend `true` — le temps d'une animation. */
   animate: (step: (now: number) => boolean) => void;
@@ -228,11 +246,16 @@ function isCut(s: Stage, point: Vector3) {
   return !!s.cut && isCutAway(point.toArray() as Vec3, s.cut);
 }
 
-function pick(s: Stage, clientX: number, clientY: number): Vec3 | null {
-  if (!s.root) return null;
+/** Le rayon de la caméra vers ce point de l'écran. */
+function aim(s: Stage, clientX: number, clientY: number) {
   const rect = s.renderer.domElement.getBoundingClientRect();
   pointer.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
   raycaster.setFromCamera(pointer, s.camera);
+}
+
+function pick(s: Stage, clientX: number, clientY: number): Vec3 | null {
+  if (!s.root) return null;
+  aim(s, clientX, clientY);
   // Le lancer de rayon ignore la coupe, faite dans les shaders : sans ce tri,
   // un clic tomberait sur un mur qu'on ne voit plus.
   const hit = raycaster.intersectObject(s.root, true).find(h => !isCut(s, h.point));
@@ -241,23 +264,80 @@ function pick(s: Stage, clientX: number, clientY: number): Vec3 | null {
   return hit ? (s.root.worldToLocal(hit.point.clone()).toArray() as Vec3) : null;
 }
 
+function floorAt(s: Stage, clientX: number, clientY: number, y: number): [number, number] | null {
+  if (!s.root) return null;
+  aim(s, clientX, clientY);
+  // Le rayon dans les coordonnées de la maquette, jusqu'au plan de ce sol.
+  const from = s.root.worldToLocal(raycaster.ray.origin.clone());
+  const to = s.root.worldToLocal(raycaster.ray.at(1, new Vector3()));
+  const t = (y - from.y) / (to.y - from.y);
+  return t > 0 && Number.isFinite(t) ? [from.x + (to.x - from.x) * t, from.z + (to.z - from.z) * t] : null;
+}
+
 /**
- * Vue d'accueil par défaut : la maquette entière dans le cadre. La sphère qui
- * l'englobe doit tenir dans le plus étroit des deux angles de vue — le
- * vertical sur un écran large, l'horizontal sur une tablette en portrait.
+ * Distance à laquelle une sphère de ce rayon tient dans le cadre : dans le plus
+ * étroit des deux angles de vue — le vertical sur un écran large,
+ * l'horizontal sur une tablette en portrait.
  */
+function fitDistance(s: Stage, radius: number) {
+  const vertical = (FOV * Math.PI) / 180;
+  const horizontal = 2 * Math.atan(Math.tan(vertical / 2) * s.camera.aspect);
+  return radius / Math.sin(Math.min(vertical, horizontal) / 2);
+}
+
+/** Vue d'accueil par défaut : la maquette entière dans le cadre. */
 function defaultView(s: Stage): FloorplanView3D {
   const box = s.root ? new Box3().setFromObject(s.root) : null;
   const radius = box ? box.getBoundingSphere(new Sphere()).radius : MODEL_SIZE / 2;
   const target = box ? box.getCenter(new Vector3()).setY(0) : new Vector3();
-  const vertical = (FOV * Math.PI) / 180;
-  const horizontal = 2 * Math.atan(Math.tan(vertical / 2) * s.camera.aspect);
   // 0,85 : la sphère déborde largement d'une maison, plus plate que haute.
-  const distance = (radius * 0.85) / Math.sin(Math.min(vertical, horizontal) / 2);
+  const distance = fitDistance(s, radius * 0.85);
   return {
     position: target.clone().addScaledVector(DEFAULT_DIRECTION, distance).toArray() as Vec3,
     target: target.toArray() as Vec3,
   };
+}
+
+function currentView(s: Stage): FloorplanView3D {
+  return { position: s.camera.position.toArray() as Vec3, target: s.controls.target.toArray() as Vec3 };
+}
+
+/** Vue rapprochée d'une pièce : cadrée sur elle, sous le même angle — en plongée, pour voir dedans. */
+function roomView(s: Stage, root: Object3D, room: Pick<FloorplanRoom, 'y' | 'points'>): FloorplanView3D {
+  const box = new Box3().setFromPoints(room.points.map(([x, z]) => root.localToWorld(new Vector3(x, room.y, z))));
+  const target = box.getCenter(new Vector3());
+  const angle = new Spherical().setFromVector3(s.camera.position.clone().sub(s.controls.target));
+  angle.phi = Math.min(angle.phi, FOCUS_MAX_POLAR);
+  angle.radius = fitDistance(s, box.getBoundingSphere(new Sphere()).radius);
+  return {
+    position: target.clone().add(new Vector3().setFromSpherical(angle)).toArray() as Vec3,
+    target: target.toArray() as Vec3,
+  };
+}
+
+/**
+ * La caméra vole vers une vue : la cible glisse, et la caméra tourne autour
+ * d'elle en s'approchant — sans couper au travers de la maison.
+ */
+function fly(s: Stage, to: FloorplanView3D) {
+  const flight = ++s.flight;
+  const target = { from: s.controls.target.clone(), to: new Vector3(...to.target) };
+  const from = new Spherical().setFromVector3(s.camera.position.clone().sub(target.from));
+  const goal = new Spherical().setFromVector3(new Vector3(...to.position).sub(target.to));
+  const turn = shortestTurn(from.theta, goal.theta);
+  const at = new Spherical();
+  let start = 0;
+  s.animate(now => {
+    if (s.flight !== flight) return false;
+    start ||= now;
+    const t = Math.min(1, (now - start) / FLY_MS);
+    const k = easeInOut(t);
+    s.controls.target.lerpVectors(target.from, target.to, k);
+    at.set(from.radius + (goal.radius - from.radius) * k, from.phi + (goal.phi - from.phi) * k, from.theta + turn * k);
+    s.camera.position.setFromSpherical(at).add(s.controls.target);
+    s.controls.update();
+    return t < 1;
+  });
 }
 
 function applyView(s: Stage, view: FloorplanView3D | undefined) {
@@ -425,7 +505,7 @@ function swing(s: Stage, entry: PartEntry) {
     if (entry.target !== to || !entry.obj.object.parent) return false;
     start ||= now;
     const t = Math.min(1, (now - start) / SWING_MS);
-    entry.value = from + (to - from) * (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2);
+    entry.value = from + (to - from) * easeInOut(t);
     entry.obj.apply(entry.value);
     s.render();
     return t < 1;
@@ -567,6 +647,7 @@ export default function Floorplan3D({
   onHover,
   outline,
   floors,
+  focus,
   onLoad,
   onError,
 }: Floorplan3DProps) {
@@ -678,6 +759,8 @@ export default function Floorplan3D({
       uniforms: createModelUniforms(),
       cutaway: false,
       cut: null,
+      home: null,
+      flight: 0,
       render,
       animate,
     };
@@ -694,15 +777,15 @@ export default function Floorplan3D({
       const start = down;
       down = null;
       if (!start || e.button !== 0 || Math.hypot(e.clientX - start.x, e.clientY - start.y) > CLICK_TOLERANCE) return;
-      if (!latest.current.onPick) return;
-      const anchor = pick(s, e.clientX, e.clientY);
-      if (anchor) latest.current.onPick(anchor, e.clientX, e.clientY);
+      latest.current.onPick?.(pick(s, e.clientX, e.clientY), e.clientX, e.clientY);
     };
     renderer.domElement.addEventListener('pointerdown', onDown);
     renderer.domElement.addEventListener('pointerup', onUp);
     // Survol : un lancer de rayon par image au plus, et seulement pendant un dessin.
     let hoverFrame = 0;
     const onMove = (e: PointerEvent) => {
+      // Tourner la maison à la main interrompt un vol en cours.
+      if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > CLICK_TOLERANCE) s.flight++;
       if (!latest.current.onHover || hoverFrame) return;
       const { clientX, clientY } = e;
       hoverFrame = requestAnimationFrame(() => {
@@ -787,6 +870,8 @@ export default function Floorplan3D({
         placeParts(s, latest.current.parts);
         placeFloors(s, latest.current.floors);
         placeLamps(s, latest.current.lamps);
+        s.home = null;
+        s.flight++;
         applyView(s, latest.current.camera);
         // `applyView` ne redessine que si la caméra a bougé : une autre
         // maquette vue du même point n'en provoquerait aucun.
@@ -856,6 +941,18 @@ export default function Floorplan3D({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- clé sérialisée
   }, [outlineKey]);
 
+  // ── Vol vers une pièce ─────────────────────────────────────────────────────
+  // À l'aller, la vue de départ est gardée : le retour y ramène.
+  const focusKey = JSON.stringify(focus ?? null);
+  useEffect(() => {
+    const s = stage.current;
+    if (!s?.root) return;
+    const to = focus ? roomView(s, s.root, focus) : s.home;
+    s.home = focus ? (s.home ?? currentView(s)) : null;
+    if (to) fly(s, to);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- clé sérialisée
+  }, [focusKey]);
+
   // ── Murs en coupe ──────────────────────────────────────────────────────────
   useEffect(() => {
     const s = stage.current;
@@ -915,12 +1012,14 @@ export default function Floorplan3D({
         return { x: (v.x + 1) * 50, y: (1 - v.y) * 50 };
       },
       pick: (clientX, clientY) => (stage.current ? pick(stage.current, clientX, clientY) : null),
-      view() {
-        const s = stage.current;
-        return s ? { position: s.camera.position.toArray() as Vec3, target: s.controls.target.toArray() as Vec3 } : null;
-      },
+      floorAt: (clientX, clientY, y) => (stage.current ? floorAt(stage.current, clientX, clientY, y) : null),
+      view: () => (stage.current ? currentView(stage.current) : null),
       resetView() {
-        if (stage.current) applyView(stage.current, latest.current.camera);
+        const s = stage.current;
+        if (!s) return;
+        s.home = null;
+        s.flight++;
+        applyView(s, latest.current.camera);
       },
       invalidate() {
         stage.current?.render();

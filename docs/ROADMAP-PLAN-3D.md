@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **14 tâches sur 21** — `E1` et `G1`, passées en priorité, puis la phase A.
+**État global** : **15 tâches sur 21** — phases A à D, et `E1` et `G1`, passées en priorité.
 
 ---
 
@@ -221,7 +221,16 @@ Le reste est indépendant.
 
 ## Phase D — Vol vers une pièce
 
-### [ ] D1 — Toucher une pièce
+### [x] D1 — Toucher une pièce
+
+> **Fait** : la caméra vole jusqu'à la pièce en une seconde — elle tourne
+> autour de sa cible en s'approchant, sans traverser la maison — et la cadre
+> entière, en plongée. Les pastilles des autres pièces s'estompent et laissent
+> passer le toucher : en toucher une mène à sa pièce. Retour à la vue de
+> départ par le bouton « ‹ Pièce », Échap (sauf fiche ouverte) ou un toucher
+> hors des pièces ; tourner la maison à la main interrompt le vol. Un meuble
+> contre le mur, le mur lui-même comptent : à défaut du point touché, c'est la
+> pièce dont le sol est sous le doigt.
 
 - **Quoi** : la caméra s'y approche en douceur, les pastilles des autres
   pièces s'estompent ; retour par un bouton, Échap ou un toucher ailleurs.

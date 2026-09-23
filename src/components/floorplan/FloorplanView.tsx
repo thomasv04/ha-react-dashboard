@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useHass } from '@hakit/core';
 import {
   Box as BoxIcon,
+  ChevronLeft,
   DoorOpen,
   Image as ImageIcon,
   Map as MapIcon,
@@ -15,6 +16,7 @@ import {
 import { usePages, type FloorplanConfig } from '@/context/PageContext';
 import { useDashboardLayout, useEditMode, type FloorplanPos, type GridWidget } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useMoreInfoOptional } from '@/context/MoreInfoContext';
 import { FreeGridScope } from '@/components/layout/DashboardGrid';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { ImageBackgroundPicker } from '@/components/layout/ThemeControlsModal/ImageBackgroundPicker';
@@ -141,6 +143,8 @@ export function FloorplanView() {
   const [draft, setDraft] = useState<PartDraft | null>(null);
   /** Vue thermique : chaque pièce colorée selon sa température. */
   const [thermal, setThermal] = useState(false);
+  /** Pièce vers laquelle la caméra a volé, hors édition. */
+  const [focusId, setFocusId] = useState<string | null>(null);
   /** Point sous le pointeur, entre les deux clics d'un dessin. */
   const [hover, setHover] = useState<Vec3 | null>(null);
   /** Coin d'un élément dessiné repris à la souris, le temps du glisser. */
@@ -157,16 +161,19 @@ export function FloorplanView() {
   const model = floorplan?.model;
   const widgets = layout.widgets.lg;
 
-  // Quitter l'édition referme ce qui n'a de sens qu'en édition — pendant le
-  // rendu plutôt que dans un effet, qui peindrait d'abord l'état périmé.
-  const [wasEditing, setWasEditing] = useState(isEditMode);
-  if (wasEditing !== isEditMode) {
-    setWasEditing(isEditMode);
+  // Entrer en édition ou en sortir, changer de page : on referme ce qui n'avait
+  // de sens qu'avant — pendant le rendu plutôt que dans un effet, qui
+  // peindrait d'abord l'état périmé.
+  const scope = `${isEditMode}:${currentPage?.id}`;
+  const [wasScope, setWasScope] = useState(scope);
+  if (wasScope !== scope) {
+    setWasScope(scope);
     setSelectedId(null);
     setAdding(null);
     setPanel(null);
     setDraft(null);
     setRoomDraft(null);
+    setFocusId(null);
   }
 
   useEffect(() => {
@@ -183,6 +190,17 @@ export function FloorplanView() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [isEditMode]);
+
+  // Échap ramène à toute la maison — sauf s'il referme d'abord la fiche d'une pastille.
+  const sheetOpen = !!useMoreInfoOptional()?.state;
+  useEffect(() => {
+    if (!focusId || sheetOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setFocusId(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [focusId, sheetOpen]);
 
   // ── Lampes : halos du plan, lumières de la maquette ────────────────────────
   const glows = widgets.flatMap(w => {
@@ -208,6 +226,7 @@ export function FloorplanView() {
 
   // Pièces dessinées : leurs lampes n'éclairent qu'elles.
   const rooms = normalizeRooms(floorplan?.rooms);
+  const focusRoom = rooms.find(r => r.id === focusId);
 
   const lamps: Lamp[] = model
     ? glows.flatMap(g => {
@@ -349,9 +368,24 @@ export function FloorplanView() {
     setAdding({ x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100 });
   };
 
-  const onModelPick = (anchor: Vec3, clientX: number, clientY: number) => {
+  /**
+   * Hors édition, toucher une pièce y fait voler la caméra ; toucher ailleurs
+   * ramène à toute la maison. La pièce du point touché ; à défaut — un meuble
+   * contre le mur, le mur lui-même —, celle dont le sol est sous le doigt.
+   */
+  const onViewPick = (anchor: Vec3 | null, clientX: number, clientY: number) => {
+    const room =
+      (anchor && rooms.find(r => pointInPolygon(anchor[0], anchor[2], r.points))) ||
+      rooms.find(r => {
+        const floor = three.current?.floorAt(clientX, clientY, r.y);
+        return !!floor && pointInPolygon(floor[0], floor[1], r.points);
+      });
+    setFocusId(room?.id ?? null);
+  };
+
+  const onModelPick = (anchor: Vec3 | null, clientX: number, clientY: number) => {
     const rect = planRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    if (!rect || !anchor) return;
     const at = { x: ((clientX - rect.left) / rect.width) * 100, y: ((clientY - rect.top) / rect.height) * 100 };
     setSelectedId(null);
     if (tool === 'chip') return setAdding({ ...at, anchor });
@@ -467,11 +501,11 @@ export function FloorplanView() {
       >
         {widgets.map(w => {
           if (showThermal && thermometers.has(w.id)) return null;
-          const anchored = !!model && !!normalizeAnchor(w.pos?.anchor);
-          const projected = anchored ? projections[w.id] : undefined;
+          const anchor = model ? normalizeAnchor(w.pos?.anchor) : undefined;
+          const projected = anchor ? projections[w.id] : undefined;
           // Accrochée à la maquette : rien à montrer tant qu'elle n'est pas
           // chargée, ni quand le point est derrière la caméra.
-          if (anchored && !projected) return null;
+          if (anchor && !projected) return null;
           return (
             <FloorplanItem
               key={w.id}
@@ -482,6 +516,8 @@ export function FloorplanView() {
               planRef={planRef}
               projected={projected ?? undefined}
               onCommit={model && w.type === 'chip' ? reanchor(w) : undefined}
+              // Vol vers une pièce : les pastilles des autres pièces s'estompent.
+              faded={!!anchor && !!focusRoom && !pointInPolygon(anchor[0], anchor[2], focusRoom.points)}
             />
           );
         })}
@@ -603,8 +639,9 @@ export function FloorplanView() {
                   parts={partsProp}
                   outline={outline}
                   floors={floors}
+                  focus={focusRoom ?? null}
                   onFrame={onFrame}
-                  onPick={isEditMode ? onModelPick : undefined}
+                  onPick={isEditMode ? onModelPick : onViewPick}
                   onHover={isEditMode && ((draft && !draft.part) || (roomDraft && !roomDraft.naming)) ? setHover : undefined}
                   onLoad={() => setLoadedModel(model)}
                   onError={kind => setFailure({ model, kind })}
@@ -651,6 +688,8 @@ export function FloorplanView() {
                         top: `${at.y}%`,
                         translate: '-50% -50%',
                         background: colorAlpha(thermalColor(temperature.celsius), 85),
+                        opacity: focusRoom && focusRoom.id !== room.id ? 0.2 : 1,
+                        transition: 'opacity .5s',
                       }}
                     >
                       {temperature.value.toFixed(1)}°
@@ -730,9 +769,24 @@ export function FloorplanView() {
                 <Thermometer size={16} />
               </button>
             )}
+            {focusRoom && (
+              <motion.button
+                initial={motionAllowed ? { opacity: 0, x: -8 } : false}
+                animate={{ opacity: 1, x: 0 }}
+                onClick={() => setFocusId(null)}
+                title={t('layout.floorplan.focusBack')}
+                className='absolute left-3 top-3 z-30 flex items-center gap-1 pl-2 pr-3.5 py-2 rounded-xl gc-overlay text-sm font-medium text-white/85 hover:text-white transition-colors'
+              >
+                <ChevronLeft size={16} />
+                {focusRoom.name}
+              </motion.button>
+            )}
             {loaded && !isEditMode && (
               <button
-                onClick={() => three.current?.resetView()}
+                onClick={() => {
+                  setFocusId(null);
+                  three.current?.resetView();
+                }}
                 title={t('layout.floorplan.resetView')}
                 aria-label={t('layout.floorplan.resetView')}
                 className='absolute right-3 bottom-3 z-30 p-2.5 rounded-xl gc-overlay text-white/60 hover:text-white transition-colors'

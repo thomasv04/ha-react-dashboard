@@ -286,6 +286,12 @@ export function polygonCentroid(points: [number, number][]): [number, number] {
   return [cx / (3 * area), cz / (3 * area)];
 }
 
+/** Rotation la plus courte d'un angle à l'autre (radians), dans ]−π, π] : une caméra qui vole ne fait pas le grand tour. */
+export function shortestTurn(from: number, to: number): number {
+  const turn = (to - from) % (2 * Math.PI);
+  return turn > Math.PI ? turn - 2 * Math.PI : turn <= -Math.PI ? turn + 2 * Math.PI : turn;
+}
+
 /**
  * Température d'une entité, si c'en est une (classe `temperature`, ou en °C ou
  * °F) : sa valeur telle qu'affichée, et en degrés Celsius pour la colorer.
