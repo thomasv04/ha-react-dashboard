@@ -43,18 +43,21 @@ import {
   compassHeading,
   CUTAWAY_HEIGHT,
   cutLimit,
+  flowDuration,
   isCutAway,
   MODEL_SIZE,
   partFrame,
   shortestTurn,
   sunLighting,
   type Cutaway,
+  type FloorplanCable,
   type FloorplanPart,
   type FloorplanRoom,
   type Sides,
   type Vec3,
 } from '@/lib/floorplan';
 import { createModelUniforms, materialsOf, patchModel, setCuts, setCutawaySides, setRoomMasks, type ModelUniforms } from './modelPatch';
+import { buildCable, type CableObject } from './cables3d';
 import { buildPart, type PartObject } from './parts3d';
 
 /**
@@ -106,6 +109,9 @@ export interface FloorOverlay {
 /** Porte, fenêtre ou volet, et son ouverture de l'instant (0 à 1). */
 export type PartProp = FloorplanPart & { open: number };
 
+/** Câble d'énergie, et ce qui y circule : le sens (0 : rien), la puissance si elle est connue. */
+export type CableProp = FloorplanCable & { direction: -1 | 0 | 1; watts: number | null };
+
 export interface Floorplan3DHandle {
   /** Point de la maquette → position à l'écran, en % du canevas ; `null` s'il est derrière la caméra. */
   project(anchor: Vec3): { x: number; y: number } | null;
@@ -156,6 +162,10 @@ interface Floorplan3DProps {
   outline?: [Vec3, Vec3] | null;
   /** Tracés au sol : pièces, pièce en cours de dessin. */
   floors?: FloorOverlay[];
+  /** Câbles d'énergie posés sur la maquette. */
+  cables?: CableProp[];
+  /** L'énergie peut circuler en mouvement : ni mouvement réduit, ni animations coupées. */
+  flowing?: boolean;
   /** Pièce vers laquelle la caméra vole ; `null` : retour à la vue d'où elle est partie. */
   focus?: Pick<FloorplanRoom, 'y' | 'points'> | null;
   /** Points d'accroche à vérifier, par identifiant : la maquette les cache-t-elle ? */
@@ -232,6 +242,16 @@ interface CutState extends Cutaway {
   sliding: boolean;
 }
 
+interface CableEntry {
+  obj: CableObject;
+  /** Forme et sorte du câble : reconstruit quand elles changent, pas quand le courant varie. */
+  key: string;
+  /** Ombres du câble, retouchées comme lui. */
+  depth: Material;
+  direction: -1 | 0 | 1;
+  watts: number | null;
+}
+
 interface PartEntry {
   obj: PartObject;
   /** Forme de l'élément : reconstruit quand elle change, pas quand il s'ouvre. */
@@ -258,6 +278,10 @@ interface Stage {
   /** Tache douce de la lueur des lampes, partagée par toutes — créée au premier besoin. */
   glowMap: CanvasTexture | null;
   parts: Map<string, PartEntry>;
+  cables: Map<string, CableEntry>;
+  /** L'énergie peut circuler en mouvement, et circule. */
+  flowAllowed: boolean;
+  flowRunning: boolean;
   /** Rectangle en cours de dessin, créé au premier besoin. */
   outline: Group | null;
   /** Tracés au sol. */
@@ -271,7 +295,12 @@ interface Stage {
   home: FloorplanView3D | null;
   /** Numéro du vol en cours : un vol plus récent, un geste ou un recentrage l'interrompt. */
   flight: number;
-  render: () => void;
+  /**
+   * Redessine. Ce qui a changé : tout (par défaut) ; la vue seule — les ombres
+   * ne dépendent pas de la caméra ; ou le seul flux d'énergie, qui ne déplace
+   * rien — ni pastilles à recaler, ni occlusion à revérifier.
+   */
+  render: (what?: 'all' | 'view' | 'flow') => void;
   /** Une image par frame tant que `step` rend `true` — le temps d'une animation. */
   animate: (step: (now: number) => boolean) => void;
 }
@@ -499,6 +528,7 @@ function placeLamps(s: Stage, lamps: Lamp[]) {
 function cutawaySides(s: Stage, on: boolean) {
   if (s.root) setCutawaySides(s.root, on);
   for (const entry of s.parts.values()) setCutawaySides(entry.obj.object, on);
+  for (const entry of s.cables.values()) setCutawaySides(entry.obj.mesh, on);
 }
 
 /** Murs en coupe (cf. `modelPatch`) : activés ou non, et la caméra qui peut descendre avec. */
@@ -591,6 +621,79 @@ function placeParts(s: Stage, parts: PartProp[]) {
     [...s.parts.values()].flatMap(entry => (entry.obj.cut ? [entry.obj.cut] : []))
   );
   s.render();
+}
+
+/** Intensité des traits lumineux dans un câble où passe le courant. */
+const FLOW_GLOW = 3;
+
+/** Câbles d'énergie : construits à leur forme, allumés selon ce qui y circule. */
+function placeCables(s: Stage, cables: CableProp[]) {
+  if (!s.root) return;
+  const seen = new Set<string>();
+  let reshaped = false;
+  for (const { direction, watts, ...cable } of cables) {
+    seen.add(cable.id);
+    const key = JSON.stringify([cable.points, cable.kind]);
+    let entry = s.cables.get(cable.id);
+    if (entry && entry.key !== key) {
+      removeCable(s, cable.id, entry);
+      entry = undefined;
+    }
+    if (!entry) {
+      const obj = buildCable(cable, s.root);
+      if (!obj) continue;
+      // Coupé par les murets comme la maquette, s'il monte le long d'un mur.
+      const depth = patchModel(obj.mesh, s.uniforms, false);
+      if (s.cutaway) setCutawaySides(obj.mesh, true);
+      s.scene.add(obj.mesh);
+      entry = { obj, key, depth, direction, watts };
+      s.cables.set(cable.id, entry);
+      reshaped = true;
+    }
+    entry.direction = direction;
+    entry.watts = watts;
+    // Au repos, la gaine seule ; quand le courant passe, la lumière court dedans.
+    entry.obj.material.emissiveIntensity = direction ? FLOW_GLOW : 0;
+  }
+  for (const [id, entry] of s.cables) {
+    if (seen.has(id)) continue;
+    removeCable(s, id, entry);
+    reshaped = true;
+  }
+  // Un câble posé ou retiré change les ombres ; un courant qui varie, non.
+  s.render(reshaped ? 'all' : 'flow');
+  runFlows(s);
+}
+
+function removeCable(s: Stage, id: string, entry: CableEntry) {
+  s.scene.remove(entry.obj.mesh);
+  entry.obj.dispose();
+  entry.depth.dispose();
+  s.cables.delete(id);
+}
+
+/**
+ * L'énergie circule : les traits lumineux avancent dans chaque câble où passe
+ * le courant, d'autant plus vite qu'il est fort. Trente images par seconde,
+ * sans recalculer les ombres — la seule animation continue de la page.
+ */
+function runFlows(s: Stage) {
+  if (s.flowRunning) return;
+  s.flowRunning = true;
+  let last = 0;
+  let frames = 0;
+  s.animate(now => {
+    const active = [...s.cables.values()].filter(c => c.direction !== 0);
+    if (!s.flowAllowed || !active.length) {
+      s.flowRunning = false;
+      return false;
+    }
+    const dt = last ? (now - last) / 1000 : 0;
+    last = now;
+    for (const c of active) c.obj.dashes.offset.x -= (c.direction * dt) / flowDuration(c.watts);
+    if (++frames % 2 === 0) s.render('flow');
+    return true;
+  });
 }
 
 function removePart(s: Stage, id: string, entry: PartEntry) {
@@ -749,6 +852,8 @@ export default function Floorplan3D({
   compass,
   lamps,
   parts,
+  cables,
+  flowing,
   onFrame,
   onPick,
   onHover,
@@ -765,9 +870,9 @@ export default function Floorplan3D({
   const stage = useRef<Stage | null>(null);
 
   // Dernières valeurs, lues par des écouteurs posés une fois pour toutes.
-  const latest = useRef({ camera, lamps, parts, floors, anchors, onFrame, onPick, onHover, onOrbit, onOcclusion, onLoad, onError });
+  const latest = useRef({ camera, lamps, parts, cables, floors, anchors, onFrame, onPick, onHover, onOrbit, onOcclusion, onLoad, onError });
   useLayoutEffect(() => {
-    latest.current = { camera, lamps, parts, floors, anchors, onFrame, onPick, onHover, onOrbit, onOcclusion, onLoad, onError };
+    latest.current = { camera, lamps, parts, cables, floors, anchors, onFrame, onPick, onHover, onOrbit, onOcclusion, onLoad, onError };
   });
 
   // ── Scène, caméra, rendu ───────────────────────────────────────────────────
@@ -788,6 +893,9 @@ export default function Floorplan3D({
     // et l'on regarde surtout des intérieurs.
     renderer.toneMappingExposure = 1.2;
     renderer.shadowMap.type = PCFShadowMap;
+    // Les ombres ne sont recalculées que quand elles changent : ni la caméra
+    // ni le courant dans les câbles ne les déplacent.
+    renderer.shadowMap.autoUpdate = false;
     renderer.domElement.style.display = 'block';
     host.appendChild(renderer.domElement);
 
@@ -819,6 +927,9 @@ export default function Floorplan3D({
     // quelque chose.
     let frame = 0;
     let dirty = false;
+    // La scène ou la caméra ont bougé : pastilles à recaler, occlusion à revérifier.
+    let moved = false;
+    let shadowsDirty = true;
     const animators = new Set<(now: number) => boolean>();
     // Ce que la maquette cache : vérifié une fois la scène posée, quelques
     // rayons par image ; une nouvelle image annule la vérification en cours.
@@ -846,24 +957,33 @@ export default function Floorplan3D({
       for (const step of animators) if (!step(now)) animators.delete(step);
       if (dirty) {
         dirty = false;
-        updateCutaway(s);
+        if (moved) updateCutaway(s);
+        if (shadowsDirty) {
+          renderer.shadowMap.needsUpdate = true;
+          shadowsDirty = false;
+        }
         renderer.render(scene, cam);
-        latest.current.onFrame();
-        window.clearTimeout(settle);
-        cancelAnimationFrame(checking);
-        settle = window.setTimeout(checkOcclusion, SETTLE_MS);
+        if (moved) {
+          moved = false;
+          latest.current.onFrame();
+          window.clearTimeout(settle);
+          cancelAnimationFrame(checking);
+          settle = window.setTimeout(checkOcclusion, SETTLE_MS);
+        }
       }
       frame = animators.size || dirty ? requestAnimationFrame(tick) : 0;
     };
-    const render = () => {
+    const render = (what: 'all' | 'view' | 'flow' = 'all') => {
       dirty = true;
+      if (what !== 'flow') moved = true;
+      if (what === 'all') shadowsDirty = true;
       if (!frame) frame = requestAnimationFrame(tick);
     };
     const animate = (step: (now: number) => boolean) => {
       animators.add(step);
       if (!frame) frame = requestAnimationFrame(tick);
     };
-    controls.addEventListener('change', render);
+    controls.addEventListener('change', () => render('view'));
 
     const resize = () => {
       const { clientWidth: w, clientHeight: h } = host;
@@ -871,7 +991,7 @@ export default function Floorplan3D({
       renderer.setSize(w, h);
       cam.aspect = w / h;
       cam.updateProjectionMatrix();
-      render();
+      render('view');
     };
     const observer = new ResizeObserver(resize);
     observer.observe(host);
@@ -889,6 +1009,9 @@ export default function Floorplan3D({
       lampGlow: false,
       glowMap: null,
       parts: new Map(),
+      cables: new Map(),
+      flowAllowed: false,
+      flowRunning: false,
       outline: null,
       floors: new Group(),
       uniforms: createModelUniforms(),
@@ -947,6 +1070,7 @@ export default function Floorplan3D({
       disposeTree(scene);
       s.depth?.dispose();
       for (const entry of s.parts.values()) entry.depth.dispose();
+      for (const entry of s.cables.values()) entry.depth.dispose();
       renderer.dispose();
       // Rendre le contexte tout de suite : un navigateur n'en garde qu'une
       // poignée, et changer de page en boucle finirait par les épuiser.
@@ -1009,6 +1133,8 @@ export default function Floorplan3D({
         // Placés d'après la maquette : tous reconstruits sur la nouvelle.
         for (const [id, entry] of s.parts) removePart(s, id, entry);
         placeParts(s, latest.current.parts);
+        for (const [id, entry] of s.cables) removeCable(s, id, entry);
+        placeCables(s, latest.current.cables ?? []);
         placeFloors(s, latest.current.floors);
         placeLamps(s, latest.current.lamps);
         s.home = null;
@@ -1064,6 +1190,15 @@ export default function Floorplan3D({
     placeLamps(s, latest.current.lamps);
     s.render();
   }, [lampsKey, lampGlow]);
+
+  // ── Câbles d'énergie ───────────────────────────────────────────────────────
+  const cablesKey = JSON.stringify(cables ?? []);
+  useEffect(() => {
+    const s = stage.current;
+    if (!s) return;
+    s.flowAllowed = !!flowing;
+    placeCables(s, latest.current.cables ?? []);
+  }, [cablesKey, flowing]);
 
   // ── Portes, fenêtres, volets ───────────────────────────────────────────────
   const partsKey = JSON.stringify(parts);

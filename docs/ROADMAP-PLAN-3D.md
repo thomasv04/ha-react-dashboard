@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **21 tâches sur 21** — toutes les phases. `F1` reste à essayer sur un vrai Android.
+**État global** : **23 tâches sur 26** — phases A à H, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -387,21 +387,44 @@ Le reste est indépendant.
 
 ---
 
-## Phase I — L'énergie qui circule *(proposée, à valider)*
+## Phase I — L'énergie qui circule
 
 Idée venue d'une capture de référence : panneaux solaires, borne et batterie
 reliés par des flux animés. Là-bas, des traits plats posés sur une image ;
 ici, des câbles tracés sur la maquette elle-même, qui suivent le sol, les
 murs, le toit, tournent avec la maison et passent derrière les murs.
 
-### [ ] I1 — Tracer un câble
+### [x] I1 — Tracer un câble
+
+> **Fait** : outil « Câble » en édition. Chaque clic sur la maquette pose un
+> point ; Entrée, ou un clic sur le dernier point, finit le câble. Reste à
+> choisir son entité : sa sorte en est devinée d'après son nom — chez Zendure,
+> « solarflow » est la batterie, pas ses panneaux —, et le sens s'inverse d'un
+> bouton. Pendant qu'on choisit, le câble s'anime déjà : on voit son sens.
+> Liste, suppression ; `floorplan.cables`.
 
 - **Quoi** : un outil « Câble » en édition. Clics successifs sur la maquette
   (sol, murs, toit), Entrée pour finir ; l'entité de puissance (W ou kW), le
   type (solaire, réseau, batterie, voiture, maison) qui en fixe la couleur,
   le sens. Liste, suppression. Stocké dans `floorplan.cables`.
 
-### [ ] I2 — L'énergie circule
+### [x] I2 — L'énergie circule
+
+> **Fait** : le câble est un tube de la scène
+> ([cables3d.ts](../src/components/floorplan/cables3d.ts)), posé au sol, gaine
+> graphite satinée, coudes arrondis. Éclairé par le soleil et les lampes, il
+> porte son ombre, passe derrière les murs et sous les meubles. Le courant y
+> court en traits lumineux de la couleur de sa sorte — celles de la card
+> « Flux d'énergie » —, dans le sens du flux : signe de la puissance, ou
+> charge et décharge de la batterie, codes `1`/`2` compris. Plus le courant
+> est fort, plus ils vont vite ; au repos, la gaine seule. La puissance
+> s'écrit à mi-longueur. Une première version dessinait les câbles en SVG
+> par-dessus le canevas : un trait plat posé sur une image photoréaliste,
+> abandonnée. L'animation tourne à 30 images par seconde sans recalculer les
+> ombres ni recaler les pastilles ; les ombres ne sont plus recalculées non
+> plus quand seule la caméra bouge. Coupée par « Réduire les animations » et
+> le mouvement réduit. Démo : le circuit d'une SolarFlow — solaire, réseau,
+> maison —, son niveau de batterie au point de jonction.
 
 - **Quoi** : le câble, un fin tube posé sur la maquette, porte des impulsions
   lumineuses qui avancent dans le sens du flux (signe de la puissance),

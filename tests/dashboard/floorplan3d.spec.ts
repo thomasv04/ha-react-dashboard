@@ -357,6 +357,42 @@ test('in edit mode, clicks on the floor draw a named room, which is kept once sa
     .toEqual(['Chambre 4', 'Salle à manger 3']);
 });
 
+test('in edit mode, clicks along a route lay an energy cable, which shows its power once saved', async ({ page, request }) => {
+  await openModel(page);
+  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
+  await page.getByRole('button', { name: 'Câble', exact: true }).click();
+  await expect(page.getByText(/Cliquez le long du trajet/)).toBeVisible();
+  await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
+
+  // Trois points au sol, puis Entrée.
+  const box = (await page.locator('[data-floorplan-3d] canvas').boundingBox())!;
+  for (const [x, y] of [
+    [0.386, 0.629],
+    [0.486, 0.48],
+    [0.443, 0.752],
+  ]) {
+    await page.mouse.click(box.x + box.width * x, box.y + box.height * y);
+  }
+  await page.keyboard.press('Enter');
+  const dialog = page.getByRole('dialog', { name: "Câble d'énergie" });
+  await page.getByPlaceholder('Rechercher...').fill('panneaux');
+  await page.getByRole('button', { name: 'sensor.din_panneaux_solaire_puissance', exact: true }).click();
+  // Deviné d'après l'entité : un câble solaire.
+  await expect(dialog.getByRole('button', { name: 'Solaire' })).toHaveAttribute('aria-pressed', 'true');
+  await dialog.getByRole('button', { name: 'Ajouter' }).click();
+  // La puissance du câble, à mi-longueur.
+  await expect(page.locator('[data-floorplan-cable]')).toHaveText('420 W');
+
+  await page.getByRole('button', { name: 'Sauvegarder' }).click();
+  await expect
+    .poll(async () => {
+      const config = await (await request.get(`${API}/api/config`)).json();
+      const cables = config.pages.find((p: { id: string }) => p.id === 'maison')?.floorplan?.cables ?? [];
+      return cables.map((c: { kind: string; entityId: string; points: unknown[] }) => `${c.kind} ${c.entityId} ${c.points.length}`);
+    })
+    .toEqual(['solar sensor.din_panneaux_solaire_puissance 3']);
+});
+
 test('in edit mode, a .glb file is uploaded as the model, and its bin deletes it', async ({ page, request }) => {
   await page.goto('/#vierge');
   await page.getByRole('button', { name: 'Modifier le dashboard' }).click();

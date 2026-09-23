@@ -1,4 +1,5 @@
 import type { FloorplanPos } from '@/context/DashboardLayoutContext';
+import { normalizePackState } from '@/lib/battery-state';
 import { clamp } from '@/lib/utils';
 
 /**
@@ -609,4 +610,119 @@ export function sunLighting(sun: { elevation?: number; azimuth?: number } | unde
     softness: 1 + 7 * clouds,
     shadow: 1 - 0.55 * clouds,
   };
+}
+
+// ── Énergie ──────────────────────────────────────────────────────────────────
+
+export type CableKind = 'solar' | 'grid' | 'home' | 'battery';
+export const CABLE_KINDS: CableKind[] = ['solar', 'grid', 'home', 'battery'];
+
+/** Couleur de chaque sorte de câble : celles de la card « Flux d'énergie ». */
+export const CABLE_COLORS: Record<CableKind, string> = { solar: '#fbbf24', grid: '#f87171', home: '#38bdf8', battery: '#34d399' };
+
+/**
+ * Câble d'énergie tracé sur la maquette : ses points, dans les coordonnées de
+ * la maquette, dans le sens où va l'énergie quand la valeur de son entité est
+ * positive — ou quand la batterie se charge.
+ */
+export interface FloorplanCable {
+  id: string;
+  kind: CableKind;
+  entityId: string;
+  points: Vec3[];
+  /** L'entité suit la convention de signe inverse : le sens du flux aussi. */
+  invert?: boolean;
+}
+
+/** Câbles lisibles d'une config : un câble illisible est écarté, pas fatal. */
+export function normalizeCables(cables: unknown): FloorplanCable[] {
+  if (!Array.isArray(cables)) return [];
+  return cables.flatMap(c => {
+    const cable = (c && typeof c === 'object' ? c : {}) as Record<string, unknown>;
+    const points = Array.isArray(cable.points) ? cable.points.map(normalizeAnchor) : [];
+    if (
+      typeof cable.id !== 'string' ||
+      typeof cable.entityId !== 'string' ||
+      !CABLE_KINDS.includes(cable.kind as CableKind) ||
+      points.length < 2 ||
+      points.some(p => !p)
+    )
+      return [];
+    return [
+      {
+        id: cable.id,
+        kind: cable.kind as CableKind,
+        entityId: cable.entityId,
+        points: points as Vec3[],
+        ...(cable.invert === true && { invert: true }),
+      },
+    ];
+  });
+}
+
+/**
+ * Sorte d'un câble, devinée d'après le nom de son entité. Réseau, batterie et
+ * maison d'abord : chez Zendure, « solarflow » désigne la batterie tout
+ * entière, pas ses panneaux.
+ */
+export function guessCableKind(entityId: string): CableKind {
+  const id = entityId.toLowerCase();
+  if (/grid|reseau|réseau/.test(id)) return 'grid';
+  if (/batter|pack/.test(id)) return 'battery';
+  if (/home|maison|house/.test(id)) return 'home';
+  if (/solar|solaire|panneau|pv/.test(id)) return 'solar';
+  return 'home';
+}
+
+/** En deçà (W), rien ne circule : le bruit d'un capteur au repos. */
+const FLOW_THRESHOLD = 5;
+
+/**
+ * Ce qui circule dans un câble, d'après son entité : une puissance (W ou kW),
+ * dont le signe donne le sens ; sinon l'état d'une batterie — en charge,
+ * l'énergie suit le tracé. `direction` 0 : rien ne circule ; `watts` nul :
+ * pas de puissance connue.
+ */
+export function cableFlow(
+  state: string | undefined,
+  attributes: Record<string, unknown> | undefined,
+  invert = false
+): { direction: -1 | 0 | 1; watts: number | null } {
+  const sign = invert ? -1 : 1;
+  const unit = attributes?.unit_of_measurement;
+  if (unit === 'W' || unit === 'kW' || attributes?.device_class === 'power') {
+    const value = parseFloat(state ?? '');
+    if (!Number.isFinite(value)) return { direction: 0, watts: null };
+    const watts = value * (unit === 'kW' ? 1000 : 1) * sign;
+    return { direction: Math.abs(watts) <= FLOW_THRESHOLD ? 0 : watts > 0 ? 1 : -1, watts };
+  }
+  // Libellé ou code numérique (1 en charge, 2 en décharge) : la même lecture que la card.
+  const pack = normalizePackState(state ?? '');
+  const direction = pack === 'charging' ? sign : pack === 'discharging' ? -sign : 0;
+  return { direction: direction as -1 | 0 | 1, watts: null };
+}
+
+/**
+ * Durée, en secondes, d'une période des traits lumineux d'un câble : d'autant
+ * plus courte que la puissance est forte — trois fois plus vite passé le
+ * kilowatt que pour quelques watts.
+ */
+export function flowDuration(watts: number | null): number {
+  if (watts === null) return 0.9;
+  return clamp(1.8 - 0.45 * Math.log10(Math.max(Math.abs(watts), 1)), 0.45, 1.35);
+}
+
+/** Le point à mi-longueur d'une ligne brisée : là où s'écrit la puissance d'un câble. */
+export function polylineMidpoint(points: { x: number; y: number }[]): { x: number; y: number } | null {
+  if (!points.length) return null;
+  const lengths = points.slice(1).map((p, i) => Math.hypot(p.x - points[i].x, p.y - points[i].y));
+  let rest = lengths.reduce((a, b) => a + b, 0) / 2;
+  for (let i = 0; i < lengths.length; i++) {
+    if (lengths[i] > 0 && rest <= lengths[i]) {
+      const t = rest / lengths[i];
+      return { x: points[i].x + (points[i + 1].x - points[i].x) * t, y: points[i].y + (points[i + 1].y - points[i].y) * t };
+    }
+    rest -= lengths[i];
+  }
+  return points[points.length - 1];
 }

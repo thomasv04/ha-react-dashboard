@@ -1,5 +1,5 @@
 import type { DashboardConfigV2, GridWidget } from '@/context/DashboardLayoutContext';
-import type { FloorplanPart, FloorplanRoom } from '@/lib/floorplan';
+import type { FloorplanCable, FloorplanPart, FloorplanRoom } from '@/lib/floorplan';
 import type { WidgetConfigs } from '@/types/widget-configs';
 
 /**
@@ -36,6 +36,8 @@ const WIDGETS: GridWidget[] = [
   chip('demo-temp-cuisine', [-11.4, 0.92, 0.2]),
   chip('demo-temp-bain', [-7.1, 0.5, -5]),
   chip('demo-temp-amis', [-2.4, 0.5, -4.2]),
+  // La batterie SolarFlow, où se rejoignent les câbles : son niveau.
+  chip('demo-batterie', [-4.1, 0.3, 1.6]),
   // Une card n'est pas accrochée : elle reste posée en % de l'écran.
   { id: 'demo-meteo', type: 'weather', x: 0, y: 0, w: 2, h: 1, pos: { x: 88, y: 22, w: 20, h: 32 } },
 ];
@@ -51,6 +53,7 @@ const CONFIGS = {
   'demo-temp-bain': { type: 'chip', entityId: 'sensor.temperature_salle_de_bain' },
   'demo-temp-amis': { type: 'chip', entityId: 'sensor.temperature_chambre_amis' },
   'demo-meteo': { type: 'weather', entityId: 'weather.home' },
+  'demo-batterie': { type: 'chip', entityId: 'sensor.solarflow_2400_ac_electric_level' },
 } as WidgetConfigs;
 
 /** Portes, fenêtres et volets dessinés sur la maquette. */
@@ -100,6 +103,33 @@ const room = (id: string, name: string, x0: number, x1: number, z0: number, z1: 
   ],
 });
 
+/**
+ * Le circuit d'une batterie Zendure SolarFlow, l'installation du mock : tout
+ * passe par elle, au sud du séjour. Chaque câble est tracé au sol dans le sens
+ * où va l'énergie quand sa valeur est positive.
+ */
+const HUB: [number, number, number] = [-4.1, 0, 1.6];
+const CABLES: FloorplanCable[] = [
+  {
+    id: 'demo-cable-solaire',
+    kind: 'solar',
+    entityId: 'sensor.din_panneaux_solaire_puissance',
+    points: [[-5.4, 0, -1.9], [-4.1, 0, -1.9], HUB],
+  },
+  {
+    id: 'demo-cable-reseau',
+    kind: 'grid',
+    entityId: 'sensor.solarflow_2400_ac_grid_input_power',
+    points: [[-8.4, 0, 1.6], HUB],
+  },
+  {
+    id: 'demo-cable-maison',
+    kind: 'home',
+    entityId: 'sensor.solarflow_2400_ac_output_home_power',
+    points: [HUB, [-2.2, 0, 1.6], [-2.2, 0, 0.8]],
+  },
+];
+
 const ROOMS: FloorplanRoom[] = [
   room('demo-cuisine', 'Cuisine', -13, -8.85, -2.15, 2.6),
   room('demo-sejour', 'Séjour', -8.85, -1.03, -2.15, 2.62),
@@ -122,7 +152,7 @@ export function withDemoFloorplan(config: DashboardConfigV2): DashboardConfigV2 
         icon: 'Home',
         type: 'floorplan',
         order: Math.max(-1, ...config.pages.map(p => p.order)) + 1,
-        floorplan: { image: '', model: MODEL, idleRotate: true, lampGlow: true, parts: PARTS, rooms: ROOMS },
+        floorplan: { image: '', model: MODEL, idleRotate: true, lampGlow: true, parts: PARTS, rooms: ROOMS, cables: CABLES },
       },
     ],
     layouts: { ...config.layouts, [ID]: { widgets: { lg: WIDGETS, md: WIDGETS, sm: WIDGETS }, cols: { lg: 12, md: 8, sm: 4 } } },

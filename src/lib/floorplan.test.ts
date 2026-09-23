@@ -1,8 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import {
+  cableFlow,
   cloudiness,
   compassHeading,
   containSize,
+  flowDuration,
+  guessCableKind,
   backSides,
   cutLimit,
   isCutAway,
@@ -12,6 +15,7 @@ import {
   lightGlow,
   movePos,
   normalizeAnchor,
+  normalizeCables,
   normalizeParts,
   normalizeRooms,
   normalizePos,
@@ -19,6 +23,7 @@ import {
   partFrame,
   pointInPolygon,
   polygonCentroid,
+  polylineMidpoint,
   precipitation,
   resizePos,
   shortestTurn,
@@ -483,5 +488,80 @@ describe('thermal view', () => {
     expect(thermalColor(30)).toBe('#ef4444');
     // Entre deux repères, un mélange des deux.
     expect(thermalColor(21)).not.toBe(thermalColor(20));
+  });
+});
+
+describe('energy cables', () => {
+  const cable = {
+    id: 'c1',
+    kind: 'solar',
+    entityId: 'sensor.pv',
+    points: [
+      [0, 0, 0],
+      [1, 0, 2],
+      [3, 0.5, 2],
+    ],
+  };
+
+  it('keeps a readable cable, and drops what cannot be drawn', () => {
+    expect(normalizeCables([cable])).toEqual([cable]);
+    expect(normalizeCables([{ ...cable, invert: true }])[0].invert).toBe(true);
+    expect(normalizeCables('x')).toEqual([]);
+    const broken = [
+      { ...cable, kind: 'gas' },
+      { ...cable, points: [[0, 0, 0]] },
+      {
+        ...cable,
+        points: [
+          [0, 0],
+          [1, 1, 1],
+        ],
+      },
+      null,
+    ];
+    expect(normalizeCables(broken)).toEqual([]);
+  });
+
+  it('guesses the kind of a Zendure SolarFlow and of its panels from their names', () => {
+    expect(guessCableKind('sensor.din_panneaux_solaire_puissance')).toBe('solar');
+    expect(guessCableKind('sensor.solarflow_2400_ac_grid_input_power')).toBe('grid');
+    expect(guessCableKind('sensor.solarflow_2400_ac_output_home_power')).toBe('home');
+    expect(guessCableKind('sensor.solarflow_2400_ac_pack_state')).toBe('battery');
+  });
+
+  it('flows along the drawing for a positive power, backwards for a negative one, not at all near zero', () => {
+    const watts = { unit_of_measurement: 'W' };
+    expect(cableFlow('420', watts)).toEqual({ direction: 1, watts: 420 });
+    expect(cableFlow('-320', watts)).toEqual({ direction: -1, watts: -320 });
+    expect(cableFlow('320', watts, true)).toEqual({ direction: -1, watts: -320 });
+    expect(cableFlow('1.5', { unit_of_measurement: 'kW' })).toEqual({ direction: 1, watts: 1500 });
+    expect(cableFlow('3', watts).direction).toBe(0);
+    expect(cableFlow('unavailable', watts)).toEqual({ direction: 0, watts: null });
+  });
+
+  it('follows the battery state, label or numeric code, when there is no power unit', () => {
+    expect(cableFlow('charging', {})).toEqual({ direction: 1, watts: null });
+    expect(cableFlow('2', {})).toEqual({ direction: -1, watts: null });
+    expect(cableFlow('1', {}, true)).toEqual({ direction: -1, watts: null });
+    expect(cableFlow('idle', {}).direction).toBe(0);
+  });
+
+  it('speeds up with the power', () => {
+    expect(flowDuration(10)).toBeGreaterThan(flowDuration(100));
+    expect(flowDuration(100)).toBeGreaterThan(flowDuration(1000));
+    expect(flowDuration(50_000)).toBe(0.45);
+    expect(flowDuration(null)).toBe(0.9);
+  });
+
+  it('finds the middle of a broken line, by length', () => {
+    expect(
+      polylineMidpoint([
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+        { x: 10, y: 30 },
+      ])
+    ).toEqual({ x: 10, y: 10 });
+    expect(polylineMidpoint([{ x: 5, y: 5 }])).toEqual({ x: 5, y: 5 });
+    expect(polylineMidpoint([])).toBeNull();
   });
 });

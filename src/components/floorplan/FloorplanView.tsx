@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useHass } from '@hakit/core';
 import {
   Box as BoxIcon,
+  Cable,
   ChevronLeft,
   Compass,
   DoorOpen,
@@ -41,7 +42,9 @@ import {
   lightColor,
   lightGlow,
   MODEL_SIZE,
+  cableFlow,
   normalizeAnchor,
+  normalizeCables,
   normalizeParts,
   normalizeRooms,
   normalizePos,
@@ -55,15 +58,17 @@ import {
   sunPosition,
   temperatureOf,
   thermalColor,
+  type FloorplanCable,
   type FloorplanPart,
   type Vec3,
 } from '@/lib/floorplan';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import type { ChipCardConfig, WidgetConfig } from '@/types/widget-configs';
-import type { FloorOverlay, Floorplan3DHandle, Lamp, PartProp } from './Floorplan3D';
+import type { CableProp, FloorOverlay, Floorplan3DHandle, Lamp, PartProp } from './Floorplan3D';
 import { FloorplanItem } from './FloorplanItem';
 import { PartList, PartPopover } from './FloorplanParts';
+import { CableList, CableOverlay, CablePopover } from './FloorplanCables';
 import { ReplayBar } from './FloorplanReplay';
 import { RoomList, RoomNamePopover } from './FloorplanRooms';
 import { useReplay } from './useReplay';
@@ -113,6 +118,19 @@ const ROOM_FIRST = '__room-first';
 const ROOM_CENTER = '__room-center';
 const roomKey = (id: string) => `room:${id}`;
 
+/** Clés, parmi les projections, des points d'un câble ; du câble qu'on trace, et du pointeur qui le prolonge. */
+const cableKey = (id: string, i: number) => `cable:${id}:${i}`;
+const CABLE_DRAFT = '__cable';
+const CABLE_HOVER = '__cable-hover';
+
+/** Câble en cours de tracé : ses points, puis — tracé jusqu'au bout — le câble, dont on choisit l'entité. */
+type CableDraft = { points: Vec3[]; cable?: FloorplanCable };
+
+/** Le câble tracé jusqu'au bout : reste à choisir son entité. Deux points au moins. */
+const finishCable = (d: CableDraft | null, id: string): CableDraft | null =>
+  d && !d.cable && d.points.length >= 2 ? { ...d, cable: { id, kind: 'home', entityId: '', points: d.points } } : d;
+const newCableId = () => `cable-${Date.now().toString(36)}`;
+
 /** Clés, parmi les projections, du premier coin d'un élément en cours de dessin, puis de ses deux coins. */
 const DRAFT_MARK = '__draft';
 const DRAFT_CORNERS = { a: '__draft-a', b: '__draft-b' } as const;
@@ -151,7 +169,8 @@ export function FloorplanView() {
   const [adding, setAdding] = useState<{ x: number; y: number; anchor?: Vec3 } | null>(null);
   const [panel, setPanel] = useState<'image' | 'model' | null>(null);
   /** Maquette : ce que pose un clic — une pastille, ou un coin de porte, de fenêtre, de volet. */
-  const [tool, setTool] = useState<'chip' | 'part' | 'room'>('chip');
+  const [tool, setTool] = useState<'chip' | 'part' | 'room' | 'cable'>('chip');
+  const [cableDraft, setCableDraft] = useState<CableDraft | null>(null);
   /** Pièce en cours de dessin : ses sommets au sol, sa hauteur de sol, puis son nom. */
   const [roomDraft, setRoomDraft] = useState<{ points: [number, number][]; y: number; naming?: boolean } | null>(null);
   const [draft, setDraft] = useState<PartDraft | null>(null);
@@ -208,19 +227,25 @@ export function FloorplanView() {
     setRoomDraft(null);
     setFocusId(null);
     setCompass(false);
+    setCableDraft(null);
     closeReplay();
   }
 
   useEffect(() => {
     if (!isEditMode) return;
     const onKey = (e: KeyboardEvent) => {
-      // Entrée ferme la pièce qu'on dessine, à partir de trois sommets.
-      if (e.key === 'Enter') setRoomDraft(d => (d && !d.naming && d.points.length >= 3 ? { ...d, naming: true } : d));
+      // Entrée ferme la pièce qu'on dessine, à partir de trois sommets ; finit le câble, à partir de deux.
+      if (e.key === 'Enter') {
+        setRoomDraft(d => (d && !d.naming && d.points.length >= 3 ? { ...d, naming: true } : d));
+        const id = newCableId();
+        setCableDraft(d => finishCable(d, id));
+      }
       if (e.key !== 'Escape') return;
       setAdding(null);
       setSelectedId(null);
       setDraft(null);
       setRoomDraft(null);
+      setCableDraft(null);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -281,6 +306,18 @@ export function FloorplanView() {
 
   // Pièces dessinées : leurs lampes n'éclairent qu'elles.
   const rooms = normalizeRooms(floorplan?.rooms);
+  const cables = normalizeCables(floorplan?.cables);
+  // Ce qui circule dans chaque câble — celui qu'on vient de tracer compris : on
+  // voit son sens en choisissant son entité. Rejouée, la maison n'a pas encore
+  // l'historique de ses câbles : ils se reposent.
+  const allCables = [...cables, ...(cableDraft?.cable ? [cableDraft.cable] : [])];
+  const cableEntities = useEntities(allCables.map(c => c.entityId));
+  const cablesProp: CableProp[] = allCables.map(c => ({
+    ...c,
+    ...(replaying
+      ? { direction: 0 as const, watts: null }
+      : cableFlow(cableEntities[c.entityId]?.state, cableEntities[c.entityId]?.attributes, c.invert)),
+  }));
   const focusRoom = rooms.find(r => r.id === focusId);
 
   const lamps: Lamp[] = model
@@ -406,6 +443,10 @@ export function FloorplanView() {
         next[ROOM_CENTER] = handle.project([x, roomDraft.y, z]);
       }
     }
+    // Câbles : chacun de leurs points ; ceux du câble qu'on trace, et le pointeur qui le prolonge.
+    for (const cable of cables) cable.points.forEach((p, i) => (next[cableKey(cable.id, i)] = handle.project(p)));
+    cableDraft?.points.forEach((p, i) => (next[cableKey(CABLE_DRAFT, i)] = handle.project(p)));
+    if (cableDraft && !cableDraft.cable && hover) next[CABLE_HOVER] = handle.project(hover);
     setProjections(next);
   };
 
@@ -426,6 +467,9 @@ export function FloorplanView() {
         draft?.part?.b ?? null,
         (isEditMode || showThermal) && rooms.map(r => r.id),
         roomDraft,
+        cables.map(c => c.points),
+        cableDraft,
+        cableDraft && !cableDraft.cable && hover,
       ])
     : '';
   useEffect(() => {
@@ -465,6 +509,19 @@ export function FloorplanView() {
     const at = { x: ((clientX - rect.left) / rect.width) * 100, y: ((clientY - rect.top) / rect.height) * 100 };
     setSelectedId(null);
     if (tool === 'chip') return setAdding({ ...at, anchor });
+    if (tool === 'cable') {
+      if (cableDraft?.cable) return;
+      // Recliquer le dernier point finit le câble.
+      const last = cableDraft && projections[cableKey(CABLE_DRAFT, cableDraft.points.length - 1)];
+      if (cableDraft && cableDraft.points.length >= 2 && last) {
+        const distance = Math.hypot(((last.x - at.x) / 100) * rect.width, ((last.y - at.y) / 100) * rect.height);
+        if (distance < CLOSE_PX) {
+          const id = newCableId();
+          return setCableDraft(d => finishCable(d, id));
+        }
+      }
+      return setCableDraft(d => ({ points: [...(d?.points ?? []), anchor] }));
+    }
     if (tool === 'room') {
       if (roomDraft?.naming) return;
       // Recliquer le premier sommet ferme la pièce.
@@ -566,6 +623,23 @@ export function FloorplanView() {
   const loaded = !!model && loadedModel === model;
   const failed = failure && failure.model === model ? failure.kind : null;
 
+  /** Un point projeté, en pixels du plan — `null` derrière la caméra. */
+  const toScreen = (key: string) => {
+    const p = projections[key];
+    return p ? { x: (p.x / 100) * area.w, y: (p.y / 100) * area.h } : null;
+  };
+  const cablesOnScreen = cablesProp.flatMap(cable => {
+    // Le câble tout juste tracé : ses points sont ceux du tracé en cours.
+    const id = cable.id === cableDraft?.cable?.id ? CABLE_DRAFT : cable.id;
+    const screen = cable.points.map((_, i) => toScreen(cableKey(id, i)));
+    return screen.every(p => p !== null) ? [{ ...cable, screen: screen as NonNullable<Projection>[] }] : [];
+  });
+  const draftLine =
+    cableDraft && !cableDraft.cable
+      ? [...cableDraft.points.map((_, i) => toScreen(cableKey(CABLE_DRAFT, i))), toScreen(CABLE_HOVER)].filter(p => p !== null)
+      : null;
+  const cableEnd = cableDraft ? projections[cableKey(CABLE_DRAFT, cableDraft.points.length - 1)] : null;
+
   const items = (
     <FreeGridScope>
       {/* `pointer-events-none` : entre les éléments, le clic atteint le plan. */}
@@ -639,12 +713,13 @@ export function FloorplanView() {
     </button>
   );
 
-  const toolButton = (id: 'chip' | 'part' | 'room', Icon: typeof MapPin, label: string) => (
+  const toolButton = (id: 'chip' | 'part' | 'room' | 'cable', Icon: typeof MapPin, label: string) => (
     <button
       onClick={() => {
         setTool(id);
         setDraft(null);
         setRoomDraft(null);
+        setCableDraft(null);
         setAdding(null);
       }}
       aria-pressed={tool === id}
@@ -666,9 +741,13 @@ export function FloorplanView() {
         ? roomDraft && roomDraft.points.length >= 3
           ? 'roomHintClose'
           : 'roomHint'
-        : draft && !draft.part
-          ? 'partHintNext'
-          : 'partHint';
+        : tool === 'cable'
+          ? cableDraft && cableDraft.points.length >= 2
+            ? 'cableHintNext'
+            : 'cableHint'
+          : draft && !draft.part
+            ? 'partHintNext'
+            : 'partHint';
 
   const checkbox = (label: string, checked: boolean, onChange: (checked: boolean) => void) => (
     <label className='flex items-center gap-1.5 text-xs text-white/60 cursor-pointer select-none'>
@@ -721,13 +800,19 @@ export function FloorplanView() {
                   parts={partsProp}
                   outline={outline}
                   floors={floors}
+                  cables={cablesProp}
+                  flowing={motionAllowed && !perfSettings.reduceAnimations}
                   focus={focusRoom ?? null}
                   anchors={anchors}
                   onOcclusion={setOccluded}
                   onFrame={onFrame}
                   onPick={isEditMode ? onModelPick : onViewPick}
                   onOrbit={() => setCompass(false)}
-                  onHover={isEditMode && ((draft && !draft.part) || (roomDraft && !roomDraft.naming)) ? setHover : undefined}
+                  onHover={
+                    isEditMode && ((draft && !draft.part) || (roomDraft && !roomDraft.naming) || (cableDraft && !cableDraft.cable))
+                      ? setHover
+                      : undefined
+                  }
                   onLoad={() => setLoadedModel(model)}
                   onError={kind => setFailure({ model, kind })}
                 />
@@ -741,6 +826,7 @@ export function FloorplanView() {
             {falling && falling.rain > 0 && <div className='fp-rain' style={{ opacity: falling.rain }} />}
             {falling && falling.snow > 0 && <div className='fp-snow' style={{ opacity: falling.snow }} />}
             {falling?.lightning && <div className='fp-lightning' />}
+            <CableOverlay cables={cablesOnScreen} draft={draftLine} />
             {items}
             {addPopover}
             {isEditMode &&
@@ -799,6 +885,18 @@ export function FloorplanView() {
                   setRoomDraft(null);
                 }}
                 onCancel={() => setRoomDraft(null)}
+              />
+            )}
+            {cableDraft?.cable && cableEnd && (
+              <CablePopover
+                cable={cableDraft.cable}
+                at={cableEnd}
+                onChange={cable => setCableDraft({ ...cableDraft, cable })}
+                onAdd={() => {
+                  if (cableDraft.cable) setFloorplan({ cables: [...cables, cableDraft.cable] });
+                  setCableDraft(null);
+                }}
+                onCancel={() => setCableDraft(null)}
               />
             )}
             {draft && !draft.part && projections[DRAFT_MARK] && (
@@ -1053,17 +1151,19 @@ export function FloorplanView() {
               )}
               {model && <RoomList rooms={rooms} onRemove={id => setFloorplan({ rooms: rooms.filter(r => r.id !== id) })} />}
               {model && <PartList parts={parts} onRemove={id => setFloorplan({ parts: parts.filter(p => p.id !== id) })} />}
+              {model && <CableList cables={cables} onRemove={id => setFloorplan({ cables: cables.filter(c => c.id !== id) })} />}
             </div>
           )}
           {model && (
             <div
               role='group'
               aria-label={t('layout.floorplan.tool')}
-              className='flex gap-1 p-0.5 rounded-lg bg-white/5 border border-white/10 w-fit'
+              className='flex flex-wrap gap-1 p-0.5 rounded-lg bg-white/5 border border-white/10 w-fit'
             >
               {toolButton('chip', MapPin, t('layout.floorplan.toolChip'))}
               {toolButton('part', DoorOpen, t('layout.floorplan.toolPart'))}
               {toolButton('room', SquareDashed, t('layout.floorplan.toolRoom'))}
+              {toolButton('cable', Cable, t('layout.floorplan.toolCable'))}
             </div>
           )}
           <p className='text-[11px] text-white/40 px-0.5'>{t(`layout.floorplan.${hint}`)}</p>
