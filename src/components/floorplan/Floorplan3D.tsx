@@ -11,6 +11,7 @@ import {
   DoubleSide,
   Float32BufferAttribute,
   Group,
+  Line,
   LineBasicMaterial,
   LineLoop,
   Mesh,
@@ -19,6 +20,8 @@ import {
   Raycaster,
   SRGBColorSpace,
   Scene,
+  Shape,
+  ShapeGeometry,
   Sphere,
   Vector2,
   Vector3,
@@ -75,6 +78,19 @@ export interface Lamp {
   range: number;
 }
 
+/** Tracé au sol de la maquette : une pièce, ou celle qu'on dessine. */
+export interface FloorOverlay {
+  id: string;
+  /** Hauteur du sol, et contour (x, z), dans les coordonnées de la maquette. */
+  y: number;
+  points: [number, number][];
+  color: string;
+  /** Opacité du remplissage ; 0 : le contour seul. */
+  fill: number;
+  /** Fermé : une pièce. Ouvert : un tracé en cours. */
+  closed: boolean;
+}
+
 /** Porte, fenêtre ou volet, et son ouverture de l'instant (0 à 1). */
 export type PartProp = FloorplanPart & { open: number };
 
@@ -118,6 +134,8 @@ interface Floorplan3DProps {
   onHover?: (anchor: Vec3 | null) => void;
   /** Rectangle en cours de dessin : deux coins opposés, dans les coordonnées de la maquette. */
   outline?: [Vec3, Vec3] | null;
+  /** Tracés au sol : pièces, pièce en cours de dessin. */
+  floors?: FloorOverlay[];
   onLoad: () => void;
   onError: (kind: 'webgl' | 'model') => void;
 }
@@ -188,6 +206,8 @@ interface Stage {
   parts: Map<string, PartEntry>;
   /** Rectangle en cours de dessin, créé au premier besoin. */
   outline: Group | null;
+  /** Tracés au sol. */
+  floors: Group;
   /** Retouches des matériaux de la maquette (coupe, découpes), partagées par tous. */
   uniforms: ModelUniforms;
   cutaway: boolean;
@@ -453,6 +473,51 @@ function placeOutline(s: Stage, corners: [Vec3, Vec3] | null | undefined) {
   s.render();
 }
 
+/** Tracés au sol, un rien au-dessus du sol pour ne pas s'y confondre. */
+const FLOOR_LIFT = 0.03;
+
+/** Remplis et cernés d'après leur contour ; tout refait à chaque changement — ils sont peu nombreux. */
+function placeFloors(s: Stage, floors: FloorOverlay[] | undefined) {
+  for (const child of [...s.floors.children]) {
+    s.floors.remove(child);
+    const mesh = child as Mesh;
+    mesh.geometry.dispose();
+    (mesh.material as Material).dispose();
+  }
+  const root = s.root;
+  if (root) {
+    for (const floor of floors ?? []) {
+      if (!floor.points.length) continue;
+      const world = floor.points.map(([x, z]) => root.localToWorld(new Vector3(x, floor.y, z)));
+      const y = world[0].y + FLOOR_LIFT;
+      if (floor.fill > 0 && world.length >= 3) {
+        // Le contour dessiné dans le plan (x, z), couché au sol.
+        const fill = new Mesh(
+          new ShapeGeometry(new Shape(world.map(p => new Vector2(p.x, p.z)))),
+          new MeshBasicMaterial({ color: floor.color, transparent: true, opacity: floor.fill, depthWrite: false, side: DoubleSide })
+        );
+        fill.rotation.x = Math.PI / 2;
+        fill.position.y = y;
+        fill.renderOrder = 5;
+        s.floors.add(fill);
+      }
+      const line = new (floor.closed ? LineLoop : Line)(
+        new BufferGeometry().setAttribute(
+          'position',
+          new Float32BufferAttribute(
+            world.flatMap(p => [p.x, y, p.z]),
+            3
+          )
+        ),
+        new LineBasicMaterial({ color: floor.color, transparent: true, opacity: 0.9, depthTest: false })
+      );
+      line.renderOrder = 6;
+      s.floors.add(line);
+    }
+  }
+  s.render();
+}
+
 function disposeTree(root: Object3D) {
   root.traverse(o => {
     (o as Mesh).geometry?.dispose();
@@ -482,6 +547,7 @@ export default function Floorplan3D({
   onPick,
   onHover,
   outline,
+  floors,
   onLoad,
   onError,
 }: Floorplan3DProps) {
@@ -489,9 +555,9 @@ export default function Floorplan3D({
   const stage = useRef<Stage | null>(null);
 
   // Dernières valeurs, lues par des écouteurs posés une fois pour toutes.
-  const latest = useRef({ camera, lamps, parts, onFrame, onPick, onHover, onLoad, onError });
+  const latest = useRef({ camera, lamps, parts, floors, onFrame, onPick, onHover, onLoad, onError });
   useLayoutEffect(() => {
-    latest.current = { camera, lamps, parts, onFrame, onPick, onHover, onLoad, onError };
+    latest.current = { camera, lamps, parts, floors, onFrame, onPick, onHover, onLoad, onError };
   });
 
   // ── Scène, caméra, rendu ───────────────────────────────────────────────────
@@ -589,6 +655,7 @@ export default function Floorplan3D({
       lamps: new Map(),
       parts: new Map(),
       outline: null,
+      floors: new Group(),
       uniforms: createModelUniforms(),
       cutaway: false,
       cut: null,
@@ -596,6 +663,7 @@ export default function Floorplan3D({
       animate,
     };
     stage.current = s;
+    scene.add(s.floors);
     resize();
 
     // Un clic pose ; un glisser fait tourner la caméra et ne pose rien.
@@ -698,6 +766,7 @@ export default function Floorplan3D({
         // Placés d'après la maquette : tous reconstruits sur la nouvelle.
         for (const [id, entry] of s.parts) removePart(s, id, entry);
         placeParts(s, latest.current.parts);
+        placeFloors(s, latest.current.floors);
         placeLamps(s, latest.current.lamps);
         applyView(s, latest.current.camera);
         // `applyView` ne redessine que si la caméra a bougé : une autre
@@ -756,6 +825,11 @@ export default function Floorplan3D({
     const s = stage.current;
     if (s) placeParts(s, latest.current.parts);
   }, [partsKey]);
+
+  const floorsKey = JSON.stringify(floors ?? []);
+  useEffect(() => {
+    if (stage.current) placeFloors(stage.current, latest.current.floors);
+  }, [floorsKey]);
 
   const outlineKey = JSON.stringify(outline ?? null);
   useEffect(() => {

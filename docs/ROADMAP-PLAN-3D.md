@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **11 tâches sur 21** — `E1` et `G1`, passées en priorité, puis la phase A.
+**État global** : **12 tâches sur 21** — `E1` et `G1`, passées en priorité, puis la phase A.
 
 ---
 
@@ -180,7 +180,14 @@ Le reste est indépendant.
 
 ## Phase C — Des pièces qui s'allument
 
-### [ ] C1 — Dessiner les pièces
+### [x] C1 — Dessiner les pièces
+
+> **Fait** : chaque clic pose un sommet, le contour suit la souris ; recliquer
+> le premier sommet (ou Entrée) ferme la pièce, qu'on nomme. Le sol de la pièce
+> est le plus bas des points cliqués — un clic sur un meuble ne le soulève
+> pas. En édition, contour bleu et nom au centre. Tracés au sol génériques
+> (`floors`) : ils serviront à la vue thermique et au vol vers une pièce. La
+> démo a ses six pièces ; test E2E : trois clics, un nom, enregistrée.
 
 - **Quoi** : un outil « Pièce » : des clics au sol forment le contour, un
   nom, et c'est enregistré (`floorplan.rooms`). Liste, suppression.

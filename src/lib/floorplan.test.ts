@@ -11,9 +11,12 @@ import {
   movePos,
   normalizeAnchor,
   normalizeParts,
+  normalizeRooms,
   normalizePos,
   openness,
   partFrame,
+  pointInPolygon,
+  polygonCentroid,
   precipitation,
   resizePos,
   skyColors,
@@ -328,5 +331,46 @@ describe('precipitation', () => {
   it('lets nothing fall otherwise', () => {
     expect(precipitation('sunny')).toEqual({ rain: 0, snow: 0, lightning: false });
     expect(precipitation(undefined)).toEqual({ rain: 0, snow: 0, lightning: false });
+  });
+});
+
+describe('rooms', () => {
+  const L: [number, number][] = [
+    [0, 0],
+    [4, 0],
+    [4, 2],
+    [2, 2],
+    [2, 4],
+    [0, 4],
+  ];
+
+  it('keeps readable rooms, and drops the rest', () => {
+    const room = { id: 'r1', name: 'Salon', y: 0.2, points: L };
+    expect(normalizeRooms([room])).toEqual([room]);
+    expect(normalizeRooms([{ ...room, points: L.slice(0, 2) }, { ...room, y: 'bas' }, { ...room, name: 3 }, null, 'x'])).toEqual([]);
+    // Un sommet illisible est oublié ; il en reste assez pour une pièce.
+    expect(normalizeRooms([{ ...room, points: [...L, [1, NaN]] }])).toEqual([room]);
+  });
+
+  it('tells whether a point is inside an L-shaped room', () => {
+    expect(pointInPolygon(1, 1, L)).toBe(true);
+    expect(pointInPolygon(3, 1, L)).toBe(true);
+    expect(pointInPolygon(1, 3, L)).toBe(true);
+    expect(pointInPolygon(3, 3, L)).toBe(false); // le creux du L
+    expect(pointInPolygon(5, 1, L)).toBe(false);
+  });
+
+  it('finds the centre of a room by its area, in either winding', () => {
+    const square: [number, number][] = [
+      [0, 0],
+      [2, 0],
+      [2, 2],
+      [0, 2],
+    ];
+    expect(polygonCentroid(square)).toEqual([1, 1]);
+    expect(polygonCentroid([...square].reverse())).toEqual([1, 1]);
+    const [x, z] = polygonCentroid(L);
+    expect(x).toBeCloseTo(5 / 3);
+    expect(z).toBeCloseTo(5 / 3);
   });
 });

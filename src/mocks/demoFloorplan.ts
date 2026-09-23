@@ -1,5 +1,5 @@
 import type { DashboardConfigV2, GridWidget } from '@/context/DashboardLayoutContext';
-import type { FloorplanPart } from '@/lib/floorplan';
+import type { FloorplanPart, FloorplanRoom } from '@/lib/floorplan';
 import type { WidgetConfigs } from '@/types/widget-configs';
 
 /**
@@ -78,6 +78,28 @@ const PARTS: FloorplanPart[] = [
   },
 ];
 
+/** Les pièces, dessinées au sol : un rectangle chacune, du nord (z−) au sud. */
+const room = (id: string, name: string, x0: number, x1: number, z0: number, z1: number): FloorplanRoom => ({
+  id,
+  name,
+  y: 0,
+  points: [
+    [x0, z0],
+    [x1, z0],
+    [x1, z1],
+    [x0, z1],
+  ],
+});
+
+const ROOMS: FloorplanRoom[] = [
+  room('demo-cuisine', 'Cuisine', -13, -8.85, -2.15, 2.6),
+  room('demo-sejour', 'Séjour', -8.85, -1.03, -2.15, 2.62),
+  room('demo-chambre', 'Chambre', -12.9, -9.55, -6.75, -2.55),
+  room('demo-bain', 'Salle de bain', -7.95, -6.2, -6.75, -3.65),
+  room('demo-eau', "Salle d'eau", -5.82, -4.07, -6.75, -2.55),
+  room('demo-amis', "Chambre d'amis", -3.81, -1.06, -6.75, -2.85),
+];
+
 /** Ajoute la page de démonstration si elle n'y est pas déjà. */
 export function withDemoFloorplan(config: DashboardConfigV2): DashboardConfigV2 {
   if (config.pages.some(p => p.id === ID)) return config;
@@ -91,7 +113,7 @@ export function withDemoFloorplan(config: DashboardConfigV2): DashboardConfigV2 
         icon: 'Home',
         type: 'floorplan',
         order: Math.max(-1, ...config.pages.map(p => p.order)) + 1,
-        floorplan: { image: '', model: MODEL, idleRotate: true, parts: PARTS },
+        floorplan: { image: '', model: MODEL, idleRotate: true, parts: PARTS, rooms: ROOMS },
       },
     ],
     layouts: { ...config.layouts, [ID]: { widgets: { lg: WIDGETS, md: WIDGETS, sm: WIDGETS }, cols: { lg: 12, md: 8, sm: 4 } } },

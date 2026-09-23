@@ -224,6 +224,68 @@ export function guessPartKind(entityId: string, deviceClass: unknown): PartKind 
   return 'door';
 }
 
+// ── Pièces ───────────────────────────────────────────────────────────────────
+
+/** Une pièce dessinée au sol de la maquette, dans ses coordonnées. */
+export interface FloorplanRoom {
+  id: string;
+  name: string;
+  /** Hauteur du sol de la pièce. */
+  y: number;
+  /** Contour au sol : (x, z) de chaque sommet. */
+  points: [number, number][];
+}
+
+/** Pièces lisibles d'une config : une pièce illisible est écartée, pas fatale. */
+export function normalizeRooms(rooms: unknown): FloorplanRoom[] {
+  if (!Array.isArray(rooms)) return [];
+  return rooms.flatMap(r => {
+    const room = (r && typeof r === 'object' ? r : {}) as Record<string, unknown>;
+    const points = Array.isArray(room.points)
+      ? room.points.filter(
+          (p): p is [number, number] => Array.isArray(p) && p.length === 2 && p.every(n => typeof n === 'number' && Number.isFinite(n))
+        )
+      : [];
+    if (
+      typeof room.id !== 'string' ||
+      typeof room.name !== 'string' ||
+      typeof room.y !== 'number' ||
+      !Number.isFinite(room.y) ||
+      points.length < 3
+    )
+      return [];
+    return [{ id: room.id, name: room.name, y: room.y, points }];
+  });
+}
+
+/** Ce point (x, z) est-il dans le contour ? Règle pair-impair : un contour croisé reste lisible. */
+export function pointInPolygon(x: number, z: number, points: [number, number][]): boolean {
+  let inside = false;
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    const [xi, zi] = points[i];
+    const [xj, zj] = points[j];
+    if (zi > z !== zj > z && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+/** Centre d'une pièce, pondéré par sa surface — là où poser son nom. */
+export function polygonCentroid(points: [number, number][]): [number, number] {
+  let area = 0;
+  let cx = 0;
+  let cz = 0;
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    const cross = points[j][0] * points[i][1] - points[i][0] * points[j][1];
+    area += cross;
+    cx += (points[j][0] + points[i][0]) * cross;
+    cz += (points[j][1] + points[i][1]) * cross;
+  }
+  // Contour plat (points alignés) : la moyenne des sommets.
+  if (Math.abs(area) < 1e-9)
+    return [points.reduce((a, p) => a + p[0], 0) / points.length, points.reduce((a, p) => a + p[1], 0) / points.length];
+  return [cx / (3 * area), cz / (3 * area)];
+}
+
 // ── Murs en coupe ────────────────────────────────────────────────────────────
 
 /** Hauteur de coupe, en part de la hauteur de la maquette : des murets, juste au-dessus des plans de travail. */

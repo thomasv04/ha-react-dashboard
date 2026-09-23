@@ -187,6 +187,39 @@ test('in edit mode, two clicks draw a door, which is kept once saved', async ({ 
     .toEqual(['door binary_sensor.porte_entree']);
 });
 
+test('in edit mode, clicks on the floor draw a named room, which is kept once saved', async ({ page, request }) => {
+  await openModel(page);
+  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
+  await page.getByRole('button', { name: 'Pièce', exact: true }).click();
+  await expect(page.getByText(/Cliquez les coins de la pièce/)).toBeVisible();
+  await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
+
+  // Trois coins au sol, autour de la table de la salle à manger.
+  const box = (await page.locator('[data-floorplan-3d] canvas').boundingBox())!;
+  for (const [x, y] of [
+    [0.386, 0.629],
+    [0.486, 0.48],
+    [0.443, 0.752],
+  ]) {
+    await page.mouse.click(box.x + box.width * x, box.y + box.height * y);
+  }
+  await expect(page.getByText(/Recliquez le premier coin/)).toBeVisible();
+  await page.keyboard.press('Enter');
+  await page.getByRole('textbox', { name: 'Nom de la pièce' }).fill('Salle à manger');
+  await page.keyboard.press('Enter');
+  // Son nom, posé au centre de la pièce.
+  await expect(page.getByText('Salle à manger')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Sauvegarder' }).click();
+  await expect
+    .poll(async () => {
+      const config = await (await request.get(`${API}/api/config`)).json();
+      const rooms = config.pages.find((p: { id: string }) => p.id === 'maison')?.floorplan?.rooms ?? [];
+      return rooms.map((r: { name: string; points: unknown[] }) => `${r.name} ${r.points.length}`);
+    })
+    .toEqual(['Salle à manger 3']);
+});
+
 test('in edit mode, a .glb file is uploaded as the model, and its bin deletes it', async ({ page, request }) => {
   await page.goto('/#vierge');
   await page.getByRole('button', { name: 'Modifier le dashboard' }).click();

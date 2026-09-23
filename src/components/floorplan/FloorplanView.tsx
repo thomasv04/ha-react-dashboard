@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useHass } from '@hakit/core';
-import { Box as BoxIcon, DoorOpen, Image as ImageIcon, Map as MapIcon, MapPin, RotateCcw, X } from 'lucide-react';
+import { Box as BoxIcon, DoorOpen, Image as ImageIcon, Map as MapIcon, MapPin, RotateCcw, SquareDashed, X } from 'lucide-react';
 import { usePages, type FloorplanConfig } from '@/context/PageContext';
 import { useDashboardLayout, useEditMode, type FloorplanPos, type GridWidget } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -26,9 +26,11 @@ import {
   MODEL_SIZE,
   normalizeAnchor,
   normalizeParts,
+  normalizeRooms,
   normalizePos,
   openness,
   partFrame,
+  polygonCentroid,
   precipitation,
   skyColors,
   type FloorplanPart,
@@ -37,9 +39,10 @@ import {
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import type { ChipCardConfig, WidgetConfig } from '@/types/widget-configs';
-import type { Floorplan3DHandle, Lamp, PartProp } from './Floorplan3D';
+import type { FloorOverlay, Floorplan3DHandle, Lamp, PartProp } from './Floorplan3D';
 import { FloorplanItem } from './FloorplanItem';
 import { PartList, PartPopover } from './FloorplanParts';
+import { RoomList, RoomNamePopover } from './FloorplanRooms';
 import { ModelPicker } from './ModelPicker';
 
 // three.js ne se télécharge que pour une page qui a une maquette.
@@ -71,6 +74,16 @@ const STARS = {
   ].join(', '),
   backgroundSize: [...Array(4).fill('230px 230px'), ...Array(3).fill('370px 370px')].join(', '),
 };
+
+/** Pièces : leur contour en édition, et celui qu'on dessine. */
+const ROOM_COLOR = '#60a5fa';
+const DRAW_COLOR = '#fbbf24';
+/** En deçà (px) du premier sommet, un clic ferme la pièce qu'on dessine. */
+const CLOSE_PX = 14;
+/** Clés, parmi les projections : premier sommet et centre de la pièce en cours de dessin. */
+const ROOM_FIRST = '__room-first';
+const ROOM_CENTER = '__room-center';
+const roomKey = (id: string) => `room:${id}`;
 
 /** Clés, parmi les projections, du premier coin d'un élément en cours de dessin, puis de ses deux coins. */
 const DRAFT_MARK = '__draft';
@@ -109,7 +122,9 @@ export function FloorplanView() {
   const [adding, setAdding] = useState<{ x: number; y: number; anchor?: Vec3 } | null>(null);
   const [panel, setPanel] = useState<'image' | 'model' | null>(null);
   /** Maquette : ce que pose un clic — une pastille, ou un coin de porte, de fenêtre, de volet. */
-  const [tool, setTool] = useState<'chip' | 'part'>('chip');
+  const [tool, setTool] = useState<'chip' | 'part' | 'room'>('chip');
+  /** Pièce en cours de dessin : ses sommets au sol, sa hauteur de sol, puis son nom. */
+  const [roomDraft, setRoomDraft] = useState<{ points: [number, number][]; y: number; naming?: boolean } | null>(null);
   const [draft, setDraft] = useState<PartDraft | null>(null);
   /** Point sous le pointeur, entre les deux clics d'un dessin. */
   const [hover, setHover] = useState<Vec3 | null>(null);
@@ -136,15 +151,19 @@ export function FloorplanView() {
     setAdding(null);
     setPanel(null);
     setDraft(null);
+    setRoomDraft(null);
   }
 
   useEffect(() => {
     if (!isEditMode) return;
     const onKey = (e: KeyboardEvent) => {
+      // Entrée ferme la pièce qu'on dessine, à partir de trois sommets.
+      if (e.key === 'Enter') setRoomDraft(d => (d && !d.naming && d.points.length >= 3 ? { ...d, naming: true } : d));
       if (e.key !== 'Escape') return;
       setAdding(null);
       setSelectedId(null);
       setDraft(null);
+      setRoomDraft(null);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -199,6 +218,21 @@ export function FloorplanView() {
     ...(draft?.part ? [{ ...draft.part, open: DRAFT_OPENNESS }] : []),
   ];
 
+  // ── Pièces ─────────────────────────────────────────────────────────────────
+  const rooms = normalizeRooms(floorplan?.rooms);
+  /** Contour de la pièce en cours de dessin, jusqu'au pointeur tant qu'elle n'est pas fermée. */
+  const roomPoints: [number, number][] = roomDraft
+    ? [...roomDraft.points, ...(!roomDraft.naming && hover ? [[hover[0], hover[2]] as [number, number]] : [])]
+    : [];
+  const floors: FloorOverlay[] = isEditMode
+    ? [
+        ...rooms.map(r => ({ id: r.id, y: r.y, points: r.points, color: ROOM_COLOR, fill: 0.12, closed: true })),
+        ...(roomDraft
+          ? [{ id: '__room', y: roomDraft.y, points: roomPoints, color: DRAW_COLOR, fill: 0.18, closed: roomPoints.length >= 3 }]
+          : []),
+      ]
+    : [];
+
   /** Après chaque image de la maquette : où tombe chaque point d'accroche. */
   const onFrame = () => {
     const handle = three.current;
@@ -216,6 +250,22 @@ export function FloorplanView() {
         next[DRAFT_CORNERS[corner]] = handle.project(adjust?.corner === corner ? adjust.point : draft.part[corner]);
       }
     }
+    // Pièces : leur nom au centre, en édition ; le premier sommet de celle
+    // qu'on dessine — y recliquer la ferme — puis son centre, pour la nommer.
+    if (isEditMode) {
+      for (const room of rooms) {
+        const [x, z] = polygonCentroid(room.points);
+        next[roomKey(room.id)] = handle.project([x, room.y, z]);
+      }
+    }
+    if (roomDraft) {
+      const [x0, z0] = roomDraft.points[0];
+      next[ROOM_FIRST] = handle.project([x0, roomDraft.y, z0]);
+      if (roomDraft.naming) {
+        const [x, z] = polygonCentroid(roomDraft.points);
+        next[ROOM_CENTER] = handle.project([x, roomDraft.y, z]);
+      }
+    }
     setProjections(next);
   };
 
@@ -229,7 +279,14 @@ export function FloorplanView() {
   // Une pastille accrochée ou déplacée sans que la caméra bouge : redessiner,
   // pour que sa nouvelle position soit projetée.
   const anchorsKey = model
-    ? JSON.stringify([widgets.map(w => w.pos?.anchor ?? null), draft?.a ?? null, draft?.part?.a ?? null, draft?.part?.b ?? null])
+    ? JSON.stringify([
+        widgets.map(w => w.pos?.anchor ?? null),
+        draft?.a ?? null,
+        draft?.part?.a ?? null,
+        draft?.part?.b ?? null,
+        isEditMode && rooms.map(r => r.id),
+        roomDraft,
+      ])
     : '';
   useEffect(() => {
     three.current?.invalidate();
@@ -253,6 +310,21 @@ export function FloorplanView() {
     const at = { x: ((clientX - rect.left) / rect.width) * 100, y: ((clientY - rect.top) / rect.height) * 100 };
     setSelectedId(null);
     if (tool === 'chip') return setAdding({ ...at, anchor });
+    if (tool === 'room') {
+      if (roomDraft?.naming) return;
+      // Recliquer le premier sommet ferme la pièce.
+      const first = projections[ROOM_FIRST];
+      if (roomDraft && roomDraft.points.length >= 3 && first) {
+        const distance = Math.hypot(((first.x - at.x) / 100) * rect.width, ((first.y - at.y) / 100) * rect.height);
+        if (distance < CLOSE_PX) return setRoomDraft({ ...roomDraft, naming: true });
+      }
+      // Le sol de la pièce : le plus bas des points cliqués — un clic sur un meuble ne le soulève pas.
+      return setRoomDraft(d =>
+        d
+          ? { ...d, points: [...d.points, [anchor[0], anchor[2]]], y: Math.min(d.y, anchor[1]) }
+          : { points: [[anchor[0], anchor[2]]], y: anchor[1] }
+      );
+    }
     // Deux coins : le bas côté gonds, puis le haut opposé. Un second clic trop
     // proche du premier — ou un nouveau dessin — repart de ce point.
     if (!draft || draft.part || !partFrame(draft.a, anchor)) {
@@ -406,16 +478,17 @@ export function FloorplanView() {
     </button>
   );
 
-  const toolButton = (id: 'chip' | 'part', Icon: typeof MapPin, label: string) => (
+  const toolButton = (id: 'chip' | 'part' | 'room', Icon: typeof MapPin, label: string) => (
     <button
       onClick={() => {
         setTool(id);
         setDraft(null);
+        setRoomDraft(null);
         setAdding(null);
       }}
       aria-pressed={tool === id}
       className={cn(
-        'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors',
+        'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors',
         tool === id ? 'bg-blue-500/20 text-blue-300' : 'text-white/45 hover:text-white/70'
       )}
     >
@@ -424,7 +497,17 @@ export function FloorplanView() {
   );
 
   // Ce qu'un clic fera, selon l'outil — et, en cours de dessin, ce qui reste à cliquer.
-  const hint = !model ? 'clickToAdd' : tool === 'chip' ? 'clickToAdd3d' : draft && !draft.part ? 'partHintNext' : 'partHint';
+  const hint = !model
+    ? 'clickToAdd'
+    : tool === 'chip'
+      ? 'clickToAdd3d'
+      : tool === 'room'
+        ? roomDraft && roomDraft.points.length >= 3
+          ? 'roomHintClose'
+          : 'roomHint'
+        : draft && !draft.part
+          ? 'partHintNext'
+          : 'partHint';
 
   const checkbox = (label: string, checked: boolean, onChange: (checked: boolean) => void) => (
     <label className='flex items-center gap-1.5 text-xs text-white/60 cursor-pointer select-none'>
@@ -473,9 +556,10 @@ export function FloorplanView() {
                   lamps={lamps}
                   parts={partsProp}
                   outline={outline}
+                  floors={floors}
                   onFrame={onFrame}
                   onPick={isEditMode ? onModelPick : undefined}
-                  onHover={isEditMode && draft && !draft.part ? setHover : undefined}
+                  onHover={isEditMode && ((draft && !draft.part) || (roomDraft && !roomDraft.naming)) ? setHover : undefined}
                   onLoad={() => setLoadedModel(model)}
                   onError={kind => setFailure({ model, kind })}
                 />
@@ -491,6 +575,40 @@ export function FloorplanView() {
             {falling?.lightning && <div className='fp-lightning' />}
             {items}
             {addPopover}
+            {isEditMode &&
+              rooms.map(room => {
+                const at = projections[roomKey(room.id)];
+                return (
+                  at && (
+                    <span
+                      key={room.id}
+                      className='absolute px-2 py-0.5 rounded-full bg-black/55 text-[11px] text-white/85 pointer-events-none whitespace-nowrap'
+                      style={{ left: `${at.x}%`, top: `${at.y}%`, translate: '-50% -50%' }}
+                    >
+                      {room.name}
+                    </span>
+                  )
+                );
+              })}
+            {roomDraft && !roomDraft.naming && projections[ROOM_FIRST] && (
+              <span
+                className='absolute w-3 h-3 rounded-full bg-amber-400 ring-4 ring-amber-400/30 pointer-events-none'
+                style={{ left: `${projections[ROOM_FIRST].x}%`, top: `${projections[ROOM_FIRST].y}%`, translate: '-50% -50%' }}
+              />
+            )}
+            {roomDraft?.naming && projections[ROOM_CENTER] && (
+              <RoomNamePopover
+                at={projections[ROOM_CENTER]}
+                defaultName={t('layout.floorplan.roomDefault', { n: rooms.length + 1 })}
+                onAdd={name => {
+                  setFloorplan({
+                    rooms: [...rooms, { id: `room-${Date.now().toString(36)}`, name, y: roomDraft.y, points: roomDraft.points }],
+                  });
+                  setRoomDraft(null);
+                }}
+                onCancel={() => setRoomDraft(null)}
+              />
+            )}
             {draft && !draft.part && projections[DRAFT_MARK] && (
               <span
                 className='absolute w-3 h-3 rounded-full bg-amber-400 ring-4 ring-amber-400/30 pointer-events-none'
@@ -657,6 +775,7 @@ export function FloorplanView() {
                   onChange={id => setFloorplan({ weather: id })}
                 />
               )}
+              {model && <RoomList rooms={rooms} onRemove={id => setFloorplan({ rooms: rooms.filter(r => r.id !== id) })} />}
               {model && <PartList parts={parts} onRemove={id => setFloorplan({ parts: parts.filter(p => p.id !== id) })} />}
             </div>
           )}
@@ -668,6 +787,7 @@ export function FloorplanView() {
             >
               {toolButton('chip', MapPin, t('layout.floorplan.toolChip'))}
               {toolButton('part', DoorOpen, t('layout.floorplan.toolPart'))}
+              {toolButton('room', SquareDashed, t('layout.floorplan.toolRoom'))}
             </div>
           )}
           <p className='text-[11px] text-white/40 px-0.5'>{t(`layout.floorplan.${hint}`)}</p>

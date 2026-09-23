@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-import type { FloorplanPart } from '@/lib/floorplan';
+import type { FloorplanPart, FloorplanRoom } from '@/lib/floorplan';
 
 export type PageType = 'grid' | 'media' | 'settings' | 'floorplan';
 
@@ -28,6 +28,8 @@ export interface FloorplanConfig {
   weather?: string;
   /** Portes, fenêtres et volets dessinés sur la maquette, mus par leur entité. */
   parts?: FloorplanPart[];
+  /** Pièces dessinées au sol de la maquette. */
+  rooms?: FloorplanRoom[];
 }
 
 export interface Page {
