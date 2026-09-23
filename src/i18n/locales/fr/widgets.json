@@ -1091,5 +1091,26 @@
         "label": "Format 12 h (AM/PM)"
       }
     }
+  },
+  "chip": {
+    "label": "Pastille d'état",
+    "description": "L'état d'une entité en une pastille, à poser sur un plan",
+    "fields": {
+      "entityId": {
+        "label": "Entité"
+      },
+      "name": {
+        "label": "Nom affiché (facultatif)"
+      },
+      "icon": {
+        "label": "Icône (automatique si vide)"
+      },
+      "glow": {
+        "label": "Halo sur le plan (lumières)"
+      },
+      "glowSize": {
+        "label": "Taille du halo (% de la largeur du plan)"
+      }
+    }
   }
 }

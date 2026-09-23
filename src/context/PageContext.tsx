@@ -1,6 +1,14 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 
-export type PageType = 'grid' | 'media' | 'settings';
+export type PageType = 'grid' | 'media' | 'settings' | 'floorplan';
+
+/** Page `floorplan` : l'image du plan, sur laquelle les widgets sont posés via `GridWidget.pos`. */
+export interface FloorplanConfig {
+  /** URL de l'image — `/uploads/…` une fois téléversée, ou adresse externe */
+  image: string;
+  /** Assombrir le plan quand le soleil est couché (`sun.sun`). Actif par défaut. */
+  dimAtNight?: boolean;
+}
 
 export interface Page {
   id: string;
@@ -16,6 +24,8 @@ export interface Page {
    * l'historique et la restauration comme le reste de la configuration.
    */
   badges?: string[];
+  /** Pages `floorplan` uniquement. Portée par la page pour la même raison que `badges`. */
+  floorplan?: FloorplanConfig;
 }
 
 interface PageContextValue {

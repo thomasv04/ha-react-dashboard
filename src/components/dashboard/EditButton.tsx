@@ -29,7 +29,7 @@ export function EditButton() {
   const isMedium = useIsMobile(1200);
   const breakpoint: 'lg' | 'md' | 'sm' = isNarrow ? 'sm' : isMedium ? 'md' : 'lg';
   const { allWidgetConfigsByPage } = useWidgetConfig();
-  const { pages } = usePages();
+  const { pages, currentPage } = usePages();
   const { config: wpConfig, wallPanelLayout, wallPanelWidgetConfigs } = useWallPanel();
   const { panels: customPanels, dock } = useCustomPanels();
   const selection = useGridSelection();
@@ -186,15 +186,18 @@ export function EditButton() {
                   Action explicite, jamais automatique : appliquée sans le
                   demander à une mise en page desktop soignée, elle déplacerait
                   presque tous les widgets. Ne concerne que le breakpoint
-                  affiché, et reste annulable tant qu'on n'a pas sauvegardé. */}
-              <button
-                onClick={() => packLayout(breakpoint)}
-                title={t('dashboard.packTooltip')}
-                className='flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white/70 hover:text-white text-sm font-medium transition-colors backdrop-blur-sm'
-              >
-                <LayoutGrid size={15} />
-                <span className='hidden sm:inline'>{t('dashboard.pack')}</span>
-              </button>
+                  affiché, et reste annulable tant qu'on n'a pas sauvegardé.
+                  Absent d'un plan, où rien ne se range en grille. */}
+              {currentPage?.type !== 'floorplan' && (
+                <button
+                  onClick={() => packLayout(breakpoint)}
+                  title={t('dashboard.packTooltip')}
+                  className='flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white/70 hover:text-white text-sm font-medium transition-colors backdrop-blur-sm'
+                >
+                  <LayoutGrid size={15} />
+                  <span className='hidden sm:inline'>{t('dashboard.pack')}</span>
+                </button>
+              )}
 
               {/* Bouton Sauvegarder */}
               <button

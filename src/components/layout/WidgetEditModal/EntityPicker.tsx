@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { useHass } from '@hakit/core';
@@ -10,11 +10,14 @@ export function EntityPicker({
   onChange,
   domain,
   label,
+  autoOpen,
 }: {
   value: string;
   onChange: (v: string) => void;
   domain?: string;
   label: string;
+  /** Ouvre la liste dès l'affichage — quand le sélecteur apparaît *pour* choisir. */
+  autoOpen?: boolean;
 }) {
   const allEntities = useHass(s => s.entities);
   const { t } = useI18n();
@@ -23,10 +26,17 @@ export function EntityPicker({
     open,
     setOpen,
     toggle: handleToggle,
+    show,
     triggerRef,
     dropRef: dropdownRef,
     dropStyle,
   } = useDropdownPortal<HTMLDivElement>({ minWidth: 260 });
+
+  // Au montage seulement : c'est l'apparition du sélecteur qui vaut demande.
+  // `show` et non `toggle` : en StrictMode l'effet passe deux fois, et deux
+  // bascules refermaient la liste aussitôt ouverte.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => void (autoOpen && show()), []);
 
   const entities = useMemo(() => {
     const list = Object.keys(allEntities ?? {}).sort();

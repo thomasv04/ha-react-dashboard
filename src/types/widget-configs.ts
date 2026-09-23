@@ -44,6 +44,7 @@ export type {
   TodoCardConfig,
   FanCardConfig,
   ClockCardConfig,
+  ChipCardConfig,
   WidgetConfig,
   WidgetConfigs,
 } from './widget-types';

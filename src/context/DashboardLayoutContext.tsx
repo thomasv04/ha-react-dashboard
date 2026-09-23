@@ -31,6 +31,21 @@ export interface GridWidget {
   static?: boolean;
   /** ID de la disposition choisie (ex: 'horizontal', 'vertical') */
   disposition?: string;
+  /**
+   * Position sur une page `floorplan`, en % du plan : centre de l'élément, et
+   * taille pour les widgets (une pastille prend celle de son contenu).
+   *
+   * À côté de `x/y/w/h` et non à leur place : le compactage au chargement,
+   * `firstFreeSlot` et « Réorganiser » réécrivent ceux-là en unités de grille.
+   */
+  pos?: FloorplanPos;
+}
+
+export interface FloorplanPos {
+  x: number;
+  y: number;
+  w?: number;
+  h?: number;
 }
 
 export type { WidgetCatalogEntry } from '@/config/widget-catalog';

@@ -528,6 +528,18 @@ export interface ClockCardConfig {
   hour12?: boolean;
 }
 
+export interface ChipCardConfig {
+  type: 'chip';
+  entityId?: string;
+  /** Affiché devant l'état s'il est renseigné — sinon la pastille ne montre que l'état */
+  name?: string;
+  icon?: string;
+  /** Page plan : halo de la couleur de la lampe quand elle est allumée (lumières seulement) */
+  glow?: boolean;
+  /** Diamètre du halo, en % de la largeur du plan */
+  glowSize?: number;
+}
+
 export type WidgetConfig =
   | ActivityBarConfig
   | CameraCardConfig
@@ -559,6 +571,7 @@ export type WidgetConfig =
   | TodoCardConfig
   | FanCardConfig
   | ClockCardConfig
+  | ChipCardConfig
   | RoomsGridConfig;
 
 /** Map of widget id → its config */

@@ -363,5 +363,19 @@
   "weatherIconsHint": "Pick an icon for each condition. Leave empty for the default icon.",
   "weatherIconsCount": "{count} customised",
   "weatherIconsCountPlural": "{count} customised",
-  "dispositionDefault": "Default"
+  "dispositionDefault": "Default",
+  "addPlan": "Floorplan",
+  "movePageLeft": "Move left",
+  "movePageRight": "Move right",
+  "floorplan": {
+    "newPage": "Floorplan",
+    "image": "Floorplan image",
+    "imageHint": "Pick an image of your home: a 3D render, a Sweet Home 3D export, a photo of the plan…",
+    "emptyTitle": "No floorplan yet",
+    "emptyView": "Switch to edit mode to choose the floorplan image.",
+    "dimAtNight": "Dim at night",
+    "clickToAdd": "Click the floorplan to place a chip; drag an element to move it.",
+    "addHere": "Chip to place here",
+    "resize": "Resize"
+  }
 }

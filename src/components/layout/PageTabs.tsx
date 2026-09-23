@@ -1,4 +1,4 @@
-import { LayoutGrid, Music, Settings, Plus, X, Monitor, Layers } from 'lucide-react';
+import { LayoutGrid, Music, Settings, Plus, X, Monitor, Layers, Map as MapIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useUser } from '@hakit/core';
 import { usePages, type PageType } from '@/context/PageContext';
@@ -17,6 +17,7 @@ const DEFAULT_ICONS: Record<PageType, LucideIcon> = {
   grid: LayoutGrid,
   media: Music,
   settings: Settings,
+  floorplan: MapIcon,
 };
 
 export function PageTabs() {
@@ -24,7 +25,7 @@ export function PageTabs() {
   // demande : sans cet abonnement elles resteraient sur leur icone de repli.
   useIconCatalog();
   const { t } = useI18n();
-  const { pages, currentPageId, setCurrentPage, addPage, deletePage } = usePages();
+  const { pages, currentPageId, setCurrentPage, addPage, deletePage, reorderPages } = usePages();
   const { isEditMode } = useEditMode();
   const { isConfigured } = useWallPanel();
   const { panels } = useCustomPanels();
@@ -36,6 +37,20 @@ export function PageTabs() {
   const [showPanelsEditor, setShowPanelsEditor] = useState(false);
 
   const sortedPages = [...pages].sort((a, b) => a.order - b.order);
+
+  /**
+   * Échange une page avec sa voisine. L'ordre compte : la première page est
+   * celle qui s'ouvre, et celle où ramène l'inactivité — un plan peut ainsi
+   * devenir l'accueil d'une tablette murale.
+   */
+  const movePage = (id: string, step: -1 | 1) => {
+    const ids = sortedPages.map(p => p.id);
+    const i = ids.indexOf(id);
+    const j = i + step;
+    if (i < 0 || j < 0 || j >= ids.length) return;
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+    reorderPages(ids);
+  };
 
   // Une seule page et pas administrateur : la barre n'afficherait que l'onglet
   // de la page en cours — les deux pastilles d'édition sont déjà masquées, et
@@ -89,10 +104,13 @@ export function PageTabs() {
           </button>
         )}
 
-        {sortedPages.map(page => {
+        {sortedPages.map((page, index) => {
           const isActive = page.id === currentPageId;
           const resolved = page.icon ? resolveIcon(page.icon) : undefined;
           const IconComponent: LucideIcon = resolved ?? DEFAULT_ICONS[page.type];
+          // Flèches sur l'onglet actif seulement : sur tous, elles hérisseraient
+          // la barre pour un geste rare.
+          const canMove = isEditMode && isActive;
 
           return (
             <button
@@ -103,8 +121,36 @@ export function PageTabs() {
                 isActive ? 'bg-white/10 text-white border border-white/20' : 'text-white/40 hover:text-white/60 hover:bg-white/5'
               )}
             >
+              {canMove && index > 0 && (
+                <span
+                  role='button'
+                  title={t('layout.movePageLeft')}
+                  aria-label={t('layout.movePageLeft')}
+                  onClick={e => {
+                    e.stopPropagation();
+                    movePage(page.id, -1);
+                  }}
+                  className='-ml-1 text-white/40 hover:text-white cursor-pointer'
+                >
+                  <ChevronLeft size={14} />
+                </span>
+              )}
               <IconComponent size={16} />
               <span className='uppercase tracking-wider text-xs'>{page.label}</span>
+              {canMove && index < sortedPages.length - 1 && (
+                <span
+                  role='button'
+                  title={t('layout.movePageRight')}
+                  aria-label={t('layout.movePageRight')}
+                  onClick={e => {
+                    e.stopPropagation();
+                    movePage(page.id, 1);
+                  }}
+                  className='text-white/40 hover:text-white cursor-pointer'
+                >
+                  <ChevronRight size={14} />
+                </span>
+              )}
 
               {/* Bouton supprimer en mode édition (sauf page home) */}
               {isEditMode && page.id !== 'home' && (
@@ -132,6 +178,20 @@ export function PageTabs() {
           >
             <Plus size={14} />
             <span className='text-xs'>{t('layout.addPage')}</span>
+          </button>
+        )}
+
+        {/* Page plan. Icône `Home` explicite plutôt que celle du type : elle est
+            dans le noyau d'icônes, donc aussi dans les versions antérieures —
+            qui, sans elle, n'auraient aucune icône pour ce type et planteraient
+            sur cet onglet en cas de retour arrière. */}
+        {isEditMode && (
+          <button
+            onClick={() => addPage({ label: t('layout.floorplan.newPage'), type: 'floorplan', icon: 'Home' })}
+            className='flex items-center gap-1 px-3 py-2 rounded-xl text-white/30 hover:text-white/60 hover:bg-white/5 transition-colors'
+          >
+            <MapIcon size={14} />
+            <span className='text-xs'>{t('layout.addPlan')}</span>
           </button>
         )}
       </div>

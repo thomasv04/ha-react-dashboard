@@ -60,6 +60,13 @@ export const MOCK_ENTITIES: Record<string, MockEntityState> = {
   'sensor.temperature_chambre_temperature': entity('sensor.temperature_chambre_temperature', '20.4', { unit_of_measurement: '°C' }),
   'sensor.temperature_chambre_humidity': entity('sensor.temperature_chambre_humidity', '55', { unit_of_measurement: '%' }),
 
+  // Ouvrants et présence (pastilles de la page plan)
+  'binary_sensor.couloir_mouvement': entity('binary_sensor.couloir_mouvement', 'on', {
+    device_class: 'motion',
+    friendly_name: 'Mouvement couloir',
+  }),
+  'binary_sensor.porte_entree': entity('binary_sensor.porte_entree', 'off', { device_class: 'door', friendly_name: "Porte d'entrée" }),
+
   // Camera selector
   'input_select.camera_selecter': entity('input_select.camera_selecter', 'Sonnette', {}),
 

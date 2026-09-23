@@ -69,6 +69,43 @@ function useGridCtx() {
   return ctx;
 }
 
+const NO_DRAG: DragHandlers = {
+  onItemDragStart: () => {},
+  onItemDragOver: () => {},
+  onItemDragEnter: () => {},
+  onItemDragLeave: () => {},
+  onItemDrop: () => {},
+  onItemDragEnd: () => {},
+  onItemTouchStart: () => {},
+  onItemTouchMove: () => {},
+  onItemTouchEnd: () => {},
+};
+
+/**
+ * Permet de rendre des `GridItem` **hors de la grille**, là où l'appelant les
+ * positionne lui-même — une page plan. À utiliser avec `readonly` : ni glisser
+ * ni redimensionnement ici. Les styles de placement de `GridItem`
+ * (`gridColumnStart`…) sont sans effet hors d'un conteneur grille.
+ *
+ * `lg` : un plan n'a qu'une disposition, celle des positions en %.
+ */
+export function FreeGridScope({ children }: { children: ReactNode }) {
+  const motionAllowed = useLowPowerMotion();
+  const value = useMemo<GridCtxValue>(
+    () => ({
+      breakpoint: 'lg',
+      draggingId: null,
+      dropTargetId: null,
+      ghostPosition: null,
+      drag: NO_DRAG,
+      startResize: () => {},
+      motionAllowed,
+    }),
+    [motionAllowed]
+  );
+  return <GridCtx.Provider value={value}>{children}</GridCtx.Provider>;
+}
+
 // ── Sélection multiple ───────────────────────────────────────────────────────
 //
 // `Shift`+clic ajoute une case à la sélection. Déplacer ou supprimer agit alors

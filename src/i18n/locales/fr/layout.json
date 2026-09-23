@@ -363,5 +363,19 @@
   "weatherIconsHint": "Personnalisez l’icône de chaque condition. Laissez vide pour l’icône par défaut.",
   "weatherIconsCount": "{count} personnalisée",
   "weatherIconsCountPlural": "{count} personnalisées",
-  "dispositionDefault": "Par défaut"
+  "dispositionDefault": "Par défaut",
+  "addPlan": "Plan",
+  "movePageLeft": "Déplacer à gauche",
+  "movePageRight": "Déplacer à droite",
+  "floorplan": {
+    "newPage": "Plan",
+    "image": "Image du plan",
+    "imageHint": "Choisissez une image de votre logement : un rendu 3D, un export Sweet Home 3D, une photo du plan…",
+    "emptyTitle": "Pas encore de plan",
+    "emptyView": "Passez en mode édition pour choisir l'image du plan.",
+    "dimAtNight": "Assombrir la nuit",
+    "clickToAdd": "Cliquez sur le plan pour y poser une pastille ; faites glisser un élément pour le déplacer.",
+    "addHere": "Pastille à poser ici",
+    "resize": "Redimensionner"
+  }
 }
