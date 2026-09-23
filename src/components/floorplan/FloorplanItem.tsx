@@ -24,6 +24,8 @@ interface FloorplanItemProps {
   faded?: boolean;
   /** Caché par la maquette : effacé, et inerte. */
   hidden?: boolean;
+  /** Quelqu'un est là (mouvement, présence) : une lueur respire sous la pastille. */
+  breathing?: boolean;
 }
 
 /**
@@ -33,7 +35,18 @@ interface FloorplanItemProps {
  * actions, visibilité conditionnelle, styles d'état et frontière d'erreur
  * compris. En édition, le widget est inerte sous un calque qui le déplace.
  */
-export function FloorplanItem({ widget, isEditMode, selected, onSelect, planRef, projected, onCommit, faded, hidden }: FloorplanItemProps) {
+export function FloorplanItem({
+  widget,
+  isEditMode,
+  selected,
+  onSelect,
+  planRef,
+  projected,
+  onCommit,
+  faded,
+  hidden,
+  breathing,
+}: FloorplanItemProps) {
   const { t } = useI18n();
   const { updateWidget, removeWidget } = useDashboardLayout();
   const { setEditingWidgetId } = useWidgetConfig();
@@ -102,6 +115,8 @@ export function FloorplanItem({ widget, isEditMode, selected, onSelect, planRef,
         zIndex: selected ? 20 : sized ? 1 : 2,
       }}
     >
+      {/* Ici plutôt que dans la pastille : la case d'un widget rogne ce qui en dépasse. */}
+      {breathing && <span aria-hidden className='fp-breathe rounded-full' />}
       {isEditMode ? (
         <>
           <WidgetErrorBoundary label={label}>

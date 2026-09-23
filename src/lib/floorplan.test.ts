@@ -8,6 +8,7 @@ import {
   isCutAway,
   guessPartKind,
   isNightDimmed,
+  isPresence,
   lightGlow,
   movePos,
   normalizeAnchor,
@@ -404,6 +405,17 @@ describe('shortestTurn', () => {
     expect(shortestTurn(3, -3)).toBeCloseTo(2 * Math.PI - 6);
     expect(shortestTurn(-3, 3)).toBeCloseTo(6 - 2 * Math.PI);
     expect(shortestTurn(1, 1 + 4 * Math.PI)).toBeCloseTo(0);
+  });
+});
+
+describe('isPresence', () => {
+  it('spots a triggered motion or presence detector, and nothing else', () => {
+    expect(isPresence('on', { device_class: 'motion' })).toBe(true);
+    expect(isPresence('on', { device_class: 'occupancy' })).toBe(true);
+    expect(isPresence('off', { device_class: 'presence' })).toBe(false);
+    // Une porte ouverte est « on » aussi, sans personne derrière.
+    expect(isPresence('on', { device_class: 'door' })).toBe(false);
+    expect(isPresence('unavailable', { device_class: 'motion' })).toBe(false);
   });
 });
 

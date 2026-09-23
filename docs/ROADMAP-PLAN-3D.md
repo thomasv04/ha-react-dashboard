@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **17 tâches sur 21** — phases A à F, et `G1`, passée en priorité. `F1` reste à essayer sur un vrai Android.
+**État global** : **18 tâches sur 21** — phases A à F, `G1` et `G2`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -319,7 +319,14 @@ Le reste est indépendant.
 - **Quoi** : option : après une minute sans toucher, la maison tourne
   lentement ; le moindre geste l'arrête. Coupé en économie d'énergie.
 
-### [ ] G2 — Un halo qui respire
+### [x] G2 — Un halo qui respire
+
+> **Fait** : une lueur ambre respire sous la pastille d'un détecteur de
+> mouvement, d'occupation ou de présence déclenché (`isPresence`, testée), en
+> 2D comme en 3D. Opacité et échelle en CSS : le compositeur l'anime seul, la
+> maquette n'est pas redessinée. Mouvement réduit ou économie d'énergie : la
+> lueur reste, immobile. Posée dans la pastille, elle aurait été rognée par la
+> case du widget : elle est sous elle, sur le plan — pas sur une page grille.
 
 - **Quoi** : un détecteur de mouvement ou de présence déclenché fait pulser
   un halo sous sa pastille (CSS, en 2D comme en 3D).

@@ -304,6 +304,14 @@ export function shortestTurn(from: number, to: number): number {
   return turn > Math.PI ? turn - 2 * Math.PI : turn <= -Math.PI ? turn + 2 * Math.PI : turn;
 }
 
+/** Classes de détecteurs dont l'état « on » signale quelqu'un. */
+const PRESENCE = new Set(['motion', 'occupancy', 'presence']);
+
+/** Un détecteur de mouvement ou de présence déclenché : quelqu'un est là. */
+export function isPresence(state: string | undefined, attributes: Record<string, unknown> | undefined): boolean {
+  return state === 'on' && PRESENCE.has(attributes?.device_class as string);
+}
+
 /**
  * Température d'une entité, si c'en est une (classe `temperature`, ou en °C ou
  * °F) : sa valeur telle qu'affichée, et en degrés Celsius pour la colorer.

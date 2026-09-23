@@ -35,6 +35,7 @@ import {
   cloudiness,
   containSize,
   isNightDimmed,
+  isPresence,
   lightColor,
   lightGlow,
   MODEL_SIZE,
@@ -296,6 +297,13 @@ export function FloorplanView() {
     return { value: mean('value'), celsius: mean('celsius') };
   });
   const showThermal = thermal && !isEditMode;
+  /** Pastilles d'un détecteur de mouvement ou de présence déclenché : une lueur respire dessous. */
+  const present = new Set(
+    widgets.flatMap(w => {
+      const entity = w.type === 'chip' ? chipEntities[getWidgetConfig<ChipCardConfig>(w.id)?.entityId ?? ''] : undefined;
+      return isPresence(entity?.state, entity?.attributes) ? [w.id] : [];
+    })
+  );
 
   /** Contour de la pièce en cours de dessin, jusqu'au pointeur tant qu'elle n'est pas fermée. */
   const roomPoints: [number, number][] = roomDraft
@@ -549,6 +557,7 @@ export function FloorplanView() {
               // Vol vers une pièce : les pastilles des autres pièces s'estompent.
               faded={!!anchor && !!focusRoom && !pointInPolygon(anchor[0], anchor[2], focusRoom.points)}
               hidden={!isEditMode && occluded.has(w.id)}
+              breathing={present.has(w.id)}
             />
           );
         })}

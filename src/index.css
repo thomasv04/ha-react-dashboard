@@ -921,6 +921,37 @@ select {
   display: none;
 }
 
+/* ── Présence sur le plan ─────────────────────────────────────────────────────
+   Un détecteur de mouvement ou de présence déclenché : une lueur respire sous
+   sa pastille. Opacité et échelle seulement, que le compositeur anime seul.
+   Sans animation — mouvement réduit, économie d'énergie —, elle reste, immobile. */
+
+.fp-breathe {
+  position: absolute;
+  inset: 0;
+  box-shadow: 0 0 0.9em 0.3em rgb(251 191 36 / 0.65);
+  opacity: 0.7;
+  pointer-events: none;
+  animation: fp-breathe 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes fp-breathe {
+  from {
+    opacity: 0.2;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce), (update: slow) {
+  .fp-breathe {
+    animation: none;
+  }
+}
+
 /* ── Legibility ramp ─────────────────────────────────────────────────────────
    A wall tablet is read from 1–2 m away, often with daylight on the screen.
    The raw alpha ramp used across the cards (text-white/40 for titles,
