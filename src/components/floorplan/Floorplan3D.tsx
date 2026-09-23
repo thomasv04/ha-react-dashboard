@@ -46,7 +46,7 @@ import {
   type Sides,
   type Vec3,
 } from '@/lib/floorplan';
-import { createModelUniforms, materialsOf, patchModel, setCuts, setCutawaySides, type ModelUniforms } from './modelPatch';
+import { createModelUniforms, materialsOf, patchModel, setCuts, setCutawaySides, setRoomMasks, type ModelUniforms } from './modelPatch';
 import { buildPart, type PartObject } from './parts3d';
 
 /**
@@ -76,6 +76,8 @@ export interface Lamp {
   brightness: number;
   /** Portée, en unités de maquette */
   range: number;
+  /** Contour (x, z) de sa pièce, dans les coordonnées de la maquette : elle n'éclaire qu'elle. */
+  room?: [number, number][];
 }
 
 /** Tracé au sol de la maquette : une pièce, ou celle qu'on dessine. */
@@ -279,10 +281,13 @@ function placeLamps(s: Stage, lamps: Lamp[]) {
     }
     if (lamp.color) light.color.setRGB(lamp.color[0] / 255, lamp.color[1] / 255, lamp.color[2] / 255, SRGBColorSpace);
     light.intensity = lamp.color ? LAMP_POWER * Math.max(0.15, lamp.brightness) : 0;
-    light.distance = lamp.range;
     const at = new Vector3(...lamp.anchor);
     if (s.root) s.root.localToWorld(at);
     light.position.set(at.x, at.y + LAMP_LIFT, at.z);
+    // Tenue à sa pièce, une lampe peut l'éclairer jusqu'au coin le plus loin :
+    // sa lumière ne passera pas les murs.
+    const corners = (s.root && lamp.room?.map(([x, z]) => s.root!.localToWorld(new Vector3(x, 0, z)))) ?? [];
+    light.distance = Math.max(lamp.range, ...corners.map(c => Math.hypot(c.x - at.x, c.z - at.z) * 1.2));
   }
   for (const [id, light] of s.lamps) {
     if (seen.has(id)) continue;
@@ -290,6 +295,20 @@ function placeLamps(s: Stage, lamps: Lamp[]) {
     light.dispose();
     s.lamps.delete(id);
   }
+  // Chaque lampe tenue à sa pièce, dans l'ordre où la scène les donne au
+  // shader : celui de leur ajout, que garde aussi `s.lamps`.
+  const root = s.root;
+  setRoomMasks(
+    s.uniforms,
+    [...s.lamps.keys()].map(id => {
+      const room = lamps.find(l => l.id === id)?.room;
+      if (!room || !root) return null;
+      return room.map(([x, z]) => {
+        const p = root.localToWorld(new Vector3(x, 0, z));
+        return [p.x, p.z] as [number, number];
+      });
+    })
+  );
 }
 
 function cutawaySides(s: Stage, on: boolean) {

@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **12 tâches sur 21** — `E1` et `G1`, passées en priorité, puis la phase A.
+**État global** : **13 tâches sur 21** — `E1` et `G1`, passées en priorité, puis la phase A.
 
 ---
 
@@ -192,7 +192,14 @@ Le reste est indépendant.
 - **Quoi** : un outil « Pièce » : des clics au sol forment le contour, un
   nom, et c'est enregistré (`floorplan.rooms`). Liste, suppression.
 
-### [ ] C2 — La lumière reste dans sa pièce
+### [x] C2 — La lumière reste dans sa pièce
+
+> **Fait** : dans la boucle des lampes du shader d'éclairage de three.js,
+> chaque lampe est multipliée par un masque — 1 dans sa pièce, puis s'éteignant
+> sur 0,8 unité au-delà du contour, de quoi éclairer la face des murs. Une lampe
+> tenue à sa pièce l'éclaire jusqu'au coin le plus loin. Sans pièce, rien ne
+> change. 16 lampes et 16 sommets par pièce au plus. Vérifié de nuit dans la
+> démo : plus rien ne passe les cloisons.
 
 - **Quoi** : chaque lampe n'éclaire que la pièce qui contient son point
   d'accroche — fin du débordement à travers les murs. Même socle que `A1`

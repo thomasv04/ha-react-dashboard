@@ -30,6 +30,7 @@ import {
   normalizePos,
   openness,
   partFrame,
+  pointInPolygon,
   polygonCentroid,
   precipitation,
   skyColors,
@@ -191,6 +192,9 @@ export function FloorplanView() {
   // Derrière la maquette : le ciel de l'heure, sauf si la page garde le fond du thème.
   const sky = model && floorplan?.sky !== false ? skyColors(sunElevation, clouds) : null;
 
+  // Pièces dessinées : leurs lampes n'éclairent qu'elles.
+  const rooms = normalizeRooms(floorplan?.rooms);
+
   const lamps: Lamp[] = model
     ? glows.flatMap(g => {
         if (!g.anchor) return [];
@@ -205,6 +209,7 @@ export function FloorplanView() {
             // Même réglage que le halo du plan — un % de sa largeur — ramené à
             // la taille de la maquette.
             range: (g.size / 100) * MODEL_SIZE * 2,
+            room: rooms.find(r => pointInPolygon(g.anchor![0], g.anchor![2], r.points))?.points,
           },
         ];
       })
@@ -219,7 +224,6 @@ export function FloorplanView() {
   ];
 
   // ── Pièces ─────────────────────────────────────────────────────────────────
-  const rooms = normalizeRooms(floorplan?.rooms);
   /** Contour de la pièce en cours de dessin, jusqu'au pointeur tant qu'elle n'est pas fermée. */
   const roomPoints: [number, number][] = roomDraft
     ? [...roomDraft.points, ...(!roomDraft.naming && hover ? [[hover[0], hover[2]] as [number, number]] : [])]

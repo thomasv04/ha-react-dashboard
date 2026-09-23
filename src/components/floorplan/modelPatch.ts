@@ -4,6 +4,8 @@ import {
   FrontSide,
   MeshDepthMaterial,
   RGBADepthPacking,
+  ShaderChunk,
+  Vector2,
   Vector3,
   Vector4,
   type Material,
@@ -22,13 +24,19 @@ import {
  *   intérieures, qu'on voit par la coupe, peintes d'une teinte unie ;
  * - des **découpes** : boîtes où la maquette n'est pas dessinée. Une porte
  *   fondue dans son mur — un export n'a souvent qu'un objet par matière — ne
- *   peut pas pivoter : on la découpe, et un battant généré prend sa place.
+ *   peut pas pivoter : on la découpe, et un battant généré prend sa place ;
+ * - des **pièces** : une lampe n'éclaire que la sienne. Sans elles, sa lumière
+ *   traversait les murs — les lampes ne portent pas d'ombre, trop coûteux.
  *
  * Les ombres suivent ce qu'on voit : ce qui n'est pas dessiné n'en porte pas.
  */
 
 /** Au-delà, les découpes suivantes sont ignorées : la boucle du shader a une borne fixe. */
 export const MAX_CUTS = 24;
+
+/** Lampes et sommets par pièce pris en compte : au-delà, une lampe éclaire sans limite de pièce. */
+export const MAX_LAMPS = 16;
+export const MAX_ROOM_VERTICES = 16;
 
 /** Tranche des murs coupés, en sRGB : un gris bleuté sombre, comme dans Les Sims. */
 const CAP_COLOR = new Vector3(0.16, 0.18, 0.23);
@@ -58,6 +66,12 @@ export function createModelUniforms() {
     /** Hauteur de chaque côté de l'emprise (x−, z−, x+, z+) — un mur du fond debout, ou abaissé. */
     fpSides: { value: new Vector4() },
     fpCapColor: { value: CAP_COLOR },
+    /** Contour, dans la scène (x, z), de la pièce de chaque lampe — dans l'ordre des lampes de la scène. */
+    fpRoomVerts: { value: Array.from({ length: MAX_LAMPS * MAX_ROOM_VERTICES }, () => new Vector2()) },
+    /** Sommets de ce contour, par lampe ; moins de trois : pas de pièce, pas de limite. */
+    fpRoomCount: { value: new Int32Array(MAX_LAMPS) },
+    /** Au-delà du contour, la lumière s'éteint sur cette distance — de quoi éclairer la face des murs. */
+    fpRoomSoft: { value: 0.8 },
   };
 }
 
@@ -70,6 +84,17 @@ export function setCuts(uniforms: ModelUniforms, cuts: Cut[]) {
     uniforms.fpCuts.value[2 * i + 1].set(u[0], u[1], half[0], half[1]);
   });
   uniforms.fpCutCount.value = kept.length;
+}
+
+/** Pièce de chaque lampe, dans l'ordre des lampes de la scène : son contour dans la scène (x, z), ou `null`. */
+export function setRoomMasks(uniforms: ModelUniforms, rooms: ([number, number][] | null)[]) {
+  uniforms.fpRoomCount.value.fill(0);
+  rooms.slice(0, MAX_LAMPS).forEach((room, lamp) => {
+    // Trop de sommets : la lampe éclaire sans limite plutôt qu'à travers une pièce tronquée.
+    if (!room || room.length < 3 || room.length > MAX_ROOM_VERTICES) return;
+    room.forEach(([x, z], k) => uniforms.fpRoomVerts.value[lamp * MAX_ROOM_VERTICES + k].set(x, z));
+    uniforms.fpRoomCount.value[lamp] = room.length;
+  });
 }
 
 export function materialsOf(object: Object3D): Material[] {
@@ -91,7 +116,36 @@ uniform vec4 fpCuts[ ${MAX_CUTS * 2} ];
 uniform vec4 fpCutaway;
 uniform vec4 fpBox;
 uniform vec4 fpSides;
-uniform vec3 fpCapColor;`;
+uniform vec3 fpCapColor;
+uniform vec2 fpRoomVerts[ ${MAX_LAMPS * MAX_ROOM_VERTICES} ];
+uniform int fpRoomCount[ ${MAX_LAMPS} ];
+uniform float fpRoomSoft;
+
+// Part de la lumière d'une lampe en ce point : 1 dans sa pièce, puis de moins
+// en moins à mesure qu'on s'éloigne de son contour (règle pair-impair).
+float fpRoomMask( const in int lamp ) {
+  if ( lamp >= ${MAX_LAMPS} ) return 1.0;
+  int count = fpRoomCount[ lamp ];
+  if ( count < 3 ) return 1.0;
+  vec2 p = vFpWorld.xz;
+  bool inside = false;
+  float edge = 1e6;
+  for ( int k = 0; k < ${MAX_ROOM_VERTICES}; k ++ ) {
+    if ( k >= count ) break;
+    vec2 a = fpRoomVerts[ lamp * ${MAX_ROOM_VERTICES} + k ];
+    vec2 b = fpRoomVerts[ lamp * ${MAX_ROOM_VERTICES} + ( k + 1 == count ? 0 : k + 1 ) ];
+    if ( ( a.y > p.y ) != ( b.y > p.y ) && p.x < ( b.x - a.x ) * ( p.y - a.y ) / ( b.y - a.y ) + a.x ) inside = ! inside;
+    vec2 ab = b - a;
+    edge = min( edge, length( p - a - ab * clamp( dot( p - a, ab ) / dot( ab, ab ), 0.0, 1.0 ) ) );
+  }
+  return inside ? 1.0 : 1.0 - smoothstep( 0.0, fpRoomSoft, edge );
+}`;
+
+// La boucle des lampes de three.js, chaque lampe tenue à sa pièce.
+const LIGHTS = ShaderChunk.lights_fragment_begin.replace(
+  'getPointLightInfo( pointLight, geometryPosition, directLight );',
+  'getPointLightInfo( pointLight, geometryPosition, directLight );\n\t\tdirectLight.color *= fpRoomMask( UNROLLED_LOOP_INDEX );'
+);
 
 // Découpes : repère de chacune, x le long de sa largeur (u), z le long de sa
 // normale (−u.z, u.x). Puis la coupe des murs, et sa tranche.
@@ -151,6 +205,7 @@ function inject(shader: WebGLProgramParametersWithUniforms, uniforms: ModelUnifo
   shader.fragmentShader = `${defines}${shader.fragmentShader}`
     .replace('#include <common>', `#include <common>${DECLARATIONS}`)
     .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>${DISCARD}`)
+    .replace('#include <lights_fragment_begin>', LIGHTS)
     .replace('#include <dithering_fragment>', `#include <dithering_fragment>${CAP}`);
 }
 
