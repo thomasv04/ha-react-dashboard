@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **16 tâches sur 21** — phases A à E, et `G1`, passée en priorité.
+**État global** : **17 tâches sur 21** — phases A à F, et `G1`, passée en priorité. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -282,7 +282,21 @@ Le reste est indépendant.
 
 ## Phase F — Boussole
 
-### [ ] F1 — La maison s'oriente comme le téléphone
+### [x] F1 — La maison s'oriente comme le téléphone
+
+> **Fait**, reste l'essai sur un Android (par toi). Le bouton boussole paraît
+> sur téléphone dès que l'appareil donne son orientation absolue
+> (`deviceorientationabsolute` : Chrome et l'appli Android, en HTTPS) ;
+> l'iPhone ne la donne pas, le bouton n'y paraît pas. Le cap est celui du haut
+> de l'écran : `360 − alpha`, plus l'angle de l'écran en paysage — ni
+> l'inclinaison ni le roulis n'y changent rien tant que le téléphone n'est
+> pas à la verticale. Le nord de la maquette (réglage « Nord ») est pris en
+> compte. La caméra suit en douceur (¼ s) et ne bouge pas en deçà d'un degré,
+> car le capteur tremble. Tourner la maison au doigt coupe le mode, un
+> pincement aussi pour l'instant ; « Recentrer » de même. Pas de rotation au
+> repos pendant ce temps. Test E2E avec des événements simulés : face au sud,
+> puis à l'est, la maison se retourne. Si le cap paraît décalé de 90° en
+> paysage, c'est le signe de l'angle de l'écran.
 
 - **Quoi** : un bouton boussole, sur téléphone seulement. La maison tourne
   pour que ce qui est devant soi à l'écran le soit en vrai. Mouvement lissé ;

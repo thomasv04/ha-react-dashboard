@@ -4,6 +4,7 @@ import { useHass } from '@hakit/core';
 import {
   Box as BoxIcon,
   ChevronLeft,
+  Compass,
   DoorOpen,
   Image as ImageIcon,
   Map as MapIcon,
@@ -24,6 +25,7 @@ import type { BackgroundConfig } from '@/config/themes';
 import { DEFAULT_WIDGET_CONFIGS } from '@/widgets';
 import { useEntities } from '@/hooks/useEntities';
 import { useElementBox } from '@/hooks/useWidgetSize';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { useLowPowerMotion } from '@/hooks/useLowPowerMotion';
 import { staggerGridContainer } from '@/lib/motion-variants';
 import { assetUrl } from '@/lib/api-base';
@@ -145,6 +147,8 @@ export function FloorplanView() {
   const [thermal, setThermal] = useState(false);
   /** Pièce vers laquelle la caméra a volé, hors édition. */
   const [focusId, setFocusId] = useState<string | null>(null);
+  /** Boussole : la maison tourne avec le téléphone. */
+  const [compass, setCompass] = useState(false);
   /** Pastilles que la maquette cache — vérifié quand la caméra s'arrête. */
   const [occluded, setOccluded] = useState<Set<string>>(() => new Set());
   /** Point sous le pointeur, entre les deux clics d'un dessin. */
@@ -176,6 +180,7 @@ export function FloorplanView() {
     setDraft(null);
     setRoomDraft(null);
     setFocusId(null);
+    setCompass(false);
   }
 
   useEffect(() => {
@@ -192,6 +197,19 @@ export function FloorplanView() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [isEditMode]);
+
+  // Boussole, sur téléphone : proposée dès que l'appareil donne son
+  // orientation. Dans l'appli Home Assistant, Android seulement, et en HTTPS.
+  const isPhone = useIsMobile();
+  const [compassReady, setCompassReady] = useState(false);
+  useEffect(() => {
+    if (!isPhone || !model || compassReady) return;
+    const onOrientation = (e: DeviceOrientationEvent) => {
+      if (e.alpha !== null) setCompassReady(true);
+    };
+    window.addEventListener('deviceorientationabsolute', onOrientation);
+    return () => window.removeEventListener('deviceorientationabsolute', onOrientation);
+  }, [isPhone, model, compassReady]);
 
   // Échap ramène à toute la maison — sauf s'il referme d'abord la fiche d'une pastille.
   const sheetOpen = !!useMoreInfoOptional()?.state;
@@ -646,8 +664,10 @@ export function FloorplanView() {
                   cloudiness={clouds}
                   shadows={!perfSettings.disableShadows}
                   cutaway={floorplan?.cutaway !== false}
-                  // Ni en édition, où l'on règle la vue, ni en économie d'énergie.
-                  idleRotate={!!floorplan?.idleRotate && motionAllowed && !isEditMode}
+                  // Ni en édition, où l'on règle la vue, ni en économie d'énergie,
+                  // ni quand la boussole oriente la maison.
+                  idleRotate={!!floorplan?.idleRotate && motionAllowed && !isEditMode && !compass}
+                  compass={compass && isPhone && !isEditMode}
                   lamps={lamps}
                   parts={partsProp}
                   outline={outline}
@@ -657,6 +677,7 @@ export function FloorplanView() {
                   onOcclusion={setOccluded}
                   onFrame={onFrame}
                   onPick={isEditMode ? onModelPick : onViewPick}
+                  onOrbit={() => setCompass(false)}
                   onHover={isEditMode && ((draft && !draft.part) || (roomDraft && !roomDraft.naming)) ? setHover : undefined}
                   onLoad={() => setLoadedModel(model)}
                   onError={kind => setFailure({ model, kind })}
@@ -770,19 +791,49 @@ export function FloorplanView() {
                 onCancel={() => setDraft(null)}
               />
             )}
-            {loaded && !isEditMode && roomTemperatures.some(Boolean) && (
-              <button
-                onClick={() => setThermal(on => !on)}
-                aria-pressed={thermal}
-                title={t('layout.floorplan.thermal')}
-                aria-label={t('layout.floorplan.thermal')}
-                className={cn(
-                  'absolute right-16 bottom-3 z-30 p-2.5 rounded-xl gc-overlay transition-colors',
-                  thermal ? 'text-orange-300' : 'text-white/60 hover:text-white'
+            {loaded && !isEditMode && (
+              <div className='absolute right-3 bottom-3 z-30 flex gap-2'>
+                {compassReady && isPhone && (
+                  <button
+                    onClick={() => setCompass(on => !on)}
+                    aria-pressed={compass}
+                    title={t('layout.floorplan.compass')}
+                    aria-label={t('layout.floorplan.compass')}
+                    className={cn(
+                      'p-2.5 rounded-xl gc-overlay transition-colors',
+                      compass ? 'text-sky-300' : 'text-white/60 hover:text-white'
+                    )}
+                  >
+                    <Compass size={16} />
+                  </button>
                 )}
-              >
-                <Thermometer size={16} />
-              </button>
+                {roomTemperatures.some(Boolean) && (
+                  <button
+                    onClick={() => setThermal(on => !on)}
+                    aria-pressed={thermal}
+                    title={t('layout.floorplan.thermal')}
+                    aria-label={t('layout.floorplan.thermal')}
+                    className={cn(
+                      'p-2.5 rounded-xl gc-overlay transition-colors',
+                      thermal ? 'text-orange-300' : 'text-white/60 hover:text-white'
+                    )}
+                  >
+                    <Thermometer size={16} />
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setFocusId(null);
+                    setCompass(false);
+                    three.current?.resetView();
+                  }}
+                  title={t('layout.floorplan.resetView')}
+                  aria-label={t('layout.floorplan.resetView')}
+                  className='p-2.5 rounded-xl gc-overlay text-white/60 hover:text-white transition-colors'
+                >
+                  <RotateCcw size={16} />
+                </button>
+              </div>
             )}
             {focusRoom && (
               <motion.button
@@ -795,19 +846,6 @@ export function FloorplanView() {
                 <ChevronLeft size={16} />
                 {focusRoom.name}
               </motion.button>
-            )}
-            {loaded && !isEditMode && (
-              <button
-                onClick={() => {
-                  setFocusId(null);
-                  three.current?.resetView();
-                }}
-                title={t('layout.floorplan.resetView')}
-                aria-label={t('layout.floorplan.resetView')}
-                className='absolute right-3 bottom-3 z-30 p-2.5 rounded-xl gc-overlay text-white/60 hover:text-white transition-colors'
-              >
-                <RotateCcw size={16} />
-              </button>
             )}
           </div>
         ) : !image ? (

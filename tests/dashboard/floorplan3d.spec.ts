@@ -190,6 +190,39 @@ test('a chip hidden by the model fades out once the camera stops', async ({ page
   await expect(lamp).toHaveCSS('opacity', '1');
 });
 
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 780 } });
+
+  test('the compass turns the house with the phone, until it is turned by hand', async ({ page }) => {
+    await openModel(page);
+    // Le téléphone tourné vers `alpha`, comme Android le dit.
+    const face = (alpha: number) =>
+      page.evaluate(
+        a => window.dispatchEvent(new DeviceOrientationEvent('deviceorientationabsolute', { alpha: a, beta: 40, gamma: 0, absolute: true })),
+        alpha
+      );
+    const compass = page.getByRole('button', { name: 'Boussole' });
+    // Rien tant que l'appareil ne donne pas son orientation.
+    await expect(compass).toBeHidden();
+    await face(0);
+    await compass.click();
+    await expect(compass).toHaveAttribute('aria-pressed', 'true');
+
+    // Plus haut à l'écran, c'est plus loin devant soi.
+    const top = (id: string) => page.locator(`[data-floorplan-item="${id}"]`).evaluate(el => parseFloat((el as HTMLElement).style.top));
+    // Face au sud (alpha tourne à l'envers : 180°) : le séjour, au sud, passe devant la chambre.
+    await face(180);
+    await expect.poll(async () => (await top('lamp-living')) < (await top('lamp-bedroom'))).toBe(true);
+    // Face à l'est (alpha 270°) : le séjour, à l'est, passe devant la cuisine.
+    await face(270);
+    await expect.poll(async () => (await top('lamp-living')) < (await top('lamp-kitchen'))).toBe(true);
+
+    // Tourner la maison au doigt coupe la boussole.
+    await orbit(page, 60);
+    await expect(compass).toHaveAttribute('aria-pressed', 'false');
+  });
+});
+
 test('in edit mode, a click on the model places a chip anchored where it landed', async ({ page }, testInfo) => {
   await openModel(page);
   await page.getByRole('button', { name: 'Modifier le dashboard' }).click();

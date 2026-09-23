@@ -286,6 +286,18 @@ export function polygonCentroid(points: [number, number][]): [number, number] {
   return [cx / (3 * area), cz / (3 * area)];
 }
 
+/**
+ * Cap du téléphone, en degrés depuis le nord dans le sens horaire : là où
+ * pointe le haut de l'écran, d'après `deviceorientationabsolute`. `alpha`
+ * tourne dans l'autre sens ; ni l'inclinaison ni le roulis n'y changent rien,
+ * tant que le téléphone n'est pas à la verticale. Le haut de l'appareil n'est
+ * celui de l'écran qu'en portrait : `screenAngle`, `screen.orientation.angle`.
+ */
+export function compassHeading(alpha: number | null, screenAngle = 0): number | null {
+  if (alpha === null || !Number.isFinite(alpha)) return null;
+  return (((360 - alpha + screenAngle) % 360) + 360) % 360;
+}
+
 /** Rotation la plus courte d'un angle à l'autre (radians), dans ]−π, π] : une caméra qui vole ne fait pas le grand tour. */
 export function shortestTurn(from: number, to: number): number {
   const turn = (to - from) % (2 * Math.PI);

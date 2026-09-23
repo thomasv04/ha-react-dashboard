@@ -36,6 +36,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import {
   backSides,
+  compassHeading,
   CUTAWAY_HEIGHT,
   cutLimit,
   isCutAway,
@@ -131,6 +132,8 @@ interface Floorplan3DProps {
   cutaway: boolean;
   /** Tourner lentement après une minute sans geste. */
   idleRotate: boolean;
+  /** Boussole : la maison tourne avec le téléphone — ce qui est en haut de l'écran est devant soi. */
+  compass?: boolean;
   lamps: Lamp[];
   parts: PartProp[];
   /** Après chaque image : la caméra a pu bouger, les pastilles se recalent. */
@@ -139,6 +142,8 @@ interface Floorplan3DProps {
   onPick?: (anchor: Vec3 | null, clientX: number, clientY: number) => void;
   /** Point de la maquette sous le pointeur, quand il bouge — pour dessiner. */
   onHover?: (anchor: Vec3 | null) => void;
+  /** La maison tournée à la main. */
+  onOrbit?: () => void;
   /** Rectangle en cours de dessin : deux coins opposés, dans les coordonnées de la maquette. */
   outline?: [Vec3, Vec3] | null;
   /** Tracés au sol : pièces, pièce en cours de dessin. */
@@ -197,6 +202,11 @@ const SETTLE_MS = 250;
 const OCCLUSION_BUDGET_MS = 4;
 /** Un obstacle plus près que ça d'un point d'accroche n'en est pas un : c'est la surface où il est posé. */
 const OCCLUSION_MARGIN = MODEL_SIZE * 0.01;
+
+/** Boussole : le cap est suivi en douceur — constante de temps, en ms. */
+const COMPASS_SMOOTH_MS = 250;
+/** Boussole : en deçà (radians, ≈ 1°), le cap ne bouge pas — le capteur tremble, la maison reste immobile. */
+const COMPASS_DEADBAND = 0.0175;
 
 /** Départ et arrivée en douceur. */
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2);
@@ -686,11 +696,13 @@ export default function Floorplan3D({
   shadows,
   cutaway,
   idleRotate,
+  compass,
   lamps,
   parts,
   onFrame,
   onPick,
   onHover,
+  onOrbit,
   outline,
   floors,
   focus,
@@ -703,9 +715,9 @@ export default function Floorplan3D({
   const stage = useRef<Stage | null>(null);
 
   // Dernières valeurs, lues par des écouteurs posés une fois pour toutes.
-  const latest = useRef({ camera, lamps, parts, floors, anchors, onFrame, onPick, onHover, onOcclusion, onLoad, onError });
+  const latest = useRef({ camera, lamps, parts, floors, anchors, onFrame, onPick, onHover, onOrbit, onOcclusion, onLoad, onError });
   useLayoutEffect(() => {
-    latest.current = { camera, lamps, parts, floors, anchors, onFrame, onPick, onHover, onOcclusion, onLoad, onError };
+    latest.current = { camera, lamps, parts, floors, anchors, onFrame, onPick, onHover, onOrbit, onOcclusion, onLoad, onError };
   });
 
   // ── Scène, caméra, rendu ───────────────────────────────────────────────────
@@ -840,7 +852,7 @@ export default function Floorplan3D({
     resize();
 
     // Un clic pose ; un glisser fait tourner la caméra et ne pose rien.
-    let down: { x: number; y: number } | null = null;
+    let down: { x: number; y: number; moved?: boolean } | null = null;
     const onDown = (e: PointerEvent) => {
       down = { x: e.clientX, y: e.clientY };
     };
@@ -855,8 +867,12 @@ export default function Floorplan3D({
     // Survol : un lancer de rayon par image au plus, et seulement pendant un dessin.
     let hoverFrame = 0;
     const onMove = (e: PointerEvent) => {
-      // Tourner la maison à la main interrompt un vol en cours.
-      if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > CLICK_TOLERANCE) s.flight++;
+      // Tourner la maison à la main interrompt un vol en cours, et la boussole.
+      if (down && !down.moved && Math.hypot(e.clientX - down.x, e.clientY - down.y) > CLICK_TOLERANCE) {
+        down.moved = true;
+        s.flight++;
+        latest.current.onOrbit?.();
+      }
       if (!latest.current.onHover || hoverFrame) return;
       const { clientX, clientY } = e;
       hoverFrame = requestAnimationFrame(() => {
@@ -1034,6 +1050,47 @@ export default function Floorplan3D({
     applyCutaway(s);
     s.render();
   }, [cutaway]);
+
+  // ── Boussole ───────────────────────────────────────────────────────────────
+  // La caméra regarde vers le cap du téléphone. Elle le suit en douceur, et
+  // reste immobile tant qu'il ne bouge pas d'un degré : pas une image de trop.
+  useEffect(() => {
+    const s = stage.current;
+    if (!s || !compass) return;
+    let goal: number | null = null;
+    let turning = false;
+    let last = 0;
+    const azimuth = () => new Spherical().setFromVector3(s.camera.position.clone().sub(s.controls.target));
+    const step = (now: number) => {
+      if (goal === null) return (turning = false);
+      const k = 1 - Math.exp(-(last ? now - last : 16) / COMPASS_SMOOTH_MS);
+      last = now;
+      const at = azimuth();
+      const turn = shortestTurn(at.theta, goal);
+      at.theta += turn * k;
+      s.camera.position.setFromSpherical(at).add(s.controls.target);
+      s.controls.update();
+      turning = Math.abs(turn) > COMPASS_DEADBAND / 10;
+      if (!turning) last = 0;
+      return turning;
+    };
+    const onOrientation = (e: DeviceOrientationEvent) => {
+      const heading = compassHeading(e.alpha, screen.orientation?.angle);
+      if (heading === null) return;
+      // Le nord de la maquette est −z, tourné de `north` : la caméra se place
+      // à l'opposé du cap, et regarde vers lui.
+      goal = (-(heading + north) * Math.PI) / 180;
+      if (!turning && Math.abs(shortestTurn(azimuth().theta, goal)) > COMPASS_DEADBAND) {
+        turning = true;
+        s.animate(step);
+      }
+    };
+    window.addEventListener('deviceorientationabsolute', onOrientation);
+    return () => {
+      window.removeEventListener('deviceorientationabsolute', onOrientation);
+      goal = null;
+    };
+  }, [compass, north]);
 
   // ── Rotation au repos ──────────────────────────────────────────────────────
   // Le moindre geste, n'importe où sur la page, l'arrête et relance l'attente.

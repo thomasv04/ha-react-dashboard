@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   cloudiness,
+  compassHeading,
   containSize,
   backSides,
   cutLimit,
@@ -375,6 +376,24 @@ describe('rooms', () => {
     const [x, z] = polygonCentroid(L);
     expect(x).toBeCloseTo(5 / 3);
     expect(z).toBeCloseTo(5 / 3);
+  });
+});
+
+describe('compassHeading', () => {
+  it('follows the top of the screen, clockwise from north', () => {
+    expect(compassHeading(0)).toBe(0);
+    // `alpha` tourne dans le sens inverse des aiguilles : 90, c'est l'ouest.
+    expect(compassHeading(90)).toBe(270);
+    expect(compassHeading(270)).toBe(90);
+  });
+
+  it('turns with the screen in landscape', () => {
+    expect(compassHeading(0, 90)).toBe(90);
+    expect(compassHeading(30, 270)).toBe(240);
+  });
+
+  it('has no heading without an absolute orientation', () => {
+    expect(compassHeading(null)).toBeNull();
   });
 });
 
