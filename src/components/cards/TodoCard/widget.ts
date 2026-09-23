@@ -45,10 +45,10 @@ export default defineWidget({
   },
 
   fields: [
-    { key: 'entityId', label: 'Liste', fieldType: 'entity', domain: 'todo' },
-    { key: 'name', label: 'Titre', fieldType: 'text' },
-    { key: 'showCompleted', label: 'Afficher les tâches terminées', fieldType: 'boolean' },
-    { key: 'allowAdd', label: "Champ d'ajout", fieldType: 'boolean' },
+    { key: 'entityId', label: 'widgets.todo.fields.entityId.label', fieldType: 'entity', domain: 'todo' },
+    { key: 'name', label: 'widgets.todo.fields.name.label', fieldType: 'text' },
+    { key: 'showCompleted', label: 'widgets.todo.fields.showCompleted.label', fieldType: 'boolean' },
+    { key: 'allowAdd', label: 'widgets.todo.fields.allowAdd.label', fieldType: 'boolean' },
   ],
 
   defaults: {

@@ -7,6 +7,7 @@ import { MoreInfoHeader } from './MoreInfoHeader';
 import { InfoSidebar, type SidebarModule } from './sidebar';
 import type { LightCardConfig } from '@/types/widget-types';
 import { useI18n } from '@/i18n';
+import { friendlyName } from '@/lib/ha-service';
 
 type LightTab = 'brightness' | 'color_temp' | 'color';
 
@@ -67,7 +68,7 @@ export default function LightMoreInfo({ entityId, widgetId }: { entityId: string
   if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
 
   const isOn = entity.state === 'on';
-  const name = config?.name ?? (entity.attributes.friendly_name as string) ?? entityId;
+  const name = config?.name ?? friendlyName(entity) ?? entityId;
   const colorModes = (entity.attributes.supported_color_modes as string[]) ?? [];
   const isDimmable = colorModes.some(m => m !== 'onoff');
   const supportsColorTemp = colorModes.includes('color_temp');

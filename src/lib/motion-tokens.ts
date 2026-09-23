@@ -21,3 +21,16 @@ export const T_EASE_OUT = { duration: DURATION_NORMAL, ease: EASE_OUT };
 export const T_EASE_IN = { duration: DURATION_FAST, ease: EASE_IN };
 export const T_EASE_IN_OUT = { duration: DURATION_MEDIUM, ease: EASE_IN_OUT };
 export const T_SPRING = EASE_SPRING;
+
+/**
+ * Entrée d'une card de la grille.
+ *
+ * Les vingt-quatre cards recopiaient ce trio à l'identique. Ici, le jour où
+ * l'entrée se règle, elle se règle une fois. Les variantes retardées
+ * surchargent `transition` après le spread.
+ */
+export const CARD_ENTRANCE = {
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: DURATION_ENTRANCE },
+} as const;

@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
+import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { ListChecks, Check, Plus, ListX, PartyPopper } from 'lucide-react';
 import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useHass } from '@hakit/core';
@@ -12,7 +12,7 @@ import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 // `helpers.callService` est typé sur les domaines connus de l'instance HA au
 // moment de la génération des types ; `todo` n'y figure pas encore.
-import { callHAService } from '@/lib/ha-service';
+import { callHAService, friendlyName } from '@/lib/ha-service';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 import type { TodoCardConfig } from '@/types/widget-configs';
@@ -58,7 +58,7 @@ export function TodoCard() {
   });
 
   const items = useMemo(() => Object.values(data ?? {}).flatMap(r => r?.items ?? []), [data]);
-  const name = config?.name ?? (entity?.attributes.friendly_name as string | undefined) ?? t('widgets.todo.label');
+  const name = config?.name ?? friendlyName(entity) ?? t('widgets.todo.label');
   const remaining = items.filter(i => i.status !== 'completed').length;
 
   const toggleItem = (item: TodoItem) => {
@@ -96,9 +96,7 @@ export function TodoCard() {
   return (
     <motion.div
       ref={cardRef}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: DURATION_ENTRANCE }}
+      {...CARD_ENTRANCE}
       className={cn('gc rounded-3xl h-full overflow-hidden select-none flex flex-col', size.squat ? 'px-3 py-2' : 'p-3.5')}
     >
       {/* En-tête */}

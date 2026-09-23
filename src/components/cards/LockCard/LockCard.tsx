@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
+import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { Lock, LockOpen, TriangleAlert, DoorOpen } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
@@ -11,6 +11,7 @@ import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 import type { LockCardConfig } from '@/types/widget-configs';
+import { friendlyName } from '@/lib/ha-service';
 
 /** `LockEntityFeature.OPEN` — le pêne peut être escamoté (gâche électrique) */
 const FEATURE_OPEN = 1;
@@ -55,7 +56,7 @@ export function LockCard() {
     );
   }
 
-  const name = config?.name ?? (entity.attributes.friendly_name as string | undefined) ?? entityId;
+  const name = config?.name ?? friendlyName(entity) ?? entityId;
   const isLocked = state === 'locked';
   const isJammed = state === 'jammed';
   const isMoving = state === 'locking' || state === 'unlocking' || state === 'opening';
@@ -99,9 +100,7 @@ export function LockCard() {
   return (
     <motion.div
       ref={cardRef}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: DURATION_ENTRANCE }}
+      {...CARD_ENTRANCE}
       className={cn(
         'gc rounded-3xl h-full overflow-hidden select-none',
         size.squat ? 'px-3 py-2 flex items-center gap-3' : 'p-3.5 flex flex-col'

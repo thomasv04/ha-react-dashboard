@@ -40,40 +40,38 @@ export default defineWidget({
   dispositions: [
     {
       id: 'default',
-      label: 'Standard',
+      label: 'widgets.vacuum.dispositions.default.label',
       minSize: { lg: { w: 2, h: 3 }, md: { w: 3, h: 3 }, sm: { w: 4, h: 3 } },
       defaultSize: { lg: { w: 3, h: 4 }, md: { w: 4, h: 4 }, sm: { w: 4, h: 4 } },
     },
   ],
 
   fields: [
-    { key: 'entityId', label: 'Aspirateur', fieldType: 'entity', domain: 'vacuum' },
-    { key: 'name', label: 'Nom affiché', fieldType: 'text' },
+    { key: 'entityId', label: 'widgets.vacuum.fields.entityId.label', fieldType: 'entity', domain: 'vacuum' },
+    { key: 'name', label: 'widgets.vacuum.fields.name.label', fieldType: 'text' },
     {
       key: 'rooms',
-      label: 'Pièces (map Roborock)',
+      label: 'widgets.vacuum.fields.rooms.label',
       fieldType: 'list',
       itemFields: [
-        { key: 'id', label: 'ID segment', fieldType: 'text' },
-        { key: 'name', label: 'Nom de la pièce', fieldType: 'text' },
-        { key: 'segmentId', label: 'Segment ID (numérique)', fieldType: 'number' },
-        { key: 'icon', label: 'Icône', fieldType: 'icon' },
+        { key: 'id', label: 'widgets.vacuum.fields.rooms.item.id.label', fieldType: 'text' },
+        { key: 'name', label: 'widgets.vacuum.fields.rooms.item.name.label', fieldType: 'text' },
+        { key: 'segmentId', label: 'widgets.vacuum.fields.rooms.item.segmentId.label', fieldType: 'number' },
+        { key: 'icon', label: 'widgets.vacuum.fields.rooms.item.icon.label', fieldType: 'icon' },
       ],
     },
     {
       key: 'selects',
-      label: 'Contrôles select (vitesse ventilateur, intensité lavage…)',
+      label: 'widgets.vacuum.fields.selects.label',
       fieldType: 'list',
       itemFields: [
-        { key: 'entityId', label: 'Entité select', fieldType: 'entity', domain: 'select' },
-        { key: 'label', label: 'Libellé personnalisé', fieldType: 'text' },
+        { key: 'entityId', label: 'widgets.vacuum.fields.selects.item.entityId.label', fieldType: 'entity', domain: 'select' },
+        { key: 'label', label: 'widgets.vacuum.fields.selects.item.label.label', fieldType: 'text' },
       ],
     },
-    { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
   ],
 
   defaults: {
-    type: 'vacuum',
     entityId: 'vacuum.robot',
     rooms: [],
   } satisfies WidgetDefaults<WidgetConfig>,

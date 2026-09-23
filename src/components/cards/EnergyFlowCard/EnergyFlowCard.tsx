@@ -1,13 +1,13 @@
 import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Sun, House, Zap, BatteryCharging } from 'lucide-react';
-import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
+import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useI18n } from '@/i18n';
-import { cn } from '@/lib/utils';
+import { cn, clamp } from '@/lib/utils';
 import type { EnergyFlowCardConfig } from '@/types/widget-configs';
 import { normalizePackState } from '@/lib/battery-state';
 
@@ -158,7 +158,7 @@ export function EnergyFlowCard() {
   // Sans consommation, le taux n'a pas de sens — afficher 100 % laissait croire
   // à une autonomie parfaite alors qu'il n'y a simplement rien à couvrir.
   const gridImport = Math.max(0, grid);
-  const selfUse = home > 0 ? Math.round(Math.max(0, Math.min(1, (home - gridImport) / home)) * 100) : null;
+  const selfUse = home > 0 ? Math.round(clamp((home - gridImport) / home, 0, 1) * 100) : null;
   const selfUseLabel = selfUse === null ? '—' : `${selfUse}%`;
 
   const COLORS = { solar: '#fbbf24', home: '#38bdf8', battery: '#34d399', grid: '#f87171' };
@@ -170,13 +170,7 @@ export function EnergyFlowCard() {
   // Une seule rangée : le schéma n'a pas la place, on garde les chiffres.
   if (size.squat) {
     return (
-      <motion.div
-        ref={cardRef}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: DURATION_ENTRANCE }}
-        className='gc rounded-3xl px-3.5 py-2 h-full flex items-center gap-3 overflow-hidden'
-      >
+      <motion.div ref={cardRef} {...CARD_ENTRANCE} className='gc rounded-3xl px-3.5 py-2 h-full flex items-center gap-3 overflow-hidden'>
         {(
           [
             [Sun, COLORS.solar, solarF],
@@ -202,9 +196,7 @@ export function EnergyFlowCard() {
   return (
     <motion.div
       ref={cardRef}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: DURATION_ENTRANCE }}
+      {...CARD_ENTRANCE}
       className={cn('gc rounded-3xl h-full flex flex-col overflow-hidden', size.h === 'short' ? 'p-2.5' : 'p-3.5')}
     >
       {config?.name && <div className='text-white/40 text-xs font-medium truncate mb-1 shrink-0'>{config.name}</div>}

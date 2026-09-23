@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { ShieldCheck, ShieldAlert, ShieldOff, ShieldQuestion, Delete, X, Home, Plane, Moon, LogOut } from 'lucide-react';
 import { useHass } from '@hakit/core';
-import { callHAService } from '@/lib/ha-service';
+import { callHAService, friendlyName } from '@/lib/ha-service';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
@@ -425,7 +425,7 @@ export function AlarmCard() {
   if (!alarm) return null;
 
   const visual = getVisual(alarm.state, t);
-  const name = config?.name ?? (alarm.attributes.friendly_name as string) ?? t('widgets.alarm.label');
+  const name = config?.name ?? friendlyName(alarm) ?? t('widgets.alarm.label');
   const isArmed = alarm.state.startsWith('armed_');
   const requireCode = config?.requireCode !== false;
   const activeModes = config?.armModes ?? DEFAULT_MODES;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cn, isTypingTarget } from './utils';
+import { cn, clamp, isTypingTarget } from './utils';
 
 describe('cn()', () => {
   it('retourne une chaîne vide sans arguments', () => {
@@ -74,5 +74,24 @@ describe('isTypingTarget()', () => {
 
     expect(guardSaw(() => input.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true, composed: true })))).toBe(true);
     host.remove();
+  });
+});
+
+describe('clamp()', () => {
+  it('laisse passer une valeur déjà dans les bornes', () => {
+    expect(clamp(5, 0, 10)).toBe(5);
+  });
+
+  it('ramène aux bornes', () => {
+    expect(clamp(-3, 0, 10)).toBe(0);
+    expect(clamp(42, 0, 10)).toBe(10);
+  });
+
+  it('rend la borne basse quand elle dépasse la haute', () => {
+    // Le cas dégénéré : une grille plus étroite que le widget qu'on y pose.
+    // L'écriture miroir `Math.min(max, Math.max(min, v))` rendrait `max` ici —
+    // c'est tout l'intérêt d'avoir une seule fonction plutôt que deux
+    // tournures qui se ressemblent.
+    expect(clamp(5, 10, 2)).toBe(10);
   });
 });

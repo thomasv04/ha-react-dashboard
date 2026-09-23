@@ -39,39 +39,37 @@ export default defineWidget({
   dispositions: [
     {
       id: 'default',
-      label: 'Standard',
+      label: 'widgets.camera.dispositions.default.label',
       minSize: { lg: { w: 3, h: 2 }, md: { w: 4, h: 2 }, sm: { w: 4, h: 2 } },
       defaultSize: { lg: { w: 6, h: 3 }, md: { w: 8, h: 3 }, sm: { w: 4, h: 2 } },
     },
   ],
 
   fields: [
-    { key: 'selectorEntity', label: 'Entité sélection', fieldType: 'entity', domain: 'input_select' },
+    { key: 'selectorEntity', label: 'widgets.camera.fields.selectorEntity.label', fieldType: 'entity', domain: 'input_select' },
     {
       key: 'cameras',
-      label: 'Caméras',
+      label: 'widgets.camera.fields.cameras.label',
       fieldType: 'list',
       itemFields: [
-        { key: 'entityId', label: 'Entité caméra', fieldType: 'entity', domain: 'camera' },
-        { key: 'name', label: 'Nom', fieldType: 'text' },
-        { key: 'posterEntity', label: "Image d'attente (entité instantané)", fieldType: 'entity', domain: 'camera' },
+        { key: 'entityId', label: 'widgets.camera.fields.cameras.item.entityId.label', fieldType: 'entity', domain: 'camera' },
+        { key: 'name', label: 'widgets.camera.fields.cameras.item.name.label', fieldType: 'text' },
+        { key: 'posterEntity', label: 'widgets.camera.fields.cameras.item.posterEntity.label', fieldType: 'entity', domain: 'camera' },
       ],
     },
     {
       key: 'streamMode',
-      label: 'Mode de streaming',
+      label: 'widgets.camera.fields.streamMode.label',
       fieldType: 'select',
       options: [
-        { value: 'auto', label: 'Auto (HLS si la caméra le supporte)' },
-        { value: 'mjpeg', label: 'MJPEG (caméras nativement MJPEG)' },
-        { value: 'hls', label: 'HLS (flux RTSP, fluide)' },
+        { value: 'auto', label: 'widgets.camera.fields.streamMode.options.auto' },
+        { value: 'mjpeg', label: 'widgets.camera.fields.streamMode.options.mjpeg' },
+        { value: 'hls', label: 'widgets.camera.fields.streamMode.options.hls' },
       ],
     },
-    { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
   ],
 
   defaults: {
-    type: 'camera',
     cameras: [
       { entityId: 'camera.front_door', name: 'Entrée' },
       { entityId: 'camera.kitchen', name: 'Cuisine' },

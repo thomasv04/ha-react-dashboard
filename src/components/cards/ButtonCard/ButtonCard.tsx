@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
+import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { Play, Check, AlertTriangle, X } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -99,12 +99,7 @@ export function ButtonCard() {
   const isActive = feedback !== 'idle' && feedback !== 'confirming';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: DURATION_ENTRANCE }}
-      className='gc rounded-3xl p-3.5 flex flex-col h-full relative overflow-hidden select-none'
-    >
+    <motion.div {...CARD_ENTRANCE} className='gc rounded-3xl p-3.5 flex flex-col h-full relative overflow-hidden select-none'>
       <RippleLayer ripples={ripples} color={colorAlpha(color, 13)} />
 
       {/* Confirm overlay */}

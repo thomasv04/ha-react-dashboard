@@ -11,6 +11,7 @@ import { useCustomPanels } from '@/context/CustomPanelContext';
 import { useMoreInfo } from '@/context/MoreInfoContext';
 import { useEditMode } from '@/context/DashboardLayoutContext';
 import { modalTypeFor } from '@/components/modals/more-info-registry';
+import { friendlyName } from '@/lib/ha-service';
 
 /** Nombre de résultats affichés — au-delà, la liste devient un scroll interminable. */
 const MAX_RESULTS = 40;
@@ -66,7 +67,7 @@ function QuickBarPanel({ mode, onClose }: { mode: Mode; onClose: () => void }) {
       id,
       // Le nom convivial est ce que l'utilisateur connaît ; l'identifiant reste
       // affiché parce que c'est lui qui est unique.
-      label: (entity?.attributes?.friendly_name as string) ?? id,
+      label: friendlyName(entity) ?? id,
       hint: entity?.state,
       run: () => openMoreInfo(id, modalTypeFor(id), id, null),
     }));

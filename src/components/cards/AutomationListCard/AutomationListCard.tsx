@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
+import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { Workflow } from 'lucide-react';
 import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useHass, type HassStore } from '@hakit/core';
@@ -12,6 +12,7 @@ import type { AutomationListCardConfig, AutomationItem } from '@/types/widget-co
 import { useI18n } from '@/i18n';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import type { SoundPreset } from '@/lib/sounds';
+import { friendlyName } from '@/lib/ha-service';
 
 function AutomationRow({
   item,
@@ -40,7 +41,7 @@ function AutomationRow({
     playFeedback(isOn ? 'toggle_off' : 'toggle_on');
   };
 
-  const name = item.name ?? entity?.attributes.friendly_name ?? item.entityId;
+  const name = item.name ?? friendlyName(entity) ?? item.entityId;
 
   return (
     <motion.div
@@ -124,12 +125,7 @@ export function AutomationListCard() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: DURATION_ENTRANCE }}
-      className='gc rounded-3xl p-3.5 flex flex-col h-full'
-    >
+    <motion.div {...CARD_ENTRANCE} className='gc rounded-3xl p-3.5 flex flex-col h-full'>
       {/* Header — le compteur d'actives manquait, `TodoCard` a bien le sien */}
       <div className='flex items-center gap-2 mb-2.5'>
         <div

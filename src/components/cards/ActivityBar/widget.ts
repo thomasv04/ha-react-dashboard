@@ -39,7 +39,7 @@ export default defineWidget({
   dispositions: [
     {
       id: 'default',
-      label: 'Standard',
+      label: 'widgets.activity.dispositions.default.label',
       minSize: { lg: { w: 6, h: 1 }, md: { w: 4, h: 1 }, sm: { w: 3, h: 1 } },
       defaultSize: { lg: { w: 11, h: 1 }, md: { w: 7, h: 1 }, sm: { w: 3, h: 1 } },
     },
@@ -48,43 +48,42 @@ export default defineWidget({
   fields: [
     {
       key: 'pills',
-      label: 'Indicateurs',
+      label: 'widgets.activity.fields.pills.label',
       fieldType: 'list',
       itemFields: [
-        { key: 'id', label: 'Identifiant', fieldType: 'text' },
-        { key: 'entityId', label: 'Entité', fieldType: 'entity' },
-        { key: 'label', label: 'Label', fieldType: 'text' },
-        { key: 'template', label: 'Template ({state}, {attr.X})', fieldType: 'text' },
-        { key: 'hideLabel', label: 'Icône seule (masquer le texte)', fieldType: 'boolean' },
-        { key: 'icon', label: 'Icône', fieldType: 'icon' },
-        { key: 'color', label: 'Couleur (#hex, template Jinja, vide = auto)', fieldType: 'text' },
+        { key: 'id', label: 'widgets.activity.fields.pills.item.id.label', fieldType: 'text' },
+        { key: 'entityId', label: 'widgets.activity.fields.pills.item.entityId.label', fieldType: 'entity' },
+        { key: 'label', label: 'widgets.activity.fields.pills.item.label.label', fieldType: 'text' },
+        { key: 'template', label: 'widgets.activity.fields.pills.item.template.label', fieldType: 'text' },
+        { key: 'hideLabel', label: 'widgets.activity.fields.pills.item.hideLabel.label', fieldType: 'boolean' },
+        { key: 'icon', label: 'widgets.activity.fields.pills.item.icon.label', fieldType: 'icon' },
+        { key: 'color', label: 'widgets.activity.fields.pills.item.color.label', fieldType: 'text' },
         {
           key: 'action',
-          label: 'Au clic',
+          label: 'widgets.activity.fields.pills.item.action.label',
           fieldType: 'select',
           options: [
-            { value: 'none', label: 'Rien' },
-            { value: 'more-info', label: 'Ouvrir la fiche détail' },
-            { value: 'toggle', label: "Basculer l'entité" },
-            { value: 'service', label: 'Appeler un service' },
+            { value: 'none', label: 'widgets.activity.fields.pills.item.action.options.none' },
+            { value: 'more-info', label: 'widgets.activity.fields.pills.item.action.options.more-info' },
+            { value: 'toggle', label: 'widgets.activity.fields.pills.item.action.options.toggle' },
+            { value: 'service', label: 'widgets.activity.fields.pills.item.action.options.service' },
           ],
         },
-        { key: 'service', label: 'Service (domain.service)', fieldType: 'text' },
+        { key: 'service', label: 'widgets.activity.fields.pills.item.service.label', fieldType: 'text' },
       ],
     },
     {
       key: 'persons',
-      label: 'Utilisateurs affichés',
+      label: 'widgets.activity.fields.persons.label',
       fieldType: 'list',
       itemFields: [
-        { key: 'entityId', label: 'Entité personne', fieldType: 'entity', domain: 'person' },
-        { key: 'name', label: 'Nom affiché', fieldType: 'text' },
+        { key: 'entityId', label: 'widgets.activity.fields.persons.item.entityId.label', fieldType: 'entity', domain: 'person' },
+        { key: 'name', label: 'widgets.activity.fields.persons.item.name.label', fieldType: 'text' },
       ],
     },
   ],
 
   defaults: {
-    type: 'activity',
     pills: [
       { id: 'alarm', entityId: 'alarm_control_panel.home_alarm', label: 'Alarme', template: '{state}' },
       { id: 'heater', entityId: 'climate.living_room', label: 'Chauffage', template: '{state}' },

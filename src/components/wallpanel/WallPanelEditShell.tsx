@@ -144,6 +144,9 @@ function WallPanelGridWidgets() {
 export function WallPanelReadonlyShell() {
   const { wallPanelLayout, wallPanelWidgetConfigs, config } = useWallPanel();
 
+  // Figés au montage : `DashboardLayoutProvider` ne lit ces valeurs *initiales*
+  // qu'une fois, et une référence neuve à chaque rendu relancerait sa
+  // synchronisation en boucle.
   const initialLayouts = useMemo(
     () => ({ wallpanel: wallPanelLayout }),
     // eslint-disable-next-line react-hooks/exhaustive-deps

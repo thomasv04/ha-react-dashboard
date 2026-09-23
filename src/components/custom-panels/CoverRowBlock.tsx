@@ -10,6 +10,7 @@ import { useLowPowerMotion } from '@/hooks/useLowPowerMotion';
 import { coverArrowMotion, type CoverDirection } from '@/lib/cover-motion';
 import { cn } from '@/lib/utils';
 import type { CoverRowBlock } from '@/types/custom-panel';
+import { friendlyName } from '@/lib/ha-service';
 
 export function CoverRowBlockRenderer({ block, card = false }: { block: CoverRowBlock; card?: boolean }) {
   const cover = useSafeEntity(block.entityId);
@@ -22,7 +23,7 @@ export function CoverRowBlockRenderer({ block, card = false }: { block: CoverRow
   if (!cover) return null;
 
   const pos = cover.attributes.current_position as number | undefined;
-  const label = block.label ?? (cover.attributes.friendly_name as string) ?? block.entityId;
+  const label = block.label ?? friendlyName(cover) ?? block.entityId;
   const isOpen = cover.state === 'open';
 
   function call(service: string) {

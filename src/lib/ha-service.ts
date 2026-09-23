@@ -1,3 +1,16 @@
+/**
+ * Le nom lisible d'une entité, s'il y en a un.
+ *
+ * Trente-trois appelants écrivaient `(entity.attributes.friendly_name as string)`,
+ * un cast qui ment : l'attribut manque souvent, et annoncer `string` rendait
+ * invisible au typage le `?? entityId` posé juste après. Ici le type dit la
+ * vérité, et la chaîne de replis de l'appelant redevient vérifiée.
+ */
+export function friendlyName(entity: { attributes?: Record<string, unknown> } | null | undefined): string | undefined {
+  const name = entity?.attributes?.friendly_name;
+  return typeof name === 'string' ? name : undefined;
+}
+
 /** États de repos : tout le reste compte comme actif — `on`, mais aussi `open`, `heat`, `playing`, `locked`. */
 const IDLE_STATES = new Set(['off', 'closed', 'unavailable', 'unknown', 'none', 'idle', 'standby', '']);
 

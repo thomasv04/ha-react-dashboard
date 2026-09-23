@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
+import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
@@ -154,9 +154,7 @@ export function ClockCard() {
   return (
     <motion.div
       ref={cardRef}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: DURATION_ENTRANCE }}
+      {...CARD_ENTRANCE}
       aria-label={`${t('widgets.clock.label')} ${time}`}
       className={cn(
         'gc rounded-3xl h-full overflow-hidden select-none flex items-center justify-center',

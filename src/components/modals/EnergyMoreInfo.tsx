@@ -8,6 +8,7 @@ import { InfoSidebar, type SidebarModule } from './sidebar';
 import { HistoryGraph } from '@/components/charts/HistoryGraph';
 import type { EnergyCardConfig } from '@/types/widget-types';
 import { useI18n } from '@/i18n';
+import { friendlyName } from '@/lib/ha-service';
 
 type HistoryTab = 'battery' | 'solar' | 'grid' | 'home';
 
@@ -162,7 +163,7 @@ export default function EnergyMoreInfo({ entityId, widgetId }: { entityId: strin
 
   if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
 
-  const name = (entity.attributes.friendly_name as string) ?? t('widgets.energy.defaultName');
+  const name = friendlyName(entity) ?? t('widgets.energy.defaultName');
   const level = Number(entity.state) || 0;
   const packState = normalizePackState(batteryStateEntity?.state ?? 'idle');
 

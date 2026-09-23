@@ -358,5 +358,10 @@
     "add": "Controls",
     "domains": "Domains",
     "entities": "Entities"
-  }
+  },
+  "weatherIconsTitle": "Custom weather icons",
+  "weatherIconsHint": "Pick an icon for each condition. Leave empty for the default icon.",
+  "weatherIconsCount": "{count} customised",
+  "weatherIconsCountPlural": "{count} customised",
+  "dispositionDefault": "Default"
 }

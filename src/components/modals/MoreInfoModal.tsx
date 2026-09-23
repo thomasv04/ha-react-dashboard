@@ -4,6 +4,7 @@ import { X, Loader2 } from 'lucide-react';
 import { useMoreInfo } from '@/context/MoreInfoContext';
 import { MoreInfoReadyContext } from '@/context/MoreInfoReadyContext';
 import { MORE_INFO_COMPONENTS } from './more-info-registry';
+import { clamp } from '@/lib/utils';
 
 export function MoreInfoModal() {
   const { state, closeMoreInfo } = useMoreInfo();
@@ -37,7 +38,7 @@ export function MoreInfoModal() {
 
     const scaleX = width / modalW;
     // Use scaleX for both axes to keep aspect ratio
-    const scale = Math.max(0.05, Math.min(scaleX, 0.95));
+    const scale = clamp(scaleX, 0.05, 0.95);
 
     const dx = cardCx - vpCx;
     const dy = cardCy - vpCy;

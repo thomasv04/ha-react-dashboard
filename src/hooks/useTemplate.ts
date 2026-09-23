@@ -58,6 +58,18 @@ export function useTemplate(template: string): string {
 }
 
 /**
+ * Comme [useTemplate], mais `null` quand le template échoue.
+ *
+ * Pour les appelants qui ont un repli et ne doivent pas peindre le message
+ * d'erreur : une icône, une URL d'image, un texte facultatif.
+ */
+export function useOptionalTemplate(template: string): string | null {
+  const entities = useTemplateEntities(template);
+  templateEngine.bind(() => entities);
+  return template ? templateEngine.tryRender(template) : null;
+}
+
+/**
  * Résout un TV<T> (TemplateOrValue) de façon réactive.
  * Si c'est une valeur fixe → retourne directement.
  * Si c'est un template → évalue via Nunjucks.

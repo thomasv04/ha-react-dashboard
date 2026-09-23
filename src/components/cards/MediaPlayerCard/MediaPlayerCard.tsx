@@ -1,6 +1,6 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
+import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Music } from 'lucide-react';
 import { useRipple, RippleLayer } from '@/components/ui/Ripple';
 import { useHass } from '@hakit/core';
@@ -10,21 +10,9 @@ import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { MediaPlayerCardConfig } from '@/types/widget-configs';
 import { useI18n } from '@/i18n';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
+import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { cn } from '@/lib/utils';
-
-function useDebouncedCallback<T extends (...args: never[]) => void>(fn: T, delay: number): T {
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Arrow inline en premier argument : le compilateur React refuse une
-  // expression `function` castée, il ne peut pas en analyser les dépendances.
-  const debounced = useCallback(
-    (...args: Parameters<T>) => {
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(() => fn(...args), delay);
-    },
-    [fn, delay]
-  );
-  return debounced as unknown as T;
-}
+import { friendlyName } from '@/lib/ha-service';
 
 // ── Compact layout (small widget, ≤ 2 rows) ────────────────────────────────────
 function CompactLayout({
@@ -342,7 +330,7 @@ export function MediaPlayerCard() {
   const position = (attrs.media_position as number | undefined) ?? 0;
   const duration = (attrs.media_duration as number | undefined) ?? 0;
   const volume = localVolume ?? haVolume;
-  const name = config?.name ?? (attrs.friendly_name as string) ?? entityId;
+  const name = config?.name ?? friendlyName({ attributes: attrs }) ?? entityId;
 
   const handleToggle = () => {
     helpers.callService({ domain: 'media_player', service: 'media_play_pause', target: { entity_id: entityId } });
@@ -380,9 +368,7 @@ export function MediaPlayerCard() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: DURATION_ENTRANCE }}
+      {...CARD_ENTRANCE}
       onPointerDown={triggerRipple}
       className={cn('gc rounded-3xl p-4 h-full relative overflow-hidden', isPlaying && 'ring-1 ring-white/10')}
     >

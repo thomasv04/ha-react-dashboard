@@ -39,7 +39,7 @@ export default defineWidget({
   dispositions: [
     {
       id: 'default',
-      label: 'Standard',
+      label: 'widgets.person.dispositions.default.label',
       minSize: { lg: { w: 4, h: 1 }, md: { w: 4, h: 1 }, sm: { w: 4, h: 1 } },
       defaultSize: { lg: { w: 6, h: 1 }, md: { w: 8, h: 1 }, sm: { w: 4, h: 1 } },
     },
@@ -48,18 +48,17 @@ export default defineWidget({
   fields: [
     {
       key: 'persons',
-      label: 'Personnes',
+      label: 'widgets.person.fields.persons.label',
       fieldType: 'list',
       itemFields: [
-        { key: 'entityId', label: 'Entité personne', fieldType: 'entity', domain: 'person' },
-        { key: 'name', label: 'Nom affiché', fieldType: 'text' },
+        { key: 'entityId', label: 'widgets.person.fields.persons.item.entityId.label', fieldType: 'entity', domain: 'person' },
+        { key: 'name', label: 'widgets.person.fields.persons.item.name.label', fieldType: 'text' },
       ],
     },
-    { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
+    { key: 'showInfoPanel', label: 'widgets.person.fields.showInfoPanel.label', fieldType: 'boolean' },
   ],
 
   defaults: {
-    type: 'person',
     persons: [{ entityId: 'person.user_1', name: 'User 1' }],
   } satisfies WidgetDefaults<WidgetConfig>,
 });

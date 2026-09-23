@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useAreas, type Area } from '@hakit/core';
-import { isActiveState, toggleService } from '@/lib/ha-service';
+import { isActiveState, toggleService, friendlyName } from '@/lib/ha-service';
 import { useI18n } from '@/i18n';
 import type { RoomControl } from '@/types/widget-configs';
 
@@ -82,7 +82,7 @@ export function buildAreaControls(
       const [serviceDomain, service] = toggleService(domain, isActiveState(entity.state));
       return [
         {
-          label: (entity.attributes.friendly_name as string | undefined) ?? token,
+          label: friendlyName(entity) ?? token,
           icon: CONTROL_DOMAINS[domain] ?? 'Package',
           domain: serviceDomain,
           service,

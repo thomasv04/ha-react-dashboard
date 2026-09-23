@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { Play, Pause, Square, LocateFixed, Home, ChevronRight, Battery, MapPin, ListOrdered, ChevronDown } from 'lucide-react';
 import { useHass } from '@hakit/core';
-import { callHAService } from '@/lib/ha-service';
+import { callHAService, friendlyName } from '@/lib/ha-service';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
@@ -52,7 +52,7 @@ function VacuumSelectControl({ entityId, label }: VacuumSelectEntity) {
 
   const options = (entity.attributes.options as string[]) ?? [];
   const currentValue = entity.state;
-  const displayLabel = label || (entity.attributes.friendly_name as string) || entityId;
+  const displayLabel = label || friendlyName(entity) || entityId;
 
   function callSvc(domain: string, service: string, target: Record<string, unknown>, serviceData?: Record<string, unknown>) {
     callHAService(helpers, domain, service, target, serviceData);
@@ -299,7 +299,7 @@ export function VacuumCard() {
   }, [stateKey, t]);
 
   const battery = vacuum?.attributes.battery_level as number | undefined;
-  const name = config?.name ?? (vacuum?.attributes.friendly_name as string) ?? t('widgets.vacuum.label');
+  const name = config?.name ?? friendlyName(vacuum) ?? t('widgets.vacuum.label');
   const rooms = config?.rooms ?? [];
   const selects = config?.selects ?? [];
   const hasRooms = rooms.length > 0;

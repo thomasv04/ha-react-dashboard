@@ -4,11 +4,13 @@ import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { MoreInfoHeader } from './MoreInfoHeader';
+import { MoreInfoLayout } from './MoreInfoLayout';
 import { ThermostatCard } from '@/components/cards/ThermostatCard/ThermostatCard';
 import { WidgetIdProvider } from '@/components/layout/DashboardGrid';
 import { InfoSidebar, type SidebarModule } from './sidebar';
 import type { ThermostatCardConfig } from '@/types/widget-types';
 import { useI18n } from '@/i18n';
+import { friendlyName } from '@/lib/ha-service';
 
 const HVAC_COLORS: Record<string, string> = {
   heating: '#f97316',
@@ -65,7 +67,7 @@ export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: s
 
   if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
 
-  const name = (entity.attributes.friendly_name as string) ?? entityId;
+  const name = friendlyName(entity) ?? entityId;
   const currentTemp = entity.attributes.current_temperature as number | undefined;
   const targetTemp = entity.attributes.temperature as number | undefined;
   const hvacAction = (entity.attributes.hvac_action as string) ?? 'idle';
@@ -78,66 +80,63 @@ export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: s
   const actionColor = HVAC_COLORS[hvacAction] ?? '#6b7280';
 
   return (
-    <div className={`p-8 md:p-12 ${showInfoPanel ? 'lg:grid lg:grid-cols-5 lg:gap-8' : ''}`}>
-      <div className={showInfoPanel ? 'lg:col-span-3' : ''}>
-        <MoreInfoHeader icon={Thermometer} name={name} state={hvacMode.toUpperCase()} stateColor={actionColor} />
+    <MoreInfoLayout
+      showPanel={showInfoPanel}
+      sidebar={
+        <InfoSidebar
+          modules={
+            [
+              ...(hvacModes.length > 0
+                ? [{ type: 'select' as const, title: 'Mode HVAC', value: hvacMode, options: hvacModes, onChange: setHvacMode }]
+                : []),
+              ...(fanModes && fanModes.length > 0
+                ? [
+                    {
+                      type: 'select' as const,
+                      title: 'Ventilation',
+                      value: currentFanMode ?? '',
+                      options: fanModes,
+                      onChange: setFanMode,
+                    },
+                  ]
+                : []),
+              ...(swingModes && swingModes.length > 0
+                ? [
+                    {
+                      type: 'select' as const,
+                      title: 'Oscillation',
+                      value: currentSwingMode ?? '',
+                      options: swingModes,
+                      onChange: setSwingMode,
+                    },
+                  ]
+                : []),
+              {
+                type: 'details' as const,
+                title: 'Informations',
+                entries: [
+                  { label: 'Action', value: hvacAction, color: `text-[${actionColor}]` },
+                  ...(currentTemp != null ? [{ label: 'Temp. actuelle', value: `${currentTemp}°C` }] : []),
+                  ...(targetTemp != null ? [{ label: 'Temp. cible', value: `${targetTemp}°C` }] : []),
+                ],
+              },
+              { type: 'timeline' as const, entityId },
+              { type: 'history' as const, historyHours, onHistoryHoursChange: setHistoryHours },
+              { type: 'attributes' as const, entityId },
+              { type: 'entityId' as const, entityIds: [entityId] },
+            ] satisfies SidebarModule[]
+          }
+        />
+      }
+    >
+      <MoreInfoHeader icon={Thermometer} name={name} state={hvacMode.toUpperCase()} stateColor={actionColor} />
 
-        {/* Gauge — même cadran que la card, en grand */}
-        <div className='gc-bare mx-auto mt-6 w-full max-w-[380px] aspect-[1/1.18]'>
-          <WidgetIdProvider id={widgetId}>
-            <ThermostatCard />
-          </WidgetIdProvider>
-        </div>
+      {/* Gauge — même cadran que la card, en grand */}
+      <div className='gc-bare mx-auto mt-6 w-full max-w-[380px] aspect-[1/1.18]'>
+        <WidgetIdProvider id={widgetId}>
+          <ThermostatCard />
+        </WidgetIdProvider>
       </div>
-
-      {showInfoPanel && (
-        <div className='lg:col-span-2 mt-8 lg:mt-0'>
-          <InfoSidebar
-            modules={
-              [
-                ...(hvacModes.length > 0
-                  ? [{ type: 'select' as const, title: 'Mode HVAC', value: hvacMode, options: hvacModes, onChange: setHvacMode }]
-                  : []),
-                ...(fanModes && fanModes.length > 0
-                  ? [
-                      {
-                        type: 'select' as const,
-                        title: 'Ventilation',
-                        value: currentFanMode ?? '',
-                        options: fanModes,
-                        onChange: setFanMode,
-                      },
-                    ]
-                  : []),
-                ...(swingModes && swingModes.length > 0
-                  ? [
-                      {
-                        type: 'select' as const,
-                        title: 'Oscillation',
-                        value: currentSwingMode ?? '',
-                        options: swingModes,
-                        onChange: setSwingMode,
-                      },
-                    ]
-                  : []),
-                {
-                  type: 'details' as const,
-                  title: 'Informations',
-                  entries: [
-                    { label: 'Action', value: hvacAction, color: `text-[${actionColor}]` },
-                    ...(currentTemp != null ? [{ label: 'Temp. actuelle', value: `${currentTemp}°C` }] : []),
-                    ...(targetTemp != null ? [{ label: 'Temp. cible', value: `${targetTemp}°C` }] : []),
-                  ],
-                },
-                { type: 'timeline' as const, entityId },
-                { type: 'history' as const, historyHours, onHistoryHoursChange: setHistoryHours },
-                { type: 'attributes' as const, entityId },
-                { type: 'entityId' as const, entityIds: [entityId] },
-              ] satisfies SidebarModule[]
-            }
-          />
-        </div>
-      )}
-    </div>
+    </MoreInfoLayout>
   );
 }

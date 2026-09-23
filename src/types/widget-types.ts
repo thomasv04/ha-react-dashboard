@@ -50,7 +50,6 @@ export interface CameraCardConfig extends WidgetSoundOverrides {
   cameras: CameraEntry[];
   selectorEntity?: string; // input_select for remembering selection
   streamMode?: CameraStreamMode; // 'auto' (default) | 'mjpeg' (caméras nativement MJPEG) | 'hls'
-  showInfoPanel?: boolean;
 }
 
 // ── Weather ───────────────────────────────────────────────────────────────────
@@ -76,7 +75,6 @@ export type WeatherCondition =
 export interface WeatherCardConfig {
   type: 'weather';
   entityId: string; // weather.xxx
-  showInfoPanel?: boolean;
   /** Advanced: override default icons per weather condition.
    *  Value is a Lucide icon name or "custom:/uploads/icons/{file}" */
   customIcons?: Partial<Record<WeatherCondition, string>>;
@@ -105,7 +103,6 @@ export interface EnergyFlowCardConfig {
   batteryStateEntity: string;
   /** Inverse la convention de signe du capteur réseau (positif = soutirage) */
   gridInvert?: boolean;
-  showInfoPanel?: boolean;
 }
 
 // ── Tempo EDF ─────────────────────────────────────────────────────────────────
@@ -322,7 +319,6 @@ export interface AlarmCardConfig {
   name?: string;
   /** Whether a PIN code is required to arm/disarm (default: true) */
   requireCode?: boolean;
-  showInfoPanel?: boolean;
   /** Which arm mode buttons to show in the card (default: all) */
   armModes?: ArmMode[];
 }
@@ -355,7 +351,6 @@ export interface VacuumCardConfig extends WidgetSoundOverrides {
   rooms?: VacuumRoom[];
   /** Select entities to show as controls (fan speed, scrub intensity, mop route…) */
   selects?: VacuumSelectEntity[];
-  showInfoPanel?: boolean;
 }
 
 // ── Media Player ──────────────────────────────────────────────────────────────

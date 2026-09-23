@@ -1,23 +1,26 @@
 import { RotateCcw } from 'lucide-react';
 import { IconPicker } from '@/components/layout/WidgetPickers';
 import type { WeatherCondition } from '@/types/widget-types';
+import { useI18n } from '@/i18n';
 
-const WEATHER_CONDITIONS: { key: WeatherCondition; label: string }[] = [
-  { key: 'sunny', label: '☀️ Ensoleillé' },
-  { key: 'clear-night', label: '🌙 Nuit claire' },
-  { key: 'partlycloudy', label: '⛅ Partiellement nuageux' },
-  { key: 'cloudy', label: '☁️ Nuageux' },
-  { key: 'fog', label: '🌫️ Brouillard' },
-  { key: 'rainy', label: '🌧️ Pluvieux' },
-  { key: 'pouring', label: '🌧️ Forte pluie' },
-  { key: 'snowy', label: '❄️ Enneigé' },
-  { key: 'snowy-rainy', label: '🌨️ Neige et pluie' },
-  { key: 'hail', label: '🧊 Grêle' },
-  { key: 'lightning', label: '⚡ Orage' },
-  { key: 'lightning-rainy', label: '⛈️ Orage pluvieux' },
-  { key: 'windy', label: '💨 Venteux' },
-  { key: 'windy-variant', label: '💨 Très venteux' },
-  { key: 'exceptional', label: '⚠️ Exceptionnel' },
+// Les noms des conditions vivent déjà dans `widgets.weather.conditions` :
+// seul l'emoji est propre à cet éditeur.
+const WEATHER_CONDITIONS: { key: WeatherCondition; emoji: string }[] = [
+  { key: 'sunny', emoji: '☀️' },
+  { key: 'clear-night', emoji: '🌙' },
+  { key: 'partlycloudy', emoji: '⛅' },
+  { key: 'cloudy', emoji: '☁️' },
+  { key: 'fog', emoji: '🌫️' },
+  { key: 'rainy', emoji: '🌧️' },
+  { key: 'pouring', emoji: '🌧️' },
+  { key: 'snowy', emoji: '❄️' },
+  { key: 'snowy-rainy', emoji: '🌨️' },
+  { key: 'hail', emoji: '🧊' },
+  { key: 'lightning', emoji: '⚡' },
+  { key: 'lightning-rainy', emoji: '⛈️' },
+  { key: 'windy', emoji: '💨' },
+  { key: 'windy-variant', emoji: '💨' },
+  { key: 'exceptional', emoji: '⚠️' },
 ];
 
 export function WeatherIconsEditor({
@@ -27,18 +30,19 @@ export function WeatherIconsEditor({
   value: Partial<Record<WeatherCondition, string>> | undefined;
   onChange: (v: Partial<Record<WeatherCondition, string>>) => void;
 }) {
+  const { t } = useI18n();
   const icons = value ?? {};
   const customCount = Object.values(icons).filter(Boolean).length;
 
   return (
     <div className='space-y-3'>
       <div>
-        <h3 className='text-sm text-white/70 font-medium'>Icônes météo personnalisées</h3>
+        <h3 className='text-sm text-white/70 font-medium'>{t('layout.weatherIconsTitle')}</h3>
         <p className='text-[10px] text-white/30 mt-1'>
-          Personnalisez l'icône de chaque condition. Laissez vide pour l'icône par défaut.
+          {t('layout.weatherIconsHint')}
           {customCount > 0 && (
             <span className='ml-1.5 px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 text-[10px]'>
-              {customCount} personnalisée{customCount > 1 ? 's' : ''}
+              {t(customCount > 1 ? 'layout.weatherIconsCountPlural' : 'layout.weatherIconsCount', { count: customCount })}
             </span>
           )}
         </p>
@@ -55,7 +59,7 @@ export function WeatherIconsEditor({
                   else delete next[cond.key];
                   onChange(next);
                 }}
-                label={cond.label}
+                label={`${cond.emoji} ${t(`widgets.weather.conditions.${cond.key}`)}`}
               />
             </div>
             {icons[cond.key] && (

@@ -6,6 +6,7 @@ import { useEntityHistory } from '@/hooks/useEntityHistory';
 import { MoreInfoHeader } from './MoreInfoHeader';
 import { HistoryGraph } from '@/components/charts/HistoryGraph';
 import { useI18n } from '@/i18n';
+import { friendlyName } from '@/lib/ha-service';
 
 interface ForecastEntry {
   datetime: string;
@@ -78,12 +79,7 @@ export default function WeatherMoreInfo({ entityId }: { entityId: string; widget
 
   return (
     <div className='p-8 md:p-12'>
-      <MoreInfoHeader
-        icon={Cloud}
-        name={(entity.attributes.friendly_name as string) ?? entityId}
-        state={conditionLabel}
-        stateColor={color}
-      />
+      <MoreInfoHeader icon={Cloud} name={friendlyName(entity) ?? entityId} state={conditionLabel} stateColor={color} />
 
       {/* Temperature */}
       {temp != null && (

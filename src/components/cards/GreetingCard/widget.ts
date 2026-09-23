@@ -39,16 +39,15 @@ export default defineWidget({
   dispositions: [
     {
       id: 'default',
-      label: 'Standard',
+      label: 'widgets.greeting.dispositions.default.label',
       minSize: { lg: { w: 1, h: 1 }, md: { w: 1, h: 1 }, sm: { w: 1, h: 1 } },
       defaultSize: { lg: { w: 1, h: 1 }, md: { w: 1, h: 1 }, sm: { w: 1, h: 1 } },
     },
   ],
 
-  fields: [{ key: 'locale', label: 'Locale (fr-FR, en-US...)', fieldType: 'text' }],
+  fields: [{ key: 'locale', label: 'widgets.greeting.fields.locale.label', fieldType: 'text' }],
 
   defaults: {
-    type: 'greeting',
     locale: 'fr-FR',
   } satisfies WidgetDefaults<WidgetConfig>,
 });

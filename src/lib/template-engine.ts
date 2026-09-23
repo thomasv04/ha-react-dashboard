@@ -29,6 +29,13 @@ type GetEntities = () => EntitiesMap;
 class HATemplateEngine {
   private env: nunjucks.Environment;
   private getEntities: GetEntities = () => ({});
+  /**
+   * Gabarit du message d'erreur, `{message}` interpolé. Le moteur est un
+   * singleton hors de React : il ne peut pas appeler `t()` lui-même, c'est
+   * `I18nProvider` qui pose la traduction. La valeur par défaut sert aux tests
+   * et au court instant avant que le provider soit monté.
+   */
+  private errorTemplate = '[Template error: {message}]';
 
   constructor() {
     // `autoescape: false` est un choix, pas un oubli — et il porte une
@@ -58,6 +65,11 @@ class HATemplateEngine {
   /** Définit le nom de l'utilisateur HA connecté (disponible via {{ user }}) */
   setUser(name: string): void {
     this.env.addGlobal('user', name);
+  }
+
+  /** Traduction du message d'erreur ; `{message}` reçoit le détail Nunjucks. */
+  setErrorTemplate(template: string): void {
+    this.errorTemplate = template;
   }
 
   // ── Fonctions HA ────────────────────────────────────────────────────────────
@@ -126,31 +138,45 @@ class HATemplateEngine {
   // ── Rendu ────────────────────────────────────────────────────────────────────
 
   /**
-   * Résout un template Nunjucks avec l'état HA courant.
-   * @returns La string résolue, ou un message d'erreur préfixé par "[Erreur template]"
+   * L'unique point où un template est évalué.
+   *
+   * Nunjucks ne sépare pas compilation et exécution : impossible de vérifier
+   * une syntaxe sans la jouer. Les trois méthodes publiques ne diffèrent donc
+   * que par ce qu'elles font de l'échec.
    */
-  render(template: string): string {
+  private attempt(template: string): { ok: true; value: string } | { ok: false; error: string } {
     try {
-      return this.env.renderString(template, {}).trim();
+      return { ok: true, value: this.env.renderString(template, {}).trim() };
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.warn('[TemplateEngine] Error:', msg, '\nTemplate:', template);
-      return `[Erreur template: ${msg}]`;
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
     }
   }
 
+  /** Résout un template ; en cas d'échec, rend le message d'erreur traduit. */
+  render(template: string): string {
+    const r = this.attempt(template);
+    if (r.ok) return r.value;
+    console.warn('[TemplateEngine] Error:', r.error, '\nTemplate:', template);
+    return this.errorTemplate.replace('{message}', r.error);
+  }
+
   /**
-   * Vérifie la syntaxe d'un template sans l'évaluer.
-   * @returns null si valide, string d'erreur si invalide
+   * Résout un template, ou `null` s'il échoue.
+   *
+   * Pour les appelants qui ont un repli et ne doivent surtout pas afficher le
+   * message d'erreur — une couleur, une icône, une URL d'image. Ils
+   * reconnaissaient l'échec au préfixe du message, ce qui a cessé de marcher
+   * dès que ce message est devenu traduisible.
    */
+  tryRender(template: string): string | null {
+    const r = this.attempt(template);
+    return r.ok ? r.value : null;
+  }
+
+  /** @returns null si le template passe, le message d'erreur sinon. */
   validate(template: string): string | null {
-    try {
-      // compile + renderString to catch both syntax and runtime errors
-      this.env.renderString(template, {});
-      return null;
-    } catch (err) {
-      return err instanceof Error ? err.message : String(err);
-    }
+    const r = this.attempt(template);
+    return r.ok ? null : r.error;
   }
 }
 

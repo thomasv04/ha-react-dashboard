@@ -38,54 +38,22 @@ function base64ToUint8(base64: string): Uint8Array {
   return Uint8Array.from(binary, c => c.charCodeAt(0));
 }
 
-async function compress(data: Uint8Array): Promise<Uint8Array> {
-  const cs = new CompressionStream('deflate-raw');
-  const writer = cs.writable.getWriter();
-  // TS 5.7 paramètre Uint8Array par son buffer ; `BufferSource` attend un
-  // ArrayBuffer strict. Le cast est sûr, la donnée est bien un Uint8Array.
-  writer.write(data as unknown as BufferSource);
-  writer.close();
-  const reader = cs.readable.getReader();
-  const chunks: Uint8Array[] = [];
-  let totalLen = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    totalLen += value.length;
-  }
-  const result = new Uint8Array(totalLen);
-  let offset = 0;
-  for (const chunk of chunks) {
-    result.set(chunk, offset);
-    offset += chunk.length;
-  }
-  return result;
-}
-
-async function decompress(data: Uint8Array): Promise<Uint8Array> {
-  const ds = new DecompressionStream('deflate-raw');
-  const writer = ds.writable.getWriter();
-  // Write and close — suppress rejections on the writable side
-  // (errors will surface via the readable side)
+/**
+ * deflate-raw dans un sens ou dans l'autre.
+ *
+ * `Response` sait déjà vider un stream : les deux fonctions d'avant
+ * recollaient les chunks à la main, vingt-cinq lignes chacune pour ce que la
+ * plateforme fait en une. (`Blob.stream()` ferait aussi l'entrée, mais jsdom
+ * ne l'implémente pas — d'où le writer.)
+ */
+async function pipe(data: Uint8Array, Stream: typeof CompressionStream | typeof DecompressionStream): Promise<Uint8Array> {
+  const { readable, writable } = new Stream('deflate-raw');
+  const writer = writable.getWriter();
+  // Les erreurs de flux remontent par la lecture ; sans ces `catch`, une entrée
+  // illisible rejetterait aussi côté écriture, sans personne pour l'attraper.
   writer.write(data as unknown as BufferSource).catch(() => {});
   writer.close().catch(() => {});
-  const reader = ds.readable.getReader();
-  const chunks: Uint8Array[] = [];
-  let totalLen = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    totalLen += value.length;
-  }
-  const result = new Uint8Array(totalLen);
-  let offset = 0;
-  for (const chunk of chunks) {
-    result.set(chunk, offset);
-    offset += chunk.length;
-  }
-  return result;
+  return new Uint8Array(await new Response(readable).arrayBuffer());
 }
 
 // ── Encode ──────────────────────────────────────────────────────────────────────
@@ -94,7 +62,7 @@ async function decompress(data: Uint8Array): Promise<Uint8Array> {
 export async function encodeConfig(snapshot: ConfigSnapshot): Promise<string> {
   const json = JSON.stringify(snapshot);
   const raw = new TextEncoder().encode(json);
-  const compressed = await compress(raw);
+  const compressed = await pipe(raw, CompressionStream);
   return PREFIX + uint8ToBase64(compressed);
 }
 
@@ -118,7 +86,7 @@ export async function decodeConfig(str: string): Promise<ConfigSnapshot> {
 
   let jsonStr: string;
   try {
-    const raw = await decompress(compressed);
+    const raw = await pipe(compressed, DecompressionStream);
     jsonStr = new TextDecoder().decode(raw);
   } catch {
     throw new Error('INVALID_COMPRESSED');

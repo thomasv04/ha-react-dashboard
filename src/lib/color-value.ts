@@ -32,8 +32,8 @@ export function resolveColorValue(raw?: string): string | undefined {
   const value = raw?.trim();
   if (!value) return undefined;
   if (value.startsWith('#')) return value;
-  const rendered = templateEngine.render(value).trim();
-  if (!rendered || rendered.startsWith('[Erreur')) return undefined;
+  const rendered = templateEngine.tryRender(value);
+  if (!rendered) return undefined;
   return COLOR_MAP[rendered.toLowerCase()] ?? rendered;
 }
 

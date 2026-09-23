@@ -8,12 +8,13 @@ import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { CoverCardConfig } from '@/types/widget-configs';
-import { cn } from '@/lib/utils';
+import { cn, clamp } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useLowPowerMotion } from '@/hooks/useLowPowerMotion';
 import { coverArrowMotion } from '@/lib/cover-motion';
+import { friendlyName } from '@/lib/ha-service';
 
 export function CoverCard() {
   const { t } = useI18n();
@@ -82,7 +83,7 @@ export function CoverCard() {
     (e: React.PointerEvent) => {
       if (!isDragging || !sliderRef.current) return;
       const rect = sliderRef.current.getBoundingClientRect();
-      const pct = Math.max(0, Math.min(100, ((rect.bottom - e.clientY) / rect.height) * 100));
+      const pct = clamp(((rect.bottom - e.clientY) / rect.height) * 100, 0, 100);
       setDragPosition(pct);
     },
     [isDragging]
@@ -109,7 +110,7 @@ export function CoverCard() {
     );
   }
 
-  const name = config?.name ?? (entity.attributes.friendly_name as string) ?? entityId;
+  const name = config?.name ?? friendlyName(entity) ?? entityId;
   const state = entity.state;
   const position = (entity.attributes.current_position as number | undefined) ?? 0;
   const isOpen = state === 'open' || position > 0;

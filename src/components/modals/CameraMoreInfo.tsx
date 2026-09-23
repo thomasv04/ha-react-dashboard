@@ -6,6 +6,7 @@ import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { MoreInfoHeader } from './MoreInfoHeader';
 import { CameraFeed } from '@/components/ui/CameraFeed/components/CameraFeed';
 import type { CameraCardConfig } from '@/types/widget-types';
+import { friendlyName } from '@/lib/ha-service';
 
 type CameraMode = 'stream' | 'snapshot';
 
@@ -23,7 +24,7 @@ export default function CameraMoreInfo({ entityId, widgetId }: { entityId: strin
   const cameraEntity = useSafeEntity(cameraEntityId);
 
   const accessToken = cameraEntity?.attributes.access_token as string | undefined;
-  const name = (cameraEntity?.attributes.friendly_name as string) ?? cameraEntityId;
+  const name = friendlyName(cameraEntity) ?? cameraEntityId;
 
   // Build URL based on HA connection
   const baseUrl = connection

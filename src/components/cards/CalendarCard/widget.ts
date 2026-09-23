@@ -47,10 +47,10 @@ export default defineWidget({
   },
 
   fields: [
-    { key: 'entityIds', label: 'Agendas', fieldType: 'entity-list', domain: 'calendar' },
-    { key: 'name', label: 'Titre', fieldType: 'text' },
-    { key: 'days', label: 'Horizon (jours)', fieldType: 'number' },
-    { key: 'max', label: "Nombre d'évènements", fieldType: 'number' },
+    { key: 'entityIds', label: 'widgets.calendar.fields.entityIds.label', fieldType: 'entity-list', domain: 'calendar' },
+    { key: 'name', label: 'widgets.calendar.fields.name.label', fieldType: 'text' },
+    { key: 'days', label: 'widgets.calendar.fields.days.label', fieldType: 'number' },
+    { key: 'max', label: 'widgets.calendar.fields.max.label', fieldType: 'number' },
   ],
 
   defaults: {

@@ -39,24 +39,23 @@ export default defineWidget({
   dispositions: [
     {
       id: 'default',
-      label: 'Standard',
+      label: 'widgets.template.dispositions.default.label',
       minSize: { lg: { w: 2, h: 1 }, md: { w: 2, h: 1 }, sm: { w: 2, h: 1 } },
       defaultSize: { lg: { w: 3, h: 1 }, md: { w: 3, h: 1 }, sm: { w: 4, h: 1 } },
     },
   ],
 
   fields: [
-    { key: 'entityId', label: 'Entité (contexte)', fieldType: 'entity' },
-    { key: 'primaryInfo', label: 'Information principale', fieldType: 'template' },
-    { key: 'secondaryInfo', label: 'Information secondaire', fieldType: 'template' },
-    { key: 'icon', label: 'Icône', fieldType: 'template' },
-    { key: 'iconColor', label: 'Couleur icône', fieldType: 'template' },
-    { key: 'image', label: 'Image (URL)', fieldType: 'template' },
-    { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
+    { key: 'entityId', label: 'widgets.template.fields.entityId.label', fieldType: 'entity' },
+    { key: 'primaryInfo', label: 'widgets.template.fields.primaryInfo.label', fieldType: 'template' },
+    { key: 'secondaryInfo', label: 'widgets.template.fields.secondaryInfo.label', fieldType: 'template' },
+    { key: 'icon', label: 'widgets.template.fields.icon.label', fieldType: 'template' },
+    { key: 'iconColor', label: 'widgets.template.fields.iconColor.label', fieldType: 'template' },
+    { key: 'image', label: 'widgets.template.fields.image.label', fieldType: 'template' },
+    { key: 'showInfoPanel', label: 'widgets.template.fields.showInfoPanel.label', fieldType: 'boolean' },
   ],
 
   defaults: {
-    type: 'template',
     primaryInfo: 'Hello, {{user}}',
     secondaryInfo: "{{ states('sensor.bedroom_temperature') }}°C",
     icon: 'mdi:home',

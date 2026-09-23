@@ -46,19 +46,19 @@ export default defineWidget({
   },
 
   fields: [
-    { key: 'entityId', label: 'Entité', fieldType: 'entity' },
-    { key: 'name', label: 'Nom affiché', fieldType: 'text' },
-    { key: 'hours', label: "Fenêtre d'historique (heures)", fieldType: 'number' },
+    { key: 'entityId', label: 'widgets.chart.fields.entityId.label', fieldType: 'entity' },
+    { key: 'name', label: 'widgets.chart.fields.name.label', fieldType: 'text' },
+    { key: 'hours', label: 'widgets.chart.fields.hours.label', fieldType: 'number' },
     {
       key: 'variant',
-      label: 'Rendu',
+      label: 'widgets.chart.fields.variant.label',
       fieldType: 'select',
       options: [
-        { value: 'line', label: 'Courbe' },
-        { value: 'timeline', label: 'Frise on/off' },
+        { value: 'line', label: 'widgets.chart.fields.variant.options.line' },
+        { value: 'timeline', label: 'widgets.chart.fields.variant.options.timeline' },
       ],
     },
-    { key: 'color', label: 'Couleur (#hex ou template Jinja)', fieldType: 'text' },
+    { key: 'color', label: 'widgets.chart.fields.color.label', fieldType: 'text' },
   ],
 
   defaults: {

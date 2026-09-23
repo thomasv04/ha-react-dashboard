@@ -6,6 +6,19 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Ramène `value` dans `[min, max]`.
+ *
+ * Écrit `Math.max(min, Math.min(max, value))` : c'est la borne **basse** qui
+ * gagne quand `min > max` (une grille plus étroite que le widget qu'on y
+ * pose). L'écriture miroir `Math.min(max, Math.max(min, value))` rend `max`
+ * dans ce cas — les deux traînaient dans le code, ce qui n'est pas la même
+ * chose.
+ */
+export function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+/**
  * L'événement clavier vient-il d'un champ où l'utilisateur est en train d'écrire ?
  *
  * `e.target` ne suffit pas : sous Home Assistant le dashboard vit dans une

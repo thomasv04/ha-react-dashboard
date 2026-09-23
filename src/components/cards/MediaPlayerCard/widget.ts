@@ -40,37 +40,36 @@ export default defineWidget({
   dispositions: [
     {
       id: 'horizontal',
-      label: 'Horizontale',
-      description: 'Cover + infos côte à côte',
+      label: 'widgets.media_player.dispositions.horizontal.label',
+      description: 'widgets.media_player.dispositions.horizontal.description',
       minSize: { lg: { w: 3, h: 2 }, md: { w: 4, h: 2 }, sm: { w: 4, h: 2 } },
       defaultSize: { lg: { w: 4, h: 3 }, md: { w: 4, h: 3 }, sm: { w: 4, h: 3 } },
     },
     {
       id: 'vertical',
-      label: 'Verticale',
-      description: 'Cover au-dessus, contrôles en dessous',
+      label: 'widgets.media_player.dispositions.vertical.label',
+      description: 'widgets.media_player.dispositions.vertical.description',
       minSize: { lg: { w: 2, h: 3 }, md: { w: 2, h: 3 }, sm: { w: 2, h: 3 } },
       defaultSize: { lg: { w: 3, h: 4 }, md: { w: 3, h: 4 }, sm: { w: 4, h: 4 } },
     },
   ],
 
   fields: [
-    { key: 'entityId', label: 'Lecteur multimédia', fieldType: 'entity', domain: 'media_player' },
-    { key: 'name', label: 'Nom affiché', fieldType: 'text' },
+    { key: 'entityId', label: 'widgets.media_player.fields.entityId.label', fieldType: 'entity', domain: 'media_player' },
+    { key: 'name', label: 'widgets.media_player.fields.name.label', fieldType: 'text' },
     {
       key: 'disposition',
-      label: 'Mise en page',
+      label: 'widgets.media_player.fields.disposition.label',
       fieldType: 'select',
       options: [
-        { value: 'horizontal', label: 'Horizontale (cover + infos)' },
-        { value: 'vertical', label: 'Verticale (cover en grand)' },
-        { value: 'compact', label: 'Compacte (1 ligne)' },
+        { value: 'horizontal', label: 'widgets.media_player.fields.disposition.options.horizontal' },
+        { value: 'vertical', label: 'widgets.media_player.fields.disposition.options.vertical' },
+        { value: 'compact', label: 'widgets.media_player.fields.disposition.options.compact' },
       ],
     },
   ],
 
   defaults: {
-    type: 'media_player',
     entityId: 'media_player.salon',
     disposition: 'horizontal',
   } satisfies WidgetDefaults<WidgetConfig>,

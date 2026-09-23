@@ -1,6 +1,6 @@
 import { useDashboardLayout } from '@/context/DashboardLayoutContext';
 import { WIDGET_DISPOSITIONS, getMinSize } from '@/widgets';
-import { cn } from '@/lib/utils';
+import { cn, clamp } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 
 interface CardLayoutTabProps {
@@ -23,12 +23,12 @@ export function CardLayoutTab({ widgetId, breakpoint }: CardLayoutTabProps) {
   const maxH = 12;
 
   const setWidth = (w: number) => {
-    const clamped = Math.max(minSize.w, Math.min(maxW, w));
+    const clamped = clamp(w, minSize.w, maxW);
     updateWidget(widgetId, { w: clamped }, breakpoint);
   };
 
   const setHeight = (h: number) => {
-    const clamped = Math.max(minSize.h, Math.min(maxH, h));
+    const clamped = clamp(h, minSize.h, maxH);
     updateWidget(widgetId, { h: clamped }, breakpoint);
   };
 
@@ -42,7 +42,7 @@ export function CardLayoutTab({ widgetId, breakpoint }: CardLayoutTabProps) {
       widgetId,
       {
         disposition: dispositionId,
-        w: Math.max(newMin.w, Math.min(widget.w, maxW)),
+        w: clamp(widget.w, newMin.w, maxW),
         h: Math.max(newMin.h, widget.h),
       },
       breakpoint
@@ -83,8 +83,8 @@ export function CardLayoutTab({ widgetId, breakpoint }: CardLayoutTabProps) {
                     </div>
                   )}
                 </div>
-                <div className='text-sm font-medium text-white/80'>{disp.label}</div>
-                {disp.description && <div className='text-[11px] text-white/30 mt-1'>{disp.description}</div>}
+                <div className='text-sm font-medium text-white/80'>{t(disp.label)}</div>
+                {disp.description && <div className='text-[11px] text-white/30 mt-1'>{t(disp.description)}</div>}
               </button>
             ))}
           </div>

@@ -39,7 +39,7 @@ export default defineWidget({
   dispositions: [
     {
       id: 'default',
-      label: 'Standard',
+      label: 'widgets.shortcuts.dispositions.default.label',
       minSize: { lg: { w: 2, h: 2 }, md: { w: 4, h: 2 }, sm: { w: 4, h: 2 } },
       defaultSize: { lg: { w: 4, h: 3 }, md: { w: 8, h: 3 }, sm: { w: 4, h: 3 } },
     },
@@ -48,21 +48,20 @@ export default defineWidget({
   fields: [
     {
       key: 'shortcuts',
-      label: 'Raccourcis',
+      label: 'widgets.shortcuts.fields.shortcuts.label',
       fieldType: 'list',
       itemFields: [
-        { key: 'id', label: 'Identifiant', fieldType: 'text' },
-        { key: 'label', label: 'Nom affiché', fieldType: 'text' },
-        { key: 'icon', label: 'Icône', fieldType: 'icon' },
-        { key: 'panelId', label: 'Panneau lié', fieldType: 'panel-select' },
-        { key: 'color', label: 'Couleur', fieldType: 'gradient' },
-        { key: 'statusEntity', label: 'Entité statut', fieldType: 'entity' },
+        { key: 'id', label: 'widgets.shortcuts.fields.shortcuts.item.id.label', fieldType: 'text' },
+        { key: 'label', label: 'widgets.shortcuts.fields.shortcuts.item.label.label', fieldType: 'text' },
+        { key: 'icon', label: 'widgets.shortcuts.fields.shortcuts.item.icon.label', fieldType: 'icon' },
+        { key: 'panelId', label: 'widgets.shortcuts.fields.shortcuts.item.panelId.label', fieldType: 'panel-select' },
+        { key: 'color', label: 'widgets.shortcuts.fields.shortcuts.item.color.label', fieldType: 'gradient' },
+        { key: 'statusEntity', label: 'widgets.shortcuts.fields.shortcuts.item.statusEntity.label', fieldType: 'entity' },
       ],
     },
   ],
 
   defaults: {
-    type: 'shortcuts',
     // Vide : les raccourcis pointent vers des panneaux que l'utilisateur crée.
     shortcuts: [],
   } satisfies WidgetDefaults<WidgetConfig>,

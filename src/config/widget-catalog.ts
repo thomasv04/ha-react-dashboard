@@ -1,15 +1,11 @@
 import type { GridWidget } from '@/context/DashboardLayoutContext';
 
 /**
- * Catalogue de tous les widgets pouvant être ajoutés/remis dans le dashboard.
+ * Une entrée du catalogue « Ajouter un widget » : le type et la taille posée à
+ * l'ajout. Dérivé des manifestes par `@/widgets`.
  *
- * Extrait de `DashboardLayoutContext` (qui le réexporte) : `@/widgets` doit
- * pouvoir le lire pour dériver le catalogue final, et le contexte dépend lui
- * de `@/widgets` — les laisser dans le même module créait un cycle à
- * l'exécution.
- *
- * Données historiques : un widget déclaré via `defineWidget` n'a pas besoin
- * d'entrée ici, sa `defaultSize` fait foi.
+ * Ici et non dans `DashboardLayoutContext` : `@/widgets` doit lire ce type, et
+ * le contexte dépend lui de `@/widgets` — même module, cycle à l'exécution.
  */
 export interface WidgetCatalogEntry {
   type: GridWidget['type'];

@@ -1,3 +1,4 @@
+import { clamp } from '@/lib/utils';
 interface SensorGaugeProps {
   value: number;
   min?: number;
@@ -16,7 +17,7 @@ export function SensorGauge({ value, min = 0, max = 100, unit = '', color = '#60
 
   const startAngle = Math.PI;
   const endAngle = 2 * Math.PI;
-  const fraction = Math.max(0, Math.min(1, (value - min) / (max - min || 1)));
+  const fraction = clamp((value - min) / (max - min || 1), 0, 1);
   const valueAngle = startAngle + fraction * (endAngle - startAngle);
 
   const toXY = (angle: number) => ({

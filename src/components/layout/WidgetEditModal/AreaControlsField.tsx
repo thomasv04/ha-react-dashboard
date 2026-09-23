@@ -1,9 +1,11 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { useDropdownPortal } from '@/hooks/useDropdownPortal';
 import { ChevronDown, ChevronUp, Search, X, Plus } from 'lucide-react';
 import { useAreas } from '@hakit/core';
 import { useI18n } from '@/i18n';
 import { useArea, areaDomains, isEntityToken } from '@/hooks/useAreaControls';
+import { friendlyName } from '@/lib/ha-service';
 
 /**
  * Choix d'une zone Home Assistant et des commandes qu'elle apporte : un domaine
@@ -26,18 +28,22 @@ export function AreaControlsField({
   const { t } = useI18n();
   const areas = useAreas();
   const selectedArea = useArea(area);
-  const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const {
+    open,
+    setOpen,
+    toggle: handleToggle,
+    triggerRef,
+    dropRef: dropdownRef,
+    dropStyle,
+  } = useDropdownPortal<HTMLButtonElement>({ minWidth: 280 });
 
   const domains = useMemo(() => areaDomains(selectedArea), [selectedArea]);
   const entities = useMemo(() => selectedArea?.entities ?? [], [selectedArea]);
 
   const q = search.toLowerCase();
   const domainLabel = (d: string) => t(`widgets.room.domains.${d}`);
-  const entityLabel = (id: string) => (entities.find(e => e.entity_id === id)?.attributes.friendly_name as string | undefined) ?? id;
+  const entityLabel = (id: string) => friendlyName(entities.find(e => e.entity_id === id)) ?? id;
 
   const availableDomains = domains.filter(d => !controls.includes(d) && domainLabel(d).toLowerCase().includes(q));
   const availableEntities = entities
@@ -56,25 +62,6 @@ export function AreaControlsField({
     setOpen(false);
     setSearch('');
   };
-
-  const handleToggle = () => {
-    if (!open && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setDropPos({ top: rect.bottom + 4, left: rect.left, width: Math.max(rect.width, 280) });
-    }
-    setOpen(v => !v);
-  };
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (triggerRef.current?.contains(target) || dropdownRef.current?.contains(target)) return;
-      setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
 
   return (
     <div className='space-y-2'>
@@ -132,9 +119,7 @@ export function AreaControlsField({
             ref={dropdownRef}
             style={{
               position: 'fixed',
-              top: dropPos.top,
-              left: dropPos.left,
-              width: dropPos.width,
+              ...dropStyle,
               zIndex: 9999,
               background: 'rgba(12, 16, 40, 0.98)',
               backdropFilter: 'blur(20px)',
@@ -177,9 +162,7 @@ export function AreaControlsField({
               )}
               {availableEntities.map(e => (
                 <button key={e.entity_id} onClick={() => add(e.entity_id)} className='w-full text-left px-3 py-1.5 hover:bg-white/8 group'>
-                  <span className='block text-sm text-white/60 group-hover:text-white/90 truncate'>
-                    {(e.attributes.friendly_name as string | undefined) ?? e.entity_id}
-                  </span>
+                  <span className='block text-sm text-white/60 group-hover:text-white/90 truncate'>{friendlyName(e) ?? e.entity_id}</span>
                   <span className='block text-[10px] text-white/25 font-mono truncate'>{e.entity_id}</span>
                 </button>
               ))}

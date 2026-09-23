@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
+import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useEntityHistory } from '@/hooks/useEntityHistory';
 import { HistoryGraph } from '@/components/charts/HistoryGraph';
@@ -12,6 +12,7 @@ import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { useColor } from '@/hooks/useColor';
 import type { ChartCardConfig } from '@/types/widget-configs';
+import { friendlyName } from '@/lib/ha-service';
 
 /**
  * Hauteur du tracé selon la place disponible. `useWidgetSize` ne rend qu'une
@@ -42,7 +43,7 @@ export function ChartCard() {
     );
   }
 
-  const name = config?.name ?? (entity.attributes.friendly_name as string | undefined) ?? entityId;
+  const name = config?.name ?? friendlyName(entity) ?? entityId;
   const unit = (entity.attributes.unit_of_measurement as string | undefined) ?? '';
   // Une entité non numérique n'a pas de courbe : sa frise on/off la remplace.
   const variant = config?.variant ?? (Number.isNaN(parseFloat(entity.state)) ? 'timeline' : 'line');
@@ -50,9 +51,7 @@ export function ChartCard() {
   return (
     <motion.div
       ref={cardRef}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: DURATION_ENTRANCE }}
+      {...CARD_ENTRANCE}
       className={cn('gc rounded-3xl h-full overflow-hidden select-none flex flex-col', size.squat ? 'px-3 py-1.5' : 'p-3.5')}
     >
       {/* En-tête : sur une seule rangée, la valeur passe à côté du titre */}

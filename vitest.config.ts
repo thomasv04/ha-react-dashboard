@@ -16,6 +16,8 @@ export default defineConfig({
   // Injecté par vite.config.ts au build. Valeur factice ici : les tests ne
   // doivent pas dépendre de la version en cours (cf. ed65051).
   define: { __BUILD_VERSION__: '"test"' },
+  // Même raison que dans vite.config.ts : ne pas surveiller les venvs Python.
+  server: { watch: { ignored: ['**/.venv*/**'] } },
   test: {
     globals: true,
     environment: 'jsdom',

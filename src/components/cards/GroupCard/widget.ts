@@ -39,28 +39,27 @@ export default defineWidget({
   dispositions: [
     {
       id: 'default',
-      label: 'Groupe',
+      label: 'widgets.group.dispositions.default.label',
       minSize: { lg: { w: 2, h: 2 }, md: { w: 2, h: 2 }, sm: { w: 2, h: 2 } },
       defaultSize: { lg: { w: 4, h: 4 }, md: { w: 6, h: 4 }, sm: { w: 4, h: 4 } },
     },
   ],
 
   fields: [
-    { key: 'title', label: 'Titre du groupe', fieldType: 'text' },
+    { key: 'title', label: 'widgets.group.fields.title.label', fieldType: 'text' },
     {
       key: 'columns',
-      label: 'Colonnes',
+      label: 'widgets.group.fields.columns.label',
       fieldType: 'select',
       options: [
-        { value: '1', label: '1 colonne' },
-        { value: '2', label: '2 colonnes' },
-        { value: '3', label: '3 colonnes' },
+        { value: '1', label: 'widgets.group.fields.columns.options.1' },
+        { value: '2', label: 'widgets.group.fields.columns.options.2' },
+        { value: '3', label: 'widgets.group.fields.columns.options.3' },
       ],
     },
   ],
 
   defaults: {
-    type: 'group',
     title: '',
     columns: 2,
     children: [],

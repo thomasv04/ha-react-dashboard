@@ -8,6 +8,7 @@ import { useMoreInfo } from '@/context/MoreInfoContext';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { resolveIcon, useIconCatalog } from '@/lib/lucide-icon-map';
 import { modalTypeFor } from '@/components/modals/more-info-registry';
+import { friendlyName } from '@/lib/ha-service';
 
 /**
  * Rend l'icône d'une pastille.
@@ -28,7 +29,7 @@ function Badge({ entityId, state, attributes }: { entityId: string; state?: stri
   const ref = useRef<HTMLButtonElement>(null);
 
   const iconNode = renderBadgeIcon(attributes?.icon as string | undefined);
-  const name = (attributes?.friendly_name as string) ?? entityId;
+  const name = friendlyName({ attributes }) ?? entityId;
   const unit = attributes?.unit_of_measurement as string | undefined;
 
   // Un état absent veut dire que Home Assistant n'a pas (encore) l'entité : on

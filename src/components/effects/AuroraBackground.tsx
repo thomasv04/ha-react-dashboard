@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useLowPowerMotion } from '@/hooks/useLowPowerMotion';
 import type { AuroraConfig } from '@/config/themes';
 import { advanceParticle, DEFAULT_EDGE_BEHAVIOUR } from '@/lib/background-motion';
+import { clamp } from '@/lib/utils';
 
 /**
  * Cadence du fond, et non celle de la page.
@@ -107,7 +108,7 @@ export function AuroraBackground({ config }: AuroraBackgroundProps) {
     if (!canvas) return;
 
     const palette = PALETTES[config?.palette ?? 'default'] ?? PALETTES.default;
-    const orbCount = Math.max(1, Math.min(12, config?.orbCount ?? 5));
+    const orbCount = clamp(config?.orbCount ?? 5, 1, 12);
     const speedMult = config?.speed ?? 1;
     const sizeMult = config?.size ?? 1;
     const opacity = config?.opacity ?? 1;

@@ -1,12 +1,13 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useDropdownPortal } from '@/hooks/useDropdownPortal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, Search, Check, X, Copy, ChevronUp, ChevronDown } from 'lucide-react';
 import { WIDGET_META, WIDGET_FIELD_DEFS, DEFAULT_WIDGET_CONFIGS } from '@/widgets';
 import { ChildFieldRenderer, WIDE_FIELD_TYPES } from '@/components/layout/WidgetEditModal/GroupWidgetsTab';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { IconPicker } from '@/components/layout/WidgetPickers';
-import { cn } from '@/lib/utils';
+import { cn, clamp } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { genId } from './block-meta';
 import type { ButtonBlock, ButtonRowBlock, InlineButton, CoverRowBlock, SectionHeaderBlock, WidgetBlock } from '@/types/custom-panel';
@@ -61,10 +62,7 @@ export function ServicePicker({
 }) {
   const { t } = useI18n();
   const [search, setSearch] = useState('');
-  const [open, setOpen] = useState(false);
-  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const dropRef = useRef<HTMLDivElement>(null);
+  const { open, close, toggle: handleOpen, triggerRef, dropRef, dropStyle } = useDropdownPortal<HTMLButtonElement>();
 
   const current = domain && service ? `${domain}.${service}` : '';
   const currentPreset = SERVICE_PRESETS.find(p => p.domain === domain && p.service === service);
@@ -76,24 +74,6 @@ export function ServicePicker({
       )
     : SERVICE_PRESETS;
 
-  const handleOpen = () => {
-    if (!open && triggerRef.current) {
-      const r = triggerRef.current.getBoundingClientRect();
-      setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
-    }
-    setOpen(v => !v);
-  };
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (triggerRef.current?.contains(e.target as Node) || dropRef.current?.contains(e.target as Node)) return;
-      setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
   const dropdown =
     open &&
     createPortal(
@@ -101,9 +81,7 @@ export function ServicePicker({
         ref={dropRef}
         className='fixed rounded-xl border border-white/12 shadow-2xl overflow-hidden'
         style={{
-          top: dropPos.top,
-          left: dropPos.left,
-          width: dropPos.width,
+          ...dropStyle,
           zIndex: 9999,
           background: 'rgba(12, 16, 40, 0.98)',
           backdropFilter: 'blur(20px)',
@@ -127,7 +105,7 @@ export function ServicePicker({
                 key={`${p.domain}.${p.service}`}
                 onClick={() => {
                   onChange(p.domain, p.service);
-                  setOpen(false);
+                  close();
                   setSearch('');
                 }}
                 className={cn(
@@ -619,7 +597,7 @@ export function WidgetBlockForm({ block, onChange }: { block: WidgetBlock; onCha
           min={1}
           max={12}
           value={block.rows ?? 4}
-          onChange={e => onChange({ ...block, rows: Math.max(1, Math.min(12, Number(e.target.value) || 4)) })}
+          onChange={e => onChange({ ...block, rows: clamp(Number(e.target.value) || 4, 1, 12) })}
           className='w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 outline-none focus:border-blue-500/50'
         />
         <p className='text-[10px] text-white/25 mt-1'>{t('layout.customPanel.widgetRowsHint')}</p>

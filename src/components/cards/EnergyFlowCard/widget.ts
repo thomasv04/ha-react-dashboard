@@ -45,13 +45,23 @@ export default defineWidget({
   },
 
   fields: [
-    { key: 'name', label: 'Titre', fieldType: 'text' },
-    { key: 'solarProductionEntity', label: 'Production solaire', fieldType: 'entity', domain: 'sensor' },
-    { key: 'homeOutputPowerEntity', label: 'Puissance maison', fieldType: 'entity', domain: 'sensor' },
-    { key: 'gridInputPowerEntity', label: 'Puissance réseau', fieldType: 'entity', domain: 'sensor' },
-    { key: 'batteryLevelEntity', label: 'Niveau batterie', fieldType: 'entity', domain: 'sensor' },
-    { key: 'batteryStateEntity', label: 'État batterie', fieldType: 'entity', domain: 'sensor' },
-    { key: 'gridInvert', label: 'Inverser le signe du réseau', fieldType: 'boolean' },
+    { key: 'name', label: 'widgets.energy_flow.fields.name.label', fieldType: 'text' },
+    {
+      key: 'solarProductionEntity',
+      label: 'widgets.energy_flow.fields.solarProductionEntity.label',
+      fieldType: 'entity',
+      domain: 'sensor',
+    },
+    {
+      key: 'homeOutputPowerEntity',
+      label: 'widgets.energy_flow.fields.homeOutputPowerEntity.label',
+      fieldType: 'entity',
+      domain: 'sensor',
+    },
+    { key: 'gridInputPowerEntity', label: 'widgets.energy_flow.fields.gridInputPowerEntity.label', fieldType: 'entity', domain: 'sensor' },
+    { key: 'batteryLevelEntity', label: 'widgets.energy_flow.fields.batteryLevelEntity.label', fieldType: 'entity', domain: 'sensor' },
+    { key: 'batteryStateEntity', label: 'widgets.energy_flow.fields.batteryStateEntity.label', fieldType: 'entity', domain: 'sensor' },
+    { key: 'gridInvert', label: 'widgets.energy_flow.fields.gridInvert.label', fieldType: 'boolean' },
   ],
 
   defaults: {

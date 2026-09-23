@@ -64,6 +64,10 @@ export default defineConfig({
     // Sur Windows, Node résout `localhost` en `::1` d'abord : Vite n'écoutait
     // que sur IPv6 pendant que Chrome appelait 127.0.0.1 → ERR_CONNECTION_REFUSED.
     host: '127.0.0.1',
+    // Les venvs Python du harnais de tests (≈ 160 000 fichiers) ne sont pas dans
+    // les exclusions par défaut du watcher : leur parcours bloquait le serveur
+    // plusieurs minutes avant de servir le premier module.
+    watch: { ignored: ['**/.venv*/**'] },
     // Proxy API requests to the Express server (configurable port for E2E tests)
     proxy: {
       '/api': {

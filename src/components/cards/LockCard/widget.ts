@@ -43,9 +43,9 @@ export default defineWidget({
   },
 
   fields: [
-    { key: 'entityId', label: 'Serrure', fieldType: 'entity', domain: 'lock' },
-    { key: 'name', label: 'Nom affiché', fieldType: 'text' },
-    { key: 'confirmUnlock', label: 'Confirmer le déverrouillage', fieldType: 'boolean' },
+    { key: 'entityId', label: 'widgets.lock.fields.entityId.label', fieldType: 'entity', domain: 'lock' },
+    { key: 'name', label: 'widgets.lock.fields.name.label', fieldType: 'text' },
+    { key: 'confirmUnlock', label: 'widgets.lock.fields.confirmUnlock.label', fieldType: 'boolean' },
   ],
 
   defaults: {

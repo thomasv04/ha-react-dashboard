@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
+import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { BatteryLow, BatteryFull } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -10,6 +10,7 @@ import { ProgressBar } from '@/components/charts/ProgressBar';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 import type { BatteriesCardConfig } from '@/types/widget-configs';
+import { friendlyName } from '@/lib/ha-service';
 
 interface Battery {
   id: string;
@@ -37,7 +38,7 @@ function useBatteries(): Battery[] {
       // Une batterie binaire (`binary_sensor`, on = faible) n'a pas de niveau :
       // la barre n'aurait rien à afficher.
       if (Number.isNaN(level)) continue;
-      next.push({ id, name: (attributes.friendly_name as string | undefined) ?? id, level });
+      next.push({ id, name: friendlyName({ attributes }) ?? id, level });
     }
     next.sort((a, b) => a.level - b.level);
 
@@ -83,9 +84,7 @@ export function BatteriesCard() {
   return (
     <motion.div
       ref={cardRef}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: DURATION_ENTRANCE }}
+      {...CARD_ENTRANCE}
       className={cn('gc rounded-3xl h-full overflow-hidden select-none flex flex-col', size.squat ? 'px-3 py-2' : 'p-3.5')}
     >
       {/* En-tête : le compteur de batteries faibles est l'information utile */}

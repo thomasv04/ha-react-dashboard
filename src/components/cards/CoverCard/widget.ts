@@ -40,21 +40,20 @@ export default defineWidget({
   dispositions: [
     {
       id: 'default',
-      label: 'Standard',
+      label: 'widgets.cover.dispositions.default.label',
       minSize: { lg: { w: 2, h: 2 }, md: { w: 2, h: 2 }, sm: { w: 2, h: 2 } },
       defaultSize: { lg: { w: 2, h: 3 }, md: { w: 2, h: 3 }, sm: { w: 2, h: 3 } },
     },
   ],
 
   fields: [
-    { key: 'entityId', label: 'Entité volet', fieldType: 'entity', domain: 'cover' },
-    { key: 'name', label: 'Nom affiché', fieldType: 'text' },
-    { key: 'icon', label: 'Icône', fieldType: 'icon' },
-    { key: 'showInfoPanel', label: 'Panneau info (More Info)', fieldType: 'boolean' },
+    { key: 'entityId', label: 'widgets.cover.fields.entityId.label', fieldType: 'entity', domain: 'cover' },
+    { key: 'name', label: 'widgets.cover.fields.name.label', fieldType: 'text' },
+    { key: 'icon', label: 'widgets.cover.fields.icon.label', fieldType: 'icon' },
+    { key: 'showInfoPanel', label: 'widgets.cover.fields.showInfoPanel.label', fieldType: 'boolean' },
   ],
 
   defaults: {
-    type: 'cover',
     entityId: 'cover.living_room',
     name: 'Volet Salon',
   } satisfies WidgetDefaults<WidgetConfig>,

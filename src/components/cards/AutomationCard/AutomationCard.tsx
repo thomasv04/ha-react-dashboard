@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { motion } from 'framer-motion';
-import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
+import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { Workflow, Clock } from 'lucide-react';
 import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
@@ -15,6 +15,7 @@ import type { AutomationCardConfig } from '@/types/widget-configs';
 import { useI18n } from '@/i18n';
 import { useGroupEmbedded } from '@/components/cards/GroupCard/GroupCard';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
+import { friendlyName } from '@/lib/ha-service';
 
 const ACCENT = '#4ade80';
 
@@ -42,7 +43,7 @@ export function AutomationCard() {
   }
 
   const isOn = entity.state === 'on';
-  const name = config?.name ?? (entity.attributes.friendly_name as string | undefined) ?? entityId;
+  const name = config?.name ?? friendlyName(entity) ?? entityId;
 
   // Seule information qui manquait vraiment sur une automatisation : quand
   // elle s'est déclenchée pour la dernière fois.
@@ -68,9 +69,7 @@ export function AutomationCard() {
   return (
     <motion.div
       ref={cardRef}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: DURATION_ENTRANCE }}
+      {...CARD_ENTRANCE}
       onClick={handleToggle}
       className={cn(
         'h-full relative overflow-hidden flex items-center justify-between gap-3 cursor-pointer transition-all duration-300 select-none',

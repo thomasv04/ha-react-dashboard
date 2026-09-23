@@ -8,6 +8,7 @@ import type { CustomPanel, DockConfig } from '@/types/custom-panel';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 // Registres dérivés des manifestes de widgets (cf. `src/widgets/index.ts`).
 import { DEFAULT_WIDGET_CONFIGS, WIDGET_DISPOSITIONS, WIDGET_CATALOG, SIZE_PRESETS } from '@/widgets';
+import type { ManifestWidgetType } from '@/widgets/registry';
 export { WIDGET_CATALOG, SIZE_PRESETS };
 
 /**
@@ -17,37 +18,12 @@ export { WIDGET_CATALOG, SIZE_PRESETS };
  */
 export interface GridWidget {
   id: string;
-  type:
-    | 'camera'
-    | 'weather'
-    | 'thermostat'
-    | 'shortcuts'
-    | 'tempo'
-    | 'energy'
-    | 'energy_flow'
-    | 'greeting'
-    | 'activity'
-    | 'sensor'
-    | 'light'
-    | 'person'
-    | 'cover'
-    | 'template'
-    | 'automation'
-    | 'automation_list'
-    | 'button'
-    | 'group'
-    | 'room'
-    | 'media_player'
-    | 'alarm'
-    | 'vacuum'
-    | 'chart'
-    | 'batteries'
-    | 'lock'
-    | 'calendar'
-    | 'todo'
-    | 'fan'
-    | 'clock'
-    | 'pellet';
+  /**
+   * Dérivé des manifestes : `defineWidget` fixe l'inférence en `const` pour
+   * que `WIDGETS` produise une union de littéraux. L'union vivait ici, tenue à
+   * la main, et un script en regex vérifiait qu'elle suivait les manifestes.
+   */
+  type: ManifestWidgetType;
   x: number;
   y: number;
   w: number;
