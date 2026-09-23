@@ -1,11 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import {
   containSize,
+  guessPartKind,
   isNightDimmed,
   lightGlow,
   movePos,
   normalizeAnchor,
+  normalizeParts,
   normalizePos,
+  openness,
+  partFrame,
   resizePos,
   sunLighting,
   DEFAULT_WIDGET_SIZE,
@@ -133,5 +137,74 @@ describe('isNightDimmed', () => {
     expect(isNightDimmed('below_horizon', false)).toBe(false);
     expect(isNightDimmed('above_horizon', true)).toBe(false);
     expect(isNightDimmed(undefined, true)).toBe(false);
+  });
+});
+
+describe('normalizeParts', () => {
+  const door = { id: 'p1', kind: 'door', entityId: 'binary_sensor.porte', a: [0, 0, 0], b: [1, 2, 0], side: -1, color: '#aa8855' };
+
+  it('keeps a readable element', () => {
+    expect(normalizeParts([door])).toEqual([door]);
+  });
+
+  it('drops what cannot be drawn, and repairs what can', () => {
+    expect(normalizeParts('x')).toEqual([]);
+    expect(normalizeParts([{ ...door, kind: 'trapdoor' }, { ...door, a: [0, 0] }, { ...door, entityId: 3 }, null])).toEqual([]);
+    // Côté inconnu : celui par défaut ; couleur illisible : oubliée.
+    const { color: _, ...uncolored } = door;
+    expect(normalizeParts([{ ...door, side: 0, color: 'red' }])).toEqual([{ ...uncolored, side: 1 }]);
+  });
+});
+
+describe('partFrame', () => {
+  it('measures the opening and orients it along the first corner', () => {
+    const f = partFrame([1, 0, 2], [1, 2.1, 0.8])!;
+    expect(f.width).toBeCloseTo(1.2);
+    expect(f.height).toBeCloseTo(2.1);
+    expect(f.bottom).toBe(0);
+    // Du premier coin vers le second : −z. La normale est à sa gauche (+x vu de dessus).
+    expect(f.u).toEqual([0, 0, -1]);
+    expect(f.n[0]).toBeCloseTo(1);
+    expect(f.n[2]).toBeCloseTo(0);
+  });
+
+  it('gives the rotation that brings x onto the opening, and z onto its normal', () => {
+    const { angle, u, n } = partFrame([0, 0, 0], [3, 1, 4])!;
+    // Rotation de three.js autour de y : x → (cos θ, 0, −sin θ), z → (sin θ, 0, cos θ).
+    expect([Math.cos(angle), -Math.sin(angle)]).toEqual([expect.closeTo(u[0]), expect.closeTo(u[2])]);
+    expect([Math.sin(angle), Math.cos(angle)]).toEqual([expect.closeTo(n[0]), expect.closeTo(n[2])]);
+  });
+
+  it('refuses two corners too close to open anything', () => {
+    expect(partFrame([0, 0, 0], [0, 2, 0])).toBeNull();
+    expect(partFrame([0, 1, 0], [1, 1, 0])).toBeNull();
+  });
+});
+
+describe('openness', () => {
+  it('follows the position of a cover', () => {
+    expect(openness('open', { current_position: 75 })).toBe(0.75);
+    expect(openness('closed', { current_position: 0 })).toBe(0);
+    expect(openness('open', { current_position: 140 })).toBe(1);
+  });
+
+  it('reads the state of a contact sensor, or of a cover without position', () => {
+    expect(openness('on', {})).toBe(1);
+    expect(openness('off', {})).toBe(0);
+    expect(openness('opening', undefined)).toBe(1);
+    expect(openness('closed', {})).toBe(0);
+    expect(openness(undefined, undefined)).toBe(0);
+  });
+});
+
+describe('guessPartKind', () => {
+  it('guesses from the device class, then the domain', () => {
+    expect(guessPartKind('cover.volet_salon', 'shutter')).toBe('shutter');
+    expect(guessPartKind('cover.volet_salon', undefined)).toBe('shutter');
+    expect(guessPartKind('cover.portail', 'gate')).toBe('door');
+    expect(guessPartKind('cover.garage', 'garage')).toBe('garage');
+    expect(guessPartKind('binary_sensor.garage', 'garage_door')).toBe('garage');
+    expect(guessPartKind('binary_sensor.fenetre', 'window')).toBe('window');
+    expect(guessPartKind('binary_sensor.porte', 'door')).toBe('door');
   });
 });

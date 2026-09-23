@@ -132,6 +132,98 @@ export function normalizeAnchor(anchor: unknown): Vec3 | undefined {
     : undefined;
 }
 
+// ── Éléments animés : portes, fenêtres, volets ───────────────────────────────
+
+export type PartKind = 'door' | 'window' | 'shutter' | 'garage';
+const PART_KINDS: readonly string[] = ['door', 'window', 'shutter', 'garage'];
+
+/**
+ * Porte, fenêtre ou volet dessiné sur la maquette : un rectangle vertical,
+ * donné par deux coins opposés, dans les coordonnées de la maquette.
+ *
+ * Dessiné, et non choisi dans la maquette : la plupart des exports fondent
+ * portes, murs et fenêtres en un seul objet par matière.
+ */
+export interface FloorplanPart {
+  id: string;
+  kind: PartKind;
+  entityId: string;
+  /** Coin bas — côté gonds pour une porte ou une fenêtre. */
+  a: Vec3;
+  /** Coin haut opposé. */
+  b: Vec3;
+  /** Côté du rectangle, le long de sa normale, où la porte s'ouvre et où se tient le volet. */
+  side: 1 | -1;
+  /** Couleur du battant ou du tablier (`#rrggbb`), prise sur la maquette. */
+  color?: string;
+}
+
+/** Éléments lisibles d'une config : un élément illisible est écarté, pas fatal. */
+export function normalizeParts(parts: unknown): FloorplanPart[] {
+  if (!Array.isArray(parts)) return [];
+  return parts.flatMap(p => {
+    const part = (p && typeof p === 'object' ? p : {}) as Record<string, unknown>;
+    const a = normalizeAnchor(part.a);
+    const b = normalizeAnchor(part.b);
+    if (typeof part.id !== 'string' || typeof part.entityId !== 'string' || !PART_KINDS.includes(part.kind as string) || !a || !b)
+      return [];
+    return [
+      {
+        id: part.id,
+        kind: part.kind as PartKind,
+        entityId: part.entityId,
+        a,
+        b,
+        side: part.side === -1 ? -1 : 1,
+        ...(typeof part.color === 'string' && /^#[0-9a-f]{6}$/i.test(part.color) && { color: part.color }),
+      },
+    ];
+  });
+}
+
+/**
+ * Repère d'un élément : `u`, horizontal, le long de l'ouverture depuis le
+ * premier coin ; `n` sa normale, horizontale aussi ; `angle`, la rotation
+ * autour de y qui amène x sur `u` (et z sur `n`). `null` si les coins sont
+ * trop proches pour former une ouverture.
+ */
+export function partFrame(a: Vec3, b: Vec3) {
+  const dx = b[0] - a[0];
+  const dz = b[2] - a[2];
+  const width = Math.hypot(dx, dz);
+  const height = Math.abs(b[1] - a[1]);
+  if (width < 1e-3 || height < 1e-3) return null;
+  const ux = dx / width;
+  const uz = dz / width;
+  return {
+    width,
+    height,
+    bottom: Math.min(a[1], b[1]),
+    u: [ux, 0, uz] as Vec3,
+    n: [-uz, 0, ux] as Vec3,
+    angle: Math.atan2(-uz, ux),
+  };
+}
+
+/**
+ * Ouverture d'un élément, de 0 (fermé) à 1 (ouvert) : la position d'un volet
+ * quand il la donne, sinon l'état — capteur d'ouverture ou `cover` sans
+ * position.
+ */
+export function openness(state: string | undefined, attributes: Record<string, unknown> | undefined): number {
+  const position = attributes?.current_position;
+  if (typeof position === 'number' && Number.isFinite(position)) return clamp(position / 100, 0, 1);
+  return state === 'on' || state === 'open' || state === 'opening' ? 1 : 0;
+}
+
+/** Type d'élément deviné d'après l'entité choisie — l'utilisateur peut le changer. */
+export function guessPartKind(entityId: string, deviceClass: unknown): PartKind {
+  if (deviceClass === 'garage' || deviceClass === 'garage_door') return 'garage';
+  if (deviceClass === 'window') return 'window';
+  if (entityId.startsWith('cover.')) return deviceClass === 'door' || deviceClass === 'gate' ? 'door' : 'shutter';
+  return 'door';
+}
+
 /** Soleil supposé quand `sun.sun` manque : début d'après-midi, une lumière flatteuse. */
 const DEFAULT_SUN = { elevation: 40, azimuth: 200 };
 
