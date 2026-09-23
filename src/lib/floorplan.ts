@@ -303,24 +303,81 @@ const SKY: { elevation: number; top: Rgb; horizon: Rgb; stars: number }[] = [
   { elevation: 50, top: [42, 112, 214], horizon: [190, 222, 250], stars: 0 }, // plein jour
 ];
 
-const hex = (c: Rgb) => `#${c.map(v => Math.round(clamp(v, 0, 255)).toString(16).padStart(2, '0')).join('')}`;
+const hex = (c: Rgb) =>
+  `#${c
+    .map(v =>
+      Math.round(clamp(v, 0, 255))
+        .toString(16)
+        .padStart(2, '0')
+    )
+    .join('')}`;
 const mix = (a: Rgb, b: Rgb, t: number): Rgb => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+/** Le gris de même luminosité : un ciel couvert. */
+const overcast = (c: Rgb): Rgb => {
+  const l = 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
+  return [l, l, l * 1.04];
+};
+
+/** Entre deux repères encadrant `x`, la part parcourue — pour interpoler. */
+function between<T extends { at: number }>(keys: T[], x: number): [T, T, number] {
+  const v = clamp(x, keys[0].at, keys[keys.length - 1].at);
+  const i = Math.max(0, keys.findIndex(k => k.at >= v) - 1);
+  const [from, to] = [keys[i], keys[i + 1] ?? keys[i]];
+  return [from, to, to.at === from.at ? 0 : (v - from.at) / (to.at - from.at)];
+}
 
 /**
  * Couleurs du ciel derrière la maquette, d'après l'élévation du soleil
- * (`sun.sun` ; absente, celle d'un début d'après-midi).
+ * (`sun.sun` ; absente, celle d'un début d'après-midi). Par temps couvert, il
+ * grisaille et les étoiles se cachent.
  */
-export function skyColors(elevation: number | undefined): { top: string; horizon: string; stars: number } {
-  const e = clamp(elevation ?? DEFAULT_SUN.elevation, SKY[0].elevation, SKY[SKY.length - 1].elevation);
-  const i = Math.max(0, SKY.findIndex(k => k.elevation >= e) - 1);
-  const [from, to] = [SKY[i], SKY[i + 1] ?? SKY[i]];
-  const t = to.elevation === from.elevation ? 0 : (e - from.elevation) / (to.elevation - from.elevation);
+export function skyColors(elevation: number | undefined, clouds = 0): { top: string; horizon: string; stars: number } {
+  const [from, to, t] = between(
+    SKY.map(k => ({ ...k, at: k.elevation })),
+    elevation ?? DEFAULT_SUN.elevation
+  );
+  const veil = (c: Rgb) => hex(mix(c, overcast(c), 0.75 * clouds));
   return {
-    top: hex(mix(from.top, to.top, t)),
-    horizon: hex(mix(from.horizon, to.horizon, t)),
-    stars: from.stars + (to.stars - from.stars) * t,
+    top: veil(mix(from.top, to.top, t)),
+    horizon: veil(mix(from.horizon, to.horizon, t)),
+    stars: (from.stars + (to.stars - from.stars) * t) * (1 - clouds),
   };
 }
+
+// ── Météo ────────────────────────────────────────────────────────────────────
+
+/** Couverture nuageuse par état d'une entité `weather`, de 0 (ciel clair) à 1 (bouché). */
+const CLOUDS: Record<string, number> = {
+  sunny: 0,
+  'clear-night': 0,
+  windy: 0.15,
+  partlycloudy: 0.35,
+  'partly-cloudy': 0.35, // l'orthographe du mock, et de quelques intégrations
+  'windy-variant': 0.4,
+  exceptional: 0.5,
+  cloudy: 0.75,
+  rainy: 0.8,
+  snowy: 0.8,
+  'snowy-rainy': 0.8,
+  hail: 0.8,
+  lightning: 0.85,
+  'lightning-rainy': 0.85,
+  fog: 0.9,
+  pouring: 0.9,
+};
+
+/** Couverture nuageuse d'après l'état d'une entité `weather` — inconnue : ciel clair. */
+export function cloudiness(state: string | undefined): number {
+  return CLOUDS[state ?? ''] ?? 0;
+}
+
+/** Couleur du soleil selon sa hauteur : orangé à l'horizon, doré, puis blanc chaud. */
+const SUN_COLORS: { at: number; color: Rgb }[] = [
+  { at: 0, color: [255, 120, 60] },
+  { at: 4, color: [255, 160, 90] },
+  { at: 10, color: [255, 205, 150] },
+  { at: 25, color: [255, 241, 220] },
+];
 
 /** Soleil supposé quand `sun.sun` manque : début d'après-midi, une lumière flatteuse. */
 const DEFAULT_SUN = { elevation: 40, azimuth: 200 };
@@ -334,15 +391,25 @@ const DEFAULT_SUN = { elevation: 40, azimuth: 200 };
  * réglage, pas une déduction. La nuit, le soleil s'éteint et l'ambiance baisse
  * progressivement autour du crépuscule : les lampes prennent le relais.
  */
-export function sunLighting(sun: { elevation?: number; azimuth?: number } | undefined, north = 0) {
+export function sunLighting(sun: { elevation?: number; azimuth?: number } | undefined, north = 0, clouds = 0) {
   const elevation = sun?.elevation ?? DEFAULT_SUN.elevation;
   const azimuth = sun?.azimuth ?? DEFAULT_SUN.azimuth;
   const e = (elevation * Math.PI) / 180;
   const a = ((azimuth + north) * Math.PI) / 180;
+  const [from, to, t] = between(SUN_COLORS, elevation);
   return {
     dir: [Math.sin(a) * Math.cos(e), Math.sin(e), -Math.cos(a) * Math.cos(e)] as Vec3,
-    sun: 3 * Math.max(0, Math.sin(e)),
-    // Crépuscule civil : de −6° à +10°, l'ambiance passe de la nuit au jour.
-    ambient: 0.15 + 0.85 * clamp((elevation + 6) / 16, 0, 1),
+    // Pleine force dès 8° : l'éclairement d'une surface suit déjà l'angle du
+    // soleil, et l'atmosphère ne l'affaiblit vraiment qu'au ras de l'horizon —
+    // un soleil rasant dore les murs. Sous les nuages, il se voile…
+    sun: 3 * clamp((elevation + 1) / 9, 0, 1) * (1 - 0.75 * clouds),
+    // Crépuscule civil : de −6° à +10°, l'ambiance passe de la nuit au jour —
+    // un peu plus diffuse par temps couvert.
+    ambient: (0.15 + 0.85 * clamp((elevation + 6) / 16, 0, 1)) * (1 + 0.2 * clouds),
+    // …perd sa couleur…
+    color: mix(mix(from.color, to.color, t), [235, 238, 245], 0.8 * clouds).map(Math.round) as Rgb,
+    // …et ses ombres s'adoucissent et pâlissent.
+    softness: 1 + 7 * clouds,
+    shadow: 1 - 0.55 * clouds,
   };
 }

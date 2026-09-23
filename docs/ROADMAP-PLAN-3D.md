@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **9 tâches sur 21** — `E1` et `G1`, passées en priorité, puis la phase A.
+**État global** : **10 tâches sur 21** — `E1` et `G1`, passées en priorité, puis la phase A.
 
 ---
 
@@ -153,7 +153,13 @@ Le reste est indépendant.
 - **Fait quand** : fonction de couleurs testée, rendu vérifié à quatre heures
   de la journée.
 
-### [ ] B2 — La lumière suit l'heure et la météo
+### [x] B2 — La lumière suit l'heure et la météo
+
+> **Fait** : soleil orangé à l'horizon, doré, puis blanc chaud ; sa force ne
+> chute qu'au ras de l'horizon (en sinus, un soleil rasant ne dorait rien).
+> Nuages d'après l'état de l'entité météo (`cloudiness`, testée) : soleil
+> voilé et décoloré, ombres adoucies et pâlies, ciel grisé, étoiles cachées.
+> Entité choisie dans « Maquette 3D », ou la première trouvée.
 
 - **Quoi** : soleil doré bas sur l'horizon ; par temps couvert, soleil voilé,
   ombres adoucies, ambiance plus diffuse. Entité météo choisie, ou la

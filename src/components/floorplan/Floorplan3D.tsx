@@ -101,6 +101,8 @@ interface Floorplan3DProps {
   sunElevation?: number;
   sunAzimuth?: number;
   north: number;
+  /** Couverture nuageuse, de 0 à 1 : soleil voilé, ombres adoucies. */
+  cloudiness: number;
   shadows: boolean;
   /** Murs en coupe, façon Les Sims : seuls les murs du fond restent debout. */
   cutaway: boolean;
@@ -470,6 +472,7 @@ export default function Floorplan3D({
   sunElevation,
   sunAzimuth,
   north,
+  cloudiness,
   shadows,
   cutaway,
   idleRotate,
@@ -716,9 +719,12 @@ export default function Floorplan3D({
   useEffect(() => {
     const s = stage.current;
     if (!s) return;
-    const light = sunLighting({ elevation: sunElevation, azimuth: sunAzimuth }, north);
+    const light = sunLighting({ elevation: sunElevation, azimuth: sunAzimuth }, north, cloudiness);
     s.sun.position.set(...light.dir).multiplyScalar(MODEL_SIZE * 2);
     s.sun.intensity = light.sun;
+    s.sun.color.setRGB(light.color[0] / 255, light.color[1] / 255, light.color[2] / 255, SRGBColorSpace);
+    s.sun.shadow.radius = light.softness;
+    s.sun.shadow.intensity = light.shadow;
     // Les pièces, qu'on voit par-dessus les murets, ne reçoivent guère que
     // cette lumière-là : plus généreuse que le soleil ne le voudrait.
     s.hemi.intensity = light.ambient * AMBIENT_BOOST;
@@ -730,7 +736,7 @@ export default function Floorplan3D({
     }
     s.sun.castShadow = cast;
     s.render();
-  }, [sunElevation, sunAzimuth, north, shadows]);
+  }, [sunElevation, sunAzimuth, north, cloudiness, shadows]);
 
   // ── Lampes ─────────────────────────────────────────────────────────────────
   // Clé sérialisée : le tableau est neuf à chaque rendu du parent, et chaque

@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useHass } from '@hakit/core';
 import { Box as BoxIcon, DoorOpen, Image as ImageIcon, Map as MapIcon, MapPin, RotateCcw, X } from 'lucide-react';
 import { usePages, type FloorplanConfig } from '@/context/PageContext';
 import { useDashboardLayout, useEditMode, type FloorplanPos, type GridWidget } from '@/context/DashboardLayoutContext';
@@ -17,6 +18,7 @@ import { assetUrl } from '@/lib/api-base';
 import { colorAlpha } from '@/lib/color-value';
 import { useTheme } from '@/context/ThemeContext';
 import {
+  cloudiness,
   containSize,
   isNightDimmed,
   lightColor,
@@ -159,8 +161,12 @@ export function FloorplanView() {
   const sunEntity = useEntities(['sun.sun'])['sun.sun'];
   const dimmed = isNightDimmed(sunEntity?.state, floorplan?.dimAtNight);
   const sunElevation = sunEntity?.attributes?.elevation as number | undefined;
+  // La météo voile le soleil et grise le ciel : l'entité choisie, ou la première trouvée.
+  const firstWeather = useHass(s => Object.keys(s.entities ?? {}).find(id => id.startsWith('weather.')));
+  const weatherId = floorplan?.weather || firstWeather || '';
+  const clouds = cloudiness(useEntities([weatherId])[weatherId]?.state);
   // Derrière la maquette : le ciel de l'heure, sauf si la page garde le fond du thème.
-  const sky = model && floorplan?.sky !== false ? skyColors(sunElevation) : null;
+  const sky = model && floorplan?.sky !== false ? skyColors(sunElevation, clouds) : null;
 
   const lamps: Lamp[] = model
     ? glows.flatMap(g => {
@@ -439,7 +445,9 @@ export function FloorplanView() {
               ...(sky && { background: `linear-gradient(to bottom, ${sky.top}, ${sky.horizon})`, borderRadius: '1.25rem' }),
             }}
           >
-            {sky && sky.stars > 0 && <div className='absolute inset-0 rounded-[1.25rem] pointer-events-none' style={{ ...STARS, opacity: sky.stars }} />}
+            {sky && sky.stars > 0 && (
+              <div className='absolute inset-0 rounded-[1.25rem] pointer-events-none' style={{ ...STARS, opacity: sky.stars }} />
+            )}
             {failed ? (
               <p className='m-auto absolute inset-0 h-fit w-fit max-w-sm px-4 py-3 rounded-2xl gc-overlay text-sm text-white/70 text-center'>
                 {t(failed === 'webgl' ? 'layout.floorplan.webglError' : 'layout.floorplan.modelError')}
@@ -453,6 +461,7 @@ export function FloorplanView() {
                   sunElevation={sunElevation}
                   sunAzimuth={sunEntity?.attributes?.azimuth as number | undefined}
                   north={floorplan?.north ?? 0}
+                  cloudiness={clouds}
                   shadows={!perfSettings.disableShadows}
                   cutaway={floorplan?.cutaway !== false}
                   // Ni en édition, où l'on règle la vue, ni en économie d'énergie.
@@ -632,6 +641,14 @@ export function FloorplanView() {
                   {checkbox(t('layout.floorplan.idleRotate'), !!floorplan?.idleRotate, checked => setFloorplan({ idleRotate: checked }))}
                   {checkbox(t('layout.floorplan.sky'), floorplan?.sky !== false, checked => setFloorplan({ sky: checked }))}
                 </div>
+              )}
+              {model && (
+                <EntityPicker
+                  label={t('layout.floorplan.weather')}
+                  value={weatherId}
+                  domain='weather'
+                  onChange={id => setFloorplan({ weather: id })}
+                />
               )}
               {model && <PartList parts={parts} onRemove={id => setFloorplan({ parts: parts.filter(p => p.id !== id) })} />}
             </div>

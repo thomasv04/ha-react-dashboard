@@ -24,6 +24,8 @@ export interface FloorplanConfig {
   idleRotate?: boolean;
   /** Un ciel qui suit le soleil derrière la maquette, plutôt que le fond du thème. Actif par défaut. */
   sky?: boolean;
+  /** Entité `weather` qui voile le soleil et grise le ciel — absente, la première trouvée. */
+  weather?: string;
   /** Portes, fenêtres et volets dessinés sur la maquette, mus par leur entité. */
   parts?: FloorplanPart[];
 }

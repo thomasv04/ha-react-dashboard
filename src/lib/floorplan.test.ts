@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  cloudiness,
   containSize,
   backSides,
   cutLimit,
@@ -269,5 +270,43 @@ describe('skyColors', () => {
 
   it('assumes an afternoon sky when sun.sun is missing', () => {
     expect(skyColors(undefined)).toEqual(skyColors(40));
+  });
+});
+
+describe('cloudiness', () => {
+  it('reads the weather state, in both spellings of partly cloudy', () => {
+    expect(cloudiness('sunny')).toBe(0);
+    expect(cloudiness('partlycloudy')).toBe(cloudiness('partly-cloudy'));
+    expect(cloudiness('cloudy')).toBeGreaterThan(cloudiness('partlycloudy'));
+    expect(cloudiness('pouring')).toBeGreaterThan(cloudiness('rainy'));
+  });
+
+  it('assumes a clear sky for an unknown or missing state', () => {
+    expect(cloudiness('unavailable')).toBe(0);
+    expect(cloudiness(undefined)).toBe(0);
+  });
+});
+
+describe('sunLighting, colour and weather', () => {
+  it('turns the sun golden, then orange, as it nears the horizon', () => {
+    const [, green, blue] = sunLighting({ elevation: 40 }).color;
+    const golden = sunLighting({ elevation: 6 }).color;
+    const setting = sunLighting({ elevation: 1 }).color;
+    expect(golden[2]).toBeLessThan(blue);
+    expect(setting[1]).toBeLessThan(golden[1]);
+    expect(green).toBeGreaterThan(golden[1]);
+  });
+
+  it('veils the sun and softens its shadows under clouds', () => {
+    const clear = sunLighting({ elevation: 40 });
+    const overcast = sunLighting({ elevation: 40 }, 0, 1);
+    expect(overcast.sun).toBeLessThan(clear.sun / 2);
+    expect(overcast.softness).toBeGreaterThan(clear.softness);
+    expect(overcast.shadow).toBeLessThan(clear.shadow);
+  });
+
+  it('greys the sky and hides the stars under clouds', () => {
+    expect(skyColors(40, 1).top).not.toBe(skyColors(40).top);
+    expect(skyColors(-20, 1).stars).toBe(0);
   });
 });
