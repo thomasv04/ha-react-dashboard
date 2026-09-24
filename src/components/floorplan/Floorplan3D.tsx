@@ -80,6 +80,7 @@ import {
   motionAt,
   openingMotion,
   structureOf,
+  wallTop,
   type ModelNode,
   type ModelOpenings,
   type Motion,
@@ -1568,18 +1569,22 @@ export default function Floorplan3D({
         // partent debout, et s'abaissent en glissant : la maison s'ouvre.
         const { min, max } = new Box3().setFromObject(root);
         const top = max.y + 0.01;
+        // La coupe se règle sur la hauteur des murs, quand la maquette les
+        // distingue : un objet plus haut qu'eux ne la relève pas.
+        const walls = s.model ? wallTop(s.model.nodes.values()) : null;
+        const height = (walls === null ? max.y : root.localToWorld(new Vector3(0, walls, 0)).y) - min.y;
         s.cut = {
           height: top,
           box: [min.x, min.z, max.x, max.z],
           sides: [top, top, top, top],
           margin: BACK_WALL_MARGIN,
           top,
-          low: (max.y - min.y) * CUTAWAY_HEIGHT,
+          low: height * CUTAWAY_HEIGHT,
           back: [true, true, true, true],
           sliding: false,
         };
         s.uniforms.fpCutaway.value.set(top, top, BACK_WALL_MARGIN, CAP_DEPTH);
-        s.uniforms.fpFade.value = Math.max((max.y - min.y) * CUTAWAY_FADE, 1e-3);
+        s.uniforms.fpFade.value = Math.max(height * CUTAWAY_FADE, 1e-3);
         s.uniforms.fpBox.value.set(...s.cut.box);
         s.uniforms.fpSides.value.set(...s.cut.sides);
         applyCutaway(s);

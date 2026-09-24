@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **34 tâches sur 37** — phases A à H et J, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
+**État global** : **35 tâches sur 38** — phases A à H et J, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -691,3 +691,17 @@ le `k` des suivantes, et leurs liaisons avec. Le plugin, lui, reste tel quel.
 
 - **Quoi** : une ouverture dont le nom finit par un nombre (`Fenetre_1`,
   `Porte_2`) se lie et bouge comme les autres.
+
+### [x] J11 — Les grandes maquettes
+
+> **Fait** : l'unité se déduisait de la taille à un facteur dix près — au-delà
+> de 63 m de diagonale, une maison en centimètres, jardin compris, passait pour
+> des millimètres, et toutes les tolérances de la détection décuplaient. Seuls
+> restent les centimètres de Sweet Home 3D et les mètres de Blender : au-delà
+> de 200 unités, des centimètres. Et la coupe des murs se règle sur leur
+> hauteur (`wall_*`) plutôt que sur celle de toute la maquette : sur ta maison
+> réexportée, des objets sans nom qui montent à 3,48 m, au-dessus des murs de
+> 2,80 m, la relevaient de 1,06 à 1,32 m.
+
+- **Quoi** : une maquette ExportToHASS de plus de 63 m, ou dont un objet
+  dépasse des murs, se lit et se coupe comme les autres.

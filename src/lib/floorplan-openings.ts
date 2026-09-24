@@ -214,12 +214,13 @@ const union = (boxes: Box[]): Box => ({
 });
 
 /**
- * Un centimètre dans l'unité de la maquette, d'après sa taille : une maison
- * mesure de 5 à 50 m. Sweet Home 3D exporte en centimètres, Blender en mètres.
+ * Un centimètre dans l'unité de la maquette, d'après sa taille. Sweet Home 3D
+ * exporte en centimètres, Blender en mètres ; une maison, jardin compris,
+ * mesure plus de 2 m et moins de 200 m : au-delà de 200 unités, des centimètres.
  */
 function centimeter(box: Box) {
   const diagonal = Math.hypot(box.max[0] - box.min[0], box.max[1] - box.min[1], box.max[2] - box.min[2]);
-  return diagonal > 0 ? 10 ** Math.round(Math.log10(diagonal / 2000)) : 1;
+  return diagonal > 0 && diagonal < 200 ? 0.01 : 1;
 }
 
 /** Regroupe ce qui se touche, de proche en proche. */
@@ -386,6 +387,16 @@ export function detectOpenings(nodes: ModelNode[]): ModelOpenings {
     } else families.push({ name: o.family, count: 1, inWall: o.inWall, kind: guessOpeningKind(o.family), size: o.size });
   }
   return { openings, families, unnamed: openings.filter(o => !o.family && o.inWall).length, cm, center };
+}
+
+/**
+ * Haut des murs, dans les coordonnées de la maquette — `null` : elle ne les
+ * distingue pas. Un objet plus haut qu'eux, un conduit, un velux, n'y compte pas.
+ */
+export function wallTop(nodes: Iterable<ModelNode>): number | null {
+  let top = -Infinity;
+  for (const node of nodes) if (structureOf(node.name)?.type === 'wall') top = Math.max(top, node.max[1]);
+  return Number.isFinite(top) ? top : null;
 }
 
 /**

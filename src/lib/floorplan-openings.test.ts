@@ -14,6 +14,7 @@ import {
   parseNodeName,
   structureOf,
   typedOpenings,
+  wallTop,
   type ModelNode,
   type Motion,
   type OpeningKind,
@@ -199,6 +200,24 @@ describe('detectOpenings', () => {
   it('works out the unit: a model in metres has a hundredth for a centimetre', () => {
     const { cm } = detectOpenings([box('wall_0_1', [0, 0, 0], [12, 2.5, 0.2]), box('room_0_1', [0, 0, 0], [12, 0, 9])]);
     expect(cm).toBe(0.01);
+  });
+
+  it('keeps centimetres for a house with its garden, 70 m across', () => {
+    const { cm } = detectOpenings([box('wall_0_1', [0, 0, 0], [5000, 250, 20]), box('room_0_1', [0, 0, 0], [5000, 0, 5000])]);
+    expect(cm).toBe(1);
+  });
+});
+
+describe('wallTop', () => {
+  it('finds the top of the walls, whatever rises above them', () => {
+    const nodes = [
+      box('wall_0_1', [0, 0, 0], [500, 250, 10]),
+      box('wall_1_1', [0, 0, 0], [10, 280, 400]),
+      // Un conduit sans nom, qui traverse le plafond.
+      box('3_6', [100, 152, 100], [120, 344, 120]),
+    ];
+    expect(wallTop(nodes)).toBe(280);
+    expect(wallTop([box('Canape_1', [0, 0, 0], [200, 80, 90])])).toBeNull();
   });
 });
 
