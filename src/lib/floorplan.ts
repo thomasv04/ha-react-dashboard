@@ -14,7 +14,7 @@ export const DEFAULT_WIDGET_SIZE = { w: 24, h: 30 };
  * Largeur sous laquelle le plan ne descend plus : sur un téléphone, il se fait
  * défiler plutôt que de réduire pastilles et cards à l'illisible.
  */
-export const MIN_PLAN_WIDTH = 768;
+const MIN_PLAN_WIDTH = 768;
 
 /** Plus petit widget redimensionnable, en % du plan. */
 const MIN_SIZE = 4;
@@ -44,10 +44,10 @@ export function normalizePos(pos: unknown, sized: boolean): FloorplanPos {
 
 /**
  * Taille du plan : la plus grande qui tienne dans la zone (`object-fit:
- * contain`), sans descendre sous `minWidth` — au-delà, la zone défile.
+ * contain`), sans descendre sous `MIN_PLAN_WIDTH` — au-delà, la zone défile.
  */
-export function containSize(areaW: number, areaH: number, aspect: number, minWidth = MIN_PLAN_WIDTH): { w: number; h: number } {
-  const w = Math.max(minWidth, Math.min(areaW, areaH * aspect));
+export function containSize(areaW: number, areaH: number, aspect: number): { w: number; h: number } {
+  const w = Math.max(MIN_PLAN_WIDTH, Math.min(areaW, areaH * aspect));
   return { w, h: w / aspect };
 }
 
@@ -398,16 +398,16 @@ export function isCutAway(p: Vec3, c: Cutaway): boolean {
 type Rgb = [number, number, number];
 
 /**
- * Le ciel au fil de l'élévation du soleil (degrés) : couleur du haut, de
+ * Le ciel au fil de l'élévation du soleil (`at`, en degrés) : couleur du haut, de
  * l'horizon, et présence des étoiles. Entre deux repères, on interpole.
  */
-const SKY: { elevation: number; top: Rgb; horizon: Rgb; stars: number }[] = [
-  { elevation: -12, top: [7, 11, 26], horizon: [18, 26, 51], stars: 1 }, // nuit
-  { elevation: -6, top: [14, 22, 51], horizon: [62, 44, 78], stars: 0.7 }, // crépuscule, violet
-  { elevation: -1, top: [34, 48, 92], horizon: [214, 120, 86], stars: 0.15 }, // soleil couchant
-  { elevation: 5, top: [60, 100, 165], horizon: [242, 178, 122], stars: 0 }, // heure dorée
-  { elevation: 15, top: [52, 120, 210], horizon: [168, 206, 240], stars: 0 }, // jour
-  { elevation: 50, top: [42, 112, 214], horizon: [190, 222, 250], stars: 0 }, // plein jour
+const SKY: { at: number; top: Rgb; horizon: Rgb; stars: number }[] = [
+  { at: -12, top: [7, 11, 26], horizon: [18, 26, 51], stars: 1 }, // nuit
+  { at: -6, top: [14, 22, 51], horizon: [62, 44, 78], stars: 0.7 }, // crépuscule, violet
+  { at: -1, top: [34, 48, 92], horizon: [214, 120, 86], stars: 0.15 }, // soleil couchant
+  { at: 5, top: [60, 100, 165], horizon: [242, 178, 122], stars: 0 }, // heure dorée
+  { at: 15, top: [52, 120, 210], horizon: [168, 206, 240], stars: 0 }, // jour
+  { at: 50, top: [42, 112, 214], horizon: [190, 222, 250], stars: 0 }, // plein jour
 ];
 
 const hex = (c: Rgb) =>
@@ -439,10 +439,7 @@ function between<T extends { at: number }>(keys: T[], x: number): [T, T, number]
  * grisaille et les étoiles se cachent.
  */
 export function skyColors(elevation: number | undefined, clouds = 0): { top: string; horizon: string; stars: number } {
-  const [from, to, t] = between(
-    SKY.map(k => ({ ...k, at: k.elevation })),
-    elevation ?? DEFAULT_SUN.elevation
-  );
+  const [from, to, t] = between(SKY, elevation ?? DEFAULT_SUN.elevation);
   const veil = (c: Rgb) => hex(mix(c, overcast(c), 0.75 * clouds));
   return {
     top: veil(mix(from.top, to.top, t)),

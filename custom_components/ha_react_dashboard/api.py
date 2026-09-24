@@ -430,7 +430,8 @@ class _UploadBase(_Base):
                 status_code=400,
             )
 
-        payload = file.file.read(max_size + 1)
+        # Hors de la boucle : une maquette pèse jusqu'à 50 Mo.
+        payload = await self.hass.async_add_executor_job(file.file.read, max_size + 1)
         if len(payload) > max_size:
             return None, self.json({"error": "File too large."}, status_code=413)
         if magic is not None and not payload.startswith(magic):

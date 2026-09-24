@@ -48,18 +48,19 @@ interface HassState {
   config: typeof mockConfig;
 }
 
+const STATE: HassState = { entities: ENTITIES, helpers: mockHelpers, formatter: mockFormatter, config: mockConfig };
+
 export function useHass(): HassState;
 export function useHass<T>(selector: (s: HassState) => T): T;
 export function useHass<T>(selector?: (s: HassState) => T): HassState | T {
-  const state: HassState = { entities: ENTITIES, helpers: mockHelpers, formatter: mockFormatter, config: mockConfig };
-  return selector ? selector(state) : state;
+  return selector ? selector(STATE) : STATE;
 }
 
 // Le vrai `useHass` est un store zustand : `HAThrottlePatch` appelle
 // `getState` / `setState` / `subscribe` dessus au montage. Sans ces méthodes le
 // mock lève `useHass.getState is not a function` et **toute l'application**
 // plante en mode mock — c'est ce qui empêchait la suite E2E de démarrer.
-useHass.getState = (): HassState => ({ entities: ENTITIES, helpers: mockHelpers, formatter: mockFormatter, config: mockConfig });
+useHass.getState = (): HassState => STATE;
 useHass.setState = (_partial: Partial<HassState>): void => {
   /* le jeu d'entités du mock est figé */
 };

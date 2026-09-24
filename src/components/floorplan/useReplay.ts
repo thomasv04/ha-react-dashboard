@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useHass } from '@hakit/core';
+import type { Connection } from 'home-assistant-js-websocket';
 import type { HistoryEntry } from '@/lib/floorplan';
 
 /** Rejouées : les dernières 24 heures. */
@@ -10,7 +11,6 @@ const SPEED = 1800;
 const TICK_MS = 50;
 
 type History = Record<string, HistoryEntry[]>;
-type Connection = { sendMessagePromise: <T>(message: Record<string, unknown>) => Promise<T> };
 
 /** L'historique de ces entités sur la période : demandé à HA, simulé en mode mock. */
 async function loadHistory(connection: Connection | null | undefined, entityIds: string[], start: number, end: number): Promise<History> {
@@ -33,7 +33,7 @@ async function loadHistory(connection: Connection | null | undefined, entityIds:
  * l'historique de ces entités. `span` nul : on est en direct.
  */
 export function useReplay(entityIds: string[]) {
-  const connection = useHass(s => s.connection) as Connection | null | undefined;
+  const connection = useHass(s => s.connection);
   const [span, setSpan] = useState<{ start: number; end: number } | null>(null);
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);

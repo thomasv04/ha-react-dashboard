@@ -1,5 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { useHass } from '@hakit/core';
+import type { Connection } from 'home-assistant-js-websocket';
 import { useI18n } from '@/i18n';
 
 /**
@@ -15,8 +16,6 @@ import { useI18n } from '@/i18n';
  * `undefined` tant que rien n'est chargé, ou pour un état sans libellé (une
  * valeur numérique) — à l'appelant de formater.
  */
-
-type Connection = { sendMessagePromise: <T>(message: Record<string, unknown>) => Promise<T> };
 
 const resources = new Map<string, Record<string, string>>();
 const requested = new Set<string>();
@@ -50,7 +49,7 @@ function subscribe(listener: () => void) {
 }
 
 export function useStateLabel(entityId: string, state: string | undefined, deviceClass: string | undefined): string | undefined {
-  const connection = useHass(s => s.connection) as Connection | null | undefined;
+  const connection = useHass(s => s.connection);
   const { language } = useI18n();
   const domain = entityId.split('.')[0];
   useSyncExternalStore(
