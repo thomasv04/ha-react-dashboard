@@ -401,7 +401,6 @@
     "cableInvert": "Inverser le sens",
     "cables": "Câbles",
     "cableRemove": "Retirer le câble",
-    "cableKinds": { "solar": "Solaire", "grid": "Réseau", "home": "Maison", "battery": "Batterie" },
     "weather": "Météo",
     "tool": "Poser",
     "toolChip": "Pastille",

@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { SquareDashed, Trash2 } from 'lucide-react';
+import { SquareDashed } from 'lucide-react';
 import type { FloorplanRoom } from '@/lib/floorplan';
 import { useI18n } from '@/i18n';
+import { DrawnList } from './FloorplanDrawn';
 
 /** Pièce tout juste fermée : on la nomme, et elle est enregistrée. */
 export function RoomNamePopover({
@@ -60,24 +61,12 @@ export function RoomNamePopover({
 /** Pièces dessinées sur la maquette, pour les retirer. */
 export function RoomList({ rooms, onRemove }: { rooms: FloorplanRoom[]; onRemove: (id: string) => void }) {
   const { t } = useI18n();
-  if (!rooms.length) return null;
   return (
-    <div className='flex flex-col gap-1'>
-      <span className='text-[11px] text-white/40 px-0.5'>{t('layout.floorplan.rooms')}</span>
-      {rooms.map(room => (
-        <div key={room.id} className='flex items-center gap-2 px-2 py-1 rounded-lg bg-white/5 text-xs text-white/70'>
-          <SquareDashed size={13} className='text-white/40 shrink-0' />
-          <span className='flex-1 truncate'>{room.name}</span>
-          <button
-            onClick={() => onRemove(room.id)}
-            title={t('layout.floorplan.roomRemove')}
-            aria-label={t('layout.floorplan.roomRemove')}
-            className='text-red-400/70 hover:text-red-400'
-          >
-            <Trash2 size={12} />
-          </button>
-        </div>
-      ))}
-    </div>
+    <DrawnList
+      title={t('layout.floorplan.rooms')}
+      removeLabel={t('layout.floorplan.roomRemove')}
+      items={rooms.map(r => ({ id: r.id, label: r.name, icon: SquareDashed }))}
+      onRemove={onRemove}
+    />
   );
 }

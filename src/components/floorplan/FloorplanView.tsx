@@ -14,7 +14,6 @@ import {
   RotateCcw,
   SquareDashed,
   Thermometer,
-  X,
   type LucideIcon,
 } from 'lucide-react';
 import { usePages, type FloorplanConfig } from '@/context/PageContext';
@@ -70,6 +69,7 @@ import { useI18n } from '@/i18n';
 import type { ChipCardConfig, WidgetConfig } from '@/types/widget-configs';
 import type { CableProp, FloorOverlay, Floorplan3DHandle, Lamp, PartProp, Project } from './Floorplan3D';
 import { FloorplanItem } from './FloorplanItem';
+import { DraftPopover } from './FloorplanDrawn';
 import { PartList, PartPopover } from './FloorplanParts';
 import { CableList, CableOverlay, CablePopover } from './FloorplanCables';
 import { ReplayBar } from './FloorplanReplay';
@@ -663,19 +663,13 @@ export function FloorplanView() {
     // Remonté à chaque point : le sélecteur ne s'ouvre seul qu'au montage.
     <div key={`${adding.x}:${adding.y}`}>
       {dot(adding, 'bg-blue-400 ring-blue-400/30')}
-      <div
-        onClick={e => e.stopPropagation()}
-        className='absolute z-30 w-64 mt-3 p-2 rounded-xl gc-overlay cursor-default'
-        style={{ left: `clamp(8rem, ${adding.x}%, calc(100% - 8rem))`, top: `${adding.y}%`, translate: '-50% 0' }}
+      <DraftPopover
+        title={t('layout.floorplan.addHere')}
+        onCancel={() => setAdding(null)}
+        style={{ left: `clamp(8rem, ${adding.x}%, calc(100% - 8rem))`, top: `calc(${adding.y}% + 0.75rem)`, translate: '-50% 0' }}
       >
-        <div className='flex items-center justify-between mb-1.5 px-1'>
-          <span className='text-[11px] text-white/50'>{t('layout.floorplan.addHere')}</span>
-          <button onClick={() => setAdding(null)} aria-label={t('common.cancel')} className='p-0.5 rounded text-white/40 hover:text-white'>
-            <X size={12} />
-          </button>
-        </div>
         <EntityPicker autoOpen label='' value='' onChange={placeChip} />
-      </div>
+      </DraftPopover>
     </div>
   );
 

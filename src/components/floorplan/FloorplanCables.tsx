@@ -1,11 +1,14 @@
-import { ArrowLeftRight, BatteryCharging, House, Sun, Trash2, X, Zap, type LucideIcon } from 'lucide-react';
+import { ArrowLeftRight, BatteryCharging, House, Sun, Zap, type LucideIcon } from 'lucide-react';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { useEntities } from '@/hooks/useEntities';
 import { useFormats } from '@/hooks/useFormats';
 import { CABLE_COLORS, CABLE_KINDS, DRAFT_COLOR, guessCableKind, type CableKind, type FloorplanCable } from '@/lib/floorplan';
+import { friendlyName } from '@/lib/ha-service';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
+import { DraftPopover, DrawnList, KindGrid } from './FloorplanDrawn';
 
+/** Celles de la card « Flux d'énergie ». */
 const CABLE_ICONS: Record<CableKind, LucideIcon> = { solar: Sun, grid: Zap, home: House, battery: BatteryCharging };
 
 type Point = { x: number; y: number };
@@ -83,23 +86,15 @@ export function CablePopover({
 }) {
   const { t } = useI18n();
   return (
-    <div
-      role='dialog'
-      aria-label={t('layout.floorplan.cableTitle')}
-      onClick={e => e.stopPropagation()}
-      className='absolute z-40 w-64 p-2 rounded-xl gc-overlay cursor-default flex flex-col gap-2'
+    <DraftPopover
+      title={t('layout.floorplan.cableTitle')}
+      onCancel={onCancel}
       style={{
         left: `clamp(8rem, ${at.x}%, calc(100% - 8rem))`,
         top: `clamp(0.5rem, calc(${at.y}% + 1.5rem), calc(100% - 16rem))`,
         translate: '-50% 0',
       }}
     >
-      <div className='flex items-center justify-between px-1'>
-        <span className='text-[11px] text-white/50'>{t('layout.floorplan.cableTitle')}</span>
-        <button onClick={onCancel} aria-label={t('common.cancel')} className='p-0.5 rounded text-white/40 hover:text-white'>
-          <X size={12} />
-        </button>
-      </div>
       <EntityPicker
         autoOpen
         label=''
@@ -107,25 +102,15 @@ export function CablePopover({
         domain='sensor'
         onChange={entityId => onChange({ ...cable, entityId, kind: guessCableKind(entityId) })}
       />
-      <div className='grid grid-cols-4 gap-1'>
-        {CABLE_KINDS.map(kind => {
-          const Icon = CABLE_ICONS[kind];
-          return (
-            <button
-              key={kind}
-              onClick={() => onChange({ ...cable, kind })}
-              aria-pressed={cable.kind === kind}
-              className={cn(
-                'flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-[10px] border transition-colors',
-                cable.kind === kind ? 'bg-white/12 border-white/30 text-white' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'
-              )}
-            >
-              <Icon size={14} style={{ color: CABLE_COLORS[kind] }} />
-              {t(`layout.floorplan.cableKinds.${kind}`)}
-            </button>
-          );
-        })}
-      </div>
+      {/* Les sortes, dans les mots et les couleurs de la card « Flux d'énergie ». */}
+      <KindGrid
+        kinds={CABLE_KINDS}
+        value={cable.kind}
+        onChange={kind => onChange({ ...cable, kind })}
+        icons={CABLE_ICONS}
+        colors={CABLE_COLORS}
+        label={kind => t(`widgets.energy_flow.${kind}`)}
+      />
       <div className='flex items-center gap-2'>
         <button
           onClick={() => onChange({ ...cable, invert: !cable.invert })}
@@ -145,7 +130,7 @@ export function CablePopover({
           {t('common.add')}
         </button>
       </div>
-    </div>
+    </DraftPopover>
   );
 }
 
@@ -153,28 +138,17 @@ export function CablePopover({
 export function CableList({ cables, onRemove }: { cables: FloorplanCable[]; onRemove: (id: string) => void }) {
   const { t } = useI18n();
   const entities = useEntities(cables.map(c => c.entityId));
-  if (!cables.length) return null;
   return (
-    <div className='flex flex-col gap-1'>
-      <span className='text-[11px] text-white/40 px-0.5'>{t('layout.floorplan.cables')}</span>
-      {cables.map(cable => {
-        const Icon = CABLE_ICONS[cable.kind];
-        const name = entities[cable.entityId]?.attributes?.friendly_name;
-        return (
-          <div key={cable.id} className='flex items-center gap-2 px-2 py-1 rounded-lg bg-white/5 text-xs text-white/70'>
-            <Icon size={13} className='shrink-0' style={{ color: CABLE_COLORS[cable.kind] }} />
-            <span className='flex-1 truncate'>{typeof name === 'string' ? name : cable.entityId}</span>
-            <button
-              onClick={() => onRemove(cable.id)}
-              title={t('layout.floorplan.cableRemove')}
-              aria-label={t('layout.floorplan.cableRemove')}
-              className='text-red-400/70 hover:text-red-400'
-            >
-              <Trash2 size={12} />
-            </button>
-          </div>
-        );
-      })}
-    </div>
+    <DrawnList
+      title={t('layout.floorplan.cables')}
+      removeLabel={t('layout.floorplan.cableRemove')}
+      items={cables.map(c => ({
+        id: c.id,
+        label: friendlyName(entities[c.entityId]) ?? c.entityId,
+        icon: CABLE_ICONS[c.kind],
+        color: CABLE_COLORS[c.kind],
+      }))}
+      onRemove={onRemove}
+    />
   );
 }

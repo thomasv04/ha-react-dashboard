@@ -138,8 +138,8 @@ export function normalizeAnchor(anchor: unknown): Vec3 | undefined {
 
 // ── Éléments animés : portes, fenêtres, volets ───────────────────────────────
 
-export type PartKind = 'door' | 'window' | 'shutter' | 'garage';
-const PART_KINDS: readonly string[] = ['door', 'window', 'shutter', 'garage'];
+export const PART_KINDS = ['door', 'window', 'shutter', 'garage'] as const;
+export type PartKind = (typeof PART_KINDS)[number];
 
 /**
  * Porte, fenêtre ou volet dessiné sur la maquette : un rectangle vertical,
@@ -169,7 +169,7 @@ export function normalizeParts(parts: unknown): FloorplanPart[] {
     const part = (p && typeof p === 'object' ? p : {}) as Record<string, unknown>;
     const a = normalizeAnchor(part.a);
     const b = normalizeAnchor(part.b);
-    if (typeof part.id !== 'string' || typeof part.entityId !== 'string' || !PART_KINDS.includes(part.kind as string) || !a || !b)
+    if (typeof part.id !== 'string' || typeof part.entityId !== 'string' || !PART_KINDS.includes(part.kind as PartKind) || !a || !b)
       return [];
     return [
       {
@@ -617,8 +617,8 @@ export function sunLighting(sun: { elevation?: number; azimuth?: number } | unde
 
 // ── Énergie ──────────────────────────────────────────────────────────────────
 
-export type CableKind = 'solar' | 'grid' | 'home' | 'battery';
-export const CABLE_KINDS: CableKind[] = ['solar', 'grid', 'home', 'battery'];
+export const CABLE_KINDS = ['solar', 'grid', 'home', 'battery'] as const;
+export type CableKind = (typeof CABLE_KINDS)[number];
 
 /** Couleur de chaque sorte de câble : celles de la card « Flux d'énergie ». */
 export const CABLE_COLORS: Record<CableKind, string> = { solar: '#fbbf24', grid: '#f87171', home: '#38bdf8', battery: '#34d399' };
