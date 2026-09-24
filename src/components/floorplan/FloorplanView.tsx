@@ -296,9 +296,7 @@ export function FloorplanView() {
   // ── Rejouer la journée ─────────────────────────────────────────────────────
   // Lampes et éléments animés, que l'historique rejoue.
   const glows = lampChips.flatMap(c =>
-    c.config?.glow !== false
-      ? [{ ...c, pos: normalizePos(c.pos, false), size: c.config?.glowSize ?? 12 }]
-      : []
+    c.config?.glow !== false ? [{ ...c, pos: normalizePos(c.pos, false), size: c.config?.glowSize ?? 12 }] : []
   );
   const parts = normalizeParts(floorplan?.parts);
   /** Ouvertures de la maquette elle-même : le type de leurs familles, et leurs liaisons. */
