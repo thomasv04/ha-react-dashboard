@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **24 tâches sur 34** — phases A à H, `I1`, `I2` et `J1`. `F1` reste à essayer sur un vrai Android.
+**État global** : **25 tâches sur 34** — phases A à H, `I1`, `I2`, `J1` et `J2`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -508,9 +508,18 @@ leurs liaisons avec. Le plugin, lui, reste tel quel.
 - **Fait quand** : chaque réglage d'avant est dans son onglet ; les tests E2E
   suivent.
 
-### [ ] J2 — Reconnaître les ouvertures
+### [x] J2 — Reconnaître les ouvertures
 
-- **Où** : [floorplan.ts](../src/lib/floorplan.ts)
+> **Fait** ([floorplan-openings.ts](../src/lib/floorplan-openings.ts), un module
+> à part : un gros morceau, sans rapport avec le reste du plan). Sur `home.glb` :
+> les cinq `Porte_en_bois`, cinq composants chacune, la
+> `Porte_coulissante_grise`, huit ouvertures sans nom valide logées dans les
+> murs ; télévision et canapé laissés de côté. « Logé dans un mur » se juge au
+> milieu de la plus large pièce de l'objet, son cadre : un battant entrouvert
+> fait déborder l'ensemble. Un centimètre se déduit de la taille de la
+> maquette — Blender exporte en mètres.
+
+- **Où** : [floorplan-openings.ts](../src/lib/floorplan-openings.ts)
 - **Quoi** : les nœuds lus au chargement. La famille d'après le nom, puis les
   occurrences par géométrie : boîtes qui se touchent (union-find), au sein
   d'une même famille — une armoire collée au chambranle n'est jamais prise
@@ -523,7 +532,7 @@ leurs liaisons avec. Le plugin, lui, reste tel quel.
 
 ### [ ] J3 — Gonds et glissières
 
-- **Où** : [floorplan.ts](../src/lib/floorplan.ts)
+- **Où** : [floorplan-openings.ts](../src/lib/floorplan-openings.ts)
 - **Quoi** : dans chaque ouverture, le cadre, l'axe du mur, les parties
   mobiles — grand panneau vertical et ce qui y tient : vitre, poignée. Battant
   : l'arête des gonds (charnières ; sinon à l'opposé de la poignée ; sinon
