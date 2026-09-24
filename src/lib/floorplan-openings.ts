@@ -1,9 +1,10 @@
-import type { Vec3 } from '@/lib/floorplan';
+import { SWING, type Vec3 } from '@/lib/floorplan';
 
 /**
  * Les ouvertures d'une maquette exportée de Sweet Home 3D avec le plugin
  * ExportToHASS : chaque porte, chaque fenêtre y est faite d'objets séparés —
- * cadre, battant, vitre, poignée, charnières —, qu'on retrouve ici.
+ * cadre, battant, vitre, poignée, charnières —, dont on retrouve ici les
+ * parties mobiles et la façon dont elles bougent.
  *
  * Ce que donne l'export : des nœuds à plat, un maillage chacun, en
  * centimètres. `<Nom>_<composant>`, puis `<Nom>_<composant>_<k>` quand le nom
@@ -84,6 +85,22 @@ export interface ModelOpenings {
   /** Centre de la maquette au sol (x, z) : l'intérieur, pour une porte qui ne dit pas de quel côté elle s'ouvre. */
   center: [number, number];
 }
+
+/** Mouvement d'une partie mobile, depuis la pose où la maquette la dessine. */
+export type Motion =
+  /** Rotation autour d'un axe vertical passant par `pivot` (x, z), en radians (`rotation.y` de three.js). */
+  | { type: 'swing'; pivot: [number, number]; closed: number; open: number }
+  /** Glissement le long de `axis` (x, z, unitaire), dans l'unité de la maquette. */
+  | { type: 'slide'; axis: [number, number]; closed: number; open: number };
+
+/** Une partie mobile : le panneau et ce qui y tient — vitre, poignée —, et son mouvement. */
+export interface MovingPart {
+  nodes: string[];
+  motion: Motion;
+}
+
+/** Position d'un mouvement pour une ouverture de 0 (fermé) à 1 (ouvert) : angle ou décalage. */
+export const motionAt = (motion: Motion, openness: number) => motion.closed + (motion.open - motion.closed) * openness;
 
 // ── Noms ─────────────────────────────────────────────────────────────────────
 
@@ -353,4 +370,292 @@ export function detectOpenings(nodes: ModelNode[]): ModelOpenings {
     } else families.push({ name: o.family, count: 1, inWall: o.inWall, kind: guessOpeningKind(o.family), size: o.size });
   }
   return { openings, families, unnamed: openings.filter(o => !o.family && o.inWall).length, cm, center };
+}
+
+// ── Parties mobiles ──────────────────────────────────────────────────────────
+
+/** Angle, en `rotation.y` de three.js, qui amène la direction `from` sur `to` (dans ]−π, π]). */
+function turn(from: Vec2, to: Vec2) {
+  const angle = Math.atan2(-to[1], to[0]) - Math.atan2(-from[1], from[0]);
+  return angle > Math.PI ? angle - 2 * Math.PI : angle <= -Math.PI ? angle + 2 * Math.PI : angle;
+}
+
+/** Un panneau et son repère : son axe au sol, la normale, et son étendue le long de chacun. */
+interface Panel {
+  node: ModelNode;
+  axis: Vec2;
+  normal: Vec2;
+  along: Vec2;
+  across: Vec2;
+  /** Longueur au sol, le long de son axe. */
+  length: number;
+  height: number;
+}
+
+/** Un panneau mobile, et ce qu'il emporte : vitre, poignée, charnières. */
+type Leaf = { panel: Panel; nodes: ModelNode[] };
+
+function panel(node: ModelNode): Panel {
+  const axis = principalAxis(node.footprint);
+  const normal: Vec2 = [-axis[1], axis[0]];
+  const along = extent(node, axis);
+  return {
+    node,
+    axis,
+    normal,
+    along,
+    across: extent(node, normal),
+    length: along[1] - along[0],
+    height: node.max[1] - node.min[1],
+  };
+}
+
+/**
+ * Parties mobiles d'une ouverture, et leur mouvement.
+ *
+ * - le **cadre** court sur toute la largeur de l'ouverture : il ne bouge pas,
+ *   et c'est lui qui donne l'axe du mur ;
+ * - un **panneau** — battant, vantail, panneau coulissant — est grand et
+ *   vertical, dans le cadre ; ce qu'il contient (vitre, poignée, charnières)
+ *   bouge avec lui ;
+ * - un battant tourne sur ses gonds. Modélisé entrouvert, il dit lui-même où
+ *   ils sont — l'arête contre le mur — et de quel côté il s'ouvre ; fermé,
+ *   c'est aux charnières de le dire, sinon à la poignée, à l'opposé, sinon à
+ *   la place du vantail — un vantail d'une fenêtre double a ses gonds contre
+ *   le montant. Une poignée ou des charnières d'un seul côté disent où il
+ *   s'ouvre ; à défaut, vers l'intérieur de la maison ;
+ * - un panneau coulissant glisse le long du mur. Un vide entre deux panneaux :
+ *   la baie est modélisée ouverte, ils s'y rejoignent pour la fermer. Sinon,
+ *   le premier glisse sur son voisin.
+ *
+ * `flip` : l'ouverture de l'autre côté du mur, ou l'autre panneau d'une baie ;
+ * `hinge` : les gonds sur l'autre arête. Rien de mobile : une liste vide.
+ */
+export function openingMotion(
+  nodes: ModelNode[],
+  kind: OpeningKind,
+  { cm, center, flip = false, hinge = false }: { cm: number; center: [number, number]; flip?: boolean; hinge?: boolean }
+): MovingPart[] {
+  const withPoints = nodes.filter(n => n.footprint.length);
+  // Volets et portes de garage s'enrouleront (`J8`) : rien ne bouge d'ici là.
+  if (!withPoints.length || kind === 'shutter' || kind === 'garage') return [];
+  // L'axe du mur : celui de sa plus large pièce, le cadre d'ordinaire.
+  const u = principalAxis(widest(withPoints).footprint);
+  const n: Vec2 = [-u[1], u[0]];
+  const spans = new Map(withPoints.map(node => [node, { u: extent(node, u), n: extent(node, n) }]));
+  const u0 = Math.min(...withPoints.map(node => spans.get(node)!.u[0]));
+  const u1 = Math.max(...withPoints.map(node => spans.get(node)!.u[1]));
+  const bottom = Math.min(...withPoints.map(node => node.min[1]));
+  const top = Math.max(...withPoints.map(node => node.max[1]));
+  const width = u1 - u0;
+  const height = top - bottom;
+  const middle = (u0 + u1) / 2;
+
+  const frame = withPoints.filter(node => spans.get(node)!.u[1] - spans.get(node)!.u[0] >= 0.97 * width);
+  // Le plan du mur : le milieu du cadre dans l'épaisseur.
+  const plane =
+    (frame.length ? frame : withPoints).reduce((s, node) => s + (spans.get(node)!.n[0] + spans.get(node)!.n[1]) / 2, 0) /
+    (frame.length || withPoints.length);
+
+  /** `part` tient-il dans `leaf` ? Un peu de marge le long du panneau, davantage de part et d'autre — une poignée dépasse. */
+  const holds = (leaf: Panel, part: ModelNode) => {
+    const along = extent(part, leaf.axis);
+    const across = extent(part, leaf.normal);
+    return (
+      along[0] >= leaf.along[0] - 2 * cm &&
+      along[1] <= leaf.along[1] + 2 * cm &&
+      across[0] >= leaf.across[0] - 9 * cm &&
+      across[1] <= leaf.across[1] + 9 * cm &&
+      part.min[1] >= leaf.node.min[1] - 2 * cm &&
+      part.max[1] <= leaf.node.max[1] + 2 * cm
+    );
+  };
+
+  // Les panneaux, du plus grand au plus petit : une vitre tient dans son
+  // vantail, et le suit.
+  const candidates = withPoints
+    .filter(node => !frame.includes(node))
+    .map(panel)
+    .filter(p => p.height >= 0.45 * height && p.length >= 0.15 * width)
+    .sort((a, b) => b.length * b.height - a.length * a.height);
+  const leaves: Leaf[] = [];
+  for (const candidate of candidates) {
+    const owner = leaves.find(l => holds(l.panel, candidate.node));
+    if (owner) owner.nodes.push(candidate.node);
+    else leaves.push({ panel: candidate, nodes: [candidate.node] });
+  }
+  if (!leaves.length) return [];
+  const small = withPoints.filter(node => !frame.includes(node) && !leaves.some(l => l.nodes.includes(node)));
+  const centerOf = (box: Box): Vec2 => [(box.min[0] + box.max[0]) / 2, (box.min[2] + box.max[2]) / 2];
+  for (const part of small) {
+    // Tenu par plusieurs (deux vantaux qui se chevauchent) : le plus proche.
+    const c = centerOf(part);
+    const distance = (leaf: Leaf) => Math.hypot(c[0] - centerOf(leaf.panel.node)[0], c[1] - centerOf(leaf.panel.node)[1]);
+    const owner = leaves.filter(l => holds(l.panel, part)).sort((a, b) => distance(a) - distance(b))[0];
+    owner?.nodes.push(part);
+  }
+  const names = (leaf: Leaf) => leaf.nodes.map(node => node.name);
+
+  if (kind === 'sliding')
+    return slide(leaves, { u, width, u0, u1, flip, spans: node => extent(node, u) }).map(({ leaf, motion }) => ({
+      nodes: names(leaf),
+      motion,
+    }));
+  return swing(leaves, small, { u, n, plane, middle, center, cm, flip, hinge }).map(({ leaf, motion }) => ({
+    nodes: names(leaf),
+    motion,
+  }));
+}
+
+/** Panneaux qui glissent : ceux qui bordent un vide s'y rejoignent, sinon le premier glisse sur son voisin. */
+function slide(
+  leaves: Leaf[],
+  { u, width, u0, u1, flip, spans }: { u: Vec2; width: number; u0: number; u1: number; flip: boolean; spans: (node: ModelNode) => Vec2 }
+): { leaf: Leaf; motion: Motion }[] {
+  const sorted = leaves
+    .map(leaf => ({ leaf, span: spans(leaf.panel.node) }))
+    .sort((a, b) => a.span[0] + a.span[1] - (b.span[0] + b.span[1]));
+  const gaps = sorted.slice(1).map((next, i) => next.span[0] - sorted[i].span[1]);
+  const widest = gaps.reduce((best, gap, i) => (gap > (gaps[best] ?? -Infinity) ? i : best), 0);
+  if (gaps.length && gaps[widest] > 0.05 * width) {
+    // Modélisée ouverte : les deux panneaux du vide s'y rejoignent pour fermer.
+    const gap = gaps[widest];
+    return [
+      { leaf: sorted[widest].leaf, motion: { type: 'slide', axis: u, closed: gap / 2, open: 0 } },
+      { leaf: sorted[widest + 1].leaf, motion: { type: 'slide', axis: u, closed: -gap / 2, open: 0 } },
+    ];
+  }
+  // Modélisée fermée : le premier panneau glisse sur son voisin (le dernier, à l'envers).
+  const active = flip ? sorted[sorted.length - 1] : sorted[0];
+  const neighbor = sorted.length > 1 ? (flip ? sorted[sorted.length - 2] : sorted[1]) : null;
+  const length = active.span[1] - active.span[0];
+  let direction = flip ? -1 : 1;
+  let travel: number;
+  if (neighbor) {
+    const overlap = Math.max(0, flip ? neighbor.span[1] - active.span[0] : active.span[1] - neighbor.span[0]);
+    travel = length - overlap;
+  } else {
+    // Seul : vers le côté où le cadre laisse le plus de place.
+    direction = u1 - active.span[1] >= active.span[0] - u0 ? 1 : -1;
+    if (flip) direction = -direction;
+    travel = length * 0.95;
+  }
+  return [{ leaf: active.leaf, motion: { type: 'slide', axis: u, closed: 0, open: direction * travel } }];
+}
+
+/** Au-delà de cet angle avec le mur (radians, ≈ 8°), un battant est modélisé entrouvert. */
+const AJAR = 0.14;
+/** Écart vertical de petites pièces, en part de la hauteur du battant, qui en fait des charnières plutôt qu'une poignée. */
+const HINGE_SPREAD = 0.35;
+
+/** Battants qui tournent sur leurs gonds. */
+function swing(
+  leaves: Leaf[],
+  small: ModelNode[],
+  {
+    u,
+    n,
+    plane,
+    middle,
+    center,
+    cm,
+    flip,
+    hinge,
+  }: {
+    u: Vec2;
+    n: Vec2;
+    plane: number;
+    middle: number;
+    center: [number, number];
+    cm: number;
+    flip: boolean;
+    hinge: boolean;
+  }
+): { leaf: Leaf; motion: Motion }[] {
+  /** Les deux arêtes verticales d'un battant (x, z), au milieu de son épaisseur. */
+  const edges = (p: Panel): [Vec2, Vec2] => {
+    const mid = (p.across[0] + p.across[1]) / 2;
+    const at = (t: number): Vec2 => [p.axis[0] * t + p.normal[0] * mid, p.axis[1] * t + p.normal[1] * mid];
+    return [at(p.along[0]), at(p.along[1])];
+  };
+  /** Petites pièces près d'une arête : charnières, poignée. */
+  const near = (p: Panel, end: 0 | 1) =>
+    small.filter(part => {
+      const along = extent(part, p.axis);
+      const across = extent(part, p.normal);
+      const edge = p.along[end];
+      return (
+        along[1] >= edge - 6 * cm &&
+        along[0] <= edge + 6 * cm &&
+        across[0] >= p.across[0] - 9 * cm &&
+        across[1] <= p.across[1] + 9 * cm &&
+        part.max[1] >= p.node.min[1] - 2 * cm &&
+        part.min[1] <= p.node.max[1] + 2 * cm
+      );
+    });
+  /** Des charnières : plusieurs pièces étagées, ou une longue bande. */
+  const spread = (p: Panel, parts: ModelNode[]) => {
+    if (!parts.length) return 0;
+    const tall = parts.some(part => part.max[1] - part.min[1] >= HINGE_SPREAD * p.height);
+    if (parts.length < 2 && !tall) return 0;
+    return (Math.max(...parts.map(part => part.max[1])) - Math.min(...parts.map(part => part.min[1]))) / p.height;
+  };
+  /** Côté du mur (1 : le long de `n`, −1 : à l'opposé) où sont ces pièces, si elles sont toutes du même côté du battant. */
+  const oneSide = (p: Panel, parts: ModelNode[]): 1 | -1 | 0 => {
+    const mid = (p.across[0] + p.across[1]) / 2;
+    const sides = new Set(
+      parts.map(part => {
+        const across = extent(part, p.normal);
+        return across[0] >= mid - 0.2 * cm ? 1 : across[1] <= mid + 0.2 * cm ? -1 : 0;
+      })
+    );
+    if (sides.size !== 1 || sides.has(0)) return 0;
+    return (([...sides][0] * Math.sign(dot(p.normal, n))) as 1 | -1) || 0;
+  };
+
+  let side: 1 | -1 | 0 = 0;
+  const plans = leaves.map(leaf => {
+    const p = leaf.panel;
+    const [e0, e1] = edges(p);
+    const tilt = Math.acos(Math.min(1, Math.abs(dot(p.axis, u))));
+    if (tilt > AJAR) {
+      // Entrouvert : l'arête contre le mur porte les gonds ; l'autre dit où il s'ouvre.
+      const hingeEnd: 0 | 1 = Math.abs(dot(e0, n) - plane) <= Math.abs(dot(e1, n) - plane) ? 0 : 1;
+      const free = hingeEnd ? e0 : e1;
+      side ||= Math.sign(dot(free, n) - plane) as 1 | -1;
+      return { leaf, e0, e1, hingeEnd };
+    }
+    const parts: [ModelNode[], ModelNode[]] = [near(p, 0), near(p, 1)];
+    const spreads = [spread(p, parts[0]), spread(p, parts[1])];
+    let hingeEnd: 0 | 1;
+    if (Math.max(...spreads) >= HINGE_SPREAD && spreads[0] !== spreads[1]) hingeEnd = spreads[0] > spreads[1] ? 0 : 1;
+    else if (parts[0].length !== parts[1].length && !(parts[0].length && parts[1].length)) hingeEnd = parts[0].length ? 1 : 0;
+    // Plusieurs vantaux : les gonds contre le montant, loin du milieu.
+    else if (leaves.length > 1) hingeEnd = Math.abs(dot(e0, u) - middle) >= Math.abs(dot(e1, u) - middle) ? 0 : 1;
+    else hingeEnd = dot(e0, u) <= dot(e1, u) ? 0 : 1;
+    // Une poignée d'un seul côté — une fenêtre, qui ne s'ouvre que de
+    // l'intérieur —, sinon des charnières qui dépassent d'un seul côté.
+    side ||= oneSide(p, parts[hingeEnd ? 0 : 1]) || oneSide(p, parts[hingeEnd]);
+    return { leaf, e0, e1, hingeEnd };
+  });
+  // Rien ne le dit : vers l'intérieur de la maison.
+  if (!side) side = dot(center, n) - plane >= 0 ? 1 : -1;
+  if (flip) side = -side as 1 | -1;
+
+  return plans.map(({ leaf, e0, e1, hingeEnd: modeled }) => {
+    const hingeEnd = hinge ? ((1 - modeled) as 0 | 1) : modeled;
+    const pivot = hingeEnd ? e1 : e0;
+    const free = hingeEnd ? e0 : e1;
+    const toFree: Vec2 = [free[0] - pivot[0], free[1] - pivot[1]];
+    const length = Math.hypot(...toFree) || 1;
+    const current: Vec2 = [toFree[0] / length, toFree[1] / length];
+    // Fermé, le battant court le long du mur, des gonds vers l'autre montant.
+    const inward = Math.sign(middle - dot(pivot, u)) || Math.sign(dot(current, u)) || 1;
+    const shut: Vec2 = [u[0] * inward, u[1] * inward];
+    const closed = turn(current, shut);
+    // Le sens de rotation qui envoie l'arête libre du côté où il s'ouvre.
+    const velocity: Vec2 = [shut[1], -shut[0]];
+    const way = Math.sign(dot(velocity, [n[0] * side, n[1] * side])) || 1;
+    return { leaf, motion: { type: 'swing' as const, pivot, closed, open: closed + way * SWING } };
+  });
 }

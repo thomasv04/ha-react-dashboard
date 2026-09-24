@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **25 tâches sur 34** — phases A à H, `I1`, `I2`, `J1` et `J2`. `F1` reste à essayer sur un vrai Android.
+**État global** : **26 tâches sur 34** — phases A à H, `I1`, `I2`, `J1` à `J3`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -530,7 +530,17 @@ leurs liaisons avec. Le plugin, lui, reste tel quel.
   `Porte_coulissante_grise` sont retrouvées, les ouvertures sans nom
   comptées, canapé et télévision laissés de côté. Tests unitaires.
 
-### [ ] J3 — Gonds et glissières
+### [x] J3 — Gonds et glissières
+
+> **Fait**, vérifié sur `home.glb` : chaque `Porte_en_bois`, entrouverte de
+> 56°, se referme sur la fine baguette de ses gonds ; la porte d'entrée tourne
+> à l'opposé de sa poignée, vers l'intérieur ; chaque fenêtre, sur ses
+> charnières, du côté de sa poignée. Sa « porte-fenêtre » est en fait une baie
+> coulissante — deux vantaux sur deux rails, poignées aux montants — : un
+> vantail glisse sur l'autre. La porte coulissante grise est modélisée
+> ouverte, ses panneaux rangés derrière les parties fixes : ils se rejoignent
+> au milieu pour la fermer. Un battant s'ouvre de 83°, comme ceux qu'on
+> dessine. Volets et portes de garage attendent `J8`.
 
 - **Où** : [floorplan-openings.ts](../src/lib/floorplan-openings.ts)
 - **Quoi** : dans chaque ouverture, le cadre, l'axe du mur, les parties
