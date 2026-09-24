@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { useHass } from '@hakit/core';
 import {
@@ -131,6 +131,38 @@ const newId = (prefix: string) => `${prefix}-${Date.now().toString(36)}`;
 /** Le câble tracé jusqu'au bout — deux points au moins : reste à choisir son entité. */
 const finishCable = (d: CableDraft): CableDraft => ({ ...d, cable: { id: newId('cable'), kind: 'home', entityId: '', points: d.points } });
 
+/** Un point de la maquette à l'écran, en % du plan — `null` tant qu'elle n'est pas affichée, ou derrière la caméra. */
+type ToScreen = (point: Vec3) => { x: number; y: number } | null;
+
+/**
+ * De quoi placer à l'écran un point de la maquette, renouvelé à chaque image
+ * où la caméra bouge. Seuls ceux qui s'en servent (`Projected`) se
+ * redessinent alors, pas la page : tant que la maison tourne, c'est trente
+ * fois par seconde.
+ */
+function createProjector() {
+  let current: Project | null = null;
+  const listeners = new Set<() => void>();
+  return {
+    get: () => current,
+    set(next: Project) {
+      current = next;
+      listeners.forEach(listener => listener());
+    },
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => void listeners.delete(listener);
+    },
+  };
+}
+type Projector = ReturnType<typeof createProjector>;
+
+/** Ce qui se place sur la maquette : redessiné à chaque image où la caméra bouge, sans la page autour. */
+function Projected({ projector, children }: { projector: Projector; children: (toScreen: ToScreen) => ReactNode }) {
+  const project = useSyncExternalStore(projector.subscribe, projector.get);
+  return children(point => project?.(point) ?? null);
+}
+
 /** Bouton rond, en bas de la maquette ; enfoncé, il prend la couleur `on`. */
 function RoundButton({
   icon: Icon,
@@ -213,13 +245,10 @@ export function FloorplanView() {
   const [adjust, setAdjust] = useState<{ corner: 'a' | 'b'; point: Vec3 } | null>(null);
 
   // Maquette : chargée (sinon les pastilles accrochées n'ont pas encore de
-  // position), en échec, et de quoi placer à l'écran un point de la maquette —
-  // renouvelé à chaque image où la caméra bouge, ce qui recale tout.
+  // position), en échec, et de quoi placer à l'écran un point de la maquette.
   const [loadedModel, setLoadedModel] = useState<string | null>(null);
   const [failure, setFailure] = useState<{ model: string; kind: 'webgl' | 'model' } | null>(null);
-  const [view, setView] = useState<{ project: Project } | null>(null);
-  /** Un point de la maquette à l'écran, en % du plan — `null` tant qu'elle n'est pas affichée, ou derrière la caméra. */
-  const project = (point: Vec3) => view?.project(point) ?? null;
+  const [projector] = useState(createProjector);
 
   const floorplan = currentPage?.floorplan;
   const image = floorplan?.image;
@@ -493,7 +522,7 @@ export function FloorplanView() {
     const at = { x: ((clientX - rect.left) / rect.width) * 100, y: ((clientY - rect.top) / rect.height) * 100 };
     /** Le clic tombe-t-il sur ce point de la maquette, à l'écran ? */
     const near = (point: Vec3) => {
-      const p = project(point);
+      const p = projector.get()?.(point);
       return !!p && Math.hypot(((p.x - at.x) / 100) * rect.width, ((p.y - at.y) / 100) * rect.height) < CLOSE_PX;
     };
     setSelectedId(null);
@@ -605,19 +634,6 @@ export function FloorplanView() {
   const loaded = !!model && loadedModel === model;
   const failed = failure && failure.model === model ? failure.kind : null;
 
-  // La puissance de chaque câble, à mi-longueur ; le câble qu'on trace,
-  // jusqu'au pointeur, en pixels ; et son bout, où choisir son entité.
-  const cableLabels = cablesProp.map(({ id, kind, watts, points }) => ({ id, kind, watts, at: project(polylineMidpoint(points)) }));
-  const draftLine =
-    cableDraft && !cableDraft.cable
-      ? [...cableDraft.points, ...(hover ? [hover] : [])]
-          .map(project)
-          .filter(p => p !== null)
-          .map(p => ({ x: (p.x / 100) * area.w, y: (p.y / 100) * area.h }))
-      : null;
-  const cableEnd = cableDraft ? project(cableDraft.points[cableDraft.points.length - 1]) : null;
-  /** La pièce tout juste fermée : on la nomme en son centre. */
-  const roomNameAt = roomDraft?.naming ? project(roomCenter(roomDraft)) : null;
   /** L'élément dessiné, dont on peut reprendre les deux coins. */
   const drawnPart = draft?.part;
 
@@ -639,31 +655,35 @@ export function FloorplanView() {
         initial={motionAllowed ? 'hidden' : false}
         animate='visible'
       >
-        {widgets.map(w => {
-          if (showThermal && thermometers.has(w.id)) return null;
-          const anchor = model ? normalizeAnchor(w.pos?.anchor) : undefined;
-          const projected = anchor ? project(anchor) : undefined;
-          // Accrochée à la maquette : rien à montrer tant qu'elle n'est pas
-          // chargée, ni quand le point est derrière la caméra.
-          if (projected === null) return null;
-          return (
-            <FloorplanItem
-              key={w.id}
-              widget={w}
-              isEditMode={isEditMode}
-              selected={selectedId === w.id}
-              onSelect={setSelectedId}
-              planRef={planRef}
-              projected={projected}
-              onCommit={model && w.type === 'chip' ? reanchor(w) : undefined}
-              // Vol vers une pièce : les pastilles des autres pièces s'estompent.
-              // Rejouée, tout s'estompe : pastilles et cards montrent le présent.
-              faded={replaying || (!!anchor && !!focusRoom && !pointInPolygon(anchor[0], anchor[2], focusRoom.points))}
-              hidden={!isEditMode && occluded.has(w.id)}
-              breathing={present.has(w.id)}
-            />
-          );
-        })}
+        <Projected projector={projector}>
+          {toScreen =>
+            widgets.map(w => {
+              if (showThermal && thermometers.has(w.id)) return null;
+              const anchor = model ? normalizeAnchor(w.pos?.anchor) : undefined;
+              const projected = anchor ? toScreen(anchor) : undefined;
+              // Accrochée à la maquette : rien à montrer tant qu'elle n'est pas
+              // chargée, ni quand le point est derrière la caméra.
+              if (projected === null) return null;
+              return (
+                <FloorplanItem
+                  key={w.id}
+                  widget={w}
+                  isEditMode={isEditMode}
+                  selected={selectedId === w.id}
+                  onSelect={setSelectedId}
+                  planRef={planRef}
+                  projected={projected}
+                  onCommit={model && w.type === 'chip' ? reanchor(w) : undefined}
+                  // Vol vers une pièce : les pastilles des autres pièces s'estompent.
+                  // Rejouée, tout s'estompe : pastilles et cards montrent le présent.
+                  faded={replaying || (!!anchor && !!focusRoom && !pointInPolygon(anchor[0], anchor[2], focusRoom.points))}
+                  hidden={!isEditMode && occluded.has(w.id)}
+                  breathing={present.has(w.id)}
+                />
+              );
+            })
+          }
+        </Projected>
       </motion.div>
     </FreeGridScope>
   );
@@ -783,7 +803,7 @@ export function FloorplanView() {
                   focus={focusRoom ?? null}
                   anchors={anchors}
                   onOcclusion={next => setOccluded(prev => (prev.size === next.size && [...next].every(id => prev.has(id)) ? prev : next))}
-                  onFrame={next => setView({ project: next })}
+                  onFrame={projector.set}
                   onPick={isEditMode ? onModelPick : onViewPick}
                   onOrbit={() => setCompass(false)}
                   onHover={
@@ -802,99 +822,127 @@ export function FloorplanView() {
               </p>
             )}
             <Weather falling={falling} frost={frost} />
-            <CableOverlay labels={cableLabels} draft={draftLine} />
+            {/* La puissance de chaque câble, à mi-longueur ; le câble qu'on trace,
+                jusqu'au pointeur, en pixels. */}
+            <Projected projector={projector}>
+              {toScreen => (
+                <CableOverlay
+                  labels={cablesProp.map(({ id, kind, watts, points }) => ({ id, kind, watts, at: toScreen(polylineMidpoint(points)) }))}
+                  draft={
+                    cableDraft && !cableDraft.cable
+                      ? [...cableDraft.points, ...(hover ? [hover] : [])]
+                          .map(toScreen)
+                          .filter(p => p !== null)
+                          .map(p => ({ x: (p.x / 100) * area.w, y: (p.y / 100) * area.h }))
+                      : null
+                  }
+                />
+              )}
+            </Projected>
             {items}
             {addPopover}
-            {isEditMode &&
-              rooms.map(room => {
-                const at = project(roomCenter(room));
+            <Projected projector={projector}>
+              {toScreen => {
+                const cableEnd = cableDraft ? toScreen(cableDraft.points[cableDraft.points.length - 1]) : null;
+                const roomNameAt = roomDraft?.naming ? toScreen(roomCenter(roomDraft)) : null;
                 return (
-                  at && (
-                    <span
-                      key={room.id}
-                      className='absolute px-2 py-0.5 rounded-full bg-black/55 text-[11px] text-white/85 pointer-events-none whitespace-nowrap'
-                      style={{ left: `${at.x}%`, top: `${at.y}%`, translate: '-50% -50%' }}
-                    >
-                      {room.name}
-                    </span>
-                  )
+                  <>
+                    {isEditMode &&
+                      rooms.map(room => {
+                        const at = toScreen(roomCenter(room));
+                        return (
+                          at && (
+                            <span
+                              key={room.id}
+                              className='absolute px-2 py-0.5 rounded-full bg-black/55 text-[11px] text-white/85 pointer-events-none whitespace-nowrap'
+                              style={{ left: `${at.x}%`, top: `${at.y}%`, translate: '-50% -50%' }}
+                            >
+                              {room.name}
+                            </span>
+                          )
+                        );
+                      })}
+                    {showThermal &&
+                      rooms.map((room, i) => {
+                        const at = toScreen(roomCenter(room));
+                        const temperature = roomTemperatures[i];
+                        return (
+                          at &&
+                          temperature && (
+                            <span
+                              key={room.id}
+                              className='absolute px-2.5 py-1 rounded-full text-sm font-semibold text-white shadow-lg pointer-events-none tabular-nums'
+                              style={{
+                                left: `${at.x}%`,
+                                top: `${at.y}%`,
+                                translate: '-50% -50%',
+                                background: colorAlpha(thermalColor(temperature.celsius), 85),
+                                opacity: focusRoom && focusRoom.id !== room.id ? 0.2 : 1,
+                                transition: 'opacity .5s',
+                              }}
+                            >
+                              {temperature.value.toFixed(1)}°
+                            </span>
+                          )
+                        );
+                      })}
+                    {/* Le premier sommet de la pièce qu'on dessine : y recliquer la ferme. */}
+                    {roomDraft && !roomDraft.naming && dot(toScreen([roomDraft.points[0][0], roomDraft.y, roomDraft.points[0][1]]))}
+                    {/* La pièce tout juste fermée : on la nomme en son centre. */}
+                    {roomDraft?.naming && roomNameAt && (
+                      <RoomNamePopover
+                        at={roomNameAt}
+                        defaultName={t('layout.floorplan.roomDefault', { n: rooms.length + 1 })}
+                        onAdd={name => {
+                          setFloorplan({
+                            rooms: [...rooms, { id: newId('room'), name, y: roomDraft.y, points: roomDraft.points }],
+                          });
+                          setRoomDraft(null);
+                        }}
+                        onCancel={() => setRoomDraft(null)}
+                      />
+                    )}
+                    {/* Le câble tracé jusqu'au bout : on choisit son entité à son bout. */}
+                    {cableDraft?.cable && cableEnd && (
+                      <CablePopover
+                        cable={cableDraft.cable}
+                        at={cableEnd}
+                        onChange={cable => setCableDraft({ ...cableDraft, cable })}
+                        onAdd={() => {
+                          if (cableDraft.cable) setFloorplan({ cables: [...cables, cableDraft.cable] });
+                          setCableDraft(null);
+                        }}
+                        onCancel={() => setCableDraft(null)}
+                      />
+                    )}
+                    {/* Le premier coin d'un élément qu'on dessine ; puis ses deux coins, qu'on
+                        peut reprendre — le coin repris suit le pointeur. */}
+                    {draft && !draft.part && dot(toScreen(draft.a))}
+                    {drawnPart &&
+                      (['a', 'b'] as const).map(corner => {
+                        const at = toScreen(adjust?.corner === corner ? adjust.point : drawnPart[corner]);
+                        if (!at) return null;
+                        return (
+                          <button
+                            key={corner}
+                            type='button'
+                            aria-label={t('layout.floorplan.partCorner')}
+                            title={t('layout.floorplan.partCorner')}
+                            className='absolute z-20 w-4 h-4 rounded-full bg-amber-400 ring-4 ring-amber-400/30 cursor-move touch-none'
+                            style={{ left: `${at.x}%`, top: `${at.y}%`, translate: '-50% -50%' }}
+                            onPointerDown={e => {
+                              e.stopPropagation();
+                              e.currentTarget.setPointerCapture(e.pointerId);
+                            }}
+                            onPointerMove={dragCorner(corner)}
+                            onPointerUp={commitCorner}
+                          />
+                        );
+                      })}
+                  </>
                 );
-              })}
-            {showThermal &&
-              rooms.map((room, i) => {
-                const at = project(roomCenter(room));
-                const temperature = roomTemperatures[i];
-                return (
-                  at &&
-                  temperature && (
-                    <span
-                      key={room.id}
-                      className='absolute px-2.5 py-1 rounded-full text-sm font-semibold text-white shadow-lg pointer-events-none tabular-nums'
-                      style={{
-                        left: `${at.x}%`,
-                        top: `${at.y}%`,
-                        translate: '-50% -50%',
-                        background: colorAlpha(thermalColor(temperature.celsius), 85),
-                        opacity: focusRoom && focusRoom.id !== room.id ? 0.2 : 1,
-                        transition: 'opacity .5s',
-                      }}
-                    >
-                      {temperature.value.toFixed(1)}°
-                    </span>
-                  )
-                );
-              })}
-            {/* Le premier sommet de la pièce qu'on dessine : y recliquer la ferme. */}
-            {roomDraft && !roomDraft.naming && dot(project([roomDraft.points[0][0], roomDraft.y, roomDraft.points[0][1]]))}
-            {roomDraft?.naming && roomNameAt && (
-              <RoomNamePopover
-                at={roomNameAt}
-                defaultName={t('layout.floorplan.roomDefault', { n: rooms.length + 1 })}
-                onAdd={name => {
-                  setFloorplan({
-                    rooms: [...rooms, { id: newId('room'), name, y: roomDraft.y, points: roomDraft.points }],
-                  });
-                  setRoomDraft(null);
-                }}
-                onCancel={() => setRoomDraft(null)}
-              />
-            )}
-            {cableDraft?.cable && cableEnd && (
-              <CablePopover
-                cable={cableDraft.cable}
-                at={cableEnd}
-                onChange={cable => setCableDraft({ ...cableDraft, cable })}
-                onAdd={() => {
-                  if (cableDraft.cable) setFloorplan({ cables: [...cables, cableDraft.cable] });
-                  setCableDraft(null);
-                }}
-                onCancel={() => setCableDraft(null)}
-              />
-            )}
-            {/* Le premier coin d'un élément qu'on dessine ; puis ses deux coins, qu'on
-                peut reprendre — le coin repris suit le pointeur. */}
-            {draft && !draft.part && dot(project(draft.a))}
-            {drawnPart &&
-              (['a', 'b'] as const).map(corner => {
-                const at = project(adjust?.corner === corner ? adjust.point : drawnPart[corner]);
-                if (!at) return null;
-                return (
-                  <button
-                    key={corner}
-                    type='button'
-                    aria-label={t('layout.floorplan.partCorner')}
-                    title={t('layout.floorplan.partCorner')}
-                    className='absolute z-20 w-4 h-4 rounded-full bg-amber-400 ring-4 ring-amber-400/30 cursor-move touch-none'
-                    style={{ left: `${at.x}%`, top: `${at.y}%`, translate: '-50% -50%' }}
-                    onPointerDown={e => {
-                      e.stopPropagation();
-                      e.currentTarget.setPointerCapture(e.pointerId);
-                    }}
-                    onPointerMove={dragCorner(corner)}
-                    onPointerUp={commitCorner}
-                  />
-                );
-              })}
+              }}
+            </Projected>
             {draft?.part && draft.around && (
               <PartPopover
                 part={draft.part}
