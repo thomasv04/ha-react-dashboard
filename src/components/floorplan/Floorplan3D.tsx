@@ -302,10 +302,11 @@ interface Stage {
   flight: number;
   /**
    * Redessine. Ce qui a changé : tout (par défaut) ; la vue seule — les ombres
-   * ne dépendent pas de la caméra ; ou le seul flux d'énergie, qui ne déplace
-   * rien — ni pastilles à recaler, ni occlusion à revérifier.
+   * ne dépendent pas de la caméra ; les ombres seules — le soleil, une porte
+   * qui tourne : rien ne bouge à l'écran, rien ne se cache ; ou l'image seule
+   * — lampes, tracés, courant dans les câbles.
    */
-  render: (what?: 'all' | 'view' | 'flow') => void;
+  render: (what?: 'all' | 'view' | 'shadows' | 'draw') => void;
   /** Une image par frame tant que `step` rend `true` — le temps d'une animation. */
   animate: (step: (now: number) => boolean) => void;
 }
@@ -594,6 +595,7 @@ function updateCutaway(s: Stage) {
 function placeParts(s: Stage, parts: PartProp[]) {
   if (!s.root) return;
   const seen = new Set<string>();
+  let reshaped = false;
   for (const { open, ...part } of parts) {
     seen.add(part.id);
     const key = JSON.stringify(part);
@@ -613,13 +615,21 @@ function placeParts(s: Stage, parts: PartProp[]) {
       s.scene.add(obj.object);
       entry = { obj, key, value: open, target: open };
       s.parts.set(part.id, entry);
+      reshaped = true;
     }
     if (entry.target !== open) {
       entry.target = open;
       s.animate(swing(s, entry));
     }
   }
-  for (const id of s.parts.keys()) if (!seen.has(id)) removeGenerated(s, s.parts, id);
+  for (const id of s.parts.keys()) {
+    if (seen.has(id)) continue;
+    removeGenerated(s, s.parts, id);
+    reshaped = true;
+  }
+  // Un élément posé ou retiré découpe autrement la maquette ; un élément qui
+  // s'ouvre, `swing` le dessine.
+  if (!reshaped) return;
   setCuts(
     s.uniforms,
     [...s.parts.values()].flatMap(entry => (entry.obj.cut ? [entry.obj.cut] : []))
@@ -664,8 +674,9 @@ function placeCables(s: Stage, cables: CableProp[]) {
     removeGenerated(s, s.cables, id);
     reshaped = true;
   }
-  // Un câble posé ou retiré change les ombres ; un courant qui varie, non.
-  s.render(reshaped ? 'all' : 'flow');
+  // Un câble posé ou retiré change les ombres ; un courant qui varie, non. Hors
+  // de la maquette, il ne cache aucune pastille.
+  s.render(reshaped ? 'shadows' : 'draw');
   runFlows(s);
 }
 
@@ -697,7 +708,7 @@ function runFlows(s: Stage) {
     const dt = last ? (now - last) / 1000 : 0;
     last = now;
     for (const c of active) c.obj.dashes.offset.x -= (c.direction * dt) / flowDuration(c.watts);
-    if (++frames % 2 === 0) s.render('flow');
+    if (++frames % 2 === 0) s.render('draw');
     return true;
   });
 }
@@ -714,7 +725,8 @@ function swing(s: Stage, entry: PartEntry) {
     const t = Math.min(1, (now - start) / SWING_MS);
     entry.value = from + (to - from) * easeInOut(t);
     entry.obj.apply(entry.value);
-    s.render();
+    // Hors de la maquette, il ne cache aucune pastille : seules ses ombres bougent.
+    s.render('shadows');
     return t < 1;
   };
 }
@@ -754,7 +766,7 @@ function placeOutline(s: Stage, corners: [Vec3, Vec3] | null | undefined) {
   if (!corners || !s.root) {
     if (s.outline?.visible) {
       s.outline.visible = false;
-      s.render();
+      s.render('draw');
     }
     return;
   }
@@ -776,7 +788,7 @@ function placeOutline(s: Stage, corners: [Vec3, Vec3] | null | undefined) {
   }
   for (const child of s.outline.children) (child as Mesh).geometry.setAttribute('position', points);
   s.outline.visible = true;
-  s.render();
+  s.render('draw');
 }
 
 /** Tracés au sol, un rien au-dessus du sol pour ne pas s'y confondre. */
@@ -819,7 +831,7 @@ function placeFloors(s: Stage, floors: FloorOverlay[] | undefined) {
       s.floors.add(line);
     }
   }
-  s.render();
+  s.render('draw');
 }
 
 function disposeTree(root: Object3D) {
@@ -970,10 +982,10 @@ export default function Floorplan3D({
       }
       frame = animators.size || dirty ? requestAnimationFrame(tick) : 0;
     };
-    const render = (what: 'all' | 'view' | 'flow' = 'all') => {
+    const render = (what: 'all' | 'view' | 'shadows' | 'draw' = 'all') => {
       dirty = true;
-      if (what !== 'flow') moved = true;
-      if (what === 'all') shadowsDirty = true;
+      if (what === 'all' || what === 'view') moved = true;
+      if (what === 'all' || what === 'shadows') shadowsDirty = true;
       if (!frame) frame = requestAnimationFrame(tick);
     };
     const animate = (step: (now: number) => boolean) => {
@@ -1171,7 +1183,7 @@ export default function Floorplan3D({
       s.scene.traverse(o => materialsOf(o).forEach(m => (m.needsUpdate = true)));
     }
     s.sun.castShadow = cast;
-    s.render();
+    s.render('shadows');
   }, [sunElevation, sunAzimuth, north, cloudiness, shadows]);
 
   // ── Lampes ─────────────────────────────────────────────────────────────────
@@ -1184,7 +1196,10 @@ export default function Floorplan3D({
     if (!s) return;
     s.lampGlow = lampGlow;
     placeLamps(s, latest.current.lamps);
-    s.render();
+    // Sans ombres, une lampe ne change que l'image. Recaler les pastilles, puis
+    // revérifier ce que la maquette cache, relancerait l'effet : une lueur
+    // suit sa pastille, cachée ou non.
+    s.render('draw');
   }, [lampsKey, lampGlow]);
 
   // ── Câbles d'énergie ───────────────────────────────────────────────────────
@@ -1332,7 +1347,7 @@ export default function Floorplan3D({
         applyView(s, latest.current.camera);
       },
       invalidate() {
-        stage.current?.render();
+        stage.current?.render('view');
       },
       colorAt: point => (stage.current ? colorAt(stage.current, point) : null),
       facing(a, b) {
