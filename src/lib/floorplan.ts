@@ -126,6 +126,9 @@ export type Vec3 = [number, number, number];
  */
 export const MODEL_SIZE = 20;
 
+/** Ce qu'on dessine sur la maquette, le temps de le dessiner : ambre. */
+export const DRAFT_COLOR = '#fbbf24';
+
 /** Point d'accroche lisible, ou `undefined` — même prudence que `normalizePos`. */
 export function normalizeAnchor(anchor: unknown): Vec3 | undefined {
   return Array.isArray(anchor) && anchor.length === 3 && anchor.every(n => typeof n === 'number' && Number.isFinite(n))

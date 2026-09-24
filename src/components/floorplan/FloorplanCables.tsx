@@ -2,14 +2,11 @@ import { ArrowLeftRight, BatteryCharging, House, Sun, Trash2, X, Zap, type Lucid
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { useEntities } from '@/hooks/useEntities';
 import { useFormats } from '@/hooks/useFormats';
-import { CABLE_COLORS, CABLE_KINDS, guessCableKind, type CableKind, type FloorplanCable } from '@/lib/floorplan';
+import { CABLE_COLORS, CABLE_KINDS, DRAFT_COLOR, guessCableKind, type CableKind, type FloorplanCable } from '@/lib/floorplan';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 
 const CABLE_ICONS: Record<CableKind, LucideIcon> = { solar: Sun, grid: Zap, home: House, battery: BatteryCharging };
-
-/** Le trajet qu'on trace : ambre, comme les autres dessins en cours. */
-const DRAFT_COLOR = '#fbbf24';
 
 type Point = { x: number; y: number };
 

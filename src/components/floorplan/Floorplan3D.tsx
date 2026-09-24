@@ -43,6 +43,7 @@ import {
   compassHeading,
   CUTAWAY_HEIGHT,
   cutLimit,
+  DRAFT_COLOR,
   flowDuration,
   isCutAway,
   MODEL_SIZE,
@@ -104,7 +105,6 @@ export interface Lamp {
 
 /** Tracé au sol de la maquette : une pièce, ou celle qu'on dessine. */
 export interface FloorOverlay {
-  id: string;
   /** Hauteur du sol, et contour (x, z), dans les coordonnées de la maquette. */
   y: number;
   points: [number, number][];
@@ -781,7 +781,7 @@ function placeOutline(s: Stage, corners: [Vec3, Vec3] | null | undefined) {
   const top = Math.max(a.y, b.y);
   const points = new Float32BufferAttribute([a.x, bottom, a.z, b.x, bottom, b.z, b.x, top, b.z, a.x, top, a.z], 3);
   if (!s.outline) {
-    const overlay = { depthTest: false, transparent: true, color: 0xfbbf24 };
+    const overlay = { depthTest: false, transparent: true, color: DRAFT_COLOR };
     const fill = new BufferGeometry().setIndex([0, 1, 2, 0, 2, 3]);
     s.outline = new Group().add(
       new Mesh(fill, new MeshBasicMaterial({ ...overlay, opacity: 0.22, side: DoubleSide })),

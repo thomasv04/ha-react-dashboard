@@ -15,6 +15,7 @@ import {
   SquareDashed,
   Thermometer,
   X,
+  type LucideIcon,
 } from 'lucide-react';
 import { usePages, type FloorplanConfig } from '@/context/PageContext';
 import { useDashboardLayout, useEditMode, type FloorplanPos, type GridWidget } from '@/context/DashboardLayoutContext';
@@ -37,6 +38,7 @@ import { useTheme } from '@/context/ThemeContext';
 import {
   cloudiness,
   containSize,
+  DRAFT_COLOR,
   isNightDimmed,
   isPresence,
   lightColor,
@@ -107,9 +109,8 @@ const STARS = {
   backgroundSize: [...Array(4).fill('230px 230px'), ...Array(3).fill('370px 370px')].join(', '),
 };
 
-/** Pièces : leur contour en édition, et celui qu'on dessine. */
+/** Pièces : leur contour, en édition. */
 const ROOM_COLOR = '#60a5fa';
-const DRAW_COLOR = '#fbbf24';
 /** En deçà (px) du premier sommet d'une pièce, du dernier point d'un câble, un clic ferme l'une, finit l'autre. */
 const CLOSE_PX = 14;
 
@@ -126,6 +127,33 @@ type CableDraft = { points: Vec3[]; cable?: FloorplanCable };
 const newId = (prefix: string) => `${prefix}-${Date.now().toString(36)}`;
 /** Le câble tracé jusqu'au bout — deux points au moins : reste à choisir son entité. */
 const finishCable = (d: CableDraft): CableDraft => ({ ...d, cable: { id: newId('cable'), kind: 'home', entityId: '', points: d.points } });
+
+/** Bouton rond, en bas de la maquette ; enfoncé, il prend la couleur `on`. */
+function RoundButton({
+  icon: Icon,
+  label,
+  onClick,
+  pressed,
+  on = 'text-sky-300',
+}: {
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+  pressed?: boolean;
+  on?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={pressed}
+      title={label}
+      aria-label={label}
+      className={cn('p-2.5 rounded-xl gc-overlay transition-colors', pressed ? on : 'text-white/60 hover:text-white')}
+    >
+      <Icon size={16} />
+    </button>
+  );
+}
 
 /**
  * Page `floorplan` : une image de la maison — ou une maquette 3D — et les
@@ -192,16 +220,20 @@ export function FloorplanView() {
   const image = floorplan?.image;
   const model = floorplan?.model;
   const widgets = layout.widgets.lg;
+  /** Les pastilles : leur entité, leur point d'accroche sur la maquette. */
+  const chips = widgets.flatMap(w => {
+    if (w.type !== 'chip') return [];
+    const config = getWidgetConfig<ChipCardConfig>(w.id);
+    return [{ id: w.id, pos: w.pos, anchor: normalizeAnchor(w.pos?.anchor), entityId: config?.entityId ?? '', config }];
+  });
 
   // ── Rejouer la journée ─────────────────────────────────────────────────────
   // Lampes et éléments animés, que l'historique rejoue.
-  const glows = widgets.flatMap(w => {
-    if (w.type !== 'chip') return [];
-    const config = getWidgetConfig<ChipCardConfig>(w.id);
-    const entityId = config?.entityId ?? '';
-    if (!entityId.startsWith('light.') || config?.glow === false) return [];
-    return [{ id: w.id, entityId, pos: normalizePos(w.pos, false), anchor: normalizeAnchor(w.pos?.anchor), size: config?.glowSize ?? 12 }];
-  });
+  const glows = chips.flatMap(c =>
+    c.entityId.startsWith('light.') && c.config?.glow !== false
+      ? [{ ...c, pos: normalizePos(c.pos, false), size: c.config?.glowSize ?? 12 }]
+      : []
+  );
   const parts = normalizeParts(floorplan?.parts);
   const replay = useReplay([...glows.map(g => g.entityId), ...parts.map(p => p.entityId)]);
   const closeReplay = replay.close;
@@ -281,9 +313,32 @@ export function FloorplanView() {
     return () => window.removeEventListener('keydown', onKey);
   }, [focusId, replaying, sheetOpen, closeReplay]);
 
+  // Pièces dessinées : leurs lampes n'éclairent qu'elles.
+  const rooms = normalizeRooms(floorplan?.rooms);
+  /** La pièce où tombe ce point (x, z) du sol. */
+  const roomAt = (x: number, z: number) => rooms.find(r => pointInPolygon(x, z, r.points));
+  const cables = normalizeCables(floorplan?.cables);
+  // Ce qui circule dans chaque câble — celui qu'on vient de tracer compris : on
+  // voit son sens en choisissant son entité.
+  const allCables = [...cables, ...(cableDraft?.cable ? [cableDraft.cable] : [])];
+  // La météo voile le soleil et grise le ciel : l'entité choisie, ou la première trouvée.
+  const firstWeather = useHass(s => {
+    if (floorplan?.weather) return '';
+    for (const id in s.entities ?? {}) if (id.startsWith('weather.')) return id;
+    return '';
+  });
+  const weatherId = floorplan?.weather || firstWeather;
+  /** Les entités de la page : pastilles, soleil, météo, portes et volets, câbles. */
+  const entities = useEntities([
+    ...chips.map(c => c.entityId),
+    'sun.sun',
+    weatherId,
+    ...parts.map(p => p.entityId),
+    ...allCables.map(c => c.entityId),
+  ]);
+
   // ── Lampes : halos du plan, lumières de la maquette ────────────────────────
-  const lights = useEntities(glows.map(g => g.entityId));
-  const sunEntity = useEntities(['sun.sun'])['sun.sun'];
+  const sunEntity = entities['sun.sun'];
   const dimmed = isNightDimmed(sunEntity?.state, floorplan?.dimAtNight);
   // Mode mock : l'heure du soleil se règle au curseur (panneau « Maquette 3D »),
   // pour voir la maquette de nuit, à l'aube, à midi. Le soleil d'aujourd'hui, au
@@ -296,36 +351,26 @@ export function FloorplanView() {
   const computedSun = sunAt !== null && place ? sunPosition(new Date(sunAt), place.latitude, place.longitude) : null;
   const sunElevation = computedSun?.elevation ?? (sunEntity?.attributes?.elevation as number | undefined);
   const sunAzimuth = computedSun?.azimuth ?? (sunEntity?.attributes?.azimuth as number | undefined);
-  // La météo voile le soleil et grise le ciel : l'entité choisie, ou la première trouvée.
-  const firstWeather = useHass(s => Object.keys(s.entities ?? {}).find(id => id.startsWith('weather.')));
-  const weatherId = floorplan?.weather || firstWeather || '';
-  const weatherState = useEntities([weatherId])[weatherId]?.state;
+  const weatherState = entities[weatherId]?.state;
   const clouds = cloudiness(weatherState);
   // Pluie, neige, éclairs : animés en CSS, jamais en économie d'énergie.
   const falling = model && motionAllowed ? precipitation(weatherState) : null;
   // Derrière la maquette : le ciel de l'heure, sauf si la page garde le fond du thème.
   const sky = model && floorplan?.sky !== false ? skyColors(sunElevation, clouds) : null;
 
-  // Pièces dessinées : leurs lampes n'éclairent qu'elles.
-  const rooms = normalizeRooms(floorplan?.rooms);
-  const cables = normalizeCables(floorplan?.cables);
-  // Ce qui circule dans chaque câble — celui qu'on vient de tracer compris : on
-  // voit son sens en choisissant son entité. Rejouée, la maison n'a pas encore
-  // l'historique de ses câbles : ils se reposent.
-  const allCables = [...cables, ...(cableDraft?.cable ? [cableDraft.cable] : [])];
-  const cableEntities = useEntities(allCables.map(c => c.entityId));
+  // Rejouée, la maison n'a pas encore l'historique de ses câbles : ils se reposent.
   const cablesProp: CableProp[] = allCables.map(c => ({
     ...c,
     ...(replaying
       ? { direction: 0 as const, watts: null }
-      : cableFlow(cableEntities[c.entityId]?.state, cableEntities[c.entityId]?.attributes, c.invert)),
+      : cableFlow(entities[c.entityId]?.state, entities[c.entityId]?.attributes, c.invert)),
   }));
   const focusRoom = rooms.find(r => r.id === focusId);
 
   const lamps: Lamp[] = model
     ? glows.flatMap(g => {
         if (!g.anchor) return [];
-        const entity = replayed(g.entityId) ?? lights[g.entityId];
+        const entity = replayed(g.entityId) ?? entities[g.entityId];
         const brightness = entity?.attributes?.brightness;
         return [
           {
@@ -336,7 +381,7 @@ export function FloorplanView() {
             // Même réglage que le halo du plan — un % de sa largeur — ramené à
             // la taille de la maquette.
             range: (g.size / 100) * MODEL_SIZE * 2,
-            room: rooms.find(r => pointInPolygon(g.anchor![0], g.anchor![2], r.points))?.points,
+            room: roomAt(g.anchor[0], g.anchor[2])?.points,
             hidden: !isEditMode && occluded.has(g.id),
           },
         ];
@@ -344,10 +389,9 @@ export function FloorplanView() {
     : [];
 
   // ── Portes, fenêtres, volets ───────────────────────────────────────────────
-  const partEntities = useEntities(parts.map(p => p.entityId));
   const partsProp: PartProp[] = [
     ...parts.map(p => {
-      const entity = replayed(p.entityId) ?? partEntities[p.entityId];
+      const entity = replayed(p.entityId) ?? entities[p.entityId];
       return { ...p, open: openness(entity?.state, entity?.attributes) };
     }),
     ...(draft?.part ? [{ ...draft.part, open: DRAFT_OPENNESS }] : []),
@@ -355,17 +399,14 @@ export function FloorplanView() {
 
   // ── Pièces ─────────────────────────────────────────────────────────────────
   // Température de chaque pièce : la moyenne des capteurs de température posés dedans.
-  const chipEntities = useEntities(
-    widgets.flatMap(w => (w.type === 'chip' ? [getWidgetConfig<ChipCardConfig>(w.id)?.entityId ?? ''] : []))
-  );
   /** Pastilles de température rattachées à une pièce : en vue thermique, la pièce affiche leur valeur à leur place. */
   const thermometers = new Set<string>();
   const roomTemperatures = rooms.map(room => {
-    const readings = widgets.flatMap(w => {
-      const anchor = normalizeAnchor(w.pos?.anchor);
-      const entity = w.type === 'chip' ? chipEntities[getWidgetConfig<ChipCardConfig>(w.id)?.entityId ?? ''] : undefined;
-      const reading = anchor && pointInPolygon(anchor[0], anchor[2], room.points) ? temperatureOf(entity?.state, entity?.attributes) : null;
-      if (reading) thermometers.add(w.id);
+    const readings = chips.flatMap(c => {
+      const entity = entities[c.entityId];
+      const reading =
+        c.anchor && pointInPolygon(c.anchor[0], c.anchor[2], room.points) ? temperatureOf(entity?.state, entity?.attributes) : null;
+      if (reading) thermometers.add(c.id);
       return reading ? [reading] : [];
     });
     if (!readings.length) return null;
@@ -375,12 +416,7 @@ export function FloorplanView() {
   // Rejouée, la maison n'a que l'historique de ses lampes et de ses portes : pas de températures.
   const showThermal = thermal && !isEditMode && !replaying;
   /** Pastilles d'un détecteur de mouvement ou de présence déclenché : une lueur respire dessous. */
-  const present = new Set(
-    widgets.flatMap(w => {
-      const entity = w.type === 'chip' ? chipEntities[getWidgetConfig<ChipCardConfig>(w.id)?.entityId ?? ''] : undefined;
-      return isPresence(entity?.state, entity?.attributes) ? [w.id] : [];
-    })
-  );
+  const present = new Set(chips.flatMap(c => (isPresence(entities[c.entityId]?.state, entities[c.entityId]?.attributes) ? [c.id] : [])));
 
   /** Contour de la pièce en cours de dessin, jusqu'au pointeur tant qu'elle n'est pas fermée. */
   const roomPoints: [number, number][] = roomDraft
@@ -389,16 +425,12 @@ export function FloorplanView() {
   const floors: FloorOverlay[] = showThermal
     ? rooms.flatMap((r, i) => {
         const temperature = roomTemperatures[i];
-        return temperature
-          ? [{ id: r.id, y: r.y, points: r.points, color: thermalColor(temperature.celsius), fill: 0.42, closed: true }]
-          : [];
+        return temperature ? [{ y: r.y, points: r.points, color: thermalColor(temperature.celsius), fill: 0.42, closed: true }] : [];
       })
     : isEditMode
       ? [
-          ...rooms.map(r => ({ id: r.id, y: r.y, points: r.points, color: ROOM_COLOR, fill: 0.12, closed: true })),
-          ...(roomDraft
-            ? [{ id: '__room', y: roomDraft.y, points: roomPoints, color: DRAW_COLOR, fill: 0.18, closed: roomPoints.length >= 3 }]
-            : []),
+          ...rooms.map(r => ({ y: r.y, points: r.points, color: ROOM_COLOR, fill: 0.12, closed: true })),
+          ...(roomDraft ? [{ y: roomDraft.y, points: roomPoints, color: DRAFT_COLOR, fill: 0.18, closed: roomPoints.length >= 3 }] : []),
         ]
       : [];
 
@@ -438,7 +470,7 @@ export function FloorplanView() {
    */
   const onViewPick = (anchor: Vec3 | null, clientX: number, clientY: number) => {
     const room =
-      (anchor && rooms.find(r => pointInPolygon(anchor[0], anchor[2], r.points))) ||
+      (anchor && roomAt(anchor[0], anchor[2])) ||
       rooms.find(r => {
         const floor = three.current?.floorAt(clientX, clientY, r.y);
         return !!floor && pointInPolygon(floor[0], floor[1], r.points);
@@ -887,57 +919,37 @@ export function FloorplanView() {
                   />
                 )}
                 {compassReady && isPhone && (
-                  <button
+                  <RoundButton
+                    icon={Compass}
+                    label={t('layout.floorplan.compass')}
                     onClick={() => setCompass(on => !on)}
-                    aria-pressed={compass}
-                    title={t('layout.floorplan.compass')}
-                    aria-label={t('layout.floorplan.compass')}
-                    className={cn(
-                      'p-2.5 rounded-xl gc-overlay transition-colors',
-                      compass ? 'text-sky-300' : 'text-white/60 hover:text-white'
-                    )}
-                  >
-                    <Compass size={16} />
-                  </button>
+                    pressed={compass}
+                  />
                 )}
                 {roomTemperatures.some(Boolean) && !replaying && (
-                  <button
+                  <RoundButton
+                    icon={Thermometer}
+                    label={t('layout.floorplan.thermal')}
                     onClick={() => setThermal(on => !on)}
-                    aria-pressed={thermal}
-                    title={t('layout.floorplan.thermal')}
-                    aria-label={t('layout.floorplan.thermal')}
-                    className={cn(
-                      'p-2.5 rounded-xl gc-overlay transition-colors',
-                      thermal ? 'text-orange-300' : 'text-white/60 hover:text-white'
-                    )}
-                  >
-                    <Thermometer size={16} />
-                  </button>
+                    pressed={thermal}
+                    on='text-orange-300'
+                  />
                 )}
-                <button
+                <RoundButton
+                  icon={HistoryIcon}
+                  label={t('layout.floorplan.replay')}
                   onClick={() => (replaying ? closeReplay() : replay.open())}
-                  aria-pressed={replaying}
-                  title={t('layout.floorplan.replay')}
-                  aria-label={t('layout.floorplan.replay')}
-                  className={cn(
-                    'p-2.5 rounded-xl gc-overlay transition-colors',
-                    replaying ? 'text-sky-300' : 'text-white/60 hover:text-white'
-                  )}
-                >
-                  <HistoryIcon size={16} />
-                </button>
-                <button
+                  pressed={replaying}
+                />
+                <RoundButton
+                  icon={RotateCcw}
+                  label={t('layout.floorplan.resetView')}
                   onClick={() => {
                     setFocusId(null);
                     setCompass(false);
                     three.current?.resetView();
                   }}
-                  title={t('layout.floorplan.resetView')}
-                  aria-label={t('layout.floorplan.resetView')}
-                  className='p-2.5 rounded-xl gc-overlay text-white/60 hover:text-white transition-colors'
-                >
-                  <RotateCcw size={16} />
-                </button>
+                />
               </div>
             )}
             {focusRoom && (
@@ -992,7 +1004,7 @@ export function FloorplanView() {
                 s'additionnent entre eux, puis éclaircissent le plan en une fois. */}
             <div className='absolute inset-0 pointer-events-none' style={{ mixBlendMode: 'screen' }}>
               {glows.map(g => {
-                const glow = lightGlow(lights[g.entityId]?.state, lights[g.entityId]?.attributes);
+                const glow = lightGlow(entities[g.entityId]?.state, entities[g.entityId]?.attributes);
                 if (!glow) return null;
                 const [r, gr, b] = glow.color;
                 return (
