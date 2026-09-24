@@ -56,7 +56,16 @@ import {
   type Sides,
   type Vec3,
 } from '@/lib/floorplan';
-import { createModelUniforms, materialsOf, patchModel, setCuts, setCutawaySides, setRoomMasks, type ModelUniforms } from './modelPatch';
+import {
+  createModelUniforms,
+  depthMaterial,
+  materialsOf,
+  patchModel,
+  setCuts,
+  setCutawaySides,
+  setRoomMasks,
+  type ModelUniforms,
+} from './modelPatch';
 import { buildCable, type CableObject } from './cables3d';
 import { buildPart, type PartObject } from './parts3d';
 
@@ -246,8 +255,6 @@ interface CableEntry {
   obj: CableObject;
   /** Forme et sorte du câble : reconstruit quand elles changent, pas quand le courant varie. */
   key: string;
-  /** Ombres du câble, retouchées comme lui. */
-  depth: Material;
   direction: -1 | 0 | 1;
   watts: number | null;
 }
@@ -256,8 +263,6 @@ interface PartEntry {
   obj: PartObject;
   /** Forme de l'élément : reconstruit quand elle change, pas quand il s'ouvre. */
   key: string;
-  /** Ombres de l'élément, retouchées comme lui. */
-  depth: Material;
   /** Ouverture de l'instant, et celle vers laquelle il va. */
   value: number;
   target: number;
@@ -271,8 +276,8 @@ interface Stage {
   sun: DirectionalLight;
   hemi: HemisphereLight;
   root: Object3D | null;
-  /** Ombres de la maquette, retouchées comme elle — à libérer avec elle. */
-  depth: Material | null;
+  /** Matériaux des ombres, retouchés comme ce qui les porte : la maquette, les éléments générés. */
+  depth: { model: Material; generated: Material };
   lamps: Map<string, PointLight>;
   lampGlow: boolean;
   /** Tache douce de la lueur des lampes, partagée par toutes — créée au premier besoin. */
@@ -527,8 +532,7 @@ function placeLamps(s: Stage, lamps: Lamp[]) {
 
 function cutawaySides(s: Stage, on: boolean) {
   if (s.root) setCutawaySides(s.root, on);
-  for (const entry of s.parts.values()) setCutawaySides(entry.obj.object, on);
-  for (const entry of s.cables.values()) setCutawaySides(entry.obj.mesh, on);
+  for (const { obj } of [...s.parts.values(), ...s.cables.values()]) setCutawaySides(obj.object, on);
 }
 
 /** Murs en coupe (cf. `modelPatch`) : activés ou non, et la caméra qui peut descendre avec. */
@@ -595,7 +599,7 @@ function placeParts(s: Stage, parts: PartProp[]) {
     const key = JSON.stringify(part);
     let entry = s.parts.get(part.id);
     if (entry && entry.key !== key) {
-      removePart(s, part.id, entry);
+      removeGenerated(s, s.parts, part.id);
       entry = undefined;
     }
     if (!entry) {
@@ -603,11 +607,11 @@ function placeParts(s: Stage, parts: PartProp[]) {
       if (!obj) continue;
       // Coupé par les murets comme la maquette, mais pas par les découpes :
       // il occupe justement celle de l'original.
-      const depth = patchModel(obj.object, s.uniforms, false);
+      patchModel(obj.object, s.uniforms, s.depth.generated, false);
       if (s.cutaway) setCutawaySides(obj.object, true);
       obj.apply(open);
       s.scene.add(obj.object);
-      entry = { obj, key, depth, value: open, target: open };
+      entry = { obj, key, value: open, target: open };
       s.parts.set(part.id, entry);
     }
     if (entry.target !== open) {
@@ -615,7 +619,7 @@ function placeParts(s: Stage, parts: PartProp[]) {
       s.animate(swing(s, entry));
     }
   }
-  for (const [id, entry] of s.parts) if (!seen.has(id)) removePart(s, id, entry);
+  for (const id of s.parts.keys()) if (!seen.has(id)) removeGenerated(s, s.parts, id);
   setCuts(
     s.uniforms,
     [...s.parts.values()].flatMap(entry => (entry.obj.cut ? [entry.obj.cut] : []))
@@ -636,17 +640,17 @@ function placeCables(s: Stage, cables: CableProp[]) {
     const key = JSON.stringify([cable.points, cable.kind]);
     let entry = s.cables.get(cable.id);
     if (entry && entry.key !== key) {
-      removeCable(s, cable.id, entry);
+      removeGenerated(s, s.cables, cable.id);
       entry = undefined;
     }
     if (!entry) {
       const obj = buildCable(cable, s.root);
       if (!obj) continue;
       // Coupé par les murets comme la maquette, s'il monte le long d'un mur.
-      const depth = patchModel(obj.mesh, s.uniforms, false);
-      if (s.cutaway) setCutawaySides(obj.mesh, true);
-      s.scene.add(obj.mesh);
-      entry = { obj, key, depth, direction, watts };
+      patchModel(obj.object, s.uniforms, s.depth.generated, false);
+      if (s.cutaway) setCutawaySides(obj.object, true);
+      s.scene.add(obj.object);
+      entry = { obj, key, direction, watts };
       s.cables.set(cable.id, entry);
       reshaped = true;
     }
@@ -655,9 +659,9 @@ function placeCables(s: Stage, cables: CableProp[]) {
     // Au repos, la gaine seule ; quand le courant passe, la lumière court dedans.
     entry.obj.material.emissiveIntensity = direction ? FLOW_GLOW : 0;
   }
-  for (const [id, entry] of s.cables) {
+  for (const id of s.cables.keys()) {
     if (seen.has(id)) continue;
-    removeCable(s, id, entry);
+    removeGenerated(s, s.cables, id);
     reshaped = true;
   }
   // Un câble posé ou retiré change les ombres ; un courant qui varie, non.
@@ -665,11 +669,13 @@ function placeCables(s: Stage, cables: CableProp[]) {
   runFlows(s);
 }
 
-function removeCable(s: Stage, id: string, entry: CableEntry) {
-  s.scene.remove(entry.obj.mesh);
-  entry.obj.dispose();
-  entry.depth.dispose();
-  s.cables.delete(id);
+/** Retire un élément généré — porte, volet, câble — de la scène, et le libère. */
+function removeGenerated(s: Stage, entries: Map<string, { obj: { object: Object3D } }>, id: string) {
+  const entry = entries.get(id);
+  if (!entry) return;
+  s.scene.remove(entry.obj.object);
+  disposeTree(entry.obj.object);
+  entries.delete(id);
 }
 
 /**
@@ -694,13 +700,6 @@ function runFlows(s: Stage) {
     if (++frames % 2 === 0) s.render('flow');
     return true;
   });
-}
-
-function removePart(s: Stage, id: string, entry: PartEntry) {
-  s.scene.remove(entry.obj.object);
-  entry.obj.dispose();
-  entry.depth.dispose();
-  s.parts.delete(id);
 }
 
 /** Une porte s'ouvre, un volet descend : en douceur, jusqu'à l'ouverture demandée. */
@@ -787,9 +786,7 @@ const FLOOR_LIFT = 0.03;
 function placeFloors(s: Stage, floors: FloorOverlay[] | undefined) {
   for (const child of [...s.floors.children]) {
     s.floors.remove(child);
-    const mesh = child as Mesh;
-    mesh.geometry.dispose();
-    (mesh.material as Material).dispose();
+    disposeTree(child);
   }
   const root = s.root;
   if (root) {
@@ -996,6 +993,7 @@ export default function Floorplan3D({
     const observer = new ResizeObserver(resize);
     observer.observe(host);
 
+    const uniforms = createModelUniforms();
     const s: Stage = {
       renderer,
       scene,
@@ -1004,7 +1002,7 @@ export default function Floorplan3D({
       sun,
       hemi,
       root: null,
-      depth: null,
+      depth: { model: depthMaterial(uniforms, true), generated: depthMaterial(uniforms, false) },
       lamps: new Map(),
       lampGlow: false,
       glowMap: null,
@@ -1014,7 +1012,7 @@ export default function Floorplan3D({
       flowRunning: false,
       outline: null,
       floors: new Group(),
-      uniforms: createModelUniforms(),
+      uniforms,
       cutaway: false,
       cut: null,
       home: null,
@@ -1068,9 +1066,8 @@ export default function Floorplan3D({
       renderer.domElement.removeEventListener('pointerup', onUp);
       renderer.domElement.removeEventListener('pointermove', onMove);
       disposeTree(scene);
-      s.depth?.dispose();
-      for (const entry of s.parts.values()) entry.depth.dispose();
-      for (const entry of s.cables.values()) entry.depth.dispose();
+      s.depth.model.dispose();
+      s.depth.generated.dispose();
       renderer.dispose();
       // Rendre le contexte tout de suite : un navigateur n'en garde qu'une
       // poignée, et changer de page en boucle finirait par les épuiser.
@@ -1107,11 +1104,10 @@ export default function Floorplan3D({
         if (s.root) {
           s.scene.remove(s.root);
           disposeTree(s.root);
-          s.depth?.dispose();
         }
         s.scene.add(root);
         s.root = root;
-        s.depth = patchModel(root, s.uniforms);
+        patchModel(root, s.uniforms, s.depth.model);
         // Emprise, une fois la maquette posée au sol et centrée. Les murs
         // partent debout, et s'abaissent en glissant : la maison s'ouvre.
         const { min, max } = new Box3().setFromObject(root);
@@ -1131,9 +1127,9 @@ export default function Floorplan3D({
         s.uniforms.fpSides.value.set(...s.cut.sides);
         applyCutaway(s);
         // Placés d'après la maquette : tous reconstruits sur la nouvelle.
-        for (const [id, entry] of s.parts) removePart(s, id, entry);
+        for (const id of s.parts.keys()) removeGenerated(s, s.parts, id);
         placeParts(s, latest.current.parts);
-        for (const [id, entry] of s.cables) removeCable(s, id, entry);
+        for (const id of s.cables.keys()) removeGenerated(s, s.cables, id);
         placeCables(s, latest.current.cables ?? []);
         placeFloors(s, latest.current.floors);
         placeLamps(s, latest.current.lamps);

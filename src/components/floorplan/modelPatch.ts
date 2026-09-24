@@ -6,7 +6,6 @@ import {
   RGBADepthPacking,
   ShaderChunk,
   Vector2,
-  Vector3,
   Vector4,
   type Material,
   type Mesh,
@@ -32,14 +31,11 @@ import {
  */
 
 /** Au-delà, les découpes suivantes sont ignorées : la boucle du shader a une borne fixe. */
-export const MAX_CUTS = 24;
+const MAX_CUTS = 24;
 
 /** Lampes et sommets par pièce pris en compte : au-delà, une lampe éclaire sans limite de pièce. */
-export const MAX_LAMPS = 16;
-export const MAX_ROOM_VERTICES = 16;
-
-/** Tranche des murs coupés, en sRGB : un gris bleuté sombre, comme dans Les Sims. */
-const CAP_COLOR = new Vector3(0.16, 0.18, 0.23);
+const MAX_LAMPS = 16;
+const MAX_ROOM_VERTICES = 16;
 
 export interface Cut {
   /** Centre, dans la scène. */
@@ -65,13 +61,10 @@ export function createModelUniforms() {
     fpBox: { value: new Vector4() },
     /** Hauteur de chaque côté de l'emprise (x−, z−, x+, z+) — un mur du fond debout, ou abaissé. */
     fpSides: { value: new Vector4() },
-    fpCapColor: { value: CAP_COLOR },
     /** Contour, dans la scène (x, z), de la pièce de chaque lampe — dans l'ordre des lampes de la scène. */
     fpRoomVerts: { value: Array.from({ length: MAX_LAMPS * MAX_ROOM_VERTICES }, () => new Vector2()) },
     /** Sommets de ce contour, par lampe ; moins de trois : pas de pièce, pas de limite. */
     fpRoomCount: { value: new Int32Array(MAX_LAMPS) },
-    /** Au-delà du contour, la lumière s'éteint sur cette distance — de quoi éclairer la face des murs. */
-    fpRoomSoft: { value: 0.8 },
   };
 }
 
@@ -116,10 +109,13 @@ uniform vec4 fpCuts[ ${MAX_CUTS * 2} ];
 uniform vec4 fpCutaway;
 uniform vec4 fpBox;
 uniform vec4 fpSides;
-uniform vec3 fpCapColor;
 uniform vec2 fpRoomVerts[ ${MAX_LAMPS * MAX_ROOM_VERTICES} ];
 uniform int fpRoomCount[ ${MAX_LAMPS} ];
-uniform float fpRoomSoft;
+// Tranche des murs coupés, en sRGB : un gris bleuté sombre, comme dans Les Sims.
+const vec3 fpCapColor = vec3( 0.16, 0.18, 0.23 );
+// Au-delà du contour d'une pièce, la lumière s'éteint sur cette distance — de
+// quoi éclairer la face des murs.
+const float fpRoomSoft = 0.8;
 
 // Part de la lumière d'une lampe en ce point : 1 dans sa pièce, puis de moins
 // en moins à mesure qu'on s'éloigne de son contour (règle pair-impair).
@@ -141,10 +137,19 @@ float fpRoomMask( const in int lamp ) {
   return inside ? 1.0 : 1.0 - smoothstep( 0.0, fpRoomSoft, edge );
 }`;
 
-// La boucle des lampes de three.js, chaque lampe tenue à sa pièce.
+/**
+ * Là où la boucle des lampes de three.js calcule la lumière de chacune : un
+ * texte du shader, pas un `#include` — une mise à jour de three.js peut le
+ * changer, et les lampes éclaireraient de nouveau à travers les murs
+ * (cf. `modelPatch.test.ts`).
+ */
+export const POINT_LIGHT_INFO = 'getPointLightInfo( pointLight, geometryPosition, directLight );';
+
+// La boucle des lampes de three.js, chaque lampe tenue à sa pièce. Éteinte, ou
+// trop loin, une lampe n'éclaire rien : inutile de chercher sa pièce.
 const LIGHTS = ShaderChunk.lights_fragment_begin.replace(
-  'getPointLightInfo( pointLight, geometryPosition, directLight );',
-  'getPointLightInfo( pointLight, geometryPosition, directLight );\n\t\tdirectLight.color *= fpRoomMask( UNROLLED_LOOP_INDEX );'
+  POINT_LIGHT_INFO,
+  `${POINT_LIGHT_INFO}\n\t\tif ( directLight.visible ) directLight.color *= fpRoomMask( UNROLLED_LOOP_INDEX );`
 );
 
 // Découpes : repère de chacune, x le long de sa largeur (u), z le long de sa
@@ -210,19 +215,26 @@ function inject(shader: WebGLProgramParametersWithUniforms, uniforms: ModelUnifo
 }
 
 /**
+ * Matériau des ombres, retouché comme ce qui les porte : la maquette, ou un
+ * élément généré, sans les découpes (`boxes`). Un de chaque suffit à toute la
+ * scène.
+ */
+export function depthMaterial(uniforms: ModelUniforms, boxes: boolean): Material {
+  const depth = new MeshDepthMaterial({ depthPacking: RGBADepthPacking });
+  depth.onBeforeCompile = shader => inject(shader, uniforms, { caps: false, front: false, boxes });
+  depth.customProgramCacheKey = () => `fp-depth${+boxes}`;
+  return depth;
+}
+
+/**
  * Branche les retouches sur la maquette — ou sur un élément généré, sans les
- * découpes (`boxes`) — et sur ses ombres. Renvoie le matériau d'ombre, à
- * libérer avec elle.
+ * découpes (`boxes`) —, et ses ombres sur `depth`, de même `boxes`.
  *
  * Pas de tranche peinte sur une vitre : on verrait une plaque sombre au
  * travers. Un matériau à face unique ne dessine ses faces arrière que pendant
  * la coupe (`setCutawaySides`).
  */
-export function patchModel(root: Object3D, uniforms: ModelUniforms, boxes = true): Material {
-  const depth = new MeshDepthMaterial({ depthPacking: RGBADepthPacking });
-  depth.onBeforeCompile = shader => inject(shader, uniforms, { caps: false, front: false, boxes });
-  depth.customProgramCacheKey = () => `fp-depth${+boxes}`;
-
+export function patchModel(root: Object3D, uniforms: ModelUniforms, depth: Material, boxes = true) {
   root.traverse(o => {
     if ((o as Mesh).isMesh) (o as Mesh).customDepthMaterial = depth;
     for (const material of materialsOf(o)) {
@@ -235,7 +247,6 @@ export function patchModel(root: Object3D, uniforms: ModelUniforms, boxes = true
       material.needsUpdate = true;
     }
   });
-  return depth;
 }
 
 /**

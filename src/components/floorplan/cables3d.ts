@@ -45,11 +45,10 @@ function dashImage() {
 }
 
 export interface CableObject {
-  mesh: Mesh;
+  object: Mesh;
   material: MeshStandardMaterial;
   /** Les traits lumineux : son décalage les fait avancer le long du câble. */
   dashes: CanvasTexture;
-  dispose(): void;
 }
 
 /**
@@ -89,16 +88,7 @@ export function buildCable(cable: FloorplanCable, root: Object3D): CableObject |
     emissiveMap: texture,
     emissiveIntensity: 0,
   });
-  const mesh = new Mesh(geometry, material);
-  mesh.castShadow = mesh.receiveShadow = true;
-  return {
-    mesh,
-    material,
-    dashes: texture,
-    dispose() {
-      geometry.dispose();
-      material.dispose();
-      texture.dispose();
-    },
-  };
+  const object = new Mesh(geometry, material);
+  object.castShadow = object.receiveShadow = true;
+  return { object, material, dashes: texture };
 }

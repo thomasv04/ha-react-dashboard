@@ -7,11 +7,11 @@ import {
   RepeatWrapping,
   SRGBColorSpace,
   Vector3,
-  type BufferGeometry,
   type Material,
   type Object3D,
 } from 'three';
 import { partFrame, type FloorplanPart } from '@/lib/floorplan';
+import { clamp } from '@/lib/utils';
 import type { Cut } from './modelPatch';
 
 /**
@@ -31,7 +31,6 @@ export interface PartObject {
   cut: Cut | null;
   /** 0 fermé → 1 ouvert. */
   apply(openness: number): void;
-  dispose(): void;
 }
 
 /** Lames d'un tablier : des niveaux de gris, que teinte la couleur du volet. */
@@ -61,7 +60,7 @@ export function buildPart(part: FloorplanPart, root: Object3D): PartObject | nul
   const frame = partFrame(a.toArray(), b.toArray());
   if (!frame) return null;
   const { width: w, height: h, bottom, u, angle } = frame;
-  const thickness = Math.min(Math.max(w * 0.04, 0.03), 0.12);
+  const thickness = clamp(w * 0.04, 0.03, 0.12);
   const color = part.color ?? DEFAULT_COLORS[part.kind];
 
   // Repère de l'élément : origine au premier coin, au sol ; x le long de
@@ -137,23 +136,5 @@ export function buildPart(part: FloorplanPart, root: Object3D): PartObject | nul
     };
   }
 
-  return {
-    object,
-    cut: part.kind === 'shutter' ? null : cut,
-    apply,
-    dispose() {
-      // Une fois chacun : les barres d'un cadre partagent leur matériau.
-      const materials = new Set<MeshStandardMaterial>();
-      object.traverse(o => {
-        const mesh = o as Mesh;
-        if (!mesh.isMesh) return;
-        (mesh.geometry as BufferGeometry).dispose();
-        materials.add(mesh.material as MeshStandardMaterial);
-      });
-      for (const material of materials) {
-        material.map?.dispose();
-        material.dispose();
-      }
-    },
-  };
+  return { object, cut: part.kind === 'shutter' ? null : cut, apply };
 }
