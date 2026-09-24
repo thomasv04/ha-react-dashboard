@@ -10,7 +10,7 @@ import {
   type Material,
   type Object3D,
 } from 'three';
-import { partFrame, type FloorplanPart } from '@/lib/floorplan';
+import { partFrame, SWING, type FloorplanPart } from '@/lib/floorplan';
 import { clamp } from '@/lib/utils';
 import type { Cut } from './modelPatch';
 
@@ -18,9 +18,6 @@ import type { Cut } from './modelPatch';
  * Portes, fenêtres et volets animés : générés d'après le rectangle dessiné,
  * posés dans la scène, et mus par `apply(ouverture)`.
  */
-
-/** Ouverture d'une porte ou d'une fenêtre, en radians : un peu moins d'un angle droit. */
-const SWING = Math.PI * 0.46;
 
 /** Couleurs par défaut, quand la maquette n'en a pas donné. */
 const DEFAULT_COLORS = { door: '#b58a5a', window: '#f2f2f2', shutter: '#d9d9d9', garage: '#e6e6e6' };

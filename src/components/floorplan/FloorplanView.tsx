@@ -3,16 +3,15 @@ import { motion } from 'framer-motion';
 import { useHass } from '@hakit/core';
 import {
   Box as BoxIcon,
-  Cable,
   ChevronLeft,
   Compass,
   DoorOpen,
   History as HistoryIcon,
   Image as ImageIcon,
+  Layers,
   Map as MapIcon,
-  MapPin,
   RotateCcw,
-  SquareDashed,
+  Sun,
   Thermometer,
   type LucideIcon,
 } from 'lucide-react';
@@ -66,12 +65,24 @@ import {
   type FloorplanPart,
   type Vec3,
 } from '@/lib/floorplan';
+import {
+  familyKind,
+  normalizeOpenings,
+  openingLabel,
+  parseNodeName,
+  typedOpenings,
+  type FloorplanOpenings,
+  type ModelOpenings,
+  type OpeningKind,
+  type OpeningLink,
+} from '@/lib/floorplan-openings';
 import { cn, isTypingTarget } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import type { ChipCardConfig, WidgetConfig } from '@/types/widget-configs';
-import type { CableProp, FloorOverlay, Floorplan3DHandle, Lamp, PartProp, Project } from './Floorplan3D';
+import type { CableProp, FloorOverlay, Floorplan3DHandle, Lamp, OpeningProp, PartProp, Project } from './Floorplan3D';
 import { FloorplanItem } from './FloorplanItem';
-import { DraftPopover } from './FloorplanDrawn';
+import { DraftPopover, type Around } from './FloorplanDrawn';
+import { OpeningPopover, OpeningsTab } from './FloorplanOpenings';
 import { PartList, PartPopover } from './FloorplanParts';
 import { CableList, CableOverlay, CablePopover } from './FloorplanCables';
 import { ReplayBar } from './FloorplanReplay';
@@ -79,6 +90,7 @@ import { RoomList, RoomNamePopover } from './FloorplanRooms';
 import { Weather } from './FloorplanWeather';
 import { useReplay } from './useReplay';
 import { ModelPicker } from './ModelPicker';
+import { EmptyTab, Segmented, SettingsPanel, ToggleRow, type SettingsTab, type Tool } from './FloorplanSettings';
 
 // three.js ne se télécharge que pour une page qui a une maquette.
 const Floorplan3D = lazy(() => import('./Floorplan3D'));
@@ -95,6 +107,8 @@ type PartDraft = { a: Vec3; from: { x: number; y: number }; part?: FloorplanPart
 
 /** Aperçu entrouvert d'un élément dessiné : on voit de quel côté s'ouvre la porte, où descend le volet. */
 const DRAFT_OPENNESS = 0.35;
+/** Pendant qu'on lie une vraie porte, elle s'ouvre et se ferme : un mouvement tous les… (ms). */
+const PREVIEW_MS = 1600;
 /**
  * Étoiles du ciel de nuit : quelques points par tuile, deux tailles de tuile
  * pour que la répétition ne se voie pas. Fixes : rien à animer, rien à payer.
@@ -224,9 +238,12 @@ export function FloorplanView() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   /** Point cliqué, en % du plan — et de la maquette, s'il y en a une — où poser la prochaine pastille. */
   const [adding, setAdding] = useState<{ x: number; y: number; anchor?: Vec3 } | null>(null);
-  const [panel, setPanel] = useState<'image' | 'model' | null>(null);
+  /** Réglages ouverts : l'image ou la maquette d'un plan en 2D, un onglet de la maquette. */
+  const [panel, setPanel] = useState<'image' | SettingsTab | null>(null);
+  /** Onglet « Maquette » : le choix de la maquette, ou de l'image qui la remplacerait. */
+  const [source, setSource] = useState<'model' | 'image'>('model');
   /** Maquette : ce que pose un clic — une pastille, ou un coin de porte, de fenêtre, de volet. */
-  const [tool, setTool] = useState<'chip' | 'part' | 'room' | 'cable'>('chip');
+  const [tool, setTool] = useState<Tool>('chip');
   const [cableDraft, setCableDraft] = useState<CableDraft | null>(null);
   /** Pièce en cours de dessin : ses sommets au sol, sa hauteur de sol, puis son nom. */
   const [roomDraft, setRoomDraft] = useState<{ points: [number, number][]; y: number; naming?: boolean } | null>(null);
@@ -247,6 +264,16 @@ export function FloorplanView() {
   // Maquette : chargée (sinon les pastilles accrochées n'ont pas encore de
   // position), en échec, et de quoi placer à l'écran un point de la maquette.
   const [loadedModel, setLoadedModel] = useState<string | null>(null);
+  /** Objets séparés de la maquette chargée, et leurs familles — `null` : une maquette « fondue ». */
+  const [detected, setDetected] = useState<{ model: string; openings: ModelOpenings | null } | null>(null);
+  /** Ouverture de la maquette qu'on lie : sa liaison en cours, le type de sa famille, où ouvrir sa fenêtre. */
+  const [openingDraft, setOpeningDraft] = useState<{ link: OpeningLink; kind: OpeningKind | null; around: Around } | null>(null);
+  /** L'aperçu de cette ouverture, ouverte (1) ou fermée (0). */
+  const [preview, setPreview] = useState(1);
+  /** Ouverture de la maquette survolée avec l'outil « Porte · volet » : cernée. */
+  const [hoverOpening, setHoverOpening] = useState<string | null>(null);
+  /** Objet sans nom valide cliqué : pourquoi on ne peut pas le lier, et de quoi le dessiner quand même. */
+  const [unnamed, setUnnamed] = useState<{ id: string; anchor: Vec3; at: { x: number; y: number } } | null>(null);
   const [failure, setFailure] = useState<{ model: string; kind: 'webgl' | 'model' } | null>(null);
   const [projector] = useState(createProjector);
 
@@ -269,7 +296,9 @@ export function FloorplanView() {
       : []
   );
   const parts = normalizeParts(floorplan?.parts);
-  const replay = useReplay([...glows.map(g => g.entityId), ...parts.map(p => p.entityId)]);
+  /** Ouvertures de la maquette elle-même : le type de leurs familles, et leurs liaisons. */
+  const openingsConfig = normalizeOpenings(floorplan?.openings);
+  const replay = useReplay([...glows.map(g => g.entityId), ...parts.map(p => p.entityId), ...openingsConfig.links.map(l => l.entityId)]);
   const closeReplay = replay.close;
   /** État d'une entité à l'instant rejoué — `undefined` en direct, ou sans historique. */
   const replayed = (entityId: string) => (replay.span ? stateAt(replay.history[entityId], replay.time) : undefined);
@@ -283,6 +312,8 @@ export function FloorplanView() {
     setDraft(null);
     setRoomDraft(null);
     setCableDraft(null);
+    setOpeningDraft(null);
+    setUnnamed(null);
   }, []);
 
   const scope = `${isEditMode}:${currentPage?.id}`;
@@ -368,6 +399,7 @@ export function FloorplanView() {
     'sun.sun',
     weatherId,
     ...parts.map(p => p.entityId),
+    ...openingsConfig.links.map(l => l.entityId),
     ...allCables.map(c => c.entityId),
   ]);
 
@@ -434,6 +466,103 @@ export function FloorplanView() {
     }),
     ...(draft?.part ? [{ ...draft.part, open: DRAFT_OPENNESS }] : []),
   ];
+
+  /** Les objets de cette maquette-ci — `undefined` tant qu'elle n'est pas lue. */
+  const modelOpenings = detected && detected.model === model ? detected.openings : undefined;
+  // L'ouverture qu'on lie s'ouvre et se ferme, pour qu'on voie ses gonds et son sens.
+  const previewing = openingDraft?.link.node;
+  useEffect(() => {
+    if (!previewing || !animated) return;
+    const timer = window.setInterval(() => setPreview(p => 1 - p), PREVIEW_MS);
+    return () => window.clearInterval(timer);
+  }, [previewing, animated]);
+  /** Portes, fenêtres et baies de la maquette liées à une entité — le type de leur famille décide du mouvement. */
+  const openingsProp: OpeningProp[] = [
+    ...openingsConfig.links.flatMap(link => {
+      const kind = familyKind(parseNodeName(link.node).family, openingsConfig.kinds);
+      if (!kind || link.node === previewing) return [];
+      const entity = replayed(link.entityId) ?? entities[link.entityId];
+      return [
+        {
+          id: link.node,
+          kind,
+          ...(link.flip && { flip: true }),
+          ...(link.hinge && { hinge: true }),
+          open: openness(entity?.state, entity?.attributes),
+        },
+      ];
+    }),
+    ...(openingDraft?.kind
+      ? [
+          {
+            id: openingDraft.link.node,
+            kind: openingDraft.kind,
+            ...(openingDraft.link.flip && { flip: true }),
+            ...(openingDraft.link.hinge && { hinge: true }),
+            open: animated ? preview : DRAFT_OPENNESS,
+          },
+        ]
+      : []),
+  ];
+
+  const setOpenings = (patch: Partial<FloorplanOpenings>) =>
+    setFloorplan({ openings: { kinds: openingsConfig.kinds, links: openingsConfig.links, ...patch } });
+
+  /** Ouvre la fenêtre de liaison d'une ouverture, à côté d'elle à l'écran. */
+  const linkOpening = (id: string) => {
+    const opening = modelOpenings?.openings.find(o => o.id === id);
+    if (!opening) return;
+    clearDrafts();
+    const project = projector.get();
+    const corners = [0, 1, 2, 3, 4, 5, 6, 7].map(i =>
+      project?.([(i & 1 ? opening.max : opening.min)[0], (i & 2 ? opening.max : opening.min)[1], (i & 4 ? opening.max : opening.min)[2]])
+    );
+    const seen = corners.filter(p => !!p);
+    const around = seen.length
+      ? {
+          left: Math.min(...seen.map(p => p.x)),
+          right: Math.max(...seen.map(p => p.x)),
+          y: seen.reduce((sum, p) => sum + p.y, 0) / seen.length,
+        }
+      : { left: 45, right: 55, y: 50 };
+    setOpeningDraft({
+      link: openingsConfig.links.find(l => l.node === id) ?? { node: id, entityId: '' },
+      kind: familyKind(opening.family, openingsConfig.kinds),
+      around,
+    });
+    setPreview(1);
+  };
+
+  /**
+   * L'ouverture de la maquette dont fait partie cet objet, quand l'outil
+   * « Porte · volet » la lie plutôt que de dessiner : une famille qui a un
+   * type, ou un objet logé dans un mur — nommé, pour choisir son type ; sans
+   * nom, pour dire pourquoi on ne peut pas le lier.
+   */
+  const openingAt = (node: string | null) => {
+    const opening = node ? modelOpenings?.openings.find(o => o.nodes.includes(node)) : undefined;
+    return opening && (opening.inWall || (opening.family && familyKind(opening.family, openingsConfig.kinds))) ? opening : undefined;
+  };
+  /** Cernée : l'ouverture survolée, quand un clic la lierait. */
+  const hovered = isEditMode && tool === 'part' && !draft ? hoverOpening : null;
+
+  /** La liaison enregistrée ; le type choisi vaut pour toute la famille. */
+  const saveOpening = () => {
+    if (!openingDraft?.link.entityId || !openingDraft.kind) return;
+    const { flip, hinge, ...link } = openingDraft.link;
+    const family = parseNodeName(link.node).family;
+    setOpenings({
+      kinds:
+        familyKind(family, openingsConfig.kinds) === openingDraft.kind
+          ? openingsConfig.kinds
+          : { ...openingsConfig.kinds, [family]: openingDraft.kind },
+      links: [
+        ...openingsConfig.links.filter(l => l.node !== link.node),
+        { ...link, ...(flip && { flip: true }), ...(hinge && { hinge: true }) },
+      ],
+    });
+    setOpeningDraft(null);
+  };
 
   // ── Pièces ─────────────────────────────────────────────────────────────────
   // Température de chaque pièce : la moyenne des capteurs de température posés dedans.
@@ -516,8 +645,10 @@ export function FloorplanView() {
     setFocusId(room?.id ?? null);
   };
 
-  const onModelPick = (anchor: Vec3 | null, clientX: number, clientY: number) => {
+  const onModelPick = (anchor: Vec3 | null, clientX: number, clientY: number, node: string | null) => {
     const rect = planRef.current?.getBoundingClientRect();
+    setOpeningDraft(null);
+    setUnnamed(null);
     if (!rect || !anchor) return;
     const at = { x: ((clientX - rect.left) / rect.width) * 100, y: ((clientY - rect.top) / rect.height) * 100 };
     /** Le clic tombe-t-il sur ce point de la maquette, à l'écran ? */
@@ -548,6 +679,10 @@ export function FloorplanView() {
           : { points: [[anchor[0], anchor[2]]], y: anchor[1] }
       );
     }
+    // Une vraie porte de la maquette : on la lie. Ailleurs, on la dessine.
+    const opening = !draft ? openingAt(node) : undefined;
+    if (opening?.family) return linkOpening(opening.id);
+    if (opening) return setUnnamed({ id: opening.id, anchor, at });
     // Deux coins : le bas côté gonds, puis le haut opposé. Un second clic trop
     // proche du premier — ou un nouveau dessin — repart de ce point.
     if (!draft || draft.part || !partFrame(draft.a, anchor)) {
@@ -714,22 +849,6 @@ export function FloorplanView() {
     </button>
   );
 
-  const toolButton = (id: 'chip' | 'part' | 'room' | 'cable', Icon: typeof MapPin, label: string) => (
-    <button
-      onClick={() => {
-        setTool(id);
-        clearDrafts();
-      }}
-      aria-pressed={tool === id}
-      className={cn(
-        'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors',
-        tool === id ? 'bg-blue-500/20 text-blue-300' : 'text-white/45 hover:text-white/70'
-      )}
-    >
-      <Icon size={12} /> {label}
-    </button>
-  );
-
   // Ce qu'un clic fera, selon l'outil — et, en cours de dessin, ce qui reste à cliquer.
   const hint = !model
     ? 'clickToAdd'
@@ -745,14 +864,120 @@ export function FloorplanView() {
             : 'cableHint'
           : draft && !draft.part
             ? 'partHintNext'
-            : 'partHint';
+            : modelOpenings?.openings.some(o => o.inWall)
+              ? 'partHintModel'
+              : 'partHint';
+  const hoveredOpening = hovered ? modelOpenings?.openings.find(o => o.id === hovered) : undefined;
+  /** Ce qu'un clic fera : lier l'ouverture survolée, ou ce que dit l'outil. */
+  const hintText =
+    hoveredOpening && modelOpenings
+      ? hoveredOpening.family
+        ? t('layout.floorplan.openingHintHover', { name: openingLabel(hoveredOpening, modelOpenings.families) })
+        : t('layout.floorplan.openingHintUnnamed')
+      : t(`layout.floorplan.${hint}`);
 
-  const checkbox = (label: string, checked: boolean, onChange: (checked: boolean) => void) => (
-    <label className='flex items-center gap-1.5 text-xs text-white/60 cursor-pointer select-none'>
-      <input type='checkbox' checked={checked} onChange={e => onChange(e.target.checked)} className='accent-blue-500' />
-      {label}
-    </label>
+  // ── Réglages de la maquette, par onglet ────────────────────────────────────
+  const modelTab = (
+    <>
+      <Segmented
+        label={t('layout.floorplan.source')}
+        value={source}
+        onChange={setSource}
+        options={[
+          { id: 'model', icon: BoxIcon, label: t('layout.floorplan.model') },
+          { id: 'image', icon: ImageIcon, label: t('layout.floorplan.image') },
+        ]}
+      />
+      {source === 'model' ? modelField : picker}
+      <div className='flex items-center gap-2'>
+        <label className='flex items-center gap-1.5 text-xs text-white/60'>
+          {t('layout.floorplan.north')}
+          <input
+            type='number'
+            step={15}
+            value={floorplan?.north ?? 0}
+            onChange={e => setFloorplan({ north: Number(e.target.value) || 0 })}
+            className='w-16 px-2 py-1 rounded-md text-xs bg-white/8 border border-white/15 text-white focus:outline-none focus:border-blue-500/60'
+          />
+        </label>
+        <button
+          onClick={() => {
+            const view = three.current?.view();
+            if (view) setFloorplan({ camera: view });
+          }}
+          disabled={!loaded}
+          className='ml-auto px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 text-white/70 hover:text-white disabled:opacity-40'
+        >
+          {t('layout.floorplan.saveView')}
+        </button>
+      </div>
+      <ToggleRow
+        label={t('layout.floorplan.cutaway')}
+        checked={floorplan?.cutaway !== false}
+        onChange={on => setFloorplan({ cutaway: on })}
+      />
+      <ToggleRow
+        label={t('layout.floorplan.idleRotate')}
+        checked={!!floorplan?.idleRotate}
+        onChange={on => setFloorplan({ idleRotate: on })}
+      />
+    </>
   );
+
+  const ambianceTab = (
+    <>
+      <ToggleRow label={t('layout.floorplan.sky')} checked={floorplan?.sky !== false} onChange={on => setFloorplan({ sky: on })} />
+      <ToggleRow label={t('layout.floorplan.lampGlow')} checked={!!floorplan?.lampGlow} onChange={on => setFloorplan({ lampGlow: on })} />
+      <EntityPicker
+        label={t('layout.floorplan.weather')}
+        value={weatherId}
+        domain='weather'
+        onChange={id => setFloorplan({ weather: id })}
+      />
+      {MOCK && (
+        <label className='flex items-center gap-2 text-xs text-white/60'>
+          {t('layout.floorplan.mockSun')}
+          <input
+            type='range'
+            min={0}
+            max={23.75}
+            step={0.25}
+            value={mockHour}
+            onChange={e => setMockHour(Number(e.target.value))}
+            className='flex-1 min-w-0 accent-amber-400'
+          />
+          <span className='w-11 text-right tabular-nums text-white/80'>{formatTime(new Date(today + mockHour * HOUR_MS))}</span>
+        </label>
+      )}
+    </>
+  );
+
+  const openingsTab = (
+    <>
+      {modelOpenings && (
+        <OpeningsTab
+          model={modelOpenings}
+          kinds={openingsConfig.kinds}
+          links={openingsConfig.links}
+          selected={previewing ?? null}
+          onSelect={linkOpening}
+          onKinds={kinds => setOpenings({ kinds })}
+        />
+      )}
+      {parts.length > 0 && <PartList parts={parts} onRemove={id => setFloorplan({ parts: parts.filter(p => p.id !== id) })} />}
+      {modelOpenings === null && !parts.length && <EmptyTab>{t('layout.floorplan.openingsEmpty')}</EmptyTab>}
+    </>
+  );
+
+  const elementsTab =
+    rooms.length || cables.length ? (
+      <>
+        <RoomList rooms={rooms} onRemove={id => setFloorplan({ rooms: rooms.filter(r => r.id !== id) })} />
+        <CableList cables={cables} onRemove={id => setFloorplan({ cables: cables.filter(c => c.id !== id) })} />
+      </>
+    ) : (
+      <EmptyTab>{t('layout.floorplan.elementsEmpty')}</EmptyTab>
+    );
 
   return (
     <div className='relative flex-1 min-h-0'>
@@ -796,6 +1021,8 @@ export function FloorplanView() {
                   lampGlow={!!floorplan?.lampGlow}
                   lamps={lamps}
                   parts={partsProp}
+                  openings={openingsProp}
+                  onOpenings={openings => setDetected({ model, openings })}
                   outline={outline}
                   floors={floors}
                   cables={cablesProp}
@@ -809,8 +1036,11 @@ export function FloorplanView() {
                   onHover={
                     isEditMode && ((draft && !draft.part) || (roomDraft && !roomDraft.naming) || (cableDraft && !cableDraft.cable))
                       ? setHover
-                      : undefined
+                      : isEditMode && tool === 'part' && !draft && modelOpenings?.openings.length
+                        ? (_, node) => setHoverOpening(openingAt(node)?.id ?? null)
+                        : undefined
                   }
+                  highlight={previewing ?? unnamed?.id ?? hovered}
                   onLoad={() => setLoadedModel(model)}
                   onError={kind => setFailure({ model, kind })}
                 />
@@ -943,6 +1173,54 @@ export function FloorplanView() {
                 );
               }}
             </Projected>
+            {unnamed && (
+              <DraftPopover
+                title={t('layout.floorplan.openingUnnamedTitle')}
+                onCancel={() => setUnnamed(null)}
+                style={{
+                  left: `clamp(8rem, ${unnamed.at.x}%, calc(100% - 8rem))`,
+                  top: `calc(${unnamed.at.y}% + 0.75rem)`,
+                  translate: '-50% 0',
+                }}
+              >
+                <p className='px-1 text-[11px] leading-snug text-white/65'>{t('layout.floorplan.openingUnnamedHelp')}</p>
+                <button
+                  onClick={() => {
+                    setDraft({ a: unnamed.anchor, from: unnamed.at });
+                    setUnnamed(null);
+                  }}
+                  className='ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 text-white/70 hover:text-white'
+                >
+                  {t('layout.floorplan.openingDrawAnyway')}
+                </button>
+              </DraftPopover>
+            )}
+            {openingDraft &&
+              modelOpenings &&
+              (() => {
+                const opening = modelOpenings.openings.find(o => o.id === openingDraft.link.node);
+                if (!opening) return null;
+                return (
+                  <OpeningPopover
+                    label={openingLabel(opening, modelOpenings.families)}
+                    family={opening.family}
+                    count={modelOpenings.families.find(f => f.name === opening.family)?.count ?? 1}
+                    kind={openingDraft.kind}
+                    link={openingDraft.link}
+                    linked={openingsConfig.links.some(l => l.node === opening.id)}
+                    single={opening.nodes.length < 2}
+                    around={openingDraft.around}
+                    onKind={kind => setOpeningDraft({ ...openingDraft, kind })}
+                    onChange={link => setOpeningDraft({ ...openingDraft, link })}
+                    onSave={saveOpening}
+                    onUnlink={() => {
+                      setOpenings({ links: openingsConfig.links.filter(l => l.node !== opening.id) });
+                      setOpeningDraft(null);
+                    }}
+                    onCancel={() => setOpeningDraft(null)}
+                  />
+                );
+              })()}
             {draft?.part && draft.around && (
               <PartPopover
                 part={draft.part}
@@ -1079,90 +1357,53 @@ export function FloorplanView() {
         )}
       </div>
 
-      {isEditMode && (image || model) && (
+      {isEditMode && model && (
+        <SettingsPanel
+          tab={panel === 'image' ? null : panel}
+          onTab={setPanel}
+          tool={tool}
+          onTool={next => {
+            setTool(next);
+            clearDrafts();
+          }}
+          hint={hintText}
+          tabs={[
+            { id: 'model', icon: BoxIcon, label: t('layout.floorplan.tabModel'), content: modelTab },
+            { id: 'ambiance', icon: Sun, label: t('layout.floorplan.tabAmbiance'), content: ambianceTab },
+            {
+              id: 'openings',
+              icon: DoorOpen,
+              label: t('layout.floorplan.tabOpenings'),
+              badge: (modelOpenings ? typedOpenings(modelOpenings, openingsConfig.kinds).length : 0) + parts.length,
+              content: openingsTab,
+            },
+            {
+              id: 'elements',
+              icon: Layers,
+              label: t('layout.floorplan.tabElements'),
+              badge: rooms.length + cables.length,
+              content: elementsTab,
+            },
+          ]}
+        />
+      )}
+      {isEditMode && !model && image && (
         <div className='absolute left-2 top-2 z-30 w-72 max-w-[calc(100%-1rem)] flex flex-col gap-2 p-2.5 rounded-2xl gc-overlay'>
           <div className='flex flex-wrap items-center gap-2'>
             {panelButton('image', ImageIcon, t('layout.floorplan.image'))}
             {panelButton('model', BoxIcon, t('layout.floorplan.model'))}
-            {!model &&
-              checkbox(t('layout.floorplan.dimAtNight'), floorplan?.dimAtNight !== false, checked => setFloorplan({ dimAtNight: checked }))}
+            <label className='flex items-center gap-1.5 text-xs text-white/60 cursor-pointer select-none'>
+              <input
+                type='checkbox'
+                checked={floorplan?.dimAtNight !== false}
+                onChange={e => setFloorplan({ dimAtNight: e.target.checked })}
+                className='accent-blue-500'
+              />
+              {t('layout.floorplan.dimAtNight')}
+            </label>
           </div>
           {panel === 'image' && picker}
-          {panel === 'model' && (
-            <div className='flex flex-col gap-2'>
-              {modelField}
-              {model && (
-                <div className='flex items-center gap-2'>
-                  <label className='flex items-center gap-1.5 text-xs text-white/60'>
-                    {t('layout.floorplan.north')}
-                    <input
-                      type='number'
-                      step={15}
-                      value={floorplan?.north ?? 0}
-                      onChange={e => setFloorplan({ north: Number(e.target.value) || 0 })}
-                      className='w-16 px-2 py-1 rounded-md text-xs bg-white/8 border border-white/15 text-white focus:outline-none focus:border-blue-500/60'
-                    />
-                  </label>
-                  <button
-                    onClick={() => {
-                      const view = three.current?.view();
-                      if (view) setFloorplan({ camera: view });
-                    }}
-                    disabled={!loaded}
-                    className='ml-auto px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 text-white/70 hover:text-white disabled:opacity-40'
-                  >
-                    {t('layout.floorplan.saveView')}
-                  </button>
-                </div>
-              )}
-              {model && (
-                <div className='flex flex-wrap items-center gap-x-3 gap-y-1.5'>
-                  {checkbox(t('layout.floorplan.cutaway'), floorplan?.cutaway !== false, checked => setFloorplan({ cutaway: checked }))}
-                  {checkbox(t('layout.floorplan.idleRotate'), !!floorplan?.idleRotate, checked => setFloorplan({ idleRotate: checked }))}
-                  {checkbox(t('layout.floorplan.sky'), floorplan?.sky !== false, checked => setFloorplan({ sky: checked }))}
-                  {checkbox(t('layout.floorplan.lampGlow'), !!floorplan?.lampGlow, checked => setFloorplan({ lampGlow: checked }))}
-                </div>
-              )}
-              {model && MOCK && (
-                <label className='flex items-center gap-2 text-xs text-white/60'>
-                  {t('layout.floorplan.mockSun')}
-                  <input
-                    type='range'
-                    min={0}
-                    max={23.75}
-                    step={0.25}
-                    value={mockHour}
-                    onChange={e => setMockHour(Number(e.target.value))}
-                    className='flex-1 min-w-0 accent-amber-400'
-                  />
-                  <span className='w-11 text-right tabular-nums text-white/80'>{formatTime(new Date(today + mockHour * HOUR_MS))}</span>
-                </label>
-              )}
-              {model && (
-                <EntityPicker
-                  label={t('layout.floorplan.weather')}
-                  value={weatherId}
-                  domain='weather'
-                  onChange={id => setFloorplan({ weather: id })}
-                />
-              )}
-              {model && <RoomList rooms={rooms} onRemove={id => setFloorplan({ rooms: rooms.filter(r => r.id !== id) })} />}
-              {model && <PartList parts={parts} onRemove={id => setFloorplan({ parts: parts.filter(p => p.id !== id) })} />}
-              {model && <CableList cables={cables} onRemove={id => setFloorplan({ cables: cables.filter(c => c.id !== id) })} />}
-            </div>
-          )}
-          {model && (
-            <div
-              role='group'
-              aria-label={t('layout.floorplan.tool')}
-              className='flex flex-wrap gap-1 p-0.5 rounded-lg bg-white/5 border border-white/10 w-fit'
-            >
-              {toolButton('chip', MapPin, t('layout.floorplan.toolChip'))}
-              {toolButton('part', DoorOpen, t('layout.floorplan.toolPart'))}
-              {toolButton('room', SquareDashed, t('layout.floorplan.toolRoom'))}
-              {toolButton('cable', Cable, t('layout.floorplan.toolCable'))}
-            </div>
-          )}
+          {panel === 'model' && modelField}
           <p className='text-[11px] text-white/40 px-0.5'>{t(`layout.floorplan.${hint}`)}</p>
         </div>
       )}

@@ -12,12 +12,15 @@ import { useI18n } from '@/i18n';
 export function DraftPopover({
   title,
   style,
+  around,
   onCancel,
   children,
 }: {
   title: string;
-  /** Où l'ouvrir, sur le plan. */
-  style: CSSProperties;
+  /** Où l'ouvrir, sur le plan… */
+  style?: CSSProperties;
+  /** …ou à côté de l'élément qu'elle règle. */
+  around?: Around;
   onCancel: () => void;
   children: ReactNode;
 }) {
@@ -28,7 +31,7 @@ export function DraftPopover({
       aria-label={title}
       onClick={e => e.stopPropagation()}
       className='absolute z-40 w-64 p-2 rounded-xl gc-overlay cursor-default flex flex-col gap-2'
-      style={style}
+      style={around ? besideStyle(around) : style}
     >
       <div className='flex items-center justify-between px-1'>
         <span className='text-[11px] text-white/50'>{title}</span>
@@ -41,6 +44,21 @@ export function DraftPopover({
   );
 }
 
+/** Emprise d'un élément à l'écran, en % du plan : de sa gauche à sa droite, à sa hauteur. */
+export type Around = { left: number; right: number; y: number };
+
+/**
+ * Où ouvrir la fenêtre d'un élément : à côté de lui, pas dessus — on doit voir
+ * l'aperçu —, du côté où il reste le plus de place.
+ */
+function besideStyle(around: Around): CSSProperties {
+  const toRight = 100 - around.right > around.left;
+  return {
+    ...(toRight ? { left: `calc(${around.right}% + 2rem)` } : { right: `calc(${100 - around.left}% + 2rem)` }),
+    top: `clamp(0.5rem, calc(${around.y}% - 6rem), calc(100% - 15rem))`,
+  };
+}
+
 /** Les sortes d'un élément, en boutons : celle qu'on a devinée, qu'on peut changer. */
 export function KindGrid<K extends string>({
   kinds,
@@ -51,14 +69,15 @@ export function KindGrid<K extends string>({
   label,
 }: {
   kinds: readonly K[];
-  value: K;
+  /** `null` : aucune n'est encore choisie. */
+  value: K | null;
   onChange: (kind: K) => void;
   icons: Record<K, LucideIcon>;
   colors?: Record<K, string>;
   label: (kind: K) => string;
 }) {
   return (
-    <div className='grid grid-cols-4 gap-1'>
+    <div className={cn('grid gap-1', kinds.length > 4 ? 'grid-cols-5' : 'grid-cols-4')}>
       {kinds.map(kind => {
         const Icon: LucideIcon = icons[kind];
         return (

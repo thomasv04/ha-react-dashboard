@@ -209,6 +209,9 @@ export function partFrame(a: Vec3, b: Vec3) {
   };
 }
 
+/** Ouverture d'une porte ou d'une fenêtre, en radians : un peu moins d'un angle droit. */
+export const SWING = Math.PI * 0.46;
+
 /**
  * Ouverture d'un élément, de 0 (fermé) à 1 (ouvert) : la position d'un volet
  * quand il la donne, sinon l'état — capteur d'ouverture ou `cover` sans

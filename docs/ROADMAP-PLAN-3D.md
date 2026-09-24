@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **23 tâches sur 26** — phases A à H, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
+**État global** : **31 tâches sur 34** — phases A à H et J, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -463,3 +463,182 @@ murs, le toit, tournent avec la maison et passent derrière les murs.
   de HA (`energy/get_prefs`) : solaire, réseau, batterie.
 - **Démo** : un circuit dans le mock — panneaux à côté de la maison, batterie,
   borne de recharge.
+
+---
+
+## Phase J — Les ouvertures de la maquette
+
+Une maquette exportée de Sweet Home 3D avec le plugin
+[ExportToHASS](https://github.com/adizanni/ExportToHASS) garde chaque porte,
+chaque fenêtre en objets séparés, jusqu'à leurs parties mobiles. Plutôt que de
+les dessiner (`A2`), on anime les vraies : le battant pivote sur ses gonds, les
+panneaux d'une baie glissent. Le dessin reste pour les maquettes « fondues ».
+
+**Ce que donne l'export** — [home.glb](../tests/dashboard/fixtures/home.glb),
+ta maison, en est un : des nœuds à plat, un maillage chacun, en centimètres,
+sans transformation. Murs `wall_<n>_<face>`, sols `room_<niveau>_<n>`. Chaque
+objet donne `<Nom>_<composant>`, puis `<Nom>_<composant>_<k>` quand le nom
+revient — `k` compte les reprises dans tout le fichier. Un nom hors de
+`[A-Za-z0-9_]` (un accent suffit) est abandonné : il ne reste que le numéro du
+composant (`1_2`, `6_3`), inutilisable. Un `#` final fond tous les composants
+en un seul : le battant n'est plus séparable du cadre.
+
+**Nomenclature**, dans Sweet Home 3D (Modifier le meuble → Nom) : un nom
+unique par ouverture, dont le premier mot donne le type — `Porte_Cuisine`,
+`Baie_Salon`, `Fenetre_Chambre`, `Volet_Salon`, `Garage`. Sans accent, sans
+`#`, sans `_<chiffres>` final. Unique, il reste stable d'un export à l'autre :
+avec un nom partagé, supprimer une porte décale le `k` des suivantes, et
+leurs liaisons avec. Le plugin, lui, reste tel quel.
+
+### [x] J1 — Les réglages en onglets
+
+> **Fait** ([FloorplanSettings.tsx](../src/components/floorplan/FloorplanSettings.tsx)) :
+> un seul onglet ouvert à la fois ; un second clic le referme, et la maquette
+> retrouve sa place. Outils et indication restent en bas. L'image du plan, qui
+> ne sert plus qu'à la place de la maquette, se choisit dans l'onglet
+> « Maquette ». Un plan en image garde son panneau d'avant.
+
+- **Où** : [FloorplanView.tsx](../src/components/floorplan/FloorplanView.tsx)
+- **Quoi** : le panneau « Maquette 3D » empilait une quinzaine de contrôles.
+  Quatre onglets : **Maquette** (fichier ou image, nord, vue d'accueil, murs
+  en coupe, rotation au repos), **Ambiance** (ciel, lueur des lampes, météo,
+  soleil du mock), **Ouvertures** (portes et volets dessinés, puis `J5`),
+  **Éléments** (pièces, câbles). La barre « Poser » reste en bas, toujours
+  visible ; le panneau a une hauteur bornée et défile.
+- **Fait quand** : chaque réglage d'avant est dans son onglet ; les tests E2E
+  suivent.
+
+### [x] J2 — Reconnaître les ouvertures
+
+> **Fait** ([floorplan-openings.ts](../src/lib/floorplan-openings.ts), un module
+> à part : un gros morceau, sans rapport avec le reste du plan). Sur `home.glb` :
+> les cinq `Porte_en_bois`, cinq composants chacune, la
+> `Porte_coulissante_grise`, huit ouvertures sans nom valide logées dans les
+> murs ; télévision et canapé laissés de côté. « Logé dans un mur » se juge au
+> milieu de la plus large pièce de l'objet, son cadre : un battant entrouvert
+> fait déborder l'ensemble. Un centimètre se déduit de la taille de la
+> maquette — Blender exporte en mètres.
+
+- **Où** : [floorplan-openings.ts](../src/lib/floorplan-openings.ts)
+- **Quoi** : les nœuds lus au chargement. La famille d'après le nom, puis les
+  occurrences par géométrie : boîtes qui se touchent (union-find), au sein
+  d'une même famille — une armoire collée au chambranle n'est jamais prise
+  pour la porte. Murs et sols écartés ; objets sans nom valide comptés, pour
+  un avertissement ; type deviné d'après le premier mot du nom ; familles
+  logées dans un mur, les ouvertures probables.
+- **Fait quand** : sur `home.glb`, les cinq `Porte_en_bois` et la
+  `Porte_coulissante_grise` sont retrouvées, les ouvertures sans nom
+  comptées, canapé et télévision laissés de côté. Tests unitaires.
+
+### [x] J3 — Gonds et glissières
+
+> **Fait**, vérifié sur `home.glb` : chaque `Porte_en_bois`, entrouverte de
+> 56°, se referme sur la fine baguette de ses gonds ; la porte d'entrée tourne
+> à l'opposé de sa poignée, vers l'intérieur ; chaque fenêtre, sur ses
+> charnières, du côté de sa poignée. Sa « porte-fenêtre » est en fait une baie
+> coulissante — deux vantaux sur deux rails, poignées aux montants — : un
+> vantail glisse sur l'autre. La porte coulissante grise est modélisée
+> ouverte, ses panneaux rangés derrière les parties fixes : ils se rejoignent
+> au milieu pour la fermer. Un battant s'ouvre de 83°, comme ceux qu'on
+> dessine. Volets et portes de garage attendent `J8`.
+
+- **Où** : [floorplan-openings.ts](../src/lib/floorplan-openings.ts)
+- **Quoi** : dans chaque ouverture, le cadre, l'axe du mur, les parties
+  mobiles — grand panneau vertical et ce qui y tient : vitre, poignée. Battant
+  : l'arête des gonds (charnières ; sinon à l'opposé de la poignée ; sinon
+  contre le montant), l'angle de repos s'il est modélisé entrouvert (axe
+  principal de ses sommets), le côté où il s'ouvre. Baie : ses panneaux,
+  modélisés fermés ou ouverts (un vide entre eux), et leur course.
+- **Fait quand** : sur `home.glb`, gonds et angles justes pour les portes
+  entrouvertes, la porte d'entrée et les fenêtres ; la baie et la porte
+  coulissante savent se fermer. Tests unitaires.
+
+### [x] J4 — Les vraies portes bougent
+
+> **Fait** : les maillages mobiles passent sous un pivot — sur l'axe des
+> gonds, ou qui glisse — et reviennent à la maquette, dans sa pose, quand la
+> liaison s'en va. Ils restent les siens : coupe des murs, lumière des pièces
+> et lancers de rayon les suivent. `floorplan.openings` : `kinds`, le type
+> choisi à la main par famille, et `links` — `node`, le nœud du premier
+> composant, `entityId`, `flip`, `hinge`. Même mouvement que les éléments
+> dessinés ; arrivée, une vraie porte peut cacher une pastille, ou la montrer :
+> c'est revérifié. Rejouée, elle suit son historique. Une maquette fondue n'est
+> pas parcourue. Vérifié dans le mock sur `home.glb` : les cinq portes et la
+> porte coulissante, ouvertes puis fermées.
+
+- **Où** : [Floorplan3D.tsx](../src/components/floorplan/Floorplan3D.tsx)
+- **Quoi** : les maillages mobiles passent sous un pivot posé sur l'axe des
+  gonds, ou sur la glissière ; l'entité les ouvre comme un élément dessiné
+  (`openness`, 0,9 s, en douceur, ombres suivies), rien entre deux
+  mouvements. Config `floorplan.openings` : type par famille, entité par
+  ouverture — des noms de nœuds, jamais des indices —, sens ou gonds
+  corrigés. Une ouverture introuvable après un nouvel export est ignorée.
+- **Fait quand** : une porte liée s'ouvre et se ferme avec son entité, sans
+  rien déranger d'autre dans la maquette.
+
+### [x] J5 — L'onglet « Ouvertures »
+
+> **Fait** ([FloorplanOpenings.tsx](../src/components/floorplan/FloorplanOpenings.tsx)) :
+> une ligne par ouverture des familles retenues — son entité et son état, ou
+> « Lier une entité… » —, puis les types, repliés : les familles de chacun,
+> « auto » quand le nom les a devinées ; en retirer une, en ajouter une —
+> celles logées dans un mur d'abord — fige le choix. Un clic sur une ligne
+> ouvre la fenêtre de liaison à côté de la porte, qui s'ouvre et se ferme
+> pendant qu'on choisit (entrouverte, immobile, quand les animations sont
+> réduites) : entité, type pour toute la famille — deviné d'après l'entité
+> quand le nom ne disait rien —, sens, gonds, délier. Les objets sans nom
+> valide logés dans un mur font un avertissement. Les éléments dessinés
+> restent listés ici ; maquette fondue : l'outil de dessin, comme avant.
+
+- **Quoi** : les liaisons d'abord — chaque occurrence, son entité ou « Lier
+  une entité… » ; un clic la montre et ouvre sa fenêtre de liaison : entité,
+  type deviné comme en `A2`, sens, gonds, aperçu qui s'ouvre. Puis les types :
+  pour chacun, un sélecteur multiple des familles de la maquette, celles
+  logées dans un mur d'abord, prérempli d'après les noms. Objets sans nom : un
+  avertissement. Maquette fondue : renvoi à l'outil de dessin.
+
+### [x] J6 — Lier en cliquant la porte
+
+> **Fait** : avec l'outil « Porte · volet », l'objet sous le pointeur — le
+> rayon remonte au nœud de la maquette, pivots compris — se cerne en ambre
+> quand un clic le lierait : une famille qui a un type, ou un objet logé dans
+> un mur. L'indication le nomme. Le clic ouvre sa fenêtre de liaison ; sa
+> famille n'a pas de type : on le choisit là, pour toute la famille. Un objet
+> sans nom valide dit pourquoi on ne peut pas le lier, et propose de le
+> dessiner. Un objet d'un seul tenant (`#` final) est signalé : rien n'y
+> bouge. Ailleurs, le clic dessine, comme avant.
+
+- **Quoi** : avec l'outil « Porte · volet », une ouverture détectée se
+  surligne au survol ; un clic ouvre sa fenêtre de liaison, à côté d'elle. Sa
+  famille n'a pas de type : on le choisit, pour toute la famille. Ailleurs, le
+  clic dessine, comme avant.
+
+### [x] J7 — Démo et tests de bout en bout
+
+> **Fait** : [make-openings-glb.ts](../scripts/make-openings-glb.ts) écrit
+> `openings.glb` — une pièce aux murs percés : porte fermée à charnières, porte
+> entrouverte, fenêtre à deux vantaux, baie coulissante, fenêtre sans nom,
+> canapé, table sans nom. Des tests unitaires la vérifient, et trois E2E s'en
+> servent : une porte liée à une entité ouverte s'ouvre ; l'onglet liste les
+> ouvertures et en lie une, gardée à l'enregistrement ; survolée puis cliquée,
+> une vraie fenêtre ouvre sa fenêtre de liaison. La maquette dit où en est
+> chaque ouverture (`data-floorplan-openings`), comme les pastilles et les
+> câbles. Le mock montre `home.glb`, page « Maison SH3D » : deux portes et la
+> porte coulissante liées, que la journée rejouée ouvre et ferme.
+
+- **Quoi** : un script génère une petite maquette façon ExportToHASS — porte,
+  fenêtres, baie, objet sans nom, murs — pour les tests E2E ; le mock montre
+  `home.glb`, portes liées.
+
+### [x] J8 — Volets roulants et portes de garage de la maquette
+
+> **Fait** : le tablier — le plus grand panneau, large de la moitié de
+> l'ouverture au moins : ni les coulisses, étroites, ni le coffre, bas —
+> s'enroule vers son haut selon la position, comme celui qu'on dessine ; il en
+> reste un liseré sous le coffre. Une porte de garage sans cadre n'a que son
+> panneau, qui s'enroule de même. Modélisé à mi-course, le tablier descend
+> jusqu'en bas pour fermer. Vérifié sur la maquette synthétique, qui a
+> désormais son volet et sa porte de garage : `home.glb` n'en a pas.
+
+- **Quoi** : un volet ou une porte de garage de la maquette s'enroule vers le
+  haut selon sa position (`current_position`), comme ceux qu'on dessine.

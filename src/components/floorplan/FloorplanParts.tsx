@@ -5,7 +5,7 @@ import { useEntities } from '@/hooks/useEntities';
 import { guessPartKind, PART_KINDS, type FloorplanPart, type PartKind } from '@/lib/floorplan';
 import { friendlyName } from '@/lib/ha-service';
 import { useI18n } from '@/i18n';
-import { DraftPopover, DrawnList, KindGrid } from './FloorplanDrawn';
+import { DraftPopover, DrawnList, KindGrid, type Around } from './FloorplanDrawn';
 
 const PART_ICONS: Record<PartKind, LucideIcon> = { door: DoorOpen, window: AppWindow, shutter: Blinds, garage: Warehouse };
 
@@ -22,7 +22,7 @@ export function PartPopover({
 }: {
   part: FloorplanPart;
   /** Emprise de l'élément à l'écran, en % du plan : la fenêtre s'ouvre à côté, pas dessus — on doit voir l'aperçu. */
-  around: { left: number; right: number; y: number };
+  around: Around;
   onChange: (part: FloorplanPart) => void;
   onAdd: () => void;
   onCancel: () => void;
@@ -34,18 +34,8 @@ export function PartPopover({
     onChange({ ...part, entityId, kind: guessPartKind(entityId, deviceClass) });
   };
 
-  // Du côté où il reste le plus de place.
-  const toRight = 100 - around.right > around.left;
-
   return (
-    <DraftPopover
-      title={t('layout.floorplan.partTitle')}
-      onCancel={onCancel}
-      style={{
-        ...(toRight ? { left: `calc(${around.right}% + 2rem)` } : { right: `calc(${100 - around.left}% + 2rem)` }),
-        top: `clamp(0.5rem, calc(${around.y}% - 6rem), calc(100% - 15rem))`,
-      }}
-    >
+    <DraftPopover title={t('layout.floorplan.partTitle')} onCancel={onCancel} around={around}>
       <EntityPicker autoOpen label='' value={part.entityId} domain={['cover', 'binary_sensor']} onChange={choose} />
       <KindGrid
         kinds={PART_KINDS}
