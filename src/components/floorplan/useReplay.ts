@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useHass } from '@hakit/core';
 import type { Connection } from 'home-assistant-js-websocket';
 import type { HistoryEntry } from '@/lib/floorplan';
@@ -38,6 +38,8 @@ export function useReplay(entityIds: string[]) {
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [history, setHistory] = useState<History>({});
+  /** Numéro de la dernière demande d'historique : une réponse plus ancienne, arrivée en retard, est ignorée. */
+  const request = useRef(0);
 
   // Arrivée au présent, la lecture s'arrête d'elle-même.
   const running = playing && !!span && time < span.end;
@@ -48,6 +50,7 @@ export function useReplay(entityIds: string[]) {
   }, [running, span]);
 
   const close = useCallback(() => {
+    request.current++;
     setSpan(null);
     setPlaying(false);
   }, []);
@@ -67,8 +70,9 @@ export function useReplay(entityIds: string[]) {
       setPlaying(true);
       setHistory({});
       // Sans historique, lampes et portes restent dans leur état du moment.
+      const id = ++request.current;
       loadHistory(connection, entityIds, start, end).then(
-        result => setHistory(result ?? {}),
+        result => id === request.current && setHistory(result ?? {}),
         () => {}
       );
     },

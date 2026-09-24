@@ -882,14 +882,19 @@ const MAX_TEXTURE = 2048;
  * Les textures de la maquette, ramenées à `MAX_TEXTURE` px au plus. Un export
  * Sketchfab ou Sweet Home 3D en porte souvent de 4096 : 85 Mo de mémoire
  * vidéo chacune, pour des détails que la vue d'ensemble ne montre pas.
+ *
+ * Les couleurs seulement, d'un matériau opaque : un canevas 2D prémultiplie
+ * l'alpha et gère les couleurs — il noircirait le contour d'un feuillage
+ * découpé, et fausserait une carte de normales ou de rugosité.
  */
 function shrinkTextures(root: Object3D) {
   const done = new Set<Texture>();
   root.traverse(o => {
     for (const material of materialsOf(o)) {
+      if (material.transparent || material.alphaTest > 0) continue;
       for (const value of Object.values(material)) {
         const texture = value as Texture | null;
-        if (!texture?.isTexture || done.has(texture)) continue;
+        if (!texture?.isTexture || texture.colorSpace !== SRGBColorSpace || done.has(texture)) continue;
         done.add(texture);
         const image: unknown = texture.image;
         if (!(image instanceof ImageBitmap || image instanceof HTMLImageElement || image instanceof HTMLCanvasElement)) continue;

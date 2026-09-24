@@ -32,7 +32,10 @@ export function ModelPicker({ model, onChange }: { model?: string; onChange: (mo
       if (!res.ok) throw new Error(json.error ?? res.statusText);
       onChange(json.url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      // Le serveur explique en anglais : la console le garde, l'écran le dit
+      // dans la langue du dashboard.
+      console.warn('[floorplan] model upload:', err);
+      setError(t('layout.floorplan.modelUploadError'));
     } finally {
       setUploading(false);
       // Pour pouvoir choisir de nouveau le même fichier.

@@ -147,9 +147,13 @@ function DashboardContent() {
           <PageBadges />
 
           {isFloorplan ? (
-            <Suspense fallback={null}>
-              <FloorplanView />
-            </Suspense>
+            // Un chunk du plan qui ne se charge pas — réseau coupé, ancien index
+            // gardé en cache après une mise à jour — n'emporte que le plan.
+            <WidgetErrorBoundary messageKey='common.panelUnavailable'>
+              <Suspense fallback={null}>
+                <FloorplanView />
+              </Suspense>
+            </WidgetErrorBoundary>
           ) : (
             <>
               <DashboardGrid className={isMobile ? 'mobile-layout' : isCompact ? 'compact-layout' : undefined}>

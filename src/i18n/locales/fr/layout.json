@@ -382,6 +382,7 @@
     "modelHint": "Un fichier .glb ou .gltf (Sweet Home 3D, Blender, Sketchfab…). Copiez-le dans /config/www, puis indiquez /local/nom-du-fichier.glb. Videz le champ pour revenir à l'image.",
     "modelChoose": "Choisir une maquette (.glb)",
     "modelFormats": "GLB — max 50 Mo",
+    "modelUploadError": "Téléversement impossible : il faut un fichier .glb de 50 Mo au plus.",
     "modelDelete": "Supprimer la maquette",
     "orModel": "…ou une maquette 3D",
     "north": "Nord (°)",

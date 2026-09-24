@@ -145,7 +145,7 @@ function Lightning() {
     let timer = 0;
     const strike = () => {
       const frames: Keyframe[] = [{ opacity: 0 }];
-      for (let i = Math.ceil(rand(0, 3)); i > 0; i--) frames.push({ opacity: rand(0.25, 0.6) }, { opacity: rand(0, 0.06) });
+      for (let i = 1 + Math.floor(rand(0, 3)); i > 0; i--) frames.push({ opacity: rand(0.25, 0.6) }, { opacity: rand(0, 0.06) });
       frames.push({ opacity: 0 });
       ref.current?.animate(frames, { duration: frames.length * rand(60, 110) });
       timer = window.setTimeout(strike, rand(4000, 14_000));
