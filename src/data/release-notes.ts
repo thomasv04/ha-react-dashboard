@@ -27,6 +27,31 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '2.4.0',
+    date: '2026-09-24',
+    title: 'La maison, en plan et en 3D',
+    items: [
+      {
+        text: "Un nouveau type de page, « Plan » : l'image de votre logement — rendu 3D, export Sweet Home 3D, photo —, avec des pastilles et des cards posées dessus. Une pastille affiche seule l'état de son entité ; un tap allume la lampe ou ouvre la fiche. Chaque lampe allumée projette un halo de sa couleur, et le plan s'assombrit la nuit. Les onglets se réordonnent : le plan peut devenir la page d'accueil de la tablette.",
+      },
+      {
+        text: "À la place de l'image, une maquette 3D (`.glb`), téléversée depuis le mode édition. Elle tourne au doigt ; le soleil de Home Assistant l'éclaire et y porte ses ombres ; le ciel suit l'heure et la météo — pluie, neige, orage, grêle, givre. Les murs côté caméra s'abaissent, et chaque lampe n'éclaire que sa pièce. Ses réglages tiennent en quatre onglets : Maquette, Ambiance, Ouvertures, Éléments.",
+      },
+      {
+        text: "Portes, fenêtres, volets et portes de garage s'ouvrent pour de vrai, avec leur entité. Une maquette exportée de Sweet Home 3D avec le plugin ExportToHASS garde ses vraies portes : un clic sur l'une d'elles la lie à son capteur, et elle pivote sur ses gonds. Sur une maquette d'un seul tenant, on dessine l'ouverture en deux clics.",
+      },
+      {
+        text: "Des pièces dessinées au sol : un tap y fait voler la caméra, et la vue thermique les colore d'après leurs capteurs de température. Un halo respire sous un détecteur de présence déclenché, et une pastille passée derrière un mur s'efface.",
+      },
+      {
+        text: "Un curseur rejoue les 24 dernières heures : soleil, ombres, lampes, portes et volets suivent l'historique. Des câbles tracés sur la maquette montrent l'énergie qui circule, dans son sens, d'autant plus vite que la puissance est forte. Sur un téléphone Android, la boussole tourne la maison comme on tient l'appareil.",
+      },
+      {
+        text: "Correctifs : une bascule verrouille enfin une serrure déverrouillée, et les menus déroulants s'ouvrent vers le haut près du bas de l'écran.",
+      },
+    ],
+  },
+  {
     version: '2.2.0',
     date: '2026-08-16',
     title: 'La tablette murale se pilote au doigt',
