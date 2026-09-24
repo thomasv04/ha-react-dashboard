@@ -54,7 +54,7 @@ export function CableOverlay({
           <span
             key={id}
             data-floorplan-cable={id}
-            className='absolute flex items-center gap-1 pl-1.5 pr-2 py-0.5 rounded-full bg-black/65 backdrop-blur-sm text-[11px] font-semibold text-white tabular-nums whitespace-nowrap shadow-lg'
+            className='absolute flex items-center gap-1 pl-1.5 pr-2 py-0.5 rounded-full bg-black/65 text-[11px] font-semibold text-white tabular-nums whitespace-nowrap shadow-lg'
             style={{ left: `${at.x}%`, top: `${at.y}%`, translate: '-50% -50%' }}
           >
             <Icon size={12} style={{ color: CABLE_COLORS[kind] }} />

@@ -20,6 +20,7 @@ import { usePages, type FloorplanConfig } from '@/context/PageContext';
 import { useDashboardLayout, useEditMode, type FloorplanPos, type GridWidget } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useMoreInfoOptional } from '@/context/MoreInfoContext';
+import { useWallPanel } from '@/context/WallPanelContext';
 import { FreeGridScope } from '@/components/layout/DashboardGrid';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { ImageBackgroundPicker } from '@/components/layout/ThemeControlsModal/ImageBackgroundPicker';
@@ -173,7 +174,9 @@ export function FloorplanView() {
   const { layout, addWidgetByType, updateWidget } = useDashboardLayout();
   const { isEditMode } = useEditMode();
   const { getWidgetConfig, updateWidgetConfig } = useWidgetConfig();
-  const motionAllowed = useLowPowerMotion();
+  // Sous l'écran de veille, la page reste montée : rien n'y bouge, pour rien.
+  const { isActive: screensaver } = useWallPanel();
+  const motionAllowed = useLowPowerMotion() && !screensaver;
   const { tokens, perfSettings } = useTheme();
   const { formatTime } = useFormats();
 
@@ -353,8 +356,10 @@ export function FloorplanView() {
   const sunAzimuth = computedSun?.azimuth ?? (sunEntity?.attributes?.azimuth as number | undefined);
   const weatherState = entities[weatherId]?.state;
   const clouds = cloudiness(weatherState);
-  // Pluie, neige, éclairs : animés en CSS, jamais en économie d'énergie.
-  const falling = model && motionAllowed ? precipitation(weatherState) : null;
+  // Pluie, neige, éclairs, courant dans les câbles : jamais en économie
+  // d'énergie, ni quand les animations sont réduites.
+  const animated = motionAllowed && !perfSettings.reduceAnimations;
+  const falling = model && animated ? precipitation(weatherState) : null;
   // Derrière la maquette : le ciel de l'heure, sauf si la page garde le fond du thème.
   const sky = model && floorplan?.sky !== false ? skyColors(sunElevation, clouds) : null;
 
@@ -733,7 +738,7 @@ export function FloorplanView() {
         {model ? (
           <div
             ref={planRef}
-            data-floorplan-plan
+            data-floorplan-plan='3d'
             className='absolute inset-0 select-none'
             style={{
               containerType: 'inline-size',
@@ -770,7 +775,7 @@ export function FloorplanView() {
                   outline={outline}
                   floors={floors}
                   cables={cablesProp}
-                  flowing={motionAllowed && !perfSettings.reduceAnimations}
+                  flowing={animated}
                   focus={focusRoom ?? null}
                   anchors={anchors}
                   onOcclusion={next => setOccluded(prev => (prev.size === next.size && [...next].every(id => prev.has(id)) ? prev : next))}

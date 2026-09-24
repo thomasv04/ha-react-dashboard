@@ -13,7 +13,7 @@ import { PageTabs } from '@/components/layout/PageTabs';
 import { PageBadges } from '@/components/layout/PageBadges';
 import { MoreInfoModal } from '@/components/modals/MoreInfoModal';
 import { LoadingScreen } from '@/components/layout/LoadingScreen';
-import { useEffect, useState, memo } from 'react';
+import { lazy, Suspense, useEffect, useState, memo } from 'react';
 import { AnimatePresence, LayoutGroup } from 'framer-motion';
 
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
@@ -39,7 +39,6 @@ const WidgetItem = memo(function WidgetItem({ widget }: { widget: GridWidget }) 
 import { EditButton } from '@/components/dashboard/EditButton';
 import { ActivePanel } from '@/components/dashboard/ActivePanel';
 import { DashboardEmptyState } from '@/components/dashboard/DashboardEmptyState';
-import { FloorplanView } from '@/components/floorplan/FloorplanView';
 import { cn } from '@/lib/utils';
 import { TourHost } from '@/components/onboarding/TourOverlay';
 import { ReleaseNotesHost } from '@/components/onboarding/ReleaseNotesModal';
@@ -49,6 +48,9 @@ import { useTheme } from '@/context/ThemeContext';
 import { usePages } from '@/context/PageContext';
 import { usePanel } from '@/context/PanelContext';
 import { useMoreInfo } from '@/context/MoreInfoContext';
+
+// La page plan ne se télécharge qu'à sa première visite : sans plan, rien à payer.
+const FloorplanView = lazy(() => import('@/components/floorplan/FloorplanView').then(m => ({ default: m.FloorplanView })));
 
 /**
  * Watcher d'inactivité — doit être monté à l'intérieur du WallPanelProvider
@@ -145,7 +147,9 @@ function DashboardContent() {
           <PageBadges />
 
           {isFloorplan ? (
-            <FloorplanView />
+            <Suspense fallback={null}>
+              <FloorplanView />
+            </Suspense>
           ) : (
             <>
               <DashboardGrid className={isMobile ? 'mobile-layout' : isCompact ? 'compact-layout' : undefined}>
