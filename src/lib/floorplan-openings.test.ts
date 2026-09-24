@@ -517,3 +517,43 @@ describe('openingLabel and typedOpenings', () => {
     expect(typedOpenings(model, { Porte_en_bois: 'none', Armoire: 'door' }).map(o => o.id)).toEqual(['Porte_Entree_1', 'Armoire_1']);
   });
 });
+
+describe('the synthetic model of the end-to-end tests (scripts/make-openings-glb.ts)', () => {
+  const nodes = readGlb(path.resolve(__dirname, '../../tests/dashboard/fixtures/openings.glb'));
+  const model = detectOpenings(nodes);
+  const byName = new Map(nodes.map(n => [n.name, n]));
+  const motion = (id: string, kind: OpeningKind) =>
+    openingMotion(
+      model.openings.find(o => o.id === id)!.nodes.map(name => byName.get(name)!),
+      kind,
+      { cm: model.cm, center: model.center }
+    );
+
+  it('holds four openings in its walls, a sofa, and one window to rename', () => {
+    expect(model.families.map(f => [f.name, f.inWall, f.kind])).toEqual([
+      ['Porte_Cuisine', true, 'door'],
+      ['Fenetre_Salon', true, 'window'],
+      ['Baie_Salon', true, 'sliding'],
+      ['Porte_Chambre', true, 'door'],
+      ['Canape', false, null],
+    ]);
+    expect(model.unnamed).toBe(1);
+  });
+
+  it('moves each of them the way it is modelled', () => {
+    const door = swingOf(motion('Porte_Cuisine_1', 'door')[0].motion);
+    expect(door.pivot[0]).toBeCloseTo(192);
+    expect(rotate([108, 0], door.pivot, door.open)[1]).toBeGreaterThan(70);
+
+    const sashes = motion('Fenetre_Salon_1', 'window').map(p => swingOf(p.motion).pivot[0]);
+    expect(sashes.sort((a, b) => a - b).map(Math.round)).toEqual([355, 545]);
+
+    const [bay] = motion('Baie_Salon_1', 'sliding');
+    expect(bay.nodes.sort()).toEqual(['Baie_Salon_2', 'Baie_Salon_4']);
+    expect(slideOf(bay.motion).open).toBeCloseTo(110);
+
+    const ajar = swingOf(motion('Porte_Chambre_1', 'door')[0].motion);
+    expect(ajar.pivot[0]).toBeCloseTo(492, 0);
+    expect(ajar.closed).toBeCloseTo(0.87, 2);
+  });
+});

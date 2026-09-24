@@ -11,6 +11,8 @@ import { test, expect, type APIRequestContext, type Page } from '@playwright/tes
 const API = 'http://localhost:8098';
 // Adresse relative : le serveur de dev sert tout sous sa `base` (`/local/…/`).
 const MODEL = 'tests/dashboard/fixtures/smart-home-floor-plan.glb';
+/** Une maquette façon ExportToHASS, aux portes et fenêtres séparées (`scripts/make-openings-glb.ts`). */
+const OPENINGS_MODEL = 'tests/dashboard/fixtures/openings.glb';
 
 /** Pastille accrochée à un point de la maquette, dans ses propres coordonnées. */
 const chip = (id: string, anchor: [number, number, number]) => ({
@@ -75,6 +77,21 @@ test.beforeAll(async ({ request }) => {
   });
   // Un plan encore vide, où téléverser une maquette.
   config.pages.push({ id: 'vierge', label: 'Vierge', icon: 'Home', type: 'floorplan', order: 100, floorplan: { image: '' } });
+  // Une maquette aux vraies portes : celle de la chambre est liée à une entité ouverte.
+  config.pages.push({
+    id: 'ouvertures',
+    label: 'Ouvertures',
+    icon: 'Home',
+    type: 'floorplan',
+    order: 101,
+    floorplan: {
+      image: '',
+      model: OPENINGS_MODEL,
+      openings: { links: [{ node: 'Porte_Chambre_1', entityId: 'binary_sensor.porte_cellier' }] },
+    },
+  });
+  config.layouts.ouvertures = { widgets: { lg: [], md: [], sm: [] }, cols: { lg: 12, md: 8, sm: 4 } };
+  config.widgetConfigs.ouvertures = {};
   config.layouts.maison = { widgets: { lg: WIDGETS, md: WIDGETS, sm: WIDGETS }, cols: { lg: 12, md: 8, sm: 4 } };
   config.widgetConfigs.maison = CONFIGS;
   expect((await request.put(`${API}/api/config`, { data: config })).ok()).toBeTruthy();
@@ -397,4 +414,73 @@ test('in edit mode, a .glb file is uploaded as the model, and its bin deletes it
   await page.getByRole('button', { name: 'Supprimer la maquette' }).click();
   await expect(page.getByText('Pas encore de plan')).toBeVisible();
   expect((await request.get(`${API}${url}`)).status()).toBe(404);
+});
+
+// ── Les vraies portes d'une maquette ExportToHASS ────────────────────────────
+
+/** Les ouvertures montées dans la maquette, et où elles en sont (`id=0.5`). */
+const openings = (page: Page) => page.locator('[data-floorplan-3d]');
+
+/** Ouvre la page aux vraies portes, et attend qu'elles soient montées. */
+async function openOpenings(page: Page) {
+  await page.goto('/#ouvertures');
+  await expect(openings(page)).toHaveAttribute('data-floorplan-openings', /Porte_Chambre_1=/, { timeout: 60_000 });
+}
+
+/** Les liaisons des ouvertures de la page, telles que le serveur les a gardées. */
+async function savedLinks(request: APIRequestContext) {
+  const config = await (await request.get(`${API}/api/config`)).json();
+  const links: { node: string; entityId: string }[] =
+    config.pages.find((p: { id: string }) => p.id === 'ouvertures')?.floorplan?.openings?.links ?? [];
+  return links.map(l => `${l.node} ${l.entityId}`);
+}
+
+test('a real door of the model turns with the entity linked to it', async ({ page }) => {
+  await openOpenings(page);
+  // Liée à une entité ouverte : la porte, modélisée entrouverte, s'est ouverte.
+  await expect(openings(page)).toHaveAttribute('data-floorplan-openings', 'Porte_Chambre_1=1');
+});
+
+test('in edit mode, the Openings tab lists the doors of the model, and links one', async ({ page, request }) => {
+  await openOpenings(page);
+  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
+  await page.getByRole('tab', { name: 'Ouvertures' }).click();
+  for (const name of ['Porte_Cuisine', 'Fenetre_Salon', 'Baie_Salon']) {
+    await expect(page.getByRole('button', { name: new RegExp(`^${name}.*Lier une entité`) })).toBeVisible();
+  }
+  await expect(page.getByRole('button', { name: /^Porte_Chambre.*Porte du cellier/ })).toBeVisible();
+  // La fenêtre sans nom valide, dans le mur du sud.
+  await expect(page.getByText(/1 objet sans nom valide/)).toBeVisible();
+
+  await page.getByRole('button', { name: /^Porte_Cuisine/ }).click();
+  const dialog = page.getByRole('dialog', { name: 'Porte_Cuisine' });
+  await page.getByPlaceholder('Rechercher...').fill('porte_entree');
+  await page.getByRole('button', { name: 'binary_sensor.porte_entree', exact: true }).click();
+  // Deviné d'après son nom : une porte.
+  await expect(dialog.getByRole('button', { name: 'Porte', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await dialog.getByRole('button', { name: 'Lier' }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^Porte_Cuisine.*Porte d'entrée/ })).toBeVisible();
+  // Liée à une entité fermée : elle l'est.
+  await expect(openings(page)).toHaveAttribute('data-floorplan-openings', /Porte_Cuisine_1=0/);
+
+  await page.getByRole('button', { name: 'Sauvegarder' }).click();
+  await expect
+    .poll(() => savedLinks(request))
+    .toEqual(['Porte_Chambre_1 binary_sensor.porte_cellier', 'Porte_Cuisine_1 binary_sensor.porte_entree']);
+});
+
+test('in edit mode, a click on a real window of the model opens its link window', async ({ page }) => {
+  await openOpenings(page);
+  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
+  await page.getByRole('button', { name: 'Porte · volet', exact: true }).click();
+  await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
+  const box = (await page.locator('[data-floorplan-3d] canvas').boundingBox())!;
+  // La fenêtre à deux vantaux, dans le mur du fond : survolée, elle se nomme.
+  await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.245);
+  await expect(page.getByText('Cliquez pour lier « Fenetre_Salon ».')).toBeVisible();
+  await page.mouse.click(box.x + box.width * 0.7, box.y + box.height * 0.245);
+  const dialog = page.getByRole('dialog', { name: 'Fenetre_Salon' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Fenêtre', exact: true })).toHaveAttribute('aria-pressed', 'true');
 });

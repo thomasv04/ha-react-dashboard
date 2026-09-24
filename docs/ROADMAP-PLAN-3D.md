@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **29 tâches sur 34** — phases A à H, `I1`, `I2`, `J1` à `J6`. `F1` reste à essayer sur un vrai Android.
+**État global** : **30 tâches sur 34** — phases A à H, `I1`, `I2`, `J1` à `J7`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -613,7 +613,18 @@ leurs liaisons avec. Le plugin, lui, reste tel quel.
   famille n'a pas de type : on le choisit, pour toute la famille. Ailleurs, le
   clic dessine, comme avant.
 
-### [ ] J7 — Démo et tests de bout en bout
+### [x] J7 — Démo et tests de bout en bout
+
+> **Fait** : [make-openings-glb.ts](../scripts/make-openings-glb.ts) écrit
+> `openings.glb` — une pièce aux murs percés : porte fermée à charnières, porte
+> entrouverte, fenêtre à deux vantaux, baie coulissante, fenêtre sans nom,
+> canapé, table sans nom. Des tests unitaires la vérifient, et trois E2E s'en
+> servent : une porte liée à une entité ouverte s'ouvre ; l'onglet liste les
+> ouvertures et en lie une, gardée à l'enregistrement ; survolée puis cliquée,
+> une vraie fenêtre ouvre sa fenêtre de liaison. La maquette dit où en est
+> chaque ouverture (`data-floorplan-openings`), comme les pastilles et les
+> câbles. Le mock montre `home.glb`, page « Maison SH3D » : deux portes et la
+> porte coulissante liées, que la journée rejouée ouvre et ferme.
 
 - **Quoi** : un script génère une petite maquette façon ExportToHASS — porte,
   fenêtres, baie, objet sans nom, murs — pour les tests E2E ; le mock montre

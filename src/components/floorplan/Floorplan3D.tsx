@@ -849,6 +849,15 @@ function unmountOpening(s: Stage, id: string) {
   }
 }
 
+/**
+ * Les ouvertures montées, et où elles en sont (`id=0.5`), lisibles sur la page
+ * comme les pastilles et les câbles : un test y vérifie qu'une porte a bougé.
+ */
+function reportOpenings(s: Stage) {
+  const host = s.renderer.domElement.parentElement;
+  if (host) host.dataset.floorplanOpenings = [...s.openings].map(([id, e]) => `${id}=${Math.round(e.value * 100) / 100}`).join(' ');
+}
+
 /** Ouvertures de la maquette : montées à leur type, puis mues vers leur ouverture. */
 function placeOpenings(s: Stage, openings: OpeningProp[]) {
   const { root, model } = s;
@@ -880,7 +889,10 @@ function placeOpenings(s: Stage, openings: OpeningProp[]) {
           () => s.openings.get(opening.id) === moving,
           // Une vraie porte fait partie de la maquette : arrivée, elle peut
           // cacher une pastille, ou la montrer.
-          () => s.render('view')
+          () => {
+            s.render('view');
+            reportOpenings(s);
+          }
         )
       );
     }
@@ -890,7 +902,9 @@ function placeOpenings(s: Stage, openings: OpeningProp[]) {
     unmountOpening(s, id);
     reshaped = true;
   }
-  if (reshaped) s.render();
+  if (!reshaped) return;
+  s.render();
+  reportOpenings(s);
 }
 
 /** Intensité des traits lumineux dans un câble où passe le courant. */
@@ -1544,6 +1558,7 @@ export default function Floorplan3D({
         applyCutaway(s);
         // Ses objets, et ses ouvertures : les pivots de l'ancienne sont partis avec elle.
         s.openings.clear();
+        reportOpenings(s);
         s.model = readModel(root);
         placeHighlight(s, null);
         latest.current.onOpenings?.(s.model?.detected ?? null);

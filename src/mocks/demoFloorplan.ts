@@ -1,5 +1,6 @@
 import type { DashboardConfigV2, GridWidget } from '@/context/DashboardLayoutContext';
 import type { FloorplanCable, FloorplanPart, FloorplanRoom } from '@/lib/floorplan';
+import type { FloorplanOpenings } from '@/lib/floorplan-openings';
 import type { WidgetConfigs } from '@/types/widget-configs';
 
 /**
@@ -139,23 +140,60 @@ const ROOMS: FloorplanRoom[] = [
   room('demo-amis', "Chambre d'amis", -3.81, -1.06, -6.75, -2.85),
 ];
 
-/** Ajoute la page de démonstration si elle n'y est pas déjà. */
+/**
+ * Une maison exportée de Sweet Home 3D avec ExportToHASS
+ * (`tests/dashboard/fixtures/home.glb`) : ses vraies portes s'ouvrent et se
+ * ferment avec leur entité — et avec la journée rejouée.
+ */
+const SH3D_ID = 'demo-sh3d';
+const SH3D_MODEL = 'tests/dashboard/fixtures/home.glb';
+
+const SH3D_OPENINGS: FloorplanOpenings = {
+  links: [
+    // Deux portes en bois, entrouvertes dans la maquette : l'une ouverte, l'autre fermée.
+    { node: 'Porte_en_bois_1', entityId: 'binary_sensor.porte_cellier' },
+    { node: 'Porte_en_bois_1_1', entityId: 'binary_sensor.porte_entree' },
+    // La porte coulissante, modélisée ouverte : fermée par son entité.
+    { node: 'Porte_coulissante_grise_1', entityId: 'binary_sensor.porte_entree' },
+  ],
+};
+
+/** Leurs pastilles, dans les coordonnées de la maquette : des centimètres. */
+const SH3D_WIDGETS: GridWidget[] = [chip('sh3d-cellier', [640, 120, 925]), chip('sh3d-entree', [1110, 120, 925])];
+
+const SH3D_CONFIGS = {
+  'sh3d-cellier': { type: 'chip', entityId: 'binary_sensor.porte_cellier' },
+  'sh3d-entree': { type: 'chip', entityId: 'binary_sensor.porte_entree' },
+} as WidgetConfigs;
+
+/** Ajoute les pages de démonstration qui n'y sont pas déjà. */
 export function withDemoFloorplan(config: DashboardConfigV2): DashboardConfigV2 {
-  if (config.pages.some(p => p.id === ID)) return config;
-  return {
-    ...config,
-    pages: [
-      ...config.pages,
-      {
-        id: ID,
-        label: 'Maison 3D',
-        icon: 'Home',
-        type: 'floorplan',
-        order: Math.max(-1, ...config.pages.map(p => p.order)) + 1,
-        floorplan: { image: '', model: MODEL, idleRotate: true, lampGlow: true, parts: PARTS, rooms: ROOMS, cables: CABLES },
-      },
-    ],
-    layouts: { ...config.layouts, [ID]: { widgets: { lg: WIDGETS, md: WIDGETS, sm: WIDGETS }, cols: { lg: 12, md: 8, sm: 4 } } },
-    widgetConfigs: { ...config.widgetConfigs, [ID]: CONFIGS },
-  };
+  const pages = [
+    {
+      id: ID,
+      label: 'Maison 3D',
+      floorplan: { image: '', model: MODEL, idleRotate: true, lampGlow: true, parts: PARTS, rooms: ROOMS, cables: CABLES },
+      widgets: WIDGETS,
+      configs: CONFIGS,
+    },
+    {
+      id: SH3D_ID,
+      label: 'Maison SH3D',
+      floorplan: { image: '', model: SH3D_MODEL, openings: SH3D_OPENINGS },
+      widgets: SH3D_WIDGETS,
+      configs: SH3D_CONFIGS,
+    },
+  ].filter(demo => !config.pages.some(p => p.id === demo.id));
+  return pages.reduce(
+    (next, { id, label, floorplan, widgets, configs }) => ({
+      ...next,
+      pages: [
+        ...next.pages,
+        { id, label, icon: 'Home', type: 'floorplan', order: Math.max(-1, ...next.pages.map(p => p.order)) + 1, floorplan },
+      ],
+      layouts: { ...next.layouts, [id]: { widgets: { lg: widgets, md: widgets, sm: widgets }, cols: { lg: 12, md: 8, sm: 4 } } },
+      widgetConfigs: { ...next.widgetConfigs, [id]: configs },
+    }),
+    config
+  );
 }
