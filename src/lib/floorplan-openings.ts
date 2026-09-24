@@ -91,7 +91,9 @@ export type Motion =
   /** Rotation autour d'un axe vertical passant par `pivot` (x, z), en radians (`rotation.y` de three.js). */
   | { type: 'swing'; pivot: [number, number]; closed: number; open: number }
   /** Glissement le long de `axis` (x, z, unitaire), dans l'unité de la maquette. */
-  | { type: 'slide'; axis: [number, number]; closed: number; open: number };
+  | { type: 'slide'; axis: [number, number]; closed: number; open: number }
+  /** Enroulement vers le haut : échelle verticale autour de la hauteur `top`, 1 dans la pose modélisée. */
+  | { type: 'roll'; top: number; closed: number; open: number };
 
 /** Une partie mobile : le panneau et ce qui y tient — vitre, poignée —, et son mouvement. */
 export interface MovingPart {
@@ -426,7 +428,9 @@ function panel(node: ModelNode): Panel {
  *   s'ouvre ; à défaut, vers l'intérieur de la maison ;
  * - un panneau coulissant glisse le long du mur. Un vide entre deux panneaux :
  *   la baie est modélisée ouverte, ils s'y rejoignent pour la fermer. Sinon,
- *   le premier glisse sur son voisin.
+ *   le premier glisse sur son voisin ;
+ * - le tablier d'un volet roulant, le panneau d'une porte de garage
+ *   s'enroulent vers le haut, comme ceux qu'on dessine.
  *
  * `flip` : l'ouverture de l'autre côté du mur, ou l'autre panneau d'une baie ;
  * `hinge` : les gonds sur l'autre arête. Rien de mobile : une liste vide.
@@ -437,8 +441,7 @@ export function openingMotion(
   { cm, center, flip = false, hinge = false }: { cm: number; center: [number, number]; flip?: boolean; hinge?: boolean }
 ): MovingPart[] {
   const withPoints = nodes.filter(n => n.footprint.length);
-  // Volets et portes de garage s'enrouleront (`J8`) : rien ne bouge d'ici là.
-  if (!withPoints.length || kind === 'shutter' || kind === 'garage') return [];
+  if (!withPoints.length) return [];
   // L'axe du mur : celui de sa plus large pièce, le cadre d'ordinaire.
   const u = principalAxis(widest(withPoints).footprint);
   const n: Vec2 = [-u[1], u[0]];
@@ -470,6 +473,8 @@ export function openingMotion(
       part.max[1] <= leaf.node.max[1] + 2 * cm
     );
   };
+
+  if (kind === 'shutter' || kind === 'garage') return roll(withPoints, { frame, width, height, bottom, holds });
 
   // Les panneaux, du plus grand au plus petit : une vitre tient dans son
   // vantail, et le suit.
@@ -505,6 +510,41 @@ export function openingMotion(
     nodes: names(leaf),
     motion,
   }));
+}
+
+/** Enroulé : il en reste un liseré, sous le coffre. */
+const ROLLED = 0.04;
+
+/**
+ * Le tablier d'un volet roulant, le panneau d'une porte de garage : le plus
+ * grand, plus large que haut de moitié au moins — les coulisses sont étroites,
+ * le coffre bas. Pas le cadre, s'il y en a un : une porte de garage sans cadre
+ * n'a que son panneau. Il s'enroule vers son haut ; modélisé à mi-course, il
+ * descend jusqu'en bas pour fermer.
+ */
+function roll(
+  nodes: ModelNode[],
+  {
+    frame,
+    width,
+    height,
+    bottom,
+    holds,
+  }: { frame: ModelNode[]; width: number; height: number; bottom: number; holds: (leaf: Panel, part: ModelNode) => boolean }
+): MovingPart[] {
+  const apron = nodes
+    .map(panel)
+    .filter(p => p.height >= 0.45 * height && p.length >= 0.5 * width)
+    .sort((a, b) => Number(frame.includes(a.node)) - Number(frame.includes(b.node)) || b.length * b.height - a.length * a.height)[0];
+  if (!apron) return [];
+  const carried = nodes.filter(node => node !== apron.node && !frame.includes(node) && holds(apron, node));
+  const top = apron.node.max[1];
+  return [
+    {
+      nodes: [apron.node, ...carried].map(node => node.name),
+      motion: { type: 'roll', top, closed: (top - bottom) / apron.height, open: ROLLED },
+    },
+  ];
 }
 
 /** Panneaux qui glissent : ceux qui bordent un vide s'y rejoignent, sinon le premier glisse sur son voisin. */

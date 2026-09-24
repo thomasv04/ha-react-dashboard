@@ -786,18 +786,20 @@ function readModel(root: Object3D): ModelObjects | null {
   return { nodes, objects, detected: detectOpenings([...nodes.values()]) };
 }
 
-/** Un battant tourne sur ses gonds, un panneau glisse : chaque pivot à cette ouverture. */
+/** Un battant tourne sur ses gonds, un panneau glisse, un tablier s'enroule : chaque pivot à cette ouverture. */
 function applyOpening(entry: OpeningEntry, openness: number) {
   for (const { pivot, motion } of entry.parts) {
     const value = motionAt(motion, openness);
     if (motion.type === 'swing') pivot.rotation.y = value;
-    else pivot.position.set(motion.axis[0] * value, 0, motion.axis[1] * value);
+    else if (motion.type === 'slide') pivot.position.set(motion.axis[0] * value, 0, motion.axis[1] * value);
+    else pivot.scale.y = Math.max(value, 1e-3);
   }
 }
 
 /**
  * Monte une ouverture de la maquette : ses maillages mobiles passent sous un
- * pivot — sur l'axe des gonds, ou qui glisse. Ils restent ceux de la maquette :
+ * pivot — sur l'axe des gonds, qui glisse, ou en haut d'un tablier qui
+ * s'enroule. Ils restent ceux de la maquette :
  * ses retouches (coupe des murs, pièces) les suivent, et sa BVH aussi, le
  * rayon étant ramené dans l'espace du maillage. Introuvable — la maquette a
  * changé depuis la liaison — ou sans rien de mobile : ignorée.
@@ -820,6 +822,8 @@ function mountOpening(s: Stage, root: Object3D, model: ModelObjects, { open, ...
       const pivot = new Group();
       pivot.userData.fpPivot = true;
       if (motion.type === 'swing') pivot.position.set(motion.pivot[0], 0, motion.pivot[1]);
+      // Un tablier s'enroule vers son haut.
+      if (motion.type === 'roll') pivot.position.set(0, motion.top, 0);
       root.add(pivot);
       pivot.updateMatrixWorld(true);
       for (const name of nodes) {
@@ -842,6 +846,7 @@ function unmountOpening(s: Stage, id: string) {
   if (!entry || !root) return;
   for (const { pivot, motion } of entry.parts) {
     pivot.rotation.y = 0;
+    pivot.scale.y = 1;
     if (motion.type === 'slide') pivot.position.set(0, 0, 0);
     pivot.updateMatrixWorld(true);
     for (const child of [...pivot.children]) root.attach(child);

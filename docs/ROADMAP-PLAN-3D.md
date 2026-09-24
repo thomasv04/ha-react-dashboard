@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **30 tâches sur 34** — phases A à H, `I1`, `I2`, `J1` à `J7`. `F1` reste à essayer sur un vrai Android.
+**État global** : **31 tâches sur 34** — phases A à H et J, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -630,7 +630,15 @@ leurs liaisons avec. Le plugin, lui, reste tel quel.
   fenêtres, baie, objet sans nom, murs — pour les tests E2E ; le mock montre
   `home.glb`, portes liées.
 
-### [ ] J8 — Volets roulants et portes de garage de la maquette
+### [x] J8 — Volets roulants et portes de garage de la maquette
+
+> **Fait** : le tablier — le plus grand panneau, large de la moitié de
+> l'ouverture au moins : ni les coulisses, étroites, ni le coffre, bas —
+> s'enroule vers son haut selon la position, comme celui qu'on dessine ; il en
+> reste un liseré sous le coffre. Une porte de garage sans cadre n'a que son
+> panneau, qui s'enroule de même. Modélisé à mi-course, le tablier descend
+> jusqu'en bas pour fermer. Vérifié sur la maquette synthétique, qui a
+> désormais son volet et sa porte de garage : `home.glb` n'en a pas.
 
 - **Quoi** : un volet ou une porte de garage de la maquette s'enroule vers le
   haut selon sa position (`current_position`), comme ceux qu'on dessine.

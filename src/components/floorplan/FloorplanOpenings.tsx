@@ -381,7 +381,9 @@ export function OpeningPopover({
         </p>
       )}
       <div className='flex flex-wrap items-center gap-1.5'>
-        {toggle('flip', ArrowLeftRight, t('layout.floorplan.openingFlip'), t('layout.floorplan.openingFlipHint'))}
+        {kind !== 'shutter' &&
+          kind !== 'garage' &&
+          toggle('flip', ArrowLeftRight, t('layout.floorplan.openingFlip'), t('layout.floorplan.openingFlipHint'))}
         {(kind === 'door' || kind === 'window') &&
           toggle('hinge', Columns2, t('layout.floorplan.openingHinge'), t('layout.floorplan.openingHingeHint'))}
         {linked && (

@@ -13,7 +13,9 @@
  *   charnières, une poignée côté pièce ;
  * - à l'est, `Baie_Salon`, deux panneaux coulissants sur deux rails ;
  * - au sud, `Porte_Chambre`, modélisée entrouverte de 50° vers la pièce ; une
- *   fenêtre sans nom valide (`1`, `2`, `3`) ;
+ *   fenêtre sans nom valide (`1`, `2`, `3`), et dehors son `Volet_Chambre`,
+ *   baissé : coffre, coulisses, tablier ;
+ * - à l'ouest, `Garage` : un panneau sans cadre, sa poignée ;
  * - dans la pièce, un `Canape` et une table sans nom (`1_1`, `2_1`).
  */
 import fs from 'node:fs';
@@ -69,7 +71,10 @@ wallX(2, 400, [
 node('wall_1_1', 'wall', box([595, 0, -5], [605, H, 80]));
 node('wall_1_2', 'wall', box([595, 220, 80], [605, H, 320]));
 node('wall_1_3', 'wall', box([595, 0, 320], [605, H, 405]));
-node('wall_3_1', 'wall', box([-5, 0, -5], [5, H, 405]));
+// À l'ouest, le long des z : la porte de garage.
+node('wall_3_1', 'wall', box([-5, 0, -5], [5, H, 150]));
+node('wall_3_2', 'wall', box([-5, 220, 150], [5, H, 330]));
+node('wall_3_3', 'wall', box([-5, 0, 330], [5, H, 405]));
 node('room_0_1', 'floor', box([0, -1, 0], [600, 0, 400]));
 
 // ── Porte_Cuisine : fermée, charnières côté pièce ────────────────────────────
@@ -134,6 +139,15 @@ node(
 );
 node('2', 'white', box([104, 104, 399], [156, 196, 401]));
 node('3', 'glass', box([110, 110, 399.8], [150, 190, 400.2]));
+
+// ── Son volet roulant, dehors, baissé ────────────────────────────────────────
+node('Volet_Chambre_1', 'white', box([96, 200, 405], [164, 215, 420]));
+node('Volet_Chambre_2', 'white', box([96, 100, 405], [100, 200, 410]), box([160, 100, 405], [164, 200, 410]));
+node('Volet_Chambre_3', 'white', box([100, 100, 406], [160, 200, 408]));
+
+// ── Garage : un panneau sans cadre ───────────────────────────────────────────
+node('Garage_1', 'white', box([-3, 0, 152], [3, 218, 328]));
+node('Garage_2', 'metal', box([3, 90, 235], [5, 95, 245]));
 
 // ── Mobilier ─────────────────────────────────────────────────────────────────
 node('Canape_1', 'fabric', box([200, 0, 250], [400, 45, 330]));

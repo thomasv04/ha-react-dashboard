@@ -244,11 +244,45 @@ describe('openingMotion — a swinging door', () => {
   it('finds nothing to move in a door that is all one piece', () => {
     expect(openingMotion([box('Porte_1', [100, 0, 2], [200, 210, 8])], 'door', INSIDE)).toEqual([]);
   });
+});
 
-  it('leaves shutters and garage doors still, for now', () => {
-    const nodes = door(box('Porte_2', ...LEAF), ...hinges);
-    expect(openingMotion(nodes, 'shutter', INSIDE)).toEqual([]);
-    expect(openingMotion(nodes, 'garage', INSIDE)).toEqual([]);
+describe('openingMotion — a roller shutter, a garage door', () => {
+  const rollOf = (motion: Motion) => {
+    if (motion.type !== 'roll') throw new Error(`roll attendu, ${motion.type} obtenu`);
+    return motion;
+  };
+
+  it('rolls the apron of a shutter up under its box, between its guides', () => {
+    const shutter = [
+      box('Volet_1', [96, 200, 405], [164, 215, 420]),
+      box('Volet_2', [96, 100, 405], [100, 200, 410]),
+      box('Volet_3', [160, 100, 405], [164, 200, 410]),
+      box('Volet_4', [100, 100, 406], [160, 200, 408]),
+    ];
+    const [part] = openingMotion(shutter, 'shutter', INSIDE);
+    const motion = rollOf(part.motion);
+    expect(part.nodes).toEqual(['Volet_4']);
+    expect(motion.top).toBe(200);
+    expect(motion.closed).toBeCloseTo(1);
+    expect(motion.open).toBeLessThan(0.1);
+  });
+
+  it('brings down to the floor an apron modelled half rolled up', () => {
+    const shutter = [
+      box('Volet_1', [96, 200, 405], [164, 215, 420]),
+      box('Volet_2', [96, 0, 405], [100, 200, 410]),
+      box('Volet_3', [160, 0, 405], [164, 200, 410]),
+      box('Volet_4', [100, 100, 406], [160, 200, 408]),
+    ];
+    const motion = rollOf(openingMotion(shutter, 'shutter', INSIDE)[0].motion);
+    expect(motion.closed).toBeCloseTo(2);
+  });
+
+  it('rolls up the panel of a garage door that has no frame, with its handle', () => {
+    const garage = [box('Garage_1', [-3, 0, 152], [3, 215, 328]), box('Garage_2', [3, 90, 235], [5, 95, 245])];
+    const [part] = openingMotion(garage, 'garage', INSIDE);
+    expect(part.nodes).toEqual(['Garage_1', 'Garage_2']);
+    expect(rollOf(part.motion).top).toBe(215);
   });
 });
 
@@ -529,12 +563,15 @@ describe('the synthetic model of the end-to-end tests (scripts/make-openings-glb
       { cm: model.cm, center: model.center }
     );
 
-  it('holds four openings in its walls, a sofa, and one window to rename', () => {
+  it('holds its openings, a sofa, and one window to rename', () => {
     expect(model.families.map(f => [f.name, f.inWall, f.kind])).toEqual([
       ['Porte_Cuisine', true, 'door'],
       ['Fenetre_Salon', true, 'window'],
       ['Baie_Salon', true, 'sliding'],
       ['Porte_Chambre', true, 'door'],
+      // Dehors, devant sa fenêtre : pas dans le mur.
+      ['Volet_Chambre', false, 'shutter'],
+      ['Garage', true, 'garage'],
       ['Canape', false, null],
     ]);
     expect(model.unnamed).toBe(1);
@@ -555,5 +592,8 @@ describe('the synthetic model of the end-to-end tests (scripts/make-openings-glb
     const ajar = swingOf(motion('Porte_Chambre_1', 'door')[0].motion);
     expect(ajar.pivot[0]).toBeCloseTo(492, 0);
     expect(ajar.closed).toBeCloseTo(0.87, 2);
+
+    expect(motion('Volet_Chambre_1', 'shutter')[0].nodes).toEqual(['Volet_Chambre_3']);
+    expect(motion('Garage_1', 'garage')[0].nodes).toEqual(['Garage_1', 'Garage_2']);
   });
 });
