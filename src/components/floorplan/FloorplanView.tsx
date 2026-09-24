@@ -39,6 +39,7 @@ import {
   cloudiness,
   containSize,
   DRAFT_COLOR,
+  frostOf,
   isNightDimmed,
   isPresence,
   lightColor,
@@ -75,6 +76,7 @@ import { PartList, PartPopover } from './FloorplanParts';
 import { CableList, CableOverlay, CablePopover } from './FloorplanCables';
 import { ReplayBar } from './FloorplanReplay';
 import { RoomList, RoomNamePopover } from './FloorplanRooms';
+import { Weather } from './FloorplanWeather';
 import { useReplay } from './useReplay';
 import { ModelPicker } from './ModelPicker';
 
@@ -360,6 +362,8 @@ export function FloorplanView() {
   // d'énergie, ni quand les animations sont réduites.
   const animated = motionAllowed && !perfSettings.reduceAnimations;
   const falling = model && animated ? precipitation(weatherState) : null;
+  // Le givre quand il gèle dehors : immobile, il reste même sans animations.
+  const frost = model ? frostOf(entities[weatherId]?.attributes) : 0;
   // Derrière la maquette : le ciel de l'heure, sauf si la page garde le fond du thème.
   const sky = model && floorplan?.sky !== false ? skyColors(sunElevation, clouds) : null;
 
@@ -797,9 +801,7 @@ export function FloorplanView() {
                 {t('layout.floorplan.loading')}
               </p>
             )}
-            {falling && falling.rain > 0 && <div className='fp-rain' style={{ opacity: falling.rain }} />}
-            {falling && falling.snow > 0 && <div className='fp-snow' style={{ opacity: falling.snow }} />}
-            {falling?.lightning && <div className='fp-lightning' />}
+            <Weather falling={falling} frost={frost} />
             <CableOverlay labels={cableLabels} draft={draftLine} />
             {items}
             {addPopover}

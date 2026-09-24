@@ -475,20 +475,40 @@ export function cloudiness(state: string | undefined): number {
   return CLOUDS[state ?? ''] ?? 0;
 }
 
-/** Ce qui tombe du ciel, par état d'une entité `weather` : pluie et neige de 0 à 1, éclairs. */
-const PRECIPITATION: Record<string, { rain: number; snow: number; lightning: boolean }> = {
-  rainy: { rain: 0.6, snow: 0, lightning: false },
-  pouring: { rain: 1, snow: 0, lightning: false },
-  hail: { rain: 0.8, snow: 0, lightning: false },
-  lightning: { rain: 0, snow: 0, lightning: true },
-  'lightning-rainy': { rain: 0.8, snow: 0, lightning: true },
-  snowy: { rain: 0, snow: 0.8, lightning: false },
-  'snowy-rainy': { rain: 0.4, snow: 0.5, lightning: false },
+/** Ce qui tombe du ciel, de 0 à 1 par sorte, et les éclairs d'un orage. */
+export interface Precipitation {
+  rain: number;
+  hail: number;
+  snow: number;
+  lightning: boolean;
+}
+
+/** Par état d'une entité `weather` ; ce qui n'y est pas ne tombe pas. */
+const PRECIPITATION: Record<string, Partial<Precipitation>> = {
+  rainy: { rain: 0.6 },
+  pouring: { rain: 1 },
+  hail: { hail: 1, rain: 0.3 },
+  lightning: { lightning: true },
+  'lightning-rainy': { rain: 0.8, lightning: true },
+  snowy: { snow: 0.8 },
+  'snowy-rainy': { rain: 0.4, snow: 0.5 },
 };
 
-/** Pluie, neige et éclairs d'après l'état d'une entité `weather` — par défaut, rien. */
-export function precipitation(state: string | undefined): { rain: number; snow: number; lightning: boolean } {
-  return PRECIPITATION[state ?? ''] ?? { rain: 0, snow: 0, lightning: false };
+/** Pluie, grêle, neige et éclairs d'après l'état d'une entité `weather` — par défaut, rien. */
+export function precipitation(state: string | undefined): Precipitation {
+  return { rain: 0, hail: 0, snow: 0, lightning: false, ...PRECIPITATION[state ?? ''] };
+}
+
+/**
+ * Le givre sur la maquette, de 0 à 1, d'après la température de l'entité
+ * `weather`, dans son unité : il paraît sous 1 °C, et couvre tout ce qu'il
+ * peut à −5 °C.
+ */
+export function frostOf(attributes: Record<string, unknown> | undefined): number {
+  const value = attributes?.temperature;
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+  const celsius = attributes?.temperature_unit === '°F' ? ((value - 32) * 5) / 9 : value;
+  return clamp((1 - celsius) / 6, 0, 1);
 }
 
 /** Couleur d'une pièce selon sa température (°C) : du bleu froid au rouge chaud. */

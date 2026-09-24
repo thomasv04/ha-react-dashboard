@@ -24,6 +24,7 @@ import {
   pointInPolygon,
   polygonCentroid,
   polylineMidpoint,
+  frostOf,
   precipitation,
   resizePos,
   shortestTurn,
@@ -387,9 +388,29 @@ describe('precipitation', () => {
     expect(precipitation('snowy-rainy').snow).toBeGreaterThan(0);
   });
 
+  it('hails, with a little rain', () => {
+    expect(precipitation('hail')).toMatchObject({ hail: 1, snow: 0, lightning: false });
+    expect(precipitation('hail').rain).toBeGreaterThan(0);
+    expect(precipitation('pouring').hail).toBe(0);
+  });
+
   it('lets nothing fall otherwise', () => {
-    expect(precipitation('sunny')).toEqual({ rain: 0, snow: 0, lightning: false });
-    expect(precipitation(undefined)).toEqual({ rain: 0, snow: 0, lightning: false });
+    expect(precipitation('sunny')).toEqual({ rain: 0, hail: 0, snow: 0, lightning: false });
+    expect(precipitation(undefined)).toEqual({ rain: 0, hail: 0, snow: 0, lightning: false });
+  });
+});
+
+describe('frostOf', () => {
+  it('frosts the model below freezing, more as it gets colder', () => {
+    expect(frostOf({ temperature: 5, temperature_unit: '°C' })).toBe(0);
+    expect(frostOf({ temperature: -2, temperature_unit: '°C' })).toBeCloseTo(0.5);
+    expect(frostOf({ temperature: -10, temperature_unit: '°C' })).toBe(1);
+  });
+
+  it('reads Fahrenheit, and nothing without a temperature', () => {
+    expect(frostOf({ temperature: 28.4, temperature_unit: '°F' })).toBeCloseTo(0.5);
+    expect(frostOf({ temperature: 'cold' })).toBe(0);
+    expect(frostOf(undefined)).toBe(0);
   });
 });
 

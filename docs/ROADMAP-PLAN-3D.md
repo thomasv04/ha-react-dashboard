@@ -169,8 +169,20 @@ Le reste est indépendant.
 
 > **Fait** : tuiles SVG que le compositeur fait défiler (un cycle = une tuile,
 > dans la pente des gouttes : la boucle ne se voit pas) ; flocons qui
-> tanguent ; deux éclairs rapprochés toutes les neuf secondes. Coupé en
-> économie d'énergie, en mouvement réduit, et par `.perf-no-animations`.
+> tanguent ; éclairs par temps d'orage. Coupé en économie d'énergie, en
+> mouvement réduit, quand les animations sont réduites et sous l'écran de
+> veille.
+>
+> **Puis** ([FloorplanWeather.tsx](../src/components/floorplan/FloorplanWeather.tsx)) :
+> rien de réglé d'avance. Chaque averse sème ses gouttes, ses flocons, ses
+> grêlons au hasard ; chaque calque part d'un point de sa course, à sa
+> vitesse ; la pluie forcit et faiblit ; l'orage frappe quand il veut, d'un à
+> trois éclairs de force inégale, toutes les 4 à 14 s. La grêle a ses
+> grêlons, droits et rapides, sur un peu de pluie. Quand il gèle dehors
+> (température de l'entité `weather`), le givre gagne les coins : il paraît
+> sous 1 °C et couvre tout ce qu'il peut à −5 °C — immobile, il reste même
+> sans animations. Tout glisse en `transform` ou change d'opacité (Web
+> Animations) : le compositeur l'anime seul.
 
 - **Quoi** : une couche animée en CSS par-dessus la maquette — la maquette,
   elle, n'est pas redessinée. Éclairs par temps d'orage. Coupée en économie
