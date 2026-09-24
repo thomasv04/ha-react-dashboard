@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **23 tâches sur 34** — phases A à H, `I1` et `I2` ; phase J proposée. `F1` reste à essayer sur un vrai Android.
+**État global** : **24 tâches sur 34** — phases A à H, `I1`, `I2` et `J1`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -490,7 +490,13 @@ unique par ouverture, dont le premier mot donne le type — `Porte_Cuisine`,
 avec un nom partagé, supprimer une porte décale le `k` des suivantes, et
 leurs liaisons avec. Le plugin, lui, reste tel quel.
 
-### [ ] J1 — Les réglages en onglets
+### [x] J1 — Les réglages en onglets
+
+> **Fait** ([FloorplanSettings.tsx](../src/components/floorplan/FloorplanSettings.tsx)) :
+> un seul onglet ouvert à la fois ; un second clic le referme, et la maquette
+> retrouve sa place. Outils et indication restent en bas. L'image du plan, qui
+> ne sert plus qu'à la place de la maquette, se choisit dans l'onglet
+> « Maquette ». Un plan en image garde son panneau d'avant.
 
 - **Où** : [FloorplanView.tsx](../src/components/floorplan/FloorplanView.tsx)
 - **Quoi** : le panneau « Maquette 3D » empilait une quinzaine de contrôles.

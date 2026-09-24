@@ -434,6 +434,14 @@
     "loading": "Loading the model…",
     "modelError": "Could not load the model: check the file address.",
     "webglError": "3D is not available on this device.",
-    "clickToAdd3d": "Click the model to place a chip; drag in the empty space to rotate it."
+    "clickToAdd3d": "Click the model to place a chip; drag in the empty space to rotate it.",
+    "settings": "Model settings",
+    "tabModel": "Model",
+    "tabAmbiance": "Ambience",
+    "tabOpenings": "Openings",
+    "tabElements": "Elements",
+    "source": "What the floorplan shows",
+    "openingsEmpty": "No doors or shutters yet. Draw them with the “Door · shutter” tool: the bottom of the opening on the hinge side, then its opposite top corner.",
+    "elementsEmpty": "Nothing drawn yet: rooms and cables are drawn with the tools below."
   }
 }

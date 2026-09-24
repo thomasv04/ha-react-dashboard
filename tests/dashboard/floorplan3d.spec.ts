@@ -331,7 +331,7 @@ test('in edit mode, two clicks draw a door, which is kept once saved', async ({ 
   await dialog.getByRole('button', { name: 'Ajouter' }).click();
   await expect(dialog).toHaveCount(0);
 
-  await page.getByRole('button', { name: 'Maquette 3D' }).click();
+  await page.getByRole('tab', { name: 'Ouvertures' }).click();
   await expect(page.getByText("Porte d'entrée")).toBeVisible();
 
   await expectSaved(page, request, 'parts', (p: { kind: string; entityId: string }) => `${p.kind} ${p.entityId}`, [
@@ -393,7 +393,7 @@ test('in edit mode, a .glb file is uploaded as the model, and its bin deletes it
   await expect(page.locator('[data-floorplan-3d] canvas')).toBeVisible();
   await expect(page.getByText('Chargement de la maquette…')).toHaveCount(0, { timeout: 60_000 });
 
-  await page.getByRole('button', { name: 'Maquette 3D' }).click();
+  await page.getByRole('tab', { name: 'Maquette' }).click();
   await page.getByRole('button', { name: 'Supprimer la maquette' }).click();
   await expect(page.getByText('Pas encore de plan')).toBeVisible();
   expect((await request.get(`${API}${url}`)).status()).toBe(404);

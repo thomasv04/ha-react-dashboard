@@ -3,16 +3,15 @@ import { motion } from 'framer-motion';
 import { useHass } from '@hakit/core';
 import {
   Box as BoxIcon,
-  Cable,
   ChevronLeft,
   Compass,
   DoorOpen,
   History as HistoryIcon,
   Image as ImageIcon,
+  Layers,
   Map as MapIcon,
-  MapPin,
   RotateCcw,
-  SquareDashed,
+  Sun,
   Thermometer,
   type LucideIcon,
 } from 'lucide-react';
@@ -79,6 +78,7 @@ import { RoomList, RoomNamePopover } from './FloorplanRooms';
 import { Weather } from './FloorplanWeather';
 import { useReplay } from './useReplay';
 import { ModelPicker } from './ModelPicker';
+import { EmptyTab, Segmented, SettingsPanel, ToggleRow, type SettingsTab, type Tool } from './FloorplanSettings';
 
 // three.js ne se télécharge que pour une page qui a une maquette.
 const Floorplan3D = lazy(() => import('./Floorplan3D'));
@@ -224,9 +224,12 @@ export function FloorplanView() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   /** Point cliqué, en % du plan — et de la maquette, s'il y en a une — où poser la prochaine pastille. */
   const [adding, setAdding] = useState<{ x: number; y: number; anchor?: Vec3 } | null>(null);
-  const [panel, setPanel] = useState<'image' | 'model' | null>(null);
+  /** Réglages ouverts : l'image ou la maquette d'un plan en 2D, un onglet de la maquette. */
+  const [panel, setPanel] = useState<'image' | SettingsTab | null>(null);
+  /** Onglet « Maquette » : le choix de la maquette, ou de l'image qui la remplacerait. */
+  const [source, setSource] = useState<'model' | 'image'>('model');
   /** Maquette : ce que pose un clic — une pastille, ou un coin de porte, de fenêtre, de volet. */
-  const [tool, setTool] = useState<'chip' | 'part' | 'room' | 'cable'>('chip');
+  const [tool, setTool] = useState<Tool>('chip');
   const [cableDraft, setCableDraft] = useState<CableDraft | null>(null);
   /** Pièce en cours de dessin : ses sommets au sol, sa hauteur de sol, puis son nom. */
   const [roomDraft, setRoomDraft] = useState<{ points: [number, number][]; y: number; naming?: boolean } | null>(null);
@@ -714,22 +717,6 @@ export function FloorplanView() {
     </button>
   );
 
-  const toolButton = (id: 'chip' | 'part' | 'room' | 'cable', Icon: typeof MapPin, label: string) => (
-    <button
-      onClick={() => {
-        setTool(id);
-        clearDrafts();
-      }}
-      aria-pressed={tool === id}
-      className={cn(
-        'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors',
-        tool === id ? 'bg-blue-500/20 text-blue-300' : 'text-white/45 hover:text-white/70'
-      )}
-    >
-      <Icon size={12} /> {label}
-    </button>
-  );
-
   // Ce qu'un clic fera, selon l'outil — et, en cours de dessin, ce qui reste à cliquer.
   const hint = !model
     ? 'clickToAdd'
@@ -747,12 +734,97 @@ export function FloorplanView() {
             ? 'partHintNext'
             : 'partHint';
 
-  const checkbox = (label: string, checked: boolean, onChange: (checked: boolean) => void) => (
-    <label className='flex items-center gap-1.5 text-xs text-white/60 cursor-pointer select-none'>
-      <input type='checkbox' checked={checked} onChange={e => onChange(e.target.checked)} className='accent-blue-500' />
-      {label}
-    </label>
+  // ── Réglages de la maquette, par onglet ────────────────────────────────────
+  const modelTab = (
+    <>
+      <Segmented
+        label={t('layout.floorplan.source')}
+        value={source}
+        onChange={setSource}
+        options={[
+          { id: 'model', icon: BoxIcon, label: t('layout.floorplan.model') },
+          { id: 'image', icon: ImageIcon, label: t('layout.floorplan.image') },
+        ]}
+      />
+      {source === 'model' ? modelField : picker}
+      <div className='flex items-center gap-2'>
+        <label className='flex items-center gap-1.5 text-xs text-white/60'>
+          {t('layout.floorplan.north')}
+          <input
+            type='number'
+            step={15}
+            value={floorplan?.north ?? 0}
+            onChange={e => setFloorplan({ north: Number(e.target.value) || 0 })}
+            className='w-16 px-2 py-1 rounded-md text-xs bg-white/8 border border-white/15 text-white focus:outline-none focus:border-blue-500/60'
+          />
+        </label>
+        <button
+          onClick={() => {
+            const view = three.current?.view();
+            if (view) setFloorplan({ camera: view });
+          }}
+          disabled={!loaded}
+          className='ml-auto px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 text-white/70 hover:text-white disabled:opacity-40'
+        >
+          {t('layout.floorplan.saveView')}
+        </button>
+      </div>
+      <ToggleRow
+        label={t('layout.floorplan.cutaway')}
+        checked={floorplan?.cutaway !== false}
+        onChange={on => setFloorplan({ cutaway: on })}
+      />
+      <ToggleRow
+        label={t('layout.floorplan.idleRotate')}
+        checked={!!floorplan?.idleRotate}
+        onChange={on => setFloorplan({ idleRotate: on })}
+      />
+    </>
   );
+
+  const ambianceTab = (
+    <>
+      <ToggleRow label={t('layout.floorplan.sky')} checked={floorplan?.sky !== false} onChange={on => setFloorplan({ sky: on })} />
+      <ToggleRow label={t('layout.floorplan.lampGlow')} checked={!!floorplan?.lampGlow} onChange={on => setFloorplan({ lampGlow: on })} />
+      <EntityPicker
+        label={t('layout.floorplan.weather')}
+        value={weatherId}
+        domain='weather'
+        onChange={id => setFloorplan({ weather: id })}
+      />
+      {MOCK && (
+        <label className='flex items-center gap-2 text-xs text-white/60'>
+          {t('layout.floorplan.mockSun')}
+          <input
+            type='range'
+            min={0}
+            max={23.75}
+            step={0.25}
+            value={mockHour}
+            onChange={e => setMockHour(Number(e.target.value))}
+            className='flex-1 min-w-0 accent-amber-400'
+          />
+          <span className='w-11 text-right tabular-nums text-white/80'>{formatTime(new Date(today + mockHour * HOUR_MS))}</span>
+        </label>
+      )}
+    </>
+  );
+
+  const openingsTab = parts.length ? (
+    <PartList parts={parts} onRemove={id => setFloorplan({ parts: parts.filter(p => p.id !== id) })} />
+  ) : (
+    <EmptyTab>{t('layout.floorplan.openingsEmpty')}</EmptyTab>
+  );
+
+  const elementsTab =
+    rooms.length || cables.length ? (
+      <>
+        <RoomList rooms={rooms} onRemove={id => setFloorplan({ rooms: rooms.filter(r => r.id !== id) })} />
+        <CableList cables={cables} onRemove={id => setFloorplan({ cables: cables.filter(c => c.id !== id) })} />
+      </>
+    ) : (
+      <EmptyTab>{t('layout.floorplan.elementsEmpty')}</EmptyTab>
+    );
 
   return (
     <div className='relative flex-1 min-h-0'>
@@ -1079,90 +1151,47 @@ export function FloorplanView() {
         )}
       </div>
 
-      {isEditMode && (image || model) && (
+      {isEditMode && model && (
+        <SettingsPanel
+          tab={panel === 'image' ? null : panel}
+          onTab={setPanel}
+          tool={tool}
+          onTool={next => {
+            setTool(next);
+            clearDrafts();
+          }}
+          hint={t(`layout.floorplan.${hint}`)}
+          tabs={[
+            { id: 'model', icon: BoxIcon, label: t('layout.floorplan.tabModel'), content: modelTab },
+            { id: 'ambiance', icon: Sun, label: t('layout.floorplan.tabAmbiance'), content: ambianceTab },
+            { id: 'openings', icon: DoorOpen, label: t('layout.floorplan.tabOpenings'), badge: parts.length, content: openingsTab },
+            {
+              id: 'elements',
+              icon: Layers,
+              label: t('layout.floorplan.tabElements'),
+              badge: rooms.length + cables.length,
+              content: elementsTab,
+            },
+          ]}
+        />
+      )}
+      {isEditMode && !model && image && (
         <div className='absolute left-2 top-2 z-30 w-72 max-w-[calc(100%-1rem)] flex flex-col gap-2 p-2.5 rounded-2xl gc-overlay'>
           <div className='flex flex-wrap items-center gap-2'>
             {panelButton('image', ImageIcon, t('layout.floorplan.image'))}
             {panelButton('model', BoxIcon, t('layout.floorplan.model'))}
-            {!model &&
-              checkbox(t('layout.floorplan.dimAtNight'), floorplan?.dimAtNight !== false, checked => setFloorplan({ dimAtNight: checked }))}
+            <label className='flex items-center gap-1.5 text-xs text-white/60 cursor-pointer select-none'>
+              <input
+                type='checkbox'
+                checked={floorplan?.dimAtNight !== false}
+                onChange={e => setFloorplan({ dimAtNight: e.target.checked })}
+                className='accent-blue-500'
+              />
+              {t('layout.floorplan.dimAtNight')}
+            </label>
           </div>
           {panel === 'image' && picker}
-          {panel === 'model' && (
-            <div className='flex flex-col gap-2'>
-              {modelField}
-              {model && (
-                <div className='flex items-center gap-2'>
-                  <label className='flex items-center gap-1.5 text-xs text-white/60'>
-                    {t('layout.floorplan.north')}
-                    <input
-                      type='number'
-                      step={15}
-                      value={floorplan?.north ?? 0}
-                      onChange={e => setFloorplan({ north: Number(e.target.value) || 0 })}
-                      className='w-16 px-2 py-1 rounded-md text-xs bg-white/8 border border-white/15 text-white focus:outline-none focus:border-blue-500/60'
-                    />
-                  </label>
-                  <button
-                    onClick={() => {
-                      const view = three.current?.view();
-                      if (view) setFloorplan({ camera: view });
-                    }}
-                    disabled={!loaded}
-                    className='ml-auto px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 text-white/70 hover:text-white disabled:opacity-40'
-                  >
-                    {t('layout.floorplan.saveView')}
-                  </button>
-                </div>
-              )}
-              {model && (
-                <div className='flex flex-wrap items-center gap-x-3 gap-y-1.5'>
-                  {checkbox(t('layout.floorplan.cutaway'), floorplan?.cutaway !== false, checked => setFloorplan({ cutaway: checked }))}
-                  {checkbox(t('layout.floorplan.idleRotate'), !!floorplan?.idleRotate, checked => setFloorplan({ idleRotate: checked }))}
-                  {checkbox(t('layout.floorplan.sky'), floorplan?.sky !== false, checked => setFloorplan({ sky: checked }))}
-                  {checkbox(t('layout.floorplan.lampGlow'), !!floorplan?.lampGlow, checked => setFloorplan({ lampGlow: checked }))}
-                </div>
-              )}
-              {model && MOCK && (
-                <label className='flex items-center gap-2 text-xs text-white/60'>
-                  {t('layout.floorplan.mockSun')}
-                  <input
-                    type='range'
-                    min={0}
-                    max={23.75}
-                    step={0.25}
-                    value={mockHour}
-                    onChange={e => setMockHour(Number(e.target.value))}
-                    className='flex-1 min-w-0 accent-amber-400'
-                  />
-                  <span className='w-11 text-right tabular-nums text-white/80'>{formatTime(new Date(today + mockHour * HOUR_MS))}</span>
-                </label>
-              )}
-              {model && (
-                <EntityPicker
-                  label={t('layout.floorplan.weather')}
-                  value={weatherId}
-                  domain='weather'
-                  onChange={id => setFloorplan({ weather: id })}
-                />
-              )}
-              {model && <RoomList rooms={rooms} onRemove={id => setFloorplan({ rooms: rooms.filter(r => r.id !== id) })} />}
-              {model && <PartList parts={parts} onRemove={id => setFloorplan({ parts: parts.filter(p => p.id !== id) })} />}
-              {model && <CableList cables={cables} onRemove={id => setFloorplan({ cables: cables.filter(c => c.id !== id) })} />}
-            </div>
-          )}
-          {model && (
-            <div
-              role='group'
-              aria-label={t('layout.floorplan.tool')}
-              className='flex flex-wrap gap-1 p-0.5 rounded-lg bg-white/5 border border-white/10 w-fit'
-            >
-              {toolButton('chip', MapPin, t('layout.floorplan.toolChip'))}
-              {toolButton('part', DoorOpen, t('layout.floorplan.toolPart'))}
-              {toolButton('room', SquareDashed, t('layout.floorplan.toolRoom'))}
-              {toolButton('cable', Cable, t('layout.floorplan.toolCable'))}
-            </div>
-          )}
+          {panel === 'model' && modelField}
           <p className='text-[11px] text-white/40 px-0.5'>{t(`layout.floorplan.${hint}`)}</p>
         </div>
       )}
