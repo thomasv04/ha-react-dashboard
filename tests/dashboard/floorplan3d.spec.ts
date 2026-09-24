@@ -6,7 +6,7 @@
  * Même principe que `floorplan.spec.ts` : la page est ajoutée à la
  * configuration amorcée, puis retirée.
  */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
 
 const API = 'http://localhost:8098';
 // Adresse relative : le serveur de dev sert tout sous sa `base` (`/local/…/`).
@@ -121,6 +121,41 @@ async function orbit(page: Page, dx: number) {
   await page.mouse.down();
   await page.mouse.move(x + dx, y, { steps: 8 });
   await page.mouse.up();
+}
+
+/**
+ * Mode édition, un outil pris. Le mode édition redimensionne le canevas : on
+ * attend son indication, puis que maquette et pastilles aient été redessinées
+ * — sans quoi un clic peut tomber sur une pastille encore à son ancienne
+ * place. Rend de quoi cliquer sur le canevas, en fraction de sa taille.
+ */
+async function drawWith(page: Page, tool: string, hint: RegExp) {
+  await openModel(page);
+  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
+  await page.getByRole('button', { name: tool, exact: true }).click();
+  await expect(page.getByText(hint)).toBeVisible();
+  await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
+  const box = (await page.locator('[data-floorplan-3d] canvas').boundingBox())!;
+  return (x: number, y: number) => page.mouse.click(box.x + box.width * x, box.y + box.height * y);
+}
+
+/** Trois points au sol, autour de la table de la salle à manger. */
+const DINING_FLOOR = [
+  [0.386, 0.629],
+  [0.486, 0.48],
+  [0.443, 0.752],
+] as const;
+
+/** Sauvegarde, puis attend que le serveur ait gardé `expected` : la liste `key` du plan, chaque élément résumé par `describe`. */
+async function expectSaved<T>(page: Page, request: APIRequestContext, key: string, describe: (item: T) => string, expected: string[]) {
+  await page.getByRole('button', { name: 'Sauvegarder' }).click();
+  await expect
+    .poll(async () => {
+      const config = await (await request.get(`${API}/api/config`)).json();
+      const items: T[] = config.pages.find((p: { id: string }) => p.id === 'maison')?.floorplan?.[key] ?? [];
+      return items.map(describe);
+    })
+    .toEqual(expected);
 }
 
 test('renders the model, with chips anchored on it and cards over it', async ({ page }, testInfo) => {
@@ -262,18 +297,9 @@ test.describe('on a phone', () => {
 });
 
 test('in edit mode, a click on the model places a chip anchored where it landed', async ({ page }, testInfo) => {
-  await openModel(page);
-  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
-
-  // Le mode édition redimensionne le canevas : attendre que la maquette et
-  // les pastilles aient été redessinées, sans quoi le clic peut tomber sur une
-  // pastille encore à son ancienne place — et la sélectionner au lieu de poser.
-  await expect(page.getByText(/Cliquez sur la maquette/)).toBeVisible();
-  await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
-
+  const click = await drawWith(page, 'Pastille', /Cliquez sur la maquette/);
   // Le sol de la salle à manger, à l'écart des pastilles.
-  const box = (await page.locator('[data-floorplan-3d] canvas').boundingBox())!;
-  await page.mouse.click(box.x + box.width * 0.4, box.y + box.height * 0.58);
+  await click(0.4, 0.58);
   // Le champ de recherche arrive avec la liste, une image plus tard : taper
   // avant, c'était écrire dans le vide.
   await page.getByPlaceholder('Rechercher...').fill('light.salon');
@@ -291,17 +317,11 @@ test('in edit mode, a click on the model places a chip anchored where it landed'
 });
 
 test('in edit mode, two clicks draw a door, which is kept once saved', async ({ page, request }) => {
-  await openModel(page);
-  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
-  await page.getByRole('button', { name: 'Porte · volet' }).click();
-  await expect(page.getByText(/côté gonds/)).toBeVisible();
-  await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
-
+  const click = await drawWith(page, 'Porte · volet', /côté gonds/);
   // Un pan du mur du fond, entre deux fenêtres : le coin bas, puis le coin haut opposé.
-  const box = (await page.locator('[data-floorplan-3d] canvas').boundingBox())!;
-  await page.mouse.click(box.x + box.width * 0.511, box.y + box.height * 0.21);
+  await click(0.511, 0.21);
   await expect(page.getByText(/coin haut opposé de l'ouverture/)).toBeVisible();
-  await page.mouse.click(box.x + box.width * 0.529, box.y + box.height * 0.134);
+  await click(0.529, 0.134);
 
   const dialog = page.getByRole('dialog', { name: 'Élément animé' });
   await page.getByPlaceholder('Rechercher...').fill('porte_entree');
@@ -314,32 +334,14 @@ test('in edit mode, two clicks draw a door, which is kept once saved', async ({ 
   await page.getByRole('button', { name: 'Maquette 3D' }).click();
   await expect(page.getByText("Porte d'entrée")).toBeVisible();
 
-  await page.getByRole('button', { name: 'Sauvegarder' }).click();
-  await expect
-    .poll(async () => {
-      const config = await (await request.get(`${API}/api/config`)).json();
-      const parts = config.pages.find((p: { id: string }) => p.id === 'maison')?.floorplan?.parts ?? [];
-      return parts.map((p: { kind: string; entityId: string }) => `${p.kind} ${p.entityId}`);
-    })
-    .toEqual(['door binary_sensor.porte_entree']);
+  await expectSaved(page, request, 'parts', (p: { kind: string; entityId: string }) => `${p.kind} ${p.entityId}`, [
+    'door binary_sensor.porte_entree',
+  ]);
 });
 
 test('in edit mode, clicks on the floor draw a named room, which is kept once saved', async ({ page, request }) => {
-  await openModel(page);
-  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
-  await page.getByRole('button', { name: 'Pièce', exact: true }).click();
-  await expect(page.getByText(/Cliquez les coins de la pièce/)).toBeVisible();
-  await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
-
-  // Trois coins au sol, autour de la table de la salle à manger.
-  const box = (await page.locator('[data-floorplan-3d] canvas').boundingBox())!;
-  for (const [x, y] of [
-    [0.386, 0.629],
-    [0.486, 0.48],
-    [0.443, 0.752],
-  ]) {
-    await page.mouse.click(box.x + box.width * x, box.y + box.height * y);
-  }
+  const click = await drawWith(page, 'Pièce', /Cliquez les coins de la pièce/);
+  for (const [x, y] of DINING_FLOOR) await click(x, y);
   await expect(page.getByText(/Recliquez le premier coin/)).toBeVisible();
   await page.keyboard.press('Enter');
   await page.getByRole('textbox', { name: 'Nom de la pièce' }).fill('Salle à manger');
@@ -347,32 +349,16 @@ test('in edit mode, clicks on the floor draw a named room, which is kept once sa
   // Son nom, posé au centre de la pièce.
   await expect(page.getByText('Salle à manger')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Sauvegarder' }).click();
-  await expect
-    .poll(async () => {
-      const config = await (await request.get(`${API}/api/config`)).json();
-      const rooms = config.pages.find((p: { id: string }) => p.id === 'maison')?.floorplan?.rooms ?? [];
-      return rooms.map((r: { name: string; points: unknown[] }) => `${r.name} ${r.points.length}`);
-    })
-    .toEqual(['Chambre 4', 'Salle à manger 3']);
+  await expectSaved(page, request, 'rooms', (r: { name: string; points: unknown[] }) => `${r.name} ${r.points.length}`, [
+    'Chambre 4',
+    'Salle à manger 3',
+  ]);
 });
 
 test('in edit mode, clicks along a route lay an energy cable, which shows its power once saved', async ({ page, request }) => {
-  await openModel(page);
-  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
-  await page.getByRole('button', { name: 'Câble', exact: true }).click();
-  await expect(page.getByText(/Cliquez le long du trajet/)).toBeVisible();
-  await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
-
+  const click = await drawWith(page, 'Câble', /Cliquez le long du trajet/);
   // Trois points au sol, puis Entrée.
-  const box = (await page.locator('[data-floorplan-3d] canvas').boundingBox())!;
-  for (const [x, y] of [
-    [0.386, 0.629],
-    [0.486, 0.48],
-    [0.443, 0.752],
-  ]) {
-    await page.mouse.click(box.x + box.width * x, box.y + box.height * y);
-  }
+  for (const [x, y] of DINING_FLOOR) await click(x, y);
   await page.keyboard.press('Enter');
   const dialog = page.getByRole('dialog', { name: "Câble d'énergie" });
   await page.getByPlaceholder('Rechercher...').fill('panneaux');
@@ -383,14 +369,13 @@ test('in edit mode, clicks along a route lay an energy cable, which shows its po
   // La puissance du câble, à mi-longueur.
   await expect(page.locator('[data-floorplan-cable]')).toHaveText('420 W');
 
-  await page.getByRole('button', { name: 'Sauvegarder' }).click();
-  await expect
-    .poll(async () => {
-      const config = await (await request.get(`${API}/api/config`)).json();
-      const cables = config.pages.find((p: { id: string }) => p.id === 'maison')?.floorplan?.cables ?? [];
-      return cables.map((c: { kind: string; entityId: string; points: unknown[] }) => `${c.kind} ${c.entityId} ${c.points.length}`);
-    })
-    .toEqual(['solar sensor.din_panneaux_solaire_puissance 3']);
+  await expectSaved(
+    page,
+    request,
+    'cables',
+    (c: { kind: string; entityId: string; points: unknown[] }) => `${c.kind} ${c.entityId} ${c.points.length}`,
+    ['solar sensor.din_panneaux_solaire_puissance 3']
+  );
 });
 
 test('in edit mode, a .glb file is uploaded as the model, and its bin deletes it', async ({ page, request }) => {
