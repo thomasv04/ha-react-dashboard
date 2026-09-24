@@ -38,6 +38,7 @@ import {
 } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { acceleratedRaycast, computeBoundsTree } from 'three-mesh-bvh';
 import {
   backSides,
   compassHeading,
@@ -205,6 +206,19 @@ const CLICK_TOLERANCE = 5;
 const MAX_POLAR = { plain: Math.PI * 0.35, cutaway: Math.PI * 0.45 };
 /** Sans geste pendant ce temps, la maison se met à tourner (option de la page). */
 const IDLE_MS = 60_000;
+/** Toujours personne après ce temps de rotation : elle s'arrête, jusqu'au prochain geste. */
+const SPIN_MS = 10 * 60_000;
+/**
+ * Rythme des animations continues : 30 battements par seconde. Une maison qui
+ * tourne lentement n'a pas besoin de plus, et la tablette chauffe moins.
+ */
+const BEAT_MS = 1000 / 30;
+/**
+ * Densité de pixels du canevas, au plus : au-delà, une tablette dessinerait
+ * deux fois plus de pixels pour une image que l'œil ne distingue pas. Pendant
+ * la rotation au repos, 1 : l'image bouge, sa finesse ne se voit pas.
+ */
+const PIXEL_RATIO = 1.5;
 /** Murs en coupe : épaisseur gardée le long des murs du fond — le mur, l'appui de ses fenêtres. */
 const BACK_WALL_MARGIN = MODEL_SIZE * 0.025;
 /** Lumière du ciel, au-delà de l'éclairage réaliste : un intérieur vu d'en haut resterait sinon dans la pénombre. */
@@ -222,6 +236,8 @@ const FOCUS_MAX_POLAR = Math.acos(DEFAULT_DIRECTION.y);
 
 /** Sans nouvelle image depuis ce temps (ms), la scène est posée : on vérifie ce que la maquette cache. */
 const SETTLE_MS = 250;
+/** Une scène qui ne se pose pas — la maison qui tourne au repos — est revérifiée à cet intervalle (ms). */
+const RECHECK_MS = 1000;
 /**
  * Lancers de rayon de la vérification, par image : pas plus de ce temps (ms).
  * Un rayon traverse toute la maquette — plusieurs ms sur une tablette, pour
@@ -308,7 +324,24 @@ interface Stage {
   render: (what?: 'all' | 'view' | 'shadows' | 'draw') => void;
   /** Une image par frame tant que `step` rend `true` — le temps d'une animation. */
   animate: (step: (now: number) => boolean) => void;
+  /**
+   * Le temps, en battements de `BEAT_MS`, et s'il vient d'en commencer un.
+   * Les animations continues — rotation au repos, courant — s'y calent :
+   * elles dessinent ensemble, au même rythme sur tous les écrans. Chacune
+   * comptant ses frames, un écran à 120 Hz les accélérait, et deux « une
+   * image sur deux » décalées d'une frame les dessinaient toutes.
+   */
+  beat: number;
+  onBeat: boolean;
+  /** La maison tourne au repos : l'image bouge, sa finesse ne se voit pas — une densité de 1. */
+  spinning: boolean;
 }
+
+// Les lancers de rayon — occlusion, clics, survol — passent par une BVH, que
+// chaque maquette calcule à son chargement : ils ne testent que les triangles
+// près du rayon, au lieu de toute la maquette.
+BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+Mesh.prototype.raycast = acceleratedRaycast;
 
 const raycaster = new Raycaster();
 const pointer = new Vector2();
@@ -696,24 +729,27 @@ function removeGenerated(s: Stage, entries: Map<string, { obj: { object: Object3
 
 /**
  * L'énergie circule : les traits lumineux avancent dans chaque câble où passe
- * le courant, d'autant plus vite qu'il est fort. Trente images par seconde,
- * sans recalculer les ombres — la seule animation continue de la page.
+ * le courant, d'autant plus vite qu'il est fort. Ils avancent à chaque
+ * battement, et profitent ainsi de chaque image de la rotation au repos ;
+ * seuls, ils ne demandent une image qu'un battement sur deux — quinze par
+ * seconde, sans recalculer les ombres : le courant anime la page toute une
+ * journée de soleil.
  */
 function runFlows(s: Stage) {
   if (s.flowRunning) return;
   s.flowRunning = true;
   let last = 0;
-  let frames = 0;
   s.animate(now => {
     const active = [...s.cables.values()].filter(c => c.direction !== 0);
     if (!s.flowAllowed || !active.length) {
       s.flowRunning = false;
       return false;
     }
+    if (!s.onBeat) return true;
     const dt = last ? (now - last) / 1000 : 0;
     last = now;
     for (const c of active) c.obj.dashes.offset.x -= (c.direction * dt) / flowDuration(c.watts);
-    if (++frames % 2 === 0) s.render('draw');
+    if (s.beat % 2 === 0) s.render('draw');
     return true;
   });
 }
@@ -839,6 +875,42 @@ function placeFloors(s: Stage, floors: FloorOverlay[] | undefined) {
   s.render('draw');
 }
 
+/** Plus grand côté d'une texture de la maquette, en pixels. */
+const MAX_TEXTURE = 2048;
+
+/**
+ * Les textures de la maquette, ramenées à `MAX_TEXTURE` px au plus. Un export
+ * Sketchfab ou Sweet Home 3D en porte souvent de 4096 : 85 Mo de mémoire
+ * vidéo chacune, pour des détails que la vue d'ensemble ne montre pas.
+ */
+function shrinkTextures(root: Object3D) {
+  const done = new Set<Texture>();
+  root.traverse(o => {
+    for (const material of materialsOf(o)) {
+      for (const value of Object.values(material)) {
+        const texture = value as Texture | null;
+        if (!texture?.isTexture || done.has(texture)) continue;
+        done.add(texture);
+        const image: unknown = texture.image;
+        if (!(image instanceof ImageBitmap || image instanceof HTMLImageElement || image instanceof HTMLCanvasElement)) continue;
+        const scale = MAX_TEXTURE / Math.max(image.width, image.height);
+        if (!(scale < 1)) continue;
+        const canvas = Object.assign(document.createElement('canvas'), {
+          width: Math.round(image.width * scale),
+          height: Math.round(image.height * scale),
+        });
+        const context = canvas.getContext('2d');
+        if (!context) continue;
+        context.imageSmoothingQuality = 'high';
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        if (image instanceof ImageBitmap) image.close();
+        texture.image = canvas;
+        texture.needsUpdate = true;
+      }
+    }
+  });
+}
+
 function disposeTree(root: Object3D) {
   root.traverse(o => {
     (o as Mesh).geometry?.dispose();
@@ -901,7 +973,7 @@ export default function Floorplan3D({
       latest.current.onError('webgl');
       return;
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, PIXEL_RATIO));
     renderer.toneMapping = ACESFilmicToneMapping;
     // Un cran plus clair que le rendu neutre : ACES assombrit les tons moyens,
     // et l'on regarde surtout des intérieurs.
@@ -946,10 +1018,15 @@ export default function Floorplan3D({
     let shadowsDirty = true;
     const animators = new Set<(now: number) => boolean>();
     // Ce que la maquette cache : vérifié une fois la scène posée, quelques
-    // rayons par image ; une nouvelle image annule la vérification en cours.
+    // rayons par image. Une vérification commencée va jusqu'au bout ; la
+    // suivante l'annule et repart, à jour.
     let settle = 0;
     let checking = 0;
+    let checked = 0;
     const checkOcclusion = () => {
+      cancelAnimationFrame(checking);
+      checking = 0;
+      checked = performance.now();
       const root = s.root;
       if (!root || !latest.current.anchors || !latest.current.onOcclusion) return;
       const queue = Object.entries(latest.current.anchors);
@@ -960,17 +1037,26 @@ export default function Floorplan3D({
           const [id, anchor] = queue.pop()!;
           if (occluded(s, root, anchor)) hidden.add(id);
         }
-        if (queue.length) checking = requestAnimationFrame(step);
-        else latest.current.onOcclusion?.(hidden);
+        if (queue.length) {
+          checking = requestAnimationFrame(step);
+          return;
+        }
+        checking = 0;
+        latest.current.onOcclusion?.(hidden);
       };
       step();
     };
     const tick = (now: number) => {
       // Pendant le tick, une demande de rendu ne planifie rien : on décide à la fin.
       frame = -1;
+      const beat = Math.floor(now / BEAT_MS);
+      s.onBeat = beat !== s.beat;
+      s.beat = beat;
       for (const step of animators) if (!step(now)) animators.delete(step);
       if (dirty) {
         dirty = false;
+        const ratio = Math.min(window.devicePixelRatio, s.spinning ? 1 : PIXEL_RATIO);
+        if (renderer.getPixelRatio() !== ratio) renderer.setPixelRatio(ratio);
         if (moved) updateCutaway(s);
         if (shadowsDirty) {
           renderer.shadowMap.needsUpdate = true;
@@ -981,8 +1067,10 @@ export default function Floorplan3D({
           moved = false;
           latest.current.onFrame(anchor => project(s, anchor));
           window.clearTimeout(settle);
-          cancelAnimationFrame(checking);
           settle = window.setTimeout(checkOcclusion, SETTLE_MS);
+          // Tant que la maison tourne, la scène ne se pose jamais : on vérifie
+          // quand même, à intervalles, sans attendre qu'elle s'arrête.
+          if (!checking && now - checked > RECHECK_MS) checkOcclusion();
         }
       }
       frame = animators.size || dirty ? requestAnimationFrame(tick) : 0;
@@ -1036,6 +1124,9 @@ export default function Floorplan3D({
       flight: 0,
       render,
       animate,
+      beat: 0,
+      onBeat: false,
+      spinning: false,
     };
     stage.current = s;
     scene.add(s.floors);
@@ -1117,7 +1208,10 @@ export default function Floorplan3D({
         root.traverse(o => {
           o.castShadow = true;
           o.receiveShadow = true;
+          const { geometry } = o as Mesh;
+          if ((o as Mesh).isMesh && !geometry.boundsTree) geometry.computeBoundsTree();
         });
+        shrinkTextures(root);
         if (s.root) {
           s.scene.remove(s.root);
           disposeTree(s.root);
@@ -1305,25 +1399,32 @@ export default function Floorplan3D({
 
   // ── Rotation au repos ──────────────────────────────────────────────────────
   // Le moindre geste, n'importe où sur la page, l'arrête et relance l'attente.
+  // Toujours personne après dix minutes : elle s'arrête d'elle-même.
   useEffect(() => {
     const s = stage.current;
     if (!s || !idleRotate) return;
     let spinning = false;
     let timer = 0;
-    let frames = 0;
+    const turn = (on: boolean) => {
+      spinning = s.spinning = s.controls.autoRotate = on;
+    };
+    const rest = () => {
+      if (!spinning) return;
+      turn(false);
+      // L'image arrêtée retrouve sa finesse.
+      s.render('view');
+    };
     const spin = () => {
-      spinning = true;
-      s.controls.autoRotate = true;
+      turn(true);
       s.animate(() => {
-        // Une image sur deux : une maison qui tourne lentement n'a pas besoin
-        // de soixante images par seconde, et la tablette chauffe moins.
-        if (spinning && ++frames % 2 === 0) s.controls.update();
+        // Un cran par battement : un tour en deux minutes, sur tout écran.
+        if (spinning && s.onBeat) s.controls.update();
         return spinning;
       });
+      timer = window.setTimeout(rest, SPIN_MS);
     };
     const wake = () => {
-      spinning = false;
-      s.controls.autoRotate = false;
+      rest();
       window.clearTimeout(timer);
       timer = window.setTimeout(spin, IDLE_MS);
     };
@@ -1333,8 +1434,7 @@ export default function Floorplan3D({
     return () => {
       for (const event of events) window.removeEventListener(event, wake);
       window.clearTimeout(timer);
-      spinning = false;
-      s.controls.autoRotate = false;
+      turn(false);
     };
   }, [idleRotate]);
 
