@@ -385,163 +385,6 @@ describe('motionAt', () => {
   });
 });
 
-// ── Sur une vraie maquette : la maison de tests/dashboard/fixtures ───────────
-
-/** Les nœuds d'un `.glb` d'ExportToHASS (à plat, sans transformation), comme les lit le chargement. */
-function readGlb(file: string): ModelNode[] {
-  const buffer = readFileSync(file);
-  const jsonLength = buffer.readUInt32LE(12);
-  const json = JSON.parse(buffer.subarray(20, 20 + jsonLength).toString('utf8'));
-  const bin = buffer.subarray(20 + jsonLength + 8);
-  return json.scenes[0].nodes.map((index: number) => {
-    const node = json.nodes[index];
-    const positions: number[] = [];
-    for (const primitive of json.meshes[node.mesh].primitives) {
-      const accessor = json.accessors[primitive.attributes.POSITION];
-      const view = json.bufferViews[accessor.bufferView];
-      const offset = (view.byteOffset ?? 0) + (accessor.byteOffset ?? 0);
-      const stride = view.byteStride ?? 12;
-      for (let i = 0; i < accessor.count; i++) {
-        for (let c = 0; c < 3; c++) positions.push(bin.readFloatLE(offset + i * stride + c * 4));
-      }
-    }
-    return modelNode(node.name, positions);
-  });
-}
-
-describe('the house of the fixtures (ExportToHASS)', () => {
-  const nodes = readGlb(path.resolve(__dirname, '../../tests/dashboard/fixtures/home.glb'));
-  const model = detectOpenings(nodes);
-  const byName = new Map(nodes.map(n => [n.name, n]));
-  /** L'objet qui contient ce nœud, et le mouvement de ses parties. */
-  const opening = (node: string) => model.openings.find(o => o.nodes.includes(node))!;
-  const motion = (node: string, kind: OpeningKind, options: { flip?: boolean; hinge?: boolean } = {}) =>
-    openingMotion(
-      opening(node).nodes.map(name => byName.get(name)!),
-      kind,
-      { cm: model.cm, center: model.center, ...options }
-    );
-
-  it('finds the families set in the walls, and the openings left without a name', () => {
-    expect(model.cm).toBe(1);
-    expect(model.families.map(f => [f.name, f.count, f.inWall, f.kind])).toEqual([
-      ['Porte_en_bois', 5, true, 'door'],
-      ['Porte_coulissante_grise', 1, true, 'sliding'],
-      ['Appareil_technologique', 1, false, null],
-    ]);
-    // La porte d'entrée, la baie, quatre fenêtres, deux petites ; pas le canapé.
-    expect(model.unnamed).toBe(8);
-    expect(opening('1_8').inWall).toBe(false);
-  });
-
-  it('lets its sofa and its device fade rather than be cut, not its doors', () => {
-    const furniture = furnitureNodes(model);
-    expect(furniture).toEqual(expect.arrayContaining(['1_8', 'Appareil_technologique_1']));
-    expect(furniture).toHaveLength(opening('1_8').nodes.length + opening('Appareil_technologique_1').nodes.length);
-  });
-
-  it('gathers the five wooden doors, five components each', () => {
-    const doors = model.openings.filter(o => o.family === 'Porte_en_bois');
-    expect(doors.map(d => d.id)).toEqual([
-      'Porte_en_bois_1',
-      'Porte_en_bois_1_1',
-      'Porte_en_bois_1_2',
-      'Porte_en_bois_1_3',
-      'Porte_en_bois_1_4',
-    ]);
-    expect(doors.every(d => d.nodes.length === 5)).toBe(true);
-    expect(doors[0].size).toEqual([98, 210]);
-  });
-
-  it('closes each wooden door modelled ajar, on the thin rod of its hinges', () => {
-    for (const k of ['', '_1', '_2', '_3', '_4']) {
-      const [part] = motion(`Porte_en_bois_1${k}`, 'door');
-      const swing = swingOf(part.motion);
-      // Le battant, sa poignée et sa rosace tournent ; le cadre reste.
-      expect(part.nodes).toEqual(expect.arrayContaining([`Porte_en_bois_5${k}`, `Porte_en_bois_3${k}`, `Porte_en_bois_4${k}`]));
-      expect(part.nodes).not.toContain(`Porte_en_bois_1${k}`);
-      const rod = byName.get(`Porte_en_bois_2${k}`)!;
-      expect(Math.hypot(swing.pivot[0] - (rod.min[0] + rod.max[0]) / 2, swing.pivot[1] - (rod.min[2] + rod.max[2]) / 2)).toBeLessThan(4);
-      // Entrouverte d'un peu moins de 60°.
-      expect(Math.abs(swing.closed)).toBeGreaterThan(0.9);
-      expect(Math.abs(swing.closed)).toBeLessThan(1.1);
-      expect(Math.abs(swing.open - swing.closed)).toBeCloseTo(SWING);
-    }
-  });
-
-  it('turns the front door on its hinges, opposite the knob, into the house', () => {
-    const [part] = motion('9', 'door');
-    const swing = swingOf(part.motion);
-    expect(part.nodes).toEqual(expect.arrayContaining(['9', '8', '10', '6']));
-    expect(swing.pivot[1]).toBeGreaterThan(495);
-    expect(swing.closed).toBeCloseTo(0);
-    // Le mur est en x = 1620 ; la maison, vers les x décroissants.
-    const free = rotate([1622, 420], swing.pivot, swing.open);
-    expect(free[0]).toBeLessThan(1560);
-  });
-
-  it('turns both sashes of a window on their hinges, into the house', () => {
-    const parts = motion('6_2', 'window');
-    expect(parts).toHaveLength(2);
-    const pivots = parts.map(p => swingOf(p.motion).pivot[0]).sort((a, b) => a - b);
-    expect(pivots[0]).toBeLessThan(175);
-    expect(pivots[1]).toBeGreaterThan(352);
-    for (const p of parts) {
-      const swing = swingOf(p.motion);
-      expect(rotate([264, 3], swing.pivot, swing.open)[1]).toBeGreaterThan(40);
-    }
-  });
-
-  it('turns the small window on the side of its hinges, opposite its handle', () => {
-    const [part] = motion('6_6', 'window');
-    const swing = swingOf(part.motion);
-    expect(swing.pivot[1]).toBeLessThan(732);
-    expect(rotate([1621, 780], swing.pivot, swing.open)[0]).toBeLessThan(1590);
-  });
-
-  it('opens every window, and the front door, into the house', () => {
-    // Vers l'intérieur : la maison s'étend des x 0 à 1628, des z 0 à 1384.
-    const inwards: Record<string, [number, number]> = {
-      '9': [-1, 0],
-      '6_2': [0, 1],
-      '6_3': [0, 1],
-      '6_4': [0, 1],
-      '6_5': [-1, 0],
-      '6_6': [-1, 0],
-      '6_7': [1, 0],
-    };
-    for (const [node, inward] of Object.entries(inwards)) {
-      for (const part of motion(node, node === '9' ? 'door' : 'window')) {
-        const swing = swingOf(part.motion);
-        const leaf = byName.get(part.nodes[0])!;
-        const middle: [number, number] = [(leaf.min[0] + leaf.max[0]) / 2, (leaf.min[2] + leaf.max[2]) / 2];
-        const moved = rotate(middle, swing.pivot, swing.open);
-        expect((moved[0] - middle[0]) * inward[0] + (moved[1] - middle[1]) * inward[1], node).toBeGreaterThan(20);
-      }
-    }
-  });
-
-  it('slides a sash of the bay over the other', () => {
-    const [part] = motion('4_1', 'sliding');
-    const slide = slideOf(part.motion);
-    expect(part.nodes).toEqual(expect.arrayContaining(['8_1', '6_1']));
-    expect(Math.abs(slide.axis[1])).toBeCloseTo(1);
-    expect(Math.abs(slide.open)).toBeGreaterThan(105);
-    expect(Math.abs(slide.open)).toBeLessThan(121);
-  });
-
-  it('closes the grey sliding door, modelled open, by bringing its panels together', () => {
-    const parts = motion('Porte_coulissante_grise_1', 'sliding');
-    expect(parts).toHaveLength(2);
-    const [left, right] = parts.map(p => ({ nodes: p.nodes, slide: slideOf(p.motion) })).sort((a, b) => b.slide.closed - a.slide.closed);
-    expect(left.nodes.sort()).toEqual(['Porte_coulissante_grise_7', 'Porte_coulissante_grise_8']);
-    expect(right.nodes.sort()).toEqual(['Porte_coulissante_grise_4', 'Porte_coulissante_grise_5']);
-    expect(left.slide.closed).toBeCloseTo(48, 0);
-    expect(right.slide.closed).toBeCloseTo(-48, 0);
-    expect(left.slide.open).toBe(0);
-  });
-});
-
 describe('normalizeOpenings', () => {
   it('keeps what is readable, and drops the rest without failing', () => {
     expect(
@@ -594,6 +437,30 @@ describe('openingLabel and typedOpenings', () => {
     expect(typedOpenings(model, { Porte_en_bois: 'none', Armoire: 'door' }).map(o => o.id)).toEqual(['Porte_Entree_1', 'Armoire_1']);
   });
 });
+
+// ── Sur une maquette .glb : celle des tests de bout en bout ─────────────────
+
+/** Les nœuds d'un `.glb` d'ExportToHASS (à plat, sans transformation), comme les lit le chargement. */
+function readGlb(file: string): ModelNode[] {
+  const buffer = readFileSync(file);
+  const jsonLength = buffer.readUInt32LE(12);
+  const json = JSON.parse(buffer.subarray(20, 20 + jsonLength).toString('utf8'));
+  const bin = buffer.subarray(20 + jsonLength + 8);
+  return json.scenes[0].nodes.map((index: number) => {
+    const node = json.nodes[index];
+    const positions: number[] = [];
+    for (const primitive of json.meshes[node.mesh].primitives) {
+      const accessor = json.accessors[primitive.attributes.POSITION];
+      const view = json.bufferViews[accessor.bufferView];
+      const offset = (view.byteOffset ?? 0) + (accessor.byteOffset ?? 0);
+      const stride = view.byteStride ?? 12;
+      for (let i = 0; i < accessor.count; i++) {
+        for (let c = 0; c < 3; c++) positions.push(bin.readFloatLE(offset + i * stride + c * 4));
+      }
+    }
+    return modelNode(node.name, positions);
+  });
+}
 
 describe('the synthetic model of the end-to-end tests (scripts/make-openings-glb.ts)', () => {
   const nodes = readGlb(path.resolve(__dirname, '../../tests/dashboard/fixtures/openings.glb'));

@@ -495,9 +495,9 @@ chaque fenêtre en objets séparés, jusqu'à leurs parties mobiles. Plutôt que
 les dessiner (`A2`), on anime les vraies : le battant pivote sur ses gonds, les
 panneaux d'une baie glissent. Le dessin reste pour les maquettes « fondues ».
 
-**Ce que donne l'export** — [home.glb](../tests/dashboard/fixtures/home.glb),
-ta maison, en est un : des nœuds à plat, un maillage chacun, en centimètres,
-sans transformation. Murs `wall_<n>_<face>`, sols `room_<niveau>_<n>`. Chaque
+**Ce que donne l'export** — `home.glb`, ta maison, gardée hors du dépôt, en est
+un : des nœuds à plat, un maillage chacun, en centimètres, sans
+transformation. Murs `wall_<n>_<face>`, sols `room_<niveau>_<n>`. Chaque
 objet donne `<Nom>_<composant>`, puis `<Nom>_<composant>_<k>` quand le nom
 revient — `k` compte les reprises dans tout le fichier. Un nom hors de
 `[A-Za-z0-9_]` (un accent suffit) est abandonné : il ne reste que le numéro du

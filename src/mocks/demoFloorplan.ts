@@ -141,12 +141,15 @@ const ROOMS: FloorplanRoom[] = [
 ];
 
 /**
- * Une maison exportée de Sweet Home 3D avec ExportToHASS
- * (`tests/dashboard/fixtures/home.glb`) : ses vraies portes s'ouvrent et se
- * ferment avec leur entité — et avec la journée rejouée.
+ * Une maison exportée de Sweet Home 3D avec ExportToHASS : ses vraies portes
+ * s'ouvrent et se ferment avec leur entité — et avec la journée rejouée. Une
+ * vraie maison n'a rien à faire dans le dépôt : la page ne paraît que si
+ * `VITE_MOCK_SH3D_MODEL` (`.env.mock.local`) donne le chemin d'un export. Ses
+ * liaisons sont celles de la maison qui a servi à la mettre au point ; sur une
+ * autre, introuvables, elles sont ignorées.
  */
 const SH3D_ID = 'demo-sh3d';
-const SH3D_MODEL = 'tests/dashboard/fixtures/home.glb';
+const SH3D_MODEL: string | undefined = import.meta.env.VITE_MOCK_SH3D_MODEL;
 
 const SH3D_OPENINGS: FloorplanOpenings = {
   links: [
@@ -176,13 +179,17 @@ export function withDemoFloorplan(config: DashboardConfigV2): DashboardConfigV2 
       widgets: WIDGETS,
       configs: CONFIGS,
     },
-    {
-      id: SH3D_ID,
-      label: 'Maison SH3D',
-      floorplan: { image: '', model: SH3D_MODEL, openings: SH3D_OPENINGS },
-      widgets: SH3D_WIDGETS,
-      configs: SH3D_CONFIGS,
-    },
+    ...(SH3D_MODEL
+      ? [
+          {
+            id: SH3D_ID,
+            label: 'Maison SH3D',
+            floorplan: { image: '', model: SH3D_MODEL, openings: SH3D_OPENINGS },
+            widgets: SH3D_WIDGETS,
+            configs: SH3D_CONFIGS,
+          },
+        ]
+      : []),
   ].filter(demo => !config.pages.some(p => p.id === demo.id));
   return pages.reduce(
     (next, { id, label, floorplan, widgets, configs }) => ({
