@@ -38,8 +38,11 @@ app.use(
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         // Camera streams, weather icons, uploaded backgrounds from any origin
         imgSrc: ["'self'", 'data:', 'blob:', 'http:', 'https:'],
-        // HA WebSocket (ws/wss) can be on any user-configured host
-        connectSrc: ["'self'", 'ws:', 'wss:', 'http:', 'https:'],
+        // HA WebSocket (ws/wss) can be on any user-configured host.
+        // `blob:` : les textures d'une maquette `.glb` y sont rangées, et
+        // three.js les charge par `fetch` — sans, la maquette s'affiche
+        // sans textures sous Chrome et Firefox.
+        connectSrc: ["'self'", 'blob:', 'ws:', 'wss:', 'http:', 'https:'],
         // Media player artwork / streams
         mediaSrc: ["'self'", 'blob:', 'http:', 'https:'],
         fontSrc: ["'self'", 'data:', 'https://fonts.gstatic.com'],
