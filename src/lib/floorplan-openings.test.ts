@@ -159,6 +159,23 @@ describe('detectOpenings', () => {
     ]);
   });
 
+  it('keeps whole an object whose name ends in a number, and numbers two of that name', () => {
+    // `Fenetre_sal_1` dans Sweet Home 3D : l'export en tire `Fenetre_sal_1_1`,
+    // `Fenetre_sal_1_2`… ; la seconde du même nom, `Fenetre_sal_1_1_1`…
+    const { openings, families } = detectOpenings([
+      box('Fenetre_sal_1_1', [0, 90, 0], [200, 220, 8]),
+      box('Fenetre_sal_1_2', [5, 95, 3], [100, 215, 5]),
+      box('Fenetre_sal_1_3', [100, 95, 3], [195, 215, 5]),
+      box('Fenetre_sal_1_1_1', [500, 90, 0], [700, 220, 8]),
+      box('Fenetre_sal_1_2_1', [505, 95, 3], [600, 215, 5]),
+    ]);
+    expect(openings.map(o => [o.id, o.family, o.index, o.nodes.length])).toEqual([
+      ['Fenetre_sal_1_1', 'Fenetre_sal_1', 1, 3],
+      ['Fenetre_sal_1_1_1', 'Fenetre_sal_1', 2, 2],
+    ]);
+    expect(families.map(f => [f.name, f.count, f.kind])).toEqual([['Fenetre_sal_1', 2, 'window']]);
+  });
+
   it('leaves walls and floors out, and counts the unnamed objects set in a wall', () => {
     const result = detectOpenings([
       ...wall(0, [0, 0, -5], [1000, 250, 5]),

@@ -336,16 +336,22 @@ export function detectOpenings(nodes: ModelNode[]): ModelOpenings {
   const openings: DetectedOpening[] = [];
   for (const members of byFamily.values()) {
     const groups = clusters(members, cm).flatMap(group => {
-      // Deux objets de même nom qui se touchent : chacun ses composants.
       const components = group.map(n => n.component);
       if (!group[0].family || new Set(components).size === components.length) return [group];
+      // Un nom qui finit par un nombre — `Fenetre_sal_1` — donne
+      // `Fenetre_sal_1_1`, `Fenetre_sal_1_2`… : lus comme autant de reprises
+      // d'un seul composant, sans première fois. C'est un seul objet, et ce
+      // nombre fait partie de son nom.
+      const ks = group.map(n => n.k);
+      if (new Set(components).size === 1 && !ks.includes(0) && new Set(ks).size === ks.length) {
+        return [group.map(n => ({ ...n, family: `${n.family}_${n.component}`, component: n.k, k: 0 }))];
+      }
+      // Deux objets de même nom qui se touchent : chacun ses composants.
       const byK = new Map<number, typeof group>();
       for (const n of group) byK.set(n.k, [...(byK.get(n.k) ?? []), n]);
       return [...byK.values()];
     });
-    // Dans l'ordre du fichier : la première reprise d'abord.
-    groups.sort((a, b) => Math.min(...a.map(n => n.k)) - Math.min(...b.map(n => n.k)) || order.get(a[0].name)! - order.get(b[0].name)!);
-    groups.forEach((group, i) => {
+    for (const group of groups) {
       const first = group.reduce((a, n) => (n.component < a.component || (n.component === a.component && n.k < a.k) ? n : a));
       const box = union(group);
       const main = widest(group);
@@ -353,16 +359,22 @@ export function detectOpenings(nodes: ModelNode[]): ModelOpenings {
       openings.push({
         id: first.name,
         family: first.family,
-        index: i + 1,
+        index: 0,
         nodes: group.map(n => n.name),
         min: box.min,
         max: box.max,
         size: [Math.round((along[1] - along[0]) / cm), Math.round((box.max[1] - box.min[1]) / cm)],
         inWall: inWall(main),
       });
-    });
+    }
   }
   openings.sort((a, b) => order.get(a.id)! - order.get(b.id)!);
+  // Rang de chaque objet dans sa famille, dans l'ordre du fichier.
+  const ranks = new Map<string, number>();
+  for (const o of openings) {
+    o.index = (ranks.get(o.family) ?? 0) + 1;
+    ranks.set(o.family, o.index);
+  }
 
   const families: OpeningFamily[] = [];
   for (const o of openings) {

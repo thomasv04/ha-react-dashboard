@@ -473,6 +473,8 @@ export function FloorplanView() {
 
   /** Les objets de cette maquette-ci — `undefined` tant qu'elle n'est pas lue. */
   const modelOpenings = detected && detected.model === model ? detected.openings : undefined;
+  /** Famille d'une ouverture, telle que la maquette l'a lue : son nœud seul ne la dit pas toujours (`Fenetre_sal_1_1`). */
+  const familyOf = (node: string) => modelOpenings?.openings.find(o => o.id === node)?.family ?? parseNodeName(node).family;
   // L'ouverture qu'on lie s'ouvre et se ferme, pour qu'on voie ses gonds et son sens.
   const previewing = openingDraft?.link.node;
   useEffect(() => {
@@ -483,7 +485,7 @@ export function FloorplanView() {
   /** Portes, fenêtres et baies de la maquette liées à une entité — le type de leur famille décide du mouvement. */
   const openingsProp: OpeningProp[] = [
     ...openingsConfig.links.flatMap(link => {
-      const kind = familyKind(parseNodeName(link.node).family, openingsConfig.kinds);
+      const kind = familyKind(familyOf(link.node), openingsConfig.kinds);
       if (!kind || link.node === previewing) return [];
       const entity = replayed(link.entityId) ?? entities[link.entityId];
       return [
@@ -554,7 +556,7 @@ export function FloorplanView() {
   const saveOpening = () => {
     if (!openingDraft?.link.entityId || !openingDraft.kind) return;
     const { flip, hinge, ...link } = openingDraft.link;
-    const family = parseNodeName(link.node).family;
+    const family = familyOf(link.node);
     setOpenings({
       kinds:
         familyKind(family, openingsConfig.kinds) === openingDraft.kind

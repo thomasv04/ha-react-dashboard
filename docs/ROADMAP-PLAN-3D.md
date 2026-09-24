@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **33 tâches sur 36** — phases A à H et J, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
+**État global** : **34 tâches sur 37** — phases A à H et J, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -504,12 +504,12 @@ revient — `k` compte les reprises dans tout le fichier. Un nom hors de
 composant (`1_2`, `6_3`), inutilisable. Un `#` final fond tous les composants
 en un seul : le battant n'est plus séparable du cadre.
 
-**Nomenclature**, dans Sweet Home 3D (Modifier le meuble → Nom) : un nom
-unique par ouverture, dont le premier mot donne le type — `Porte_Cuisine`,
-`Baie_Salon`, `Fenetre_Chambre`, `Volet_Salon`, `Garage`. Sans accent, sans
-`#`, sans `_<chiffres>` final. Unique, il reste stable d'un export à l'autre :
-avec un nom partagé, supprimer une porte décale le `k` des suivantes, et
-leurs liaisons avec. Le plugin, lui, reste tel quel.
+**Nomenclature**, dans Sweet Home 3D (double-clic sur l'objet, champ « Nom ») :
+un nom unique par ouverture, dont le premier mot donne le type —
+`Porte_Cuisine`, `Baie_Salon`, `Fenetre_Chambre`, `Volet_Salon`, `Garage`.
+Sans accent, sans `#` ; un nombre final est toléré (`J10`). Unique, il reste
+stable d'un export à l'autre : avec un nom partagé, supprimer une porte décale
+le `k` des suivantes, et leurs liaisons avec. Le plugin, lui, reste tel quel.
 
 ### [x] J1 — Les réglages en onglets
 
@@ -676,3 +676,18 @@ leurs liaisons avec. Le plugin, lui, reste tel quel.
 
 - **Quoi** : on doit trouver comment poser une lampe sans savoir que c'est
   une pastille.
+
+### [x] J10 — Un nom qui finit par un nombre
+
+> **Fait** ([floorplan-openings.ts](../src/lib/floorplan-openings.ts)), trouvé
+> sur ta maison réexportée : une fenêtre nommée `Fenetre_sal_1` s'exporte en
+> `Fenetre_sal_1_1` … `Fenetre_sal_1_12`, que le nom seul lit comme douze
+> reprises d'un même composant. Douze fenêtres d'une seule pièce, rien ne
+> bougeait, et la fenêtre de liaison réclamait de retirer un « # » absent. Des
+> objets qui se touchent, d'un même composant et sans première fois, sont un
+> seul objet : le nombre rejoint son nom. Le rang dans une famille se compte
+> dans tout le fichier : deux `Fenetre_sal_1` font 1 et 2. L'aide dit où
+> renommer dans Sweet Home 3D : double-clic sur l'objet, champ « Nom ».
+
+- **Quoi** : une ouverture dont le nom finit par un nombre (`Fenetre_1`,
+  `Porte_2`) se lie et bouge comme les autres.

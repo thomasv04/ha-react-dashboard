@@ -453,7 +453,7 @@
     "openingLinkEntity": "Link an entity…",
     "openingStateOpen": "open",
     "openingStateClosed": "closed",
-    "openingsNoKind": "No door or window recognised from the names. Name them in Sweet Home 3D — Door_Kitchen, Sliding_Living, Window_Bedroom… —, or sort their families below.",
+    "openingsNoKind": "No door or window recognised from the names. In Sweet Home 3D, double-click each one and change its “Name”: its type first — Door_Kitchen, Sliding_Living, Window_Bedroom… —, one name per opening. Or sort their families below.",
     "openingTypes": "Opening types",
     "openingFamilies": "{count} family",
     "openingFamiliesPlural": "{count} families",
@@ -481,8 +481,8 @@
     "openingOthers": "Other objects of the model",
     "openingNone": "No family to add.",
     "openingSize": "{w} × {h} cm",
-    "openingUnnamed": "{count} object without a valid name, in a wall, is ignored: rename it in Sweet Home 3D, without accents or “#”.",
-    "openingUnnamedPlural": "{count} objects without a valid name, in the walls, are ignored: rename them in Sweet Home 3D, without accents or “#”.",
+    "openingUnnamed": "{count} object without a valid name, in a wall, is ignored: in Sweet Home 3D, double-click it and change its “Name”, without accents or “#”.",
+    "openingUnnamedPlural": "{count} objects without a valid name, in the walls, are ignored: in Sweet Home 3D, double-click each one and change its “Name”, without accents or “#”.",
     "openingFamilyWide": "The type applies to all {count} “{name}”.",
     "openingFlip": "Direction",
     "openingFlipHint": "Opens on the other side of the wall — for a bay, the other panel slides",
@@ -494,7 +494,7 @@
     "openingHintHover": "Click to link “{name}”.",
     "openingHintUnnamed": "This object has no valid name: click to see what to do.",
     "openingUnnamedTitle": "Object without a valid name",
-    "openingUnnamedHelp": "Sweet Home 3D exported it without a name: its own has an accent, or a sign the plugin refuses. Rename it — Window_Bedroom, Door_Kitchen… —, without a trailing “#”, then export the model again: it will link in one click.",
+    "openingUnnamedHelp": "Sweet Home 3D exported it without a name: its own has an accent, or a sign the plugin refuses. In Sweet Home 3D, double-click it and change its “Name”: its type first, without accents or a trailing “#” — Window_Bedroom, Door_Kitchen… —, one name per opening. Then export the model again: it will link in one click.",
     "openingDrawAnyway": "Draw it instead",
     "openingSingle": "All in one piece: nothing can move. In Sweet Home 3D, remove the trailing “#” from its name."
   }
