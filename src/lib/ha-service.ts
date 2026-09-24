@@ -11,8 +11,11 @@ export function friendlyName(entity: { attributes?: Record<string, unknown> } | 
   return typeof name === 'string' ? name : undefined;
 }
 
-/** États de repos : tout le reste compte comme actif — `on`, mais aussi `open`, `heat`, `playing`, `locked`. */
-const IDLE_STATES = new Set(['off', 'closed', 'unavailable', 'unknown', 'none', 'idle', 'standby', '']);
+/**
+ * États de repos : tout le reste compte comme actif — `on`, mais aussi `open`, `heat`, `playing`, `locked`.
+ * Une serrure déverrouillée est au repos : sa bascule la verrouille.
+ */
+const IDLE_STATES = new Set(['off', 'closed', 'unlocked', 'unavailable', 'unknown', 'none', 'idle', 'standby', '']);
 
 export function isActiveState(state: string | undefined): boolean {
   return !IDLE_STATES.has(state ?? '');
