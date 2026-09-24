@@ -556,12 +556,18 @@ describe('energy cables', () => {
   it('finds the middle of a broken line, by length', () => {
     expect(
       polylineMidpoint([
-        { x: 0, y: 0 },
-        { x: 10, y: 0 },
-        { x: 10, y: 30 },
+        [0, 0, 0],
+        [10, 0, 0],
+        [10, 0, 30],
       ])
-    ).toEqual({ x: 10, y: 10 });
-    expect(polylineMidpoint([{ x: 5, y: 5 }])).toEqual({ x: 5, y: 5 });
-    expect(polylineMidpoint([])).toBeNull();
+    ).toEqual([10, 0, 10]);
+    // Un segment de longueur nulle ne compte pas.
+    expect(
+      polylineMidpoint([
+        [0, 1, 0],
+        [0, 1, 0],
+        [0, 1, 4],
+      ])
+    ).toEqual([0, 1, 2]);
   });
 });

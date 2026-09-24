@@ -121,9 +121,10 @@ export type PartProp = FloorplanPart & { open: number };
 /** Câble d'énergie, et ce qui y circule : le sens (0 : rien), la puissance si elle est connue. */
 export type CableProp = FloorplanCable & { direction: -1 | 0 | 1; watts: number | null };
 
+/** Point de la maquette → position à l'écran, en % du canevas ; `null` s'il est derrière la caméra. */
+export type Project = (anchor: Vec3) => { x: number; y: number } | null;
+
 export interface Floorplan3DHandle {
-  /** Point de la maquette → position à l'écran, en % du canevas ; `null` s'il est derrière la caméra. */
-  project(anchor: Vec3): { x: number; y: number } | null;
   /** Point de la maquette sous ce point de l'écran, ou `null` s'il n'y a que du vide. */
   pick(clientX: number, clientY: number): Vec3 | null;
   /** Point (x, z) du sol à la hauteur `y` sous ce point de l'écran, comme si meubles et murs étaient transparents. */
@@ -131,8 +132,6 @@ export interface Floorplan3DHandle {
   /** Vue courante — `null` tant que rien n'est affiché. */
   view(): FloorplanView3D | null;
   resetView(): void;
-  /** Redessine — après un changement qui ne vient pas de la caméra. */
-  invalidate(): void;
   /** Couleur de la maquette en ce point, vu de la caméra : de quoi habiller un élément généré. */
   colorAt(point: Vec3): string | null;
   /** Côté du rectangle (a, b) tourné vers la caméra — celui qu'on voit en le dessinant. */
@@ -159,8 +158,8 @@ interface Floorplan3DProps {
   compass?: boolean;
   lamps: Lamp[];
   parts: PartProp[];
-  /** Après chaque image : la caméra a pu bouger, les pastilles se recalent. */
-  onFrame: () => void;
+  /** Après chaque image où la caméra ou la scène a bougé : de quoi recaler les pastilles. */
+  onFrame: (project: Project) => void;
   /** Clic — pas un glisser, qui fait tourner — sur la maquette, ou à côté (`null`). */
   onPick?: (anchor: Vec3 | null, clientX: number, clientY: number) => void;
   /** Point de la maquette sous le pointeur, quand il bouge — pour dessiner. */
@@ -338,6 +337,12 @@ function anchorPoint(s: Stage, root: Object3D, local: Vec3) {
   const point = root.localToWorld(new Vector3(...local));
   if (s.cut && isCut(s, point)) point.y = cutLimit(point.toArray() as Vec3, s.cut);
   return point;
+}
+
+function project(s: Stage, anchor: Vec3) {
+  if (!s.root) return null;
+  const v = anchorPoint(s, s.root, anchor).project(s.camera);
+  return v.z < -1 || v.z > 1 ? null : { x: (v.x + 1) * 50, y: (1 - v.y) * 50 };
 }
 
 /** Point d'accroche caché par ce que la maquette dessine — ni les murs abaissés, ni les originaux découpés. */
@@ -974,7 +979,7 @@ export default function Floorplan3D({
         renderer.render(scene, cam);
         if (moved) {
           moved = false;
-          latest.current.onFrame();
+          latest.current.onFrame(anchor => project(s, anchor));
           window.clearTimeout(settle);
           cancelAnimationFrame(checking);
           settle = window.setTimeout(checkOcclusion, SETTLE_MS);
@@ -1218,6 +1223,13 @@ export default function Floorplan3D({
     if (s) placeParts(s, latest.current.parts);
   }, [partsKey]);
 
+  // Points d'accroche changés sans que la caméra bouge : ce que la maquette
+  // cache est à revérifier.
+  const anchorsKey = JSON.stringify(anchors ?? null);
+  useEffect(() => {
+    stage.current?.render('view');
+  }, [anchorsKey]);
+
   const floorsKey = JSON.stringify(floors ?? []);
   useEffect(() => {
     if (stage.current) placeFloors(stage.current, latest.current.floors);
@@ -1329,13 +1341,6 @@ export default function Floorplan3D({
   useImperativeHandle(
     ref,
     () => ({
-      project(anchor) {
-        const s = stage.current;
-        if (!s?.root) return null;
-        const v = anchorPoint(s, s.root, anchor).project(s.camera);
-        if (v.z < -1 || v.z > 1) return null;
-        return { x: (v.x + 1) * 50, y: (1 - v.y) * 50 };
-      },
       pick: (clientX, clientY) => (stage.current ? pick(stage.current, clientX, clientY) : null),
       floorAt: (clientX, clientY, y) => (stage.current ? floorAt(stage.current, clientX, clientY, y) : null),
       view: () => (stage.current ? currentView(stage.current) : null),
@@ -1345,9 +1350,6 @@ export default function Floorplan3D({
         s.home = null;
         s.flight++;
         applyView(s, latest.current.camera);
-      },
-      invalidate() {
-        stage.current?.render('view');
       },
       colorAt: point => (stage.current ? colorAt(stage.current, point) : null),
       facing(a, b) {

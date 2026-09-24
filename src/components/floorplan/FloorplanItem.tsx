@@ -1,4 +1,4 @@
-import { useState, type RefObject } from 'react';
+import { memo, useState, type RefObject } from 'react';
 import { Settings, Trash2 } from 'lucide-react';
 import { GridItem, WidgetIdProvider, WIDGET_LABELS } from '@/components/layout/DashboardGrid';
 import { WidgetErrorBoundary } from '@/components/ui/WidgetErrorBoundary';
@@ -29,12 +29,32 @@ interface FloorplanItemProps {
 }
 
 /**
- * Un widget posé sur le plan, centré sur `pos`.
+ * Le widget lui-même, sans sa position : quand la maquette tourne, elle
+ * change à chaque image, lui non — il ne se redessine pas pour autant.
  *
  * Hors édition, c'est un `GridItem` comme sur la grille — fiche au tap,
  * actions, visibilité conditionnelle, styles d'état et frontière d'erreur
- * compris. En édition, le widget est inerte sous un calque qui le déplace.
+ * compris. En édition, il est inerte.
  */
+const ItemContent = memo(function ItemContent({ id, type, isEditMode }: { id: string; type: GridWidget['type']; isEditMode: boolean }) {
+  const Component = WIDGET_COMPONENTS[type];
+  if (!Component) return null;
+  return isEditMode ? (
+    <WidgetErrorBoundary label={WIDGET_LABELS[type] ?? type}>
+      <WidgetIdProvider id={id}>
+        <div className='h-full pointer-events-none select-none'>
+          <Component />
+        </div>
+      </WidgetIdProvider>
+    </WidgetErrorBoundary>
+  ) : (
+    <GridItem id={id} readonly>
+      <Component />
+    </GridItem>
+  );
+});
+
+/** Un widget posé sur le plan, centré sur `pos` ; en édition, sous un calque qui le déplace. */
 export function FloorplanItem({
   widget,
   isEditMode,
@@ -58,9 +78,7 @@ export function FloorplanItem({
   const [live, setLive] = useState<FloorplanPos | null>(null);
   const pos = live ?? saved;
 
-  const Component = WIDGET_COMPONENTS[widget.type];
-  if (!Component) return null;
-  const label = WIDGET_LABELS[widget.type] ?? widget.type;
+  if (!WIDGET_COMPONENTS[widget.type]) return null;
 
   const startGesture = (e: React.PointerEvent<HTMLElement>, apply: typeof movePos) => {
     const rect = planRef.current?.getBoundingClientRect();
@@ -117,16 +135,9 @@ export function FloorplanItem({
     >
       {/* Ici plutôt que dans la pastille : la case d'un widget rogne ce qui en dépasse. */}
       {breathing && <span aria-hidden className='fp-breathe rounded-full' />}
-      {isEditMode ? (
+      <ItemContent id={widget.id} type={widget.type} isEditMode={isEditMode} />
+      {isEditMode && (
         <>
-          <WidgetErrorBoundary label={label}>
-            <WidgetIdProvider id={widget.id}>
-              <div className='h-full pointer-events-none select-none'>
-                <Component />
-              </div>
-            </WidgetIdProvider>
-          </WidgetErrorBoundary>
-
           <div
             data-drag-handle
             onPointerDown={e => startGesture(e, movePos)}
@@ -166,10 +177,6 @@ export function FloorplanItem({
             />
           )}
         </>
-      ) : (
-        <GridItem id={widget.id} readonly>
-          <Component />
-        </GridItem>
       )}
     </div>
   );

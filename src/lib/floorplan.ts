@@ -712,15 +712,14 @@ export function flowDuration(watts: number | null): number {
   return clamp(1.8 - 0.45 * Math.log10(Math.max(Math.abs(watts), 1)), 0.45, 1.35);
 }
 
-/** Le point à mi-longueur d'une ligne brisée : là où s'écrit la puissance d'un câble. */
-export function polylineMidpoint(points: { x: number; y: number }[]): { x: number; y: number } | null {
-  if (!points.length) return null;
-  const lengths = points.slice(1).map((p, i) => Math.hypot(p.x - points[i].x, p.y - points[i].y));
+/** Le point à mi-longueur d'une ligne brisée — un câble : là où s'écrit sa puissance. */
+export function polylineMidpoint(points: Vec3[]): Vec3 {
+  const lengths = points.slice(1).map((p, i) => Math.hypot(p[0] - points[i][0], p[1] - points[i][1], p[2] - points[i][2]));
   let rest = lengths.reduce((a, b) => a + b, 0) / 2;
   for (let i = 0; i < lengths.length; i++) {
     if (lengths[i] > 0 && rest <= lengths[i]) {
       const t = rest / lengths[i];
-      return { x: points[i].x + (points[i + 1].x - points[i].x) * t, y: points[i].y + (points[i + 1].y - points[i].y) * t };
+      return points[i].map((v, k) => v + (points[i + 1][k] - v) * t) as Vec3;
     }
     rest -= lengths[i];
   }

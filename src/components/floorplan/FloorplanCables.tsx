@@ -2,7 +2,7 @@ import { ArrowLeftRight, BatteryCharging, House, Sun, Trash2, X, Zap, type Lucid
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { useEntities } from '@/hooks/useEntities';
 import { useFormats } from '@/hooks/useFormats';
-import { CABLE_COLORS, CABLE_KINDS, guessCableKind, polylineMidpoint, type CableKind, type FloorplanCable } from '@/lib/floorplan';
+import { CABLE_COLORS, CABLE_KINDS, guessCableKind, type CableKind, type FloorplanCable } from '@/lib/floorplan';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 
@@ -10,13 +10,8 @@ const CABLE_ICONS: Record<CableKind, LucideIcon> = { solar: Sun, grid: Zap, home
 
 /** Le trajet qu'on trace : ambre, comme les autres dessins en cours. */
 const DRAFT_COLOR = '#fbbf24';
-/** Rayon des coudes, en px : un câble ne fait pas d'angle vif. */
-const ELBOW = 14;
 
 type Point = { x: number; y: number };
-
-/** Un câble et son tracé à l'écran, en pixels du plan. */
-export type CableOnScreen = FloorplanCable & { screen: Point[] };
 
 /** Une puissance lisible : en W, en kW au-delà de mille. */
 function power(watts: number, locale: string) {
@@ -24,40 +19,25 @@ function power(watts: number, locale: string) {
   return w >= 1000 ? `${(w / 1000).toLocaleString(locale, { maximumFractionDigits: 1 })} kW` : `${Math.round(w)} W`;
 }
 
-const xy = (p: Point) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
-
-/** Le tracé d'un câble, ses coudes arrondis. */
-function pathOf(points: Point[]) {
-  let d = `M ${xy(points[0])}`;
-  for (let i = 1; i < points.length - 1; i++) {
-    const [a, b, c] = [points[i - 1], points[i], points[i + 1]];
-    const into = Math.hypot(b.x - a.x, b.y - a.y);
-    const out = Math.hypot(c.x - b.x, c.y - b.y);
-    const r = Math.min(ELBOW, into / 2, out / 2);
-    if (!r) {
-      d += ` L ${xy(b)}`;
-      continue;
-    }
-    const before = { x: b.x - ((b.x - a.x) / into) * r, y: b.y - ((b.y - a.y) / into) * r };
-    const after = { x: b.x + ((c.x - b.x) / out) * r, y: b.y + ((c.y - b.y) / out) * r };
-    d += ` L ${xy(before)} Q ${xy(b)} ${xy(after)}`;
-  }
-  return `${d} L ${xy(points[points.length - 1])}`;
-}
-
 /**
  * Par-dessus la maquette, ce qui ne se dessine pas en 3D : la puissance de
- * chaque câble, à mi-longueur, et le trajet qu'on trace — le câble, lui, est
- * un tube de la scène (`cables3d`).
+ * chaque câble, à mi-longueur (`at`, en % du plan), et le trajet qu'on trace,
+ * en pixels — le câble, lui, est un tube de la scène (`cables3d`).
  */
-export function CableOverlay({ cables, draft }: { cables: (CableOnScreen & { watts: number | null })[]; draft: Point[] | null }) {
+export function CableOverlay({
+  labels,
+  draft,
+}: {
+  labels: { id: string; kind: CableKind; watts: number | null; at: Point | null }[];
+  draft: Point[] | null;
+}) {
   const { locale } = useFormats();
   return (
     <div className='absolute inset-0 pointer-events-none'>
       {draft && draft.length > 1 && (
         <svg className='absolute inset-0 w-full h-full overflow-visible'>
-          <path
-            d={pathOf(draft)}
+          <polyline
+            points={draft.map(p => `${p.x},${p.y}`).join(' ')}
             fill='none'
             stroke={DRAFT_COLOR}
             strokeWidth={2.5}
@@ -67,19 +47,18 @@ export function CableOverlay({ cables, draft }: { cables: (CableOnScreen & { wat
           />
         </svg>
       )}
-      {cables.map(cable => {
-        const middle = polylineMidpoint(cable.screen);
-        if (!middle || cable.watts === null) return null;
-        const Icon = CABLE_ICONS[cable.kind];
+      {labels.map(({ id, kind, watts, at }) => {
+        if (!at || watts === null) return null;
+        const Icon = CABLE_ICONS[kind];
         return (
           <span
-            key={cable.id}
-            data-floorplan-cable={cable.id}
+            key={id}
+            data-floorplan-cable={id}
             className='absolute flex items-center gap-1 pl-1.5 pr-2 py-0.5 rounded-full bg-black/65 backdrop-blur-sm text-[11px] font-semibold text-white tabular-nums whitespace-nowrap shadow-lg'
-            style={{ left: middle.x, top: middle.y, translate: '-50% -50%' }}
+            style={{ left: `${at.x}%`, top: `${at.y}%`, translate: '-50% -50%' }}
           >
-            <Icon size={12} style={{ color: CABLE_COLORS[cable.kind] }} />
-            {power(cable.watts, locale)}
+            <Icon size={12} style={{ color: CABLE_COLORS[kind] }} />
+            {power(watts, locale)}
           </span>
         );
       })}
