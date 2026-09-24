@@ -16,6 +16,7 @@ import {
   Line,
   LineBasicMaterial,
   LineLoop,
+  Matrix4,
   Mesh,
   MeshBasicMaterial,
   PointLight,
@@ -68,6 +69,17 @@ import {
   setRoomMasks,
   type ModelUniforms,
 } from './modelPatch';
+import {
+  detectOpenings,
+  modelNode,
+  motionAt,
+  openingMotion,
+  structureOf,
+  type ModelNode,
+  type ModelOpenings,
+  type Motion,
+  type OpeningKind,
+} from '@/lib/floorplan-openings';
 import { buildCable, type CableObject } from './cables3d';
 import { buildPart, type PartObject } from './parts3d';
 
@@ -119,6 +131,19 @@ export interface FloorOverlay {
 /** Porte, fenêtre ou volet, et son ouverture de l'instant (0 à 1). */
 export type PartProp = FloorplanPart & { open: number };
 
+/**
+ * Ouverture de la maquette elle-même (export ExportToHASS), désignée par le
+ * nœud de son premier composant : son type, ses corrections, et son ouverture
+ * de l'instant (0 à 1).
+ */
+export interface OpeningProp {
+  id: string;
+  kind: OpeningKind;
+  flip?: boolean;
+  hinge?: boolean;
+  open: number;
+}
+
 /** Câble d'énergie, et ce qui y circule : le sens (0 : rien), la puissance si elle est connue. */
 export type CableProp = FloorplanCable & { direction: -1 | 0 | 1; watts: number | null };
 
@@ -159,6 +184,10 @@ interface Floorplan3DProps {
   compass?: boolean;
   lamps: Lamp[];
   parts: PartProp[];
+  /** Portes, fenêtres et baies de la maquette, liées à une entité. */
+  openings?: OpeningProp[];
+  /** Maquette chargée : ses objets et leurs familles — `null` si elle n'en a pas de séparés (maquette « fondue »). */
+  onOpenings?: (openings: ModelOpenings | null) => void;
   /** Après chaque image où la caméra ou la scène a bougé : de quoi recaler les pastilles. */
   onFrame: (project: Project) => void;
   /** Clic — pas un glisser, qui fait tourner — sur la maquette, ou à côté (`null`). */
@@ -274,6 +303,22 @@ interface CableEntry {
   watts: number | null;
 }
 
+/** Une ouverture de la maquette mise en mouvement : ses pivots, qui portent les maillages mobiles. */
+interface OpeningEntry {
+  /** Type et corrections : remontée quand ils changent, pas quand elle s'ouvre. */
+  key: string;
+  parts: { pivot: Group; motion: Motion }[];
+  value: number;
+  target: number;
+}
+
+/** Les objets de la maquette chargée : de quoi retrouver et mouvoir ses ouvertures. */
+interface ModelObjects {
+  nodes: Map<string, ModelNode>;
+  objects: Map<string, Object3D>;
+  detected: ModelOpenings;
+}
+
 interface PartEntry {
   obj: PartObject;
   /** Forme de l'élément : reconstruit quand elle change, pas quand il s'ouvre. */
@@ -298,6 +343,9 @@ interface Stage {
   /** Tache douce de la lueur des lampes, partagée par toutes — créée au premier besoin. */
   glowMap: CanvasTexture | null;
   parts: Map<string, PartEntry>;
+  /** Objets séparés de la maquette — `null` : une maquette « fondue », ou pas encore chargée. */
+  model: ModelObjects | null;
+  openings: Map<string, OpeningEntry>;
   cables: Map<string, CableEntry>;
   /** L'énergie peut circuler en mouvement, et circule. */
   flowAllowed: boolean;
@@ -657,7 +705,16 @@ function placeParts(s: Stage, parts: PartProp[]) {
     }
     if (entry.target !== open) {
       entry.target = open;
-      s.animate(swing(s, entry));
+      const moving = entry;
+      // Hors de la maquette, il ne cache aucune pastille : seules ses ombres bougent.
+      s.animate(
+        swing(
+          s,
+          moving,
+          v => moving.obj.apply(v),
+          () => !!moving.obj.object.parent
+        )
+      );
     }
   }
   for (const id of s.parts.keys()) {
@@ -673,6 +730,143 @@ function placeParts(s: Stage, parts: PartProp[]) {
     [...s.parts.values()].flatMap(entry => (entry.obj.cut ? [entry.obj.cut] : []))
   );
   s.render();
+}
+
+/**
+ * Les objets de la maquette, lus une fois au chargement : leurs sommets, de
+ * quoi reconnaître ses ouvertures. `null` pour une maquette « fondue » — un
+ * objet par matière, ou un seul tenant : rien n'y est séparable, inutile d'en
+ * parcourir les sommets.
+ */
+function readModel(root: Object3D): ModelObjects | null {
+  const children = root.children.filter(c => c.name);
+  if (children.length < 2 || !children.some(c => structureOf(c.name) || /_\d+$/.test(c.name))) return null;
+  const toModel = new Matrix4();
+  const inverse = root.matrixWorld.clone().invert();
+  const point = new Vector3();
+  const nodes = new Map<string, ModelNode>();
+  const objects = new Map<string, Object3D>();
+  for (const child of children) {
+    const positions: number[] = [];
+    child.traverse(o => {
+      const position = (o as Mesh).isMesh ? (o as Mesh).geometry.attributes.position : undefined;
+      if (!position) return;
+      toModel.multiplyMatrices(inverse, o.matrixWorld);
+      for (let i = 0; i < position.count; i++) {
+        point.fromBufferAttribute(position, i).applyMatrix4(toModel);
+        positions.push(point.x, point.y, point.z);
+      }
+    });
+    nodes.set(child.name, modelNode(child.name, positions));
+    objects.set(child.name, child);
+  }
+  return { nodes, objects, detected: detectOpenings([...nodes.values()]) };
+}
+
+/** Un battant tourne sur ses gonds, un panneau glisse : chaque pivot à cette ouverture. */
+function applyOpening(entry: OpeningEntry, openness: number) {
+  for (const { pivot, motion } of entry.parts) {
+    const value = motionAt(motion, openness);
+    if (motion.type === 'swing') pivot.rotation.y = value;
+    else pivot.position.set(motion.axis[0] * value, 0, motion.axis[1] * value);
+  }
+}
+
+/**
+ * Monte une ouverture de la maquette : ses maillages mobiles passent sous un
+ * pivot — sur l'axe des gonds, ou qui glisse. Ils restent ceux de la maquette :
+ * ses retouches (coupe des murs, pièces) les suivent, et sa BVH aussi, le
+ * rayon étant ramené dans l'espace du maillage. Introuvable — la maquette a
+ * changé depuis la liaison — ou sans rien de mobile : ignorée.
+ */
+function mountOpening(s: Stage, root: Object3D, model: ModelObjects, { open, ...opening }: OpeningProp) {
+  const found = model.detected.openings.find(o => o.id === opening.id);
+  if (!found) return null;
+  const parts = openingMotion(
+    found.nodes.flatMap(name => model.nodes.get(name) ?? []),
+    opening.kind,
+    { cm: model.detected.cm, center: model.detected.center, flip: opening.flip, hinge: opening.hinge }
+  );
+  if (!parts.length) return null;
+  root.updateMatrixWorld(true);
+  const entry: OpeningEntry = {
+    key: JSON.stringify(opening),
+    value: open,
+    target: open,
+    parts: parts.map(({ nodes, motion }) => {
+      const pivot = new Group();
+      if (motion.type === 'swing') pivot.position.set(motion.pivot[0], 0, motion.pivot[1]);
+      root.add(pivot);
+      pivot.updateMatrixWorld(true);
+      for (const name of nodes) {
+        const object = model.objects.get(name);
+        if (object) pivot.attach(object);
+      }
+      return { pivot, motion };
+    }),
+  };
+  applyOpening(entry, open);
+  s.openings.set(opening.id, entry);
+  return entry;
+}
+
+/** Rend ses maillages à la maquette, dans la pose où elle les dessine. */
+function unmountOpening(s: Stage, id: string) {
+  const entry = s.openings.get(id);
+  s.openings.delete(id);
+  const root = s.root;
+  if (!entry || !root) return;
+  for (const { pivot, motion } of entry.parts) {
+    pivot.rotation.y = 0;
+    if (motion.type === 'slide') pivot.position.set(0, 0, 0);
+    pivot.updateMatrixWorld(true);
+    for (const child of [...pivot.children]) root.attach(child);
+    root.remove(pivot);
+  }
+}
+
+/** Ouvertures de la maquette : montées à leur type, puis mues vers leur ouverture. */
+function placeOpenings(s: Stage, openings: OpeningProp[]) {
+  const { root, model } = s;
+  if (!root || !model) return;
+  const seen = new Set<string>();
+  let reshaped = false;
+  for (const opening of openings) {
+    seen.add(opening.id);
+    const { open, ...shape } = opening;
+    let entry = s.openings.get(opening.id);
+    if (entry && entry.key !== JSON.stringify(shape)) {
+      unmountOpening(s, opening.id);
+      entry = undefined;
+      reshaped = true;
+    }
+    if (!entry) {
+      entry = mountOpening(s, root, model, opening) ?? undefined;
+      if (!entry) continue;
+      reshaped = true;
+    }
+    if (entry.target !== open) {
+      entry.target = open;
+      const moving = entry;
+      s.animate(
+        swing(
+          s,
+          moving,
+          v => applyOpening(moving, v),
+          () => s.openings.get(opening.id) === moving,
+          // Une vraie porte fait partie de la maquette : arrivée, elle peut
+          // cacher une pastille, ou la montrer.
+          () => s.render('view')
+        )
+      );
+    }
+  }
+  for (const id of s.openings.keys()) {
+    if (seen.has(id)) continue;
+    unmountOpening(s, id);
+    reshaped = true;
+  }
+  if (reshaped) s.render();
 }
 
 /** Intensité des traits lumineux dans un câble où passe le courant. */
@@ -754,21 +948,32 @@ function runFlows(s: Stage) {
   });
 }
 
-/** Une porte s'ouvre, un volet descend : en douceur, jusqu'à l'ouverture demandée. */
-function swing(s: Stage, entry: PartEntry) {
+/**
+ * Une porte s'ouvre, un volet descend : en douceur, jusqu'à l'ouverture
+ * demandée. `apply` met l'élément à une ouverture ; `alive` dit s'il est
+ * toujours dans la scène ; `settled` suit l'arrivée.
+ */
+function swing(
+  s: Stage,
+  entry: { value: number; target: number },
+  apply: (openness: number) => void,
+  alive: () => boolean,
+  settled?: () => void
+) {
   const from = entry.value;
   const to = entry.target;
   let start = 0;
   return (now: number) => {
     // Remplacé par un mouvement plus récent, ou retiré de la scène.
-    if (entry.target !== to || !entry.obj.object.parent) return false;
+    if (entry.target !== to || !alive()) return false;
     start ||= now;
     const t = Math.min(1, (now - start) / SWING_MS);
     entry.value = from + (to - from) * easeInOut(t);
-    entry.obj.apply(entry.value);
-    // Hors de la maquette, il ne cache aucune pastille : seules ses ombres bougent.
+    apply(entry.value);
     s.render('shadows');
-    return t < 1;
+    if (t < 1) return true;
+    settled?.();
+    return false;
   };
 }
 
@@ -943,6 +1148,8 @@ export default function Floorplan3D({
   compass,
   lamps,
   parts,
+  openings,
+  onOpenings,
   cables,
   flowing,
   onFrame,
@@ -961,9 +1168,41 @@ export default function Floorplan3D({
   const stage = useRef<Stage | null>(null);
 
   // Dernières valeurs, lues par des écouteurs posés une fois pour toutes.
-  const latest = useRef({ camera, lamps, parts, cables, floors, anchors, onFrame, onPick, onHover, onOrbit, onOcclusion, onLoad, onError });
+  const latest = useRef({
+    camera,
+    lamps,
+    parts,
+    openings,
+    cables,
+    floors,
+    anchors,
+    onFrame,
+    onPick,
+    onHover,
+    onOrbit,
+    onOcclusion,
+    onOpenings,
+    onLoad,
+    onError,
+  });
   useLayoutEffect(() => {
-    latest.current = { camera, lamps, parts, cables, floors, anchors, onFrame, onPick, onHover, onOrbit, onOcclusion, onLoad, onError };
+    latest.current = {
+      camera,
+      lamps,
+      parts,
+      openings,
+      cables,
+      floors,
+      anchors,
+      onFrame,
+      onPick,
+      onHover,
+      onOrbit,
+      onOcclusion,
+      onOpenings,
+      onLoad,
+      onError,
+    };
   });
 
   // ── Scène, caméra, rendu ───────────────────────────────────────────────────
@@ -1117,6 +1356,8 @@ export default function Floorplan3D({
       lampGlow: false,
       glowMap: null,
       parts: new Map(),
+      model: null,
+      openings: new Map(),
       cables: new Map(),
       flowAllowed: false,
       flowRunning: false,
@@ -1242,6 +1483,11 @@ export default function Floorplan3D({
         s.uniforms.fpBox.value.set(...s.cut.box);
         s.uniforms.fpSides.value.set(...s.cut.sides);
         applyCutaway(s);
+        // Ses objets, et ses ouvertures : les pivots de l'ancienne sont partis avec elle.
+        s.openings.clear();
+        s.model = readModel(root);
+        latest.current.onOpenings?.(s.model?.detected ?? null);
+        placeOpenings(s, latest.current.openings ?? []);
         // Placés d'après la maquette : tous reconstruits sur la nouvelle.
         for (const id of s.parts.keys()) removeGenerated(s, s.parts, id);
         placeParts(s, latest.current.parts);
@@ -1321,6 +1567,13 @@ export default function Floorplan3D({
     const s = stage.current;
     if (s) placeParts(s, latest.current.parts);
   }, [partsKey]);
+
+  // ── Portes, fenêtres et baies de la maquette ──────────────────────────────
+  const openingsKey = JSON.stringify(openings ?? []);
+  useEffect(() => {
+    const s = stage.current;
+    if (s) placeOpenings(s, latest.current.openings ?? []);
+  }, [openingsKey]);
 
   // Points d'accroche changés sans que la caméra bouge : ce que la maquette
   // cache est à revérifier.

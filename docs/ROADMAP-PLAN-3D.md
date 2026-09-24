@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **26 tâches sur 34** — phases A à H, `I1`, `I2`, `J1` à `J3`. `F1` reste à essayer sur un vrai Android.
+**État global** : **27 tâches sur 34** — phases A à H, `I1`, `I2`, `J1` à `J4`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -553,7 +553,18 @@ leurs liaisons avec. Le plugin, lui, reste tel quel.
   entrouvertes, la porte d'entrée et les fenêtres ; la baie et la porte
   coulissante savent se fermer. Tests unitaires.
 
-### [ ] J4 — Les vraies portes bougent
+### [x] J4 — Les vraies portes bougent
+
+> **Fait** : les maillages mobiles passent sous un pivot — sur l'axe des
+> gonds, ou qui glisse — et reviennent à la maquette, dans sa pose, quand la
+> liaison s'en va. Ils restent les siens : coupe des murs, lumière des pièces
+> et lancers de rayon les suivent. `floorplan.openings` : `kinds`, le type
+> choisi à la main par famille, et `links` — `node`, le nœud du premier
+> composant, `entityId`, `flip`, `hinge`. Même mouvement que les éléments
+> dessinés ; arrivée, une vraie porte peut cacher une pastille, ou la montrer :
+> c'est revérifié. Rejouée, elle suit son historique. Une maquette fondue n'est
+> pas parcourue. Vérifié dans le mock sur `home.glb` : les cinq portes et la
+> porte coulissante, ouvertes puis fermées.
 
 - **Où** : [Floorplan3D.tsx](../src/components/floorplan/Floorplan3D.tsx)
 - **Quoi** : les maillages mobiles passent sous un pivot posé sur l'axe des

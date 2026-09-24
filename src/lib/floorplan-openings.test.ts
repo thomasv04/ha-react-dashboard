@@ -3,9 +3,11 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import {
   detectOpenings,
+  familyKind,
   guessOpeningKind,
   modelNode,
   motionAt,
+  normalizeOpenings,
   openingMotion,
   parseNodeName,
   structureOf,
@@ -458,5 +460,34 @@ describe('the house of the fixtures (ExportToHASS)', () => {
     expect(left.slide.closed).toBeCloseTo(48, 0);
     expect(right.slide.closed).toBeCloseTo(-48, 0);
     expect(left.slide.open).toBe(0);
+  });
+});
+
+describe('normalizeOpenings', () => {
+  it('keeps what is readable, and drops the rest without failing', () => {
+    expect(
+      normalizeOpenings({
+        kinds: { Porte_en_bois: 'door', Canape: 'none', Armoire: 'wardrobe' },
+        links: [
+          { node: 'Porte_en_bois_1', entityId: 'binary_sensor.porte', flip: true, hinge: 'yes' },
+          { node: 3, entityId: 'binary_sensor.x' },
+          null,
+        ],
+      })
+    ).toEqual({
+      kinds: { Porte_en_bois: 'door', Canape: 'none' },
+      links: [{ node: 'Porte_en_bois_1', entityId: 'binary_sensor.porte', flip: true }],
+    });
+    expect(normalizeOpenings(undefined)).toEqual({ kinds: {}, links: [] });
+  });
+});
+
+describe('familyKind', () => {
+  it('takes the type chosen by hand, then the one guessed from the name', () => {
+    expect(familyKind('Porte_en_bois', {})).toBe('door');
+    expect(familyKind('Porte_en_bois', { Porte_en_bois: 'window' })).toBe('window');
+    expect(familyKind('Porte_en_bois', { Porte_en_bois: 'none' })).toBeNull();
+    expect(familyKind('Armoire', { Armoire: 'door' })).toBe('door');
+    expect(familyKind('', {})).toBeNull();
   });
 });

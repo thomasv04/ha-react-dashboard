@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import type { FloorplanCable, FloorplanPart, FloorplanRoom } from '@/lib/floorplan';
+import type { FloorplanOpenings } from '@/lib/floorplan-openings';
 
 export type PageType = 'grid' | 'media' | 'settings' | 'floorplan';
 
@@ -34,6 +35,8 @@ export interface FloorplanConfig {
   rooms?: FloorplanRoom[];
   /** Câbles d'énergie tracés sur la maquette, animés par leur entité. */
   cables?: FloorplanCable[];
+  /** Portes, fenêtres et baies de la maquette elle-même (export ExportToHASS), mues par leur entité. */
+  openings?: FloorplanOpenings;
 }
 
 export interface Page {

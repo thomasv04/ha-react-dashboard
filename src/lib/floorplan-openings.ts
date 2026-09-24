@@ -659,3 +659,51 @@ function swing(
     return { leaf, motion: { type: 'swing' as const, pivot, closed, open: closed + way * SWING } };
   });
 }
+
+// ── Réglage ──────────────────────────────────────────────────────────────────
+
+/** Une ouverture de la maquette liée à une entité. */
+export interface OpeningLink {
+  /**
+   * Le nœud de son premier composant, qui la désigne : un nom, jamais un
+   * indice — il survit à un nouvel export, pourvu que l'objet garde son nom.
+   */
+  node: string;
+  entityId: string;
+  /** S'ouvre de l'autre côté du mur ; pour une baie, l'autre panneau glisse. */
+  flip?: boolean;
+  /** Ses gonds sont sur l'autre arête du battant. */
+  hinge?: boolean;
+}
+
+/** Les ouvertures d'une maquette (`floorplan.openings`) : le type de ses familles, et les liaisons. */
+export interface FloorplanOpenings {
+  /** Type choisi à la main, par famille — `none` : écartée. Une famille absente se devine d'après son nom. */
+  kinds?: Record<string, OpeningKind | 'none'>;
+  links?: OpeningLink[];
+}
+
+/** Réglage lisible : ce qui est illisible est écarté, pas fatal. */
+export function normalizeOpenings(value: unknown): { kinds: Record<string, OpeningKind | 'none'>; links: OpeningLink[] } {
+  const config = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  const kinds = Object.fromEntries(
+    Object.entries(config.kinds && typeof config.kinds === 'object' ? config.kinds : {}).filter(
+      (entry): entry is [string, OpeningKind | 'none'] => entry[1] === 'none' || OPENING_KINDS.includes(entry[1] as OpeningKind)
+    )
+  );
+  const links = (Array.isArray(config.links) ? config.links : []).flatMap((l: unknown) => {
+    const link = (l && typeof l === 'object' ? l : {}) as Record<string, unknown>;
+    if (typeof link.node !== 'string' || !link.node || typeof link.entityId !== 'string') return [];
+    return [
+      { node: link.node, entityId: link.entityId, ...(link.flip === true && { flip: true }), ...(link.hinge === true && { hinge: true }) },
+    ];
+  });
+  return { kinds, links };
+}
+
+/** Type d'une famille : choisi à la main, sinon deviné d'après son nom — `null` : écartée, ou rien n'y ressemble. */
+export function familyKind(family: string, kinds: Record<string, OpeningKind | 'none'>): OpeningKind | null {
+  const chosen = kinds[family];
+  if (chosen) return chosen === 'none' ? null : chosen;
+  return family ? guessOpeningKind(family) : null;
+}

@@ -65,10 +65,11 @@ import {
   type FloorplanPart,
   type Vec3,
 } from '@/lib/floorplan';
+import { familyKind, normalizeOpenings, parseNodeName } from '@/lib/floorplan-openings';
 import { cn, isTypingTarget } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import type { ChipCardConfig, WidgetConfig } from '@/types/widget-configs';
-import type { CableProp, FloorOverlay, Floorplan3DHandle, Lamp, PartProp, Project } from './Floorplan3D';
+import type { CableProp, FloorOverlay, Floorplan3DHandle, Lamp, OpeningProp, PartProp, Project } from './Floorplan3D';
 import { FloorplanItem } from './FloorplanItem';
 import { DraftPopover } from './FloorplanDrawn';
 import { PartList, PartPopover } from './FloorplanParts';
@@ -272,7 +273,9 @@ export function FloorplanView() {
       : []
   );
   const parts = normalizeParts(floorplan?.parts);
-  const replay = useReplay([...glows.map(g => g.entityId), ...parts.map(p => p.entityId)]);
+  /** Ouvertures de la maquette elle-même : le type de leurs familles, et leurs liaisons. */
+  const openingsConfig = normalizeOpenings(floorplan?.openings);
+  const replay = useReplay([...glows.map(g => g.entityId), ...parts.map(p => p.entityId), ...openingsConfig.links.map(l => l.entityId)]);
   const closeReplay = replay.close;
   /** État d'une entité à l'instant rejoué — `undefined` en direct, ou sans historique. */
   const replayed = (entityId: string) => (replay.span ? stateAt(replay.history[entityId], replay.time) : undefined);
@@ -371,6 +374,7 @@ export function FloorplanView() {
     'sun.sun',
     weatherId,
     ...parts.map(p => p.entityId),
+    ...openingsConfig.links.map(l => l.entityId),
     ...allCables.map(c => c.entityId),
   ]);
 
@@ -437,6 +441,22 @@ export function FloorplanView() {
     }),
     ...(draft?.part ? [{ ...draft.part, open: DRAFT_OPENNESS }] : []),
   ];
+
+  /** Portes, fenêtres et baies de la maquette liées à une entité — le type de leur famille décide du mouvement. */
+  const openingsProp: OpeningProp[] = openingsConfig.links.flatMap(link => {
+    const kind = familyKind(parseNodeName(link.node).family, openingsConfig.kinds);
+    if (!kind) return [];
+    const entity = replayed(link.entityId) ?? entities[link.entityId];
+    return [
+      {
+        id: link.node,
+        kind,
+        ...(link.flip && { flip: true }),
+        ...(link.hinge && { hinge: true }),
+        open: openness(entity?.state, entity?.attributes),
+      },
+    ];
+  });
 
   // ── Pièces ─────────────────────────────────────────────────────────────────
   // Température de chaque pièce : la moyenne des capteurs de température posés dedans.
@@ -868,6 +888,7 @@ export function FloorplanView() {
                   lampGlow={!!floorplan?.lampGlow}
                   lamps={lamps}
                   parts={partsProp}
+                  openings={openingsProp}
                   outline={outline}
                   floors={floors}
                   cables={cablesProp}
