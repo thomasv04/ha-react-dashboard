@@ -173,7 +173,9 @@ const MAX_FOOTPRINT = 1024;
 export function modelNode(name: string, positions: ArrayLike<number>): ModelNode {
   const min: Vec3 = [Infinity, Infinity, Infinity];
   const max: Vec3 = [-Infinity, -Infinity, -Infinity];
-  const seen = new Map<string, [number, number]>();
+  // Clé numérique, au centième près : un texte par sommet coûterait cher sur
+  // une grosse maquette. Exacte jusqu'à ± 20 km en centimètres.
+  const seen = new Map<number, [number, number]>();
   for (let i = 0; i + 2 < positions.length; i += 3) {
     const x = positions[i];
     const y = positions[i + 1];
@@ -184,7 +186,7 @@ export function modelNode(name: string, positions: ArrayLike<number>): ModelNode
     if (x > max[0]) max[0] = x;
     if (y > max[1]) max[1] = y;
     if (z > max[2]) max[2] = z;
-    const key = `${Math.round(x * 100)},${Math.round(z * 100)}`;
+    const key = Math.round(x * 100) * 4294967296 + Math.round(z * 100) + 2147483648;
     if (!seen.has(key)) seen.set(key, [x, z]);
   }
   let footprint = [...seen.values()];

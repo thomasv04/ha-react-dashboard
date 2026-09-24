@@ -770,16 +770,24 @@ function readModel(root: Object3D): ModelObjects | null {
   const nodes = new Map<string, ModelNode>();
   const objects = new Map<string, Object3D>();
   for (const child of children) {
-    const positions: number[] = [];
+    const meshes: Mesh[] = [];
     child.traverse(o => {
-      const position = (o as Mesh).isMesh ? (o as Mesh).geometry.attributes.position : undefined;
-      if (!position) return;
-      toModel.multiplyMatrices(inverse, o.matrixWorld);
-      for (let i = 0; i < position.count; i++) {
-        point.fromBufferAttribute(position, i).applyMatrix4(toModel);
-        positions.push(point.x, point.y, point.z);
-      }
+      if ((o as Mesh).isMesh && (o as Mesh).geometry.attributes.position) meshes.push(o as Mesh);
     });
+    // Dans les coordonnées de la maquette, d'un seul tableau : une grosse
+    // maquette compte des centaines de milliers de sommets.
+    const positions = new Float32Array(meshes.reduce((n, mesh) => n + mesh.geometry.attributes.position.count * 3, 0));
+    let k = 0;
+    for (const mesh of meshes) {
+      const position = mesh.geometry.attributes.position;
+      toModel.multiplyMatrices(inverse, mesh.matrixWorld);
+      for (let i = 0; i < position.count; i++, k += 3) {
+        point.fromBufferAttribute(position, i).applyMatrix4(toModel);
+        positions[k] = point.x;
+        positions[k + 1] = point.y;
+        positions[k + 2] = point.z;
+      }
+    }
     nodes.set(child.name, modelNode(child.name, positions));
     objects.set(child.name, child);
   }
