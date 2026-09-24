@@ -4,6 +4,7 @@ import path from 'node:path';
 import {
   detectOpenings,
   familyKind,
+  furnitureNodes,
   guessOpeningKind,
   modelNode,
   motionAt,
@@ -397,6 +398,12 @@ describe('the house of the fixtures (ExportToHASS)', () => {
     expect(opening('1_8').inWall).toBe(false);
   });
 
+  it('lets its sofa and its device fade rather than be cut, not its doors', () => {
+    const furniture = furnitureNodes(model);
+    expect(furniture).toEqual(expect.arrayContaining(['1_8', 'Appareil_technologique_1']));
+    expect(furniture).toHaveLength(opening('1_8').nodes.length + opening('Appareil_technologique_1').nodes.length);
+  });
+
   it('gathers the five wooden doors, five components each', () => {
     const doors = model.openings.filter(o => o.family === 'Porte_en_bois');
     expect(doors.map(d => d.id)).toEqual([
@@ -573,8 +580,13 @@ describe('the synthetic model of the end-to-end tests (scripts/make-openings-glb
       ['Volet_Chambre', false, 'shutter'],
       ['Garage', true, 'garage'],
       ['Canape', false, null],
+      ['Armoire_Chambre', false, null],
     ]);
     expect(model.unnamed).toBe(1);
+  });
+
+  it('lets its furniture fade rather than be cut — not the shutter, set outside the wall', () => {
+    expect(furnitureNodes(model).sort()).toEqual(['1_1', '2_1', 'Armoire_Chambre_1', 'Armoire_Chambre_2', 'Canape_1', 'Canape_2']);
   });
 
   it('moves each of them the way it is modelled', () => {

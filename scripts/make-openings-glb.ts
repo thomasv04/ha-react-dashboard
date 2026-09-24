@@ -16,7 +16,8 @@
  *   fenêtre sans nom valide (`1`, `2`, `3`), et dehors son `Volet_Chambre`,
  *   baissé : coffre, coulisses, tablier ;
  * - à l'ouest, `Garage` : un panneau sans cadre, sa poignée ;
- * - dans la pièce, un `Canape` et une table sans nom (`1_1`, `2_1`).
+ * - dans la pièce, un `Canape`, une table sans nom (`1_1`, `2_1`), et une
+ *   `Armoire_Chambre` bleue, haute de 2 m : la coupe des murs la traverse.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -33,6 +34,7 @@ const MATERIALS = {
   metal: { color: [0.54, 0.56, 0.6], metal: 0.6 },
   glass: { color: [0.66, 0.81, 0.88], alpha: 0.35 },
   fabric: { color: [0.36, 0.42, 0.55] },
+  blue: { color: [0.16, 0.33, 0.72] },
 } as const;
 type MaterialName = keyof typeof MATERIALS;
 
@@ -154,6 +156,9 @@ node('Canape_1', 'fabric', box([200, 0, 250], [400, 45, 330]));
 node('Canape_2', 'fabric', box([200, 45, 310], [400, 85, 330]));
 node('1_1', 'wood', box([250, 70, 100], [350, 75, 180]));
 node('2_1', 'wood', box([295, 0, 135], [305, 70, 145]));
+// Dans le coin sud-est, à l'écart de la porte entrouverte et du mur de la baie.
+node('Armoire_Chambre_1', 'blue', box([505, 0, 335], [580, 200, 393]));
+node('Armoire_Chambre_2', 'metal', box([538, 95, 331], [541, 125, 335]), box([544, 95, 331], [547, 125, 335]));
 
 // ── Écriture du .glb ─────────────────────────────────────────────────────────
 const FACES: { normal: Vec3; corners: [number, number, number][] }[] = [

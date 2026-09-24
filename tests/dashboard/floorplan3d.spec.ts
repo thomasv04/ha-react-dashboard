@@ -466,6 +466,21 @@ test('a real door of the model turns with the entity linked to it', async ({ pag
   await expect(openings(page)).toHaveAttribute('data-floorplan-openings', 'Porte_Chambre_1=1');
 });
 
+test('the furniture of the model fades above the cut of the walls, rather than being cut', async ({ page }) => {
+  // three.js ne dit que dans la console qu'un shader ne compile pas.
+  const shaderErrors: string[] = [];
+  page.on('console', message => {
+    if (message.type() === 'error' && message.text().includes('THREE.WebGLProgram')) shaderErrors.push(message.text());
+  });
+  await openOpenings(page);
+  // L'armoire, le canapé, la table : ni le volet, posé devant le mur, ni les portes et fenêtres.
+  const ghosts = (await openings(page).getAttribute('data-floorplan-ghosts'))?.split(' ').sort();
+  expect(ghosts).toEqual(['1_1', '2_1', 'Armoire_Chambre_1', 'Armoire_Chambre_2', 'Canape_1', 'Canape_2']);
+  // La porte a fini de s'ouvrir : la maison a été dessinée, fondu et fantômes compris.
+  await expect(openings(page)).toHaveAttribute('data-floorplan-openings', 'Porte_Chambre_1=1');
+  expect(shaderErrors).toEqual([]);
+});
+
 test('in edit mode, the Openings tab lists the doors of the model, and links one', async ({ page, request }) => {
   await openOpenings(page);
   await page.getByRole('button', { name: 'Modifier le dashboard' }).click();

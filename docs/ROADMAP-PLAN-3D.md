@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **32 tâches sur 35** — phases A à H et J, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
+**État global** : **33 tâches sur 36** — phases A à H et J, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -289,6 +289,27 @@ Le reste est indépendant.
 - **Quoi** : une pastille dont le point est masqué par la maquette (hors
   partie coupée) disparaît. Recalculé quand la caméra s'arrête, pas à chaque
   image.
+
+### [x] E3 — Un fondu tramé plutôt qu'une coupe franche
+
+> **Fait** ([modelPatch.ts](../src/components/floorplan/modelPatch.ts)) : au-dessus
+> de la coupe, un mur ne s'arrête plus net ; il s'efface sur 12 % de la
+> hauteur de la maquette, une part de ses pixels gardée, de moins en moins en
+> montant — un tramage de Bayer 4 × 4 posé sur les pixels de l'écran, sans
+> transparence à trier. Un meuble d'une maquette ExportToHASS (ni mur, ni sol,
+> ni logé dans un mur, ni nommé comme une ouverture : un volet est posé devant
+> le mur) n'est plus tranché : sa partie haute reste en fantôme, un pixel sur
+> trois, qu'on reconnaît et au travers duquel on voit. Ses ombres restent
+> entières ; celles des murs gardent la coupe franche. Juste sous la coupe, la
+> tranche sombre s'estompe elle aussi : vue au travers du fondu, elle en
+> piquetait le bas de points noirs ; vue d'en haut, plus profonde, elle reste.
+> Une bande de 18 % faisait, sur les murs sombres de la démo, une fumée
+> au-dessus des cloisons. La maquette synthétique a désormais son armoire
+> bleue, haute de 2 m.
+
+- **Quoi** : l'effet « Dithering Fade » des jeux, à la place de la coupe :
+  surtout, qu'un meuble haut — l'armoire bleue de la maison — ne soit plus
+  coupé en deux.
 
 ---
 

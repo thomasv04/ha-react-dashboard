@@ -46,6 +46,7 @@ import { acceleratedRaycast, computeBoundsTree } from 'three-mesh-bvh';
 import {
   backSides,
   compassHeading,
+  CUTAWAY_FADE,
   CUTAWAY_HEIGHT,
   cutLimit,
   DRAFT_COLOR,
@@ -74,6 +75,7 @@ import {
 } from './modelPatch';
 import {
   detectOpenings,
+  furnitureNodes,
   modelNode,
   motionAt,
   openingMotion,
@@ -792,6 +794,11 @@ function readModel(root: Object3D): ModelObjects | null {
     objects.set(child.name, child);
   }
   return { nodes, objects, detected: detectOpenings([...nodes.values()]) };
+}
+
+/** Les meubles de la maquette, qui s'estompent au lieu d'être coupés — aucun, sans objets séparés. */
+function furnitureOf(model: ModelObjects | null): Object3D[] {
+  return model ? furnitureNodes(model.detected).flatMap(name => model.objects.get(name) ?? []) : [];
 }
 
 /** Un battant tourne sur ses gonds, un panneau glisse, un tablier s'enroule : chaque pivot à cette ouverture. */
@@ -1550,7 +1557,13 @@ export default function Floorplan3D({
         }
         s.scene.add(root);
         s.root = root;
-        patchModel(root, s.uniforms, s.depth.model);
+        // Ses objets, lus avant les retouches : ses meubles ne se coupent pas,
+        // ils s'estompent — la maquette dit lesquels, comme ses ouvertures.
+        s.model = readModel(root);
+        const furniture = furnitureOf(s.model);
+        patchModel(root, s.uniforms, s.depth.model, true, furniture);
+        const host = s.renderer.domElement.parentElement;
+        if (host) host.dataset.floorplanGhosts = furniture.map(o => o.name).join(' ');
         // Emprise, une fois la maquette posée au sol et centrée. Les murs
         // partent debout, et s'abaissent en glissant : la maison s'ouvre.
         const { min, max } = new Box3().setFromObject(root);
@@ -1566,13 +1579,13 @@ export default function Floorplan3D({
           sliding: false,
         };
         s.uniforms.fpCutaway.value.set(top, top, BACK_WALL_MARGIN, CAP_DEPTH);
+        s.uniforms.fpFade.value = Math.max((max.y - min.y) * CUTAWAY_FADE, 1e-3);
         s.uniforms.fpBox.value.set(...s.cut.box);
         s.uniforms.fpSides.value.set(...s.cut.sides);
         applyCutaway(s);
-        // Ses objets, et ses ouvertures : les pivots de l'ancienne sont partis avec elle.
+        // Ses ouvertures : les pivots de l'ancienne sont partis avec elle.
         s.openings.clear();
         reportOpenings(s);
-        s.model = readModel(root);
         placeHighlight(s, null);
         latest.current.onOpenings?.(s.model?.detected ?? null);
         placeOpenings(s, latest.current.openings ?? []);

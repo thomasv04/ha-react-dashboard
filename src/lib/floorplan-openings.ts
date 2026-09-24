@@ -376,6 +376,16 @@ export function detectOpenings(nodes: ModelNode[]): ModelOpenings {
   return { openings, families, unnamed: openings.filter(o => !o.family && o.inWall).length, cm, center };
 }
 
+/**
+ * Les meubles : les objets qui ne sont ni murs ni sols, ni logés dans un mur
+ * — des portes, des fenêtres —, ni nommés comme une ouverture : un volet
+ * roulant est posé devant le mur. La coupe des murs ne les tranche pas : ils
+ * s'estompent.
+ */
+export function furnitureNodes(model: ModelOpenings): string[] {
+  return model.openings.filter(o => !o.inWall && !guessOpeningKind(o.family)).flatMap(o => o.nodes);
+}
+
 // ── Parties mobiles ──────────────────────────────────────────────────────────
 
 /** Angle, en `rotation.y` de three.js, qui amène la direction `from` sur `to` (dans ]−π, π]). */
