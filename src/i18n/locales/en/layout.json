@@ -484,6 +484,13 @@
     "openingHinge": "Hinges",
     "openingHingeHint": "Hinges on the other edge of the leaf",
     "openingLink": "Link",
-    "openingUnlink": "Unlink"
+    "openingUnlink": "Unlink",
+    "partHintModel": "Click a door or window of the model to link it. Elsewhere, draw it: the bottom on the hinge side, then the opposite top corner.",
+    "openingHintHover": "Click to link “{name}”.",
+    "openingHintUnnamed": "This object has no valid name: click to see what to do.",
+    "openingUnnamedTitle": "Object without a valid name",
+    "openingUnnamedHelp": "Sweet Home 3D exported it without a name: its own has an accent, or a sign the plugin refuses. Rename it — Window_Bedroom, Door_Kitchen… —, without a trailing “#”, then export the model again: it will link in one click.",
+    "openingDrawAnyway": "Draw it instead",
+    "openingSingle": "All in one piece: nothing can move. In Sweet Home 3D, remove the trailing “#” from its name."
   }
 }

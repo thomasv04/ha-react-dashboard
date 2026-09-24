@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **28 tâches sur 34** — phases A à H, `I1`, `I2`, `J1` à `J5`. `F1` reste à essayer sur un vrai Android.
+**État global** : **29 tâches sur 34** — phases A à H, `I1`, `I2`, `J1` à `J6`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -597,7 +597,16 @@ leurs liaisons avec. Le plugin, lui, reste tel quel.
   logées dans un mur d'abord, prérempli d'après les noms. Objets sans nom : un
   avertissement. Maquette fondue : renvoi à l'outil de dessin.
 
-### [ ] J6 — Lier en cliquant la porte
+### [x] J6 — Lier en cliquant la porte
+
+> **Fait** : avec l'outil « Porte · volet », l'objet sous le pointeur — le
+> rayon remonte au nœud de la maquette, pivots compris — se cerne en ambre
+> quand un clic le lierait : une famille qui a un type, ou un objet logé dans
+> un mur. L'indication le nomme. Le clic ouvre sa fenêtre de liaison ; sa
+> famille n'a pas de type : on le choisit là, pour toute la famille. Un objet
+> sans nom valide dit pourquoi on ne peut pas le lier, et propose de le
+> dessiner. Un objet d'un seul tenant (`#` final) est signalé : rien n'y
+> bouge. Ailleurs, le clic dessine, comme avant.
 
 - **Quoi** : avec l'outil « Porte · volet », une ouverture détectée se
   surligne au survol ; un clic ouvre sa fenêtre de liaison, à côté d'elle. Sa

@@ -316,6 +316,7 @@ export function OpeningPopover({
   kind,
   link,
   linked,
+  single,
   around,
   onKind,
   onChange,
@@ -331,6 +332,8 @@ export function OpeningPopover({
   link: OpeningLink;
   /** Déjà liée : on peut la délier. */
   linked: boolean;
+  /** D'un seul tenant : rien ne peut bouger — un « # » à la fin de son nom, dans Sweet Home 3D. */
+  single: boolean;
   around: Around;
   onKind: (kind: OpeningKind) => void;
   onChange: (link: OpeningLink) => void;
@@ -370,6 +373,12 @@ export function OpeningPopover({
       />
       {count > 1 && (
         <p className='px-1 text-[10px] leading-snug text-white/40'>{t('layout.floorplan.openingFamilyWide', { name: family, count })}</p>
+      )}
+      {single && (
+        <p className='flex items-start gap-1.5 px-1 text-[10px] leading-snug text-amber-200/90'>
+          <TriangleAlert size={11} className='shrink-0 mt-px' />
+          {t('layout.floorplan.openingSingle')}
+        </p>
       )}
       <div className='flex flex-wrap items-center gap-1.5'>
         {toggle('flip', ArrowLeftRight, t('layout.floorplan.openingFlip'), t('layout.floorplan.openingFlipHint'))}

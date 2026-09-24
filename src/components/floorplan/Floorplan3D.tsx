@@ -9,13 +9,16 @@ import {
   PCFShadowMap,
   PerspectiveCamera,
   BufferGeometry,
+  BoxGeometry,
   Color,
   DoubleSide,
+  EdgesGeometry,
   Float32BufferAttribute,
   Group,
   Line,
   LineBasicMaterial,
   LineLoop,
+  LineSegments,
   Matrix4,
   Mesh,
   MeshBasicMaterial,
@@ -190,10 +193,15 @@ interface Floorplan3DProps {
   onOpenings?: (openings: ModelOpenings | null) => void;
   /** Après chaque image où la caméra ou la scène a bougé : de quoi recaler les pastilles. */
   onFrame: (project: Project) => void;
-  /** Clic — pas un glisser, qui fait tourner — sur la maquette, ou à côté (`null`). */
-  onPick?: (anchor: Vec3 | null, clientX: number, clientY: number) => void;
-  /** Point de la maquette sous le pointeur, quand il bouge — pour dessiner. */
-  onHover?: (anchor: Vec3 | null) => void;
+  /**
+   * Clic — pas un glisser, qui fait tourner — sur la maquette, ou à côté
+   * (`null`) ; et l'objet de la maquette touché, par son nom.
+   */
+  onPick?: (anchor: Vec3 | null, clientX: number, clientY: number, node: string | null) => void;
+  /** Point de la maquette sous le pointeur, quand il bouge — pour dessiner —, et l'objet qu'il survole. */
+  onHover?: (anchor: Vec3 | null, node: string | null) => void;
+  /** Ouverture de la maquette cernée, par-dessus tout : celle qu'on survole, celle qu'on lie. */
+  highlight?: string | null;
   /** La maison tournée à la main. */
   onOrbit?: () => void;
   /** Rectangle en cours de dessin : deux coins opposés, dans les coordonnées de la maquette. */
@@ -352,6 +360,8 @@ interface Stage {
   flowRunning: boolean;
   /** Rectangle en cours de dessin, créé au premier besoin. */
   outline: Group | null;
+  /** Contour de l'ouverture cernée, créé au premier besoin. */
+  highlight: LineSegments | null;
   /** Tracés au sol. */
   floors: Group;
   /** Retouches des matériaux de la maquette (coupe, découpes), partagées par tous. */
@@ -443,15 +453,28 @@ function aim(s: Stage, clientX: number, clientY: number) {
   raycaster.setFromCamera(pointer, s.camera);
 }
 
-function pick(s: Stage, clientX: number, clientY: number): Vec3 | null {
-  if (!s.root) return null;
+/**
+ * Ce que touche le rayon de ce point de l'écran : le point, et l'objet de la
+ * maquette dont il fait partie — un enfant de la maquette, ou d'un pivot
+ * d'ouverture qui l'emporte.
+ */
+function hitAt(s: Stage, clientX: number, clientY: number): { point: Vec3; node: string | null } | null {
+  const root = s.root;
+  if (!root) return null;
   aim(s, clientX, clientY);
   // Le lancer de rayon ignore la coupe, faite dans les shaders : sans ce tri,
   // un clic tomberait sur un mur qu'on ne voit plus.
-  const hit = raycaster.intersectObject(s.root, true).find(h => !isCut(s, h.point));
+  const hit = raycaster.intersectObject(root, true).find(h => !isCut(s, h.point));
+  if (!hit) return null;
+  let object: Object3D = hit.object;
+  while (object.parent && object.parent !== root && !object.parent.userData.fpPivot) object = object.parent;
   // Coordonnées de la maquette elle-même, pas de la scène : elles survivent à
   // un changement de taille ou de centrage au prochain chargement.
-  return hit ? (s.root.worldToLocal(hit.point.clone()).toArray() as Vec3) : null;
+  return { point: root.worldToLocal(hit.point.clone()).toArray() as Vec3, node: object.parent ? object.name : null };
+}
+
+function pick(s: Stage, clientX: number, clientY: number): Vec3 | null {
+  return hitAt(s, clientX, clientY)?.point ?? null;
 }
 
 function floorAt(s: Stage, clientX: number, clientY: number, y: number): [number, number] | null {
@@ -795,6 +818,7 @@ function mountOpening(s: Stage, root: Object3D, model: ModelObjects, { open, ...
     target: open,
     parts: parts.map(({ nodes, motion }) => {
       const pivot = new Group();
+      pivot.userData.fpPivot = true;
       if (motion.type === 'swing') pivot.position.set(motion.pivot[0], 0, motion.pivot[1]);
       root.add(pivot);
       pivot.updateMatrixWorld(true);
@@ -1037,6 +1061,37 @@ function placeOutline(s: Stage, corners: [Vec3, Vec3] | null | undefined) {
   s.render('draw');
 }
 
+/**
+ * Contour d'une ouverture de la maquette — sa boîte —, par-dessus tout, comme
+ * le rectangle d'un dessin : celle qu'on survole avec l'outil « Porte · volet »,
+ * celle qu'on lie. Dans la scène, pas dans la maquette : les rayons ne le
+ * voient pas, et il survit à un changement de maquette.
+ */
+function placeHighlight(s: Stage, id: string | null | undefined) {
+  const opening = id ? s.model?.detected.openings.find(o => o.id === id) : undefined;
+  if (!opening || !s.root) {
+    if (s.highlight?.visible) {
+      s.highlight.visible = false;
+      s.render('draw');
+    }
+    return;
+  }
+  if (!s.highlight) {
+    s.highlight = new LineSegments(
+      new EdgesGeometry(new BoxGeometry(1, 1, 1)),
+      new LineBasicMaterial({ color: DRAFT_COLOR, depthTest: false, transparent: true })
+    );
+    s.highlight.renderOrder = 10;
+    s.scene.add(s.highlight);
+  }
+  const min = s.root.localToWorld(new Vector3(...opening.min));
+  const max = s.root.localToWorld(new Vector3(...opening.max));
+  s.highlight.position.addVectors(min, max).multiplyScalar(0.5);
+  s.highlight.scale.subVectors(max, min).max(new Vector3(0.01, 0.01, 0.01));
+  s.highlight.visible = true;
+  s.render('draw');
+}
+
 /** Tracés au sol, un rien au-dessus du sol pour ne pas s'y confondre. */
 const FLOOR_LIFT = 0.03;
 
@@ -1157,6 +1212,7 @@ export default function Floorplan3D({
   onHover,
   onOrbit,
   outline,
+  highlight,
   floors,
   focus,
   anchors,
@@ -1362,6 +1418,7 @@ export default function Floorplan3D({
       flowAllowed: false,
       flowRunning: false,
       outline: null,
+      highlight: null,
       floors: new Group(),
       uniforms,
       cutaway: false,
@@ -1387,7 +1444,8 @@ export default function Floorplan3D({
       const start = down;
       down = null;
       if (!start || e.button !== 0 || Math.hypot(e.clientX - start.x, e.clientY - start.y) > CLICK_TOLERANCE) return;
-      latest.current.onPick?.(pick(s, e.clientX, e.clientY), e.clientX, e.clientY);
+      const hit = hitAt(s, e.clientX, e.clientY);
+      latest.current.onPick?.(hit?.point ?? null, e.clientX, e.clientY, hit?.node ?? null);
     };
     renderer.domElement.addEventListener('pointerdown', onDown);
     renderer.domElement.addEventListener('pointerup', onUp);
@@ -1404,7 +1462,8 @@ export default function Floorplan3D({
       const { clientX, clientY } = e;
       hoverFrame = requestAnimationFrame(() => {
         hoverFrame = 0;
-        latest.current.onHover?.(pick(s, clientX, clientY));
+        const hit = hitAt(s, clientX, clientY);
+        latest.current.onHover?.(hit?.point ?? null, hit?.node ?? null);
       });
     };
     renderer.domElement.addEventListener('pointermove', onMove);
@@ -1486,6 +1545,7 @@ export default function Floorplan3D({
         // Ses objets, et ses ouvertures : les pivots de l'ancienne sont partis avec elle.
         s.openings.clear();
         s.model = readModel(root);
+        placeHighlight(s, null);
         latest.current.onOpenings?.(s.model?.detected ?? null);
         placeOpenings(s, latest.current.openings ?? []);
         // Placés d'après la maquette : tous reconstruits sur la nouvelle.
@@ -1586,6 +1646,10 @@ export default function Floorplan3D({
   useEffect(() => {
     if (stage.current) placeFloors(stage.current, latest.current.floors);
   }, [floorsKey]);
+
+  useEffect(() => {
+    if (stage.current) placeHighlight(stage.current, highlight);
+  }, [highlight]);
 
   const outlineKey = JSON.stringify(outline ?? null);
   useEffect(() => {

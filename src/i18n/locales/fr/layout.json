@@ -484,6 +484,13 @@
     "openingHinge": "Gonds",
     "openingHingeHint": "Les gonds sur l'autre arête du battant",
     "openingLink": "Lier",
-    "openingUnlink": "Délier"
+    "openingUnlink": "Délier",
+    "partHintModel": "Cliquez une porte ou une fenêtre de la maquette pour la lier. Ailleurs, dessinez-la : le bas côté gonds, puis le coin haut opposé.",
+    "openingHintHover": "Cliquez pour lier « {name} ».",
+    "openingHintUnnamed": "Cet objet n'a pas de nom valide : cliquez pour savoir quoi faire.",
+    "openingUnnamedTitle": "Objet sans nom valide",
+    "openingUnnamedHelp": "Sweet Home 3D l'a exporté sans nom : le sien a un accent, ou un signe que le plugin refuse. Renommez-le — Fenetre_Chambre, Porte_Cuisine… —, sans « # » final, puis exportez de nouveau la maquette : il se liera d'un clic.",
+    "openingDrawAnyway": "Le dessiner",
+    "openingSingle": "D'un seul tenant : rien ne peut bouger. Dans Sweet Home 3D, retirez le « # » final de son nom."
   }
 }

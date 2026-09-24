@@ -270,6 +270,10 @@ export function FloorplanView() {
   const [openingDraft, setOpeningDraft] = useState<{ link: OpeningLink; kind: OpeningKind | null; around: Around } | null>(null);
   /** L'aperçu de cette ouverture, ouverte (1) ou fermée (0). */
   const [preview, setPreview] = useState(1);
+  /** Ouverture de la maquette survolée avec l'outil « Porte · volet » : cernée. */
+  const [hoverOpening, setHoverOpening] = useState<string | null>(null);
+  /** Objet sans nom valide cliqué : pourquoi on ne peut pas le lier, et de quoi le dessiner quand même. */
+  const [unnamed, setUnnamed] = useState<{ id: string; anchor: Vec3; at: { x: number; y: number } } | null>(null);
   const [failure, setFailure] = useState<{ model: string; kind: 'webgl' | 'model' } | null>(null);
   const [projector] = useState(createProjector);
 
@@ -309,6 +313,7 @@ export function FloorplanView() {
     setRoomDraft(null);
     setCableDraft(null);
     setOpeningDraft(null);
+    setUnnamed(null);
   }, []);
 
   const scope = `${isEditMode}:${currentPage?.id}`;
@@ -528,6 +533,19 @@ export function FloorplanView() {
     setPreview(1);
   };
 
+  /**
+   * L'ouverture de la maquette dont fait partie cet objet, quand l'outil
+   * « Porte · volet » la lie plutôt que de dessiner : une famille qui a un
+   * type, ou un objet logé dans un mur — nommé, pour choisir son type ; sans
+   * nom, pour dire pourquoi on ne peut pas le lier.
+   */
+  const openingAt = (node: string | null) => {
+    const opening = node ? modelOpenings?.openings.find(o => o.nodes.includes(node)) : undefined;
+    return opening && (opening.inWall || (opening.family && familyKind(opening.family, openingsConfig.kinds))) ? opening : undefined;
+  };
+  /** Cernée : l'ouverture survolée, quand un clic la lierait. */
+  const hovered = isEditMode && tool === 'part' && !draft ? hoverOpening : null;
+
   /** La liaison enregistrée ; le type choisi vaut pour toute la famille. */
   const saveOpening = () => {
     if (!openingDraft?.link.entityId || !openingDraft.kind) return;
@@ -627,8 +645,10 @@ export function FloorplanView() {
     setFocusId(room?.id ?? null);
   };
 
-  const onModelPick = (anchor: Vec3 | null, clientX: number, clientY: number) => {
+  const onModelPick = (anchor: Vec3 | null, clientX: number, clientY: number, node: string | null) => {
     const rect = planRef.current?.getBoundingClientRect();
+    setOpeningDraft(null);
+    setUnnamed(null);
     if (!rect || !anchor) return;
     const at = { x: ((clientX - rect.left) / rect.width) * 100, y: ((clientY - rect.top) / rect.height) * 100 };
     /** Le clic tombe-t-il sur ce point de la maquette, à l'écran ? */
@@ -659,6 +679,10 @@ export function FloorplanView() {
           : { points: [[anchor[0], anchor[2]]], y: anchor[1] }
       );
     }
+    // Une vraie porte de la maquette : on la lie. Ailleurs, on la dessine.
+    const opening = !draft ? openingAt(node) : undefined;
+    if (opening?.family) return linkOpening(opening.id);
+    if (opening) return setUnnamed({ id: opening.id, anchor, at });
     // Deux coins : le bas côté gonds, puis le haut opposé. Un second clic trop
     // proche du premier — ou un nouveau dessin — repart de ce point.
     if (!draft || draft.part || !partFrame(draft.a, anchor)) {
@@ -840,7 +864,17 @@ export function FloorplanView() {
             : 'cableHint'
           : draft && !draft.part
             ? 'partHintNext'
-            : 'partHint';
+            : modelOpenings?.openings.some(o => o.inWall)
+              ? 'partHintModel'
+              : 'partHint';
+  const hoveredOpening = hovered ? modelOpenings?.openings.find(o => o.id === hovered) : undefined;
+  /** Ce qu'un clic fera : lier l'ouverture survolée, ou ce que dit l'outil. */
+  const hintText =
+    hoveredOpening && modelOpenings
+      ? hoveredOpening.family
+        ? t('layout.floorplan.openingHintHover', { name: openingLabel(hoveredOpening, modelOpenings.families) })
+        : t('layout.floorplan.openingHintUnnamed')
+      : t(`layout.floorplan.${hint}`);
 
   // ── Réglages de la maquette, par onglet ────────────────────────────────────
   const modelTab = (
@@ -1002,8 +1036,11 @@ export function FloorplanView() {
                   onHover={
                     isEditMode && ((draft && !draft.part) || (roomDraft && !roomDraft.naming) || (cableDraft && !cableDraft.cable))
                       ? setHover
-                      : undefined
+                      : isEditMode && tool === 'part' && !draft && modelOpenings?.openings.length
+                        ? (_, node) => setHoverOpening(openingAt(node)?.id ?? null)
+                        : undefined
                   }
+                  highlight={previewing ?? unnamed?.id ?? hovered}
                   onLoad={() => setLoadedModel(model)}
                   onError={kind => setFailure({ model, kind })}
                 />
@@ -1136,6 +1173,28 @@ export function FloorplanView() {
                 );
               }}
             </Projected>
+            {unnamed && (
+              <DraftPopover
+                title={t('layout.floorplan.openingUnnamedTitle')}
+                onCancel={() => setUnnamed(null)}
+                style={{
+                  left: `clamp(8rem, ${unnamed.at.x}%, calc(100% - 8rem))`,
+                  top: `calc(${unnamed.at.y}% + 0.75rem)`,
+                  translate: '-50% 0',
+                }}
+              >
+                <p className='px-1 text-[11px] leading-snug text-white/65'>{t('layout.floorplan.openingUnnamedHelp')}</p>
+                <button
+                  onClick={() => {
+                    setDraft({ a: unnamed.anchor, from: unnamed.at });
+                    setUnnamed(null);
+                  }}
+                  className='ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 text-white/70 hover:text-white'
+                >
+                  {t('layout.floorplan.openingDrawAnyway')}
+                </button>
+              </DraftPopover>
+            )}
             {openingDraft &&
               modelOpenings &&
               (() => {
@@ -1149,6 +1208,7 @@ export function FloorplanView() {
                     kind={openingDraft.kind}
                     link={openingDraft.link}
                     linked={openingsConfig.links.some(l => l.node === opening.id)}
+                    single={opening.nodes.length < 2}
                     around={openingDraft.around}
                     onKind={kind => setOpeningDraft({ ...openingDraft, kind })}
                     onChange={link => setOpeningDraft({ ...openingDraft, link })}
@@ -1306,7 +1366,7 @@ export function FloorplanView() {
             setTool(next);
             clearDrafts();
           }}
-          hint={t(`layout.floorplan.${hint}`)}
+          hint={hintText}
           tabs={[
             { id: 'model', icon: BoxIcon, label: t('layout.floorplan.tabModel'), content: modelTab },
             { id: 'ambiance', icon: Sun, label: t('layout.floorplan.tabAmbiance'), content: ambianceTab },
