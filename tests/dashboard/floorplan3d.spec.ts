@@ -311,6 +311,16 @@ test.describe('on a phone', () => {
     await orbit(page, 60);
     await expect(compass).toHaveAttribute('aria-pressed', 'false');
   });
+
+  test('a card on the model keeps a readable width, inside the plan', async ({ page }) => {
+    await openModel(page);
+    const card = (await page.locator('[data-floorplan-item="weather-3d"]').boundingBox())!;
+    const plan = (await page.locator('[data-floorplan-plan]').boundingBox())!;
+    // Ses 20 % d'un plan en image, qui ne descend pas sous 768 px — pas 20 % de l'écran.
+    expect(card.width).toBeGreaterThan(150);
+    // Posée au bord droit : elle rentre dans le plan plutôt que d'en déborder.
+    expect(card.x + card.width).toBeLessThanOrEqual(plan.x + plan.width + 1);
+  });
 });
 
 test('in edit mode, a click on the model places a chip anchored where it landed', async ({ page }, testInfo) => {

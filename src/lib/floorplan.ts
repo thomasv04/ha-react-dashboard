@@ -14,7 +14,7 @@ export const DEFAULT_WIDGET_SIZE = { w: 24, h: 30 };
  * Largeur sous laquelle le plan ne descend plus : sur un téléphone, il se fait
  * défiler plutôt que de réduire pastilles et cards à l'illisible.
  */
-const MIN_PLAN_WIDTH = 768;
+export const MIN_PLAN_WIDTH = 768;
 
 /** Plus petit widget redimensionnable, en % du plan. */
 const MIN_SIZE = 4;

@@ -5,7 +5,7 @@ import { WidgetErrorBoundary } from '@/components/ui/WidgetErrorBoundary';
 import { useDashboardLayout, type FloorplanPos, type GridWidget } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { WIDGET_COMPONENTS } from '@/widgets';
-import { movePos, normalizePos, resizePos } from '@/lib/floorplan';
+import { MIN_PLAN_WIDTH, movePos, normalizePos, resizePos } from '@/lib/floorplan';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 
@@ -77,6 +77,11 @@ export function FloorplanItem({
   // un geste égale un point d'annulation, pas un par pixel.
   const [live, setLive] = useState<FloorplanPos | null>(null);
   const pos = live ?? saved;
+  // Une maquette 3D suit l'écran, sans largeur minimale : une card n'y descend
+  // pas sous la taille qu'elle aurait sur le plus petit plan en image — elle
+  // reste lisible sur un téléphone —, et reste dans le plan.
+  const floor = sized ? ((pos.w ?? 0) * MIN_PLAN_WIDTH) / 100 : 0;
+  const half = `min(50%, max(${(pos.w ?? 0) / 2}%, ${floor / 2}px))`;
 
   if (!WIDGET_COMPONENTS[widget.type]) return null;
 
@@ -123,9 +128,9 @@ export function FloorplanItem({
       inert={faded || hidden}
       onClick={e => e.stopPropagation()}
       style={{
-        left: `${pos.x}%`,
+        left: sized ? `clamp(${half}, ${pos.x}%, calc(100% - ${half}))` : `${pos.x}%`,
         top: `${pos.y}%`,
-        width: sized ? `${pos.w}%` : undefined,
+        width: sized ? `min(100%, max(${pos.w}%, ${floor}px))` : undefined,
         height: sized ? `${pos.h}%` : undefined,
         translate: '-50% -50%',
         // Les pastilles au-dessus des cards : posées sur une card, elles doivent
