@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **31 tâches sur 34** — phases A à H et J, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
+**État global** : **32 tâches sur 35** — phases A à H et J, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -642,3 +642,16 @@ leurs liaisons avec. Le plugin, lui, reste tel quel.
 
 - **Quoi** : un volet ou une porte de garage de la maquette s'enroule vers le
   haut selon sa position (`current_position`), comme ceux qu'on dessine.
+
+### [x] J9 — Les lampes, dans l'onglet « Éléments »
+
+> **Fait** ([FloorplanLamps.tsx](../src/components/floorplan/FloorplanLamps.tsx)) :
+> les onglets de `J1` ne disaient nulle part qu'une lampe est une pastille
+> d'une lumière — l'outil s'appelle « Pastille ». L'onglet « Éléments » liste
+> désormais les lampes de la page, l'ampoule de la couleur de la lampe
+> allumée, chacune retirable ; « Poser une lampe » prend l'outil « Pastille »,
+> dont le prochain clic ne propose que des lumières. Une lampe posée, l'outil
+> redevient celui de toutes les pastilles.
+
+- **Quoi** : on doit trouver comment poser une lampe sans savoir que c'est
+  une pastille.

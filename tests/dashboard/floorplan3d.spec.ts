@@ -333,6 +333,31 @@ test('in edit mode, a click on the model places a chip anchored where it landed'
   await page.screenshot({ path: testInfo.outputPath('floorplan3d-edit.png'), animations: 'disabled' });
 });
 
+test('the Elements tab lists the lamps, and places one that only offers lights', async ({ page }) => {
+  await openModel(page);
+  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
+  await page.getByRole('tab', { name: 'Éléments' }).click();
+  const remove = page.getByRole('tabpanel').getByRole('button', { name: 'Retirer la lampe' });
+  // Les trois pastilles d'une lumière : ni le capteur de mouvement, ni le thermomètre.
+  await expect(remove).toHaveCount(3);
+
+  await page.getByRole('button', { name: 'Poser une lampe' }).click();
+  await expect(page.getByText(/là où est la lampe/)).toBeVisible();
+  await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
+  const box = (await page.locator('[data-floorplan-3d] canvas').boundingBox())!;
+  await page.mouse.click(box.x + box.width * 0.4, box.y + box.height * 0.58);
+  // Rien que des lumières : le volet du salon n'est pas proposé.
+  await page.getByPlaceholder('Rechercher...').fill('salon');
+  await expect(page.getByRole('button', { name: 'light.salon', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'cover.volet_salon', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'light.salon', exact: true }).click();
+
+  await expect(page.locator('[data-floorplan-item]')).toHaveCount(WIDGETS.length + 1);
+  await expect(remove).toHaveCount(4);
+  // Posée, l'outil repose des pastilles de tout genre.
+  await expect(page.getByText(/pour y poser une pastille/)).toBeVisible();
+});
+
 test('in edit mode, two clicks draw a door, which is kept once saved', async ({ page, request }) => {
   const click = await drawWith(page, 'Porte · volet', /côté gonds/);
   // Un pan du mur du fond, entre deux fenêtres : le coin bas, puis le coin haut opposé.
