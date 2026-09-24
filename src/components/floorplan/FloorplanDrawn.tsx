@@ -105,13 +105,16 @@ export function DrawnList({
   removeLabel,
   items,
   onRemove,
+  action,
 }: {
   title: string;
   removeLabel: string;
   items: { id: string; label: string; icon: LucideIcon; color?: string }[];
   onRemove: (id: string) => void;
+  /** Sous la liste, de quoi y ajouter : elle s'affiche alors même vide. */
+  action?: ReactNode;
 }) {
-  if (!items.length) return null;
+  if (!items.length && !action) return null;
   return (
     <div className='flex flex-col gap-1'>
       <span className='text-[11px] text-white/40 px-0.5'>{title}</span>
@@ -124,6 +127,7 @@ export function DrawnList({
           </button>
         </div>
       ))}
+      {action}
     </div>
   );
 }

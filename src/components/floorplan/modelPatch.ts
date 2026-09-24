@@ -20,7 +20,10 @@ import {
  * - les **murs en coupe**, façon Les Sims : au-dessus d'une hauteur, seuls
  *   restent debout les murs du fond — les côtés de l'emprise tournés dos à la
  *   caméra. La tranche d'un mur coupé est pleine et sombre : ce sont ses faces
- *   intérieures, qu'on voit par la coupe, peintes d'une teinte unie ;
+ *   intérieures, qu'on voit par la coupe, peintes d'une teinte unie. Au-dessus,
+ *   le mur ne s'arrête pas net : il s'efface en un **fondu tramé** — une part
+ *   des pixels, de moins en moins nombreux en montant. Un meuble, lui, n'est
+ *   pas coupé : sa partie haute reste, en fantôme tramé ;
  * - des **découpes** : boîtes où la maquette n'est pas dessinée. Une porte
  *   fondue dans son mur — un export n'a souvent qu'un objet par matière — ne
  *   peut pas pivoter : on la découpe, et un battant généré prend sa place ;
@@ -32,6 +35,12 @@ import {
 
 /** Au-delà, les découpes suivantes sont ignorées : la boucle du shader a une borne fixe. */
 const MAX_CUTS = 24;
+
+/**
+ * Part des pixels d'un meuble gardée au-dessus de la coupe : de quoi le
+ * reconnaître, et voir au travers.
+ */
+const GHOST = 0.35;
 
 /** Lampes et sommets par pièce pris en compte : au-delà, une lampe éclaire sans limite de pièce. */
 const MAX_LAMPS = 16;
@@ -61,6 +70,8 @@ export function createModelUniforms() {
     fpBox: { value: new Vector4() },
     /** Hauteur de chaque côté de l'emprise (x−, z−, x+, z+) — un mur du fond debout, ou abaissé. */
     fpSides: { value: new Vector4() },
+    /** Hauteur du fondu tramé, au-dessus de la coupe. */
+    fpFade: { value: 1 },
     /** Contour, dans la scène (x, z), de la pièce de chaque lampe — dans l'ordre des lampes de la scène. */
     fpRoomVerts: { value: Array.from({ length: MAX_LAMPS * MAX_ROOM_VERTICES }, () => new Vector2()) },
     /** Sommets de ce contour, par lampe ; moins de trois : pas de pièce, pas de limite. */
@@ -109,10 +120,21 @@ uniform vec4 fpCuts[ ${MAX_CUTS * 2} ];
 uniform vec4 fpCutaway;
 uniform vec4 fpBox;
 uniform vec4 fpSides;
+uniform float fpFade;
 uniform vec2 fpRoomVerts[ ${MAX_LAMPS * MAX_ROOM_VERTICES} ];
 uniform int fpRoomCount[ ${MAX_LAMPS} ];
 // Tranche des murs coupés, en sRGB : un gris bleuté sombre, comme dans Les Sims.
 const vec3 fpCapColor = vec3( 0.16, 0.18, 0.23 );
+// Part des pixels d'un meuble gardée au-dessus du fondu : son fantôme.
+const float fpGhost = ${GHOST};
+
+// Seuil de tramage d'un pixel de l'écran, entre 0 et 1 : une matrice de Bayer
+// 4 × 4 — les bits de x ^ y et de y, entrelacés, lus à l'envers.
+float fpBayer( const in vec2 frag ) {
+  ivec2 p = ivec2( frag ) & 3;
+  int v = p.x ^ p.y;
+  return float( ( v & 1 ) << 3 | ( p.y & 1 ) << 2 | ( v & 2 ) | ( p.y & 2 ) >> 1 ) / 16.0 + 1.0 / 32.0;
+}
 // Au-delà du contour d'une pièce, la lumière s'éteint sur cette distance — de
 // quoi éclairer la face des murs.
 const float fpRoomSoft = 0.8;
@@ -153,7 +175,7 @@ const LIGHTS = ShaderChunk.lights_fragment_begin.replace(
 );
 
 // Découpes : repère de chacune, x le long de sa largeur (u), z le long de sa
-// normale (−u.z, u.x). Puis la coupe des murs, et sa tranche.
+// normale (−u.z, u.x). Puis la coupe des murs, son fondu et sa tranche.
 const DISCARD = /* glsl */ `
 #ifdef FP_BOXES
 for ( int i = 0; i < ${MAX_CUTS}; i ++ ) {
@@ -172,7 +194,22 @@ if ( vFpWorld.x < fpBox.x + fpCutaway.z ) fpLimit = max( fpLimit, fpSides.x );
 if ( vFpWorld.z < fpBox.y + fpCutaway.z ) fpLimit = max( fpLimit, fpSides.y );
 if ( vFpWorld.x > fpBox.z - fpCutaway.z ) fpLimit = max( fpLimit, fpSides.z );
 if ( vFpWorld.z > fpBox.w - fpCutaway.z ) fpLimit = max( fpLimit, fpSides.w );
+#ifdef FP_DEPTH
+// Les ombres gardent la coupe franche : un mur qui s'efface n'en porte pas.
 if ( vFpWorld.y > fpLimit ) discard;
+#else
+float fpAbove = vFpWorld.y - fpLimit;
+if ( fpAbove > 0.0 ) {
+  // Au-dessus de la coupe, les pixels gardés se raréfient en montant : jusqu'à
+  // rien pour un mur, jusqu'à son fantôme pour un meuble. Pas de face arrière :
+  // l'intérieur d'un mur ne se voit qu'à sa tranche.
+  float fpKeep = 1.0 - smoothstep( 0.0, fpFade, fpAbove );
+  #ifdef FP_GHOST
+  fpKeep = mix( fpGhost, 1.0, fpKeep );
+  #endif
+  if ( ! gl_FrontFacing || fpKeep < fpBayer( gl_FragCoord.xy ) ) discard;
+}
+#endif
 #ifdef FP_CAPS
 if ( ! gl_FrontFacing ) {
   bool fpCutHere = fpLimit < fpCutaway.y;
@@ -186,6 +223,10 @@ if ( ! gl_FrontFacing ) {
   // sous la coupe fait la tranche.
   fpCap = fpCutHere && vFpWorld.y > fpLimit - fpCutaway.w;
   #endif
+  // Juste sous la coupe, la tranche ne se voit qu'au travers du fondu : elle
+  // s'y estompe aussi, plutôt que d'en piqueter le bas de points sombres. Vue
+  // d'en haut, plus profonde, elle reste pleine.
+  if ( fpCap && smoothstep( 0.0, fpCutaway.w, fpLimit - vFpWorld.y ) < fpBayer( gl_FragCoord.xy ) ) discard;
 }
 #endif`;
 
@@ -197,16 +238,19 @@ if ( fpCap ) gl_FragColor = vec4( fpCapColor, 1.0 );
 /**
  * Variante de retouche d'un matériau : tranche peinte (opaque), face unique à
  * l'origine, découpes appliquées — pas à un élément généré, qui occupe
- * justement la découpe.
+ * justement la découpe —, meuble qui s'estompe au lieu d'être coupé, ombres.
  */
-type Variant = { caps: boolean; front: boolean; boxes: boolean };
+type Variant = { caps: boolean; front: boolean; boxes: boolean; ghost?: boolean; depth?: boolean };
 
-function inject(shader: WebGLProgramParametersWithUniforms, uniforms: ModelUniforms, { caps, front, boxes }: Variant) {
+function inject(shader: WebGLProgramParametersWithUniforms, uniforms: ModelUniforms, variant: Variant) {
   Object.assign(shader.uniforms, uniforms);
   shader.vertexShader = shader.vertexShader
     .replace('#include <common>', '#include <common>\nvarying vec3 vFpWorld;')
     .replace('#include <project_vertex>', `#include <project_vertex>${VERTEX}`);
-  const defines = [caps && 'FP_CAPS', front && 'FP_FRONT', boxes && 'FP_BOXES'].map(d => (d ? `#define ${d}\n` : '')).join('');
+  const flags = { caps: 'FP_CAPS', front: 'FP_FRONT', boxes: 'FP_BOXES', ghost: 'FP_GHOST', depth: 'FP_DEPTH' } as const;
+  const defines = Object.entries(flags)
+    .map(([flag, define]) => (variant[flag as keyof Variant] ? `#define ${define}\n` : ''))
+    .join('');
   shader.fragmentShader = `${defines}${shader.fragmentShader}`
     .replace('#include <common>', `#include <common>${DECLARATIONS}`)
     .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>${DISCARD}`)
@@ -221,7 +265,7 @@ function inject(shader: WebGLProgramParametersWithUniforms, uniforms: ModelUnifo
  */
 export function depthMaterial(uniforms: ModelUniforms, boxes: boolean): Material {
   const depth = new MeshDepthMaterial({ depthPacking: RGBADepthPacking });
-  depth.onBeforeCompile = shader => inject(shader, uniforms, { caps: false, front: false, boxes });
+  depth.onBeforeCompile = shader => inject(shader, uniforms, { caps: false, front: false, boxes, depth: true });
   depth.customProgramCacheKey = () => `fp-depth${+boxes}`;
   return depth;
 }
@@ -233,17 +277,34 @@ export function depthMaterial(uniforms: ModelUniforms, boxes: boolean): Material
  * Pas de tranche peinte sur une vitre : on verrait une plaque sombre au
  * travers. Un matériau à face unique ne dessine ses faces arrière que pendant
  * la coupe (`setCutawaySides`).
+ *
+ * Les meubles (`ghosts`) s'estompent au lieu d'être coupés : ni tranche, ni
+ * faces arrière. Chacun a sa copie des matériaux qu'il partagerait avec un
+ * mur ; ses ombres restent entières, comme lui.
  */
-export function patchModel(root: Object3D, uniforms: ModelUniforms, depth: Material, boxes = true) {
+export function patchModel(root: Object3D, uniforms: ModelUniforms, depth: Material, boxes = true, ghosts: Object3D[] = []) {
+  const ghostly = new Set<Object3D>();
+  for (const ghost of ghosts) ghost.traverse(o => ghostly.add(o));
+  const copies = new Map<Material, Material>();
+  const copy = (material: Material) => {
+    if (!copies.has(material)) copies.set(material, material.clone());
+    return copies.get(material)!;
+  };
   root.traverse(o => {
-    if ((o as Mesh).isMesh) (o as Mesh).customDepthMaterial = depth;
+    const mesh = o as Mesh;
+    const ghost = ghostly.has(o);
+    if (mesh.isMesh) {
+      mesh.customDepthMaterial = ghost ? undefined : depth;
+      if (ghost) mesh.material = Array.isArray(mesh.material) ? mesh.material.map(copy) : copy(mesh.material);
+    }
     for (const material of materialsOf(o)) {
-      const variant = { caps: !material.transparent, front: material.side === FrontSide && !material.transparent, boxes };
+      const opaque = !material.transparent && !ghost;
+      const variant = { caps: opaque, front: opaque && material.side === FrontSide, boxes, ghost };
       material.userData.fpFront = variant.front;
       material.onBeforeCompile = shader => inject(shader, uniforms, variant);
       // Une clé par variante : le texte de la fonction étant le même partout,
       // three.js confondrait sinon leurs programmes.
-      material.customProgramCacheKey = () => `fp-${+variant.caps}${+variant.front}${+boxes}`;
+      material.customProgramCacheKey = () => `fp-${+variant.caps}${+variant.front}${+boxes}${+ghost}`;
       material.needsUpdate = true;
     }
   });

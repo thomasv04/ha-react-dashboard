@@ -81,6 +81,7 @@ import { useI18n } from '@/i18n';
 import type { ChipCardConfig, WidgetConfig } from '@/types/widget-configs';
 import type { CableProp, FloorOverlay, Floorplan3DHandle, Lamp, OpeningProp, PartProp, Project } from './Floorplan3D';
 import { FloorplanItem } from './FloorplanItem';
+import { LampList } from './FloorplanLamps';
 import { DraftPopover, type Around } from './FloorplanDrawn';
 import { OpeningPopover, OpeningsTab } from './FloorplanOpenings';
 import { PartList, PartPopover } from './FloorplanParts';
@@ -219,7 +220,7 @@ function RoundButton({
 export function FloorplanView() {
   const { t } = useI18n();
   const { currentPage, updatePage } = usePages();
-  const { layout, addWidgetByType, updateWidget } = useDashboardLayout();
+  const { layout, addWidgetByType, updateWidget, removeWidget } = useDashboardLayout();
   const { isEditMode } = useEditMode();
   const { getWidgetConfig, updateWidgetConfig } = useWidgetConfig();
   // Sous l'écran de veille, la page reste montée : rien n'y bouge, pour rien.
@@ -244,6 +245,8 @@ export function FloorplanView() {
   const [source, setSource] = useState<'model' | 'image'>('model');
   /** Maquette : ce que pose un clic — une pastille, ou un coin de porte, de fenêtre, de volet. */
   const [tool, setTool] = useState<Tool>('chip');
+  /** « Poser une lampe » : la prochaine pastille ne propose que des lumières. */
+  const [lampArmed, setLampArmed] = useState(false);
   const [cableDraft, setCableDraft] = useState<CableDraft | null>(null);
   /** Pièce en cours de dessin : ses sommets au sol, sa hauteur de sol, puis son nom. */
   const [roomDraft, setRoomDraft] = useState<{ points: [number, number][]; y: number; naming?: boolean } | null>(null);
@@ -287,11 +290,13 @@ export function FloorplanView() {
     const config = getWidgetConfig<ChipCardConfig>(w.id);
     return [{ id: w.id, pos: w.pos, anchor: normalizeAnchor(w.pos?.anchor), entityId: config?.entityId ?? '', config }];
   });
+  /** Les lampes : les pastilles d'une lumière. */
+  const lampChips = chips.filter(c => c.entityId.startsWith('light.'));
 
   // ── Rejouer la journée ─────────────────────────────────────────────────────
   // Lampes et éléments animés, que l'historique rejoue.
-  const glows = chips.flatMap(c =>
-    c.entityId.startsWith('light.') && c.config?.glow !== false
+  const glows = lampChips.flatMap(c =>
+    c.config?.glow !== false
       ? [{ ...c, pos: normalizePos(c.pos, false), size: c.config?.glowSize ?? 12 }]
       : []
   );
@@ -314,6 +319,7 @@ export function FloorplanView() {
     setCableDraft(null);
     setOpeningDraft(null);
     setUnnamed(null);
+    setLampArmed(false);
   }, []);
 
   const scope = `${isEditMode}:${currentPage?.id}`;
@@ -710,6 +716,7 @@ export function FloorplanView() {
     const at = adding;
     setAdding(null);
     if (!at || !entityId) return;
+    setLampArmed(false);
     const id = addWidgetByType('chip');
     if (!id) return;
     updateWidgetConfig(id, { ...DEFAULT_WIDGET_CONFIGS.chip, entityId } as WidgetConfig);
@@ -828,11 +835,11 @@ export function FloorplanView() {
     <div key={`${adding.x}:${adding.y}`}>
       {dot(adding, 'bg-blue-400 ring-blue-400/30')}
       <DraftPopover
-        title={t('layout.floorplan.addHere')}
+        title={t(lampArmed ? 'layout.floorplan.lampHere' : 'layout.floorplan.addHere')}
         onCancel={() => setAdding(null)}
         style={{ left: `clamp(8rem, ${adding.x}%, calc(100% - 8rem))`, top: `calc(${adding.y}% + 0.75rem)`, translate: '-50% 0' }}
       >
-        <EntityPicker autoOpen label='' value='' onChange={placeChip} />
+        <EntityPicker autoOpen label='' value='' domain={lampArmed ? 'light' : undefined} onChange={placeChip} />
       </DraftPopover>
     </div>
   );
@@ -853,7 +860,9 @@ export function FloorplanView() {
   const hint = !model
     ? 'clickToAdd'
     : tool === 'chip'
-      ? 'clickToAdd3d'
+      ? lampArmed
+        ? 'lampHint'
+        : 'clickToAdd3d'
       : tool === 'room'
         ? roomDraft && roomDraft.points.length >= 3
           ? 'roomHintClose'
@@ -969,15 +978,29 @@ export function FloorplanView() {
     </>
   );
 
-  const elementsTab =
-    rooms.length || cables.length ? (
-      <>
-        <RoomList rooms={rooms} onRemove={id => setFloorplan({ rooms: rooms.filter(r => r.id !== id) })} />
-        <CableList cables={cables} onRemove={id => setFloorplan({ cables: cables.filter(c => c.id !== id) })} />
-      </>
-    ) : (
-      <EmptyTab>{t('layout.floorplan.elementsEmpty')}</EmptyTab>
-    );
+  const elementsTab = (
+    <>
+      <LampList
+        lamps={lampChips}
+        armed={lampArmed}
+        onArm={() => {
+          const arm = !lampArmed;
+          clearDrafts();
+          setTool('chip');
+          setLampArmed(arm);
+        }}
+        onRemove={removeWidget}
+      />
+      {rooms.length || cables.length ? (
+        <>
+          <RoomList rooms={rooms} onRemove={id => setFloorplan({ rooms: rooms.filter(r => r.id !== id) })} />
+          <CableList cables={cables} onRemove={id => setFloorplan({ cables: cables.filter(c => c.id !== id) })} />
+        </>
+      ) : (
+        <EmptyTab>{t('layout.floorplan.elementsEmpty')}</EmptyTab>
+      )}
+    </>
+  );
 
   return (
     <div className='relative flex-1 min-h-0'>
@@ -1381,7 +1404,7 @@ export function FloorplanView() {
               id: 'elements',
               icon: Layers,
               label: t('layout.floorplan.tabElements'),
-              badge: rooms.length + cables.length,
+              badge: lampChips.length + rooms.length + cables.length,
               content: elementsTab,
             },
           ]}

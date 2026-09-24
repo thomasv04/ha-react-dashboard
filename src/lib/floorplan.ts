@@ -338,6 +338,8 @@ export function temperatureOf(
 
 /** Hauteur de coupe, en part de la hauteur de la maquette : des murets, juste au-dessus des plans de travail. */
 export const CUTAWAY_HEIGHT = 0.38;
+/** Au-dessus de la coupe, hauteur du fondu tramé où un mur s'efface, en part de la hauteur de la maquette. */
+export const CUTAWAY_FADE = 0.12;
 
 /** Une valeur par côté de l'emprise : x−, z−, x+, z+. */
 export type Sides<T> = [T, T, T, T];
