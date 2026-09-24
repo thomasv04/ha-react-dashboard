@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **27 tâches sur 34** — phases A à H, `I1`, `I2`, `J1` à `J4`. `F1` reste à essayer sur un vrai Android.
+**État global** : **28 tâches sur 34** — phases A à H, `I1`, `I2`, `J1` à `J5`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -576,7 +576,19 @@ leurs liaisons avec. Le plugin, lui, reste tel quel.
 - **Fait quand** : une porte liée s'ouvre et se ferme avec son entité, sans
   rien déranger d'autre dans la maquette.
 
-### [ ] J5 — L'onglet « Ouvertures »
+### [x] J5 — L'onglet « Ouvertures »
+
+> **Fait** ([FloorplanOpenings.tsx](../src/components/floorplan/FloorplanOpenings.tsx)) :
+> une ligne par ouverture des familles retenues — son entité et son état, ou
+> « Lier une entité… » —, puis les types, repliés : les familles de chacun,
+> « auto » quand le nom les a devinées ; en retirer une, en ajouter une —
+> celles logées dans un mur d'abord — fige le choix. Un clic sur une ligne
+> ouvre la fenêtre de liaison à côté de la porte, qui s'ouvre et se ferme
+> pendant qu'on choisit (entrouverte, immobile, quand les animations sont
+> réduites) : entité, type pour toute la famille — deviné d'après l'entité
+> quand le nom ne disait rien —, sens, gonds, délier. Les objets sans nom
+> valide logés dans un mur font un avertissement. Les éléments dessinés
+> restent listés ici ; maquette fondue : l'outil de dessin, comme avant.
 
 - **Quoi** : les liaisons d'abord — chaque occurrence, son entité ou « Lier
   une entité… » ; un clic la montre et ouvre sa fenêtre de liaison : entité,

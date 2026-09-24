@@ -65,13 +65,24 @@ import {
   type FloorplanPart,
   type Vec3,
 } from '@/lib/floorplan';
-import { familyKind, normalizeOpenings, parseNodeName } from '@/lib/floorplan-openings';
+import {
+  familyKind,
+  normalizeOpenings,
+  openingLabel,
+  parseNodeName,
+  typedOpenings,
+  type FloorplanOpenings,
+  type ModelOpenings,
+  type OpeningKind,
+  type OpeningLink,
+} from '@/lib/floorplan-openings';
 import { cn, isTypingTarget } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import type { ChipCardConfig, WidgetConfig } from '@/types/widget-configs';
 import type { CableProp, FloorOverlay, Floorplan3DHandle, Lamp, OpeningProp, PartProp, Project } from './Floorplan3D';
 import { FloorplanItem } from './FloorplanItem';
-import { DraftPopover } from './FloorplanDrawn';
+import { DraftPopover, type Around } from './FloorplanDrawn';
+import { OpeningPopover, OpeningsTab } from './FloorplanOpenings';
 import { PartList, PartPopover } from './FloorplanParts';
 import { CableList, CableOverlay, CablePopover } from './FloorplanCables';
 import { ReplayBar } from './FloorplanReplay';
@@ -96,6 +107,8 @@ type PartDraft = { a: Vec3; from: { x: number; y: number }; part?: FloorplanPart
 
 /** Aperçu entrouvert d'un élément dessiné : on voit de quel côté s'ouvre la porte, où descend le volet. */
 const DRAFT_OPENNESS = 0.35;
+/** Pendant qu'on lie une vraie porte, elle s'ouvre et se ferme : un mouvement tous les… (ms). */
+const PREVIEW_MS = 1600;
 /**
  * Étoiles du ciel de nuit : quelques points par tuile, deux tailles de tuile
  * pour que la répétition ne se voie pas. Fixes : rien à animer, rien à payer.
@@ -251,6 +264,12 @@ export function FloorplanView() {
   // Maquette : chargée (sinon les pastilles accrochées n'ont pas encore de
   // position), en échec, et de quoi placer à l'écran un point de la maquette.
   const [loadedModel, setLoadedModel] = useState<string | null>(null);
+  /** Objets séparés de la maquette chargée, et leurs familles — `null` : une maquette « fondue ». */
+  const [detected, setDetected] = useState<{ model: string; openings: ModelOpenings | null } | null>(null);
+  /** Ouverture de la maquette qu'on lie : sa liaison en cours, le type de sa famille, où ouvrir sa fenêtre. */
+  const [openingDraft, setOpeningDraft] = useState<{ link: OpeningLink; kind: OpeningKind | null; around: Around } | null>(null);
+  /** L'aperçu de cette ouverture, ouverte (1) ou fermée (0). */
+  const [preview, setPreview] = useState(1);
   const [failure, setFailure] = useState<{ model: string; kind: 'webgl' | 'model' } | null>(null);
   const [projector] = useState(createProjector);
 
@@ -289,6 +308,7 @@ export function FloorplanView() {
     setDraft(null);
     setRoomDraft(null);
     setCableDraft(null);
+    setOpeningDraft(null);
   }, []);
 
   const scope = `${isEditMode}:${currentPage?.id}`;
@@ -442,21 +462,89 @@ export function FloorplanView() {
     ...(draft?.part ? [{ ...draft.part, open: DRAFT_OPENNESS }] : []),
   ];
 
+  /** Les objets de cette maquette-ci — `undefined` tant qu'elle n'est pas lue. */
+  const modelOpenings = detected && detected.model === model ? detected.openings : undefined;
+  // L'ouverture qu'on lie s'ouvre et se ferme, pour qu'on voie ses gonds et son sens.
+  const previewing = openingDraft?.link.node;
+  useEffect(() => {
+    if (!previewing || !animated) return;
+    const timer = window.setInterval(() => setPreview(p => 1 - p), PREVIEW_MS);
+    return () => window.clearInterval(timer);
+  }, [previewing, animated]);
   /** Portes, fenêtres et baies de la maquette liées à une entité — le type de leur famille décide du mouvement. */
-  const openingsProp: OpeningProp[] = openingsConfig.links.flatMap(link => {
-    const kind = familyKind(parseNodeName(link.node).family, openingsConfig.kinds);
-    if (!kind) return [];
-    const entity = replayed(link.entityId) ?? entities[link.entityId];
-    return [
-      {
-        id: link.node,
-        kind,
-        ...(link.flip && { flip: true }),
-        ...(link.hinge && { hinge: true }),
-        open: openness(entity?.state, entity?.attributes),
-      },
-    ];
-  });
+  const openingsProp: OpeningProp[] = [
+    ...openingsConfig.links.flatMap(link => {
+      const kind = familyKind(parseNodeName(link.node).family, openingsConfig.kinds);
+      if (!kind || link.node === previewing) return [];
+      const entity = replayed(link.entityId) ?? entities[link.entityId];
+      return [
+        {
+          id: link.node,
+          kind,
+          ...(link.flip && { flip: true }),
+          ...(link.hinge && { hinge: true }),
+          open: openness(entity?.state, entity?.attributes),
+        },
+      ];
+    }),
+    ...(openingDraft?.kind
+      ? [
+          {
+            id: openingDraft.link.node,
+            kind: openingDraft.kind,
+            ...(openingDraft.link.flip && { flip: true }),
+            ...(openingDraft.link.hinge && { hinge: true }),
+            open: animated ? preview : DRAFT_OPENNESS,
+          },
+        ]
+      : []),
+  ];
+
+  const setOpenings = (patch: Partial<FloorplanOpenings>) =>
+    setFloorplan({ openings: { kinds: openingsConfig.kinds, links: openingsConfig.links, ...patch } });
+
+  /** Ouvre la fenêtre de liaison d'une ouverture, à côté d'elle à l'écran. */
+  const linkOpening = (id: string) => {
+    const opening = modelOpenings?.openings.find(o => o.id === id);
+    if (!opening) return;
+    clearDrafts();
+    const project = projector.get();
+    const corners = [0, 1, 2, 3, 4, 5, 6, 7].map(i =>
+      project?.([(i & 1 ? opening.max : opening.min)[0], (i & 2 ? opening.max : opening.min)[1], (i & 4 ? opening.max : opening.min)[2]])
+    );
+    const seen = corners.filter(p => !!p);
+    const around = seen.length
+      ? {
+          left: Math.min(...seen.map(p => p.x)),
+          right: Math.max(...seen.map(p => p.x)),
+          y: seen.reduce((sum, p) => sum + p.y, 0) / seen.length,
+        }
+      : { left: 45, right: 55, y: 50 };
+    setOpeningDraft({
+      link: openingsConfig.links.find(l => l.node === id) ?? { node: id, entityId: '' },
+      kind: familyKind(opening.family, openingsConfig.kinds),
+      around,
+    });
+    setPreview(1);
+  };
+
+  /** La liaison enregistrée ; le type choisi vaut pour toute la famille. */
+  const saveOpening = () => {
+    if (!openingDraft?.link.entityId || !openingDraft.kind) return;
+    const { flip, hinge, ...link } = openingDraft.link;
+    const family = parseNodeName(link.node).family;
+    setOpenings({
+      kinds:
+        familyKind(family, openingsConfig.kinds) === openingDraft.kind
+          ? openingsConfig.kinds
+          : { ...openingsConfig.kinds, [family]: openingDraft.kind },
+      links: [
+        ...openingsConfig.links.filter(l => l.node !== link.node),
+        { ...link, ...(flip && { flip: true }), ...(hinge && { hinge: true }) },
+      ],
+    });
+    setOpeningDraft(null);
+  };
 
   // ── Pièces ─────────────────────────────────────────────────────────────────
   // Température de chaque pièce : la moyenne des capteurs de température posés dedans.
@@ -830,10 +918,21 @@ export function FloorplanView() {
     </>
   );
 
-  const openingsTab = parts.length ? (
-    <PartList parts={parts} onRemove={id => setFloorplan({ parts: parts.filter(p => p.id !== id) })} />
-  ) : (
-    <EmptyTab>{t('layout.floorplan.openingsEmpty')}</EmptyTab>
+  const openingsTab = (
+    <>
+      {modelOpenings && (
+        <OpeningsTab
+          model={modelOpenings}
+          kinds={openingsConfig.kinds}
+          links={openingsConfig.links}
+          selected={previewing ?? null}
+          onSelect={linkOpening}
+          onKinds={kinds => setOpenings({ kinds })}
+        />
+      )}
+      {parts.length > 0 && <PartList parts={parts} onRemove={id => setFloorplan({ parts: parts.filter(p => p.id !== id) })} />}
+      {modelOpenings === null && !parts.length && <EmptyTab>{t('layout.floorplan.openingsEmpty')}</EmptyTab>}
+    </>
   );
 
   const elementsTab =
@@ -889,6 +988,7 @@ export function FloorplanView() {
                   lamps={lamps}
                   parts={partsProp}
                   openings={openingsProp}
+                  onOpenings={openings => setDetected({ model, openings })}
                   outline={outline}
                   floors={floors}
                   cables={cablesProp}
@@ -1036,6 +1136,31 @@ export function FloorplanView() {
                 );
               }}
             </Projected>
+            {openingDraft &&
+              modelOpenings &&
+              (() => {
+                const opening = modelOpenings.openings.find(o => o.id === openingDraft.link.node);
+                if (!opening) return null;
+                return (
+                  <OpeningPopover
+                    label={openingLabel(opening, modelOpenings.families)}
+                    family={opening.family}
+                    count={modelOpenings.families.find(f => f.name === opening.family)?.count ?? 1}
+                    kind={openingDraft.kind}
+                    link={openingDraft.link}
+                    linked={openingsConfig.links.some(l => l.node === opening.id)}
+                    around={openingDraft.around}
+                    onKind={kind => setOpeningDraft({ ...openingDraft, kind })}
+                    onChange={link => setOpeningDraft({ ...openingDraft, link })}
+                    onSave={saveOpening}
+                    onUnlink={() => {
+                      setOpenings({ links: openingsConfig.links.filter(l => l.node !== opening.id) });
+                      setOpeningDraft(null);
+                    }}
+                    onCancel={() => setOpeningDraft(null)}
+                  />
+                );
+              })()}
             {draft?.part && draft.around && (
               <PartPopover
                 part={draft.part}
@@ -1185,7 +1310,13 @@ export function FloorplanView() {
           tabs={[
             { id: 'model', icon: BoxIcon, label: t('layout.floorplan.tabModel'), content: modelTab },
             { id: 'ambiance', icon: Sun, label: t('layout.floorplan.tabAmbiance'), content: ambianceTab },
-            { id: 'openings', icon: DoorOpen, label: t('layout.floorplan.tabOpenings'), badge: parts.length, content: openingsTab },
+            {
+              id: 'openings',
+              icon: DoorOpen,
+              label: t('layout.floorplan.tabOpenings'),
+              badge: (modelOpenings ? typedOpenings(modelOpenings, openingsConfig.kinds).length : 0) + parts.length,
+              content: openingsTab,
+            },
             {
               id: 'elements',
               icon: Layers,

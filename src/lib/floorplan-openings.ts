@@ -660,6 +660,12 @@ function swing(
   });
 }
 
+/** Nom d'une ouverture : sa famille, et son rang quand la famille en compte plusieurs. */
+export function openingLabel(opening: DetectedOpening, families: OpeningFamily[]) {
+  const count = families.find(f => f.name === opening.family)?.count ?? 1;
+  return count > 1 ? `${opening.family} · ${opening.index}` : opening.family;
+}
+
 // ── Réglage ──────────────────────────────────────────────────────────────────
 
 /** Une ouverture de la maquette liée à une entité. */
@@ -707,3 +713,7 @@ export function familyKind(family: string, kinds: Record<string, OpeningKind | '
   if (chosen) return chosen === 'none' ? null : chosen;
   return family ? guessOpeningKind(family) : null;
 }
+
+/** Les ouvertures des familles retenues — un type, choisi ou deviné —, dans l'ordre de la maison. */
+export const typedOpenings = (model: ModelOpenings, kinds: Record<string, OpeningKind | 'none'>) =>
+  model.openings.filter(o => o.family && familyKind(o.family, kinds));

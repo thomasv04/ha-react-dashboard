@@ -8,9 +8,11 @@ import {
   modelNode,
   motionAt,
   normalizeOpenings,
+  openingLabel,
   openingMotion,
   parseNodeName,
   structureOf,
+  typedOpenings,
   type ModelNode,
   type Motion,
   type OpeningKind,
@@ -489,5 +491,29 @@ describe('familyKind', () => {
     expect(familyKind('Porte_en_bois', { Porte_en_bois: 'none' })).toBeNull();
     expect(familyKind('Armoire', { Armoire: 'door' })).toBe('door');
     expect(familyKind('', {})).toBeNull();
+  });
+});
+
+describe('openingLabel and typedOpenings', () => {
+  const nodes = [
+    box('Porte_en_bois_1', [0, 0, 0], [100, 210, 6]),
+    box('Porte_en_bois_1_1', [500, 0, 0], [600, 210, 6]),
+    box('Porte_Entree_1', [900, 0, 0], [1000, 210, 6]),
+    box('Armoire_1', [0, 0, 300], [100, 220, 360]),
+  ];
+  const model = detectOpenings(nodes);
+
+  it('numbers the objects of a family only when it has several', () => {
+    expect(model.openings.map(o => openingLabel(o, model.families))).toEqual([
+      'Porte_en_bois · 1',
+      'Porte_en_bois · 2',
+      'Porte_Entree',
+      'Armoire',
+    ]);
+  });
+
+  it('keeps the objects of the families that have a type', () => {
+    expect(typedOpenings(model, {}).map(o => o.id)).toEqual(['Porte_en_bois_1', 'Porte_en_bois_1_1', 'Porte_Entree_1']);
+    expect(typedOpenings(model, { Porte_en_bois: 'none', Armoire: 'door' }).map(o => o.id)).toEqual(['Porte_Entree_1', 'Armoire_1']);
   });
 });
