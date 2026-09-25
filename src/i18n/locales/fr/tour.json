@@ -77,7 +77,7 @@
     },
     "planButtons": {
       "title": "Les vues",
-      "body": "Le bouclier montre ce qui est resté ouvert, le thermomètre la température des pièces ; l'horloge rejoue les 24 dernières heures, la flèche recentre la maison."
+      "body": "Le bouclier montre ce qui est resté ouvert — et arme l'alarme —, le thermomètre la température des pièces ; l'horloge rejoue les 24 dernières heures, la flèche recentre la maison."
     },
     "planSettings": {
       "title": "Les réglages",

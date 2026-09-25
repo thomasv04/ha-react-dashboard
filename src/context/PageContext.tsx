@@ -29,6 +29,8 @@ export interface FloorplanConfig {
   lampGlow?: boolean;
   /** Entité `weather` qui voile le soleil et grise le ciel — absente, la première trouvée. */
   weather?: string;
+  /** Entité `alarm_control_panel` qu'arme le bouclier — absente, la première trouvée. */
+  alarm?: string;
   /** Portes, fenêtres et volets dessinés sur la maquette, mus par leur entité. */
   parts?: FloorplanPart[];
   /** Pièces dessinées au sol de la maquette. */

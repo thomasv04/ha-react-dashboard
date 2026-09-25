@@ -660,11 +660,18 @@ test('in edit mode, the Openings tab proposes the entity named like an opening, 
   await expect.poll(() => savedLinks(request)).toContain('Volet_Chambre_1 cover.volet_chambre');
 });
 
-test('the security view circles in red what is left open, and says so', async ({ page }) => {
+test('the shield asks for the mode of the alarm, then circles in red what is left open', async ({ page }) => {
   await openOpenings(page);
-  const security = page.getByRole('button', { name: 'Portes et fenêtres' });
+  const security = page.getByRole('button', { name: 'Alarme, portes et fenêtres' });
   await security.click();
-  // La porte de la chambre, liée au cellier, ouvert ; un volet ouvert ne compte pas.
+  // L'alarme d'abord : ses modes, et ce qui est resté ouvert — la porte de la chambre, liée au cellier, ouvert.
+  const alarm = page.getByRole('dialog');
+  await expect(alarm.getByText('1 ouverte : Porte du cellier')).toBeVisible();
+  await alarm.getByRole('button', { name: 'Nuit' }).first().click();
+  // Choisi, le mode s'affiche aussi sur le bouton qui le confirme.
+  await alarm.getByRole('button', { name: 'Nuit' }).last().click();
+  await expect(alarm).toHaveCount(0);
+  // Un volet ouvert ne compte pas.
   await expect(page.getByRole('status')).toHaveText('1 ouverte : Porte du cellier');
   await expect(openings(page)).toHaveAttribute('data-floorplan-alerts', '1');
 

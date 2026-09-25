@@ -443,6 +443,8 @@
     "roomRemove": "Remove the room",
     "thermal": "Room temperatures",
     "security": "Doors and windows",
+    "securityAlarm": "Alarm, doors and windows",
+    "alarm": "Alarm",
     "securityClosed": "All closed",
     "securityOpen": "{count} open: {names}",
     "securityOpenPlural": "{count} open: {names}",

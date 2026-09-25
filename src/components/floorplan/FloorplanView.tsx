@@ -23,6 +23,7 @@ import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useMoreInfoOptional } from '@/context/MoreInfoContext';
 import { useWallPanel } from '@/context/WallPanelContext';
 import { FreeGridScope } from '@/components/layout/DashboardGrid';
+import { AlarmModeModal } from '@/components/cards/AlarmCard/AlarmCard';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { ImageBackgroundPicker } from '@/components/layout/ThemeControlsModal/ImageBackgroundPicker';
 import type { BackgroundConfig } from '@/config/themes';
@@ -276,6 +277,8 @@ export function FloorplanView() {
   const [thermal, setThermal] = useState(false);
   /** Vue sécurité : les portes et fenêtres restées ouvertes, en rouge. */
   const [security, setSecurity] = useState(false);
+  /** Choix du mode de l'alarme, ouvert par le bouclier. */
+  const [alarmOpen, setAlarmOpen] = useState(false);
   /** Étage choisi — `undefined` : le rez-de-chaussée ; `null` : toute la maison. */
   const [levelChoice, setLevelChoice] = useState<string | null>();
   /** Pièce vers laquelle la caméra a volé, hors édition. */
@@ -430,11 +433,19 @@ export function FloorplanView() {
     return '';
   });
   const weatherId = floorplan?.weather || firstWeather;
+  // L'alarme qu'arme le bouclier : l'entité choisie, ou la première trouvée.
+  const firstAlarm = useHass(s => {
+    if (floorplan?.alarm) return '';
+    for (const id in s.entities ?? {}) if (id.startsWith('alarm_control_panel.')) return id;
+    return '';
+  });
+  const alarmId = floorplan?.alarm || firstAlarm;
   /** Les entités de la page : pastilles, soleil, météo, portes et volets, câbles. */
   const entities = useEntities([
     ...chips.map(c => c.entityId),
     'sun.sun',
     weatherId,
+    alarmId,
     ...parts.map(p => p.entityId),
     ...openingsConfig.links.map(l => l.entityId),
     ...(openingDraft ? [openingDraft.link.entityId] : []),
@@ -570,6 +581,13 @@ export function FloorplanView() {
   /** Une fois chacune : une porte et sa pastille ne font qu'une. */
   const openedNames = [...new Set(opened.map(g => g.entityId))].map(id => friendlyName(entities[id]) ?? id);
   const alertChips = new Set(opened.flatMap(g => (g.chip ? [g.chip] : [])));
+  const securityText = openedNames.length
+    ? t(openedNames.length > 1 ? 'layout.floorplan.securityOpenPlural' : 'layout.floorplan.securityOpen', {
+        count: openedNames.length,
+        names: openedNames.join(', '),
+      })
+    : t('layout.floorplan.securityClosed');
+  const alarm = entities[alarmId];
   // L'ouverture qu'on lie s'ouvre et se ferme, pour qu'on voie ses gonds et son sens.
   const previewing = openingDraft?.link.node;
   useEffect(() => {
@@ -1075,6 +1093,12 @@ export function FloorplanView() {
 
   const openingsTab = (
     <>
+      <EntityPicker
+        label={t('layout.floorplan.alarm')}
+        value={alarmId}
+        domain='alarm_control_panel'
+        onChange={id => setFloorplan({ alarm: id })}
+      />
       {modelOpenings && (
         <OpeningsTab
           model={modelOpenings}
@@ -1415,11 +1439,15 @@ export function FloorplanView() {
                     pressed={compass}
                   />
                 )}
-                {guards.length > 0 && !replaying && (
+                {(guards.length > 0 || alarm) && !replaying && (
                   <RoundButton
                     icon={ShieldCheck}
-                    label={t('layout.floorplan.security')}
-                    onClick={() => setSecurity(on => !on)}
+                    label={t(alarm ? 'layout.floorplan.securityAlarm' : 'layout.floorplan.security')}
+                    onClick={() => {
+                      // Avec une alarme, la vue sécurité s'ouvre sur le choix de son mode.
+                      if (!security && alarm) setAlarmOpen(true);
+                      setSecurity(on => !on);
+                    }}
                     pressed={security}
                     on='text-red-300'
                   />
@@ -1506,15 +1534,25 @@ export function FloorplanView() {
                 ) : (
                   <ShieldCheck size={16} className='shrink-0 text-green-400' />
                 )}
-                <span className='truncate'>
-                  {openedNames.length
-                    ? t(openedNames.length > 1 ? 'layout.floorplan.securityOpenPlural' : 'layout.floorplan.securityOpen', {
-                        count: openedNames.length,
-                        names: openedNames.join(', '),
-                      })
-                    : t('layout.floorplan.securityClosed')}
-                </span>
+                <span className='truncate'>{securityText}</span>
               </div>
+            )}
+            {alarm && (
+              <AlarmModeModal
+                entityId={alarmId}
+                open={alarmOpen}
+                onClose={() => setAlarmOpen(false)}
+                notice={
+                  guards.length > 0 && (
+                    <p
+                      className={cn('flex items-center gap-2 text-xs font-medium', openedNames.length ? 'text-red-300' : 'text-green-300')}
+                    >
+                      {openedNames.length ? <ShieldAlert size={14} className='shrink-0' /> : <ShieldCheck size={14} className='shrink-0' />}
+                      {securityText}
+                    </p>
+                  )
+                }
+              />
             )}
             {focusRoom && (
               <motion.button

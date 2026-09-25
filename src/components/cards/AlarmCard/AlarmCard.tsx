@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
@@ -189,6 +189,18 @@ const MODE_CONFIGS: ModeConfig[] = [
 
 const DEFAULT_MODES: ArmMode[] = ['disarm', 'home', 'away', 'night'];
 
+/** Bits des `supported_features` d'une alarme (`AlarmControlPanelEntityFeature` de HA). */
+const ARM_FEATURES: [ArmMode, number][] = [
+  ['home', 1],
+  ['away', 2],
+  ['night', 4],
+  ['vacation', 32],
+];
+
+/** Les modes que sait prendre une alarme, d'après ses `supported_features` — ceux par défaut, sans elles. */
+const alarmModes = (features: unknown): ArmMode[] =>
+  typeof features === 'number' ? ['disarm', ...ARM_FEATURES.flatMap(([mode, bit]) => (features & bit ? [mode] : []))] : DEFAULT_MODES;
+
 // ── SVG ring — scales with size prop ─────────────────────────────────────────
 function AlarmRing({ size, fill, color, pulse }: { size: number; fill: number; color: string; pulse: boolean }) {
   const cx = size / 2;
@@ -230,9 +242,22 @@ interface AlarmKeypadModalProps {
   visual: AlarmVisual;
   activeModes: ArmMode[];
   t: (key: string) => string;
+  /** Au-dessus des modes : ce qu'il faut savoir avant d'armer — une fenêtre restée ouverte. */
+  notice?: ReactNode;
 }
 
-function AlarmKeypadModal({ open, pendingMode, onClose, entityId, name, requireCode, visual, activeModes, t }: AlarmKeypadModalProps) {
+function AlarmKeypadModal({
+  open,
+  pendingMode,
+  onClose,
+  entityId,
+  name,
+  requireCode,
+  visual,
+  activeModes,
+  t,
+  notice,
+}: AlarmKeypadModalProps) {
   const helpers = useHass(s => s.helpers);
   const playFeedback = useSoundFeedback();
   const [code, setCode] = useState('');
@@ -302,6 +327,7 @@ function AlarmKeypadModal({ open, pendingMode, onClose, entityId, name, requireC
               </div>
 
               <div className='p-4 space-y-3'>
+                {notice}
                 {/* ── Mode selector ── */}
                 <div>
                   <div className='text-[10px] text-white/30 uppercase tracking-wider mb-2'>{t('widgets.alarm.selectMode')}</div>
@@ -399,6 +425,42 @@ function AlarmKeypadModal({ open, pendingMode, onClose, entityId, name, requireC
       )}
     </AnimatePresence>,
     document.body
+  );
+}
+
+/**
+ * Le choix du mode d'une alarme, hors de sa card — le bouclier du plan : ses
+ * modes, son code et son état viennent de l'entité elle-même.
+ */
+export function AlarmModeModal({
+  entityId,
+  open,
+  onClose,
+  notice,
+}: {
+  entityId: string;
+  open: boolean;
+  onClose: () => void;
+  notice?: ReactNode;
+}) {
+  const { t } = useI18n();
+  const alarm = useSafeEntity(entityId);
+  if (!alarm) return null;
+  const modes = alarmModes(alarm.attributes.supported_features);
+  return (
+    <AlarmKeypadModal
+      open={open}
+      // Désarmée, on vient l'armer ; armée, la désarmer.
+      pendingMode={alarm.state === 'disarmed' ? (modes.find(m => m !== 'disarm') ?? 'disarm') : 'disarm'}
+      onClose={onClose}
+      entityId={entityId}
+      name={friendlyName(alarm) ?? entityId}
+      requireCode={!!alarm.attributes.code_format}
+      visual={getVisual(alarm.state, t)}
+      activeModes={modes}
+      t={t}
+      notice={notice}
+    />
   );
 }
 

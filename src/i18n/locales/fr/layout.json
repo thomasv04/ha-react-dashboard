@@ -443,6 +443,8 @@
     "roomRemove": "Retirer la pièce",
     "thermal": "Températures des pièces",
     "security": "Portes et fenêtres",
+    "securityAlarm": "Alarme, portes et fenêtres",
+    "alarm": "Alarme",
     "securityClosed": "Tout est fermé",
     "securityOpen": "{count} ouverte : {names}",
     "securityOpenPlural": "{count} ouvertes : {names}",
