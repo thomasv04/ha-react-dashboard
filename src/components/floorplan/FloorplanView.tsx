@@ -73,11 +73,13 @@ import {
 } from '@/lib/floorplan';
 import {
   familyKind,
+  frontShutter,
   isContact,
   linkCandidates,
   normalizeOpenings,
   openingLabel,
   parseNodeName,
+  shutsInFront,
   suggestLinks,
   typedOpenings,
   type FloorplanOpenings,
@@ -435,6 +437,7 @@ export function FloorplanView() {
     weatherId,
     ...parts.map(p => p.entityId),
     ...openingsConfig.links.map(l => l.entityId),
+    ...(openingDraft ? [openingDraft.link.entityId] : []),
     ...allCables.map(c => c.entityId),
     ...solarFields.map(f => f.entityId),
   ]);
@@ -530,20 +533,17 @@ export function FloorplanView() {
     ...(solarDraft?.field ? [{ ...solarDraft.field, glow: 0.35 }] : []),
   ];
 
-  const partsProp: PartProp[] = [
-    ...parts
-      .filter(p => !aboveLevel(Math.min(p.a[1], p.b[1])))
-      .map(p => {
-        const entity = replayed(p.entityId) ?? entities[p.entityId];
-        return { ...p, open: openness(entity?.state, entity?.attributes) };
-      }),
-    ...(draft?.part ? [{ ...draft.part, open: DRAFT_OPENNESS }] : []),
-  ];
-
   /** Les objets de cette maquette-ci — `undefined` tant qu'elle n'est pas lue. */
   const modelOpenings = detected && detected.model === model ? detected.openings : undefined;
   /** Famille d'une ouverture, telle que la maquette l'a lue : son nœud seul ne la dit pas toujours (`Fenetre_sal_1_1`). */
   const familyOf = (node: string) => modelOpenings?.openings.find(o => o.id === node)?.family ?? parseNodeName(node).family;
+  /** Le volet d'une fenêtre que la maquette dessine sans le sien, posé devant elle — `null` : elle bouge elle-même. */
+  const frontOf = (link: OpeningLink, kind: OpeningKind): FloorplanPart | null => {
+    const found = modelOpenings?.openings.find(o => o.id === link.node);
+    const entity = { entityId: link.entityId, deviceClass: entities[link.entityId]?.attributes?.device_class };
+    if (!modelOpenings || !found || !shutsInFront(found.family, kind, entity)) return null;
+    return { id: `front-${link.node}`, kind: 'shutter', entityId: link.entityId, ...frontShutter(found, modelOpenings.center) };
+  };
 
   // ── Vue sécurité ───────────────────────────────────────────────────────────
   /**
@@ -557,7 +557,9 @@ export function FloorplanView() {
     ...openingsConfig.links.flatMap(l => {
       const found = modelOpenings?.openings.find(o => o.id === l.node);
       const kind = familyKind(familyOf(l.node), openingsConfig.kinds);
-      return found && kind && kind !== 'shutter' ? [{ entityId: l.entityId, box: [found.min, found.max] as [Vec3, Vec3] }] : [];
+      return found && kind && kind !== 'shutter' && !frontOf(l, kind)
+        ? [{ entityId: l.entityId, box: [found.min, found.max] as [Vec3, Vec3] }]
+        : [];
     }),
     ...chips.flatMap(c =>
       isContact(c.entityId, entities[c.entityId]?.attributes?.device_class) ? [{ entityId: c.entityId, chip: c.id }] : []
@@ -576,32 +578,28 @@ export function FloorplanView() {
     return () => window.clearInterval(timer);
   }, [previewing, animated]);
   /** Portes, fenêtres et baies de la maquette liées à une entité — le type de leur famille décide du mouvement. */
-  const openingsProp: OpeningProp[] = [
+  const moving = [
     ...openingsConfig.links.flatMap(link => {
       const kind = familyKind(familyOf(link.node), openingsConfig.kinds);
       if (!kind || link.node === previewing) return [];
       const entity = replayed(link.entityId) ?? entities[link.entityId];
-      return [
-        {
-          id: link.node,
-          kind,
-          ...(link.flip && { flip: true }),
-          ...(link.hinge && { hinge: true }),
-          open: openness(entity?.state, entity?.attributes),
-        },
-      ];
+      return [{ link, kind, open: openness(entity?.state, entity?.attributes) }];
     }),
-    ...(openingDraft?.kind
-      ? [
-          {
-            id: openingDraft.link.node,
-            kind: openingDraft.kind,
-            ...(openingDraft.link.flip && { flip: true }),
-            ...(openingDraft.link.hinge && { hinge: true }),
-            open: animated ? preview : DRAFT_OPENNESS,
-          },
-        ]
-      : []),
+    ...(openingDraft?.kind ? [{ link: openingDraft.link, kind: openingDraft.kind, open: animated ? preview : DRAFT_OPENNESS }] : []),
+  ].map(m => ({ ...m, front: frontOf(m.link, m.kind) }));
+  const openingsProp: OpeningProp[] = moving.flatMap(({ link, kind, open, front }) =>
+    front ? [] : [{ id: link.node, kind, ...(link.flip && { flip: true }), ...(link.hinge && { hinge: true }), open }]
+  );
+
+  const partsProp: PartProp[] = [
+    ...parts
+      .filter(p => !aboveLevel(Math.min(p.a[1], p.b[1])))
+      .map(p => {
+        const entity = replayed(p.entityId) ?? entities[p.entityId];
+        return { ...p, open: openness(entity?.state, entity?.attributes) };
+      }),
+    ...(draft?.part ? [{ ...draft.part, open: DRAFT_OPENNESS }] : []),
+    ...moving.flatMap(({ front, open }) => (front && !aboveLevel(front.a[1]) ? [{ ...front, open }] : [])),
   ];
 
   const setOpenings = (patch: Partial<FloorplanOpenings>) =>

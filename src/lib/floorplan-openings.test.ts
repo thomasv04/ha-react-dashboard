@@ -4,6 +4,7 @@ import path from 'node:path';
 import {
   detectOpenings,
   familyKind,
+  frontShutter,
   furnitureNodes,
   guessOpeningKind,
   levelOf,
@@ -15,6 +16,7 @@ import {
   openingLabel,
   openingMotion,
   parseNodeName,
+  shutsInFront,
   structureOf,
   suggestLinks,
   typedOpenings,
@@ -349,6 +351,23 @@ describe('openingMotion — a roller shutter, a garage door', () => {
   });
 });
 
+describe('shutsInFront', () => {
+  const shutter = { entityId: 'cover.volet_salon', deviceClass: 'shutter' };
+
+  it('sets a shutter in front of a window, a door or a bay linked to one — or typed « Volet »', () => {
+    expect(shutsInFront('Fenetre_Salon', 'window', shutter)).toBe(true);
+    expect(shutsInFront('Baie_Salon', 'sliding', { entityId: 'cover.volet_baie' })).toBe(true);
+    expect(shutsInFront('Fenetre_Salon', 'shutter', shutter)).toBe(true);
+  });
+
+  it('lets a shutter or a garage door of the model roll itself, and a contact or a motorised window move the window', () => {
+    expect(shutsInFront('Volet_Chambre', 'shutter', shutter)).toBe(false);
+    expect(shutsInFront('Garage', 'garage', { entityId: 'cover.garage', deviceClass: 'garage' })).toBe(false);
+    expect(shutsInFront('Fenetre_Salon', 'window', { entityId: 'binary_sensor.fenetre_salon', deviceClass: 'window' })).toBe(false);
+    expect(shutsInFront('Fenetre_Salon', 'window', { entityId: 'cover.velux', deviceClass: 'window' })).toBe(false);
+  });
+});
+
 describe('openingMotion — a window with two sashes', () => {
   const window = [
     box('Fenetre_1', [0, 90, 0], [200, 220, 8]),
@@ -591,5 +610,10 @@ describe('the synthetic model of the end-to-end tests (scripts/make-openings-glb
 
     expect(motion('Volet_Chambre_1', 'shutter')[0].nodes).toEqual(['Volet_Chambre_3']);
     expect(motion('Garage_1', 'garage')[0].nodes).toEqual(['Garage_1', 'Garage_2']);
+  });
+
+  it('sets the shutter of a window outside, on the face of its frame away from the house', () => {
+    const window = model.openings.find(o => o.id === 'Fenetre_Salon_1')!;
+    expect(frontShutter(window, model.center)).toEqual({ a: [350, 90, -4], b: [550, 220, -4], side: -1 });
   });
 });

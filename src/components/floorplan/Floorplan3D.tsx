@@ -823,6 +823,9 @@ function placeParts(s: Stage, parts: PartProp[]) {
   // Un élément posé ou retiré découpe autrement la maquette ; un élément qui
   // s'ouvre, `swing` le dessine.
   if (!reshaped) return;
+  // Lisibles sur la page, comme les ouvertures : un test y trouve le volet posé devant une fenêtre.
+  const host = s.renderer.domElement.parentElement;
+  if (host) host.dataset.floorplanParts = [...s.parts.keys()].join(' ');
   setCuts(
     s.uniforms,
     [...s.parts.values()].flatMap(entry => (entry.obj.cut ? [entry.obj.cut] : []))

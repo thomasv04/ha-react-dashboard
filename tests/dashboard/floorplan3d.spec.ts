@@ -632,6 +632,21 @@ test('in edit mode, the Openings tab lists the doors of the model, and links one
     .toEqual(['Porte_Chambre_1 binary_sensor.porte_cellier', 'Porte_Cuisine_1 binary_sensor.porte_entree']);
 });
 
+test('a window linked to its shutter stays put: the shutter is set in front of it', async ({ page }) => {
+  await openOpenings(page);
+  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
+  await page.getByRole('tab', { name: 'Ouvertures' }).click();
+  await page.getByRole('button', { name: /^Fenetre_Salon/ }).click();
+  const dialog = page.getByRole('dialog', { name: 'Fenetre_Salon' });
+  await page.getByPlaceholder('Rechercher...').fill('volet_salon');
+  await page.getByRole('button', { name: 'cover.volet_salon', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Lier' }).click();
+  await expect(dialog).toHaveCount(0);
+  // La maquette n'a pas de tablier devant cette fenêtre : on en pose un, et elle ne s'enroule pas.
+  await expect(openings(page)).toHaveAttribute('data-floorplan-parts', 'front-Fenetre_Salon_1');
+  await expect(openings(page)).not.toHaveAttribute('data-floorplan-openings', /Fenetre_Salon/);
+});
+
 test('in edit mode, the Openings tab proposes the entity named like an opening, linked in one click', async ({ page, request }) => {
   await openOpenings(page);
   await page.getByRole('button', { name: 'Modifier le dashboard' }).click();

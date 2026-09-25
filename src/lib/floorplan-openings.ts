@@ -60,6 +60,10 @@ export interface DetectedOpening {
   size: [number, number];
   /** Logée dans un mur : une ouverture, sans doute — un meuble se pose contre. */
   inWall: boolean;
+  /** L'axe de son mur au sol (x, z), et l'étendue de sa plus large pièce le long de lui et au travers. */
+  axis: [number, number];
+  along: [number, number];
+  across: [number, number];
 }
 
 /** Une famille d'objets de la maquette : les objets d'un même nom. */
@@ -359,7 +363,8 @@ export function detectOpenings(nodes: ModelNode[]): ModelOpenings {
       const first = group.reduce((a, n) => (n.component < a.component || (n.component === a.component && n.k < a.k) ? n : a));
       const box = union(group);
       const main = widest(group);
-      const along = extent(main, principalAxis(main.footprint));
+      const axis = principalAxis(main.footprint);
+      const along = extent(main, axis);
       openings.push({
         id: first.name,
         family: first.family,
@@ -369,6 +374,9 @@ export function detectOpenings(nodes: ModelNode[]): ModelOpenings {
         max: box.max,
         size: [Math.round((along[1] - along[0]) / cm), Math.round((box.max[1] - box.min[1]) / cm)],
         inWall: inWall(main),
+        axis,
+        along,
+        across: extent(main, [-axis[1], axis[0]]),
       });
     }
   }
@@ -620,6 +628,33 @@ function roll(
       motion: { type: 'roll', top, closed: (top - bottom) / apron.height, open: ROLLED },
     },
   ];
+}
+
+/**
+ * Un volet lié à une fenêtre, une porte ou une baie : la maquette n'a pas son
+ * tablier — c'est la fenêtre entière qui s'enroulerait. On en pose un devant,
+ * et elle ne bouge plus. Ce qu'est l'objet, son nom le dit, sinon le type
+ * choisi ; ce qui bouge, l'entité — un volet — ou le type « Volet ».
+ */
+export function shutsInFront(family: string, kind: OpeningKind, entity: LinkCandidate) {
+  const nature = guessOpeningKind(family) ?? kind;
+  if (nature === 'shutter' || nature === 'garage') return false;
+  return kind === 'shutter' || movableKinds(entity).includes('shutter');
+}
+
+/**
+ * Où poser ce volet : les deux coins de l'ouverture sur sa face du dehors —
+ * loin du centre de la maison —, comme on dessine un volet, et ce côté-là.
+ */
+export function frontShutter(
+  { axis, along, across, min, max }: DetectedOpening,
+  center: [number, number]
+): { a: Vec3; b: Vec3; side: 1 | -1 } {
+  const normal: Vec2 = [-axis[1], axis[0]];
+  const side = (across[0] + across[1]) / 2 > dot(center, normal) ? 1 : -1;
+  const face = side > 0 ? across[1] : across[0];
+  const corner = (t: number, y: number): Vec3 => [axis[0] * t + normal[0] * face, y, axis[1] * t + normal[1] * face];
+  return { a: corner(along[0], min[1]), b: corner(along[1], max[1]), side };
 }
 
 /** Panneaux qui glissent : ceux qui bordent un vide s'y rejoignent, sinon le premier glisse sur son voisin. */
