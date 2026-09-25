@@ -341,9 +341,6 @@ export function FloorplanView() {
   /** État d'une entité à l'instant rejoué — `undefined` en direct, ou sans historique. */
   const replayed = (entityId: string) => (replay.span ? stateAt(replay.history[entityId], replay.time) : undefined);
 
-  // Entrer en édition ou en sortir, changer de page : on referme ce qui n'avait
-  // de sens qu'avant — pendant le rendu plutôt que dans un effet, qui
-  // peindrait d'abord l'état périmé.
   /** Ce qu'on était en train de poser ou de dessiner : abandonné. */
   const clearDrafts = useCallback(() => {
     setAdding(null);
@@ -356,6 +353,9 @@ export function FloorplanView() {
     setSolarDraft(null);
   }, []);
 
+  // Entrer en édition ou en sortir, changer de page : on referme ce qui n'avait
+  // de sens qu'avant — pendant le rendu plutôt que dans un effet, qui
+  // peindrait d'abord l'état périmé.
   const scope = `${isEditMode}:${currentPage?.id}`;
   const [wasScope, setWasScope] = useState(scope);
   if (wasScope !== scope) {
@@ -477,8 +477,6 @@ export function FloorplanView() {
   // Derrière la maquette : le ciel de l'heure, sauf si la page garde le fond du thème.
   const sky = model && floorplan?.sky !== false ? skyColors(sunElevation, clouds) : null;
 
-  // Rejouée, l'énergie de l'instant — l'unité, que l'historique n'a pas, du
-  // direct ; sans historique, le câble se repose.
   // ── Étages ─────────────────────────────────────────────────────────────────
   /** Les objets de cette maquette-ci — `undefined` tant qu'elle n'est pas chargée. */
   const modelOpenings = ready && ready.model === model ? ready.openings : undefined;
@@ -490,20 +488,32 @@ export function FloorplanView() {
   const hideAbove = level ? (levels[levels.findIndex(l => l.id === level) + 1]?.floor ?? Infinity) : Infinity;
   const aboveLevel = (y: number) => y >= hideAbove;
 
+  // ── Énergie : câbles, panneaux ─────────────────────────────────────────────
+  /**
+   * Ce que dit une entité d'énergie, rejouée ou en direct : rejouée, l'unité —
+   * que l'historique n'a pas — vient du direct ; sans historique, au repos.
+   */
+  const energyOf = <T,>(
+    entityId: string,
+    read: (state: string | undefined, attributes: Record<string, unknown> | undefined) => T,
+    rest: T
+  ) => {
+    const live = entities[entityId];
+    const past = replayed(entityId);
+    if (past) return read(past.state, { ...live?.attributes, ...past.attributes });
+    return replaying ? rest : read(live?.state, live?.attributes);
+  };
   const cablesProp: CableProp[] = allCables
     .filter(c => c.points.some(p => !aboveLevel(p[1])))
-    .map(c => {
-      const live = entities[c.entityId];
-      const past = replayed(c.entityId);
-      return {
-        ...c,
-        ...(past
-          ? cableFlow(past.state, { ...live?.attributes, ...past.attributes }, c.invert)
-          : replaying
-            ? { direction: 0 as const, watts: null }
-            : cableFlow(live?.state, live?.attributes, c.invert)),
-      };
-    });
+    .map(c => ({
+      ...c,
+      ...energyOf(c.entityId, (state, attributes) => cableFlow(state, attributes, c.invert), { direction: 0 as const, watts: null }),
+    }));
+  /** Panneaux solaires : leur éclat suit leur production ; celui qu'on pose, entre les deux. */
+  const solarProp: SolarProp[] = [
+    ...solarFields.filter(f => !aboveLevel(Math.min(f.a[1], f.b[1]))).map(f => ({ ...f, glow: energyOf(f.entityId, solarGlow, 0) })),
+    ...(solarDraft?.field ? [{ ...solarDraft.field, glow: 0.35 }] : []),
+  ];
   const focusRoom = rooms.find(r => r.id === focusId);
 
   const lamps: Lamp[] = model
@@ -528,23 +538,6 @@ export function FloorplanView() {
     : [];
 
   // ── Portes, fenêtres, volets ───────────────────────────────────────────────
-  /** Panneaux solaires : leur éclat suit leur production, rejouée ou en direct ; celui qu'on pose, entre les deux. */
-  const solarProp: SolarProp[] = [
-    ...solarFields
-      .filter(f => !aboveLevel(Math.min(f.a[1], f.b[1])))
-      .map(f => {
-        const live = entities[f.entityId];
-        const past = replayed(f.entityId);
-        const glow = past
-          ? solarGlow(past.state, { ...live?.attributes, ...past.attributes })
-          : replaying
-            ? 0
-            : solarGlow(live?.state, live?.attributes);
-        return { ...f, glow };
-      }),
-    ...(solarDraft?.field ? [{ ...solarDraft.field, glow: 0.35 }] : []),
-  ];
-
   /** Famille d'une ouverture, telle que la maquette l'a lue : son nœud seul ne la dit pas toujours (`Fenetre_sal_1_1`). */
   const familyOf = (node: string) => modelOpenings?.openings.find(o => o.id === node)?.family ?? '';
   /** Le volet d'une fenêtre que la maquette dessine sans le sien, posé devant elle — `null` : elle bouge elle-même. */
@@ -721,13 +714,19 @@ export function FloorplanView() {
         ]
       : [];
 
-  /** Hors édition, les pastilles que la maquette cache s'effacent : leurs points d'accroche, à vérifier. */
+  /**
+   * Hors édition, les pastilles que la maquette cache s'effacent : leurs points
+   * d'accroche, à vérifier — pas ceux des étages cachés. En fond d'écran de
+   * veille, seules les lampes, dont la lueur passe par-dessus tout : les
+   * pastilles n'y paraissent pas.
+   */
   const anchors = isEditMode
     ? undefined
     : Object.fromEntries(
         widgets.flatMap(w => {
           const anchor = normalizeAnchor(w.pos?.anchor);
-          return anchor ? [[w.id, anchor]] : [];
+          const wanted = !backdrop || (!!floorplan?.lampGlow && glows.some(g => g.id === w.id));
+          return anchor && wanted && !aboveLevel(anchor[1]) ? [[w.id, anchor]] : [];
         })
       );
 
@@ -912,7 +911,8 @@ export function FloorplanView() {
       />
     );
 
-  const items = (
+  // En fond d'écran de veille, la maison seule : ni pastilles, ni cards.
+  const items = !backdrop && (
     <FreeGridScope>
       {/* `pointer-events-none` : entre les éléments, le clic atteint le plan. */}
       <motion.div
@@ -943,7 +943,7 @@ export function FloorplanView() {
                   // Vol vers une pièce : les pastilles des autres pièces s'estompent.
                   // Rejouée, tout s'estompe : pastilles et cards montrent le présent.
                   faded={replaying || (!!anchor && !!focusRoom && !pointInPolygon(anchor[0], anchor[2], focusRoom.points))}
-                  hidden={backdrop || (!isEditMode && occluded.has(w.id)) || (!!anchor && aboveLevel(anchor[1]))}
+                  hidden={(!isEditMode && occluded.has(w.id)) || (!!anchor && aboveLevel(anchor[1]))}
                   breathing={present.has(w.id)}
                   alert={alertChips.has(w.id)}
                 />

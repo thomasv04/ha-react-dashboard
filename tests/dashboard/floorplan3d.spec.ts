@@ -343,7 +343,7 @@ test('as the background of the screensaver, the house turns alone, and the page 
     await expect(page.locator('[data-floorplan-3d] canvas')).toBeVisible();
     await expect(page).not.toHaveURL(/#maison/);
     // Seule : ni pastilles, ni boutons.
-    await expect(page.locator('[data-floorplan-item="temp"]')).toHaveCSS('opacity', '0', { timeout: 60_000 });
+    await expect(page.locator('[data-floorplan-item="temp"]')).toHaveCount(0);
     await expect(page.locator('[data-tour="floorplan-buttons"]')).toHaveCount(0);
 
     // En partant, l'accueil, où l'on était.

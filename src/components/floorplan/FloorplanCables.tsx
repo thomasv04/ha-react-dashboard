@@ -207,7 +207,6 @@ export function CablePopover({
   );
 }
 
-/** Câbles tracés sur la maquette, pour les retirer. */
 /**
  * Les panneaux solaires de la page, et de quoi en poser : le prochain clic
  * sur la maquette en est un coin, sur le toit ou au sol, le suivant le coin
@@ -292,6 +291,7 @@ export function SolarPopover({
   );
 }
 
+/** Câbles tracés sur la maquette, pour les retirer. */
 export function CableList({ cables, onRemove }: { cables: FloorplanCable[]; onRemove: (id: string) => void }) {
   const { t } = useI18n();
   const entities = useEntities(cables.map(c => c.entityId));

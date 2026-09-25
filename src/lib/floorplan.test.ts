@@ -311,6 +311,12 @@ describe('stateAt', () => {
     expect(stateAt(history, 4_000_000)).toEqual({ state: 'off', attributes: {} });
   });
 
+  it('finds the change of the moment in a long history', () => {
+    const day: HistoryEntry[] = Array.from({ length: 17_280 }, (_, i) => ({ s: String(i), lu: i * 5 }));
+    expect(stateAt(day, 43_202_000)?.state).toBe('8640');
+    expect(stateAt(day, 86_400_000)?.state).toBe('17279');
+  });
+
   it('keeps the first known state before any change, and nothing without history', () => {
     expect(stateAt(history, 0)?.state).toBe('off');
     expect(stateAt(undefined, 0)).toBeUndefined();
@@ -660,5 +666,7 @@ describe('solar fields', () => {
     expect(solarGlow('4.2', { unit_of_measurement: 'kW' })).toBe(1);
     expect(solarGlow('0', { unit_of_measurement: 'W' })).toBe(0);
     expect(solarGlow('unavailable', { unit_of_measurement: 'W' })).toBe(0);
+    // Par paliers : 1 520 W brillent comme 1 500.
+    expect(solarGlow('1520', { unit_of_measurement: 'W' })).toBe(0.5);
   });
 });

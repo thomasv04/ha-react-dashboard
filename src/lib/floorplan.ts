@@ -554,9 +554,25 @@ export interface HistoryEntry {
 }
 
 /**
+ * Les attributs de chaque changement : HA ne les répète que quand ils
+ * changent, on garde les derniers vus. Calculés une fois par historique — la
+ * relecture en redemande vingt fois par seconde.
+ */
+const carried = new WeakMap<HistoryEntry[], Record<string, unknown>[]>();
+function carriedAttributes(entries: HistoryEntry[]) {
+  let list = carried.get(entries);
+  if (!list) {
+    let last = entries[0].a ?? {};
+    list = entries.map(entry => (last = entry.a ?? last));
+    carried.set(entries, list);
+  }
+  return list;
+}
+
+/**
  * État d'une entité à l'instant `time` (ms), d'après son historique : le
- * dernier changement survenu d'ici là. HA ne répète les attributs que quand
- * ils changent : on garde les derniers vus. Avant le premier changement
+ * dernier changement survenu d'ici là — cherché par dichotomie, une journée
+ * de capteur de puissance en compte des milliers. Avant le premier changement
  * connu, le premier état — celui du début de la période.
  */
 export function stateAt(
@@ -564,14 +580,14 @@ export function stateAt(
   time: number
 ): { state: string; attributes: Record<string, unknown> } | undefined {
   if (!entries?.length) return undefined;
-  let state = entries[0].s;
-  let attributes = entries[0].a ?? {};
-  for (const entry of entries) {
-    if ((entry.lu ?? entry.lc ?? 0) * 1000 > time) break;
-    state = entry.s;
-    if (entry.a) attributes = entry.a;
+  let lo = 0;
+  let hi = entries.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if ((entries[mid].lu ?? entries[mid].lc ?? 0) * 1000 <= time) lo = mid;
+    else hi = mid - 1;
   }
-  return { state, attributes };
+  return { state: entries[lo].s, attributes: carriedAttributes(entries)[lo] };
 }
 
 const RAD = Math.PI / 180;
@@ -753,10 +769,14 @@ export function solarFrame(a: Vec3, b: Vec3, normal: Vec3) {
 /** Production, en watts, qui illumine un champ tout entier : celle d'une maison bien équipée. */
 const SOLAR_FULL = 3000;
 
-/** Éclat d'un champ de panneaux, de 0 à 1, d'après sa production — éteint la nuit. */
+/**
+ * Éclat d'un champ de panneaux, de 0 à 1, d'après sa production — éteint la
+ * nuit. Par paliers de 5 % : une production qui varie de quelques watts ne
+ * redessine pas la maison.
+ */
 export function solarGlow(state: string | undefined, attributes: Record<string, unknown> | undefined): number {
   const { watts } = cableFlow(state, attributes);
-  return watts === null ? 0 : clamp(Math.abs(watts) / SOLAR_FULL, 0, 1);
+  return watts === null ? 0 : Math.round(clamp(Math.abs(watts) / SOLAR_FULL, 0, 1) * 20) / 20;
 }
 
 /** Un capteur du tableau Énergie de HA, pour un câble : sa puissance, et la sorte de sa source. */
@@ -774,7 +794,8 @@ function statSensors(value: unknown): string[] {
   return Object.entries(value).flatMap(([key, v]) => (key.startsWith('stat_') && typeof v === 'string' ? [v] : statSensors(v)));
 }
 
-const isPowerSensor = (attributes: Record<string, unknown> | undefined) =>
+/** Un capteur de puissance : des watts ou des kilowatts. */
+export const isPowerSensor = (attributes: Record<string, unknown> | undefined) =>
   attributes?.unit_of_measurement === 'W' || attributes?.unit_of_measurement === 'kW' || attributes?.device_class === 'power';
 
 /**
