@@ -56,6 +56,7 @@ import {
   partFrame,
   shortestTurn,
   sunLighting,
+  unitsPerMeter,
   type Cutaway,
   type FloorplanCable,
   type FloorplanSolar,
@@ -1704,8 +1705,7 @@ export default function Floorplan3D({
         // l'export soit en centimètres ou en mètres.
         const size = new Box3().setFromObject(root).getSize(new Vector3()).length() || 1;
         root.scale.setScalar(MODEL_SIZE / size);
-        // Centimètres (Sweet Home 3D) ou mètres (Blender) : une maison dépasse deux mètres, pas deux cents.
-        s.meter = size >= 200 ? 100 : 1;
+        s.meter = unitsPerMeter(size);
         root.updateMatrixWorld(true);
         const box = new Box3().setFromObject(root);
         const center = box.getCenter(new Vector3());

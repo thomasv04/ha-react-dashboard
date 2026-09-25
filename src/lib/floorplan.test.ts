@@ -13,7 +13,6 @@ import {
   backSides,
   cutLimit,
   isCutAway,
-  guessPartKind,
   isNightDimmed,
   isPresence,
   lightGlow,
@@ -224,18 +223,6 @@ describe('openness', () => {
     expect(openness('opening', undefined)).toBe(1);
     expect(openness('closed', {})).toBe(0);
     expect(openness(undefined, undefined)).toBe(0);
-  });
-});
-
-describe('guessPartKind', () => {
-  it('guesses from the device class, then the domain', () => {
-    expect(guessPartKind('cover.volet_salon', 'shutter')).toBe('shutter');
-    expect(guessPartKind('cover.volet_salon', undefined)).toBe('shutter');
-    expect(guessPartKind('cover.portail', 'gate')).toBe('door');
-    expect(guessPartKind('cover.garage', 'garage')).toBe('garage');
-    expect(guessPartKind('binary_sensor.garage', 'garage_door')).toBe('garage');
-    expect(guessPartKind('binary_sensor.fenetre', 'window')).toBe('window');
-    expect(guessPartKind('binary_sensor.porte', 'door')).toBe('door');
   });
 });
 

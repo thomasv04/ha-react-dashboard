@@ -2,7 +2,8 @@ import { AppWindow, ArrowLeftRight, Blinds, DoorOpen, Warehouse, type LucideIcon
 import { useHass } from '@hakit/core';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { useEntities } from '@/hooks/useEntities';
-import { guessPartKind, PART_KINDS, type FloorplanPart, type PartKind } from '@/lib/floorplan';
+import { PART_KINDS, type FloorplanPart, type PartKind } from '@/lib/floorplan';
+import { guessPartKind } from '@/lib/floorplan-openings';
 import { friendlyName } from '@/lib/ha-service';
 import { useI18n } from '@/i18n';
 import { DraftPopover, DrawnList, KindGrid, type Around } from './FloorplanDrawn';

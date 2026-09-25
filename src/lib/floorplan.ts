@@ -126,6 +126,13 @@ export type Vec3 = [number, number, number];
  */
 export const MODEL_SIZE = 20;
 
+/**
+ * Unités d'un mètre dans une maquette, d'après sa diagonale : Sweet Home 3D
+ * exporte en centimètres, Blender en mètres — une maison, jardin compris,
+ * dépasse 2 m et pas 200.
+ */
+export const unitsPerMeter = (diagonal: number) => (diagonal >= 200 ? 100 : 1);
+
 /** Ce qu'on dessine sur la maquette, le temps de le dessiner : ambre. */
 export const DRAFT_COLOR = '#fbbf24';
 
@@ -221,14 +228,6 @@ export function openness(state: string | undefined, attributes: Record<string, u
   const position = attributes?.current_position;
   if (typeof position === 'number' && Number.isFinite(position)) return clamp(position / 100, 0, 1);
   return state === 'on' || state === 'open' || state === 'opening' ? 1 : 0;
-}
-
-/** Type d'élément deviné d'après l'entité choisie — l'utilisateur peut le changer. */
-export function guessPartKind(entityId: string, deviceClass: unknown): PartKind {
-  if (deviceClass === 'garage' || deviceClass === 'garage_door') return 'garage';
-  if (deviceClass === 'window') return 'window';
-  if (entityId.startsWith('cover.')) return deviceClass === 'door' || deviceClass === 'gate' ? 'door' : 'shutter';
-  return 'door';
 }
 
 // ── Pièces ───────────────────────────────────────────────────────────────────
@@ -830,11 +829,10 @@ export function cableFlow(
   invert = false
 ): { direction: -1 | 0 | 1; watts: number | null } {
   const sign = invert ? -1 : 1;
-  const unit = attributes?.unit_of_measurement;
-  if (unit === 'W' || unit === 'kW' || attributes?.device_class === 'power') {
+  if (isPowerSensor(attributes)) {
     const value = parseFloat(state ?? '');
     if (!Number.isFinite(value)) return { direction: 0, watts: null };
-    const watts = value * (unit === 'kW' ? 1000 : 1) * sign;
+    const watts = value * (attributes?.unit_of_measurement === 'kW' ? 1000 : 1) * sign;
     return { direction: Math.abs(watts) <= FLOW_THRESHOLD ? 0 : watts > 0 ? 1 : -1, watts };
   }
   // Libellé ou code numérique (1 en charge, 2 en décharge) : la même lecture que la card.

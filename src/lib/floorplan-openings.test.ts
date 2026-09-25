@@ -6,6 +6,7 @@ import {
   familyKind,
   frontShutter,
   furnitureNodes,
+  guessPartKind,
   guessOpeningKind,
   levelOf,
   linkCandidates,
@@ -351,6 +352,18 @@ describe('openingMotion — a roller shutter, a garage door', () => {
   });
 });
 
+describe('guessPartKind', () => {
+  it('guesses from the device class, then the domain', () => {
+    expect(guessPartKind('cover.volet_salon', 'shutter')).toBe('shutter');
+    expect(guessPartKind('cover.volet_salon', undefined)).toBe('shutter');
+    expect(guessPartKind('cover.portail', 'gate')).toBe('door');
+    expect(guessPartKind('cover.garage', 'garage')).toBe('garage');
+    expect(guessPartKind('binary_sensor.garage', 'garage_door')).toBe('garage');
+    expect(guessPartKind('binary_sensor.fenetre', 'window')).toBe('window');
+    expect(guessPartKind('binary_sensor.porte', 'door')).toBe('door');
+  });
+});
+
 describe('shutsInFront', () => {
   const shutter = { entityId: 'cover.volet_salon', deviceClass: 'shutter' };
 
@@ -514,6 +527,13 @@ describe('suggestLinks', () => {
     const taken = [{ node: 'Porte_Chambre_1', entityId: 'binary_sensor.contact_42' }];
     expect(suggestLinks(model, {}, links, entities).map(s => s.node)).toEqual(['Porte_Entree_1']);
     expect(suggestLinks(model, {}, taken, entities).map(s => s.node)).toEqual(['Volet_Chambre_1']);
+  });
+
+  it('reads a plural as the type it names: Volets_Salon, like Volet_Salon', () => {
+    const plural = detectOpenings([box('Volets_Salon_1', [0, 100, 0], [100, 200, 6])]);
+    expect(suggestLinks(plural, {}, [], [{ entityId: 'cover.volet_salon', deviceClass: 'shutter' }])).toEqual([
+      { node: 'Volets_Salon_1', entityId: 'cover.volet_salon' },
+    ]);
   });
 
   it('keeps only contacts and covers among the entities of the house', () => {
