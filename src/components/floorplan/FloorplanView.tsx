@@ -79,7 +79,6 @@ import {
   linkCandidates,
   normalizeOpenings,
   openingLabel,
-  parseNodeName,
   shutsInFront,
   suggestLinks,
   typedOpenings,
@@ -295,9 +294,8 @@ export function FloorplanView() {
 
   // Maquette : chargée (sinon les pastilles accrochées n'ont pas encore de
   // position), en échec, et de quoi placer à l'écran un point de la maquette.
-  const [loadedModel, setLoadedModel] = useState<string | null>(null);
-  /** Objets séparés de la maquette chargée, et leurs familles — `null` : une maquette « fondue ». */
-  const [detected, setDetected] = useState<{ model: string; openings: ModelOpenings | null } | null>(null);
+  /** La maquette chargée, et ses objets séparés — `null` : une maquette « fondue ». */
+  const [ready, setReady] = useState<{ model: string; openings: ModelOpenings | null } | null>(null);
   /** Ouverture de la maquette qu'on lie : sa liaison en cours, le type de sa famille, où ouvrir sa fenêtre. */
   const [openingDraft, setOpeningDraft] = useState<{ link: OpeningLink; kind: OpeningKind | null; around: Around } | null>(null);
   /** L'aperçu de cette ouverture, ouverte (1) ou fermée (0). */
@@ -482,8 +480,10 @@ export function FloorplanView() {
   // Rejouée, l'énergie de l'instant — l'unité, que l'historique n'a pas, du
   // direct ; sans historique, le câble se repose.
   // ── Étages ─────────────────────────────────────────────────────────────────
+  /** Les objets de cette maquette-ci — `undefined` tant qu'elle n'est pas chargée. */
+  const modelOpenings = ready && ready.model === model ? ready.openings : undefined;
   /** Niveaux d'une maison à étages — aucun de plain-pied. */
-  const levels = (detected && detected.model === model ? detected.openings?.levels : undefined) ?? [];
+  const levels = modelOpenings?.levels ?? [];
   /** L'étage montré : celui qu'on a choisi, le rez-de-chaussée d'abord ; `null` : toute la maison. */
   const level = !levels.length || levelChoice === null ? null : (levels.find(l => l.id === levelChoice) ?? levels[0]).id;
   /** Ce que l'étage montré cache commence au sol de celui du dessus : pastilles, lampes, éléments tracés. */
@@ -545,10 +545,8 @@ export function FloorplanView() {
     ...(solarDraft?.field ? [{ ...solarDraft.field, glow: 0.35 }] : []),
   ];
 
-  /** Les objets de cette maquette-ci — `undefined` tant qu'elle n'est pas lue. */
-  const modelOpenings = detected && detected.model === model ? detected.openings : undefined;
   /** Famille d'une ouverture, telle que la maquette l'a lue : son nœud seul ne la dit pas toujours (`Fenetre_sal_1_1`). */
-  const familyOf = (node: string) => modelOpenings?.openings.find(o => o.id === node)?.family ?? parseNodeName(node).family;
+  const familyOf = (node: string) => modelOpenings?.openings.find(o => o.id === node)?.family ?? '';
   /** Le volet d'une fenêtre que la maquette dessine sans le sien, posé devant elle — `null` : elle bouge elle-même. */
   const frontOf = (link: OpeningLink, kind: OpeningKind): FloorplanPart | null => {
     const found = modelOpenings?.openings.find(o => o.id === link.node);
@@ -899,7 +897,7 @@ export function FloorplanView() {
   const plan = containSize(area.w, area.h, aspect);
   // Plus large que la place disponible (téléphone) : on fait défiler le plan.
   const pan = !model && !!image && plan.w > area.w + 1;
-  const loaded = !!model && loadedModel === model;
+  const loaded = modelOpenings !== undefined;
   const failed = failure && failure.model === model ? failure.kind : null;
 
   /** L'élément dessiné, dont on peut reprendre les deux coins. */
@@ -1193,7 +1191,6 @@ export function FloorplanView() {
                   lamps={lamps}
                   parts={partsProp}
                   openings={openingsProp}
-                  onOpenings={openings => setDetected({ model, openings })}
                   outline={outline}
                   floors={floors}
                   cables={cablesProp}
@@ -1215,7 +1212,7 @@ export function FloorplanView() {
                   highlight={previewing ?? unnamed?.id ?? hovered}
                   alerts={opened.flatMap(g => (g.box && !aboveLevel(Math.min(g.box[0][1], g.box[1][1])) ? [g.box] : []))}
                   level={level}
-                  onLoad={() => setLoadedModel(model)}
+                  onLoad={openings => setReady({ model, openings })}
                   onError={kind => setFailure({ model, kind })}
                 />
               </Suspense>
