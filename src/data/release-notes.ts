@@ -28,7 +28,7 @@ export interface ReleaseNote {
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
     version: '2.4.0',
-    date: '2026-09-24',
+    date: '2026-09-25',
     title: 'La maison, en plan et en 3D',
     items: [
       {
@@ -39,16 +39,20 @@ export const RELEASE_NOTES: ReleaseNote[] = [
         text: "À la place de l'image, une maquette 3D (`.glb`), téléversée depuis le mode édition. Elle tourne au doigt ; le soleil de Home Assistant l'éclaire et y porte ses ombres ; le ciel suit l'heure et la météo — pluie, neige, orage, grêle, givre. Les murs côté caméra s'abaissent, et chaque lampe n'éclaire que sa pièce. Ses réglages tiennent en quatre onglets : Maquette, Ambiance, Ouvertures, Éléments.",
       },
       {
-        text: "Portes, fenêtres, volets et portes de garage s'ouvrent pour de vrai, avec leur entité. Une maquette exportée de Sweet Home 3D avec le plugin ExportToHASS garde ses vraies portes : un clic sur l'une d'elles la lie à son capteur, et elle pivote sur ses gonds. Sur une maquette d'un seul tenant, on dessine l'ouverture en deux clics.",
+        text: "Portes, fenêtres, volets et portes de garage s'ouvrent pour de vrai, avec leur entité. Une maquette exportée de Sweet Home 3D avec le plugin ExportToHASS garde ses vraies portes : un clic sur l'une d'elles la lie à son capteur — celui qui porte son nom est proposé d'office —, et elle pivote sur ses gonds. Une maison à étages se lit étage par étage. Sur une maquette d'un seul tenant, on dessine l'ouverture en deux clics.",
       },
       {
-        text: "Des pièces dessinées au sol : un tap y fait voler la caméra, et la vue thermique les colore d'après leurs capteurs de température. Un halo respire sous un détecteur de présence déclenché, et une pastille passée derrière un mur s'efface.",
+        text: "Des pièces dessinées au sol : un tap y fait voler la caméra, et la vue thermique les colore d'après leurs capteurs de température. Un halo respire sous un détecteur de présence déclenché, et une pastille passée derrière un mur s'efface. La vue sécurité cerne de rouge ce qui est resté ouvert — ou dit que tout est fermé.",
       },
       {
-        text: "Un curseur rejoue les 24 dernières heures : soleil, ombres, lampes, portes et volets suivent l'historique. Des câbles tracés sur la maquette montrent l'énergie qui circule, dans son sens, d'autant plus vite que la puissance est forte. Sur un téléphone Android, la boussole tourne la maison comme on tient l'appareil.",
+        text: "Un curseur rejoue les 24 dernières heures : soleil, ombres, lampes, portes et volets suivent l'historique. Des câbles tracés sur la maquette montrent l'énergie qui circule, dans son sens, d'autant plus vite que la puissance est forte — le tableau Énergie de Home Assistant en propose les capteurs —, et des panneaux solaires posés sur le toit s'illuminent avec leur production ; la relecture rejoue aussi l'énergie. Sur un téléphone Android, la boussole tourne la maison comme on tient l'appareil.",
       },
       {
-        text: "Correctifs : une bascule verrouille enfin une serrure déverrouillée, et les menus déroulants s'ouvrent vers le haut près du bas de l'écran.",
+        text: "L'écran de veille peut montrer la maison à la place des photos : elle tourne doucement, ses lampes allumées la nuit, et l'on retrouve sa page en sortant. Réglage dans WallPanel › Fond.",
+        tour: 'appearance',
+      },
+      {
+        text: "Correctifs : une bascule verrouille enfin une serrure déverrouillée ; une fenêtre `ha_dashboard_modal` persistante se ferme après une action ; la limite de 30 écritures par minute du serveur se déclenche enfin ; les menus déroulants s'ouvrent vers le haut près du bas de l'écran.",
       },
     ],
   },
