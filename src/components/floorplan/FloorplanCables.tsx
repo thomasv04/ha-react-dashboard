@@ -1,8 +1,19 @@
+import { useEffect, useState } from 'react';
 import { ArrowLeftRight, BatteryCharging, House, Sun, Zap, type LucideIcon } from 'lucide-react';
+import { useHass } from '@hakit/core';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { useEntities } from '@/hooks/useEntities';
 import { useFormats } from '@/hooks/useFormats';
-import { CABLE_COLORS, CABLE_KINDS, DRAFT_COLOR, guessCableKind, type CableKind, type FloorplanCable } from '@/lib/floorplan';
+import {
+  CABLE_COLORS,
+  CABLE_KINDS,
+  DRAFT_COLOR,
+  energySources,
+  guessCableKind,
+  type CableKind,
+  type EnergySource,
+  type FloorplanCable,
+} from '@/lib/floorplan';
 import { friendlyName } from '@/lib/ha-service';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
@@ -10,6 +21,37 @@ import { DraftPopover, DrawnList, KindGrid } from './FloorplanDrawn';
 
 /** Celles de la card « Flux d'énergie ». */
 const CABLE_ICONS: Record<CableKind, LucideIcon> = { solar: Sun, grid: Zap, home: House, battery: BatteryCharging };
+
+/**
+ * Les capteurs du tableau Énergie de HA, lus une fois — ceux de la démo en
+ * mode mock. Un tableau jamais configuré, un HA trop ancien : aucun.
+ */
+function useEnergySources(): EnergySource[] {
+  const connection = useHass(s => s.connection);
+  const [sources, setSources] = useState<EnergySource[]>([]);
+  useEffect(() => {
+    let live = true;
+    const load: Promise<EnergySource[]> =
+      import.meta.env.MODE === 'mock'
+        ? import('@/mocks/demoFloorplan').then(m => m.DEMO_ENERGY_SOURCES)
+        : connection
+          ? Promise.all([
+              connection.sendMessagePromise({ type: 'energy/get_prefs' }),
+              connection.sendMessagePromise<{ entities?: { ei: string; di?: string }[] }>({
+                type: 'config/entity_registry/list_for_display',
+              }),
+            ]).then(([prefs, registry]) => energySources(prefs, registry.entities ?? [], useHass.getState().entities ?? {}))
+          : Promise.resolve([]);
+    load.then(
+      found => live && setSources(found),
+      () => {}
+    );
+    return () => {
+      live = false;
+    };
+  }, [connection]);
+  return sources;
+}
 
 type Point = { x: number; y: number };
 
@@ -85,6 +127,8 @@ export function CablePopover({
   onCancel: () => void;
 }) {
   const { t } = useI18n();
+  const sources = useEnergySources();
+  const entities = useEntities(sources.map(s => s.entityId));
   return (
     <DraftPopover
       title={t('layout.floorplan.cableTitle')}
@@ -95,8 +139,36 @@ export function CablePopover({
         translate: '-50% 0',
       }}
     >
+      {sources.length > 0 && (
+        <div className='flex flex-col gap-1'>
+          <span className='px-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/45'>
+            {t('layout.floorplan.cableEnergySources')}
+          </span>
+          <div className='flex flex-wrap gap-1'>
+            {sources.map(source => {
+              const Icon = CABLE_ICONS[source.kind];
+              return (
+                <button
+                  key={source.entityId}
+                  onClick={() => onChange({ ...cable, entityId: source.entityId, kind: source.kind })}
+                  aria-pressed={cable.entityId === source.entityId}
+                  className={cn(
+                    'flex items-center gap-1 max-w-full px-2 py-1 rounded-lg text-[11px] border transition-colors',
+                    cable.entityId === source.entityId
+                      ? 'bg-white/12 border-white/30 text-white'
+                      : 'bg-white/5 border-white/10 text-white/70 hover:text-white'
+                  )}
+                >
+                  <Icon size={11} className='shrink-0' style={{ color: CABLE_COLORS[source.kind] }} />
+                  <span className='truncate'>{friendlyName(entities[source.entityId]) ?? source.entityId}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
       <EntityPicker
-        autoOpen
+        autoOpen={!sources.length}
         label=''
         value={cable.entityId}
         domain='sensor'

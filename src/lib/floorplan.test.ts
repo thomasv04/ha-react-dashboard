@@ -5,6 +5,7 @@ import {
   compassHeading,
   containSize,
   flowDuration,
+  energySources,
   guessCableKind,
   backSides,
   cutLimit,
@@ -590,5 +591,47 @@ describe('energy cables', () => {
         [0, 1, 4],
       ])
     ).toEqual([0, 1, 2]);
+  });
+});
+
+describe('energySources', () => {
+  const states = {
+    'sensor.pv_power': { attributes: { unit_of_measurement: 'W' } },
+    'sensor.hub_solar_input_power': { attributes: { unit_of_measurement: 'W' } },
+    'sensor.hub_grid_input_power': { attributes: { unit_of_measurement: 'W' } },
+    'sensor.hub_solar_energy': { attributes: { unit_of_measurement: 'kWh' } },
+    'sensor.linky_import': { attributes: { unit_of_measurement: 'kWh' } },
+    'sensor.linky_power': { attributes: { unit_of_measurement: 'kW' } },
+  };
+  const registry = [
+    { ei: 'sensor.hub_solar_input_power', di: 'hub' },
+    { ei: 'sensor.hub_grid_input_power', di: 'hub' },
+    { ei: 'sensor.hub_solar_energy', di: 'hub' },
+    { ei: 'sensor.linky_import', di: 'linky' },
+    { ei: 'sensor.linky_power', di: 'linky' },
+  ];
+
+  it('takes the power sensors of the Energy dashboard, and those of the devices of its energy sensors', () => {
+    const prefs = {
+      energy_sources: [
+        { type: 'solar', stat_energy_from: 'sensor.hub_solar_energy' },
+        { type: 'grid', flow_from: [{ stat_energy_from: 'sensor.linky_import' }], flow_to: [] },
+        // Aucun appareil connu : rien à proposer.
+        { type: 'battery', stat_energy_from: 'sensor.unknown_in', stat_energy_to: 'sensor.unknown_out' },
+        { type: 'gas', stat_energy_from: 'sensor.gas' },
+      ],
+      device_consumption: [{ stat_consumption: 'sensor.pv_power' }],
+    };
+    expect(energySources(prefs, registry, states)).toEqual([
+      // L'appareil du capteur d'énergie solaire : sa puissance solaire, pas celle du réseau.
+      { entityId: 'sensor.hub_solar_input_power', kind: 'solar' },
+      { entityId: 'sensor.linky_power', kind: 'grid' },
+      { entityId: 'sensor.pv_power', kind: 'home' },
+    ]);
+  });
+
+  it('proposes nothing from prefs it cannot read', () => {
+    expect(energySources(undefined, [], states)).toEqual([]);
+    expect(energySources({ energy_sources: 'x' }, [], states)).toEqual([]);
   });
 });

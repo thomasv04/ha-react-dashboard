@@ -407,6 +407,7 @@
     "cableHint": "Click along the route, in the direction the energy flows",
     "cableHintNext": "Enter, or a click on the last point, to finish",
     "cableTitle": "Energy cable",
+    "cableEnergySources": "Energy dashboard",
     "cableInvert": "Reverse direction",
     "cables": "Cables",
     "cableRemove": "Remove the cable",

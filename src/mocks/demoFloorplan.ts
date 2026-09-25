@@ -1,5 +1,5 @@
 import type { DashboardConfigV2, GridWidget } from '@/context/DashboardLayoutContext';
-import type { FloorplanCable, FloorplanPart, FloorplanRoom } from '@/lib/floorplan';
+import type { EnergySource, FloorplanCable, FloorplanPart, FloorplanRoom } from '@/lib/floorplan';
 import type { FloorplanOpenings } from '@/lib/floorplan-openings';
 import type { WidgetConfigs } from '@/types/widget-configs';
 
@@ -129,6 +129,14 @@ const CABLES: FloorplanCable[] = [
     entityId: 'sensor.solarflow_2400_ac_output_home_power',
     points: [HUB, [-2.2, 0, 1.6], [-2.2, 0, 0.8]],
   },
+];
+
+/** Le tableau Énergie de la démo : ce qu'y déclarerait l'installation SolarFlow. */
+export const DEMO_ENERGY_SOURCES: EnergySource[] = [
+  { entityId: 'sensor.din_panneaux_solaire_puissance', kind: 'solar' },
+  { entityId: 'sensor.solarflow_2400_ac_grid_input_power', kind: 'grid' },
+  { entityId: 'sensor.solarflow_2400_ac_pack_state', kind: 'battery' },
+  { entityId: 'sensor.solarflow_2400_ac_output_home_power', kind: 'home' },
 ];
 
 const ROOMS: FloorplanRoom[] = [

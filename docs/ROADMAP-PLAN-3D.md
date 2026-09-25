@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **41 tâches sur 43** — phases A à H et J, `I1`, `I2` et `I4`. `F1` reste à essayer sur un vrai Android.
+**État global** : **42 tâches sur 43** — phases A à H et J, `I1`, `I2`, `I4` et `I5`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -525,7 +525,19 @@ murs, le toit, tournent avec la maison et passent derrière les murs.
 - **Quoi** : la relecture des 24 heures (`H2`) rejoue aussi les flux, d'après
   l'historique des capteurs de puissance — la production qui monte à midi.
 
-### [ ] I5 — Les sources du tableau Énergie
+### [x] I5 — Les sources du tableau Énergie
+
+> **Fait** (`energySources`, [floorplan.ts](../src/lib/floorplan.ts)) : la
+> fenêtre d'un câble propose d'abord les capteurs du tableau Énergie de HA —
+> solaire, réseau, batterie, et les appareils suivis, comme consommation —,
+> chacun avec sa sorte ; un clic le prend. Le tableau déclare surtout des
+> capteurs d'énergie (kWh), quand un câble veut une puissance : pour chacun,
+> le capteur de puissance de son appareil
+> (`config/entity_registry/list_for_display`) qui lui ressemble le plus ; à
+> égalité, aucun. Un tableau jamais configuré ou un HA trop ancien : rien de
+> proposé, le choix libre reste. Il n'y a pas de sorte « voiture » — la card
+> « Flux d'énergie » n'en a pas — : une borne suivie compte comme
+> consommation. Mock : le tableau de l'installation SolarFlow.
 
 - **Quoi** : proposer d'abord les entités déclarées dans le tableau Énergie
   de HA (`energy/get_prefs`) : solaire, réseau, batterie.

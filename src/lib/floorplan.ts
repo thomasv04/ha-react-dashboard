@@ -699,6 +699,61 @@ export function guessCableKind(entityId: string): CableKind {
   return 'home';
 }
 
+/** Un capteur du tableau Énergie de HA, pour un câble : sa puissance, et la sorte de sa source. */
+export interface EnergySource {
+  entityId: string;
+  kind: CableKind;
+}
+
+const SOURCE_KINDS: Record<string, CableKind> = { solar: 'solar', grid: 'grid', battery: 'battery' };
+
+/** Les capteurs (`stat_*`) d'une source du tableau Énergie, où qu'ils soient : `flow_from`, `power`… */
+function statSensors(value: unknown): string[] {
+  if (Array.isArray(value)) return value.flatMap(statSensors);
+  if (!value || typeof value !== 'object') return [];
+  return Object.entries(value).flatMap(([key, v]) => (key.startsWith('stat_') && typeof v === 'string' ? [v] : statSensors(v)));
+}
+
+const isPowerSensor = (attributes: Record<string, unknown> | undefined) =>
+  attributes?.unit_of_measurement === 'W' || attributes?.unit_of_measurement === 'kW' || attributes?.device_class === 'power';
+
+/**
+ * Les capteurs de puissance que déclare le tableau Énergie de HA
+ * (`energy/get_prefs`) : solaire, réseau, batterie, et les appareils suivis,
+ * comme consommation. Un capteur de puissance, tel quel ; un capteur
+ * d'énergie (kWh), le capteur de puissance de son appareil — `registry`, de
+ * `config/entity_registry/list_for_display` — qui lui ressemble le plus : à
+ * égalité, aucun.
+ */
+export function energySources(
+  prefs: unknown,
+  registry: { ei: string; di?: string }[],
+  states: Record<string, { attributes?: Record<string, unknown> }>
+): EnergySource[] {
+  const p = (prefs && typeof prefs === 'object' ? prefs : {}) as { energy_sources?: unknown; device_consumption?: unknown };
+  const declared = [
+    ...(Array.isArray(p.energy_sources) ? p.energy_sources : []).flatMap((source: { type?: unknown }) => {
+      const kind = SOURCE_KINDS[String(source?.type)];
+      return kind ? statSensors(source).map(entityId => ({ entityId, kind })) : [];
+    }),
+    ...statSensors(p.device_consumption).map(entityId => ({ entityId, kind: 'home' as CableKind })),
+  ];
+  const device = new Map(registry.map(e => [e.ei, e.di]));
+  const powers = Object.keys(states).filter(id => id.startsWith('sensor.') && isPowerSensor(states[id].attributes));
+  const words = (entityId: string) => entityId.slice(entityId.indexOf('.') + 1).split('_');
+  const found = declared.flatMap(({ entityId, kind }) => {
+    if (isPowerSensor(states[entityId]?.attributes)) return [{ entityId, kind }];
+    const di = device.get(entityId);
+    if (!di) return [];
+    const own = new Set(words(entityId));
+    const scored = powers.filter(id => device.get(id) === di).map(id => ({ id, score: words(id).filter(w => own.has(w)).length }));
+    const best = Math.max(...scored.map(s => s.score));
+    const winners = scored.filter(s => s.score === best);
+    return winners.length === 1 ? [{ entityId: winners[0].id, kind }] : [];
+  });
+  return found.filter((s, i) => found.findIndex(o => o.entityId === s.entityId) === i);
+}
+
 /** En deçà (W), rien ne circule : le bruit d'un capteur au repos. */
 const FLOW_THRESHOLD = 5;
 

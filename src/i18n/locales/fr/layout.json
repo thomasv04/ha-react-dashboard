@@ -407,6 +407,7 @@
     "cableHint": "Cliquez le long du trajet, dans le sens où va l'énergie",
     "cableHintNext": "Entrée, ou un clic sur le dernier point, pour finir",
     "cableTitle": "Câble d'énergie",
+    "cableEnergySources": "Tableau Énergie",
     "cableInvert": "Inverser le sens",
     "cables": "Câbles",
     "cableRemove": "Retirer le câble",
