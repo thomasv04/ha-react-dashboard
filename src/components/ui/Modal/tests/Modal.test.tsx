@@ -87,10 +87,10 @@ describe('Modal', () => {
     expect(actionMock).toHaveBeenCalled();
   });
 
-  it('closes persistent modal when action.closeOnClick is true', async () => {
+  it('closes a modal on any of its actions, even one neither Escape nor a click outside closes', async () => {
     const actionMock = vi.fn();
 
-    function TestPersistent() {
+    function TestNonDismissible() {
       const { openModal } = useModal();
 
       return (
@@ -98,14 +98,13 @@ describe('Modal', () => {
           <button
             onClick={() =>
               openModal({
-                title: 'Persistent Modal',
-                persistent: true,
+                title: 'Non-dismissible Modal',
                 dismissible: false,
-                actions: [{ label: 'Confirm', onClick: actionMock, closeOnClick: true }],
+                actions: [{ label: 'Confirm', onClick: actionMock }],
               })
             }
           >
-            OpenPersistent
+            OpenNonDismissible
           </button>
           <ModalContainer />
         </div>
@@ -115,60 +114,17 @@ describe('Modal', () => {
     render(
       <ThemeContextProvider>
         <ModalProvider>
-          <TestPersistent />
+          <TestNonDismissible />
         </ModalProvider>
       </ThemeContextProvider>
     );
 
-    fireEvent.click(screen.getByText('OpenPersistent'));
+    fireEvent.click(screen.getByText('OpenNonDismissible'));
     await waitFor(() => expect(screen.getByText('Confirm')).toBeInTheDocument());
 
     fireEvent.click(screen.getByText('Confirm'));
     expect(actionMock).toHaveBeenCalled();
 
-    await waitFor(() => expect(screen.queryByText('Persistent Modal')).not.toBeInTheDocument());
-  });
-
-  it('does not close persistent modal when action.closeOnClick is not set', async () => {
-    const actionMock = vi.fn();
-
-    function TestPersistentNoClose() {
-      const { openModal } = useModal();
-
-      return (
-        <div>
-          <button
-            onClick={() =>
-              openModal({
-                title: 'Persistent NoClose',
-                persistent: true,
-                dismissible: false,
-                actions: [{ label: 'NoClose', onClick: actionMock }],
-              })
-            }
-          >
-            OpenNoClose
-          </button>
-          <ModalContainer />
-        </div>
-      );
-    }
-
-    render(
-      <ThemeContextProvider>
-        <ModalProvider>
-          <TestPersistentNoClose />
-        </ModalProvider>
-      </ThemeContextProvider>
-    );
-
-    fireEvent.click(screen.getByText('OpenNoClose'));
-    await waitFor(() => expect(screen.getByText('NoClose')).toBeInTheDocument());
-
-    fireEvent.click(screen.getByText('NoClose'));
-    expect(actionMock).toHaveBeenCalled();
-
-    // The modal should still be present because closeOnClick was not set
-    expect(screen.getByText('Persistent NoClose')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText('Non-dismissible Modal')).not.toBeInTheDocument());
   });
 });

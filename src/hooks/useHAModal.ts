@@ -14,7 +14,6 @@ interface HAModalEvent {
   title?: string;
   content?: string;
   content_type?: 'markdown' | 'html' | 'plain';
-  persistent?: boolean;
   width?: 'sm' | 'md' | 'lg' | 'full';
   sound?: string | false;
   dismissible?: boolean;
@@ -46,7 +45,7 @@ export function useHAModal() {
 
     connection
       .subscribeEvents((event: { data: HAModalEvent }) => {
-        const { title, content, content_type, persistent, width, sound, dismissible, actions } = event.data;
+        const { title, content, content_type, width, sound, dismissible, actions } = event.data;
 
         // Process content based on type
         let processedContent: string | { type: 'markdown' | 'html' | 'plain'; value: string } | undefined;
@@ -62,16 +61,12 @@ export function useHAModal() {
         openModalRef.current({
           title,
           content: processedContent,
-          persistent: persistent ?? false,
           width: width ?? 'md',
           sound: sound === undefined ? 'notification' : sound,
           dismissible: dismissible ?? true,
           actions: actions?.map(a => ({
             label: a.label,
             variant: a.variant ?? 'default',
-            // Une fenêtre `persistent` reste jusqu'à une action : chacune la
-            // ferme. Sans quoi, `dismissible: false` en plus, rien ne le pouvait.
-            closeOnClick: true,
             onClick: () => {
               if (a.service) {
                 const parts = a.service.split('.');

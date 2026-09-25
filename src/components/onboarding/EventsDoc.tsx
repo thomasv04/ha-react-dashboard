@@ -12,8 +12,7 @@ const MODAL_YAML = `action:
       content: "Une nouvelle version est prête à être installée."
       content_type: plain        # plain | html (assaini) | markdown (brut)
       width: md                  # sm | md | lg | full
-      persistent: true           # reste jusqu'à une action
-      dismissible: false         # ni Échap ni clic extérieur
+      dismissible: false         # reste jusqu'à une action : ni Échap ni clic extérieur
       actions:
         - label: "Installer"
           variant: primary
@@ -153,7 +152,7 @@ export function EventsDoc() {
       title: t('help.events.demoModalTitle'),
       content: t('help.events.demoModalBody'),
       width: 'md',
-      actions: [{ label: t('common.close'), onClick: () => {}, closeOnClick: true, variant: 'primary' }],
+      actions: [{ label: t('common.close'), onClick: () => {}, variant: 'primary' }],
     });
 
   const previewToast = () =>

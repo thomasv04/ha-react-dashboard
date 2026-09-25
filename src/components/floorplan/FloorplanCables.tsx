@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeftRight, BatteryCharging, House, Plus, Sun, Zap, type LucideIcon } from 'lucide-react';
+import { ArrowLeftRight, BatteryCharging, House, Sun, Zap, type LucideIcon } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { useEntities } from '@/hooks/useEntities';
@@ -237,18 +237,7 @@ export function SolarList({
         color: CABLE_COLORS.solar,
       }))}
       onRemove={onRemove}
-      action={
-        <button
-          onClick={onArm}
-          aria-pressed={armed}
-          className={cn(
-            'flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors',
-            armed ? 'bg-amber-500/20 border-amber-500/40 text-amber-200' : 'bg-white/5 border-white/10 text-white/70 hover:text-white'
-          )}
-        >
-          <Plus size={13} /> {t('layout.floorplan.solarAdd')}
-        </button>
-      }
+      add={{ label: t('layout.floorplan.solarAdd'), armed, onArm }}
     />
   );
 }

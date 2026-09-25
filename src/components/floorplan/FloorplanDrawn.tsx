@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { Trash2, X, type LucideIcon } from 'lucide-react';
+import { Plus, Trash2, X, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 
@@ -105,16 +105,16 @@ export function DrawnList({
   removeLabel,
   items,
   onRemove,
-  action,
+  add,
 }: {
   title: string;
   removeLabel: string;
   items: { id: string; label: string; icon: LucideIcon; color?: string }[];
   onRemove: (id: string) => void;
-  /** Sous la liste, de quoi y ajouter : elle s'affiche alors même vide. */
-  action?: ReactNode;
+  /** Sous la liste, de quoi y ajouter — enfoncé, le prochain clic sur la maquette pose : elle s'affiche alors même vide. */
+  add?: { label: string; armed: boolean; onArm: () => void };
 }) {
-  if (!items.length && !action) return null;
+  if (!items.length && !add) return null;
   return (
     <div className='flex flex-col gap-1'>
       <span className='text-[11px] text-white/40 px-0.5'>{title}</span>
@@ -127,7 +127,18 @@ export function DrawnList({
           </button>
         </div>
       ))}
-      {action}
+      {add && (
+        <button
+          onClick={add.onArm}
+          aria-pressed={add.armed}
+          className={cn(
+            'flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors',
+            add.armed ? 'bg-amber-500/20 border-amber-500/40 text-amber-200' : 'bg-white/5 border-white/10 text-white/70 hover:text-white'
+          )}
+        >
+          <Plus size={13} /> {add.label}
+        </button>
+      )}
     </div>
   );
 }
