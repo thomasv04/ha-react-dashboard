@@ -22,3 +22,10 @@ test("laisse three.js charger les textures d'une maquette, rangées en blob:", a
   const directive = res.headers['content-security-policy'].split(';').find(d => d.trim().startsWith('connect-src'));
   expect(directive.trim().split(/\s+/)).toContain('blob:');
 });
+
+test('limite les écritures à 30 par minute et par utilisateur', async () => {
+  const statuses = [];
+  for (let i = 0; i < 31; i++) statuses.push((await request(app).post('/api/limite-des-ecritures')).status);
+  expect(statuses.slice(0, 30)).not.toContain(429);
+  expect(statuses[30]).toBe(429);
+});

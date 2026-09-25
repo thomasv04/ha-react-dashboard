@@ -155,7 +155,10 @@ if (process.env.HA_AUTH === 'true') {
 // middleware vient de vérifier. Les lectures sont nombreuses et bon marché ;
 // les écritures sont rares et coûteuses (2 Mo de configuration, images).
 app.use('/api/', limiter(300, byUser));
-app.use('/api/', (req, res, next) => (req.method === 'GET' ? next() : limiter(30, byUser)(req, res, next)));
+// Créé une fois, comme les autres : construit dans le handler, il donnait à
+// chaque écriture un compteur neuf, et la limite ne se déclenchait jamais.
+const writeLimiter = limiter(30, byUser);
+app.use('/api/', (req, res, next) => (req.method === 'GET' ? next() : writeLimiter(req, res, next)));
 
 // ── Uploads directory ────────────────────────────────────────────────────────
 const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, '..', 'data', 'uploads');
