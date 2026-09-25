@@ -27,6 +27,11 @@ export interface FloorplanConfig {
   sky?: boolean;
   /** Une lueur autour de chaque lampe allumée, de sa couleur. */
   lampGlow?: boolean;
+  /**
+   * Clarté de la maquette la nuit, de 0 (seules les lampes éclairent) à 1 : un
+   * clair de lune, pour les pièces sans lampe reliée. Absente : `DEFAULT_NIGHT_LIGHT`.
+   */
+  nightLight?: number;
   /** Entité `weather` qui voile le soleil et grise le ciel — absente, la première trouvée. */
   weather?: string;
   /** Entité `alarm_control_panel` qu'arme le bouclier — absente, la première trouvée. */

@@ -146,13 +146,36 @@ describe('sunLighting', () => {
   });
 
   it('switches the sun off at night, and dims the ambient light through dusk', () => {
-    const night = sunLighting({ azimuth: 300, elevation: -12 });
+    const night = sunLighting({ azimuth: 300, elevation: -12 }, 0, 0, 0);
     expect(night.sun).toBe(0);
     expect(night.ambient).toBeCloseTo(0.15);
     expect(sunLighting({ azimuth: 180, elevation: 30 }).ambient).toBe(1);
-    const dusk = sunLighting({ azimuth: 270, elevation: 2 }).ambient;
+    const dusk = sunLighting({ azimuth: 270, elevation: 2 }, 0, 0, 0).ambient;
     expect(dusk).toBeGreaterThan(0.15);
     expect(dusk).toBeLessThan(1);
+  });
+
+  it('keeps the house readable at night with a shadowless moon, high and opposite the sun', () => {
+    const dark = sunLighting({ azimuth: 300, elevation: -12 }, 0, 0, 0);
+    const night = sunLighting({ azimuth: 300, elevation: -12 });
+    expect(night.sun).toBeGreaterThan(0);
+    expect(night.shadow).toBe(0);
+    expect(night.ambient).toBeGreaterThan(dark.ambient);
+    expect(sunLighting({ azimuth: 300, elevation: -12 }, 0, 0, 1).ambient).toBeGreaterThan(night.ambient);
+    const [x, y, z] = night.dir;
+    expect(y).toBeCloseTo(Math.sin((55 * Math.PI) / 180));
+    expect(Math.atan2(x, -z) * (180 / Math.PI)).toBeCloseTo(120); // 300° + 180°
+    // Du soleil à la lune, le relais se fait éteint : rien ne saute.
+    expect(sunLighting({ azimuth: 280, elevation: -1 }).sun).toBe(0);
+    expect(sunLighting({ azimuth: 280, elevation: -1.01 }).sun).toBeCloseTo(0);
+    // Le jour, la clarté de nuit ne change rien.
+    expect(sunLighting({ azimuth: 180, elevation: 30 }, 0, 0, 1)).toEqual(sunLighting({ azimuth: 180, elevation: 30 }, 0, 0, 0));
+  });
+
+  it('falls back to the default night light when the setting is unreadable', () => {
+    const night = { azimuth: 300, elevation: -12 };
+    expect(sunLighting(night, 0, 0, NaN)).toEqual(sunLighting(night));
+    expect(sunLighting(night, 0, 0, 5)).toEqual(sunLighting(night, 0, 0, 1));
   });
 
   it('assumes an afternoon sun when sun.sun is missing', () => {

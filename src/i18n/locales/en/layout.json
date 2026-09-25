@@ -398,6 +398,7 @@
     "lampRemove": "Remove the lamp",
     "lampHere": "Lamp to place here",
     "lampHint": "Click the model where the lamp stands: its chip will light the room there.",
+    "nightLight": "Night light",
     "mockSun": "Sun (demo)",
     "replay": "Replay the last 24 hours",
     "replayPlay": "Play",

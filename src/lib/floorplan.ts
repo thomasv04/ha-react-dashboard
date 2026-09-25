@@ -621,6 +621,21 @@ export function sunPosition(date: Date, latitude: number, longitude: number): { 
 const DEFAULT_SUN = { elevation: 40, azimuth: 200 };
 
 /**
+ * Clarté de la maquette la nuit quand la page ne la règle pas : une maison
+ * qu'on lit encore là où aucune lampe n'est reliée, où celles qui sont
+ * allumées se voient toujours.
+ */
+export const DEFAULT_NIGHT_LIGHT = 0.5;
+/** La lune supposée : haute, à l'opposé du soleil — là où serait la pleine lune. */
+const MOON_ELEVATION = 55;
+/** Force du clair de lune à pleine clarté de nuit — le soleil de midi en vaut 3. */
+const MOON_POWER = 1;
+const MOON_COLOR: Rgb = [185, 200, 235];
+/** Couleur du ciel dans la lumière d'ambiance : de jour, et bleuie la nuit. */
+const DAY_SKY: Rgb = [221, 230, 255];
+const NIGHT_SKY: Rgb = [165, 185, 240];
+
+/**
  * Éclairage de la maquette d'après `sun.sun` (degrés : azimut depuis le nord,
  * dans le sens horaire ; élévation au-dessus de l'horizon).
  *
@@ -628,27 +643,40 @@ const DEFAULT_SUN = { elevation: 40, azimuth: 200 };
  * `north` degrés — l'orientation de la maquette, que rien ne donne : c'est un
  * réglage, pas une déduction. La nuit, le soleil s'éteint et l'ambiance baisse
  * progressivement autour du crépuscule : les lampes prennent le relais.
+ *
+ * Toutes les pièces n'ont pas de lampe reliée : la nuit, un clair de lune et
+ * une ambiance bleutée gardent la maison lisible, d'autant plus que `night`
+ * (de 0 à 1) est grand. À 0, seules les lampes éclairent.
  */
-export function sunLighting(sun: { elevation?: number; azimuth?: number } | undefined, north = 0, clouds = 0) {
+export function sunLighting(sun: { elevation?: number; azimuth?: number } | undefined, north = 0, clouds = 0, night = DEFAULT_NIGHT_LIGHT) {
   const elevation = sun?.elevation ?? DEFAULT_SUN.elevation;
   const azimuth = sun?.azimuth ?? DEFAULT_SUN.azimuth;
-  const e = (elevation * Math.PI) / 180;
-  const a = ((azimuth + north) * Math.PI) / 180;
+  const clarity = Number.isFinite(night) ? clamp(night, 0, 1) : DEFAULT_NIGHT_LIGHT;
+  // Sous l'horizon, la lumière directe vient de la lune. Elle se lève à mesure
+  // que le soleil se couche : le relais se fait à −1°, où tous deux sont éteints.
+  const moon = elevation < -1;
+  const e = (moon ? MOON_ELEVATION : elevation) * RAD;
+  const a = ((moon ? azimuth + 180 : azimuth) + north) * RAD;
   const [from, to, t] = between(SUN_COLORS, elevation);
+  // Crépuscule civil : de −6° à +10°, l'ambiance passe de la nuit au jour.
+  const day = clamp((elevation + 6) / 16, 0, 1);
+  const floor = 0.15 + 0.45 * clarity;
   return {
     dir: [Math.sin(a) * Math.cos(e), Math.sin(e), -Math.cos(a) * Math.cos(e)] as Vec3,
     // Pleine force dès 8° : l'éclairement d'une surface suit déjà l'angle du
     // soleil, et l'atmosphère ne l'affaiblit vraiment qu'au ras de l'horizon —
-    // un soleil rasant dore les murs. Sous les nuages, il se voile…
-    sun: 3 * clamp((elevation + 1) / 9, 0, 1) * (1 - 0.75 * clouds),
-    // Crépuscule civil : de −6° à +10°, l'ambiance passe de la nuit au jour —
-    // un peu plus diffuse par temps couvert.
-    ambient: (0.15 + 0.85 * clamp((elevation + 6) / 16, 0, 1)) * (1 + 0.2 * clouds),
+    // un soleil rasant dore les murs. La lune, à pleine force dès −8°.
+    // Sous les nuages, l'un comme l'autre se voile…
+    sun: (moon ? MOON_POWER * clarity * clamp((-1 - elevation) / 7, 0, 1) : 3 * clamp((elevation + 1) / 9, 0, 1)) * (1 - 0.75 * clouds),
+    // Un peu plus diffuse par temps couvert.
+    ambient: (1 - (1 - floor) * (1 - day)) * (1 + 0.2 * clouds),
+    sky: mix(NIGHT_SKY, DAY_SKY, day).map(Math.round) as Rgb,
     // …perd sa couleur…
-    color: mix(mix(from.color, to.color, t), [235, 238, 245], 0.8 * clouds).map(Math.round) as Rgb,
-    // …et ses ombres s'adoucissent et pâlissent.
+    color: mix(moon ? MOON_COLOR : mix(from.color, to.color, t), [235, 238, 245], 0.8 * clouds).map(Math.round) as Rgb,
+    // …et ses ombres s'adoucissent et pâlissent. La lune n'en porte pas : les
+    // murs assombriraient les pièces qu'elle doit rendre lisibles.
     softness: 1 + 7 * clouds,
-    shadow: 1 - 0.55 * clouds,
+    shadow: moon ? 0 : 1 - 0.55 * clouds,
   };
 }
 

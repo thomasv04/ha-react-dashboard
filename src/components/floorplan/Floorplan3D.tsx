@@ -187,6 +187,8 @@ interface Floorplan3DProps {
   north: number;
   /** Couverture nuageuse, de 0 à 1 : soleil voilé, ombres adoucies. */
   cloudiness: number;
+  /** Clarté de la maison la nuit, de 0 (les lampes seules) à 1 — absente : `DEFAULT_NIGHT_LIGHT`. */
+  nightLight?: number;
   shadows: boolean;
   /** Murs en coupe, façon Les Sims : seuls les murs du fond restent debout. */
   cutaway: boolean;
@@ -1392,6 +1394,7 @@ export default function Floorplan3D(props: Floorplan3DProps) {
     sunAzimuth,
     north,
     cloudiness,
+    nightLight,
     shadows,
     cutaway,
     idleRotate,
@@ -1763,7 +1766,8 @@ export default function Floorplan3D(props: Floorplan3DProps) {
   useEffect(() => {
     const s = stage.current;
     if (!s) return;
-    const light = sunLighting({ elevation: sunElevation, azimuth: sunAzimuth }, north, cloudiness);
+    const light = sunLighting({ elevation: sunElevation, azimuth: sunAzimuth }, north, cloudiness, nightLight);
+    // Le soleil, ou la lune une fois la nuit tombée.
     s.sun.position.set(...light.dir).multiplyScalar(MODEL_SIZE * 2);
     s.sun.intensity = light.sun;
     s.sun.color.setRGB(light.color[0] / 255, light.color[1] / 255, light.color[2] / 255, SRGBColorSpace);
@@ -1772,7 +1776,8 @@ export default function Floorplan3D(props: Floorplan3DProps) {
     // Les pièces, qu'on voit par-dessus les murets, ne reçoivent guère que
     // cette lumière-là : plus généreuse que le soleil ne le voudrait.
     s.hemi.intensity = light.ambient * AMBIENT_BOOST;
-    const cast = shadows && light.sun > 0;
+    s.hemi.color.setRGB(light.sky[0] / 255, light.sky[1] / 255, light.sky[2] / 255, SRGBColorSpace);
+    const cast = shadows && light.sun > 0 && light.shadow > 0;
     if (s.renderer.shadowMap.enabled !== cast) {
       s.renderer.shadowMap.enabled = cast;
       // Les matériaux déjà compilés ne verraient pas le changement.
@@ -1780,7 +1785,7 @@ export default function Floorplan3D(props: Floorplan3DProps) {
     }
     s.sun.castShadow = cast;
     s.render('shadows');
-  }, [sunElevation, sunAzimuth, north, cloudiness, shadows]);
+  }, [sunElevation, sunAzimuth, north, cloudiness, nightLight, shadows]);
 
   // ── Lampes ─────────────────────────────────────────────────────────────────
   // Clé sérialisée : le tableau est neuf à chaque rendu du parent, et chaque

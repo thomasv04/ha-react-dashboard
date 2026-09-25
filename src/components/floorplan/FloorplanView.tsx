@@ -40,6 +40,7 @@ import { useTheme } from '@/context/ThemeContext';
 import {
   cloudiness,
   containSize,
+  DEFAULT_NIGHT_LIGHT,
   DRAFT_COLOR,
   frostOf,
   isNightDimmed,
@@ -114,6 +115,13 @@ const HOUR_MS = 3_600_000;
 
 /** Proportions supposées tant que l'image n'est pas chargée. */
 const DEFAULT_ASPECT = 16 / 9;
+
+/**
+ * Clarté de nuit en cours de réglage : la maquette passe à la nuit noire, même
+ * en plein jour, et y reste ce temps (ms) après qu'on a lâché le curseur.
+ */
+const NIGHT_PREVIEW_MS = 2500;
+const NIGHT_PREVIEW_ELEVATION = -20;
 
 /** Porte, fenêtre ou volet en cours de dessin : son premier coin (et où il est à l'écran, en %), puis l'élément entier. */
 type PartDraft = { a: Vec3; from: { x: number; y: number }; part?: FloorplanPart; around?: { left: number; right: number; y: number } };
@@ -258,6 +266,14 @@ export function FloorplanView() {
   const [panel, setPanel] = useState<'image' | SettingsTab | null>(null);
   /** Onglet « Maquette » : le choix de la maquette, ou de l'image qui la remplacerait. */
   const [source, setSource] = useState<'model' | 'image'>('model');
+  const [nightPreview, setNightPreview] = useState(false);
+  const nightPreviewTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(nightPreviewTimer.current), []);
+  const previewNight = () => {
+    setNightPreview(true);
+    clearTimeout(nightPreviewTimer.current);
+    nightPreviewTimer.current = setTimeout(() => setNightPreview(false), NIGHT_PREVIEW_MS);
+  };
   /** Maquette : ce que pose un clic — une pastille, ou un coin de porte, de fenêtre, de volet. */
   const [tool, setTool] = useState<Tool>('chip');
   /** « Poser une lampe » : la prochaine pastille ne propose que des lumières. */
@@ -455,6 +471,7 @@ export function FloorplanView() {
   // ── Lampes : halos du plan, lumières de la maquette ────────────────────────
   const sunEntity = entities['sun.sun'];
   const dimmed = isNightDimmed(sunEntity?.state, floorplan?.dimAtNight);
+  const nightLight = floorplan?.nightLight ?? DEFAULT_NIGHT_LIGHT;
   // Mode mock : l'heure du soleil se règle au curseur (panneau « Maquette 3D »),
   // pour voir la maquette de nuit, à l'aube, à midi. Le soleil d'aujourd'hui, au
   // lieu que donne la configuration de HA.
@@ -464,7 +481,10 @@ export function FloorplanView() {
   const [mockHour, setMockHour] = useState(14);
   const sunAt = replay.span ? replay.time : MOCK ? today + mockHour * HOUR_MS : null;
   const computedSun = sunAt !== null && place ? sunPosition(new Date(sunAt), place.latitude, place.longitude) : null;
-  const sunElevation = computedSun?.elevation ?? (sunEntity?.attributes?.elevation as number | undefined);
+  const sunElevation =
+    nightPreview && isEditMode
+      ? NIGHT_PREVIEW_ELEVATION
+      : (computedSun?.elevation ?? (sunEntity?.attributes?.elevation as number | undefined));
   const sunAzimuth = computedSun?.azimuth ?? (sunEntity?.attributes?.azimuth as number | undefined);
   const weatherState = entities[weatherId]?.state;
   const clouds = cloudiness(weatherState);
@@ -1066,6 +1086,23 @@ export function FloorplanView() {
     <>
       <ToggleRow label={t('layout.floorplan.sky')} checked={floorplan?.sky !== false} onChange={on => setFloorplan({ sky: on })} />
       <ToggleRow label={t('layout.floorplan.lampGlow')} checked={!!floorplan?.lampGlow} onChange={on => setFloorplan({ lampGlow: on })} />
+      <label className='flex items-center gap-3 px-2 py-1.5 rounded-lg bg-white/5 text-xs text-white/70'>
+        {t('layout.floorplan.nightLight')}
+        <input
+          type='range'
+          min={0}
+          max={1}
+          step={0.05}
+          value={nightLight}
+          onPointerDown={previewNight}
+          onChange={e => {
+            previewNight();
+            setFloorplan({ nightLight: Number(e.target.value) });
+          }}
+          className='flex-1 min-w-0 accent-blue-400'
+        />
+        <span className='w-9 text-right tabular-nums text-white/80'>{Math.round(nightLight * 100)}%</span>
+      </label>
       <EntityPicker
         label={t('layout.floorplan.weather')}
         value={weatherId}
@@ -1181,6 +1218,7 @@ export function FloorplanView() {
                   sunAzimuth={sunAzimuth}
                   north={floorplan?.north ?? 0}
                   cloudiness={clouds}
+                  nightLight={nightLight}
                   shadows={!perfSettings.disableShadows}
                   cutaway={floorplan?.cutaway !== false}
                   // Ni en édition, où l'on règle la vue, ni en économie d'énergie,
