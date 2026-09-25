@@ -13,6 +13,8 @@ const API = 'http://localhost:8098';
 const MODEL = 'tests/dashboard/fixtures/smart-home-floor-plan.glb';
 /** Une maquette façon ExportToHASS, aux portes et fenêtres séparées (`scripts/make-openings-glb.ts`). */
 const OPENINGS_MODEL = 'tests/dashboard/fixtures/openings.glb';
+/** Une maison à deux niveaux, du même script. */
+const LEVELS_MODEL = 'tests/dashboard/fixtures/levels.glb';
 
 /** Pastille accrochée à un point de la maquette, dans ses propres coordonnées. */
 const chip = (id: string, anchor: [number, number, number]) => ({
@@ -91,6 +93,21 @@ test.beforeAll(async ({ request }) => {
     },
   });
   config.layouts.ouvertures = { widgets: { lg: [], md: [], sm: [] }, cols: { lg: 12, md: 8, sm: 4 } };
+  // Une maison à deux niveaux : une pastille à chaque étage.
+  config.pages.push({
+    id: 'etages',
+    label: 'Étages',
+    icon: 'Home',
+    type: 'floorplan',
+    order: 102,
+    floorplan: { image: '', model: LEVELS_MODEL },
+  });
+  const storeys = [chip('rdc-lamp', [300, 60, 200]), chip('etage-temp', [300, 320, 200])];
+  config.layouts.etages = { widgets: { lg: storeys, md: storeys, sm: storeys }, cols: { lg: 12, md: 8, sm: 4 } };
+  config.widgetConfigs.etages = {
+    'rdc-lamp': { type: 'chip', entityId: 'light.living_room' },
+    'etage-temp': { type: 'chip', entityId: 'sensor.temperature_chambre_temperature' },
+  };
   config.widgetConfigs.ouvertures = {};
   config.layouts.maison = { widgets: { lg: WIDGETS, md: WIDGETS, sm: WIDGETS }, cols: { lg: 12, md: 8, sm: 4 } };
   config.widgetConfigs.maison = CONFIGS;
@@ -277,6 +294,24 @@ test('the replay plays the last 24 hours back, the sun with them', async ({ page
   await page.keyboard.press('Escape');
   await expect(slider).toBeHidden();
   await expect(page.locator('[data-floorplan-item="weather-3d"]')).toHaveCSS('opacity', '1');
+});
+
+test('a house with levels shows one at a time, the ground floor first', async ({ page }) => {
+  await page.goto('/#etages');
+  const house = page.locator('[data-floorplan-3d]');
+  await expect(house).toHaveAttribute('data-floorplan-level', 'lvl000', { timeout: 60_000 });
+  const upstairs = page.locator('[data-floorplan-item="etage-temp"]');
+  // L'étage est caché, sa pastille aussi.
+  await expect(upstairs).toHaveCSS('opacity', '0');
+
+  await page.getByRole('button', { name: 'Étage 1' }).click();
+  await expect(house).toHaveAttribute('data-floorplan-level', 'lvl001');
+  await expect(upstairs).toHaveCSS('opacity', '1');
+
+  await page.getByRole('button', { name: 'Toute la maison' }).click();
+  await expect(house).toHaveAttribute('data-floorplan-level', '');
+  await page.getByRole('button', { name: 'Rez-de-chaussée' }).click();
+  await expect(house).toHaveAttribute('data-floorplan-level', 'lvl000');
 });
 
 test('the Plan tour opens a plan page, then points at its chips and its views', async ({ page }) => {

@@ -85,6 +85,8 @@ export interface ModelOpenings {
   cm: number;
   /** Centre de la maquette au sol (x, z) : l'intérieur, pour une porte qui ne dit pas de quel côté elle s'ouvre. */
   center: [number, number];
+  /** Ses niveaux, du plus bas au plus haut — aucun de plain-pied. */
+  levels: ModelLevel[];
 }
 
 /** Mouvement d'une partie mobile, depuis la pose où la maquette la dessine. */
@@ -387,7 +389,44 @@ export function detectOpenings(nodes: ModelNode[]): ModelOpenings {
       family.inWall ||= o.inWall;
     } else families.push({ name: o.family, count: 1, inWall: o.inWall, kind: guessOpeningKind(o.family), size: o.size });
   }
-  return { openings, families, unnamed: openings.filter(o => !o.family && o.inWall).length, cm, center };
+  return { openings, families, unnamed: openings.filter(o => !o.family && o.inWall).length, cm, center, levels: modelLevels(all) };
+}
+
+/** Un niveau d'une maison à étages : son sol, et le haut de ses murs, dans les coordonnées de la maquette. */
+export interface ModelLevel {
+  /** `lvl000`, `lvl001`… : le préfixe de ses nœuds. */
+  id: string;
+  floor: number;
+  top: number;
+}
+
+/** Niveau d'un nœud d'une maison à étages ; vide de plain-pied. */
+export const levelOf = (name: string) => /^lvl\d{3}/.exec(name)?.[0] ?? '';
+
+/**
+ * Les niveaux d'une maison à étages, du plus bas au plus haut — aucun de
+ * plain-pied : ExportToHASS ne préfixe ses nœuds d'un `lvl<nnn>` que s'il y en
+ * a plusieurs. Le sol d'un niveau : le plus bas de ses sols (`room`), sinon de
+ * ses objets ; son haut : celui de ses murs, sinon de ses objets.
+ */
+export function modelLevels(nodes: ModelNode[]): ModelLevel[] {
+  const byLevel = new Map<string, ModelNode[]>();
+  for (const node of nodes) {
+    const level = levelOf(node.name);
+    if (level && node.footprint.length) byLevel.set(level, [...(byLevel.get(level) ?? []), node]);
+  }
+  if (byLevel.size < 2) return [];
+  return [...byLevel]
+    .map(([id, list]) => {
+      const rooms = list.filter(n => structureOf(n.name)?.type === 'room');
+      const walls = list.filter(n => structureOf(n.name)?.type === 'wall');
+      return {
+        id,
+        floor: Math.min(...(rooms.length ? rooms : list).map(n => n.min[1])),
+        top: Math.max(...(walls.length ? walls : list).map(n => n.max[1])),
+      };
+    })
+    .sort((a, b) => a.floor - b.floor);
 }
 
 /**

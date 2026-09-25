@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **38 tâches sur 41** — phases A à H et J, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
+**État global** : **39 tâches sur 42** — phases A à H et J, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -746,3 +746,21 @@ le `k` des suivantes, et leurs liaisons avec. Le plugin, lui, reste tel quel.
 > toutes ; la fenêtre de liaison s'ouvre, elle, déjà remplie.
 
 - **Quoi** : lier en un clic les ouvertures dont le nom dit l'entité.
+
+### [x] J13 — Un étage à la fois
+
+> **Fait** (`modelLevels`, [floorplan-openings.ts](../src/lib/floorplan-openings.ts)) :
+> ExportToHASS préfixe les nœuds d'une maison à étages de leur niveau
+> (`lvl000`, `lvl001`…). Un sélecteur, sur le bord droit, comme un ascenseur :
+> l'étage du haut en haut, « RDC », et toute la maison. Par défaut, le
+> rez-de-chaussée. Les étages du dessus disparaissent — ni dessinés, ni
+> touchés par les clics, ni par la vérification des pastilles cachées — avec
+> leurs pastilles, lampes, pièces, câbles et éléments dessinés ; la coupe des
+> murs se règle sur l'étage montré, et la caméra le suit, sans changer
+> d'angle — « Recentrer » aussi ; la vue d'accueil enregistrée vaut pour toute
+> la maison. La vue sécurité compte encore ce qui est ouvert à un étage
+> caché, sans le cerner. `levels.glb`, du même script que `openings.glb` :
+> deux niveaux ; test E2E : la pastille de l'étage, cachée au
+> rez-de-chaussée, paraît à l'étage.
+
+- **Quoi** : une maison à étages se lit étage par étage.

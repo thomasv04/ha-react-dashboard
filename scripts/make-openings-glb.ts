@@ -18,6 +18,10 @@
  * - à l'ouest, `Garage` : un panneau sans cadre, sa poignée ;
  * - dans la pièce, un `Canape`, une table sans nom (`1_1`, `2_1`), et une
  *   `Armoire_Chambre` bleue, haute de 2 m : la coupe des murs la traverse.
+ *
+ * Et `levels.glb` : une maison à deux niveaux, chaque nœud préfixé de son
+ * niveau comme le fait ExportToHASS (`lvl000`, `lvl001`) — un sol, quatre
+ * murs, une porte au rez-de-chaussée, une fenêtre à l'étage.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -225,100 +229,127 @@ const rotate = (x: number, z: number, b: Box): [number, number] => {
   return [b.about[0] + dx * Math.cos(b.turn) + dz * Math.sin(b.turn), b.about[1] - dx * Math.sin(b.turn) + dz * Math.cos(b.turn)];
 };
 
-const chunks: Buffer[] = [];
-let offset = 0;
-const bufferViews: object[] = [];
-const accessors: object[] = [];
-function push(data: Buffer, target: number) {
-  const padded = Buffer.concat([data, Buffer.alloc((4 - (data.length % 4)) % 4)]);
-  bufferViews.push({ buffer: 0, byteOffset: offset, byteLength: data.length, target });
-  chunks.push(padded);
-  offset += padded.length;
-  return bufferViews.length - 1;
-}
-
-const materialNames = Object.keys(MATERIALS) as MaterialName[];
-const meshes = nodes.map(({ name, material, boxes }) => {
-  const positions: number[] = [];
-  const normals: number[] = [];
-  const indices: number[] = [];
-  for (const b of boxes) {
-    for (const { normal, corners } of FACES) {
-      const base = positions.length / 3;
-      for (const [cx, cy, cz] of corners) {
-        const [x, z] = rotate(cx ? b.max[0] : b.min[0], cz ? b.max[2] : b.min[2], b);
-        positions.push(x, cy ? b.max[1] : b.min[1], z);
-        const [nx, nz] = b.turn ? rotate(normal[0], normal[2], { ...b, about: [0, 0] }) : [normal[0], normal[2]];
-        normals.push(nx, normal[1], nz);
-      }
-      indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
-    }
+/** Écrit ces nœuds dans `tests/dashboard/fixtures/<name>`. */
+function writeGlb(name: string, nodes: { name: string; material: MaterialName; boxes: Box[] }[]) {
+  const chunks: Buffer[] = [];
+  let offset = 0;
+  const bufferViews: object[] = [];
+  const accessors: object[] = [];
+  function push(data: Buffer, target: number) {
+    const padded = Buffer.concat([data, Buffer.alloc((4 - (data.length % 4)) % 4)]);
+    bufferViews.push({ buffer: 0, byteOffset: offset, byteLength: data.length, target });
+    chunks.push(padded);
+    offset += padded.length;
+    return bufferViews.length - 1;
   }
-  const min = [0, 1, 2].map(i => Math.min(...positions.filter((_, k) => k % 3 === i)));
-  const max = [0, 1, 2].map(i => Math.max(...positions.filter((_, k) => k % 3 === i)));
-  accessors.push({
-    bufferView: push(Buffer.from(new Float32Array(positions).buffer), 34962),
-    componentType: 5126,
-    count: positions.length / 3,
-    type: 'VEC3',
-    min,
-    max,
-  });
-  const position = accessors.length - 1;
-  accessors.push({
-    bufferView: push(Buffer.from(new Float32Array(normals).buffer), 34962),
-    componentType: 5126,
-    count: normals.length / 3,
-    type: 'VEC3',
-  });
-  const normal = accessors.length - 1;
-  accessors.push({
-    bufferView: push(Buffer.from(new Uint16Array(indices).buffer), 34963),
-    componentType: 5123,
-    count: indices.length,
-    type: 'SCALAR',
-  });
-  return {
-    name,
-    primitives: [
-      { attributes: { POSITION: position, NORMAL: normal }, indices: accessors.length - 1, material: materialNames.indexOf(material) },
-    ],
-  };
-});
 
-const gltf = {
-  asset: { version: '2.0', generator: 'ha-dashboard scripts/make-openings-glb.ts' },
-  scene: 0,
-  scenes: [{ nodes: nodes.map((_, i) => i) }],
-  nodes: nodes.map(({ name }, i) => ({ name, mesh: i })),
-  meshes,
-  materials: materialNames.map(name => {
-    const m: { color: readonly number[]; metal?: number; alpha?: number } = MATERIALS[name];
+  const materialNames = Object.keys(MATERIALS) as MaterialName[];
+  const meshes = nodes.map(({ name, material, boxes }) => {
+    const positions: number[] = [];
+    const normals: number[] = [];
+    const indices: number[] = [];
+    for (const b of boxes) {
+      for (const { normal, corners } of FACES) {
+        const base = positions.length / 3;
+        for (const [cx, cy, cz] of corners) {
+          const [x, z] = rotate(cx ? b.max[0] : b.min[0], cz ? b.max[2] : b.min[2], b);
+          positions.push(x, cy ? b.max[1] : b.min[1], z);
+          const [nx, nz] = b.turn ? rotate(normal[0], normal[2], { ...b, about: [0, 0] }) : [normal[0], normal[2]];
+          normals.push(nx, normal[1], nz);
+        }
+        indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
+      }
+    }
+    const min = [0, 1, 2].map(i => Math.min(...positions.filter((_, k) => k % 3 === i)));
+    const max = [0, 1, 2].map(i => Math.max(...positions.filter((_, k) => k % 3 === i)));
+    accessors.push({
+      bufferView: push(Buffer.from(new Float32Array(positions).buffer), 34962),
+      componentType: 5126,
+      count: positions.length / 3,
+      type: 'VEC3',
+      min,
+      max,
+    });
+    const position = accessors.length - 1;
+    accessors.push({
+      bufferView: push(Buffer.from(new Float32Array(normals).buffer), 34962),
+      componentType: 5126,
+      count: normals.length / 3,
+      type: 'VEC3',
+    });
+    const normal = accessors.length - 1;
+    accessors.push({
+      bufferView: push(Buffer.from(new Uint16Array(indices).buffer), 34963),
+      componentType: 5123,
+      count: indices.length,
+      type: 'SCALAR',
+    });
     return {
       name,
-      pbrMetallicRoughness: { baseColorFactor: [...m.color, m.alpha ?? 1], metallicFactor: m.metal ?? 0, roughnessFactor: 0.7 },
-      ...(m.alpha !== undefined && { alphaMode: 'BLEND' }),
-      doubleSided: false,
+      primitives: [
+        { attributes: { POSITION: position, NORMAL: normal }, indices: accessors.length - 1, material: materialNames.indexOf(material) },
+      ],
     };
-  }),
-  accessors,
-  bufferViews,
-  buffers: [{ byteLength: offset }],
-};
+  });
 
-const json = Buffer.from(JSON.stringify(gltf));
-const jsonChunk = Buffer.concat([json, Buffer.alloc((4 - (json.length % 4)) % 4, 0x20)]);
-const bin = Buffer.concat(chunks);
-const header = Buffer.alloc(12);
-header.writeUInt32LE(0x46546c67, 0);
-header.writeUInt32LE(2, 4);
-header.writeUInt32LE(12 + 8 + jsonChunk.length + 8 + bin.length, 8);
-const chunk = (data: Buffer, type: number) => {
-  const head = Buffer.alloc(8);
-  head.writeUInt32LE(data.length, 0);
-  head.writeUInt32LE(type, 4);
-  return Buffer.concat([head, data]);
-};
-const file = path.resolve(import.meta.dirname, '../tests/dashboard/fixtures/openings.glb');
-fs.writeFileSync(file, Buffer.concat([header, chunk(jsonChunk, 0x4e4f534a), chunk(bin, 0x004e4942)]));
-console.info(`${path.relative(process.cwd(), file)} : ${nodes.length} nœuds`);
+  const gltf = {
+    asset: { version: '2.0', generator: 'ha-dashboard scripts/make-openings-glb.ts' },
+    scene: 0,
+    scenes: [{ nodes: nodes.map((_, i) => i) }],
+    nodes: nodes.map(({ name }, i) => ({ name, mesh: i })),
+    meshes,
+    materials: materialNames.map(name => {
+      const m: { color: readonly number[]; metal?: number; alpha?: number } = MATERIALS[name];
+      return {
+        name,
+        pbrMetallicRoughness: { baseColorFactor: [...m.color, m.alpha ?? 1], metallicFactor: m.metal ?? 0, roughnessFactor: 0.7 },
+        ...(m.alpha !== undefined && { alphaMode: 'BLEND' }),
+        doubleSided: false,
+      };
+    }),
+    accessors,
+    bufferViews,
+    buffers: [{ byteLength: offset }],
+  };
+
+  const json = Buffer.from(JSON.stringify(gltf));
+  const jsonChunk = Buffer.concat([json, Buffer.alloc((4 - (json.length % 4)) % 4, 0x20)]);
+  const bin = Buffer.concat(chunks);
+  const header = Buffer.alloc(12);
+  header.writeUInt32LE(0x46546c67, 0);
+  header.writeUInt32LE(2, 4);
+  header.writeUInt32LE(12 + 8 + jsonChunk.length + 8 + bin.length, 8);
+  const chunk = (data: Buffer, type: number) => {
+    const head = Buffer.alloc(8);
+    head.writeUInt32LE(data.length, 0);
+    head.writeUInt32LE(type, 4);
+    return Buffer.concat([head, data]);
+  };
+  const file = path.resolve(import.meta.dirname, '../tests/dashboard/fixtures', name);
+  fs.writeFileSync(file, Buffer.concat([header, chunk(jsonChunk, 0x4e4f534a), chunk(bin, 0x004e4942)]));
+  console.info(`${path.relative(process.cwd(), file)} : ${nodes.length} nœuds`);
+}
+
+writeGlb('openings.glb', nodes);
+
+// ── levels.glb : deux niveaux ────────────────────────────────────────────────
+const levels: typeof nodes = [];
+const onLevel = (level: string, name: string, material: MaterialName, ...boxes: Box[]) =>
+  levels.push({ name: `${level}${name}`, material, boxes });
+/** Un niveau : son sol à `y`, ses quatre murs au-dessus, hauts de 250. */
+function storey(level: string, n: number, y: number) {
+  onLevel(level, `room_${n}_1`, 'floor', box([0, y - 2, 0], [600, y, 400]));
+  onLevel(level, `wall_${n * 4}_1`, 'wall', box([-5, y, -5], [605, y + 250, 5]));
+  onLevel(level, `wall_${n * 4 + 1}_1`, 'wall', box([-5, y, 395], [605, y + 250, 405]));
+  onLevel(level, `wall_${n * 4 + 2}_1`, 'wall', box([-5, y, -5], [5, y + 250, 405]));
+  onLevel(level, `wall_${n * 4 + 3}_1`, 'wall', box([595, y, -5], [605, y + 250, 405]));
+}
+storey('lvl000', 0, 0);
+onLevel('lvl000', 'Porte_Entree_1', 'white', box([250, 0, -4], [350, 210, 4]));
+onLevel('lvl000', 'Porte_Entree_2', 'wood', box([258, 1, -2], [342, 201, 2]));
+onLevel('lvl000', 'Canape_1', 'fabric', box([200, 0, 250], [400, 45, 330]));
+storey('lvl001', 1, 262);
+onLevel('lvl001', 'Fenetre_Etage_1', 'white', box([250, 352, 396], [350, 472, 404]));
+onLevel('lvl001', 'Fenetre_Etage_2', 'white', box([255, 357, 399], [345, 467, 401]));
+onLevel('lvl001', 'Armoire_1', 'blue', box([450, 262, 300], [550, 462, 380]));
+writeGlb('levels.glb', levels);

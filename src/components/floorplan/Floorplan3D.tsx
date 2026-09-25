@@ -79,6 +79,7 @@ import {
   modelNode,
   motionAt,
   openingMotion,
+  levelOf,
   structureOf,
   wallTop,
   type ModelNode,
@@ -207,6 +208,8 @@ interface Floorplan3DProps {
   highlight?: string | null;
   /** Vue sécurité : les ouvertures restées ouvertes, chacune par deux coins opposés, cernées de rouge. */
   alerts?: [Vec3, Vec3][];
+  /** Maison à étages : le niveau montré, ceux du dessus cachés — `null` : toute la maison. */
+  level?: string | null;
   /** La maison tournée à la main. */
   onOrbit?: () => void;
   /** Rectangle en cours de dessin : deux coins opposés, dans les coordonnées de la maquette. */
@@ -303,6 +306,9 @@ interface CutState extends Cutaway {
   top: number;
   /** Hauteur des murs abaissés. */
   low: number;
+  /** Sol et haut des murs de toute la maison : la coupe, quand aucun étage n'est choisi. */
+  ground: number;
+  ceiling: number;
   /** Côtés du fond, d'après la caméra. */
   back: Sides<boolean>;
   sliding: boolean;
@@ -369,6 +375,9 @@ interface Stage {
   highlight: LineSegments | null;
   /** Contours rouges de la vue sécurité. */
   alerts: Group;
+  /** Étage montré — `null` : toute la maison —, et la hauteur dont la caméra l'a suivi. */
+  level: string | null;
+  levelShift: number;
   /** Tracés au sol. */
   floors: Group;
   /** Retouches des matériaux de la maquette (coupe, découpes), partagées par tous. */
@@ -411,6 +420,12 @@ Mesh.prototype.raycast = acceleratedRaycast;
 const raycaster = new Raycaster();
 const pointer = new Vector2();
 
+/** Objet dessiné : ni lui ni ses parents cachés — les étages du dessus le sont. */
+function isShown(object: Object3D) {
+  for (let o: Object3D | null = object; o; o = o.parent) if (!o.visible) return false;
+  return true;
+}
+
 /** Point de la scène retiré par la coupe des murs — invisible, donc ni cliquable ni support de pastille. */
 function isCut(s: Stage, point: Vector3) {
   return !!s.cut && isCutAway(point.toArray() as Vec3, s.cut);
@@ -448,7 +463,7 @@ function occluded(s: Stage, root: Object3D, local: Vec3) {
   const toward = anchorPoint(s, root, local).sub(s.camera.position);
   raycaster.set(s.camera.position, toward.clone().normalize());
   raycaster.far = toward.length() - OCCLUSION_MARGIN;
-  const hidden = raycaster.intersectObject(root, true).some(h => !isCut(s, h.point) && !inPartCut(s, h.point));
+  const hidden = raycaster.intersectObject(root, true).some(h => isShown(h.object) && !isCut(s, h.point) && !inPartCut(s, h.point));
   raycaster.far = Infinity;
   return hidden;
 }
@@ -471,7 +486,7 @@ function hitAt(s: Stage, clientX: number, clientY: number): { point: Vec3; node:
   aim(s, clientX, clientY);
   // Le lancer de rayon ignore la coupe, faite dans les shaders : sans ce tri,
   // un clic tomberait sur un mur qu'on ne voit plus.
-  const hit = raycaster.intersectObject(root, true).find(h => !isCut(s, h.point));
+  const hit = raycaster.intersectObject(root, true).find(h => isShown(h.object) && !isCut(s, h.point));
   if (!hit) return null;
   let object: Object3D = hit.object;
   while (object.parent && object.parent !== root && !object.parent.userData.fpPivot) object = object.parent;
@@ -705,6 +720,41 @@ function updateCutaway(s: Stage) {
   c.back = backSides(s.camera.position.toArray() as Vec3, s.controls.target.toArray() as Vec3, c.back);
   const target = wallTargets(s, c);
   if (target.height !== c.height || target.sides.some((goal, i) => goal !== c.sides[i])) slideWalls(s, c);
+}
+
+/**
+ * Un étage à la fois : ceux du dessus disparaissent — ni dessinés, ni touchés
+ * par les rayons —, et la coupe des murs se règle sur l'étage montré, sinon
+ * sur toute la maison. Ses murs glissent vers leur nouvelle hauteur.
+ */
+function applyLevel(s: Stage, level: string | null | undefined) {
+  s.level = level ?? null;
+  const { root, cut } = s;
+  if (!root || !cut) return;
+  const levels = s.model?.detected.levels ?? [];
+  const index = level ? levels.findIndex(l => l.id === level) : -1;
+  const shown = new Set(levels.slice(0, index + 1).map(l => l.id));
+  for (const [name, object] of s.model?.objects ?? []) {
+    const id = levelOf(name);
+    object.visible = index < 0 || !id || shown.has(id);
+  }
+  const bounds = levels[index];
+  const floor = bounds ? root.localToWorld(new Vector3(0, bounds.floor, 0)).y : cut.ground;
+  const height = (bounds ? root.localToWorld(new Vector3(0, bounds.top, 0)).y : cut.ceiling) - floor;
+  cut.low = floor + height * CUTAWAY_HEIGHT;
+  s.uniforms.fpFade.value = Math.max(height * CUTAWAY_FADE, 1e-3);
+  const host = s.renderer.domElement.parentElement;
+  if (host) host.dataset.floorplanLevel = index < 0 ? '' : levels[index].id;
+  // La caméra suit l'étage : même angle, même distance, à sa hauteur.
+  const shift = bounds ? floor + height / 2 - (cut.ground + cut.ceiling) / 2 : 0;
+  if (shift !== s.levelShift) {
+    s.camera.position.y += shift - s.levelShift;
+    s.controls.target.y += shift - s.levelShift;
+    s.levelShift = shift;
+    s.controls.update();
+  }
+  updateCutaway(s);
+  s.render();
 }
 
 /** Éléments animés : construits à leur forme, puis mus vers leur ouverture. */
@@ -1046,7 +1096,7 @@ function colorAt(s: Stage, local: Vec3): string | null {
   if (!s.root) return null;
   const target = s.root.localToWorld(new Vector3(...local));
   raycaster.set(s.camera.position, target.clone().sub(s.camera.position).normalize());
-  const hit = raycaster.intersectObject(s.root, true).find(h => !isCut(s, h.point));
+  const hit = raycaster.intersectObject(s.root, true).find(h => isShown(h.object) && !isCut(s, h.point));
   if (!hit) return null;
   const material = materialsOf(hit.object)[hit.face?.materialIndex ?? 0] as MeshStandardMaterial | undefined;
   const color = material?.color?.clone() ?? new Color(1, 1, 1);
@@ -1289,6 +1339,7 @@ export default function Floorplan3D({
   outline,
   highlight,
   alerts,
+  level,
   floors,
   focus,
   anchors,
@@ -1306,6 +1357,7 @@ export default function Floorplan3D({
     parts,
     openings,
     alerts,
+    level,
     cables,
     floors,
     anchors,
@@ -1325,6 +1377,7 @@ export default function Floorplan3D({
       parts,
       openings,
       alerts,
+      level,
       cables,
       floors,
       anchors,
@@ -1498,6 +1551,8 @@ export default function Floorplan3D({
       outline: null,
       highlight: null,
       alerts: new Group(),
+      level: null,
+      levelShift: 0,
       floors: new Group(),
       uniforms,
       cutaway: false,
@@ -1616,19 +1671,19 @@ export default function Floorplan3D({
         // La coupe se règle sur la hauteur des murs, quand la maquette les
         // distingue : un objet plus haut qu'eux ne la relève pas.
         const walls = s.model ? wallTop(s.model.nodes.values()) : null;
-        const height = (walls === null ? max.y : root.localToWorld(new Vector3(0, walls, 0)).y) - min.y;
         s.cut = {
           height: top,
           box: [min.x, min.z, max.x, max.z],
           sides: [top, top, top, top],
           margin: BACK_WALL_MARGIN,
           top,
-          low: height * CUTAWAY_HEIGHT,
+          low: top,
+          ground: min.y,
+          ceiling: walls === null ? max.y : root.localToWorld(new Vector3(0, walls, 0)).y,
           back: [true, true, true, true],
           sliding: false,
         };
         s.uniforms.fpCutaway.value.set(top, top, BACK_WALL_MARGIN, CAP_DEPTH);
-        s.uniforms.fpFade.value = Math.max(height * CUTAWAY_FADE, 1e-3);
         s.uniforms.fpBox.value.set(...s.cut.box);
         s.uniforms.fpSides.value.set(...s.cut.sides);
         applyCutaway(s);
@@ -1649,6 +1704,8 @@ export default function Floorplan3D({
         s.home = null;
         s.flight++;
         applyView(s, latest.current.camera);
+        s.levelShift = 0;
+        applyLevel(s, latest.current.level);
         // `applyView` ne redessine que si la caméra a bougé : une autre
         // maquette vue du même point n'en provoquerait aucun.
         s.render();
@@ -1741,6 +1798,10 @@ export default function Floorplan3D({
   useEffect(() => {
     if (stage.current) placeHighlight(stage.current, highlight);
   }, [highlight]);
+
+  useEffect(() => {
+    if (stage.current) applyLevel(stage.current, level);
+  }, [level]);
 
   const alertsKey = JSON.stringify(alerts ?? []);
   useEffect(() => {
@@ -1861,13 +1922,24 @@ export default function Floorplan3D({
     () => ({
       pick: (clientX, clientY) => (stage.current ? pick(stage.current, clientX, clientY) : null),
       floorAt: (clientX, clientY, y) => (stage.current ? floorAt(stage.current, clientX, clientY, y) : null),
-      view: () => (stage.current ? currentView(stage.current) : null),
+      // La vue d'accueil, sans le décalage de l'étage montré : elle vaut pour toute la maison.
+      view: () => {
+        const s = stage.current;
+        if (!s) return null;
+        const { position, target } = currentView(s);
+        return {
+          position: [position[0], position[1] - s.levelShift, position[2]],
+          target: [target[0], target[1] - s.levelShift, target[2]],
+        };
+      },
       resetView() {
         const s = stage.current;
         if (!s) return;
         s.home = null;
         s.flight++;
         applyView(s, latest.current.camera);
+        s.levelShift = 0;
+        applyLevel(s, s.level);
       },
       colorAt: point => (stage.current ? colorAt(stage.current, point) : null),
       facing(a, b) {

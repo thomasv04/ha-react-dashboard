@@ -6,7 +6,9 @@ import {
   familyKind,
   furnitureNodes,
   guessOpeningKind,
+  levelOf,
   linkCandidates,
+  modelLevels,
   modelNode,
   motionAt,
   normalizeOpenings,
@@ -208,6 +210,27 @@ describe('detectOpenings', () => {
   it('keeps centimetres for a house with its garden, 70 m across', () => {
     const { cm } = detectOpenings([box('wall_0_1', [0, 0, 0], [5000, 250, 20]), box('room_0_1', [0, 0, 0], [5000, 0, 5000])]);
     expect(cm).toBe(1);
+  });
+});
+
+describe('modelLevels', () => {
+  it('reads the floors of a house with levels, from the lowest', () => {
+    const nodes = [
+      box('lvl001room_1_1', [0, 260, 0], [500, 262, 400]),
+      box('lvl001wall_3_1', [0, 262, 0], [500, 510, 10]),
+      box('lvl001Fenetre_Etage_1', [100, 350, 0], [200, 450, 8]),
+      box('lvl000room_0_1', [0, -2, 0], [500, 0, 400]),
+      box('lvl000wall_1_1', [0, 0, 0], [500, 250, 10]),
+    ];
+    expect(modelLevels(nodes)).toEqual([
+      { id: 'lvl000', floor: -2, top: 250 },
+      { id: 'lvl001', floor: 260, top: 510 },
+    ]);
+    expect(levelOf('lvl001Fenetre_Etage_1')).toBe('lvl001');
+  });
+
+  it('finds none in a house on one level', () => {
+    expect(modelLevels([box('room_0_1', [0, -2, 0], [500, 0, 400]), box('wall_1_1', [0, 0, 0], [500, 250, 10])])).toEqual([]);
   });
 });
 
@@ -509,6 +532,16 @@ function readGlb(file: string): ModelNode[] {
     return modelNode(node.name, positions);
   });
 }
+
+describe('the house with levels of the end-to-end tests (scripts/make-openings-glb.ts)', () => {
+  it('holds a ground floor and a floor above it', () => {
+    const { levels } = detectOpenings(readGlb(path.resolve(__dirname, '../../tests/dashboard/fixtures/levels.glb')));
+    expect(levels).toEqual([
+      { id: 'lvl000', floor: -2, top: 250 },
+      { id: 'lvl001', floor: 260, top: 512 },
+    ]);
+  });
+});
 
 describe('the synthetic model of the end-to-end tests (scripts/make-openings-glb.ts)', () => {
   const nodes = readGlb(path.resolve(__dirname, '../../tests/dashboard/fixtures/openings.glb'));

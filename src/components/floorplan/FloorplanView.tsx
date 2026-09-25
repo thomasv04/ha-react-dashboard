@@ -261,6 +261,8 @@ export function FloorplanView() {
   const [thermal, setThermal] = useState(false);
   /** Vue sécurité : les portes et fenêtres restées ouvertes, en rouge. */
   const [security, setSecurity] = useState(false);
+  /** Étage choisi — `undefined` : le rez-de-chaussée ; `null` : toute la maison. */
+  const [levelChoice, setLevelChoice] = useState<string | null>();
   /** Pièce vers laquelle la caméra a volé, hors édition. */
   const [focusId, setFocusId] = useState<string | null>(null);
   /** Boussole : la maison tourne avec le téléphone. */
@@ -441,12 +443,23 @@ export function FloorplanView() {
   const sky = model && floorplan?.sky !== false ? skyColors(sunElevation, clouds) : null;
 
   // Rejouée, la maison n'a pas encore l'historique de ses câbles : ils se reposent.
-  const cablesProp: CableProp[] = allCables.map(c => ({
-    ...c,
-    ...(replaying
-      ? { direction: 0 as const, watts: null }
-      : cableFlow(entities[c.entityId]?.state, entities[c.entityId]?.attributes, c.invert)),
-  }));
+  // ── Étages ─────────────────────────────────────────────────────────────────
+  /** Niveaux d'une maison à étages — aucun de plain-pied. */
+  const levels = (detected && detected.model === model ? detected.openings?.levels : undefined) ?? [];
+  /** L'étage montré : celui qu'on a choisi, le rez-de-chaussée d'abord ; `null` : toute la maison. */
+  const level = !levels.length || levelChoice === null ? null : (levels.find(l => l.id === levelChoice) ?? levels[0]).id;
+  /** Ce que l'étage montré cache commence au sol de celui du dessus : pastilles, lampes, éléments tracés. */
+  const hideAbove = level ? (levels[levels.findIndex(l => l.id === level) + 1]?.floor ?? Infinity) : Infinity;
+  const aboveLevel = (y: number) => y >= hideAbove;
+
+  const cablesProp: CableProp[] = allCables
+    .filter(c => c.points.some(p => !aboveLevel(p[1])))
+    .map(c => ({
+      ...c,
+      ...(replaying
+        ? { direction: 0 as const, watts: null }
+        : cableFlow(entities[c.entityId]?.state, entities[c.entityId]?.attributes, c.invert)),
+    }));
   const focusRoom = rooms.find(r => r.id === focusId);
 
   const lamps: Lamp[] = model
@@ -464,7 +477,7 @@ export function FloorplanView() {
             // la taille de la maquette.
             range: (g.size / 100) * MODEL_SIZE * 2,
             room: roomAt(g.anchor[0], g.anchor[2])?.points,
-            hidden: !isEditMode && occluded.has(g.id),
+            hidden: (!isEditMode && occluded.has(g.id)) || aboveLevel(g.anchor[1]),
           },
         ];
       })
@@ -472,10 +485,12 @@ export function FloorplanView() {
 
   // ── Portes, fenêtres, volets ───────────────────────────────────────────────
   const partsProp: PartProp[] = [
-    ...parts.map(p => {
-      const entity = replayed(p.entityId) ?? entities[p.entityId];
-      return { ...p, open: openness(entity?.state, entity?.attributes) };
-    }),
+    ...parts
+      .filter(p => !aboveLevel(Math.min(p.a[1], p.b[1])))
+      .map(p => {
+        const entity = replayed(p.entityId) ?? entities[p.entityId];
+        return { ...p, open: openness(entity?.state, entity?.attributes) };
+      }),
     ...(draft?.part ? [{ ...draft.part, open: DRAFT_OPENNESS }] : []),
   ];
 
@@ -634,11 +649,13 @@ export function FloorplanView() {
   const floors: FloorOverlay[] = showThermal
     ? rooms.flatMap((r, i) => {
         const temperature = roomTemperatures[i];
-        return temperature ? [{ y: r.y, points: r.points, color: thermalColor(temperature.celsius), fill: 0.42, closed: true }] : [];
+        return temperature && !aboveLevel(r.y)
+          ? [{ y: r.y, points: r.points, color: thermalColor(temperature.celsius), fill: 0.42, closed: true }]
+          : [];
       })
     : isEditMode
       ? [
-          ...rooms.map(r => ({ y: r.y, points: r.points, color: ROOM_COLOR, fill: 0.12, closed: true })),
+          ...rooms.filter(r => !aboveLevel(r.y)).map(r => ({ y: r.y, points: r.points, color: ROOM_COLOR, fill: 0.12, closed: true })),
           ...(roomDraft ? [{ y: roomDraft.y, points: roomPoints, color: DRAFT_COLOR, fill: 0.18, closed: roomPoints.length >= 3 }] : []),
         ]
       : [];
@@ -855,7 +872,7 @@ export function FloorplanView() {
                   // Vol vers une pièce : les pastilles des autres pièces s'estompent.
                   // Rejouée, tout s'estompe : pastilles et cards montrent le présent.
                   faded={replaying || (!!anchor && !!focusRoom && !pointInPolygon(anchor[0], anchor[2], focusRoom.points))}
-                  hidden={!isEditMode && occluded.has(w.id)}
+                  hidden={(!isEditMode && occluded.has(w.id)) || (!!anchor && aboveLevel(anchor[1]))}
                   breathing={present.has(w.id)}
                   alert={alertChips.has(w.id)}
                 />
@@ -1102,7 +1119,8 @@ export function FloorplanView() {
                         : undefined
                   }
                   highlight={previewing ?? unnamed?.id ?? hovered}
-                  alerts={opened.flatMap(g => (g.box ? [g.box] : []))}
+                  alerts={opened.flatMap(g => (g.box && !aboveLevel(Math.min(g.box[0][1], g.box[1][1])) ? [g.box] : []))}
+                  level={level}
                   onLoad={() => setLoadedModel(model)}
                   onError={kind => setFailure({ model, kind })}
                 />
@@ -1348,6 +1366,49 @@ export function FloorplanView() {
                     three.current?.resetView();
                   }}
                 />
+              </div>
+            )}
+            {loaded && levels.length > 1 && (
+              <div
+                role='group'
+                aria-label={t('layout.floorplan.levels')}
+                className='absolute right-3 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-1 p-1 rounded-xl gc-overlay'
+              >
+                {/* Comme un ascenseur : le plus haut en haut. */}
+                {levels
+                  .map((l, i) => ({
+                    id: l.id,
+                    short: i ? String(i) : t('layout.floorplan.levelGroundShort'),
+                    name: i ? t('layout.floorplan.levelN', { n: i }) : t('layout.floorplan.levelGround'),
+                  }))
+                  .reverse()
+                  .map(l => (
+                    <button
+                      key={l.id}
+                      onClick={() => setLevelChoice(l.id)}
+                      aria-pressed={level === l.id}
+                      aria-label={l.name}
+                      title={l.name}
+                      className={cn(
+                        'min-w-9 px-2 py-1.5 rounded-lg text-xs font-semibold tabular-nums transition-colors',
+                        level === l.id ? 'bg-sky-500/25 text-sky-200' : 'text-white/55 hover:text-white'
+                      )}
+                    >
+                      {l.short}
+                    </button>
+                  ))}
+                <button
+                  onClick={() => setLevelChoice(null)}
+                  aria-pressed={level === null}
+                  aria-label={t('layout.floorplan.levelAll')}
+                  title={t('layout.floorplan.levelAll')}
+                  className={cn(
+                    'flex justify-center px-2 py-1.5 rounded-lg transition-colors',
+                    level === null ? 'bg-sky-500/25 text-sky-200' : 'text-white/55 hover:text-white'
+                  )}
+                >
+                  <Layers size={14} />
+                </button>
               </div>
             )}
             {showSecurity && (

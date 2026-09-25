@@ -21,4 +21,5 @@ git), elle alimente la page « Maison SH3D » du mode mock quand
 
 `openings.glb` — une petite maquette façon ExportToHASS, générée par
 `npx tsx scripts/make-openings-glb.ts` : les tests de bout en bout des
-ouvertures.
+ouvertures. `levels.glb`, du même script : une maison à deux niveaux, pour
+ceux des étages.
