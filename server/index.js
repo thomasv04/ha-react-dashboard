@@ -38,8 +38,11 @@ app.use(
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         // Camera streams, weather icons, uploaded backgrounds from any origin
         imgSrc: ["'self'", 'data:', 'blob:', 'http:', 'https:'],
-        // HA WebSocket (ws/wss) can be on any user-configured host
-        connectSrc: ["'self'", 'ws:', 'wss:', 'http:', 'https:'],
+        // HA WebSocket (ws/wss) can be on any user-configured host.
+        // `blob:` : les textures d'une maquette `.glb` y sont rangées, et
+        // three.js les charge par `fetch` — sans, la maquette s'affiche
+        // sans textures sous Chrome et Firefox.
+        connectSrc: ["'self'", 'blob:', 'ws:', 'wss:', 'http:', 'https:'],
         // Media player artwork / streams
         mediaSrc: ["'self'", 'blob:', 'http:', 'https:'],
         fontSrc: ["'self'", 'data:', 'https://fonts.gstatic.com'],
@@ -152,7 +155,10 @@ if (process.env.HA_AUTH === 'true') {
 // middleware vient de vérifier. Les lectures sont nombreuses et bon marché ;
 // les écritures sont rares et coûteuses (2 Mo de configuration, images).
 app.use('/api/', limiter(300, byUser));
-app.use('/api/', (req, res, next) => (req.method === 'GET' ? next() : limiter(30, byUser)(req, res, next)));
+// Créé une fois, comme les autres : construit dans le handler, il donnait à
+// chaque écriture un compteur neuf, et la limite ne se déclenchait jamais.
+const writeLimiter = limiter(30, byUser);
+app.use('/api/', (req, res, next) => (req.method === 'GET' ? next() : writeLimiter(req, res, next)));
 
 // ── Uploads directory ────────────────────────────────────────────────────────
 const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, '..', 'data', 'uploads');

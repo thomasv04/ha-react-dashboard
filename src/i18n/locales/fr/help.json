@@ -19,6 +19,10 @@
       "title": "Apparence et mode mural",
       "body": "Thèmes, fond d'écran, opacité des cards, et l'écran de veille pour une tablette murale."
     },
+    "floorplan": {
+      "title": "La page Plan",
+      "body": "La maison en 3D : ses pastilles, les vues sécurité et thermique, la relecture de la journée, et les réglages de la maquette."
+    },
     "events": {
       "title": "Modales, toasts et notifications depuis Home Assistant",
       "body": "Déclenchez un événement depuis n'importe quelle automatisation pour afficher une modale, un toast, ou déposer une notification sur tous les dashboards."

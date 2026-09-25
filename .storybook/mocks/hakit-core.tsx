@@ -22,6 +22,19 @@ const mockHelpers = {
   },
 };
 
+// Nombre + unité, comme le vrai formateur pour un capteur ; les libellés par
+// `device_class` viennent de HA, que le mock n'a pas.
+const mockFormatter = {
+  stateValue: (entity: { state: string; attributes?: Record<string, unknown> }) => {
+    const unit = entity.attributes?.unit_of_measurement;
+    return unit ? `${entity.state} ${unit}` : entity.state;
+  },
+};
+
+// Le lieu de la maison, comme la configuration de HA le donne : la page Plan en
+// 3D y calcule le soleil de n'importe quelle heure.
+const mockConfig = { latitude: 48.8566, longitude: 2.3522, time_zone: 'Europe/Paris' };
+
 // ─── Hooks ──────────────────────────────────────────────────────────────────
 
 export function useEntity(entityId: EntityName): EntityState {
@@ -31,20 +44,23 @@ export function useEntity(entityId: EntityName): EntityState {
 interface HassState {
   entities: typeof ENTITIES;
   helpers: typeof mockHelpers;
+  formatter: typeof mockFormatter;
+  config: typeof mockConfig;
 }
+
+const STATE: HassState = { entities: ENTITIES, helpers: mockHelpers, formatter: mockFormatter, config: mockConfig };
 
 export function useHass(): HassState;
 export function useHass<T>(selector: (s: HassState) => T): T;
 export function useHass<T>(selector?: (s: HassState) => T): HassState | T {
-  const state: HassState = { entities: ENTITIES, helpers: mockHelpers };
-  return selector ? selector(state) : state;
+  return selector ? selector(STATE) : STATE;
 }
 
 // Le vrai `useHass` est un store zustand : `HAThrottlePatch` appelle
 // `getState` / `setState` / `subscribe` dessus au montage. Sans ces méthodes le
 // mock lève `useHass.getState is not a function` et **toute l'application**
 // plante en mode mock — c'est ce qui empêchait la suite E2E de démarrer.
-useHass.getState = (): HassState => ({ entities: ENTITIES, helpers: mockHelpers });
+useHass.getState = (): HassState => STATE;
 useHass.setState = (_partial: Partial<HassState>): void => {
   /* le jeu d'entités du mock est figé */
 };

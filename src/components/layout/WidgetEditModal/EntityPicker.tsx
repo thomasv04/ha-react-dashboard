@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { useHass } from '@hakit/core';
@@ -10,11 +10,15 @@ export function EntityPicker({
   onChange,
   domain,
   label,
+  autoOpen,
 }: {
   value: string;
   onChange: (v: string) => void;
-  domain?: string;
+  /** Un domaine, ou plusieurs (`['cover', 'binary_sensor']`). */
+  domain?: string | string[];
   label: string;
+  /** Ouvre la liste dès l'affichage — quand le sélecteur apparaît *pour* choisir. */
+  autoOpen?: boolean;
 }) {
   const allEntities = useHass(s => s.entities);
   const { t } = useI18n();
@@ -23,16 +27,26 @@ export function EntityPicker({
     open,
     setOpen,
     toggle: handleToggle,
+    show,
     triggerRef,
     dropRef: dropdownRef,
     dropStyle,
   } = useDropdownPortal<HTMLDivElement>({ minWidth: 260 });
 
+  // Au montage seulement : c'est l'apparition du sélecteur qui vaut demande.
+  // `show` et non `toggle` : en StrictMode l'effet passe deux fois, et deux
+  // bascules refermaient la liste aussitôt ouverte.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => void (autoOpen && show()), []);
+
+  // Clé textuelle : un tableau passé en ligne serait neuf à chaque rendu.
+  const domains = [domain ?? []].flat().join(',');
   const entities = useMemo(() => {
     const list = Object.keys(allEntities ?? {}).sort();
-    if (domain) return list.filter(id => id.startsWith(`${domain}.`));
-    return list;
-  }, [allEntities, domain]);
+    if (!domains) return list;
+    const prefixes = domains.split(',').map(d => `${d}.`);
+    return list.filter(id => prefixes.some(p => id.startsWith(p)));
+  }, [allEntities, domains]);
 
   const filtered = useMemo(() => {
     if (!search) return entities.slice(0, 50);

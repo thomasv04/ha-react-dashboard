@@ -15,24 +15,35 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from 're
  * son champ dès qu'on faisait défiler la modale. Ici les deux corrections
  * valent pour tout le monde.
  */
+/** Hauteur des plus grands menus : en deçà sous le déclencheur, on regarde au-dessus. */
+const MENU_ROOM = 320;
+
 export function useDropdownPortal<T extends HTMLElement>({ minWidth = 0 }: { minWidth?: number } = {}) {
   const [open, setOpen] = useState(false);
-  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
+  const [dropPos, setDropPos] = useState<{ top?: number; bottom?: number; left: number; width: number }>({ top: 0, left: 0, width: 0 });
   const triggerRef = useRef<T>(null);
   const dropRef = useRef<HTMLDivElement>(null);
 
-  const toggle = useCallback(() => {
-    if (!open && triggerRef.current) {
+  /** Ouvre le menu sous son déclencheur. Idempotent — sûr dans un effet. */
+  const show = useCallback(() => {
+    if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
       const width = Math.max(rect.width, minWidth);
       // Une marge de 8 px des deux côtés : un menu plus large que son
       // déclencheur doit rester visible, et le recalage ne doit pas le faire
       // sortir par la gauche à son tour.
       const left = Math.min(Math.max(8, rect.left), Math.max(8, window.innerWidth - width - 8));
-      setDropPos({ top: rect.bottom + 4, left, width });
+      // Près du bas de l'écran, le menu s'ouvre vers le haut : il est en
+      // `position: fixed`, rien ne défile, et ses dernières lignes restaient
+      // hors d'atteinte sous le bord.
+      const below = window.innerHeight - rect.bottom;
+      const up = below < MENU_ROOM && rect.top > below;
+      setDropPos(up ? { bottom: window.innerHeight - rect.top + 4, left, width } : { top: rect.bottom + 4, left, width });
     }
-    setOpen(v => !v);
-  }, [open, minWidth]);
+    setOpen(true);
+  }, [minWidth]);
+
+  const toggle = useCallback(() => (open ? setOpen(false) : show()), [open, show]);
 
   const close = useCallback(() => setOpen(false), []);
 
@@ -65,7 +76,7 @@ export function useDropdownPortal<T extends HTMLElement>({ minWidth = 0 }: { min
   }, [open]);
 
   /** À poser tel quel sur le `<div>` du portail. */
-  const dropStyle: CSSProperties = { top: dropPos.top, left: dropPos.left, width: dropPos.width };
+  const dropStyle: CSSProperties = { top: dropPos.top, bottom: dropPos.bottom, left: dropPos.left, width: dropPos.width };
 
-  return { open, setOpen, toggle, close, triggerRef, dropRef, dropStyle };
+  return { open, setOpen, toggle, show, close, triggerRef, dropRef, dropStyle };
 }

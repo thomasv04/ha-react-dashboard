@@ -69,6 +69,9 @@ export function useHAModal() {
           actions: actions?.map(a => ({
             label: a.label,
             variant: a.variant ?? 'default',
+            // Une fenêtre `persistent` reste jusqu'à une action : chacune la
+            // ferme. Sans quoi, `dismissible: false` en plus, rien ne le pouvait.
+            closeOnClick: true,
             onClick: () => {
               if (a.service) {
                 const parts = a.service.split('.');

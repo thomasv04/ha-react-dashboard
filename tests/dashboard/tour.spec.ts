@@ -90,12 +90,12 @@ test.describe("Modale d'aide", () => {
     await waitForDashboard(page);
   });
 
-  test('le bouton « ? » du mode édition ouvre les quatre visites', async ({ page }) => {
+  test('le bouton « ? » du mode édition ouvre les cinq visites', async ({ page }) => {
     await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
     await page.getByTestId('help-button').click();
 
     await expect(page.getByTestId('help-modal')).toBeVisible();
-    for (const id of ['basics', 'widgets', 'panels', 'appearance']) {
+    for (const id of ['basics', 'widgets', 'panels', 'appearance', 'floorplan']) {
       await expect(page.getByTestId(`help-launch-${id}`)).toBeVisible();
     }
   });
@@ -161,20 +161,8 @@ test.describe('Nouveautés', () => {
     await expect(page.getByTestId('release-notes-modal')).toHaveCount(0);
   });
 
-  test('une note peut lancer la visite correspondante', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('ha-dashboard-tour-done', 'true');
-      localStorage.setItem('ha-dashboard-seen-version', '0.0.1');
-    });
-    await page.goto('/');
-    await waitForDashboard(page);
-    await expect(page.getByTestId('release-notes-modal')).toBeVisible({ timeout: 10_000 });
-
-    await page.getByTestId('release-tour-panels').click();
-    await expect(page.getByTestId('release-notes-modal')).toHaveCount(0);
-    await expect(page.getByTestId('tour-card')).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByTestId('tour-progress')).toHaveText('1/3');
-  });
+  // Qu'une note lance sa visite : ReleaseNotesModal.test.tsx, sur une note
+  // fictive — la dernière vraie version n'en propose pas toujours.
 });
 
 test.describe('Documentation des événements HA', () => {

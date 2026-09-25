@@ -66,6 +66,30 @@
     "appearanceWallpanel": {
       "title": "Mode mural",
       "body": "Configurez un écran de veille pour une tablette fixée au mur : il prend le relais après un moment d'inactivité."
+    },
+    "planModel": {
+      "title": "La maison",
+      "body": "Faites-la tourner au doigt, pincez pour zoomer. Touchez une pièce : la caméra y vole, et Échap ramène à toute la maison."
+    },
+    "planChips": {
+      "title": "Les pastilles",
+      "body": "Chacune montre l'état de son entité. Un tap allume la lampe ou ouvre la fiche, un appui long ouvre toujours la fiche."
+    },
+    "planButtons": {
+      "title": "Les vues",
+      "body": "Le bouclier montre ce qui est resté ouvert, le thermomètre la température des pièces ; l'horloge rejoue les 24 dernières heures, la flèche recentre la maison."
+    },
+    "planSettings": {
+      "title": "Les réglages",
+      "body": "Quatre onglets : la maquette et sa vue d'accueil, l'ambiance — ciel, météo, lueur des lampes —, les ouvertures à lier, et les éléments : lampes, pièces, câbles."
+    },
+    "planTools": {
+      "title": "Les outils",
+      "body": "Un outil, puis un clic sur la maquette : poser une pastille, lier ou dessiner une porte, tracer une pièce au sol ou un câble d'énergie."
+    },
+    "planSave": {
+      "title": "Enregistrer",
+      "body": "Rien n'est gardé sans « Sauvegarder », et chaque geste s'annule d'un Ctrl+Z."
     }
   }
 }

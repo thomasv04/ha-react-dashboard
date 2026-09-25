@@ -47,6 +47,15 @@ IMAGE_TYPES = {
     "image/gif": ".gif",
     "image/avif": ".avif",
 }
+# Maquette 3D d'une page plan. Le type annoncé ne dit rien — peu de systèmes
+# connaissent `.glb`, le navigateur envoie alors `application/octet-stream` :
+# c'est l'en-tête du fichier qui fait foi.
+MAX_MODEL_SIZE = 50 * 1024 * 1024
+MODEL_TYPES = {
+    "model/gltf-binary": ".glb",
+    "application/octet-stream": ".glb",
+}
+GLB_MAGIC = b"glTF"
 # ponytail: pas de SVG côté intégration — le nettoyer demande un parseur
 # (DOMPurify côté add-on), et le servir tel quel ouvre une XSS same-origin.
 # À rouvrir le jour où on ajoute une dépendance de sanitisation.

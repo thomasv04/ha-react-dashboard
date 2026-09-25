@@ -1,0 +1,133 @@
+import type { CSSProperties, ReactNode } from 'react';
+import { Trash2, X, type LucideIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n';
+
+/**
+ * Ce qu'on pose ou dessine sur la maquette — pastilles, pièces, portes et
+ * volets, câbles — partage sa fenêtre, sa grille de sortes et sa liste.
+ */
+
+/** Fenêtre de ce qu'on pose ou vient de dessiner : son titre, de quoi l'abandonner, ses réglages. */
+export function DraftPopover({
+  title,
+  style,
+  around,
+  onCancel,
+  children,
+}: {
+  title: string;
+  /** Où l'ouvrir, sur le plan… */
+  style?: CSSProperties;
+  /** …ou à côté de l'élément qu'elle règle. */
+  around?: Around;
+  onCancel: () => void;
+  children: ReactNode;
+}) {
+  const { t } = useI18n();
+  return (
+    <div
+      role='dialog'
+      aria-label={title}
+      onClick={e => e.stopPropagation()}
+      className='absolute z-40 w-64 p-2 rounded-xl gc-overlay cursor-default flex flex-col gap-2'
+      style={around ? besideStyle(around) : style}
+    >
+      <div className='flex items-center justify-between px-1'>
+        <span className='text-[11px] text-white/50'>{title}</span>
+        <button onClick={onCancel} aria-label={t('common.cancel')} className='p-0.5 rounded text-white/40 hover:text-white'>
+          <X size={12} />
+        </button>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/** Emprise d'un élément à l'écran, en % du plan : de sa gauche à sa droite, à sa hauteur. */
+export type Around = { left: number; right: number; y: number };
+
+/**
+ * Où ouvrir la fenêtre d'un élément : à côté de lui, pas dessus — on doit voir
+ * l'aperçu —, du côté où il reste le plus de place.
+ */
+function besideStyle(around: Around): CSSProperties {
+  const toRight = 100 - around.right > around.left;
+  return {
+    ...(toRight ? { left: `calc(${around.right}% + 2rem)` } : { right: `calc(${100 - around.left}% + 2rem)` }),
+    top: `clamp(0.5rem, calc(${around.y}% - 6rem), calc(100% - 15rem))`,
+  };
+}
+
+/** Les sortes d'un élément, en boutons : celle qu'on a devinée, qu'on peut changer. */
+export function KindGrid<K extends string>({
+  kinds,
+  value,
+  onChange,
+  icons,
+  colors,
+  label,
+}: {
+  kinds: readonly K[];
+  /** `null` : aucune n'est encore choisie. */
+  value: K | null;
+  onChange: (kind: K) => void;
+  icons: Record<K, LucideIcon>;
+  colors?: Record<K, string>;
+  label: (kind: K) => string;
+}) {
+  return (
+    <div className={cn('grid gap-1', kinds.length > 4 ? 'grid-cols-5' : 'grid-cols-4')}>
+      {kinds.map(kind => {
+        const Icon: LucideIcon = icons[kind];
+        return (
+          <button
+            key={kind}
+            onClick={() => onChange(kind)}
+            aria-pressed={value === kind}
+            className={cn(
+              'flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-[10px] border transition-colors',
+              value === kind ? 'bg-white/12 border-white/30 text-white' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'
+            )}
+          >
+            <Icon size={14} style={colors ? { color: colors[kind] } : undefined} />
+            {label(kind)}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Ce qu'on a dessiné sur la maquette, pour le retirer. */
+export function DrawnList({
+  title,
+  removeLabel,
+  items,
+  onRemove,
+  action,
+}: {
+  title: string;
+  removeLabel: string;
+  items: { id: string; label: string; icon: LucideIcon; color?: string }[];
+  onRemove: (id: string) => void;
+  /** Sous la liste, de quoi y ajouter : elle s'affiche alors même vide. */
+  action?: ReactNode;
+}) {
+  if (!items.length && !action) return null;
+  return (
+    <div className='flex flex-col gap-1'>
+      <span className='text-[11px] text-white/40 px-0.5'>{title}</span>
+      {items.map(({ id, label, icon: Icon, color }) => (
+        <div key={id} className='flex items-center gap-2 px-2 py-1 rounded-lg bg-white/5 text-xs text-white/70'>
+          <Icon size={13} className={cn('shrink-0', !color && 'text-white/40')} style={color ? { color } : undefined} />
+          <span className='flex-1 truncate'>{label}</span>
+          <button onClick={() => onRemove(id)} title={removeLabel} aria-label={removeLabel} className='text-red-400/70 hover:text-red-400'>
+            <Trash2 size={12} />
+          </button>
+        </div>
+      ))}
+      {action}
+    </div>
+  );
+}

@@ -65,6 +65,10 @@ export function WallPanelOverlay() {
   const user = useUser();
   const { isActive, deactivate, wallPanelLayout, config, isWallPanelEditMode, enterWallPanelEditMode } = useWallPanel();
   const hasWidgets = wallPanelLayout.widgets.lg.length > 0;
+  // Fond sur une maquette : la page Plan, que la veille a ouverte dessous, se
+  // voit au travers — ni voile noir, ni photos.
+  const { pages } = usePages();
+  const planBackdrop = !!config.floorplan_page && pages.some(p => p.id === config.floorplan_page && p.type === 'floorplan');
 
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const [photoCount, setPhotoCount] = useState(0);
@@ -142,7 +146,7 @@ export function WallPanelOverlay() {
             data-overlay
             className='fixed inset-0 z-[199] bg-black pointer-events-none'
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.9 }}
+            animate={{ opacity: planBackdrop ? 0 : 0.9 }}
             exit={{ opacity: 0 }}
             transition={{ duration: DURATION_HERO, ease: 'easeIn' }}
           />
@@ -172,7 +176,12 @@ export function WallPanelOverlay() {
               animate={{ scale: sheet ? 1.04 : 1 }}
               transition={{ duration: 0.4, ease: EASE_OUT }}
             >
-              <BackgroundSlideshow config={config} ref={slideshowRef} onCountChange={setPhotoCount} />
+              {planBackdrop ? (
+                // Assez sombre en haut pour cacher les onglets et lire l'heure.
+                <div data-wallpanel-plan className='absolute inset-0 bg-gradient-to-b from-black/80 via-black/0 via-35% to-black/50' />
+              ) : (
+                <BackgroundSlideshow config={config} ref={slideshowRef} onCountChange={setPhotoCount} />
+              )}
             </motion.div>
 
             {/* ── Gestes ── posés sous les widgets : une card garde la priorité */}

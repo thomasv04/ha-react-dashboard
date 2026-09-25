@@ -148,10 +148,10 @@ export default defineWidget({
 Puis **une seule ligne** dans un fichier partagé — l'import dans
 `src/widgets/registry.ts`. Le générateur s'en charge.
 
-Restent deux déclarations que TypeScript ne peut pas dériver d'une valeur, et
-que le générateur écrit aussi : le type dans l'union `GridWidget['type']`
-(`src/context/DashboardLayoutContext.tsx`) et l'interface de configuration dans
-`src/types/widget-types.ts`.
+Reste une déclaration que TypeScript ne peut pas dériver d'une valeur, et que
+le générateur écrit aussi : l'interface de configuration dans
+`src/types/widget-types.ts`. L'union `GridWidget['type']`, elle, se dérive des
+manifestes enregistrés.
 
 ### Anatomie du composant
 
@@ -179,9 +179,8 @@ registres centraux (`LEGACY_WIDGET_META`, `LEGACY_WIDGET_CATALOG`,
 `LEGACY_DEFAULT_WIDGET_CONFIGS`, `LEGACY_WIDGET_COMPONENTS`) ont été supprimés,
 et avec eux la synchronisation manuelle qu'ils imposaient.
 
-`npm run check:widgets` vérifie ce qui reste à tenir en phase : chaque type de
-l'union `GridWidget['type']` a un manifeste importé, et aucun manifeste ne
-traîne sans import.
+`npm run check:widgets` vérifie ce que le compilateur ne voit pas : aucun
+manifeste ne traîne sans import.
 
 ### Toujours importer depuis `@/widgets`
 

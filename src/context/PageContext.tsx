@@ -1,6 +1,45 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import type { FloorplanCable, FloorplanPart, FloorplanRoom, FloorplanSolar } from '@/lib/floorplan';
+import type { FloorplanOpenings } from '@/lib/floorplan-openings';
 
-export type PageType = 'grid' | 'media' | 'settings';
+export type PageType = 'grid' | 'media' | 'settings' | 'floorplan';
+
+/** Page `floorplan` : l'image du plan, sur laquelle les widgets sont posés via `GridWidget.pos`. */
+export interface FloorplanConfig {
+  /** URL de l'image — `/uploads/…` une fois téléversée, ou adresse externe */
+  image: string;
+  /** Assombrir le plan quand le soleil est couché (`sun.sun`). Actif par défaut. */
+  dimAtNight?: boolean;
+  /**
+   * Maquette 3D (`.glb`, `.gltf`). Renseignée, elle remplace l'image : la page
+   * devient une maison qu'on fait tourner, éclairée par le soleil et les lampes.
+   */
+  model?: string;
+  /** Vue d'accueil de la maquette, réglée en édition. */
+  camera?: { position: [number, number, number]; target: [number, number, number] };
+  /** Orientation du nord dans la maquette, en degrés — pour placer le soleil. */
+  north?: number;
+  /** Murs en coupe : le côté caméra est abaissé à environ un mètre. Actif par défaut. */
+  cutaway?: boolean;
+  /** La maison tourne lentement après une minute sans geste. */
+  idleRotate?: boolean;
+  /** Un ciel qui suit le soleil derrière la maquette, plutôt que le fond du thème. Actif par défaut. */
+  sky?: boolean;
+  /** Une lueur autour de chaque lampe allumée, de sa couleur. */
+  lampGlow?: boolean;
+  /** Entité `weather` qui voile le soleil et grise le ciel — absente, la première trouvée. */
+  weather?: string;
+  /** Portes, fenêtres et volets dessinés sur la maquette, mus par leur entité. */
+  parts?: FloorplanPart[];
+  /** Pièces dessinées au sol de la maquette. */
+  rooms?: FloorplanRoom[];
+  /** Câbles d'énergie tracés sur la maquette, animés par leur entité. */
+  cables?: FloorplanCable[];
+  /** Portes, fenêtres et baies de la maquette elle-même (export ExportToHASS), mues par leur entité. */
+  openings?: FloorplanOpenings;
+  /** Champs de panneaux solaires posés sur la maquette, éclairés par leur production. */
+  solar?: FloorplanSolar[];
+}
 
 export interface Page {
   id: string;
@@ -16,6 +55,8 @@ export interface Page {
    * l'historique et la restauration comme le reste de la configuration.
    */
   badges?: string[];
+  /** Pages `floorplan` uniquement. Portée par la page pour la même raison que `badges`. */
+  floorplan?: FloorplanConfig;
 }
 
 interface PageContextValue {

@@ -16,6 +16,10 @@ dist-ssr
 # Dashboard config — contient des données personnelles (entités HA, config maison)
 dashboard_config.json
 
+# Maquette d'une vraie maison, pour la page « Maison SH3D » du mock
+# (VITE_MOCK_SH3D_MODEL) : son plan est une donnée personnelle.
+tests/dashboard/fixtures/home.glb
+
 # SQLite databases (production & test)
 data/*.db
 data/*.db-shm

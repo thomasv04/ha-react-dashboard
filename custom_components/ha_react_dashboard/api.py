@@ -21,10 +21,13 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     DOMAIN,
+    GLB_MAGIC,
     ICON_TYPES,
     IMAGE_TYPES,
     MAX_ICON_SIZE,
     MAX_IMAGE_SIZE,
+    MAX_MODEL_SIZE,
+    MODEL_TYPES,
     UPLOAD_DIR,
 )
 from .store import DashboardStore
@@ -413,6 +416,7 @@ class _UploadBase(_Base):
         allowed: dict[str, str],
         max_size: int,
         subdir: str = "",
+        magic: bytes | None = None,
     ) -> tuple[dict[str, Any] | None, web.Response | None]:
         data = await request.post()
         file = data.get(field)
@@ -426,9 +430,12 @@ class _UploadBase(_Base):
                 status_code=400,
             )
 
-        payload = file.file.read(max_size + 1)
+        # Hors de la boucle : une maquette pèse jusqu'à 50 Mo.
+        payload = await self.hass.async_add_executor_job(file.file.read, max_size + 1)
         if len(payload) > max_size:
             return None, self.json({"error": "File too large."}, status_code=413)
+        if magic is not None and not payload.startswith(magic):
+            return None, self.json({"error": "Not a .glb file."}, status_code=400)
 
         filename = f"{uuid.uuid4()}{extension}"
         directory = _uploads_path(self.hass) / subdir
@@ -471,6 +478,30 @@ class BackgroundUploadView(_UploadBase):
         await self.store.async_set("images", images)
         # Forme conservée entre add-on et carte : le frontend résout `/uploads/…`
         # vers la bonne base au moment de l'affichage.
+        return self.json({"url": f"/uploads/{meta['filename']}"}, status_code=201)
+
+
+class ModelUploadView(_UploadBase):
+    """Maquette 3D d'une page plan.
+
+    Rangée avec les images : la suppression passe par `BackgroundFileView`.
+    """
+
+    url = f"{BASE}/uploads/model"
+    name = f"api:{DOMAIN}:uploads:model"
+
+    @require_admin
+    async def post(self, request: web.Request) -> web.Response:
+        # Home Assistant plafonne les corps de requête à 16 Mo — comme
+        # `image_upload`, on relève la limite pour cette seule vue.
+        request._client_max_size = MAX_MODEL_SIZE + 1024 * 1024  # noqa: SLF001
+        meta, error = await self._save(
+            request, "model", MODEL_TYPES, MAX_MODEL_SIZE, magic=GLB_MAGIC
+        )
+        if error is not None:
+            return error
+        assert meta is not None
+        await self.store.async_set("images", [*self.store.get("images", []), meta])
         return self.json({"url": f"/uploads/{meta['filename']}"}, status_code=201)
 
 
@@ -557,6 +588,7 @@ def async_register_views(hass: HomeAssistant, store: DashboardStore) -> None:
         SettingsBroadcastView,
         TranslationsView,
         BackgroundUploadView,
+        ModelUploadView,
         BackgroundFileView,
         IconsView,
         IconFileView,

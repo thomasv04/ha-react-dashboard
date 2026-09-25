@@ -19,6 +19,10 @@
       "title": "Look and wall panel",
       "body": "Themes, wallpaper, card opacity, and the screensaver mode for a wall-mounted tablet."
     },
+    "floorplan": {
+      "title": "The Plan page",
+      "body": "The house in 3D: its chips, the security and thermal views, the day replay, and the model's settings."
+    },
     "events": {
       "title": "Modals, toasts and notifications from Home Assistant",
       "body": "Fire an event from any automation to show a modal, a toast, or file a notification on every dashboard."

@@ -1091,5 +1091,26 @@
         "label": "12-hour format (AM/PM)"
       }
     }
+  },
+  "chip": {
+    "label": "State chip",
+    "description": "An entity's state in a small chip, to place on a floorplan",
+    "fields": {
+      "entityId": {
+        "label": "Entity"
+      },
+      "name": {
+        "label": "Display name (optional)"
+      },
+      "icon": {
+        "label": "Icon (automatic if empty)"
+      },
+      "glow": {
+        "label": "Glow on the floorplan (lights)"
+      },
+      "glowSize": {
+        "label": "Glow size (% of floorplan width)"
+      }
+    }
   }
 }

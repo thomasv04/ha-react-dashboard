@@ -66,6 +66,30 @@
     "appearanceWallpanel": {
       "title": "Wall panel mode",
       "body": "Set up a screensaver layout for a tablet mounted on the wall: it takes over after a while idle."
+    },
+    "planModel": {
+      "title": "The house",
+      "body": "Turn it with a finger, pinch to zoom. Tap a room: the camera flies to it, and Escape brings back the whole house."
+    },
+    "planChips": {
+      "title": "The chips",
+      "body": "Each shows the state of its entity. A tap turns the lamp on or opens its sheet, a long press always opens the sheet."
+    },
+    "planButtons": {
+      "title": "The views",
+      "body": "The shield shows what was left open, the thermometer the temperature of the rooms; the clock replays the last 24 hours, the arrow centres the house again."
+    },
+    "planSettings": {
+      "title": "The settings",
+      "body": "Four tabs: the model and its home view, the ambiance — sky, weather, lamp glow —, the openings to link, and the elements: lamps, rooms, cables."
+    },
+    "planTools": {
+      "title": "The tools",
+      "body": "A tool, then a click on the model: place a chip, link or draw a door, trace a room on the floor or an energy cable."
+    },
+    "planSave": {
+      "title": "Save",
+      "body": "Nothing is kept without “Save”, and every gesture undoes with Ctrl+Z."
     }
   }
 }

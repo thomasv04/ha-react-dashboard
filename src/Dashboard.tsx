@@ -13,7 +13,7 @@ import { PageTabs } from '@/components/layout/PageTabs';
 import { PageBadges } from '@/components/layout/PageBadges';
 import { MoreInfoModal } from '@/components/modals/MoreInfoModal';
 import { LoadingScreen } from '@/components/layout/LoadingScreen';
-import { useEffect, useState, memo } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, memo } from 'react';
 import { AnimatePresence, LayoutGroup } from 'framer-motion';
 
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
@@ -39,6 +39,7 @@ const WidgetItem = memo(function WidgetItem({ widget }: { widget: GridWidget }) 
 import { EditButton } from '@/components/dashboard/EditButton';
 import { ActivePanel } from '@/components/dashboard/ActivePanel';
 import { DashboardEmptyState } from '@/components/dashboard/DashboardEmptyState';
+import { cn } from '@/lib/utils';
 import { TourHost } from '@/components/onboarding/TourOverlay';
 import { ReleaseNotesHost } from '@/components/onboarding/ReleaseNotesModal';
 import { WidgetErrorBoundary } from '@/components/ui/WidgetErrorBoundary';
@@ -47,6 +48,9 @@ import { useTheme } from '@/context/ThemeContext';
 import { usePages } from '@/context/PageContext';
 import { usePanel } from '@/context/PanelContext';
 import { useMoreInfo } from '@/context/MoreInfoContext';
+
+// La page plan ne se télécharge qu'à sa première visite : sans plan, rien à payer.
+const FloorplanView = lazy(() => import('@/components/floorplan/FloorplanView').then(m => ({ default: m.FloorplanView })));
 
 /**
  * Watcher d'inactivité — doit être monté à l'intérieur du WallPanelProvider
@@ -99,6 +103,30 @@ function ReturnHomeWatcher() {
  * Surveille l'entité HA `screensaver_entity` via WebSocket pour
  * activer/désactiver le WallPanel depuis Home Assistant.
  */
+/**
+ * Écran de veille sur une maquette (`floorplan_page`) : la veille ouvre sa
+ * page Plan, et rend en partant la page qu'on avait — celle de l'accueil si
+ * l'inactivité y a ramené entre-temps.
+ */
+function ScreensaverPlanWatcher() {
+  const { isActive, config } = useWallPanel();
+  const { pages, currentPageId, setCurrentPage } = usePages();
+  const plan = pages.find(p => p.id === config.floorplan_page && p.type === 'floorplan')?.id;
+  const back = useRef<string | null>(null);
+  useEffect(() => {
+    if (isActive && plan) {
+      if (currentPageId === plan) return;
+      back.current = currentPageId;
+      setCurrentPage(plan);
+    } else if (!isActive && back.current !== null) {
+      const page = back.current;
+      back.current = null;
+      setCurrentPage(page);
+    }
+  }, [isActive, plan, currentPageId, setCurrentPage]);
+  return null;
+}
+
 function ScreensaverEntityWatcher() {
   const { config, activate, deactivate, isActive } = useWallPanel();
   const entityId = config.screensaver_entity ?? '';
@@ -115,31 +143,52 @@ function ScreensaverEntityWatcher() {
 
 function DashboardContent() {
   const { layout } = useDashboardLayout();
+  const { currentPage } = usePages();
   usePageRouting();
   const isMobile = useIsMobile(640);
   const isCompact = useIsMobile(768) && !isMobile;
   // Use lg layout as canonical list of widget ids (all breakpoints share same ids)
   const widgets = layout.widgets.lg;
+  const isFloorplan = currentPage?.type === 'floorplan';
 
   return (
     <LayoutGroup>
       <div className='min-h-screen w-full text-white overflow-x-hidden'>
         {/* `pt-2` : l'en-tête (onglets, pastilles) mangeait un sixième de la hauteur
             d'une tablette avant la première card. */}
-        <div className='max-w-[1440px] mx-auto px-2 sm:px-4 md:px-5 pt-2 sm:pt-3 pb-24 sm:pb-32 md:pb-36'>
+        {/* Page plan : tout l'écran, le plan prenant la hauteur que laissent les
+            onglets — il se lit d'un coup d'œil, sans défiler. */}
+        <div
+          className={cn(
+            'mx-auto px-2 sm:px-4 md:px-5 pt-2 sm:pt-3',
+            isFloorplan ? 'h-dvh flex flex-col' : 'max-w-[1440px] pb-24 sm:pb-32 md:pb-36'
+          )}
+        >
           {/* Onglets de navigation entre pages */}
           <PageTabs />
 
           {/* Pastilles d'état de la page — n'occupent aucune place si vides */}
           <PageBadges />
 
-          <DashboardGrid className={isMobile ? 'mobile-layout' : isCompact ? 'compact-layout' : undefined}>
-            {widgets.map(widget => (
-              <WidgetItem key={widget.id} widget={widget} />
-            ))}
-          </DashboardGrid>
+          {isFloorplan ? (
+            // Un chunk du plan qui ne se charge pas — réseau coupé, ancien index
+            // gardé en cache après une mise à jour — n'emporte que le plan.
+            <WidgetErrorBoundary messageKey='common.panelUnavailable'>
+              <Suspense fallback={null}>
+                <FloorplanView />
+              </Suspense>
+            </WidgetErrorBoundary>
+          ) : (
+            <>
+              <DashboardGrid className={isMobile ? 'mobile-layout' : isCompact ? 'compact-layout' : undefined}>
+                {widgets.map(widget => (
+                  <WidgetItem key={widget.id} widget={widget} />
+                ))}
+              </DashboardGrid>
 
-          {widgets.length === 0 && <DashboardEmptyState />}
+              {widgets.length === 0 && <DashboardEmptyState />}
+            </>
+          )}
         </div>
 
         {/* Bouton d'édition admin (fixe, top-right) */}
@@ -168,6 +217,7 @@ function DashboardContent() {
         <IdleWatcher />
         <ReturnHomeWatcher />
         <ScreensaverEntityWatcher />
+        <ScreensaverPlanWatcher />
         <WallPanelOverlay />
 
         {/* More Info modal — une modale par domaine, chacune avec ses graphes

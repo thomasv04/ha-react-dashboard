@@ -813,6 +813,88 @@ select {
   opacity: 0.7;
 }
 
+/* ── Verre sur la maquette ────────────────────────────────────────────────────
+   La maquette 3D se redessine à chaque image tant qu'elle bouge : chaque verre
+   posé dessus referait son flou à chaque image. Les cards y sont presque
+   opaques (fond à 80 %) : ce flou ne se voyait guère. */
+
+[data-floorplan-plan='3d'] .gc,
+[data-floorplan-plan='3d'] .gc-light {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* ── Météo sur la maquette ───────────────────────────────────────────────────
+   Pluie, grêle, neige, éclairs et givre par-dessus la page plan en 3D : tirés
+   au hasard et animés par FloorplanWeather, en `transform` et en opacité, que
+   le compositeur anime seul. Ici, leur place. */
+
+.fp-weather {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: 1.25rem;
+}
+
+/* Un calque de ce qui tombe : sa tuile se répète, le composant le place. */
+.fp-layer {
+  position: absolute;
+}
+
+.fp-lightning {
+  background: rgb(236, 242, 255);
+  mix-blend-mode: screen;
+  opacity: 0;
+}
+
+/* Le givre gagne les coins : ses aiguilles, sur un voile de glace, n'y
+   paraissent qu'à travers ce masque. */
+.fp-frost {
+  background-color: rgba(226, 238, 255, 0.42);
+  -webkit-mask-image:
+    radial-gradient(ellipse 42% 52% at 0 0, #000 35%, transparent),
+    radial-gradient(ellipse 42% 52% at 100% 0, #000 30%, transparent),
+    radial-gradient(ellipse 42% 52% at 0 100%, #000 30%, transparent),
+    radial-gradient(ellipse 42% 52% at 100% 100%, #000 35%, transparent);
+  mask-image:
+    radial-gradient(ellipse 42% 52% at 0 0, #000 35%, transparent),
+    radial-gradient(ellipse 42% 52% at 100% 0, #000 30%, transparent),
+    radial-gradient(ellipse 42% 52% at 0 100%, #000 30%, transparent),
+    radial-gradient(ellipse 42% 52% at 100% 100%, #000 35%, transparent);
+}
+
+/* ── Présence sur le plan ─────────────────────────────────────────────────────
+   Un détecteur de mouvement ou de présence déclenché : une lueur respire sous
+   sa pastille. Opacité et échelle seulement, que le compositeur anime seul.
+   Sans animation — mouvement réduit, économie d'énergie —, elle reste, immobile. */
+
+.fp-breathe {
+  position: absolute;
+  inset: 0;
+  box-shadow: 0 0 0.9em 0.3em rgb(251 191 36 / 0.65);
+  opacity: 0.7;
+  pointer-events: none;
+  animation: fp-breathe 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes fp-breathe {
+  from {
+    opacity: 0.2;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce), (update: slow) {
+  .fp-breathe {
+    animation: none;
+  }
+}
+
 /* ── Legibility ramp ─────────────────────────────────────────────────────────
    A wall tablet is read from 1–2 m away, often with daylight on the screen.
    The raw alpha ramp used across the cards (text-white/40 for titles,

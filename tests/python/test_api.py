@@ -378,6 +378,48 @@ async def test_background_upload_needs_a_file(hass, entry, hass_client):
     assert (await client.post(f"{BASE}/uploads/background", data=form)).status == 400
 
 
+# En-tête d'un `.glb` : magie, version 2, longueur totale.
+GLB = b"glTF" + (2).to_bytes(4, "little") + (12).to_bytes(4, "little")
+
+
+async def test_model_upload_is_served_and_deleted_like_an_image(hass, entry, hass_client):
+    client = await hass_client()
+    response = await client.post(
+        f"{BASE}/uploads/model",
+        data=_upload("model", GLB, "maison.glb", "application/octet-stream"),
+    )
+    assert response.status == 201
+    url = (await response.json())["url"]
+    assert url.startswith("/uploads/") and url.endswith(".glb")
+
+    filename = url.rsplit("/", 1)[-1]
+    served = await client.get(f"/{DOMAIN}_files/{filename}")
+    assert served.status == 200
+    assert await served.read() == GLB
+
+    assert (await client.delete(f"{BASE}/uploads/background/{filename}")).status == 200
+
+
+async def test_model_upload_goes_past_the_16_mb_request_limit(hass, entry, hass_client):
+    """Une maison texturée dépasse vite le plafond par défaut de Home Assistant."""
+    client = await hass_client()
+    big = GLB + bytes(17 * 1024 * 1024)
+    response = await client.post(
+        f"{BASE}/uploads/model",
+        data=_upload("model", big, "maison.glb", "model/gltf-binary"),
+    )
+    assert response.status == 201
+
+
+async def test_model_upload_rejects_what_is_not_a_glb(hass, entry, hass_client):
+    client = await hass_client()
+    response = await client.post(
+        f"{BASE}/uploads/model",
+        data=_upload("model", b"<html>", "maison.glb", "application/octet-stream"),
+    )
+    assert response.status == 400
+
+
 async def test_icons_upload_list_and_delete(hass, entry, hass_client):
     client = await hass_client()
 
