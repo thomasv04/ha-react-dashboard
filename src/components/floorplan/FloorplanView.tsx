@@ -51,6 +51,10 @@ import {
   normalizeCables,
   normalizeParts,
   normalizeRooms,
+  normalizeSolar,
+  solarFrame,
+  solarGlow,
+  type FloorplanSolar,
   normalizePos,
   openness,
   partFrame,
@@ -85,13 +89,13 @@ import { friendlyName } from '@/lib/ha-service';
 import { cn, isTypingTarget } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import type { ChipCardConfig, WidgetConfig } from '@/types/widget-configs';
-import type { CableProp, FloorOverlay, Floorplan3DHandle, Lamp, OpeningProp, PartProp, Project } from './Floorplan3D';
+import type { CableProp, FloorOverlay, Floorplan3DHandle, Lamp, OpeningProp, PartProp, Project, SolarProp } from './Floorplan3D';
 import { FloorplanItem } from './FloorplanItem';
 import { LampList } from './FloorplanLamps';
 import { DraftPopover, type Around } from './FloorplanDrawn';
 import { OpeningPopover, OpeningsTab } from './FloorplanOpenings';
 import { PartList, PartPopover } from './FloorplanParts';
-import { CableList, CableOverlay, CablePopover } from './FloorplanCables';
+import { CableList, CableOverlay, CablePopover, SolarList, SolarPopover } from './FloorplanCables';
 import { ReplayBar } from './FloorplanReplay';
 import { RoomList, RoomNamePopover } from './FloorplanRooms';
 import { Weather } from './FloorplanWeather';
@@ -256,6 +260,13 @@ export function FloorplanView() {
   /** « Poser une lampe » : la prochaine pastille ne propose que des lumières. */
   const [lampArmed, setLampArmed] = useState(false);
   const [cableDraft, setCableDraft] = useState<CableDraft | null>(null);
+  /**
+   * Panneaux solaires en cours de pose — `{}` : on attend le premier coin ;
+   * puis ce coin et la pente de sa surface ; puis le champ, dont on choisit la production.
+   */
+  const [solarDraft, setSolarDraft] = useState<{ a?: Vec3; normal?: Vec3; field?: FloorplanSolar; at?: { x: number; y: number } } | null>(
+    null
+  );
   /** Pièce en cours de dessin : ses sommets au sol, sa hauteur de sol, puis son nom. */
   const [roomDraft, setRoomDraft] = useState<{ points: [number, number][]; y: number; naming?: boolean } | null>(null);
   const [draft, setDraft] = useState<PartDraft | null>(null);
@@ -316,9 +327,11 @@ export function FloorplanView() {
   /** Ouvertures de la maquette elle-même : le type de leurs familles, et leurs liaisons. */
   const openingsConfig = normalizeOpenings(floorplan?.openings);
   const cables = normalizeCables(floorplan?.cables);
+  /** Champs de panneaux solaires. */
+  const solarFields = normalizeSolar(floorplan?.solar);
   const replay = useReplay(
     [...glows.map(g => g.entityId), ...parts.map(p => p.entityId), ...openingsConfig.links.map(l => l.entityId)],
-    cables.map(c => c.entityId)
+    [...cables.map(c => c.entityId), ...solarFields.map(f => f.entityId)]
   );
   const closeReplay = replay.close;
   /** État d'une entité à l'instant rejoué — `undefined` en direct, ou sans historique. */
@@ -336,6 +349,7 @@ export function FloorplanView() {
     setOpeningDraft(null);
     setUnnamed(null);
     setLampArmed(false);
+    setSolarDraft(null);
   }, []);
 
   const scope = `${isEditMode}:${currentPage?.id}`;
@@ -422,6 +436,7 @@ export function FloorplanView() {
     ...parts.map(p => p.entityId),
     ...openingsConfig.links.map(l => l.entityId),
     ...allCables.map(c => c.entityId),
+    ...solarFields.map(f => f.entityId),
   ]);
 
   // ── Lampes : halos du plan, lumières de la maquette ────────────────────────
@@ -498,6 +513,23 @@ export function FloorplanView() {
     : [];
 
   // ── Portes, fenêtres, volets ───────────────────────────────────────────────
+  /** Panneaux solaires : leur éclat suit leur production, rejouée ou en direct ; celui qu'on pose, entre les deux. */
+  const solarProp: SolarProp[] = [
+    ...solarFields
+      .filter(f => !aboveLevel(Math.min(f.a[1], f.b[1])))
+      .map(f => {
+        const live = entities[f.entityId];
+        const past = replayed(f.entityId);
+        const glow = past
+          ? solarGlow(past.state, { ...live?.attributes, ...past.attributes })
+          : replaying
+            ? 0
+            : solarGlow(live?.state, live?.attributes);
+        return { ...f, glow };
+      }),
+    ...(solarDraft?.field ? [{ ...solarDraft.field, glow: 0.35 }] : []),
+  ];
+
   const partsProp: PartProp[] = [
     ...parts
       .filter(p => !aboveLevel(Math.min(p.a[1], p.b[1])))
@@ -718,7 +750,7 @@ export function FloorplanView() {
     setFocusId(room?.id ?? null);
   };
 
-  const onModelPick = (anchor: Vec3 | null, clientX: number, clientY: number, node: string | null) => {
+  const onModelPick = (anchor: Vec3 | null, clientX: number, clientY: number, node: string | null, normal: Vec3 | null) => {
     const rect = planRef.current?.getBoundingClientRect();
     setOpeningDraft(null);
     setUnnamed(null);
@@ -730,6 +762,16 @@ export function FloorplanView() {
       return !!p && Math.hypot(((p.x - at.x) / 100) * rect.width, ((p.y - at.y) / 100) * rect.height) < CLOSE_PX;
     };
     setSelectedId(null);
+    // Panneaux solaires : deux coins, sur le toit ou au sol — la pente, celle de la surface du premier.
+    if (solarDraft) {
+      if (solarDraft.field) return;
+      const surface = normal ?? [0, 1, 0];
+      if (!solarDraft.a || !solarDraft.normal) return setSolarDraft({ a: anchor, normal: surface });
+      const field = { id: newId('solar'), entityId: '', a: solarDraft.a, b: anchor, normal: solarDraft.normal };
+      // Deux coins alignés : pas de rectangle, ce clic repart de zéro.
+      if (!solarFrame(field.a, field.b, field.normal)) return setSolarDraft({ a: anchor, normal: surface });
+      return setSolarDraft({ ...solarDraft, field, at });
+    }
     if (tool === 'chip') return setAdding({ ...at, anchor });
     if (tool === 'cable') {
       if (cableDraft?.cable) return;
@@ -927,23 +969,27 @@ export function FloorplanView() {
   // Ce qu'un clic fera, selon l'outil — et, en cours de dessin, ce qui reste à cliquer.
   const hint = !model
     ? 'clickToAdd'
-    : tool === 'chip'
-      ? lampArmed
-        ? 'lampHint'
-        : 'clickToAdd3d'
-      : tool === 'room'
-        ? roomDraft && roomDraft.points.length >= 3
-          ? 'roomHintClose'
-          : 'roomHint'
-        : tool === 'cable'
-          ? cableDraft && cableDraft.points.length >= 2
-            ? 'cableHintNext'
-            : 'cableHint'
-          : draft && !draft.part
-            ? 'partHintNext'
-            : modelOpenings?.openings.some(o => o.inWall)
-              ? 'partHintModel'
-              : 'partHint';
+    : solarDraft
+      ? solarDraft.a
+        ? 'solarHintNext'
+        : 'solarHint'
+      : tool === 'chip'
+        ? lampArmed
+          ? 'lampHint'
+          : 'clickToAdd3d'
+        : tool === 'room'
+          ? roomDraft && roomDraft.points.length >= 3
+            ? 'roomHintClose'
+            : 'roomHint'
+          : tool === 'cable'
+            ? cableDraft && cableDraft.points.length >= 2
+              ? 'cableHintNext'
+              : 'cableHint'
+            : draft && !draft.part
+              ? 'partHintNext'
+              : modelOpenings?.openings.some(o => o.inWall)
+                ? 'partHintModel'
+                : 'partHint';
   const hoveredOpening = hovered ? modelOpenings?.openings.find(o => o.id === hovered) : undefined;
   /** Ce qu'un clic fera : lier l'ouverture survolée, ou ce que dit l'outil. */
   const hintText =
@@ -1060,6 +1106,16 @@ export function FloorplanView() {
         }}
         onRemove={removeWidget}
       />
+      <SolarList
+        fields={solarFields}
+        armed={!!solarDraft}
+        onArm={() => {
+          const arm = !solarDraft;
+          clearDrafts();
+          setSolarDraft(arm ? {} : null);
+        }}
+        onRemove={id => setFloorplan({ solar: solarFields.filter(f => f.id !== id) })}
+      />
       {rooms.length || cables.length ? (
         <>
           <RoomList rooms={rooms} onRemove={id => setFloorplan({ rooms: rooms.filter(r => r.id !== id) })} />
@@ -1118,6 +1174,7 @@ export function FloorplanView() {
                   outline={outline}
                   floors={floors}
                   cables={cablesProp}
+                  solar={solarProp}
                   flowing={animated}
                   focus={focusRoom ?? null}
                   anchors={anchors}
@@ -1237,6 +1294,19 @@ export function FloorplanView() {
                           setCableDraft(null);
                         }}
                         onCancel={() => setCableDraft(null)}
+                      />
+                    )}
+                    {/* Le champ de panneaux posé : on choisit sa production sous son second coin. */}
+                    {solarDraft?.field && solarDraft.at && (
+                      <SolarPopover
+                        field={solarDraft.field}
+                        at={solarDraft.at}
+                        onChange={field => setSolarDraft({ ...solarDraft, field })}
+                        onAdd={() => {
+                          if (solarDraft.field) setFloorplan({ solar: [...solarFields, solarDraft.field] });
+                          setSolarDraft(null);
+                        }}
+                        onCancel={() => setSolarDraft(null)}
                       />
                     )}
                     {/* Le premier coin d'un élément qu'on dessine ; puis ses deux coins, qu'on
@@ -1550,7 +1620,7 @@ export function FloorplanView() {
               id: 'elements',
               icon: Layers,
               label: t('layout.floorplan.tabElements'),
-              badge: lampChips.length + rooms.length + cables.length,
+              badge: lampChips.length + rooms.length + cables.length + solarFields.length,
               content: elementsTab,
             },
           ]}

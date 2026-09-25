@@ -58,6 +58,7 @@ import {
   sunLighting,
   type Cutaway,
   type FloorplanCable,
+  type FloorplanSolar,
   type FloorplanPart,
   type FloorplanRoom,
   type Sides,
@@ -89,6 +90,7 @@ import {
 } from '@/lib/floorplan-openings';
 import { buildCable, type CableObject } from './cables3d';
 import { buildPart, type PartObject } from './parts3d';
+import { buildSolar, type SolarObject } from './solar3d';
 
 /**
  * La maquette 3D d'une page plan : un `.glb`/`.gltf` exporté de Sweet Home 3D,
@@ -154,6 +156,9 @@ export interface OpeningProp {
 /** Câble d'énergie, et ce qui y circule : le sens (0 : rien), la puissance si elle est connue. */
 export type CableProp = FloorplanCable & { direction: -1 | 0 | 1; watts: number | null };
 
+/** Champ de panneaux solaires, et son éclat de l'instant (0 à 1), d'après sa production. */
+export type SolarProp = FloorplanSolar & { glow: number };
+
 /** Point de la maquette → position à l'écran, en % du canevas ; `null` s'il est derrière la caméra. */
 export type Project = (anchor: Vec3) => { x: number; y: number } | null;
 
@@ -201,7 +206,9 @@ interface Floorplan3DProps {
    * Clic — pas un glisser, qui fait tourner — sur la maquette, ou à côté
    * (`null`) ; et l'objet de la maquette touché, par son nom.
    */
-  onPick?: (anchor: Vec3 | null, clientX: number, clientY: number, node: string | null) => void;
+  onPick?: (anchor: Vec3 | null, clientX: number, clientY: number, node: string | null, normal: Vec3 | null) => void;
+  /** Champs de panneaux solaires posés sur la maquette. */
+  solar?: SolarProp[];
   /** Point de la maquette sous le pointeur, quand il bouge — pour dessiner —, et l'objet qu'il survole. */
   onHover?: (anchor: Vec3 | null, node: string | null) => void;
   /** Ouverture de la maquette cernée, par-dessus tout : celle qu'on survole, celle qu'on lie. */
@@ -338,6 +345,12 @@ interface ModelObjects {
   detected: ModelOpenings;
 }
 
+interface SolarEntry {
+  obj: SolarObject;
+  /** Ses coins et sa pente : reconstruit quand ils changent, pas quand la production varie. */
+  key: string;
+}
+
 interface PartEntry {
   obj: PartObject;
   /** Forme de l'élément : reconstruit quand elle change, pas quand il s'ouvre. */
@@ -366,6 +379,9 @@ interface Stage {
   model: ModelObjects | null;
   openings: Map<string, OpeningEntry>;
   cables: Map<string, CableEntry>;
+  solar: Map<string, SolarEntry>;
+  /** Un mètre, en unités de la maquette : les panneaux gardent leur vraie taille. */
+  meter: number;
   /** L'énergie peut circuler en mouvement, et circule. */
   flowAllowed: boolean;
   flowRunning: boolean;
@@ -480,7 +496,7 @@ function aim(s: Stage, clientX: number, clientY: number) {
  * maquette dont il fait partie — un enfant de la maquette, ou d'un pivot
  * d'ouverture qui l'emporte.
  */
-function hitAt(s: Stage, clientX: number, clientY: number): { point: Vec3; node: string | null } | null {
+function hitAt(s: Stage, clientX: number, clientY: number): { point: Vec3; node: string | null; normal: Vec3 | null } | null {
   const root = s.root;
   if (!root) return null;
   aim(s, clientX, clientY);
@@ -492,7 +508,9 @@ function hitAt(s: Stage, clientX: number, clientY: number): { point: Vec3; node:
   while (object.parent && object.parent !== root && !object.parent.userData.fpPivot) object = object.parent;
   // Coordonnées de la maquette elle-même, pas de la scène : elles survivent à
   // un changement de taille ou de centrage au prochain chargement.
-  return { point: root.worldToLocal(hit.point.clone()).toArray() as Vec3, node: object.parent ? object.name : null };
+  // La normale de la surface touchée : la maquette n'est ni tournée ni déformée, c'est aussi la sienne.
+  const normal = hit.face ? (hit.face.normal.clone().transformDirection(hit.object.matrixWorld).toArray() as Vec3) : null;
+  return { point: root.worldToLocal(hit.point.clone()).toArray() as Vec3, node: object.parent ? object.name : null, normal };
 }
 
 function pick(s: Stage, clientX: number, clientY: number): Vec3 | null {
@@ -664,7 +682,7 @@ function placeLamps(s: Stage, lamps: Lamp[]) {
 
 function cutawaySides(s: Stage, on: boolean) {
   if (s.root) setCutawaySides(s.root, on);
-  for (const { obj } of [...s.parts.values(), ...s.cables.values()]) setCutawaySides(obj.object, on);
+  for (const { obj } of [...s.parts.values(), ...s.cables.values(), ...s.solar.values()]) setCutawaySides(obj.object, on);
 }
 
 /** Murs en coupe (cf. `modelPatch`) : activés ou non, et la caméra qui peut descendre avec. */
@@ -1025,6 +1043,45 @@ function placeCables(s: Stage, cables: CableProp[]) {
   runFlows(s);
 }
 
+/** Éclat d'un champ de panneaux en pleine production. */
+const SOLAR_GLOW = 1.4;
+
+/** Champs de panneaux : construits à leurs coins, puis éclairés par leur production. */
+function placeSolar(s: Stage, fields: SolarProp[]) {
+  if (!s.root) return;
+  const seen = new Set<string>();
+  let reshaped = false;
+  for (const { glow, ...field } of fields) {
+    seen.add(field.id);
+    const key = JSON.stringify([field.a, field.b, field.normal]);
+    let entry = s.solar.get(field.id);
+    if (entry && entry.key !== key) {
+      removeGenerated(s, s.solar, field.id);
+      entry = undefined;
+    }
+    if (!entry) {
+      const obj = buildSolar(field, s.root, s.meter);
+      if (!obj) continue;
+      // Sur un toit, coupé avec lui par la coupe des murs.
+      patchModel(obj.object, s.uniforms, s.depth.generated, false);
+      if (s.cutaway) setCutawaySides(obj.object, true);
+      s.scene.add(obj.object);
+      entry = { obj, key };
+      s.solar.set(field.id, entry);
+      reshaped = true;
+    }
+    entry.obj.material.emissiveIntensity = glow * SOLAR_GLOW;
+  }
+  for (const id of s.solar.keys()) {
+    if (seen.has(id)) continue;
+    removeGenerated(s, s.solar, id);
+    reshaped = true;
+  }
+  const host = s.renderer.domElement.parentElement;
+  if (host) host.dataset.floorplanSolar = String(s.solar.size);
+  s.render(reshaped ? 'shadows' : 'draw');
+}
+
 /** Retire un élément généré — porte, volet, câble — de la scène, et le libère. */
 function removeGenerated(s: Stage, entries: Map<string, { obj: { object: Object3D } }>, id: string) {
   const entry = entries.get(id);
@@ -1331,6 +1388,7 @@ export default function Floorplan3D({
   openings,
   onOpenings,
   cables,
+  solar,
   flowing,
   onFrame,
   onPick,
@@ -1359,6 +1417,7 @@ export default function Floorplan3D({
     alerts,
     level,
     cables,
+    solar,
     floors,
     anchors,
     onFrame,
@@ -1379,6 +1438,7 @@ export default function Floorplan3D({
       alerts,
       level,
       cables,
+      solar,
       floors,
       anchors,
       onFrame,
@@ -1546,6 +1606,8 @@ export default function Floorplan3D({
       model: null,
       openings: new Map(),
       cables: new Map(),
+      solar: new Map(),
+      meter: 1,
       flowAllowed: false,
       flowRunning: false,
       outline: null,
@@ -1579,7 +1641,7 @@ export default function Floorplan3D({
       down = null;
       if (!start || e.button !== 0 || Math.hypot(e.clientX - start.x, e.clientY - start.y) > CLICK_TOLERANCE) return;
       const hit = hitAt(s, e.clientX, e.clientY);
-      latest.current.onPick?.(hit?.point ?? null, e.clientX, e.clientY, hit?.node ?? null);
+      latest.current.onPick?.(hit?.point ?? null, e.clientX, e.clientY, hit?.node ?? null, hit?.normal ?? null);
     };
     renderer.domElement.addEventListener('pointerdown', onDown);
     renderer.domElement.addEventListener('pointerup', onUp);
@@ -1639,6 +1701,8 @@ export default function Floorplan3D({
         // l'export soit en centimètres ou en mètres.
         const size = new Box3().setFromObject(root).getSize(new Vector3()).length() || 1;
         root.scale.setScalar(MODEL_SIZE / size);
+        // Centimètres (Sweet Home 3D) ou mètres (Blender) : une maison dépasse deux mètres, pas deux cents.
+        s.meter = size >= 200 ? 100 : 1;
         root.updateMatrixWorld(true);
         const box = new Box3().setFromObject(root);
         const center = box.getCenter(new Vector3());
@@ -1699,6 +1763,8 @@ export default function Floorplan3D({
         placeParts(s, latest.current.parts);
         for (const id of s.cables.keys()) removeGenerated(s, s.cables, id);
         placeCables(s, latest.current.cables ?? []);
+        for (const id of s.solar.keys()) removeGenerated(s, s.solar, id);
+        placeSolar(s, latest.current.solar ?? []);
         placeFloors(s, latest.current.floors);
         placeLamps(s, latest.current.lamps);
         s.home = null;
@@ -1802,6 +1868,11 @@ export default function Floorplan3D({
   useEffect(() => {
     if (stage.current) applyLevel(stage.current, level);
   }, [level]);
+
+  const solarKey = JSON.stringify(solar ?? []);
+  useEffect(() => {
+    if (stage.current) placeSolar(stage.current, latest.current.solar ?? []);
+  }, [solarKey]);
 
   const alertsKey = JSON.stringify(alerts ?? []);
   useEffect(() => {

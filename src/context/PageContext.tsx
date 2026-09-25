@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-import type { FloorplanCable, FloorplanPart, FloorplanRoom } from '@/lib/floorplan';
+import type { FloorplanCable, FloorplanPart, FloorplanRoom, FloorplanSolar } from '@/lib/floorplan';
 import type { FloorplanOpenings } from '@/lib/floorplan-openings';
 
 export type PageType = 'grid' | 'media' | 'settings' | 'floorplan';
@@ -37,6 +37,8 @@ export interface FloorplanConfig {
   cables?: FloorplanCable[];
   /** Portes, fenêtres et baies de la maquette elle-même (export ExportToHASS), mues par leur entité. */
   openings?: FloorplanOpenings;
+  /** Champs de panneaux solaires posés sur la maquette, éclairés par leur production. */
+  solar?: FloorplanSolar[];
 }
 
 export interface Page {

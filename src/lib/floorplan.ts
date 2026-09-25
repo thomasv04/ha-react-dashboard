@@ -699,6 +699,67 @@ export function guessCableKind(entityId: string): CableKind {
   return 'home';
 }
 
+// ── Panneaux solaires ────────────────────────────────────────────────────────
+
+/**
+ * Un champ de panneaux posé sur la maquette : deux coins opposés, et la
+ * normale de la surface où il est posé — le toit, ou le sol —, dans les
+ * coordonnées de la maquette.
+ */
+export interface FloorplanSolar {
+  id: string;
+  /** Sa production : un capteur de puissance. */
+  entityId: string;
+  a: Vec3;
+  b: Vec3;
+  normal: Vec3;
+}
+
+/** Champs de panneaux lisibles d'une config : un champ illisible est écarté, pas fatal. */
+export function normalizeSolar(fields: unknown): FloorplanSolar[] {
+  if (!Array.isArray(fields)) return [];
+  return fields.flatMap(f => {
+    const field = (f && typeof f === 'object' ? f : {}) as Record<string, unknown>;
+    const [a, b, normal] = [normalizeAnchor(field.a), normalizeAnchor(field.b), normalizeAnchor(field.normal)];
+    if (typeof field.id !== 'string' || typeof field.entityId !== 'string' || !a || !b || !normal) return [];
+    return [{ id: field.id, entityId: field.entityId, a, b, normal }];
+  });
+}
+
+/**
+ * Le repère d'un champ de panneaux, dans son plan : `along`, l'horizontale
+ * de la pente, où s'alignent les rangées ; `up`, la pente elle-même, qu'on
+ * remonte. Au sol, les rangées suivent les x de la maquette. `origin` : le
+ * coin d'où partent les deux côtés, longs de `width` et `height`. `null` :
+ * deux coins alignés, pas de rectangle.
+ */
+export function solarFrame(a: Vec3, b: Vec3, normal: Vec3) {
+  const length = Math.hypot(...normal) || 1;
+  // Tourné vers le ciel, toujours : une face de toit vue de dessous reste un toit.
+  const n = normal.map(v => (normal[1] < 0 ? -v : v) / length) as Vec3;
+  const flat = Math.abs(n[1]) > 0.98;
+  const h = flat ? [1, 0, 0] : [-n[2], 0, n[0]];
+  const hLength = Math.hypot(...h);
+  const along = h.map(v => v / hLength) as Vec3;
+  // Dans le plan, perpendiculaire à l'horizontale : vers le haut de la pente.
+  const up: Vec3 = [along[1] * n[2] - along[2] * n[1], along[2] * n[0] - along[0] * n[2], along[0] * n[1] - along[1] * n[0]];
+  const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+  const u = d[0] * along[0] + d[1] * along[1] + d[2] * along[2];
+  const v = d[0] * up[0] + d[1] * up[1] + d[2] * up[2];
+  if (!u || !v) return null;
+  const origin = a.map((p, i) => p + Math.min(0, u) * along[i] + Math.min(0, v) * up[i]) as Vec3;
+  return { origin, along, up, normal: n, width: Math.abs(u), height: Math.abs(v) };
+}
+
+/** Production, en watts, qui illumine un champ tout entier : celle d'une maison bien équipée. */
+const SOLAR_FULL = 3000;
+
+/** Éclat d'un champ de panneaux, de 0 à 1, d'après sa production — éteint la nuit. */
+export function solarGlow(state: string | undefined, attributes: Record<string, unknown> | undefined): number {
+  const { watts } = cableFlow(state, attributes);
+  return watts === null ? 0 : clamp(Math.abs(watts) / SOLAR_FULL, 0, 1);
+}
+
 /** Un capteur du tableau Énergie de HA, pour un câble : sa puissance, et la sorte de sa source. */
 export interface EnergySource {
   entityId: string;

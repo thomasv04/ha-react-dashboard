@@ -6,6 +6,9 @@ import {
   containSize,
   flowDuration,
   energySources,
+  normalizeSolar,
+  solarFrame,
+  solarGlow,
   guessCableKind,
   backSides,
   cutLimit,
@@ -633,5 +636,42 @@ describe('energySources', () => {
   it('proposes nothing from prefs it cannot read', () => {
     expect(energySources(undefined, [], states)).toEqual([]);
     expect(energySources({ energy_sources: 'x' }, [], states)).toEqual([]);
+  });
+});
+
+describe('solar fields', () => {
+  it('lays rows along the x of the model on the ground', () => {
+    const frame = solarFrame([0, 0, 0], [300, 0, -200], [0, 1, 0])!;
+    expect(frame.along).toEqual([1, 0, 0]);
+    expect(frame.up).toEqual([0, 0, 1]);
+    expect(frame.origin).toEqual([0, 0, -200]);
+    expect([frame.width, frame.height]).toEqual([300, 200]);
+  });
+
+  it('lays rows along the level of a roof, and goes up its slope', () => {
+    // Un pan tourné au sud (z croissants), à 45° : les rangées courent le long des x.
+    const s = Math.SQRT1_2;
+    const frame = solarFrame([0, 300, 400], [-400, 300 + 200 * s, 400 - 200 * s], [0, s, s])!;
+    expect(frame.along.map(v => Math.round(v * 1000) / 1000)).toEqual([-1, 0, 0]);
+    expect(frame.up[1]).toBeGreaterThan(0.7);
+    expect(frame.width).toBeCloseTo(400);
+    expect(frame.height).toBeCloseTo(200);
+  });
+
+  it('finds no rectangle between two aligned corners', () => {
+    expect(solarFrame([0, 0, 0], [300, 0, 0], [0, 1, 0])).toBeNull();
+  });
+
+  it('keeps the readable fields of a config', () => {
+    const field = { id: 'pv', entityId: 'sensor.pv', a: [0, 0, 0], b: [1, 0, 1], normal: [0, 1, 0] };
+    expect(normalizeSolar([field, { ...field, a: 'x' }, null])).toEqual([field]);
+    expect(normalizeSolar(undefined)).toEqual([]);
+  });
+
+  it('glows with the production, dark at night', () => {
+    expect(solarGlow('1500', { unit_of_measurement: 'W' })).toBe(0.5);
+    expect(solarGlow('4.2', { unit_of_measurement: 'kW' })).toBe(1);
+    expect(solarGlow('0', { unit_of_measurement: 'W' })).toBe(0);
+    expect(solarGlow('unavailable', { unit_of_measurement: 'W' })).toBe(0);
   });
 });

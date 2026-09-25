@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **42 tâches sur 43** — phases A à H et J, `I1`, `I2`, `I4` et `I5`. `F1` reste à essayer sur un vrai Android.
+**État global** : **43 tâches sur 43** — toutes les phases, de A à J. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -505,7 +505,21 @@ murs, le toit, tournent avec la maison et passent derrière les murs.
   la journée. Vingt images par seconde, sans recalculer les ombres ; figée en
   économie d'énergie.
 
-### [ ] I3 — Panneaux solaires
+### [x] I3 — Panneaux solaires
+
+> **Fait** ([solar3d.ts](../src/components/floorplan/solar3d.ts)) : « Poser des
+> panneaux », dans l'onglet « Éléments », puis deux coins opposés sur la
+> maquette — le toit ou le sol —, puis le capteur de production.
+> Contrairement à une porte, toujours debout, un champ suit la pente de la
+> surface de son premier coin (la normale du point touché) : les rangées
+> courent le long de son horizontale, on remonte la pente ; au sol, le long
+> des x de la maquette (`solarFrame`, testée). Autant de panneaux qu'il en
+> tient, à leur vraie taille — 1 × 1,7 m, l'unité de la maquette déduite de
+> sa taille —, sombres, qui s'illuminent de bleu avec la production :
+> 3 kW, tout l'éclat ; la nuit, éteints. Rejoués avec la journée (`I4`). Sur
+> un toit, coupés avec lui. Liste et suppression dans l'onglet ;
+> `floorplan.solar`. Test E2E : un champ posé sur le sol de la salle à
+> manger, gardé à l'enregistrement.
 
 - **Quoi** : un élément « panneau solaire », dessiné comme une porte (deux
   coins, sur le toit ou au sol) : un champ de cellules généré, qui s'illumine

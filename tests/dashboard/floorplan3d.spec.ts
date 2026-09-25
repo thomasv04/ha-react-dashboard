@@ -519,6 +519,29 @@ test('in edit mode, clicks along a route lay an energy cable, which shows its po
   );
 });
 
+test('in edit mode, two corners lay a field of solar panels, lit by what it produces', async ({ page, request }) => {
+  await openModel(page);
+  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
+  await page.getByRole('tab', { name: 'Éléments' }).click();
+  await page.getByRole('button', { name: 'Poser des panneaux' }).click();
+  await expect(page.getByText(/Cliquez un coin du champ de panneaux/)).toBeVisible();
+  await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
+  const box = (await page.locator('[data-floorplan-3d] canvas').boundingBox())!;
+  const click = ([x, y]: readonly [number, number]) => page.mouse.click(box.x + box.width * x, box.y + box.height * y);
+  // Deux coins opposés sur le sol de la salle à manger : un champ à plat.
+  await click(DINING_FLOOR[0]);
+  await expect(page.getByText(/Cliquez le coin opposé/)).toBeVisible();
+  await click(DINING_FLOOR[2]);
+  const dialog = page.getByRole('dialog', { name: 'Panneaux solaires' });
+  await page.getByPlaceholder('Rechercher...').fill('din_panneaux');
+  await page.getByRole('button', { name: 'sensor.din_panneaux_solaire_puissance', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Ajouter' }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator('[data-floorplan-3d]')).toHaveAttribute('data-floorplan-solar', '1');
+
+  await expectSaved(page, request, 'solar', (f: { entityId: string }) => f.entityId, ['sensor.din_panneaux_solaire_puissance']);
+});
+
 test('in edit mode, a .glb file is uploaded as the model, and its bin deletes it', async ({ page, request }) => {
   await page.goto('/#vierge');
   await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
