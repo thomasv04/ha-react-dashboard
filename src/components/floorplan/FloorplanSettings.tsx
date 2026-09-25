@@ -54,6 +54,7 @@ export function SettingsPanel({
     <div className='absolute left-2 top-2 z-30 w-76 max-w-[calc(100%-1rem)] max-h-[calc(100%-1rem)] flex flex-col gap-2 p-2.5 rounded-2xl gc-overlay'>
       <div
         role='tablist'
+        data-tour='floorplan-settings'
         aria-label={t('layout.floorplan.settings')}
         className='shrink-0 grid grid-cols-4 gap-0.5 p-0.5 rounded-xl bg-white/5 border border-white/10'
       >
@@ -99,6 +100,7 @@ export function SettingsPanel({
       )}
       <div
         role='group'
+        data-tour='floorplan-tools'
         aria-label={t('layout.floorplan.tool')}
         className='shrink-0 flex gap-0.5 p-0.5 rounded-lg bg-white/5 border border-white/10'
       >

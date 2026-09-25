@@ -279,6 +279,20 @@ test('the replay plays the last 24 hours back, the sun with them', async ({ page
   await expect(page.locator('[data-floorplan-item="weather-3d"]')).toHaveCSS('opacity', '1');
 });
 
+test('the Plan tour opens a plan page, then points at its chips and its views', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
+  await page.getByTestId('help-button').click();
+  await page.getByTestId('help-launch-floorplan').click();
+  // Lancée depuis l'accueil : la visite ouvre la maison, hors édition.
+  await expect(page.getByTestId('tour-progress')).toHaveText('1/6', { timeout: 10_000 });
+  await expect(page.getByText('20.4 °C')).toBeVisible({ timeout: 60_000 });
+  await page.getByTestId('tour-next').click();
+  await expect(page.getByTestId('tour-progress')).toHaveText('2/6');
+  await page.getByTestId('tour-next').click();
+  await expect(page.getByTestId('tour-progress')).toHaveText('3/6');
+});
+
 test.describe('on a phone', () => {
   test.use({ viewport: { width: 390, height: 780 } });
 

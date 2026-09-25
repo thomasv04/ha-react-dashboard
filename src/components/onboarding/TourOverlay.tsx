@@ -5,12 +5,15 @@ import { X } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import { useUser } from '@hakit/core';
 import { useEditMode } from '@/context/DashboardLayoutContext';
+import { usePages } from '@/context/PageContext';
 
 const TOUR_DONE_KEY = 'ha-dashboard-tour-done';
 
 /** Ce qu'une étape peut demander à l'application avant de pointer son ancre. */
 interface TourContext {
   setEditMode: (v: boolean) => void;
+  /** Ouvre une page Plan — celle qui a une maquette d'abord —, si l'on n'y est pas. */
+  openPlan: () => void;
 }
 
 interface TourStep {
@@ -30,6 +33,10 @@ interface TourStep {
 
 const enterEdit = (ctx: TourContext) => ctx.setEditMode(true);
 const leaveEdit = (ctx: TourContext) => ctx.setEditMode(false);
+const viewPlan = (ctx: TourContext) => {
+  ctx.openPlan();
+  ctx.setEditMode(false);
+};
 
 export const TOURS: Record<string, TourStep[]> = {
   basics: [
@@ -54,6 +61,15 @@ export const TOURS: Record<string, TourStep[]> = {
   appearance: [
     { anchor: '[data-tour="settings"]', key: 'appearanceOpen', setup: leaveEdit },
     { anchor: '[data-tour="wallpanel"]', key: 'appearanceWallpanel', setup: enterEdit, adminOnly: true },
+  ],
+  // Sur un plan en image, ce qui n'existe qu'en 3D — les vues, les onglets — est sauté.
+  floorplan: [
+    { anchor: '[data-floorplan-plan]', key: 'planModel', setup: viewPlan },
+    { anchor: '[data-tour="floorplan-chip"]', key: 'planChips' },
+    { anchor: '[data-tour="floorplan-buttons"]', key: 'planButtons' },
+    { anchor: '[data-tour="floorplan-settings"]', key: 'planSettings', setup: enterEdit, adminOnly: true },
+    { anchor: '[data-tour="floorplan-tools"]', key: 'planTools', adminOnly: true },
+    { anchor: '[data-tour="save"]', key: 'planSave', adminOnly: true },
   ],
 };
 
@@ -110,6 +126,7 @@ function cardPosition(box: Box): { top: number; left: number } {
 export function TourOverlay({ tourId, onClose }: { tourId: TourId; onClose: () => void }) {
   const { t } = useI18n();
   const { isEditMode, setEditMode } = useEditMode();
+  const { pages, currentPage, setCurrentPage } = usePages();
   const user = useUser();
   const [index, setIndex] = useState(0);
   const [box, setBox] = useState<Box | null>(null);
@@ -143,9 +160,15 @@ export function TourOverlay({ tourId, onClose }: { tourId: TourId; onClose: () =
   // Chaque étape prépare l'interface puis attend que son ancre apparaisse :
   // `setup` déclenche un rendu, l'ancre n'existe pas encore à la frame courante.
   // Après MAX_FRAMES sans ancre, l'étape est sautée plutôt que de bloquer.
+  const openPlan = useCallback(() => {
+    if (currentPage?.type === 'floorplan') return;
+    const plan = pages.find(p => p.type === 'floorplan' && p.floorplan?.model) ?? pages.find(p => p.type === 'floorplan');
+    if (plan) setCurrentPage(plan.id);
+  }, [pages, currentPage, setCurrentPage]);
+
   useLayoutEffect(() => {
     if (!step) return;
-    step.setup?.({ setEditMode });
+    step.setup?.({ setEditMode, openPlan });
 
     let raf = 0;
     let frames = 0;
@@ -173,7 +196,7 @@ export function TourOverlay({ tourId, onClose }: { tourId: TourId; onClose: () =
       window.removeEventListener('resize', sync);
       window.removeEventListener('scroll', sync, true);
     };
-  }, [step, next, setEditMode]);
+  }, [step, next, setEditMode, openPlan]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

@@ -124,6 +124,7 @@ export function FloorplanItem({
   return (
     <div
       data-floorplan-item={widget.id}
+      data-tour={sized ? undefined : 'floorplan-chip'}
       // Le calque des éléments laisse passer les clics vers le plan ; chaque
       // élément les reprend. Le clic s'arrête ici : sinon, sur le plan, il
       // poserait une pastille en plus.

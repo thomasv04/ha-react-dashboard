@@ -1296,7 +1296,7 @@ export function FloorplanView() {
               />
             )}
             {loaded && !isEditMode && (
-              <div className={cn('absolute right-3 bottom-3 z-30 flex gap-2', replay.span && 'left-3')}>
+              <div data-tour='floorplan-buttons' className={cn('absolute right-3 bottom-3 z-30 flex gap-2', replay.span && 'left-3')}>
                 {replay.span && (
                   <ReplayBar
                     start={replay.span.start}

@@ -33,6 +33,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     items: [
       {
         text: "Un nouveau type de page, « Plan » : l'image de votre logement — rendu 3D, export Sweet Home 3D, photo —, avec des pastilles et des cards posées dessus. Une pastille affiche seule l'état de son entité ; un tap allume la lampe ou ouvre la fiche. Chaque lampe allumée projette un halo de sa couleur, et le plan s'assombrit la nuit. Les onglets se réordonnent : le plan peut devenir la page d'accueil de la tablette.",
+        tour: 'floorplan',
       },
       {
         text: "À la place de l'image, une maquette 3D (`.glb`), téléversée depuis le mode édition. Elle tourne au doigt ; le soleil de Home Assistant l'éclaire et y porte ses ombres ; le ciel suit l'heure et la météo — pluie, neige, orage, grêle, givre. Les murs côté caméra s'abaissent, et chaque lampe n'éclaire que sa pièce. Ses réglages tiennent en quatre onglets : Maquette, Ambiance, Ouvertures, Éléments.",

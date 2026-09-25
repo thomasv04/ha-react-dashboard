@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { X, Compass, Hand, LayoutGrid, Layers, Palette, Play, Radio, Sparkles, ChevronRight } from 'lucide-react';
+import { X, Compass, Hand, LayoutGrid, Layers, Map as MapIcon, Palette, Play, Radio, Sparkles, ChevronRight } from 'lucide-react';
 import { DURATION_FAST } from '@/lib/motion-tokens';
 import { useI18n } from '@/i18n';
 import { startTour, type TourId } from './TourOverlay';
@@ -13,6 +13,7 @@ const TOUR_SECTIONS: { id: TourId; Icon: typeof Compass }[] = [
   { id: 'widgets', Icon: LayoutGrid },
   { id: 'panels', Icon: Layers },
   { id: 'appearance', Icon: Palette },
+  { id: 'floorplan', Icon: MapIcon },
 ];
 
 /**

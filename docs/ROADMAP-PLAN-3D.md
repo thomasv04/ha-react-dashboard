@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **37 tâches sur 40** — phases A à H et J, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
+**État global** : **38 tâches sur 41** — phases A à H et J, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -391,6 +391,17 @@ Le reste est indépendant.
 > cernée.
 
 - **Quoi** : d'un coup d'œil en partant, ce qui est resté ouvert.
+
+### [x] G5 — Une visite guidée de la page Plan
+
+> **Fait** : cinquième visite de l'aide, et celle que lance la note de la
+> 2.4.0. Lancée d'ailleurs, elle ouvre une page Plan — une maquette
+> d'abord — puis montre la maison (tourner, pincer, toucher une pièce), une
+> pastille (tap, appui long), les vues (sécurité, thermique, relecture,
+> recentrer) ; en édition, les quatre onglets, les outils, « Sauvegarder ».
+> Sur un plan en image, ce qui n'existe qu'en 3D est sauté.
+
+- **Quoi** : que les gestes et les vues du plan se découvrent.
 
 ---
 

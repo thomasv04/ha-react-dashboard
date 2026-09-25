@@ -90,12 +90,12 @@ test.describe("Modale d'aide", () => {
     await waitForDashboard(page);
   });
 
-  test('le bouton « ? » du mode édition ouvre les quatre visites', async ({ page }) => {
+  test('le bouton « ? » du mode édition ouvre les cinq visites', async ({ page }) => {
     await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
     await page.getByTestId('help-button').click();
 
     await expect(page.getByTestId('help-modal')).toBeVisible();
-    for (const id of ['basics', 'widgets', 'panels', 'appearance']) {
+    for (const id of ['basics', 'widgets', 'panels', 'appearance', 'floorplan']) {
       await expect(page.getByTestId(`help-launch-${id}`)).toBeVisible();
     }
   });
