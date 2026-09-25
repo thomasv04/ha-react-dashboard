@@ -159,11 +159,9 @@ function ModalCard({ modal, onClose }: ModalCardProps) {
                 key={i}
                 onClick={() => {
                   action.onClick();
-                  // Close modal if action explicitly requests it, or
-                  // if modal is not persistent (existing behaviour).
-                  if (action.closeOnClick || !modal.persistent) {
-                    onClose();
-                  }
+                  // Une action ferme toujours sa fenêtre : `dismissible: false`
+                  // la garde ouverte jusque-là, rien d'autre.
+                  onClose();
                 }}
                 className={cn('px-4 py-2 rounded-xl text-sm font-medium transition-all', variantClass[action.variant ?? 'default'])}
               >

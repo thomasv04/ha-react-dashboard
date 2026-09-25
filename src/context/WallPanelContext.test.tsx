@@ -41,4 +41,10 @@ describe('WallPanelContext', () => {
     expect(result.current.config.image_duration).toBe(12);
     expect(result.current.config.image_urls).toEqual(['media-source://album/1']);
   });
+
+  it('se dit configuré avec une page Plan pour seul fond', () => {
+    // Sans photos ni widgets : l'onglet WallPanel restait « + WallPanel », et disparaissait hors édition.
+    const { result } = setup({ ...DEFAULT_WALLPANEL_CONFIG, floorplan_page: 'maison' });
+    expect(result.current.isConfigured).toBe(true);
+  });
 });

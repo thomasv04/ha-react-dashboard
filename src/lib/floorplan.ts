@@ -126,6 +126,13 @@ export type Vec3 = [number, number, number];
  */
 export const MODEL_SIZE = 20;
 
+/**
+ * Unités d'un mètre dans une maquette, d'après sa diagonale : Sweet Home 3D
+ * exporte en centimètres, Blender en mètres — une maison, jardin compris,
+ * dépasse 2 m et pas 200.
+ */
+export const unitsPerMeter = (diagonal: number) => (diagonal >= 200 ? 100 : 1);
+
 /** Ce qu'on dessine sur la maquette, le temps de le dessiner : ambre. */
 export const DRAFT_COLOR = '#fbbf24';
 
@@ -221,14 +228,6 @@ export function openness(state: string | undefined, attributes: Record<string, u
   const position = attributes?.current_position;
   if (typeof position === 'number' && Number.isFinite(position)) return clamp(position / 100, 0, 1);
   return state === 'on' || state === 'open' || state === 'opening' ? 1 : 0;
-}
-
-/** Type d'élément deviné d'après l'entité choisie — l'utilisateur peut le changer. */
-export function guessPartKind(entityId: string, deviceClass: unknown): PartKind {
-  if (deviceClass === 'garage' || deviceClass === 'garage_door') return 'garage';
-  if (deviceClass === 'window') return 'window';
-  if (entityId.startsWith('cover.')) return deviceClass === 'door' || deviceClass === 'gate' ? 'door' : 'shutter';
-  return 'door';
 }
 
 // ── Pièces ───────────────────────────────────────────────────────────────────
@@ -555,9 +554,25 @@ export interface HistoryEntry {
 }
 
 /**
+ * Les attributs de chaque changement : HA ne les répète que quand ils
+ * changent, on garde les derniers vus. Calculés une fois par historique — la
+ * relecture en redemande vingt fois par seconde.
+ */
+const carried = new WeakMap<HistoryEntry[], Record<string, unknown>[]>();
+function carriedAttributes(entries: HistoryEntry[]) {
+  let list = carried.get(entries);
+  if (!list) {
+    let last = entries[0].a ?? {};
+    list = entries.map(entry => (last = entry.a ?? last));
+    carried.set(entries, list);
+  }
+  return list;
+}
+
+/**
  * État d'une entité à l'instant `time` (ms), d'après son historique : le
- * dernier changement survenu d'ici là. HA ne répète les attributs que quand
- * ils changent : on garde les derniers vus. Avant le premier changement
+ * dernier changement survenu d'ici là — cherché par dichotomie, une journée
+ * de capteur de puissance en compte des milliers. Avant le premier changement
  * connu, le premier état — celui du début de la période.
  */
 export function stateAt(
@@ -565,14 +580,14 @@ export function stateAt(
   time: number
 ): { state: string; attributes: Record<string, unknown> } | undefined {
   if (!entries?.length) return undefined;
-  let state = entries[0].s;
-  let attributes = entries[0].a ?? {};
-  for (const entry of entries) {
-    if ((entry.lu ?? entry.lc ?? 0) * 1000 > time) break;
-    state = entry.s;
-    if (entry.a) attributes = entry.a;
+  let lo = 0;
+  let hi = entries.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if ((entries[mid].lu ?? entries[mid].lc ?? 0) * 1000 <= time) lo = mid;
+    else hi = mid - 1;
   }
-  return { state, attributes };
+  return { state: entries[lo].s, attributes: carriedAttributes(entries)[lo] };
 }
 
 const RAD = Math.PI / 180;
@@ -606,6 +621,21 @@ export function sunPosition(date: Date, latitude: number, longitude: number): { 
 const DEFAULT_SUN = { elevation: 40, azimuth: 200 };
 
 /**
+ * Clarté de la maquette la nuit quand la page ne la règle pas : une maison
+ * qu'on lit encore là où aucune lampe n'est reliée, où celles qui sont
+ * allumées se voient toujours.
+ */
+export const DEFAULT_NIGHT_LIGHT = 0.5;
+/** La lune supposée : haute, à l'opposé du soleil — là où serait la pleine lune. */
+const MOON_ELEVATION = 55;
+/** Force du clair de lune à pleine clarté de nuit — le soleil de midi en vaut 3. */
+const MOON_POWER = 1;
+const MOON_COLOR: Rgb = [185, 200, 235];
+/** Couleur du ciel dans la lumière d'ambiance : de jour, et bleuie la nuit. */
+const DAY_SKY: Rgb = [221, 230, 255];
+const NIGHT_SKY: Rgb = [165, 185, 240];
+
+/**
  * Éclairage de la maquette d'après `sun.sun` (degrés : azimut depuis le nord,
  * dans le sens horaire ; élévation au-dessus de l'horizon).
  *
@@ -613,27 +643,40 @@ const DEFAULT_SUN = { elevation: 40, azimuth: 200 };
  * `north` degrés — l'orientation de la maquette, que rien ne donne : c'est un
  * réglage, pas une déduction. La nuit, le soleil s'éteint et l'ambiance baisse
  * progressivement autour du crépuscule : les lampes prennent le relais.
+ *
+ * Toutes les pièces n'ont pas de lampe reliée : la nuit, un clair de lune et
+ * une ambiance bleutée gardent la maison lisible, d'autant plus que `night`
+ * (de 0 à 1) est grand. À 0, seules les lampes éclairent.
  */
-export function sunLighting(sun: { elevation?: number; azimuth?: number } | undefined, north = 0, clouds = 0) {
+export function sunLighting(sun: { elevation?: number; azimuth?: number } | undefined, north = 0, clouds = 0, night = DEFAULT_NIGHT_LIGHT) {
   const elevation = sun?.elevation ?? DEFAULT_SUN.elevation;
   const azimuth = sun?.azimuth ?? DEFAULT_SUN.azimuth;
-  const e = (elevation * Math.PI) / 180;
-  const a = ((azimuth + north) * Math.PI) / 180;
+  const clarity = Number.isFinite(night) ? clamp(night, 0, 1) : DEFAULT_NIGHT_LIGHT;
+  // Sous l'horizon, la lumière directe vient de la lune. Elle se lève à mesure
+  // que le soleil se couche : le relais se fait à −1°, où tous deux sont éteints.
+  const moon = elevation < -1;
+  const e = (moon ? MOON_ELEVATION : elevation) * RAD;
+  const a = ((moon ? azimuth + 180 : azimuth) + north) * RAD;
   const [from, to, t] = between(SUN_COLORS, elevation);
+  // Crépuscule civil : de −6° à +10°, l'ambiance passe de la nuit au jour.
+  const day = clamp((elevation + 6) / 16, 0, 1);
+  const floor = 0.15 + 0.45 * clarity;
   return {
     dir: [Math.sin(a) * Math.cos(e), Math.sin(e), -Math.cos(a) * Math.cos(e)] as Vec3,
     // Pleine force dès 8° : l'éclairement d'une surface suit déjà l'angle du
     // soleil, et l'atmosphère ne l'affaiblit vraiment qu'au ras de l'horizon —
-    // un soleil rasant dore les murs. Sous les nuages, il se voile…
-    sun: 3 * clamp((elevation + 1) / 9, 0, 1) * (1 - 0.75 * clouds),
-    // Crépuscule civil : de −6° à +10°, l'ambiance passe de la nuit au jour —
-    // un peu plus diffuse par temps couvert.
-    ambient: (0.15 + 0.85 * clamp((elevation + 6) / 16, 0, 1)) * (1 + 0.2 * clouds),
+    // un soleil rasant dore les murs. La lune, à pleine force dès −8°.
+    // Sous les nuages, l'un comme l'autre se voile…
+    sun: (moon ? MOON_POWER * clarity * clamp((-1 - elevation) / 7, 0, 1) : 3 * clamp((elevation + 1) / 9, 0, 1)) * (1 - 0.75 * clouds),
+    // Un peu plus diffuse par temps couvert.
+    ambient: (1 - (1 - floor) * (1 - day)) * (1 + 0.2 * clouds),
+    sky: mix(NIGHT_SKY, DAY_SKY, day).map(Math.round) as Rgb,
     // …perd sa couleur…
-    color: mix(mix(from.color, to.color, t), [235, 238, 245], 0.8 * clouds).map(Math.round) as Rgb,
-    // …et ses ombres s'adoucissent et pâlissent.
+    color: mix(moon ? MOON_COLOR : mix(from.color, to.color, t), [235, 238, 245], 0.8 * clouds).map(Math.round) as Rgb,
+    // …et ses ombres s'adoucissent et pâlissent. La lune n'en porte pas : les
+    // murs assombriraient les pièces qu'elle doit rendre lisibles.
     softness: 1 + 7 * clouds,
-    shadow: 1 - 0.55 * clouds,
+    shadow: moon ? 0 : 1 - 0.55 * clouds,
   };
 }
 
@@ -754,10 +797,14 @@ export function solarFrame(a: Vec3, b: Vec3, normal: Vec3) {
 /** Production, en watts, qui illumine un champ tout entier : celle d'une maison bien équipée. */
 const SOLAR_FULL = 3000;
 
-/** Éclat d'un champ de panneaux, de 0 à 1, d'après sa production — éteint la nuit. */
+/**
+ * Éclat d'un champ de panneaux, de 0 à 1, d'après sa production — éteint la
+ * nuit. Par paliers de 5 % : une production qui varie de quelques watts ne
+ * redessine pas la maison.
+ */
 export function solarGlow(state: string | undefined, attributes: Record<string, unknown> | undefined): number {
   const { watts } = cableFlow(state, attributes);
-  return watts === null ? 0 : clamp(Math.abs(watts) / SOLAR_FULL, 0, 1);
+  return watts === null ? 0 : Math.round(clamp(Math.abs(watts) / SOLAR_FULL, 0, 1) * 20) / 20;
 }
 
 /** Un capteur du tableau Énergie de HA, pour un câble : sa puissance, et la sorte de sa source. */
@@ -775,7 +822,8 @@ function statSensors(value: unknown): string[] {
   return Object.entries(value).flatMap(([key, v]) => (key.startsWith('stat_') && typeof v === 'string' ? [v] : statSensors(v)));
 }
 
-const isPowerSensor = (attributes: Record<string, unknown> | undefined) =>
+/** Un capteur de puissance : des watts ou des kilowatts. */
+export const isPowerSensor = (attributes: Record<string, unknown> | undefined) =>
   attributes?.unit_of_measurement === 'W' || attributes?.unit_of_measurement === 'kW' || attributes?.device_class === 'power';
 
 /**
@@ -830,11 +878,10 @@ export function cableFlow(
   invert = false
 ): { direction: -1 | 0 | 1; watts: number | null } {
   const sign = invert ? -1 : 1;
-  const unit = attributes?.unit_of_measurement;
-  if (unit === 'W' || unit === 'kW' || attributes?.device_class === 'power') {
+  if (isPowerSensor(attributes)) {
     const value = parseFloat(state ?? '');
     if (!Number.isFinite(value)) return { direction: 0, watts: null };
-    const watts = value * (unit === 'kW' ? 1000 : 1) * sign;
+    const watts = value * (attributes?.unit_of_measurement === 'kW' ? 1000 : 1) * sign;
     return { direction: Math.abs(watts) <= FLOW_THRESHOLD ? 0 : watts > 0 ? 1 : -1, watts };
   }
   // Libellé ou code numérique (1 en charge, 2 en décharge) : la même lecture que la card.

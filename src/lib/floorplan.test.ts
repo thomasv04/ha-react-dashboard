@@ -13,7 +13,6 @@ import {
   backSides,
   cutLimit,
   isCutAway,
-  guessPartKind,
   isNightDimmed,
   isPresence,
   lightGlow,
@@ -147,13 +146,36 @@ describe('sunLighting', () => {
   });
 
   it('switches the sun off at night, and dims the ambient light through dusk', () => {
-    const night = sunLighting({ azimuth: 300, elevation: -12 });
+    const night = sunLighting({ azimuth: 300, elevation: -12 }, 0, 0, 0);
     expect(night.sun).toBe(0);
     expect(night.ambient).toBeCloseTo(0.15);
     expect(sunLighting({ azimuth: 180, elevation: 30 }).ambient).toBe(1);
-    const dusk = sunLighting({ azimuth: 270, elevation: 2 }).ambient;
+    const dusk = sunLighting({ azimuth: 270, elevation: 2 }, 0, 0, 0).ambient;
     expect(dusk).toBeGreaterThan(0.15);
     expect(dusk).toBeLessThan(1);
+  });
+
+  it('keeps the house readable at night with a shadowless moon, high and opposite the sun', () => {
+    const dark = sunLighting({ azimuth: 300, elevation: -12 }, 0, 0, 0);
+    const night = sunLighting({ azimuth: 300, elevation: -12 });
+    expect(night.sun).toBeGreaterThan(0);
+    expect(night.shadow).toBe(0);
+    expect(night.ambient).toBeGreaterThan(dark.ambient);
+    expect(sunLighting({ azimuth: 300, elevation: -12 }, 0, 0, 1).ambient).toBeGreaterThan(night.ambient);
+    const [x, y, z] = night.dir;
+    expect(y).toBeCloseTo(Math.sin((55 * Math.PI) / 180));
+    expect(Math.atan2(x, -z) * (180 / Math.PI)).toBeCloseTo(120); // 300° + 180°
+    // Du soleil à la lune, le relais se fait éteint : rien ne saute.
+    expect(sunLighting({ azimuth: 280, elevation: -1 }).sun).toBe(0);
+    expect(sunLighting({ azimuth: 280, elevation: -1.01 }).sun).toBeCloseTo(0);
+    // Le jour, la clarté de nuit ne change rien.
+    expect(sunLighting({ azimuth: 180, elevation: 30 }, 0, 0, 1)).toEqual(sunLighting({ azimuth: 180, elevation: 30 }, 0, 0, 0));
+  });
+
+  it('falls back to the default night light when the setting is unreadable', () => {
+    const night = { azimuth: 300, elevation: -12 };
+    expect(sunLighting(night, 0, 0, NaN)).toEqual(sunLighting(night));
+    expect(sunLighting(night, 0, 0, 5)).toEqual(sunLighting(night, 0, 0, 1));
   });
 
   it('assumes an afternoon sun when sun.sun is missing', () => {
@@ -224,18 +246,6 @@ describe('openness', () => {
     expect(openness('opening', undefined)).toBe(1);
     expect(openness('closed', {})).toBe(0);
     expect(openness(undefined, undefined)).toBe(0);
-  });
-});
-
-describe('guessPartKind', () => {
-  it('guesses from the device class, then the domain', () => {
-    expect(guessPartKind('cover.volet_salon', 'shutter')).toBe('shutter');
-    expect(guessPartKind('cover.volet_salon', undefined)).toBe('shutter');
-    expect(guessPartKind('cover.portail', 'gate')).toBe('door');
-    expect(guessPartKind('cover.garage', 'garage')).toBe('garage');
-    expect(guessPartKind('binary_sensor.garage', 'garage_door')).toBe('garage');
-    expect(guessPartKind('binary_sensor.fenetre', 'window')).toBe('window');
-    expect(guessPartKind('binary_sensor.porte', 'door')).toBe('door');
   });
 });
 
@@ -322,6 +332,12 @@ describe('stateAt', () => {
     expect(stateAt(history, 2_500_000)).toEqual({ state: 'on', attributes: { brightness: 120 } });
     expect(stateAt(history, 3_500_000)).toEqual({ state: 'on', attributes: { brightness: 120 } });
     expect(stateAt(history, 4_000_000)).toEqual({ state: 'off', attributes: {} });
+  });
+
+  it('finds the change of the moment in a long history', () => {
+    const day: HistoryEntry[] = Array.from({ length: 17_280 }, (_, i) => ({ s: String(i), lu: i * 5 }));
+    expect(stateAt(day, 43_202_000)?.state).toBe('8640');
+    expect(stateAt(day, 86_400_000)?.state).toBe('17279');
   });
 
   it('keeps the first known state before any change, and nothing without history', () => {
@@ -673,5 +689,7 @@ describe('solar fields', () => {
     expect(solarGlow('4.2', { unit_of_measurement: 'kW' })).toBe(1);
     expect(solarGlow('0', { unit_of_measurement: 'W' })).toBe(0);
     expect(solarGlow('unavailable', { unit_of_measurement: 'W' })).toBe(0);
+    // Par paliers : 1 520 W brillent comme 1 500.
+    expect(solarGlow('1520', { unit_of_measurement: 'W' })).toBe(0.5);
   });
 });

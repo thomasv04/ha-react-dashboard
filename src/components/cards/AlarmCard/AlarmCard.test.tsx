@@ -69,7 +69,7 @@ vi.mock('@/hooks/useSafeEntity', () => ({
 }));
 
 import { useSafeEntity } from '@/hooks/useSafeEntity';
-import { AlarmCard } from './AlarmCard';
+import { AlarmCard, AlarmModeModal } from './AlarmCard';
 
 test('renders null when no alarm entity', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -110,4 +110,12 @@ test('shows state label and numpad, handles code input and disarm', () => {
 
   expect(mockCallService).toHaveBeenCalled();
   expect(mockCallService).toHaveBeenCalledWith(expect.objectContaining({ service: 'alarm_disarm', serviceData: { code: '12' } }));
+});
+
+test('the mode window of an alarm offers only the modes the alarm supports', () => {
+  // ARM_HOME | ARM_NIGHT : ni absent, ni vacances. Dernier test du fichier : le bouchon peut rester.
+  vi.mocked(useSafeEntity).mockReturnValue({ state: 'disarmed', attributes: { supported_features: 5 } } as never);
+  render(<AlarmModeModal entityId='alarm_control_panel.maison' open onClose={() => {}} />);
+  expect(screen.getByRole('button', { name: 'widgets.alarm.modeNight' })).toBeDefined();
+  expect(screen.queryByText('widgets.alarm.modeAway')).toBeNull();
 });

@@ -336,19 +336,20 @@ test('as the background of the screensaver, the house turns alone, and the page 
   };
   expect((await request.put(`${API}/api/config`, { data: config })).ok()).toBeTruthy();
   try {
-    // La veille, dès le chargement, sur l'accueil : elle ouvre la maison.
+    // La veille, dès le chargement, sur l'accueil : elle montre la maison, sans y naviguer.
     await page.goto('/?hrd_screensaver=true');
     const overlay = page.getByRole('button', { name: "Fermer l'écran de veille" });
     await expect(overlay).toBeVisible({ timeout: 60_000 });
-    await expect(page).toHaveURL(/#maison$/);
     await expect(page.locator('[data-floorplan-3d] canvas')).toBeVisible();
+    await expect(page).not.toHaveURL(/#maison/);
     // Seule : ni pastilles, ni boutons.
-    await expect(page.locator('[data-floorplan-item="temp"]')).toHaveCSS('opacity', '0', { timeout: 60_000 });
+    await expect(page.locator('[data-floorplan-item="temp"]')).toHaveCount(0);
     await expect(page.locator('[data-tour="floorplan-buttons"]')).toHaveCount(0);
 
+    // En partant, l'accueil, où l'on était.
     await overlay.click();
     await expect(overlay).toBeHidden();
-    await expect(page).not.toHaveURL(/#maison/);
+    await expect(page.locator('[data-floorplan-3d]')).toHaveCount(0);
   } finally {
     await request.put(`${API}/api/config`, { data: before });
   }
@@ -632,6 +633,21 @@ test('in edit mode, the Openings tab lists the doors of the model, and links one
     .toEqual(['Porte_Chambre_1 binary_sensor.porte_cellier', 'Porte_Cuisine_1 binary_sensor.porte_entree']);
 });
 
+test('a window linked to its shutter stays put: the shutter is set in front of it', async ({ page }) => {
+  await openOpenings(page);
+  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
+  await page.getByRole('tab', { name: 'Ouvertures' }).click();
+  await page.getByRole('button', { name: /^Fenetre_Salon/ }).click();
+  const dialog = page.getByRole('dialog', { name: 'Fenetre_Salon' });
+  await page.getByPlaceholder('Rechercher...').fill('volet_salon');
+  await page.getByRole('button', { name: 'cover.volet_salon', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Lier' }).click();
+  await expect(dialog).toHaveCount(0);
+  // La maquette n'a pas de tablier devant cette fenêtre : on en pose un, et elle ne s'enroule pas.
+  await expect(openings(page)).toHaveAttribute('data-floorplan-parts', 'front-Fenetre_Salon_1');
+  await expect(openings(page)).not.toHaveAttribute('data-floorplan-openings', /Fenetre_Salon/);
+});
+
 test('in edit mode, the Openings tab proposes the entity named like an opening, linked in one click', async ({ page, request }) => {
   await openOpenings(page);
   await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
@@ -645,11 +661,18 @@ test('in edit mode, the Openings tab proposes the entity named like an opening, 
   await expect.poll(() => savedLinks(request)).toContain('Volet_Chambre_1 cover.volet_chambre');
 });
 
-test('the security view circles in red what is left open, and says so', async ({ page }) => {
+test('the shield asks for the mode of the alarm, then circles in red what is left open', async ({ page }) => {
   await openOpenings(page);
-  const security = page.getByRole('button', { name: 'Portes et fenêtres' });
+  const security = page.getByRole('button', { name: 'Alarme, portes et fenêtres' });
   await security.click();
-  // La porte de la chambre, liée au cellier, ouvert ; un volet ouvert ne compte pas.
+  // L'alarme d'abord : ses modes, et ce qui est resté ouvert — la porte de la chambre, liée au cellier, ouvert.
+  const alarm = page.getByRole('dialog');
+  await expect(alarm.getByText('1 ouverte : Porte du cellier')).toBeVisible();
+  await alarm.getByRole('button', { name: 'Nuit' }).first().click();
+  // Choisi, le mode s'affiche aussi sur le bouton qui le confirme.
+  await alarm.getByRole('button', { name: 'Nuit' }).last().click();
+  await expect(alarm).toHaveCount(0);
+  // Un volet ouvert ne compte pas.
   await expect(page.getByRole('status')).toHaveText('1 ouverte : Porte du cellier');
   await expect(openings(page)).toHaveAttribute('data-floorplan-alerts', '1');
 

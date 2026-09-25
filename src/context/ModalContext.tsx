@@ -6,10 +6,6 @@ export interface ModalAction {
   label: string;
   onClick: () => void;
   variant?: 'default' | 'primary' | 'danger';
-  /** If true, this action will close the modal after running `onClick`.
-   * Use to allow closing non-dismissible / persistent modals from a button.
-   */
-  closeOnClick?: boolean;
 }
 
 export type ModalContent = string | ReactNode | { type: 'markdown' | 'html' | 'plain'; value: string };
@@ -18,13 +14,11 @@ export interface Modal {
   id: string;
   title?: string;
   content?: ModalContent;
-  /** If true, modal stays until manually dismissed */
-  persistent?: boolean;
   /** Modal width preset */
   width?: 'sm' | 'md' | 'lg' | 'full';
   /** Sound to play when modal opens */
   sound?: SoundPreset | string | false;
-  /** Can be dismissed via ESC or backdrop click */
+  /** Can be dismissed via ESC or backdrop click — otherwise it stays until one of its actions. */
   dismissible?: boolean;
   actions?: ModalAction[];
 }

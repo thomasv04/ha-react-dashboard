@@ -37,7 +37,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Vous pouvez déclencher cette modal depuis Home Assistant en émettant l\'événement `ha_dashboard_modal` avec `event_data` suivant :\n\n```yaml\nevent: ha_dashboard_modal\nevent_data:\n  title: "Mise à jour disponible"\n  content: "Une nouvelle version de Home Assistant est disponible. Voulez-vous l\'installer maintenant?"\n  width: "md"\n  dismissible: false\n  persistent: true\n  actions:\n    - label: "Installer"\n      variant: "primary"\n      service: "hassio.addon_update"\n    - label: "Plus tard"\n      variant: "default"\n```',
+          'Vous pouvez déclencher cette modal depuis Home Assistant en émettant l\'événement `ha_dashboard_modal` avec `event_data` suivant :\n\n```yaml\nevent: ha_dashboard_modal\nevent_data:\n  title: "Mise à jour disponible"\n  content: "Une nouvelle version de Home Assistant est disponible. Voulez-vous l\'installer maintenant?"\n  width: "md"\n  dismissible: false\n  actions:\n    - label: "Installer"\n      variant: "primary"\n      service: "hassio.addon_update"\n    - label: "Plus tard"\n      variant: "default"\n```',
         story: "Exemple d'événement Home Assistant (utilisez l'onglet Docs pour voir le YAML complet).",
       },
     },
@@ -119,14 +119,11 @@ export const NonDismissible: Story = {
           title: 'Action requise',
           content: 'Vous devez confirmer cette action avant de continuer.',
           dismissible: false,
-          persistent: true,
           actions: [
             {
               label: 'Confirmer',
               variant: 'primary',
               onClick: () => console.info('Confirmed'),
-              // Close even if modal is marked persistent/non-dismissible
-              closeOnClick: true,
             },
           ],
         })
@@ -150,7 +147,6 @@ export const FromHAEvent: Story = {
           content: "Une nouvelle version de Home Assistant est disponible. Voulez-vous l'installer maintenant?",
           width: 'md',
           dismissible: false,
-          persistent: true,
           actions: [
             {
               label: 'Installer',

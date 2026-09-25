@@ -20,9 +20,10 @@ import {
 import { useHass } from '@hakit/core';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { useEntities } from '@/hooks/useEntities';
-import { guessPartKind, openness } from '@/lib/floorplan';
+import { openness } from '@/lib/floorplan';
 import {
   familyKind,
+  guessPartKind,
   linkCandidates,
   openingLabel,
   OPENING_KINDS,

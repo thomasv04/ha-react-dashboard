@@ -35,6 +35,7 @@ import {
   Vector2,
   Vector3,
   WebGLRenderer,
+  type ColorRepresentation,
   type Material,
   type MeshStandardMaterial,
   type Object3D,
@@ -56,6 +57,7 @@ import {
   partFrame,
   shortestTurn,
   sunLighting,
+  unitsPerMeter,
   type Cutaway,
   type FloorplanCable,
   type FloorplanSolar,
@@ -82,7 +84,7 @@ import {
   openingMotion,
   levelOf,
   structureOf,
-  wallTop,
+  wallBounds,
   type ModelNode,
   type ModelOpenings,
   type Motion,
@@ -185,6 +187,8 @@ interface Floorplan3DProps {
   north: number;
   /** Couverture nuageuse, de 0 à 1 : soleil voilé, ombres adoucies. */
   cloudiness: number;
+  /** Clarté de la maison la nuit, de 0 (les lampes seules) à 1 — absente : `DEFAULT_NIGHT_LIGHT`. */
+  nightLight?: number;
   shadows: boolean;
   /** Murs en coupe, façon Les Sims : seuls les murs du fond restent debout. */
   cutaway: boolean;
@@ -197,9 +201,7 @@ interface Floorplan3DProps {
   lamps: Lamp[];
   parts: PartProp[];
   /** Portes, fenêtres et baies de la maquette, liées à une entité. */
-  openings?: OpeningProp[];
-  /** Maquette chargée : ses objets et leurs familles — `null` si elle n'en a pas de séparés (maquette « fondue »). */
-  onOpenings?: (openings: ModelOpenings | null) => void;
+  openings: OpeningProp[];
   /** Après chaque image où la caméra ou la scène a bougé : de quoi recaler les pastilles. */
   onFrame: (project: Project) => void;
   /**
@@ -208,13 +210,13 @@ interface Floorplan3DProps {
    */
   onPick?: (anchor: Vec3 | null, clientX: number, clientY: number, node: string | null, normal: Vec3 | null) => void;
   /** Champs de panneaux solaires posés sur la maquette. */
-  solar?: SolarProp[];
+  solar: SolarProp[];
   /** Point de la maquette sous le pointeur, quand il bouge — pour dessiner —, et l'objet qu'il survole. */
   onHover?: (anchor: Vec3 | null, node: string | null) => void;
   /** Ouverture de la maquette cernée, par-dessus tout : celle qu'on survole, celle qu'on lie. */
   highlight?: string | null;
   /** Vue sécurité : les ouvertures restées ouvertes, chacune par deux coins opposés, cernées de rouge. */
-  alerts?: [Vec3, Vec3][];
+  alerts: [Vec3, Vec3][];
   /** Maison à étages : le niveau montré, ceux du dessus cachés — `null` : toute la maison. */
   level?: string | null;
   /** La maison tournée à la main. */
@@ -222,9 +224,9 @@ interface Floorplan3DProps {
   /** Rectangle en cours de dessin : deux coins opposés, dans les coordonnées de la maquette. */
   outline?: [Vec3, Vec3] | null;
   /** Tracés au sol : pièces, pièce en cours de dessin. */
-  floors?: FloorOverlay[];
+  floors: FloorOverlay[];
   /** Câbles d'énergie posés sur la maquette. */
-  cables?: CableProp[];
+  cables: CableProp[];
   /** L'énergie peut circuler en mouvement : ni mouvement réduit, ni animations coupées. */
   flowing?: boolean;
   /** Pièce vers laquelle la caméra vole ; `null` : retour à la vue d'où elle est partie. */
@@ -233,7 +235,8 @@ interface Floorplan3DProps {
   anchors?: Record<string, Vec3>;
   /** Scène posée, vérification faite : les points d'accroche que la maquette cache. */
   onOcclusion?: (hidden: Set<string>) => void;
-  onLoad: () => void;
+  /** Maquette chargée : ses objets et leurs familles — `null` si elle n'en a pas de séparés (maquette « fondue »). */
+  onLoad: (openings: ModelOpenings | null) => void;
   onError: (kind: 'webgl' | 'model') => void;
 }
 
@@ -362,6 +365,8 @@ interface PartEntry {
 
 interface Stage {
   renderer: WebGLRenderer;
+  /** Le conteneur du canevas : ce que la scène a d'utile à dire, les tests le lisent sur lui. */
+  host: HTMLElement;
   scene: Scene;
   camera: PerspectiveCamera;
   controls: OrbitControls;
@@ -423,8 +428,6 @@ interface Stage {
    */
   beat: number;
   onBeat: boolean;
-  /** La maison tourne au repos : l'image bouge, sa finesse ne se voit pas — une densité de 1. */
-  spinning: boolean;
 }
 
 // Les lancers de rayon — occlusion, clics, survol — passent par une BVH, que
@@ -441,6 +444,17 @@ function isShown(object: Object3D) {
   for (let o: Object3D | null = object; o; o = o.parent) if (!o.visible) return false;
   return true;
 }
+
+/**
+ * Le rayon à travers la maquette, sans traverser les étages cachés : le lancer
+ * de rayon ignore `visible`. Ce que porte un pivot d'ouverture peut l'être
+ * encore — `isShown` le dit.
+ */
+const intersect = (root: Object3D) =>
+  raycaster.intersectObjects(
+    root.children.filter(o => o.visible),
+    true
+  );
 
 /** Point de la scène retiré par la coupe des murs — invisible, donc ni cliquable ni support de pastille. */
 function isCut(s: Stage, point: Vector3) {
@@ -479,7 +493,7 @@ function occluded(s: Stage, root: Object3D, local: Vec3) {
   const toward = anchorPoint(s, root, local).sub(s.camera.position);
   raycaster.set(s.camera.position, toward.clone().normalize());
   raycaster.far = toward.length() - OCCLUSION_MARGIN;
-  const hidden = raycaster.intersectObject(root, true).some(h => isShown(h.object) && !isCut(s, h.point) && !inPartCut(s, h.point));
+  const hidden = intersect(root).some(h => isShown(h.object) && !isCut(s, h.point) && !inPartCut(s, h.point));
   raycaster.far = Infinity;
   return hidden;
 }
@@ -502,7 +516,7 @@ function hitAt(s: Stage, clientX: number, clientY: number): { point: Vec3; node:
   aim(s, clientX, clientY);
   // Le lancer de rayon ignore la coupe, faite dans les shaders : sans ce tri,
   // un clic tomberait sur un mur qu'on ne voit plus.
-  const hit = raycaster.intersectObject(root, true).find(h => isShown(h.object) && !isCut(s, h.point));
+  const hit = intersect(root).find(h => isShown(h.object) && !isCut(s, h.point));
   if (!hit) return null;
   let object: Object3D = hit.object;
   while (object.parent && object.parent !== root && !object.parent.userData.fpPivot) object = object.parent;
@@ -511,10 +525,6 @@ function hitAt(s: Stage, clientX: number, clientY: number): { point: Vec3; node:
   // La normale de la surface touchée : la maquette n'est ni tournée ni déformée, c'est aussi la sienne.
   const normal = hit.face ? (hit.face.normal.clone().transformDirection(hit.object.matrixWorld).toArray() as Vec3) : null;
   return { point: root.worldToLocal(hit.point.clone()).toArray() as Vec3, node: object.parent ? object.name : null, normal };
-}
-
-function pick(s: Stage, clientX: number, clientY: number): Vec3 | null {
-  return hitAt(s, clientX, clientY)?.point ?? null;
 }
 
 function floorAt(s: Stage, clientX: number, clientY: number, y: number): [number, number] | null {
@@ -761,8 +771,7 @@ function applyLevel(s: Stage, level: string | null | undefined) {
   const height = (bounds ? root.localToWorld(new Vector3(0, bounds.top, 0)).y : cut.ceiling) - floor;
   cut.low = floor + height * CUTAWAY_HEIGHT;
   s.uniforms.fpFade.value = Math.max(height * CUTAWAY_FADE, 1e-3);
-  const host = s.renderer.domElement.parentElement;
-  if (host) host.dataset.floorplanLevel = index < 0 ? '' : levels[index].id;
+  s.host.dataset.floorplanLevel = index < 0 ? '' : levels[index].id;
   // La caméra suit l'étage : même angle, même distance, à sa hauteur.
   const shift = bounds ? floor + height / 2 - (cut.ground + cut.ceiling) / 2 : 0;
   if (shift !== s.levelShift) {
@@ -775,54 +784,79 @@ function applyLevel(s: Stage, level: string | null | undefined) {
   s.render();
 }
 
-/** Éléments animés : construits à leur forme, puis mus vers leur ouverture. */
-function placeParts(s: Stage, parts: PartProp[]) {
-  if (!s.root) return;
-  const seen = new Set<string>();
+/**
+ * Des éléments générés — portes, câbles, panneaux — accordés à leur liste :
+ * construits à leur forme (`key`), reconstruits quand elle change, retirés
+ * quand ils n'y sont plus. Coupés par les murets comme la maquette, mais pas
+ * par les découpes : un élément occupe justement celle de l'original qu'il
+ * remplace. Vrai si la scène a changé de forme.
+ */
+function syncGenerated<T extends { id: string }, E extends { obj: { object: Object3D }; key: string }>(
+  s: Stage,
+  entries: Map<string, E>,
+  items: T[],
+  keyOf: (item: T) => string,
+  build: (item: T, key: string) => E | null
+) {
   let reshaped = false;
-  for (const { open, ...part } of parts) {
-    seen.add(part.id);
-    const key = JSON.stringify(part);
-    let entry = s.parts.get(part.id);
-    if (entry && entry.key !== key) {
-      removeGenerated(s, s.parts, part.id);
-      entry = undefined;
-    }
-    if (!entry) {
-      const obj = buildPart(part, s.root);
-      if (!obj) continue;
-      // Coupé par les murets comme la maquette, mais pas par les découpes :
-      // il occupe justement celle de l'original.
-      patchModel(obj.object, s.uniforms, s.depth.generated, false);
-      if (s.cutaway) setCutawaySides(obj.object, true);
-      obj.apply(open);
-      s.scene.add(obj.object);
-      entry = { obj, key, value: open, target: open };
-      s.parts.set(part.id, entry);
+  const ids = new Set(items.map(item => item.id));
+  for (const id of entries.keys()) {
+    if (ids.has(id)) continue;
+    removeGenerated(s, entries, id);
+    reshaped = true;
+  }
+  for (const item of items) {
+    const key = keyOf(item);
+    if (entries.get(item.id)?.key === key) continue;
+    if (entries.has(item.id)) {
+      removeGenerated(s, entries, item.id);
       reshaped = true;
     }
-    if (entry.target !== open) {
-      entry.target = open;
-      const moving = entry;
-      // Hors de la maquette, il ne cache aucune pastille : seules ses ombres bougent.
-      s.animate(
-        swing(
-          s,
-          moving,
-          v => moving.obj.apply(v),
-          () => !!moving.obj.object.parent
-        )
-      );
-    }
-  }
-  for (const id of s.parts.keys()) {
-    if (seen.has(id)) continue;
-    removeGenerated(s, s.parts, id);
+    const entry = build(item, key);
+    if (!entry) continue;
+    patchModel(entry.obj.object, s.uniforms, s.depth.generated, false);
+    if (s.cutaway) setCutawaySides(entry.obj.object, true);
+    s.scene.add(entry.obj.object);
+    entries.set(item.id, entry);
     reshaped = true;
+  }
+  return reshaped;
+}
+
+/** Éléments animés : construits à leur forme, puis mus vers leur ouverture. */
+function placeParts(s: Stage, parts: PartProp[]) {
+  const root = s.root;
+  if (!root) return;
+  const reshaped = syncGenerated(
+    s,
+    s.parts,
+    parts,
+    part => JSON.stringify({ ...part, open: undefined }),
+    ({ open, ...part }, key) => {
+      const obj = buildPart(part, root);
+      obj?.apply(open);
+      return obj && { obj, key, value: open, target: open };
+    }
+  );
+  for (const { id, open } of parts) {
+    const entry = s.parts.get(id);
+    if (!entry || entry.target === open) continue;
+    entry.target = open;
+    // Hors de la maquette, il ne cache aucune pastille : seules ses ombres bougent.
+    s.animate(
+      swing(
+        s,
+        entry,
+        v => entry.obj.apply(v),
+        () => !!entry.obj.object.parent
+      )
+    );
   }
   // Un élément posé ou retiré découpe autrement la maquette ; un élément qui
   // s'ouvre, `swing` le dessine.
   if (!reshaped) return;
+  // Lisibles sur la page, comme les ouvertures : un test y trouve le volet posé devant une fenêtre.
+  s.host.dataset.floorplanParts = [...s.parts.keys()].join(' ');
   setCuts(
     s.uniforms,
     [...s.parts.values()].flatMap(entry => (entry.obj.cut ? [entry.obj.cut] : []))
@@ -901,7 +935,6 @@ function mountOpening(s: Stage, root: Object3D, model: ModelObjects, { open, ...
     { cm: model.detected.cm, center: model.detected.center, flip: opening.flip, hinge: opening.hinge }
   );
   if (!parts.length) return null;
-  root.updateMatrixWorld(true);
   const entry: OpeningEntry = {
     key: JSON.stringify(opening),
     value: open,
@@ -947,8 +980,7 @@ function unmountOpening(s: Stage, id: string) {
  * comme les pastilles et les câbles : un test y vérifie qu'une porte a bougé.
  */
 function reportOpenings(s: Stage) {
-  const host = s.renderer.domElement.parentElement;
-  if (host) host.dataset.floorplanOpenings = [...s.openings].map(([id, e]) => `${id}=${Math.round(e.value * 100) / 100}`).join(' ');
+  s.host.dataset.floorplanOpenings = [...s.openings].map(([id, e]) => `${id}=${Math.round(e.value * 100) / 100}`).join(' ');
 }
 
 /** Ouvertures de la maquette : montées à leur type, puis mues vers leur ouverture. */
@@ -1005,41 +1037,34 @@ const FLOW_GLOW = 3;
 
 /** Câbles d'énergie : construits à leur forme, allumés selon ce qui y circule. */
 function placeCables(s: Stage, cables: CableProp[]) {
-  if (!s.root) return;
-  const seen = new Set<string>();
-  let reshaped = false;
-  for (const { direction, watts, ...cable } of cables) {
-    seen.add(cable.id);
-    const key = JSON.stringify([cable.points, cable.kind]);
-    let entry = s.cables.get(cable.id);
-    if (entry && entry.key !== key) {
-      removeGenerated(s, s.cables, cable.id);
-      entry = undefined;
+  const root = s.root;
+  if (!root) return;
+  const reshaped = syncGenerated(
+    s,
+    s.cables,
+    cables,
+    cable => JSON.stringify([cable.points, cable.kind]),
+    (cable, key) => {
+      const obj = buildCable(cable, root);
+      return obj && { obj, key, direction: cable.direction, watts: cable.watts };
     }
-    if (!entry) {
-      const obj = buildCable(cable, s.root);
-      if (!obj) continue;
-      // Coupé par les murets comme la maquette, s'il monte le long d'un mur.
-      patchModel(obj.object, s.uniforms, s.depth.generated, false);
-      if (s.cutaway) setCutawaySides(obj.object, true);
-      s.scene.add(obj.object);
-      entry = { obj, key, direction, watts };
-      s.cables.set(cable.id, entry);
-      reshaped = true;
-    }
+  );
+  let lit = false;
+  for (const { id, direction, watts } of cables) {
+    const entry = s.cables.get(id);
+    if (!entry) continue;
     entry.direction = direction;
     entry.watts = watts;
     // Au repos, la gaine seule ; quand le courant passe, la lumière court dedans.
-    entry.obj.material.emissiveIntensity = direction ? FLOW_GLOW : 0;
+    const glow = direction ? FLOW_GLOW : 0;
+    if (entry.obj.material.emissiveIntensity === glow) continue;
+    entry.obj.material.emissiveIntensity = glow;
+    lit = true;
   }
-  for (const id of s.cables.keys()) {
-    if (seen.has(id)) continue;
-    removeGenerated(s, s.cables, id);
-    reshaped = true;
-  }
-  // Un câble posé ou retiré change les ombres ; un courant qui varie, non. Hors
-  // de la maquette, il ne cache aucune pastille.
-  s.render(reshaped ? 'shadows' : 'draw');
+  // Un câble posé ou retiré change les ombres ; un courant qui passe ou cesse,
+  // l'image seule ; un courant qui varie, rien : `runFlows` en règle la vitesse.
+  // Hors de la maquette, un câble ne cache aucune pastille.
+  if (reshaped || lit) s.render(reshaped ? 'shadows' : 'draw');
   runFlows(s);
 }
 
@@ -1048,38 +1073,27 @@ const SOLAR_GLOW = 1.4;
 
 /** Champs de panneaux : construits à leurs coins, puis éclairés par leur production. */
 function placeSolar(s: Stage, fields: SolarProp[]) {
-  if (!s.root) return;
-  const seen = new Set<string>();
-  let reshaped = false;
-  for (const { glow, ...field } of fields) {
-    seen.add(field.id);
-    const key = JSON.stringify([field.a, field.b, field.normal]);
-    let entry = s.solar.get(field.id);
-    if (entry && entry.key !== key) {
-      removeGenerated(s, s.solar, field.id);
-      entry = undefined;
+  const root = s.root;
+  if (!root) return;
+  const reshaped = syncGenerated(
+    s,
+    s.solar,
+    fields,
+    field => JSON.stringify([field.a, field.b, field.normal]),
+    (field, key) => {
+      const obj = buildSolar(field, root, s.meter);
+      return obj && { obj, key };
     }
-    if (!entry) {
-      const obj = buildSolar(field, s.root, s.meter);
-      if (!obj) continue;
-      // Sur un toit, coupé avec lui par la coupe des murs.
-      patchModel(obj.object, s.uniforms, s.depth.generated, false);
-      if (s.cutaway) setCutawaySides(obj.object, true);
-      s.scene.add(obj.object);
-      entry = { obj, key };
-      s.solar.set(field.id, entry);
-      reshaped = true;
-    }
-    entry.obj.material.emissiveIntensity = glow * SOLAR_GLOW;
+  );
+  let lit = false;
+  for (const { id, glow } of fields) {
+    const material = s.solar.get(id)?.obj.material;
+    if (!material || material.emissiveIntensity === glow * SOLAR_GLOW) continue;
+    material.emissiveIntensity = glow * SOLAR_GLOW;
+    lit = true;
   }
-  for (const id of s.solar.keys()) {
-    if (seen.has(id)) continue;
-    removeGenerated(s, s.solar, id);
-    reshaped = true;
-  }
-  const host = s.renderer.domElement.parentElement;
-  if (host) host.dataset.floorplanSolar = String(s.solar.size);
-  s.render(reshaped ? 'shadows' : 'draw');
+  s.host.dataset.floorplanSolar = String(s.solar.size);
+  if (reshaped || lit) s.render(reshaped ? 'shadows' : 'draw');
 }
 
 /** Retire un élément généré — porte, volet, câble — de la scène, et le libère. */
@@ -1153,7 +1167,7 @@ function colorAt(s: Stage, local: Vec3): string | null {
   if (!s.root) return null;
   const target = s.root.localToWorld(new Vector3(...local));
   raycaster.set(s.camera.position, target.clone().sub(s.camera.position).normalize());
-  const hit = raycaster.intersectObject(s.root, true).find(h => isShown(h.object) && !isCut(s, h.point));
+  const hit = intersect(s.root).find(h => isShown(h.object) && !isCut(s, h.point));
   if (!hit) return null;
   const material = materialsOf(hit.object)[hit.face?.materialIndex ?? 0] as MeshStandardMaterial | undefined;
   const color = material?.color?.clone() ?? new Color(1, 1, 1);
@@ -1223,16 +1237,30 @@ function placeHighlight(s: Stage, id: string | null | undefined) {
     return;
   }
   if (!s.highlight) {
-    s.highlight = new LineSegments(
-      new EdgesGeometry(new BoxGeometry(1, 1, 1)),
-      new LineBasicMaterial({ color: DRAFT_COLOR, depthTest: false, transparent: true })
-    );
-    s.highlight.renderOrder = 10;
+    s.highlight = boxOutline(DRAFT_COLOR);
     s.scene.add(s.highlight);
   }
   fitOutline(s.root, s.highlight, opening.min, opening.max);
   s.highlight.visible = true;
   s.render('draw');
+}
+
+/** Un contour de boîte — un cube unité, que `fitOutline` pose —, dessiné par-dessus tout. */
+function boxOutline(color: ColorRepresentation) {
+  const line = new LineSegments(
+    new EdgesGeometry(new BoxGeometry(1, 1, 1)),
+    new LineBasicMaterial({ color, depthTest: false, transparent: true })
+  );
+  line.renderOrder = 10;
+  return line;
+}
+
+/** Vide un groupe d'éléments générés, et les libère. */
+function clearGroup(group: Group) {
+  for (const child of [...group.children]) {
+    group.remove(child);
+    disposeTree(child);
+  }
 }
 
 /** Pose un contour de boîte (un cube unité) sur deux coins opposés de la maquette. */
@@ -1252,25 +1280,16 @@ const ALERT_COLOR = 0xf87171;
  * changement : elles sont peu nombreuses. Leur nombre se lit sur la page.
  */
 function placeAlerts(s: Stage, boxes: [Vec3, Vec3][]) {
-  for (const line of [...s.alerts.children] as LineSegments[]) {
-    line.geometry.dispose();
-    (line.material as Material).dispose();
-    s.alerts.remove(line);
-  }
+  clearGroup(s.alerts);
   const root = s.root;
   if (root) {
     for (const [a, b] of boxes) {
-      const line = new LineSegments(
-        new EdgesGeometry(new BoxGeometry(1, 1, 1)),
-        new LineBasicMaterial({ color: ALERT_COLOR, depthTest: false, transparent: true })
-      );
-      line.renderOrder = 10;
+      const line = boxOutline(ALERT_COLOR);
       fitOutline(root, line, a, b);
       s.alerts.add(line);
     }
   }
-  const host = s.renderer.domElement.parentElement;
-  if (host) host.dataset.floorplanAlerts = String(s.alerts.children.length);
+  s.host.dataset.floorplanAlerts = String(s.alerts.children.length);
   s.render('draw');
 }
 
@@ -1278,14 +1297,11 @@ function placeAlerts(s: Stage, boxes: [Vec3, Vec3][]) {
 const FLOOR_LIFT = 0.03;
 
 /** Remplis et cernés d'après leur contour ; tout refait à chaque changement — ils sont peu nombreux. */
-function placeFloors(s: Stage, floors: FloorOverlay[] | undefined) {
-  for (const child of [...s.floors.children]) {
-    s.floors.remove(child);
-    disposeTree(child);
-  }
+function placeFloors(s: Stage, floors: FloorOverlay[]) {
+  clearGroup(s.floors);
   const root = s.root;
   if (root) {
-    for (const floor of floors ?? []) {
+    for (const floor of floors) {
       if (!floor.points.length) continue;
       const world = floor.points.map(([x, z]) => root.localToWorld(new Vector3(x, floor.y, z)));
       const y = world[0].y + FLOOR_LIFT;
@@ -1370,86 +1386,41 @@ function disposeTree(root: Object3D) {
   });
 }
 
-export default function Floorplan3D({
-  ref,
-  model,
-  camera,
-  sunElevation,
-  sunAzimuth,
-  north,
-  cloudiness,
-  shadows,
-  cutaway,
-  idleRotate,
-  lampGlow,
-  compass,
-  lamps,
-  parts,
-  openings,
-  onOpenings,
-  cables,
-  solar,
-  flowing,
-  onFrame,
-  onPick,
-  onHover,
-  onOrbit,
-  outline,
-  highlight,
-  alerts,
-  level,
-  floors,
-  focus,
-  anchors,
-  onOcclusion,
-  onLoad,
-  onError,
-}: Floorplan3DProps) {
+export default function Floorplan3D(props: Floorplan3DProps) {
+  const {
+    ref,
+    model,
+    sunElevation,
+    sunAzimuth,
+    north,
+    cloudiness,
+    nightLight,
+    shadows,
+    cutaway,
+    idleRotate,
+    lampGlow,
+    compass,
+    lamps,
+    parts,
+    openings,
+    cables,
+    solar,
+    flowing,
+    outline,
+    highlight,
+    alerts,
+    level,
+    floors,
+    focus,
+    anchors,
+  } = props;
   const hostRef = useRef<HTMLDivElement>(null);
   const stage = useRef<Stage | null>(null);
 
   // Dernières valeurs, lues par des écouteurs posés une fois pour toutes.
-  const latest = useRef({
-    camera,
-    lamps,
-    parts,
-    openings,
-    alerts,
-    level,
-    cables,
-    solar,
-    floors,
-    anchors,
-    onFrame,
-    onPick,
-    onHover,
-    onOrbit,
-    onOcclusion,
-    onOpenings,
-    onLoad,
-    onError,
-  });
+  const latest = useRef(props);
   useLayoutEffect(() => {
-    latest.current = {
-      camera,
-      lamps,
-      parts,
-      openings,
-      alerts,
-      level,
-      cables,
-      solar,
-      floors,
-      anchors,
-      onFrame,
-      onPick,
-      onHover,
-      onOrbit,
-      onOcclusion,
-      onOpenings,
-      onLoad,
-      onError,
-    };
+    latest.current = props;
   });
 
   // ── Scène, caméra, rendu ───────────────────────────────────────────────────
@@ -1477,6 +1448,9 @@ export default function Floorplan3D({
     host.appendChild(renderer.domElement);
 
     const scene = new Scene();
+    // La scène ne bouge jamais : elle n'oblige pas, à chaque image, tout ce
+    // qu'elle porte à recalculer sa place. Ce qui bouge s'en charge seul.
+    scene.matrixAutoUpdate = false;
     const cam = new PerspectiveCamera(FOV, 1, 0.1, MODEL_SIZE * 20);
     const controls = new OrbitControls(cam, renderer.domElement);
     // Ni si près ou si loin qu'on s'y perde. L'inclinaison dépend de la coupe
@@ -1546,7 +1520,8 @@ export default function Floorplan3D({
       for (const step of animators) if (!step(now)) animators.delete(step);
       if (dirty) {
         dirty = false;
-        const ratio = Math.min(window.devicePixelRatio, s.spinning ? 1 : PIXEL_RATIO);
+        // La maison tourne au repos : l'image bouge, sa finesse ne se voit pas — une densité de 1.
+        const ratio = Math.min(window.devicePixelRatio, s.controls.autoRotate ? 1 : PIXEL_RATIO);
         if (renderer.getPixelRatio() !== ratio) renderer.setPixelRatio(ratio);
         if (moved) updateCutaway(s);
         if (shadowsDirty) {
@@ -1592,6 +1567,7 @@ export default function Floorplan3D({
     const uniforms = createModelUniforms();
     const s: Stage = {
       renderer,
+      host,
       scene,
       camera: cam,
       controls,
@@ -1625,7 +1601,6 @@ export default function Floorplan3D({
       animate,
       beat: 0,
       onBeat: false,
-      spinning: false,
     };
     stage.current = s;
     scene.add(s.floors, s.alerts);
@@ -1701,8 +1676,7 @@ export default function Floorplan3D({
         // l'export soit en centimètres ou en mètres.
         const size = new Box3().setFromObject(root).getSize(new Vector3()).length() || 1;
         root.scale.setScalar(MODEL_SIZE / size);
-        // Centimètres (Sweet Home 3D) ou mètres (Blender) : une maison dépasse deux mètres, pas deux cents.
-        s.meter = size >= 200 ? 100 : 1;
+        s.meter = unitsPerMeter(size);
         root.updateMatrixWorld(true);
         const box = new Box3().setFromObject(root);
         const center = box.getCenter(new Vector3());
@@ -1711,6 +1685,9 @@ export default function Floorplan3D({
         root.traverse(o => {
           o.castShadow = true;
           o.receiveShadow = true;
+          // Posée, la maquette ne bouge plus : seuls les pivots des ouvertures,
+          // ajoutés ensuite, bougent — et entraînent ce qu'ils portent.
+          o.matrixAutoUpdate = false;
           const { geometry } = o as Mesh;
           if ((o as Mesh).isMesh && !geometry.boundsTree) geometry.computeBoundsTree();
         });
@@ -1726,24 +1703,25 @@ export default function Floorplan3D({
         s.model = readModel(root);
         const furniture = furnitureOf(s.model);
         patchModel(root, s.uniforms, s.depth.model, true, furniture);
-        const host = s.renderer.domElement.parentElement;
-        if (host) host.dataset.floorplanGhosts = furniture.map(o => o.name).join(' ');
+        s.host.dataset.floorplanGhosts = furniture.map(o => o.name).join(' ');
         // Emprise, une fois la maquette posée au sol et centrée. Les murs
         // partent debout, et s'abaissent en glissant : la maison s'ouvre.
         const { min, max } = new Box3().setFromObject(root);
         const top = max.y + 0.01;
-        // La coupe se règle sur la hauteur des murs, quand la maquette les
-        // distingue : un objet plus haut qu'eux ne la relève pas.
-        const walls = s.model ? wallTop(s.model.nodes.values()) : null;
+        // La coupe se règle sur les murs, quand la maquette les distingue : un
+        // objet plus haut qu'eux ne la relève pas, et ce qui est au-delà — le
+        // jardin, la terrasse — n'éloigne pas de la façade la bande du fond.
+        const walls = s.model && wallBounds(s.model.nodes.values());
+        const [w0, w1] = walls ? [root.localToWorld(new Vector3(...walls.min)), root.localToWorld(new Vector3(...walls.max))] : [min, max];
         s.cut = {
           height: top,
-          box: [min.x, min.z, max.x, max.z],
+          box: [w0.x, w0.z, w1.x, w1.z],
           sides: [top, top, top, top],
           margin: BACK_WALL_MARGIN,
           top,
           low: top,
           ground: min.y,
-          ceiling: walls === null ? max.y : root.localToWorld(new Vector3(0, walls, 0)).y,
+          ceiling: w1.y,
           back: [true, true, true, true],
           sliding: false,
         };
@@ -1755,16 +1733,13 @@ export default function Floorplan3D({
         s.openings.clear();
         reportOpenings(s);
         placeHighlight(s, null);
-        placeAlerts(s, latest.current.alerts ?? []);
-        latest.current.onOpenings?.(s.model?.detected ?? null);
-        placeOpenings(s, latest.current.openings ?? []);
+        placeAlerts(s, latest.current.alerts);
+        placeOpenings(s, latest.current.openings);
         // Placés d'après la maquette : tous reconstruits sur la nouvelle.
-        for (const id of s.parts.keys()) removeGenerated(s, s.parts, id);
+        for (const entries of [s.parts, s.cables, s.solar]) for (const id of entries.keys()) removeGenerated(s, entries, id);
         placeParts(s, latest.current.parts);
-        for (const id of s.cables.keys()) removeGenerated(s, s.cables, id);
-        placeCables(s, latest.current.cables ?? []);
-        for (const id of s.solar.keys()) removeGenerated(s, s.solar, id);
-        placeSolar(s, latest.current.solar ?? []);
+        placeCables(s, latest.current.cables);
+        placeSolar(s, latest.current.solar);
         placeFloors(s, latest.current.floors);
         placeLamps(s, latest.current.lamps);
         s.home = null;
@@ -1775,7 +1750,7 @@ export default function Floorplan3D({
         // `applyView` ne redessine que si la caméra a bougé : une autre
         // maquette vue du même point n'en provoquerait aucun.
         s.render();
-        latest.current.onLoad();
+        latest.current.onLoad(s.model?.detected ?? null);
       },
       undefined,
       () => {
@@ -1791,7 +1766,8 @@ export default function Floorplan3D({
   useEffect(() => {
     const s = stage.current;
     if (!s) return;
-    const light = sunLighting({ elevation: sunElevation, azimuth: sunAzimuth }, north, cloudiness);
+    const light = sunLighting({ elevation: sunElevation, azimuth: sunAzimuth }, north, cloudiness, nightLight);
+    // Le soleil, ou la lune une fois la nuit tombée.
     s.sun.position.set(...light.dir).multiplyScalar(MODEL_SIZE * 2);
     s.sun.intensity = light.sun;
     s.sun.color.setRGB(light.color[0] / 255, light.color[1] / 255, light.color[2] / 255, SRGBColorSpace);
@@ -1800,7 +1776,8 @@ export default function Floorplan3D({
     // Les pièces, qu'on voit par-dessus les murets, ne reçoivent guère que
     // cette lumière-là : plus généreuse que le soleil ne le voudrait.
     s.hemi.intensity = light.ambient * AMBIENT_BOOST;
-    const cast = shadows && light.sun > 0;
+    s.hemi.color.setRGB(light.sky[0] / 255, light.sky[1] / 255, light.sky[2] / 255, SRGBColorSpace);
+    const cast = shadows && light.sun > 0 && light.shadow > 0;
     if (s.renderer.shadowMap.enabled !== cast) {
       s.renderer.shadowMap.enabled = cast;
       // Les matériaux déjà compilés ne verraient pas le changement.
@@ -1808,7 +1785,7 @@ export default function Floorplan3D({
     }
     s.sun.castShadow = cast;
     s.render('shadows');
-  }, [sunElevation, sunAzimuth, north, cloudiness, shadows]);
+  }, [sunElevation, sunAzimuth, north, cloudiness, nightLight, shadows]);
 
   // ── Lampes ─────────────────────────────────────────────────────────────────
   // Clé sérialisée : le tableau est neuf à chaque rendu du parent, et chaque
@@ -1827,12 +1804,12 @@ export default function Floorplan3D({
   }, [lampsKey, lampGlow]);
 
   // ── Câbles d'énergie ───────────────────────────────────────────────────────
-  const cablesKey = JSON.stringify(cables ?? []);
+  const cablesKey = JSON.stringify(cables);
   useEffect(() => {
     const s = stage.current;
     if (!s) return;
     s.flowAllowed = !!flowing;
-    placeCables(s, latest.current.cables ?? []);
+    placeCables(s, latest.current.cables);
   }, [cablesKey, flowing]);
 
   // ── Portes, fenêtres, volets ───────────────────────────────────────────────
@@ -1843,10 +1820,10 @@ export default function Floorplan3D({
   }, [partsKey]);
 
   // ── Portes, fenêtres et baies de la maquette ──────────────────────────────
-  const openingsKey = JSON.stringify(openings ?? []);
+  const openingsKey = JSON.stringify(openings);
   useEffect(() => {
     const s = stage.current;
-    if (s) placeOpenings(s, latest.current.openings ?? []);
+    if (s) placeOpenings(s, latest.current.openings);
   }, [openingsKey]);
 
   // Points d'accroche changés sans que la caméra bouge : ce que la maquette
@@ -1856,7 +1833,7 @@ export default function Floorplan3D({
     stage.current?.render('view');
   }, [anchorsKey]);
 
-  const floorsKey = JSON.stringify(floors ?? []);
+  const floorsKey = JSON.stringify(floors);
   useEffect(() => {
     if (stage.current) placeFloors(stage.current, latest.current.floors);
   }, [floorsKey]);
@@ -1869,14 +1846,14 @@ export default function Floorplan3D({
     if (stage.current) applyLevel(stage.current, level);
   }, [level]);
 
-  const solarKey = JSON.stringify(solar ?? []);
+  const solarKey = JSON.stringify(solar);
   useEffect(() => {
-    if (stage.current) placeSolar(stage.current, latest.current.solar ?? []);
+    if (stage.current) placeSolar(stage.current, latest.current.solar);
   }, [solarKey]);
 
-  const alertsKey = JSON.stringify(alerts ?? []);
+  const alertsKey = JSON.stringify(alerts);
   useEffect(() => {
-    if (stage.current) placeAlerts(stage.current, latest.current.alerts ?? []);
+    if (stage.current) placeAlerts(stage.current, latest.current.alerts);
   }, [alertsKey]);
 
   const outlineKey = JSON.stringify(outline ?? null);
@@ -1953,23 +1930,19 @@ export default function Floorplan3D({
   useEffect(() => {
     const s = stage.current;
     if (!s || !idleRotate) return;
-    let spinning = false;
     let timer = 0;
-    const turn = (on: boolean) => {
-      spinning = s.spinning = s.controls.autoRotate = on;
-    };
     const rest = () => {
-      if (!spinning) return;
-      turn(false);
+      if (!s.controls.autoRotate) return;
+      s.controls.autoRotate = false;
       // L'image arrêtée retrouve sa finesse.
       s.render('view');
     };
     const spin = () => {
-      turn(true);
+      s.controls.autoRotate = true;
       s.animate(() => {
         // Un cran par battement : un tour en deux minutes, sur tout écran.
-        if (spinning && s.onBeat) s.controls.update();
-        return spinning;
+        if (s.controls.autoRotate && s.onBeat) s.controls.update();
+        return s.controls.autoRotate;
       });
       timer = window.setTimeout(rest, SPIN_MS);
     };
@@ -1984,14 +1957,14 @@ export default function Floorplan3D({
     return () => {
       for (const event of events) window.removeEventListener(event, wake);
       window.clearTimeout(timer);
-      turn(false);
+      rest();
     };
   }, [idleRotate]);
 
   useImperativeHandle(
     ref,
     () => ({
-      pick: (clientX, clientY) => (stage.current ? pick(stage.current, clientX, clientY) : null),
+      pick: (clientX, clientY) => (stage.current && hitAt(stage.current, clientX, clientY)?.point) ?? null,
       floorAt: (clientX, clientY, y) => (stage.current ? floorAt(stage.current, clientX, clientY, y) : null),
       // La vue d'accueil, sans le décalage de l'étage montré : elle vaut pour toute la maison.
       view: () => {

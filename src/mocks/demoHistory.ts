@@ -1,4 +1,4 @@
-import type { HistoryEntry } from '@/lib/floorplan';
+import { guessCableKind, isPowerSensor, type HistoryEntry } from '@/lib/floorplan';
 import { MOCK_ENTITIES } from './hassEntities';
 
 /**
@@ -30,8 +30,9 @@ const STEP_MS = 5 * 60_000;
 function kindOf(entityId: string): string | null {
   const domain = entityId.split('.')[0];
   if (domain === 'light' || domain === 'cover') return domain;
-  const { unit_of_measurement: unit, device_class: deviceClass } = MOCK_ENTITIES[entityId]?.attributes ?? {};
-  if (unit === 'W' || unit === 'kW' || deviceClass === 'power') return 'power';
+  const attributes = MOCK_ENTITIES[entityId]?.attributes;
+  if (isPowerSensor(attributes)) return 'power';
+  const deviceClass = attributes?.device_class;
   if (deviceClass === 'window') return 'window';
   return deviceClass === 'door' || deviceClass === 'garage_door' ? 'door' : null;
 }
@@ -42,16 +43,12 @@ const solar = (hour: number) => Math.round(1800 * Math.max(0, Math.sin((Math.PI 
 const home = (hour: number) =>
   Math.round(150 + 40 * Math.sin(hour * 3) + (hour >= 6.75 && hour < 8 ? 900 : 0) + (hour >= 18.5 && hour < 23 ? 650 : 0));
 
-/**
- * Puissance d'un capteur à cette heure : réseau (ce que les panneaux ne
- * couvrent pas), maison, panneaux — dans cet ordre : chez Zendure, la batterie
- * s'appelle « solarflow ».
- */
+/** Puissance d'un capteur à cette heure, selon ce que son nom dit de lui — comme pour un câble. */
 function powerAt(entityId: string, hour: number) {
-  if (/grid|reseau/i.test(entityId)) return Math.max(0, home(hour) - solar(hour));
-  if (/home|maison/i.test(entityId)) return home(hour);
-  if (/solai|solar|pv/i.test(entityId)) return solar(hour);
-  return home(hour);
+  const kind = guessCableKind(entityId);
+  // Le réseau comble ce que les panneaux ne couvrent pas.
+  if (kind === 'grid') return Math.max(0, home(hour) - solar(hour));
+  return kind === 'solar' ? solar(hour) : home(hour);
 }
 
 /** L'historique de ces entités entre `start` et `end` (ms), au format de `history/history_during_period`. */

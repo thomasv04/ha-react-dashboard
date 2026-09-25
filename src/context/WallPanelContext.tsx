@@ -4,6 +4,7 @@ import { DEFAULT_WALLPANEL_CONFIG } from '@/types/wallpanel';
 import type { DashboardLayout } from '@/context/DashboardLayoutContext';
 import type { WidgetConfigs } from '@/types/widget-configs';
 import { DEFAULT_LAYOUT } from '@/context/DashboardLayoutContext';
+import { usePages } from '@/context/PageContext';
 
 interface WallPanelContextValue {
   config: WallPanelConfig;
@@ -85,7 +86,7 @@ export function WallPanelProvider({ children, initialConfig, initialLayout, init
   const urlForced = new URLSearchParams(window.location.search).get(SCREENSAVER_PARAM) === 'true';
   const enabled = config.enabled || urlForced;
 
-  const isConfigured = config.image_urls.length > 0 || wallPanelLayout.widgets.lg.length > 0;
+  const isConfigured = config.image_urls.length > 0 || wallPanelLayout.widgets.lg.length > 0 || !!config.floorplan_page;
 
   const activate = useCallback(() => setIsActive(true), []);
   const deactivate = useCallback(() => {
@@ -137,4 +138,11 @@ export function useWallPanel() {
   const ctx = useContext(WallPanelContext);
   if (!ctx) throw new Error('useWallPanel must be used within WallPanelProvider');
   return ctx;
+}
+
+/** La page Plan que l'écran de veille montre à la place des photos — `undefined` : aucune. */
+export function useScreensaverPlan() {
+  const { config } = useWallPanel();
+  const { pages } = usePages();
+  return pages.find(p => p.id === config.floorplan_page && p.type === 'floorplan')?.id;
 }

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useMotionValue } from 'framer-motion';
 import { DURATION_HERO, EASE_OUT } from '@/lib/motion-tokens';
 import { PencilLine } from 'lucide-react';
-import { useWallPanel } from '@/context/WallPanelContext';
+import { useScreensaverPlan, useWallPanel } from '@/context/WallPanelContext';
 import { gesturesOf } from '@/types/wallpanel';
 import { BackgroundSlideshow, type SlideshowHandle } from './BackgroundSlideshow';
 import { WallPanelEditShell, WallPanelReadonlyShell } from './WallPanelEditShell';
@@ -67,8 +67,7 @@ export function WallPanelOverlay() {
   const hasWidgets = wallPanelLayout.widgets.lg.length > 0;
   // Fond sur une maquette : la page Plan, que la veille a ouverte dessous, se
   // voit au travers — ni voile noir, ni photos.
-  const { pages } = usePages();
-  const planBackdrop = !!config.floorplan_page && pages.some(p => p.id === config.floorplan_page && p.type === 'floorplan');
+  const planBackdrop = !!useScreensaverPlan();
 
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const [photoCount, setPhotoCount] = useState(0);

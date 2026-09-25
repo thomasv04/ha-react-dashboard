@@ -4,7 +4,9 @@ import path from 'node:path';
 import {
   detectOpenings,
   familyKind,
+  frontShutter,
   furnitureNodes,
+  guessPartKind,
   guessOpeningKind,
   levelOf,
   linkCandidates,
@@ -15,10 +17,11 @@ import {
   openingLabel,
   openingMotion,
   parseNodeName,
+  shutsInFront,
   structureOf,
   suggestLinks,
   typedOpenings,
-  wallTop,
+  wallBounds,
   type LinkCandidate,
   type ModelNode,
   type Motion,
@@ -234,16 +237,18 @@ describe('modelLevels', () => {
   });
 });
 
-describe('wallTop', () => {
-  it('finds the top of the walls, whatever rises above them', () => {
+describe('wallBounds', () => {
+  it('finds the extent of the walls, whatever rises above them or lies beyond', () => {
     const nodes = [
       box('wall_0_1', [0, 0, 0], [500, 250, 10]),
       box('wall_1_1', [0, 0, 0], [10, 280, 400]),
       // Un conduit sans nom, qui traverse le plafond.
       box('3_6', [100, 152, 100], [120, 344, 120]),
+      // Des panneaux au fond du jardin, à cinq mètres de la façade.
+      box('model_1_9', [200, 0, -540], [300, 120, -500]),
     ];
-    expect(wallTop(nodes)).toBe(280);
-    expect(wallTop([box('Canape_1', [0, 0, 0], [200, 80, 90])])).toBeNull();
+    expect(wallBounds(nodes)).toEqual({ min: [0, 0, 0], max: [500, 280, 400] });
+    expect(wallBounds([box('Canape_1', [0, 0, 0], [200, 80, 90])])).toBeNull();
   });
 });
 
@@ -346,6 +351,35 @@ describe('openingMotion — a roller shutter, a garage door', () => {
     const [part] = openingMotion(garage, 'garage', INSIDE);
     expect(part.nodes).toEqual(['Garage_1', 'Garage_2']);
     expect(rollOf(part.motion).top).toBe(215);
+  });
+});
+
+describe('guessPartKind', () => {
+  it('guesses from the device class, then the domain', () => {
+    expect(guessPartKind('cover.volet_salon', 'shutter')).toBe('shutter');
+    expect(guessPartKind('cover.volet_salon', undefined)).toBe('shutter');
+    expect(guessPartKind('cover.portail', 'gate')).toBe('door');
+    expect(guessPartKind('cover.garage', 'garage')).toBe('garage');
+    expect(guessPartKind('binary_sensor.garage', 'garage_door')).toBe('garage');
+    expect(guessPartKind('binary_sensor.fenetre', 'window')).toBe('window');
+    expect(guessPartKind('binary_sensor.porte', 'door')).toBe('door');
+  });
+});
+
+describe('shutsInFront', () => {
+  const shutter = { entityId: 'cover.volet_salon', deviceClass: 'shutter' };
+
+  it('sets a shutter in front of a window, a door or a bay linked to one — or typed « Volet »', () => {
+    expect(shutsInFront('Fenetre_Salon', 'window', shutter)).toBe(true);
+    expect(shutsInFront('Baie_Salon', 'sliding', { entityId: 'cover.volet_baie' })).toBe(true);
+    expect(shutsInFront('Fenetre_Salon', 'shutter', shutter)).toBe(true);
+  });
+
+  it('lets a shutter or a garage door of the model roll itself, and a contact or a motorised window move the window', () => {
+    expect(shutsInFront('Volet_Chambre', 'shutter', shutter)).toBe(false);
+    expect(shutsInFront('Garage', 'garage', { entityId: 'cover.garage', deviceClass: 'garage' })).toBe(false);
+    expect(shutsInFront('Fenetre_Salon', 'window', { entityId: 'binary_sensor.fenetre_salon', deviceClass: 'window' })).toBe(false);
+    expect(shutsInFront('Fenetre_Salon', 'window', { entityId: 'cover.velux', deviceClass: 'window' })).toBe(false);
   });
 });
 
@@ -497,6 +531,13 @@ describe('suggestLinks', () => {
     expect(suggestLinks(model, {}, taken, entities).map(s => s.node)).toEqual(['Volet_Chambre_1']);
   });
 
+  it('reads a plural as the type it names: Volets_Salon, like Volet_Salon', () => {
+    const plural = detectOpenings([box('Volets_Salon_1', [0, 100, 0], [100, 200, 6])]);
+    expect(suggestLinks(plural, {}, [], [{ entityId: 'cover.volet_salon', deviceClass: 'shutter' }])).toEqual([
+      { node: 'Volets_Salon_1', entityId: 'cover.volet_salon' },
+    ]);
+  });
+
   it('keeps only contacts and covers among the entities of the house', () => {
     const candidates = linkCandidates({
       'binary_sensor.porte_entree': { attributes: { device_class: 'door', friendly_name: "Porte d'entrée" } },
@@ -591,5 +632,10 @@ describe('the synthetic model of the end-to-end tests (scripts/make-openings-glb
 
     expect(motion('Volet_Chambre_1', 'shutter')[0].nodes).toEqual(['Volet_Chambre_3']);
     expect(motion('Garage_1', 'garage')[0].nodes).toEqual(['Garage_1', 'Garage_2']);
+  });
+
+  it('sets the shutter of a window outside, on the face of its frame away from the house', () => {
+    const window = model.openings.find(o => o.id === 'Fenetre_Salon_1')!;
+    expect(frontShutter(window, model.center)).toEqual({ a: [350, 90, -4], b: [550, 220, -4], side: -1 });
   });
 });

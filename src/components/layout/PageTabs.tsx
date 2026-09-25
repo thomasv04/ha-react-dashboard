@@ -111,6 +111,24 @@ export function PageTabs() {
           // Flèches sur l'onglet actif seulement : sur tous, elles hérisseraient
           // la barre pour un geste rare.
           const canMove = isEditMode && isActive;
+          const arrow = (step: -1 | 1) => {
+            const label = t(step < 0 ? 'layout.movePageLeft' : 'layout.movePageRight');
+            const Arrow = step < 0 ? ChevronLeft : ChevronRight;
+            return (
+              <span
+                role='button'
+                title={label}
+                aria-label={label}
+                onClick={e => {
+                  e.stopPropagation();
+                  movePage(page.id, step);
+                }}
+                className={cn('text-white/40 hover:text-white cursor-pointer', step < 0 && '-ml-1')}
+              >
+                <Arrow size={14} />
+              </span>
+            );
+          };
 
           return (
             <button
@@ -121,36 +139,10 @@ export function PageTabs() {
                 isActive ? 'bg-white/10 text-white border border-white/20' : 'text-white/40 hover:text-white/60 hover:bg-white/5'
               )}
             >
-              {canMove && index > 0 && (
-                <span
-                  role='button'
-                  title={t('layout.movePageLeft')}
-                  aria-label={t('layout.movePageLeft')}
-                  onClick={e => {
-                    e.stopPropagation();
-                    movePage(page.id, -1);
-                  }}
-                  className='-ml-1 text-white/40 hover:text-white cursor-pointer'
-                >
-                  <ChevronLeft size={14} />
-                </span>
-              )}
+              {canMove && index > 0 && arrow(-1)}
               <IconComponent size={16} />
               <span className='uppercase tracking-wider text-xs'>{page.label}</span>
-              {canMove && index < sortedPages.length - 1 && (
-                <span
-                  role='button'
-                  title={t('layout.movePageRight')}
-                  aria-label={t('layout.movePageRight')}
-                  onClick={e => {
-                    e.stopPropagation();
-                    movePage(page.id, 1);
-                  }}
-                  className='text-white/40 hover:text-white cursor-pointer'
-                >
-                  <ChevronRight size={14} />
-                </span>
-              )}
+              {canMove && index < sortedPages.length - 1 && arrow(1)}
 
               {/* Bouton supprimer en mode édition (sauf page home) */}
               {isEditMode && page.id !== 'home' && (

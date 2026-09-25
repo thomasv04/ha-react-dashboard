@@ -21,8 +21,9 @@ import { usePages, type FloorplanConfig } from '@/context/PageContext';
 import { useDashboardLayout, useEditMode, type FloorplanPos, type GridWidget } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useMoreInfoOptional } from '@/context/MoreInfoContext';
-import { useWallPanel } from '@/context/WallPanelContext';
+import { useScreensaverPlan, useWallPanel } from '@/context/WallPanelContext';
 import { FreeGridScope } from '@/components/layout/DashboardGrid';
+import { AlarmModeModal } from '@/components/cards/AlarmCard/AlarmCard';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { ImageBackgroundPicker } from '@/components/layout/ThemeControlsModal/ImageBackgroundPicker';
 import type { BackgroundConfig } from '@/config/themes';
@@ -39,6 +40,7 @@ import { useTheme } from '@/context/ThemeContext';
 import {
   cloudiness,
   containSize,
+  DEFAULT_NIGHT_LIGHT,
   DRAFT_COLOR,
   frostOf,
   isNightDimmed,
@@ -73,11 +75,12 @@ import {
 } from '@/lib/floorplan';
 import {
   familyKind,
+  frontShutter,
   isContact,
   linkCandidates,
   normalizeOpenings,
   openingLabel,
-  parseNodeName,
+  shutsInFront,
   suggestLinks,
   typedOpenings,
   type FloorplanOpenings,
@@ -112,6 +115,13 @@ const HOUR_MS = 3_600_000;
 
 /** Proportions supposées tant que l'image n'est pas chargée. */
 const DEFAULT_ASPECT = 16 / 9;
+
+/**
+ * Clarté de nuit en cours de réglage : la maquette passe à la nuit noire, même
+ * en plein jour, et y reste ce temps (ms) après qu'on a lâché le curseur.
+ */
+const NIGHT_PREVIEW_MS = 2500;
+const NIGHT_PREVIEW_ELEVATION = -20;
 
 /** Porte, fenêtre ou volet en cours de dessin : son premier coin (et où il est à l'écran, en %), puis l'élément entier. */
 type PartDraft = { a: Vec3; from: { x: number; y: number }; part?: FloorplanPart; around?: { left: number; right: number; y: number } };
@@ -235,7 +245,8 @@ export function FloorplanView() {
   const { getWidgetConfig, updateWidgetConfig } = useWidgetConfig();
   // Sous l'écran de veille, la page reste montée : rien n'y bouge, pour rien —
   // sauf si elle en est le fond : la maison y tourne, seule, sans pastilles.
-  const { isActive: screensaver, config: wallPanel } = useWallPanel();
+  const { isActive: screensaver } = useWallPanel();
+  const screensaverPlan = useScreensaverPlan();
   const motionOk = useLowPowerMotion();
   const motionAllowed = motionOk && !screensaver;
   const { tokens, perfSettings } = useTheme();
@@ -255,6 +266,14 @@ export function FloorplanView() {
   const [panel, setPanel] = useState<'image' | SettingsTab | null>(null);
   /** Onglet « Maquette » : le choix de la maquette, ou de l'image qui la remplacerait. */
   const [source, setSource] = useState<'model' | 'image'>('model');
+  const [nightPreview, setNightPreview] = useState(false);
+  const nightPreviewTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(nightPreviewTimer.current), []);
+  const previewNight = () => {
+    setNightPreview(true);
+    clearTimeout(nightPreviewTimer.current);
+    nightPreviewTimer.current = setTimeout(() => setNightPreview(false), NIGHT_PREVIEW_MS);
+  };
   /** Maquette : ce que pose un clic — une pastille, ou un coin de porte, de fenêtre, de volet. */
   const [tool, setTool] = useState<Tool>('chip');
   /** « Poser une lampe » : la prochaine pastille ne propose que des lumières. */
@@ -274,6 +293,8 @@ export function FloorplanView() {
   const [thermal, setThermal] = useState(false);
   /** Vue sécurité : les portes et fenêtres restées ouvertes, en rouge. */
   const [security, setSecurity] = useState(false);
+  /** Choix du mode de l'alarme, ouvert par le bouclier. */
+  const [alarmOpen, setAlarmOpen] = useState(false);
   /** Étage choisi — `undefined` : le rez-de-chaussée ; `null` : toute la maison. */
   const [levelChoice, setLevelChoice] = useState<string | null>();
   /** Pièce vers laquelle la caméra a volé, hors édition. */
@@ -289,9 +310,8 @@ export function FloorplanView() {
 
   // Maquette : chargée (sinon les pastilles accrochées n'ont pas encore de
   // position), en échec, et de quoi placer à l'écran un point de la maquette.
-  const [loadedModel, setLoadedModel] = useState<string | null>(null);
-  /** Objets séparés de la maquette chargée, et leurs familles — `null` : une maquette « fondue ». */
-  const [detected, setDetected] = useState<{ model: string; openings: ModelOpenings | null } | null>(null);
+  /** La maquette chargée, et ses objets séparés — `null` : une maquette « fondue ». */
+  const [ready, setReady] = useState<{ model: string; openings: ModelOpenings | null } | null>(null);
   /** Ouverture de la maquette qu'on lie : sa liaison en cours, le type de sa famille, où ouvrir sa fenêtre. */
   const [openingDraft, setOpeningDraft] = useState<{ link: OpeningLink; kind: OpeningKind | null; around: Around } | null>(null);
   /** L'aperçu de cette ouverture, ouverte (1) ou fermée (0). */
@@ -305,7 +325,7 @@ export function FloorplanView() {
 
   const floorplan = currentPage?.floorplan;
   /** Fond de l'écran de veille : la maison seule. */
-  const backdrop = screensaver && !!currentPage && wallPanel.floorplan_page === currentPage.id;
+  const backdrop = screensaver && !!screensaverPlan && screensaverPlan === currentPage?.id;
   const image = floorplan?.image;
   const model = floorplan?.model;
   const widgets = layout.widgets.lg;
@@ -337,9 +357,6 @@ export function FloorplanView() {
   /** État d'une entité à l'instant rejoué — `undefined` en direct, ou sans historique. */
   const replayed = (entityId: string) => (replay.span ? stateAt(replay.history[entityId], replay.time) : undefined);
 
-  // Entrer en édition ou en sortir, changer de page : on referme ce qui n'avait
-  // de sens qu'avant — pendant le rendu plutôt que dans un effet, qui
-  // peindrait d'abord l'état périmé.
   /** Ce qu'on était en train de poser ou de dessiner : abandonné. */
   const clearDrafts = useCallback(() => {
     setAdding(null);
@@ -352,6 +369,9 @@ export function FloorplanView() {
     setSolarDraft(null);
   }, []);
 
+  // Entrer en édition ou en sortir, changer de page : on referme ce qui n'avait
+  // de sens qu'avant — pendant le rendu plutôt que dans un effet, qui
+  // peindrait d'abord l'état périmé.
   const scope = `${isEditMode}:${currentPage?.id}`;
   const [wasScope, setWasScope] = useState(scope);
   if (wasScope !== scope) {
@@ -428,13 +448,22 @@ export function FloorplanView() {
     return '';
   });
   const weatherId = floorplan?.weather || firstWeather;
+  // L'alarme qu'arme le bouclier : l'entité choisie, ou la première trouvée.
+  const firstAlarm = useHass(s => {
+    if (floorplan?.alarm) return '';
+    for (const id in s.entities ?? {}) if (id.startsWith('alarm_control_panel.')) return id;
+    return '';
+  });
+  const alarmId = floorplan?.alarm || firstAlarm;
   /** Les entités de la page : pastilles, soleil, météo, portes et volets, câbles. */
   const entities = useEntities([
     ...chips.map(c => c.entityId),
     'sun.sun',
     weatherId,
+    alarmId,
     ...parts.map(p => p.entityId),
     ...openingsConfig.links.map(l => l.entityId),
+    ...(openingDraft ? [openingDraft.link.entityId] : []),
     ...allCables.map(c => c.entityId),
     ...solarFields.map(f => f.entityId),
   ]);
@@ -442,6 +471,7 @@ export function FloorplanView() {
   // ── Lampes : halos du plan, lumières de la maquette ────────────────────────
   const sunEntity = entities['sun.sun'];
   const dimmed = isNightDimmed(sunEntity?.state, floorplan?.dimAtNight);
+  const nightLight = floorplan?.nightLight ?? DEFAULT_NIGHT_LIGHT;
   // Mode mock : l'heure du soleil se règle au curseur (panneau « Maquette 3D »),
   // pour voir la maquette de nuit, à l'aube, à midi. Le soleil d'aujourd'hui, au
   // lieu que donne la configuration de HA.
@@ -451,7 +481,10 @@ export function FloorplanView() {
   const [mockHour, setMockHour] = useState(14);
   const sunAt = replay.span ? replay.time : MOCK ? today + mockHour * HOUR_MS : null;
   const computedSun = sunAt !== null && place ? sunPosition(new Date(sunAt), place.latitude, place.longitude) : null;
-  const sunElevation = computedSun?.elevation ?? (sunEntity?.attributes?.elevation as number | undefined);
+  const sunElevation =
+    nightPreview && isEditMode
+      ? NIGHT_PREVIEW_ELEVATION
+      : (computedSun?.elevation ?? (sunEntity?.attributes?.elevation as number | undefined));
   const sunAzimuth = computedSun?.azimuth ?? (sunEntity?.attributes?.azimuth as number | undefined);
   const weatherState = entities[weatherId]?.state;
   const clouds = cloudiness(weatherState);
@@ -464,31 +497,43 @@ export function FloorplanView() {
   // Derrière la maquette : le ciel de l'heure, sauf si la page garde le fond du thème.
   const sky = model && floorplan?.sky !== false ? skyColors(sunElevation, clouds) : null;
 
-  // Rejouée, l'énergie de l'instant — l'unité, que l'historique n'a pas, du
-  // direct ; sans historique, le câble se repose.
   // ── Étages ─────────────────────────────────────────────────────────────────
+  /** Les objets de cette maquette-ci — `undefined` tant qu'elle n'est pas chargée. */
+  const modelOpenings = ready && ready.model === model ? ready.openings : undefined;
   /** Niveaux d'une maison à étages — aucun de plain-pied. */
-  const levels = (detected && detected.model === model ? detected.openings?.levels : undefined) ?? [];
+  const levels = modelOpenings?.levels ?? [];
   /** L'étage montré : celui qu'on a choisi, le rez-de-chaussée d'abord ; `null` : toute la maison. */
   const level = !levels.length || levelChoice === null ? null : (levels.find(l => l.id === levelChoice) ?? levels[0]).id;
   /** Ce que l'étage montré cache commence au sol de celui du dessus : pastilles, lampes, éléments tracés. */
   const hideAbove = level ? (levels[levels.findIndex(l => l.id === level) + 1]?.floor ?? Infinity) : Infinity;
   const aboveLevel = (y: number) => y >= hideAbove;
 
+  // ── Énergie : câbles, panneaux ─────────────────────────────────────────────
+  /**
+   * Ce que dit une entité d'énergie, rejouée ou en direct : rejouée, l'unité —
+   * que l'historique n'a pas — vient du direct ; sans historique, au repos.
+   */
+  const energyOf = <T,>(
+    entityId: string,
+    read: (state: string | undefined, attributes: Record<string, unknown> | undefined) => T,
+    rest: T
+  ) => {
+    const live = entities[entityId];
+    const past = replayed(entityId);
+    if (past) return read(past.state, { ...live?.attributes, ...past.attributes });
+    return replaying ? rest : read(live?.state, live?.attributes);
+  };
   const cablesProp: CableProp[] = allCables
     .filter(c => c.points.some(p => !aboveLevel(p[1])))
-    .map(c => {
-      const live = entities[c.entityId];
-      const past = replayed(c.entityId);
-      return {
-        ...c,
-        ...(past
-          ? cableFlow(past.state, { ...live?.attributes, ...past.attributes }, c.invert)
-          : replaying
-            ? { direction: 0 as const, watts: null }
-            : cableFlow(live?.state, live?.attributes, c.invert)),
-      };
-    });
+    .map(c => ({
+      ...c,
+      ...energyOf(c.entityId, (state, attributes) => cableFlow(state, attributes, c.invert), { direction: 0 as const, watts: null }),
+    }));
+  /** Panneaux solaires : leur éclat suit leur production ; celui qu'on pose, entre les deux. */
+  const solarProp: SolarProp[] = [
+    ...solarFields.filter(f => !aboveLevel(Math.min(f.a[1], f.b[1]))).map(f => ({ ...f, glow: energyOf(f.entityId, solarGlow, 0) })),
+    ...(solarDraft?.field ? [{ ...solarDraft.field, glow: 0.35 }] : []),
+  ];
   const focusRoom = rooms.find(r => r.id === focusId);
 
   const lamps: Lamp[] = model
@@ -513,37 +558,15 @@ export function FloorplanView() {
     : [];
 
   // ── Portes, fenêtres, volets ───────────────────────────────────────────────
-  /** Panneaux solaires : leur éclat suit leur production, rejouée ou en direct ; celui qu'on pose, entre les deux. */
-  const solarProp: SolarProp[] = [
-    ...solarFields
-      .filter(f => !aboveLevel(Math.min(f.a[1], f.b[1])))
-      .map(f => {
-        const live = entities[f.entityId];
-        const past = replayed(f.entityId);
-        const glow = past
-          ? solarGlow(past.state, { ...live?.attributes, ...past.attributes })
-          : replaying
-            ? 0
-            : solarGlow(live?.state, live?.attributes);
-        return { ...f, glow };
-      }),
-    ...(solarDraft?.field ? [{ ...solarDraft.field, glow: 0.35 }] : []),
-  ];
-
-  const partsProp: PartProp[] = [
-    ...parts
-      .filter(p => !aboveLevel(Math.min(p.a[1], p.b[1])))
-      .map(p => {
-        const entity = replayed(p.entityId) ?? entities[p.entityId];
-        return { ...p, open: openness(entity?.state, entity?.attributes) };
-      }),
-    ...(draft?.part ? [{ ...draft.part, open: DRAFT_OPENNESS }] : []),
-  ];
-
-  /** Les objets de cette maquette-ci — `undefined` tant qu'elle n'est pas lue. */
-  const modelOpenings = detected && detected.model === model ? detected.openings : undefined;
   /** Famille d'une ouverture, telle que la maquette l'a lue : son nœud seul ne la dit pas toujours (`Fenetre_sal_1_1`). */
-  const familyOf = (node: string) => modelOpenings?.openings.find(o => o.id === node)?.family ?? parseNodeName(node).family;
+  const familyOf = (node: string) => modelOpenings?.openings.find(o => o.id === node)?.family ?? '';
+  /** Le volet d'une fenêtre que la maquette dessine sans le sien, posé devant elle — `null` : elle bouge elle-même. */
+  const frontOf = (link: OpeningLink, kind: OpeningKind): FloorplanPart | null => {
+    const found = modelOpenings?.openings.find(o => o.id === link.node);
+    const entity = { entityId: link.entityId, deviceClass: entities[link.entityId]?.attributes?.device_class };
+    if (!modelOpenings || !found || !shutsInFront(found.family, kind, entity)) return null;
+    return { id: `front-${link.node}`, kind: 'shutter', entityId: link.entityId, ...frontShutter(found, modelOpenings.center) };
+  };
 
   // ── Vue sécurité ───────────────────────────────────────────────────────────
   /**
@@ -557,7 +580,9 @@ export function FloorplanView() {
     ...openingsConfig.links.flatMap(l => {
       const found = modelOpenings?.openings.find(o => o.id === l.node);
       const kind = familyKind(familyOf(l.node), openingsConfig.kinds);
-      return found && kind && kind !== 'shutter' ? [{ entityId: l.entityId, box: [found.min, found.max] as [Vec3, Vec3] }] : [];
+      return found && kind && kind !== 'shutter' && !frontOf(l, kind)
+        ? [{ entityId: l.entityId, box: [found.min, found.max] as [Vec3, Vec3] }]
+        : [];
     }),
     ...chips.flatMap(c =>
       isContact(c.entityId, entities[c.entityId]?.attributes?.device_class) ? [{ entityId: c.entityId, chip: c.id }] : []
@@ -568,6 +593,13 @@ export function FloorplanView() {
   /** Une fois chacune : une porte et sa pastille ne font qu'une. */
   const openedNames = [...new Set(opened.map(g => g.entityId))].map(id => friendlyName(entities[id]) ?? id);
   const alertChips = new Set(opened.flatMap(g => (g.chip ? [g.chip] : [])));
+  const securityText = openedNames.length
+    ? t(openedNames.length > 1 ? 'layout.floorplan.securityOpenPlural' : 'layout.floorplan.securityOpen', {
+        count: openedNames.length,
+        names: openedNames.join(', '),
+      })
+    : t('layout.floorplan.securityClosed');
+  const alarm = entities[alarmId];
   // L'ouverture qu'on lie s'ouvre et se ferme, pour qu'on voie ses gonds et son sens.
   const previewing = openingDraft?.link.node;
   useEffect(() => {
@@ -576,32 +608,28 @@ export function FloorplanView() {
     return () => window.clearInterval(timer);
   }, [previewing, animated]);
   /** Portes, fenêtres et baies de la maquette liées à une entité — le type de leur famille décide du mouvement. */
-  const openingsProp: OpeningProp[] = [
+  const moving = [
     ...openingsConfig.links.flatMap(link => {
       const kind = familyKind(familyOf(link.node), openingsConfig.kinds);
       if (!kind || link.node === previewing) return [];
       const entity = replayed(link.entityId) ?? entities[link.entityId];
-      return [
-        {
-          id: link.node,
-          kind,
-          ...(link.flip && { flip: true }),
-          ...(link.hinge && { hinge: true }),
-          open: openness(entity?.state, entity?.attributes),
-        },
-      ];
+      return [{ link, kind, open: openness(entity?.state, entity?.attributes) }];
     }),
-    ...(openingDraft?.kind
-      ? [
-          {
-            id: openingDraft.link.node,
-            kind: openingDraft.kind,
-            ...(openingDraft.link.flip && { flip: true }),
-            ...(openingDraft.link.hinge && { hinge: true }),
-            open: animated ? preview : DRAFT_OPENNESS,
-          },
-        ]
-      : []),
+    ...(openingDraft?.kind ? [{ link: openingDraft.link, kind: openingDraft.kind, open: animated ? preview : DRAFT_OPENNESS }] : []),
+  ].map(m => ({ ...m, front: frontOf(m.link, m.kind) }));
+  const openingsProp: OpeningProp[] = moving.flatMap(({ link, kind, open, front }) =>
+    front ? [] : [{ id: link.node, kind, ...(link.flip && { flip: true }), ...(link.hinge && { hinge: true }), open }]
+  );
+
+  const partsProp: PartProp[] = [
+    ...parts
+      .filter(p => !aboveLevel(Math.min(p.a[1], p.b[1])))
+      .map(p => {
+        const entity = replayed(p.entityId) ?? entities[p.entityId];
+        return { ...p, open: openness(entity?.state, entity?.attributes) };
+      }),
+    ...(draft?.part ? [{ ...draft.part, open: DRAFT_OPENNESS }] : []),
+    ...moving.flatMap(({ front, open }) => (front && !aboveLevel(front.a[1]) ? [{ ...front, open }] : [])),
   ];
 
   const setOpenings = (patch: Partial<FloorplanOpenings>) =>
@@ -706,13 +734,19 @@ export function FloorplanView() {
         ]
       : [];
 
-  /** Hors édition, les pastilles que la maquette cache s'effacent : leurs points d'accroche, à vérifier. */
+  /**
+   * Hors édition, les pastilles que la maquette cache s'effacent : leurs points
+   * d'accroche, à vérifier — pas ceux des étages cachés. En fond d'écran de
+   * veille, seules les lampes, dont la lueur passe par-dessus tout : les
+   * pastilles n'y paraissent pas.
+   */
   const anchors = isEditMode
     ? undefined
     : Object.fromEntries(
         widgets.flatMap(w => {
           const anchor = normalizeAnchor(w.pos?.anchor);
-          return anchor ? [[w.id, anchor]] : [];
+          const wanted = !backdrop || (!!floorplan?.lampGlow && glows.some(g => g.id === w.id));
+          return anchor && wanted && !aboveLevel(anchor[1]) ? [[w.id, anchor]] : [];
         })
       );
 
@@ -882,7 +916,7 @@ export function FloorplanView() {
   const plan = containSize(area.w, area.h, aspect);
   // Plus large que la place disponible (téléphone) : on fait défiler le plan.
   const pan = !model && !!image && plan.w > area.w + 1;
-  const loaded = !!model && loadedModel === model;
+  const loaded = modelOpenings !== undefined;
   const failed = failure && failure.model === model ? failure.kind : null;
 
   /** L'élément dessiné, dont on peut reprendre les deux coins. */
@@ -897,7 +931,8 @@ export function FloorplanView() {
       />
     );
 
-  const items = (
+  // En fond d'écran de veille, la maison seule : ni pastilles, ni cards.
+  const items = !backdrop && (
     <FreeGridScope>
       {/* `pointer-events-none` : entre les éléments, le clic atteint le plan. */}
       <motion.div
@@ -928,7 +963,7 @@ export function FloorplanView() {
                   // Vol vers une pièce : les pastilles des autres pièces s'estompent.
                   // Rejouée, tout s'estompe : pastilles et cards montrent le présent.
                   faded={replaying || (!!anchor && !!focusRoom && !pointInPolygon(anchor[0], anchor[2], focusRoom.points))}
-                  hidden={backdrop || (!isEditMode && occluded.has(w.id)) || (!!anchor && aboveLevel(anchor[1]))}
+                  hidden={(!isEditMode && occluded.has(w.id)) || (!!anchor && aboveLevel(anchor[1]))}
                   breathing={present.has(w.id)}
                   alert={alertChips.has(w.id)}
                 />
@@ -1051,6 +1086,23 @@ export function FloorplanView() {
     <>
       <ToggleRow label={t('layout.floorplan.sky')} checked={floorplan?.sky !== false} onChange={on => setFloorplan({ sky: on })} />
       <ToggleRow label={t('layout.floorplan.lampGlow')} checked={!!floorplan?.lampGlow} onChange={on => setFloorplan({ lampGlow: on })} />
+      <label className='flex items-center gap-3 px-2 py-1.5 rounded-lg bg-white/5 text-xs text-white/70'>
+        {t('layout.floorplan.nightLight')}
+        <input
+          type='range'
+          min={0}
+          max={1}
+          step={0.05}
+          value={nightLight}
+          onPointerDown={previewNight}
+          onChange={e => {
+            previewNight();
+            setFloorplan({ nightLight: Number(e.target.value) });
+          }}
+          className='flex-1 min-w-0 accent-blue-400'
+        />
+        <span className='w-9 text-right tabular-nums text-white/80'>{Math.round(nightLight * 100)}%</span>
+      </label>
       <EntityPicker
         label={t('layout.floorplan.weather')}
         value={weatherId}
@@ -1077,6 +1129,12 @@ export function FloorplanView() {
 
   const openingsTab = (
     <>
+      <EntityPicker
+        label={t('layout.floorplan.alarm')}
+        value={alarmId}
+        domain='alarm_control_panel'
+        onChange={id => setFloorplan({ alarm: id })}
+      />
       {modelOpenings && (
         <OpeningsTab
           model={modelOpenings}
@@ -1160,6 +1218,7 @@ export function FloorplanView() {
                   sunAzimuth={sunAzimuth}
                   north={floorplan?.north ?? 0}
                   cloudiness={clouds}
+                  nightLight={nightLight}
                   shadows={!perfSettings.disableShadows}
                   cutaway={floorplan?.cutaway !== false}
                   // Ni en édition, où l'on règle la vue, ni en économie d'énergie,
@@ -1170,7 +1229,6 @@ export function FloorplanView() {
                   lamps={lamps}
                   parts={partsProp}
                   openings={openingsProp}
-                  onOpenings={openings => setDetected({ model, openings })}
                   outline={outline}
                   floors={floors}
                   cables={cablesProp}
@@ -1192,7 +1250,7 @@ export function FloorplanView() {
                   highlight={previewing ?? unnamed?.id ?? hovered}
                   alerts={opened.flatMap(g => (g.box && !aboveLevel(Math.min(g.box[0][1], g.box[1][1])) ? [g.box] : []))}
                   level={level}
-                  onLoad={() => setLoadedModel(model)}
+                  onLoad={openings => setReady({ model, openings })}
                   onError={kind => setFailure({ model, kind })}
                 />
               </Suspense>
@@ -1417,11 +1475,15 @@ export function FloorplanView() {
                     pressed={compass}
                   />
                 )}
-                {guards.length > 0 && !replaying && (
+                {(guards.length > 0 || alarm) && !replaying && (
                   <RoundButton
                     icon={ShieldCheck}
-                    label={t('layout.floorplan.security')}
-                    onClick={() => setSecurity(on => !on)}
+                    label={t(alarm ? 'layout.floorplan.securityAlarm' : 'layout.floorplan.security')}
+                    onClick={() => {
+                      // Avec une alarme, la vue sécurité s'ouvre sur le choix de son mode.
+                      if (!security && alarm) setAlarmOpen(true);
+                      setSecurity(on => !on);
+                    }}
                     pressed={security}
                     on='text-red-300'
                   />
@@ -1508,15 +1570,25 @@ export function FloorplanView() {
                 ) : (
                   <ShieldCheck size={16} className='shrink-0 text-green-400' />
                 )}
-                <span className='truncate'>
-                  {openedNames.length
-                    ? t(openedNames.length > 1 ? 'layout.floorplan.securityOpenPlural' : 'layout.floorplan.securityOpen', {
-                        count: openedNames.length,
-                        names: openedNames.join(', '),
-                      })
-                    : t('layout.floorplan.securityClosed')}
-                </span>
+                <span className='truncate'>{securityText}</span>
               </div>
+            )}
+            {alarm && (
+              <AlarmModeModal
+                entityId={alarmId}
+                open={alarmOpen}
+                onClose={() => setAlarmOpen(false)}
+                notice={
+                  guards.length > 0 && (
+                    <p
+                      className={cn('flex items-center gap-2 text-xs font-medium', openedNames.length ? 'text-red-300' : 'text-green-300')}
+                    >
+                      {openedNames.length ? <ShieldAlert size={14} className='shrink-0' /> : <ShieldCheck size={14} className='shrink-0' />}
+                      {securityText}
+                    </p>
+                  )
+                }
+              />
             )}
             {focusRoom && (
               <motion.button

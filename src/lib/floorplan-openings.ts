@@ -1,4 +1,4 @@
-import { SWING, type Vec3 } from '@/lib/floorplan';
+import { shortestTurn, SWING, unitsPerMeter, type PartKind, type Vec3 } from '@/lib/floorplan';
 import { friendlyName } from '@/lib/ha-service';
 
 /**
@@ -60,6 +60,10 @@ export interface DetectedOpening {
   size: [number, number];
   /** Logée dans un mur : une ouverture, sans doute — un meuble se pose contre. */
   inWall: boolean;
+  /** L'axe de son mur au sol (x, z), et l'étendue de sa plus large pièce le long de lui et au travers. */
+  axis: [number, number];
+  along: [number, number];
+  across: [number, number];
 }
 
 /** Une famille d'objets de la maquette : les objets d'un même nom. */
@@ -123,7 +127,7 @@ export function structureOf(name: string): { type: 'wall' | 'room'; id: string }
  * une autre application — est une famille d'un seul composant.
  */
 export function parseNodeName(name: string): NodeName {
-  const level = /^lvl\d{3}/.exec(name)?.[0] ?? '';
+  const level = levelOf(name);
   const rest = name.slice(level.length);
   const numeric = /^(\d+)(?:_(\d+))?$/.exec(rest);
   if (numeric) return { level, family: '', component: Number(numeric[1]), k: Number(numeric[2] ?? 0) };
@@ -134,12 +138,14 @@ export function parseNodeName(name: string): NodeName {
   return { level, family: rest, component: 0, k: 0 };
 }
 
-/** Mots d'un nom : `PorteFenetre_Sejour` → porte, fenetre, sejour. */
-const words = (name: string) =>
-  name
+/** Mots d'un nom, sans accents ni casse : `PorteFenetre_Sejour`, « Porte d'entrée » → porte, fenetre, sejour ; porte, entree. */
+const nameWords = (text: string) =>
+  text
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
     .replace(/([a-z])([A-Z])/g, '$1_$2')
     .toLowerCase()
-    .split(/[_\s]+/)
+    .split(/[^a-z0-9]+/)
     .filter(Boolean);
 
 /**
@@ -157,7 +163,7 @@ const KIND_WORDS: [RegExp, OpeningKind][] = [
 ];
 
 export function guessOpeningKind(family: string): OpeningKind | null {
-  const tokens = words(family);
+  const tokens = nameWords(family);
   for (const [pattern, kind] of KIND_WORDS) if (tokens.some(t => pattern.test(t))) return kind;
   return null;
 }
@@ -211,20 +217,20 @@ type Box = { min: Vec3; max: Vec3 };
 const touches = (a: Box, b: Box, tolerance: number) =>
   [0, 1, 2].every(i => a.min[i] - tolerance <= b.max[i] && b.min[i] - tolerance <= a.max[i]);
 
+/** Ajoute `value` au groupe `key`. */
+function push<K, V>(groups: Map<K, V[]>, key: K, value: V) {
+  const group = groups.get(key);
+  if (group) group.push(value);
+  else groups.set(key, [value]);
+}
+
 const union = (boxes: Box[]): Box => ({
   min: [0, 1, 2].map(i => Math.min(...boxes.map(b => b.min[i]))) as Vec3,
   max: [0, 1, 2].map(i => Math.max(...boxes.map(b => b.max[i]))) as Vec3,
 });
 
-/**
- * Un centimètre dans l'unité de la maquette, d'après sa taille. Sweet Home 3D
- * exporte en centimètres, Blender en mètres ; une maison, jardin compris,
- * mesure plus de 2 m et moins de 200 m : au-delà de 200 unités, des centimètres.
- */
-function centimeter(box: Box) {
-  const diagonal = Math.hypot(box.max[0] - box.min[0], box.max[1] - box.min[1], box.max[2] - box.min[2]);
-  return diagonal > 0 && diagonal < 200 ? 0.01 : 1;
-}
+/** Un centimètre dans l'unité de la maquette, d'après sa taille. */
+const centimeter = (box: Box) => unitsPerMeter(Math.hypot(box.max[0] - box.min[0], box.max[1] - box.min[1], box.max[2] - box.min[2])) / 100;
 
 /** Regroupe ce qui se touche, de proche en proche. */
 function clusters<T extends Box>(items: T[], tolerance: number): T[][] {
@@ -238,7 +244,7 @@ function clusters<T extends Box>(items: T[], tolerance: number): T[][] {
   const groups = new Map<number, T[]>();
   items.forEach((item, i) => {
     const r = root(i);
-    groups.set(r, [...(groups.get(r) ?? []), item]);
+    push(groups, r, item);
   });
   return [...groups.values()];
 }
@@ -315,7 +321,7 @@ export function detectOpenings(nodes: ModelNode[]): ModelOpenings {
   const objects: (ModelNode & NodeName)[] = [];
   for (const node of all) {
     const structure = structureOf(node.name);
-    if (structure?.type === 'wall') wallFaces.set(structure.id, [...(wallFaces.get(structure.id) ?? []), node]);
+    if (structure?.type === 'wall') push(wallFaces, structure.id, node);
     if (!structure) objects.push({ ...node, ...parseNodeName(node.name) });
   }
   const walls = [...wallFaces.values()].map(union);
@@ -332,7 +338,7 @@ export function detectOpenings(nodes: ModelNode[]): ModelOpenings {
   const byFamily = new Map<string, (ModelNode & NodeName)[]>();
   for (const o of objects) {
     const key = `${o.level}\u0000${o.family}`;
-    byFamily.set(key, [...(byFamily.get(key) ?? []), o]);
+    push(byFamily, key, o);
   }
 
   // L'ordre du fichier, qui est celui de la maison dans Sweet Home 3D.
@@ -352,14 +358,15 @@ export function detectOpenings(nodes: ModelNode[]): ModelOpenings {
       }
       // Deux objets de même nom qui se touchent : chacun ses composants.
       const byK = new Map<number, typeof group>();
-      for (const n of group) byK.set(n.k, [...(byK.get(n.k) ?? []), n]);
+      for (const n of group) push(byK, n.k, n);
       return [...byK.values()];
     });
     for (const group of groups) {
       const first = group.reduce((a, n) => (n.component < a.component || (n.component === a.component && n.k < a.k) ? n : a));
       const box = union(group);
       const main = widest(group);
-      const along = extent(main, principalAxis(main.footprint));
+      const axis = principalAxis(main.footprint);
+      const along = extent(main, axis);
       openings.push({
         id: first.name,
         family: first.family,
@@ -369,6 +376,9 @@ export function detectOpenings(nodes: ModelNode[]): ModelOpenings {
         max: box.max,
         size: [Math.round((along[1] - along[0]) / cm), Math.round((box.max[1] - box.min[1]) / cm)],
         inWall: inWall(main),
+        axis,
+        along,
+        across: extent(main, [-axis[1], axis[0]]),
       });
     }
   }
@@ -413,7 +423,7 @@ export function modelLevels(nodes: ModelNode[]): ModelLevel[] {
   const byLevel = new Map<string, ModelNode[]>();
   for (const node of nodes) {
     const level = levelOf(node.name);
-    if (level && node.footprint.length) byLevel.set(level, [...(byLevel.get(level) ?? []), node]);
+    if (level && node.footprint.length) push(byLevel, level, node);
   }
   if (byLevel.size < 2) return [];
   return [...byLevel]
@@ -430,13 +440,13 @@ export function modelLevels(nodes: ModelNode[]): ModelLevel[] {
 }
 
 /**
- * Haut des murs, dans les coordonnées de la maquette — `null` : elle ne les
- * distingue pas. Un objet plus haut qu'eux, un conduit, un velux, n'y compte pas.
+ * Emprise des murs, dans les coordonnées de la maquette — `null` : elle ne les
+ * distingue pas. Un objet plus haut qu'eux, un conduit, un velux, n'y compte
+ * pas ; ni ce qui est au-delà, le jardin, la terrasse.
  */
-export function wallTop(nodes: Iterable<ModelNode>): number | null {
-  let top = -Infinity;
-  for (const node of nodes) if (structureOf(node.name)?.type === 'wall') top = Math.max(top, node.max[1]);
-  return Number.isFinite(top) ? top : null;
+export function wallBounds(nodes: Iterable<ModelNode>): Box | null {
+  const walls = [...nodes].filter(node => structureOf(node.name)?.type === 'wall');
+  return walls.length ? union(walls) : null;
 }
 
 /**
@@ -452,10 +462,7 @@ export function furnitureNodes(model: ModelOpenings): string[] {
 // ── Parties mobiles ──────────────────────────────────────────────────────────
 
 /** Angle, en `rotation.y` de three.js, qui amène la direction `from` sur `to` (dans ]−π, π]). */
-function turn(from: Vec2, to: Vec2) {
-  const angle = Math.atan2(-to[1], to[0]) - Math.atan2(-from[1], from[0]);
-  return angle > Math.PI ? angle - 2 * Math.PI : angle <= -Math.PI ? angle + 2 * Math.PI : angle;
-}
+const turn = (from: Vec2, to: Vec2) => shortestTurn(Math.atan2(-from[1], from[0]), Math.atan2(-to[1], to[0]));
 
 /** Un panneau et son repère : son axe au sol, la normale, et son étendue le long de chacun. */
 interface Panel {
@@ -574,17 +581,11 @@ export function openingMotion(
     const owner = leaves.filter(l => holds(l.panel, part)).sort((a, b) => distance(a) - distance(b))[0];
     owner?.nodes.push(part);
   }
-  const names = (leaf: Leaf) => leaf.nodes.map(node => node.name);
-
-  if (kind === 'sliding')
-    return slide(leaves, { u, width, u0, u1, flip, spans: node => extent(node, u) }).map(({ leaf, motion }) => ({
-      nodes: names(leaf),
-      motion,
-    }));
-  return swing(leaves, small, { u, n, plane, middle, center, cm, flip, hinge }).map(({ leaf, motion }) => ({
-    nodes: names(leaf),
-    motion,
-  }));
+  const moves =
+    kind === 'sliding'
+      ? slide(leaves, { u, width, u0, u1, flip, spans: node => extent(node, u) })
+      : swing(leaves, small, { u, n, plane, middle, center, cm, flip, hinge });
+  return moves.map(({ leaf, motion }) => ({ nodes: leaf.nodes.map(node => node.name), motion }));
 }
 
 /** Enroulé : il en reste un liseré, sous le coffre. */
@@ -620,6 +621,33 @@ function roll(
       motion: { type: 'roll', top, closed: (top - bottom) / apron.height, open: ROLLED },
     },
   ];
+}
+
+/**
+ * Un volet lié à une fenêtre, une porte ou une baie : la maquette n'a pas son
+ * tablier — c'est la fenêtre entière qui s'enroulerait. On en pose un devant,
+ * et elle ne bouge plus. Ce qu'est l'objet, son nom le dit, sinon le type
+ * choisi ; ce qui bouge, l'entité — un volet — ou le type « Volet ».
+ */
+export function shutsInFront(family: string, kind: OpeningKind, entity: LinkCandidate) {
+  const nature = guessOpeningKind(family) ?? kind;
+  if (nature === 'shutter' || nature === 'garage') return false;
+  return kind === 'shutter' || movableKinds(entity).includes('shutter');
+}
+
+/**
+ * Où poser ce volet : les deux coins de l'ouverture sur sa face du dehors —
+ * loin du centre de la maison —, comme on dessine un volet, et ce côté-là.
+ */
+export function frontShutter(
+  { axis, along, across, min, max }: DetectedOpening,
+  center: [number, number]
+): { a: Vec3; b: Vec3; side: 1 | -1 } {
+  const normal: Vec2 = [-axis[1], axis[0]];
+  const side = (across[0] + across[1]) / 2 > dot(center, normal) ? 1 : -1;
+  const face = side > 0 ? across[1] : across[0];
+  const corner = (t: number, y: number): Vec3 => [axis[0] * t + normal[0] * face, y, axis[1] * t + normal[1] * face];
+  return { a: corner(along[0], min[1]), b: corner(along[1], max[1]), side };
 }
 
 /** Panneaux qui glissent : ceux qui bordent un vide s'y rejoignent, sinon le premier glisse sur son voisin. */
@@ -842,19 +870,14 @@ export interface LinkCandidate {
   deviceClass?: unknown;
 }
 
-/** Mots d'un nom, sans accents ni casse : `Porte_Entree`, « Porte d'entrée » → porte, entree. */
-const nameWords = (text: string) =>
-  text
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/([a-z])([A-Z])/g, '$1_$2')
-    .toLowerCase()
-    .split(/[^a-z0-9]+/)
-    .filter(Boolean);
+/** Un mot qui dit ce qu'est une ouverture, pas laquelle — le vocabulaire des types. */
+const isTypeWord = (word: string) => KIND_WORDS.some(([pattern]) => pattern.test(word));
 
-/** Mots qui disent ce qu'est une ouverture, pas laquelle. */
-const TYPE_WORD =
-  /^(baie|coulissante?|sliding|slider|garage|volet|shutter|store|blind|fenetre|window|velux|lucarne|porte|door|portail|gate)$/;
+/**
+ * Type d'un élément dessiné, deviné d'après son entité : ce qu'elle peut
+ * mouvoir — une porte, sans rien de plus précis.
+ */
+export const guessPartKind = (entityId: string, deviceClass: unknown) => (movableKinds({ entityId, deviceClass })[0] ?? 'door') as PartKind;
 
 /** Ce qu'une entité peut mouvoir : un contact de porte une porte, un volet un volet. */
 function movableKinds({ entityId, deviceClass }: LinkCandidate): OpeningKind[] {
@@ -895,7 +918,7 @@ export function suggestLinks(
     if (linkedNodes.has(opening.id) || model.families.find(f => f.name === opening.family)?.count !== 1) return [];
     const kind = familyKind(opening.family, kinds)!;
     const all = nameWords(opening.family);
-    const which = all.filter(w => !TYPE_WORD.test(w));
+    const which = all.filter(w => !isTypeWord(w));
     const wanted = which.length ? which : all;
     const scored = free.flatMap(entity => {
       if (!movableKinds(entity).includes(kind)) return [];
