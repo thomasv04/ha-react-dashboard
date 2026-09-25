@@ -70,6 +70,8 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
   const { saveConfig, isSaving } = useDashboardConfig();
 
   const [tab, setTab] = useState<Tab>('activation');
+  /** Pages Plan d'une maquette : chacune peut servir de fond, à la place des photos. */
+  const planPages = pages.filter(p => p.type === 'floorplan' && p.floorplan?.model);
   const [newUrl, setNewUrl] = useState('');
 
   // Chaque réglage s'appliquait au contexte à la frappe, et n'atteignait le
@@ -282,97 +284,129 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
             {/* ── FOND ── */}
             {tab === 'background' && (
               <>
-                <div>
-                  <p className='text-white/55 text-xs font-medium mb-2'>{t('layout.wallPanel.backgroundImages')}</p>
-                  <div className='space-y-1.5 mb-2'>
-                    {draft.image_urls.map((url, i) => (
-                      <div key={i} className='flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/[0.07] group'>
-                        <span className='flex-1 truncate text-white/55 text-xs font-mono'>{url}</span>
+                {planPages.length > 0 && (
+                  <div>
+                    <p className='text-white/55 text-xs font-medium mb-2'>{t('layout.wallPanel.backgroundSource')}</p>
+                    <div className='flex flex-wrap gap-1.5'>
+                      {[
+                        { id: '', label: t('layout.wallPanel.backgroundPhotos') },
+                        ...planPages.map(p => ({ id: p.id, label: p.label })),
+                      ].map(option => (
                         <button
-                          onClick={() => removeImageUrl(i)}
-                          className='text-red-400/40 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100'
+                          key={option.id || 'photos'}
+                          onClick={() => update({ floorplan_page: option.id })}
+                          aria-pressed={(draft.floorplan_page ?? '') === option.id}
+                          className={cn(
+                            'px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors',
+                            (draft.floorplan_page ?? '') === option.id
+                              ? 'bg-purple-500/20 border-purple-500/40 text-purple-200'
+                              : 'bg-white/5 border-white/[0.08] text-white/60 hover:text-white'
+                          )}
                         >
-                          <Trash2 size={12} />
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                    {draft.floorplan_page && (
+                      <p className='text-white/35 text-[11px] mt-1.5 leading-relaxed'>{t('layout.wallPanel.backgroundPlanHint')}</p>
+                    )}
+                  </div>
+                )}
+                {!draft.floorplan_page && (
+                  <>
+                    <div>
+                      <p className='text-white/55 text-xs font-medium mb-2'>{t('layout.wallPanel.backgroundImages')}</p>
+                      <div className='space-y-1.5 mb-2'>
+                        {draft.image_urls.map((url, i) => (
+                          <div key={i} className='flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/[0.07] group'>
+                            <span className='flex-1 truncate text-white/55 text-xs font-mono'>{url}</span>
+                            <button
+                              onClick={() => removeImageUrl(i)}
+                              className='text-red-400/40 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100'
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        ))}
+                        {draft.image_urls.length === 0 && (
+                          <p className='text-white/18 text-xs text-center py-3'>{t('layout.wallPanel.noImages')}</p>
+                        )}
+                      </div>
+                      <div className='flex gap-2'>
+                        <input
+                          type='text'
+                          value={newUrl}
+                          onChange={e => setNewUrl(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && addImageUrl()}
+                          placeholder='https://... ou media-source://...'
+                          className='flex-1 px-3 py-2 rounded-xl bg-white/5 border border-white/[0.08] text-white/70 text-xs outline-none focus:border-white/20'
+                        />
+                        <button
+                          onClick={addImageUrl}
+                          className='px-3 py-2 rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-300 hover:bg-purple-500/30 transition-colors'
+                        >
+                          <Plus size={14} />
                         </button>
                       </div>
-                    ))}
-                    {draft.image_urls.length === 0 && (
-                      <p className='text-white/18 text-xs text-center py-3'>{t('layout.wallPanel.noImages')}</p>
-                    )}
-                  </div>
-                  <div className='flex gap-2'>
-                    <input
-                      type='text'
-                      value={newUrl}
-                      onChange={e => setNewUrl(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && addImageUrl()}
-                      placeholder='https://... ou media-source://...'
-                      className='flex-1 px-3 py-2 rounded-xl bg-white/5 border border-white/[0.08] text-white/70 text-xs outline-none focus:border-white/20'
-                    />
-                    <button
-                      onClick={addImageUrl}
-                      className='px-3 py-2 rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-300 hover:bg-purple-500/30 transition-colors'
-                    >
-                      <Plus size={14} />
-                    </button>
-                  </div>
-                </div>
+                    </div>
 
-                <div className='grid grid-cols-2 gap-3'>
-                  <div>
-                    <label className='text-white/55 text-xs font-medium block mb-1'>{t('layout.wallPanel.imageFit')}</label>
-                    <select
-                      value={draft.image_fit}
-                      onChange={e => update({ image_fit: e.target.value as ImageFit })}
-                      className='w-full px-3 py-2 rounded-xl bg-white/5 border border-white/[0.08] text-white/70 text-xs outline-none'
-                    >
-                      <option value='cover'>{t('layout.wallPanel.fitCover')}</option>
-                      <option value='contain'>{t('layout.wallPanel.fitContain')}</option>
-                      <option value='fill'>{t('layout.wallPanel.fitFill')}</option>
-                    </select>
-                    {draft.image_fit === 'contain' && (
-                      <label className='flex items-center gap-2 mt-2 cursor-pointer select-none'>
-                        <input
-                          type='checkbox'
-                          checked={draft.style.containBlurBackground ?? false}
-                          onChange={e =>
-                            update({
-                              style: { ...draft.style, containBlurBackground: e.target.checked },
-                            })
-                          }
-                          className='accent-purple-500 w-3.5 h-3.5'
-                        />
-                        <span className='text-white/50 text-xs'>{t('layout.wallPanel.blurBackground')}</span>
+                    <div className='grid grid-cols-2 gap-3'>
+                      <div>
+                        <label className='text-white/55 text-xs font-medium block mb-1'>{t('layout.wallPanel.imageFit')}</label>
+                        <select
+                          value={draft.image_fit}
+                          onChange={e => update({ image_fit: e.target.value as ImageFit })}
+                          className='w-full px-3 py-2 rounded-xl bg-white/5 border border-white/[0.08] text-white/70 text-xs outline-none'
+                        >
+                          <option value='cover'>{t('layout.wallPanel.fitCover')}</option>
+                          <option value='contain'>{t('layout.wallPanel.fitContain')}</option>
+                          <option value='fill'>{t('layout.wallPanel.fitFill')}</option>
+                        </select>
+                        {draft.image_fit === 'contain' && (
+                          <label className='flex items-center gap-2 mt-2 cursor-pointer select-none'>
+                            <input
+                              type='checkbox'
+                              checked={draft.style.containBlurBackground ?? false}
+                              onChange={e =>
+                                update({
+                                  style: { ...draft.style, containBlurBackground: e.target.checked },
+                                })
+                              }
+                              className='accent-purple-500 w-3.5 h-3.5'
+                            />
+                            <span className='text-white/50 text-xs'>{t('layout.wallPanel.blurBackground')}</span>
+                          </label>
+                        )}
+                      </div>
+                      <div>
+                        <label className='text-white/55 text-xs font-medium block mb-1'>{t('layout.wallPanel.imageOrder')}</label>
+                        <select
+                          value={draft.media_order}
+                          onChange={e => update({ media_order: e.target.value as MediaOrder })}
+                          className='w-full px-3 py-2 rounded-xl bg-white/5 border border-white/[0.08] text-white/70 text-xs outline-none'
+                        >
+                          <option value='random'>{t('layout.wallPanel.orderRandom')}</option>
+                          <option value='sequential'>{t('layout.wallPanel.orderSequential')}</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className='text-white/55 text-xs font-medium block mb-1.5'>
+                        {t('layout.wallPanel.imageDuration')} : <span className='text-white/80'>{draft.image_duration}s</span>
                       </label>
-                    )}
-                  </div>
-                  <div>
-                    <label className='text-white/55 text-xs font-medium block mb-1'>{t('layout.wallPanel.imageOrder')}</label>
-                    <select
-                      value={draft.media_order}
-                      onChange={e => update({ media_order: e.target.value as MediaOrder })}
-                      className='w-full px-3 py-2 rounded-xl bg-white/5 border border-white/[0.08] text-white/70 text-xs outline-none'
-                    >
-                      <option value='random'>{t('layout.wallPanel.orderRandom')}</option>
-                      <option value='sequential'>{t('layout.wallPanel.orderSequential')}</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className='text-white/55 text-xs font-medium block mb-1.5'>
-                    {t('layout.wallPanel.imageDuration')} : <span className='text-white/80'>{draft.image_duration}s</span>
-                  </label>
-                  <input
-                    type='range'
-                    min={5}
-                    max={300}
-                    step={5}
-                    value={draft.image_duration}
-                    onChange={e => update({ image_duration: Number(e.target.value) })}
-                    className='w-full accent-purple-500'
-                  />
-                </div>
+                      <input
+                        type='range'
+                        min={5}
+                        max={300}
+                        step={5}
+                        value={draft.image_duration}
+                        onChange={e => update({ image_duration: Number(e.target.value) })}
+                        className='w-full accent-purple-500'
+                      />
+                    </div>
+                  </>
+                )}
               </>
             )}
 

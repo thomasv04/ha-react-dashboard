@@ -48,6 +48,12 @@ export interface WallPanelConfig {
   image_duration: number;
   /** Entité HA pour activer/désactiver depuis HA */
   screensaver_entity?: string;
+  /**
+   * Page Plan servant de fond, à la place des photos : la veille l'ouvre, la
+   * maison y tourne doucement, et l'on retrouve sa page en sortant. Absente
+   * ou vide : les photos.
+   */
+  floorplan_page?: string;
   /** Styles avancés */
   style: WallPanelStyle;
   /** Gestes tactiles. Absent dans les configs antérieures — lire via `gesturesOf`. */

@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **39 tâches sur 42** — phases A à H et J, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
+**État global** : **40 tâches sur 43** — phases A à H et J, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -402,6 +402,19 @@ Le reste est indépendant.
 > Sur un plan en image, ce qui n'existe qu'en 3D est sauté.
 
 - **Quoi** : que les gestes et les vues du plan se découvrent.
+
+### [x] G6 — La maquette en écran de veille
+
+> **Fait** : WallPanel › Fond propose, à côté des photos, chaque page Plan
+> qui a une maquette. La veille ouvre alors cette page et se fait
+> transparente — un dégradé en haut, pour les onglets et l'heure, et en bas :
+> la maison seule, sans pastilles ni boutons, tourne doucement (une minute
+> après, dix minutes durant, comme `G1`, sauf en économie d'énergie), ses
+> lampes allumées la nuit. En sortant, on retrouve sa page — celle de
+> l'accueil si l'inactivité y a ramené entre-temps. Test E2E : veille forcée
+> sur l'accueil, la maison paraît seule, l'accueil revient.
+
+- **Quoi** : la maison la nuit, lampes allumées, à la place des photos.
 
 ---
 

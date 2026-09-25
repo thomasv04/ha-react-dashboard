@@ -229,9 +229,11 @@ export function FloorplanView() {
   const { layout, addWidgetByType, updateWidget, removeWidget } = useDashboardLayout();
   const { isEditMode } = useEditMode();
   const { getWidgetConfig, updateWidgetConfig } = useWidgetConfig();
-  // Sous l'écran de veille, la page reste montée : rien n'y bouge, pour rien.
-  const { isActive: screensaver } = useWallPanel();
-  const motionAllowed = useLowPowerMotion() && !screensaver;
+  // Sous l'écran de veille, la page reste montée : rien n'y bouge, pour rien —
+  // sauf si elle en est le fond : la maison y tourne, seule, sans pastilles.
+  const { isActive: screensaver, config: wallPanel } = useWallPanel();
+  const motionOk = useLowPowerMotion();
+  const motionAllowed = motionOk && !screensaver;
   const { tokens, perfSettings } = useTheme();
   const { formatTime } = useFormats();
 
@@ -291,6 +293,8 @@ export function FloorplanView() {
   const [projector] = useState(createProjector);
 
   const floorplan = currentPage?.floorplan;
+  /** Fond de l'écran de veille : la maison seule. */
+  const backdrop = screensaver && !!currentPage && wallPanel.floorplan_page === currentPage.id;
   const image = floorplan?.image;
   const model = floorplan?.model;
   const widgets = layout.widgets.lg;
@@ -517,7 +521,7 @@ export function FloorplanView() {
       isContact(c.entityId, entities[c.entityId]?.attributes?.device_class) ? [{ entityId: c.entityId, chip: c.id }] : []
     ),
   ].filter(g => g.entityId);
-  const showSecurity = security && !isEditMode && !replaying;
+  const showSecurity = security && !isEditMode && !replaying && !backdrop;
   const opened = showSecurity ? guards.filter(g => openness(entities[g.entityId]?.state, entities[g.entityId]?.attributes) > 0) : [];
   /** Une fois chacune : une porte et sa pastille ne font qu'une. */
   const openedNames = [...new Set(opened.map(g => g.entityId))].map(id => friendlyName(entities[id]) ?? id);
@@ -872,7 +876,7 @@ export function FloorplanView() {
                   // Vol vers une pièce : les pastilles des autres pièces s'estompent.
                   // Rejouée, tout s'estompe : pastilles et cards montrent le présent.
                   faded={replaying || (!!anchor && !!focusRoom && !pointInPolygon(anchor[0], anchor[2], focusRoom.points))}
-                  hidden={(!isEditMode && occluded.has(w.id)) || (!!anchor && aboveLevel(anchor[1]))}
+                  hidden={backdrop || (!isEditMode && occluded.has(w.id)) || (!!anchor && aboveLevel(anchor[1]))}
                   breathing={present.has(w.id)}
                   alert={alertChips.has(w.id)}
                 />
@@ -1094,7 +1098,7 @@ export function FloorplanView() {
                   cutaway={floorplan?.cutaway !== false}
                   // Ni en édition, où l'on règle la vue, ni en économie d'énergie,
                   // ni quand la boussole oriente la maison.
-                  idleRotate={!!floorplan?.idleRotate && motionAllowed && !isEditMode && !compass}
+                  idleRotate={((!!floorplan?.idleRotate && motionAllowed) || (backdrop && motionOk)) && !isEditMode && !compass}
                   compass={compass && isPhone && !isEditMode}
                   lampGlow={!!floorplan?.lampGlow}
                   lamps={lamps}
@@ -1313,7 +1317,7 @@ export function FloorplanView() {
                 onCancel={() => setDraft(null)}
               />
             )}
-            {loaded && !isEditMode && (
+            {loaded && !isEditMode && !backdrop && (
               <div data-tour='floorplan-buttons' className={cn('absolute right-3 bottom-3 z-30 flex gap-2', replay.span && 'left-3')}>
                 {replay.span && (
                   <ReplayBar
@@ -1368,7 +1372,7 @@ export function FloorplanView() {
                 />
               </div>
             )}
-            {loaded && levels.length > 1 && (
+            {loaded && levels.length > 1 && !backdrop && (
               <div
                 role='group'
                 aria-label={t('layout.floorplan.levels')}

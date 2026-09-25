@@ -13,7 +13,7 @@ import { PageTabs } from '@/components/layout/PageTabs';
 import { PageBadges } from '@/components/layout/PageBadges';
 import { MoreInfoModal } from '@/components/modals/MoreInfoModal';
 import { LoadingScreen } from '@/components/layout/LoadingScreen';
-import { lazy, Suspense, useEffect, useState, memo } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, memo } from 'react';
 import { AnimatePresence, LayoutGroup } from 'framer-motion';
 
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
@@ -103,6 +103,30 @@ function ReturnHomeWatcher() {
  * Surveille l'entité HA `screensaver_entity` via WebSocket pour
  * activer/désactiver le WallPanel depuis Home Assistant.
  */
+/**
+ * Écran de veille sur une maquette (`floorplan_page`) : la veille ouvre sa
+ * page Plan, et rend en partant la page qu'on avait — celle de l'accueil si
+ * l'inactivité y a ramené entre-temps.
+ */
+function ScreensaverPlanWatcher() {
+  const { isActive, config } = useWallPanel();
+  const { pages, currentPageId, setCurrentPage } = usePages();
+  const plan = pages.find(p => p.id === config.floorplan_page && p.type === 'floorplan')?.id;
+  const back = useRef<string | null>(null);
+  useEffect(() => {
+    if (isActive && plan) {
+      if (currentPageId === plan) return;
+      back.current = currentPageId;
+      setCurrentPage(plan);
+    } else if (!isActive && back.current !== null) {
+      const page = back.current;
+      back.current = null;
+      setCurrentPage(page);
+    }
+  }, [isActive, plan, currentPageId, setCurrentPage]);
+  return null;
+}
+
 function ScreensaverEntityWatcher() {
   const { config, activate, deactivate, isActive } = useWallPanel();
   const entityId = config.screensaver_entity ?? '';
@@ -193,6 +217,7 @@ function DashboardContent() {
         <IdleWatcher />
         <ReturnHomeWatcher />
         <ScreensaverEntityWatcher />
+        <ScreensaverPlanWatcher />
         <WallPanelOverlay />
 
         {/* More Info modal — une modale par domaine, chacune avec ses graphes

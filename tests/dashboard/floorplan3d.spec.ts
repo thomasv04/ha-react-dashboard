@@ -314,6 +314,46 @@ test('a house with levels shows one at a time, the ground floor first', async ({
   await expect(house).toHaveAttribute('data-floorplan-level', 'lvl000');
 });
 
+test('as the background of the screensaver, the house turns alone, and the page comes back after', async ({ page, request }) => {
+  const before = await (await request.get(`${API}/api/config`)).json();
+  const config = structuredClone(before);
+  config.wallPanel = {
+    config: {
+      ...(config.wallPanel?.config ?? {
+        enabled: false,
+        idle_time: 300,
+        image_urls: [],
+        image_fit: 'cover',
+        media_order: 'random',
+        media_list_update_interval: 43200,
+        image_duration: 30,
+        style: {},
+      }),
+      floorplan_page: 'maison',
+    },
+    layout: config.wallPanel?.layout ?? { widgets: { lg: [], md: [], sm: [] }, cols: { lg: 12, md: 8, sm: 4 } },
+    widgetConfigs: config.wallPanel?.widgetConfigs ?? {},
+  };
+  expect((await request.put(`${API}/api/config`, { data: config })).ok()).toBeTruthy();
+  try {
+    // La veille, dès le chargement, sur l'accueil : elle ouvre la maison.
+    await page.goto('/?hrd_screensaver=true');
+    const overlay = page.getByRole('button', { name: "Fermer l'écran de veille" });
+    await expect(overlay).toBeVisible({ timeout: 60_000 });
+    await expect(page).toHaveURL(/#maison$/);
+    await expect(page.locator('[data-floorplan-3d] canvas')).toBeVisible();
+    // Seule : ni pastilles, ni boutons.
+    await expect(page.locator('[data-floorplan-item="temp"]')).toHaveCSS('opacity', '0', { timeout: 60_000 });
+    await expect(page.locator('[data-tour="floorplan-buttons"]')).toHaveCount(0);
+
+    await overlay.click();
+    await expect(overlay).toBeHidden();
+    await expect(page).not.toHaveURL(/#maison/);
+  } finally {
+    await request.put(`${API}/api/config`, { data: before });
+  }
+});
+
 test('the Plan tour opens a plan page, then points at its chips and its views', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
