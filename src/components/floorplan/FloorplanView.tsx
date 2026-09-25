@@ -67,9 +67,11 @@ import {
 } from '@/lib/floorplan';
 import {
   familyKind,
+  linkCandidates,
   normalizeOpenings,
   openingLabel,
   parseNodeName,
+  suggestLinks,
   typedOpenings,
   type FloorplanOpenings,
   type ModelOpenings,
@@ -532,7 +534,11 @@ export function FloorplanView() {
         }
       : { left: 45, right: 55, y: 50 };
     setOpeningDraft({
-      link: openingsConfig.links.find(l => l.node === id) ?? { node: id, entityId: '' },
+      // Pas encore liée : l'entité que propose son nom, s'il en propose une.
+      link: openingsConfig.links.find(l => l.node === id) ??
+        suggestLinks(modelOpenings!, openingsConfig.kinds, openingsConfig.links, linkCandidates(useHass.getState().entities)).find(
+          l => l.node === id
+        ) ?? { node: id, entityId: '' },
       kind: familyKind(opening.family, openingsConfig.kinds),
       around,
     });
@@ -971,6 +977,7 @@ export function FloorplanView() {
           selected={previewing ?? null}
           onSelect={linkOpening}
           onKinds={kinds => setOpenings({ kinds })}
+          onLink={links => setOpenings({ links: [...openingsConfig.links, ...links] })}
         />
       )}
       {parts.length > 0 && <PartList parts={parts} onRemove={id => setFloorplan({ parts: parts.filter(p => p.id !== id) })} />}

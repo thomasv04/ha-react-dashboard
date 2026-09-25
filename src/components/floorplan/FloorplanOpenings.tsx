@@ -23,8 +23,10 @@ import { useEntities } from '@/hooks/useEntities';
 import { guessPartKind, openness } from '@/lib/floorplan';
 import {
   familyKind,
+  linkCandidates,
   openingLabel,
   OPENING_KINDS,
+  suggestLinks,
   typedOpenings,
   type ModelOpenings,
   type OpeningFamily,
@@ -64,8 +66,9 @@ function SectionTitle({ title, aside }: { title: string; aside?: string }) {
 
 /**
  * Onglet « Ouvertures » : les liaisons d'abord — chaque porte, fenêtre ou
- * baie des familles retenues, son entité ou de quoi en choisir une —, puis le
- * type de chaque famille, deviné d'après son nom, qu'on corrige.
+ * baie des familles retenues, son entité ou de quoi en choisir une, et celle
+ * que propose son nom —, puis le type de chaque famille, deviné d'après son
+ * nom, qu'on corrige.
  */
 export function OpeningsTab({
   model,
@@ -74,6 +77,7 @@ export function OpeningsTab({
   selected,
   onSelect,
   onKinds,
+  onLink,
 }: {
   model: ModelOpenings;
   kinds: Kinds;
@@ -82,9 +86,13 @@ export function OpeningsTab({
   selected: string | null;
   onSelect: (id: string) => void;
   onKinds: (kinds: Kinds) => void;
+  /** Liaisons à ajouter : celles que proposent les noms. */
+  onLink: (links: OpeningLink[]) => void;
 }) {
   const { t } = useI18n();
-  const entities = useEntities(links.map(l => l.entityId));
+  const all = useHass(s => s.entities);
+  const suggested = suggestLinks(model, kinds, links, linkCandidates(all));
+  const entities = useEntities([...links, ...suggested].map(l => l.entityId));
   const typed = typedOpenings(model, kinds);
   const linked = typed.filter(o => links.some(l => l.node === o.id && l.entityId)).length;
   return (
@@ -95,11 +103,23 @@ export function OpeningsTab({
             title={t('layout.floorplan.openingsLinks')}
             aside={t('layout.floorplan.openingsLinked', { linked, total: typed.length })}
           />
+          {suggested.length > 0 && (
+            <button
+              onClick={() => onLink(suggested)}
+              className='flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-sky-500/15 border border-sky-400/30 text-sky-200 hover:bg-sky-500/25'
+            >
+              <Link2 size={12} />
+              {t(suggested.length > 1 ? 'layout.floorplan.openingLinkSuggestedPlural' : 'layout.floorplan.openingLinkSuggested', {
+                count: suggested.length,
+              })}
+            </button>
+          )}
           {typed.map(opening => {
             const Icon = OPENING_ICONS[familyKind(opening.family, kinds)!];
             const link = links.find(l => l.node === opening.id);
             const entity = link?.entityId ? entities[link.entityId] : undefined;
             const open = entity && openness(entity.state, entity.attributes) > 0;
+            const proposal = suggested.find(s => s.node === opening.id)?.entityId;
             return (
               <button
                 key={opening.id}
@@ -120,8 +140,17 @@ export function OpeningsTab({
                 ) : (
                   <span />
                 )}
-                <span className={cn('col-span-2 truncate text-[11px]', entity ? 'text-white/45' : 'text-amber-300/90')}>
-                  {entity ? (friendlyName(entity) ?? link?.entityId) : t('layout.floorplan.openingLinkEntity')}
+                <span
+                  className={cn(
+                    'col-span-2 truncate text-[11px]',
+                    entity ? 'text-white/45' : proposal ? 'text-sky-300/90' : 'text-amber-300/90'
+                  )}
+                >
+                  {entity
+                    ? (friendlyName(entity) ?? link?.entityId)
+                    : proposal
+                      ? t('layout.floorplan.openingSuggested', { name: friendlyName(entities[proposal]) ?? proposal })
+                      : t('layout.floorplan.openingLinkEntity')}
                 </span>
               </button>
             );

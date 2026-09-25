@@ -6,6 +6,7 @@ import {
   familyKind,
   furnitureNodes,
   guessOpeningKind,
+  linkCandidates,
   modelNode,
   motionAt,
   normalizeOpenings,
@@ -13,8 +14,10 @@ import {
   openingMotion,
   parseNodeName,
   structureOf,
+  suggestLinks,
   typedOpenings,
   wallTop,
+  type LinkCandidate,
   type ModelNode,
   type Motion,
   type OpeningKind,
@@ -435,6 +438,51 @@ describe('openingLabel and typedOpenings', () => {
   it('keeps the objects of the families that have a type', () => {
     expect(typedOpenings(model, {}).map(o => o.id)).toEqual(['Porte_en_bois_1', 'Porte_en_bois_1_1', 'Porte_Entree_1']);
     expect(typedOpenings(model, { Porte_en_bois: 'none', Armoire: 'door' }).map(o => o.id)).toEqual(['Porte_Entree_1', 'Armoire_1']);
+  });
+});
+
+describe('suggestLinks', () => {
+  const model = detectOpenings([
+    box('Porte_Entree_1', [0, 0, 0], [100, 210, 6]),
+    box('Porte_Chambre_1', [200, 0, 0], [300, 210, 6]),
+    box('Volet_Chambre_1', [400, 100, 0], [500, 200, 6]),
+    box('Porte_en_bois_1', [600, 0, 0], [700, 210, 6]),
+    box('Porte_en_bois_1_1', [800, 0, 0], [900, 210, 6]),
+  ]);
+  const entities: LinkCandidate[] = [
+    { entityId: 'binary_sensor.contact_42', name: "Porte d'entrée", deviceClass: 'door' },
+    { entityId: 'binary_sensor.fenetre_chambre', deviceClass: 'window' },
+    { entityId: 'cover.volet_chambre', deviceClass: 'shutter' },
+    { entityId: 'cover.volet_chambre_invites', deviceClass: 'shutter' },
+    { entityId: 'binary_sensor.porte_en_bois', deviceClass: 'door' },
+  ];
+
+  it('links an opening to the entity named like it, able to move it', () => {
+    expect(suggestLinks(model, {}, [], entities)).toEqual([
+      // Par son nom, accents et apostrophe compris.
+      { node: 'Porte_Entree_1', entityId: 'binary_sensor.contact_42' },
+      // Le volet de la chambre, pas celui de la chambre d'invités.
+      { node: 'Volet_Chambre_1', entityId: 'cover.volet_chambre' },
+    ]);
+    // Porte_Chambre : un contact de fenêtre ne meut pas une porte. Porte_en_bois × 2 : laquelle ?
+  });
+
+  it('proposes nothing for what is already linked', () => {
+    const links = [{ node: 'Volet_Chambre_1', entityId: 'cover.volet_salon' }];
+    const taken = [{ node: 'Porte_Chambre_1', entityId: 'binary_sensor.contact_42' }];
+    expect(suggestLinks(model, {}, links, entities).map(s => s.node)).toEqual(['Porte_Entree_1']);
+    expect(suggestLinks(model, {}, taken, entities).map(s => s.node)).toEqual(['Volet_Chambre_1']);
+  });
+
+  it('keeps only contacts and covers among the entities of the house', () => {
+    const candidates = linkCandidates({
+      'binary_sensor.porte_entree': { attributes: { device_class: 'door', friendly_name: "Porte d'entrée" } },
+      'binary_sensor.couloir_mouvement': { attributes: { device_class: 'motion' } },
+      'cover.volet_salon': { attributes: {} },
+      'light.salon': { attributes: {} },
+    });
+    expect(candidates.map(c => c.entityId)).toEqual(['binary_sensor.porte_entree', 'cover.volet_salon']);
+    expect(candidates[0].name).toBe("Porte d'entrée");
   });
 });
 

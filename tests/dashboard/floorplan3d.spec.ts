@@ -520,6 +520,19 @@ test('in edit mode, the Openings tab lists the doors of the model, and links one
     .toEqual(['Porte_Chambre_1 binary_sensor.porte_cellier', 'Porte_Cuisine_1 binary_sensor.porte_entree']);
 });
 
+test('in edit mode, the Openings tab proposes the entity named like an opening, linked in one click', async ({ page, request }) => {
+  await openOpenings(page);
+  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
+  await page.getByRole('tab', { name: 'Ouvertures' }).click();
+  // `cover.volet_chambre`, pas `cover.volet_chambre_invites` : celui qui a le moins de mots en plus.
+  await expect(page.getByRole('button', { name: /^Volet_Chambre.*Proposée : Chambre$/ })).toBeVisible();
+  await page.getByRole('button', { name: "Lier l'entité proposée" }).click();
+  await expect(page.getByRole('button', { name: /^Volet_Chambre.*Proposée/ })).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Sauvegarder' }).click();
+  await expect.poll(() => savedLinks(request)).toContain('Volet_Chambre_1 cover.volet_chambre');
+});
+
 test('in edit mode, a click on a real window of the model opens its link window', async ({ page }) => {
   await openOpenings(page);
   await page.getByRole('button', { name: 'Modifier le dashboard' }).click();

@@ -1,4 +1,5 @@
 import { SWING, type Vec3 } from '@/lib/floorplan';
+import { friendlyName } from '@/lib/ha-service';
 
 /**
  * Les ouvertures d'une maquette exportée de Sweet Home 3D avec le plugin
@@ -792,3 +793,88 @@ export function familyKind(family: string, kinds: Record<string, OpeningKind | '
 /** Les ouvertures des familles retenues — un type, choisi ou deviné —, dans l'ordre de la maison. */
 export const typedOpenings = (model: ModelOpenings, kinds: Record<string, OpeningKind | 'none'>) =>
   model.openings.filter(o => o.family && familyKind(o.family, kinds));
+
+// ── Liaisons proposées ───────────────────────────────────────────────────────
+
+/** Une entité qui pourrait mouvoir une ouverture. */
+export interface LinkCandidate {
+  entityId: string;
+  name?: string;
+  deviceClass?: unknown;
+}
+
+/** Mots d'un nom, sans accents ni casse : `Porte_Entree`, « Porte d'entrée » → porte, entree. */
+const nameWords = (text: string) =>
+  text
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/([a-z])([A-Z])/g, '$1_$2')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+
+/** Mots qui disent ce qu'est une ouverture, pas laquelle. */
+const TYPE_WORD =
+  /^(baie|coulissante?|sliding|slider|garage|volet|shutter|store|blind|fenetre|window|velux|lucarne|porte|door|portail|gate)$/;
+
+/** Ce qu'une entité peut mouvoir : un contact de porte une porte, un volet un volet. */
+function movableKinds({ entityId, deviceClass }: LinkCandidate): OpeningKind[] {
+  if (entityId.startsWith('cover.')) {
+    if (deviceClass === 'garage') return ['garage'];
+    if (deviceClass === 'door' || deviceClass === 'gate') return ['door', 'sliding'];
+    if (deviceClass === 'window') return ['window'];
+    return ['shutter'];
+  }
+  if (!entityId.startsWith('binary_sensor.')) return [];
+  if (deviceClass === 'door') return ['door', 'sliding'];
+  if (deviceClass === 'window') return ['window', 'sliding'];
+  if (deviceClass === 'opening') return ['door', 'sliding', 'window'];
+  if (deviceClass === 'garage_door') return ['garage'];
+  return [];
+}
+
+/**
+ * Les liaisons que proposent les noms. Pour chaque ouverture sans entité,
+ * seule de sa famille — `Porte_en_bois` × 5 ne dit pas laquelle est laquelle —,
+ * l'entité qui peut la mouvoir et dont l'identifiant ou le nom contient les
+ * mots de la famille, hors celui du type : `Porte_Entree` → `binary_sensor.porte_entree`,
+ * ou « Porte d'entrée ». Entre plusieurs, celle qui a le moins de mots en plus ;
+ * à égalité, aucune, et une entité qui répond à deux ouvertures n'en lie
+ * aucune : deviner, ce serait lier au hasard. Une entité déjà liée n'est pas
+ * proposée.
+ */
+export function suggestLinks(
+  model: ModelOpenings,
+  kinds: Record<string, OpeningKind | 'none'>,
+  links: OpeningLink[],
+  entities: LinkCandidate[]
+): OpeningLink[] {
+  const linkedNodes = new Set(links.map(l => l.node));
+  const linkedEntities = new Set(links.map(l => l.entityId));
+  const free = entities.filter(e => !linkedEntities.has(e.entityId));
+  const suggestions = typedOpenings(model, kinds).flatMap(opening => {
+    if (linkedNodes.has(opening.id) || model.families.find(f => f.name === opening.family)?.count !== 1) return [];
+    const kind = familyKind(opening.family, kinds)!;
+    const all = nameWords(opening.family);
+    const which = all.filter(w => !TYPE_WORD.test(w));
+    const wanted = which.length ? which : all;
+    const scored = free.flatMap(entity => {
+      if (!movableKinds(entity).includes(kind)) return [];
+      const id = nameWords(entity.entityId.slice(entity.entityId.indexOf('.') + 1));
+      const known = new Set([...id, ...nameWords(entity.name ?? '')]);
+      return wanted.every(w => known.has(w)) ? [{ entityId: entity.entityId, extra: id.filter(w => !all.includes(w)).length }] : [];
+    });
+    const best = Math.min(...scored.map(s => s.extra));
+    const winners = scored.filter(s => s.extra === best);
+    return winners.length === 1 ? [{ node: opening.id, entityId: winners[0].entityId }] : [];
+  });
+  return suggestions.filter(s => suggestions.filter(o => o.entityId === s.entityId).length === 1);
+}
+
+/** Les entités d'une maison qui pourraient mouvoir une ouverture : contacts de porte ou de fenêtre, volets. */
+export function linkCandidates(entities: Record<string, { attributes?: Record<string, unknown> }> | undefined): LinkCandidate[] {
+  return Object.entries(entities ?? {}).flatMap(([entityId, entity]) => {
+    const candidate = { entityId, name: friendlyName(entity), deviceClass: entity.attributes?.device_class };
+    return movableKinds(candidate).length ? [candidate] : [];
+  });
+}

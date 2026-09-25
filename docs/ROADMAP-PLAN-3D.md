@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **35 tâches sur 38** — phases A à H et J, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
+**État global** : **36 tâches sur 39** — phases A à H et J, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -705,3 +705,19 @@ le `k` des suivantes, et leurs liaisons avec. Le plugin, lui, reste tel quel.
 
 - **Quoi** : une maquette ExportToHASS de plus de 63 m, ou dont un objet
   dépasse des murs, se lit et se coupe comme les autres.
+
+### [x] J12 — Les liaisons que proposent les noms
+
+> **Fait** (`suggestLinks`, [floorplan-openings.ts](../src/lib/floorplan-openings.ts)) :
+> l'onglet « Ouvertures » propose, sous chaque ouverture sans entité,
+> l'entité qui porte son nom — les mots de sa famille hors celui du type,
+> dans l'identifiant ou le nom, accents et casse ignorés : `Porte_Entree` →
+> « Porte d'entrée » — et qui peut la mouvoir : un contact de porte pour une
+> porte, de fenêtre pour une fenêtre, un volet pour un volet. Entre
+> plusieurs, celle qui a le moins de mots en plus (`cover.volet_chambre`
+> plutôt que `cover.volet_chambre_invites`) ; à égalité, aucune. Rien pour une
+> famille de plusieurs objets — `Porte_en_bois` × 5 ne dit pas laquelle est
+> laquelle —, ni une entité déjà liée. « Lier les entités proposées » les lie
+> toutes ; la fenêtre de liaison s'ouvre, elle, déjà remplie.
+
+- **Quoi** : lier en un clic les ouvertures dont le nom dit l'entité.
