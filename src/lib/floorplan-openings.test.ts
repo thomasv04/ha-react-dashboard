@@ -21,7 +21,7 @@ import {
   structureOf,
   suggestLinks,
   typedOpenings,
-  wallTop,
+  wallBounds,
   type LinkCandidate,
   type ModelNode,
   type Motion,
@@ -237,16 +237,18 @@ describe('modelLevels', () => {
   });
 });
 
-describe('wallTop', () => {
-  it('finds the top of the walls, whatever rises above them', () => {
+describe('wallBounds', () => {
+  it('finds the extent of the walls, whatever rises above them or lies beyond', () => {
     const nodes = [
       box('wall_0_1', [0, 0, 0], [500, 250, 10]),
       box('wall_1_1', [0, 0, 0], [10, 280, 400]),
       // Un conduit sans nom, qui traverse le plafond.
       box('3_6', [100, 152, 100], [120, 344, 120]),
+      // Des panneaux au fond du jardin, à cinq mètres de la façade.
+      box('model_1_9', [200, 0, -540], [300, 120, -500]),
     ];
-    expect(wallTop(nodes)).toBe(280);
-    expect(wallTop([box('Canape_1', [0, 0, 0], [200, 80, 90])])).toBeNull();
+    expect(wallBounds(nodes)).toEqual({ min: [0, 0, 0], max: [500, 280, 400] });
+    expect(wallBounds([box('Canape_1', [0, 0, 0], [200, 80, 90])])).toBeNull();
   });
 });
 

@@ -83,7 +83,7 @@ import {
   openingMotion,
   levelOf,
   structureOf,
-  wallTop,
+  wallBounds,
   type ModelNode,
   type ModelOpenings,
   type Motion,
@@ -1735,18 +1735,20 @@ export default function Floorplan3D({
         // partent debout, et s'abaissent en glissant : la maison s'ouvre.
         const { min, max } = new Box3().setFromObject(root);
         const top = max.y + 0.01;
-        // La coupe se règle sur la hauteur des murs, quand la maquette les
-        // distingue : un objet plus haut qu'eux ne la relève pas.
-        const walls = s.model ? wallTop(s.model.nodes.values()) : null;
+        // La coupe se règle sur les murs, quand la maquette les distingue : un
+        // objet plus haut qu'eux ne la relève pas, et ce qui est au-delà — le
+        // jardin, la terrasse — n'éloigne pas de la façade la bande du fond.
+        const walls = s.model && wallBounds(s.model.nodes.values());
+        const [w0, w1] = walls ? [root.localToWorld(new Vector3(...walls.min)), root.localToWorld(new Vector3(...walls.max))] : [min, max];
         s.cut = {
           height: top,
-          box: [min.x, min.z, max.x, max.z],
+          box: [w0.x, w0.z, w1.x, w1.z],
           sides: [top, top, top, top],
           margin: BACK_WALL_MARGIN,
           top,
           low: top,
           ground: min.y,
-          ceiling: walls === null ? max.y : root.localToWorld(new Vector3(0, walls, 0)).y,
+          ceiling: w1.y,
           back: [true, true, true, true],
           sliding: false,
         };

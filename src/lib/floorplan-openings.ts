@@ -440,13 +440,13 @@ export function modelLevels(nodes: ModelNode[]): ModelLevel[] {
 }
 
 /**
- * Haut des murs, dans les coordonnées de la maquette — `null` : elle ne les
- * distingue pas. Un objet plus haut qu'eux, un conduit, un velux, n'y compte pas.
+ * Emprise des murs, dans les coordonnées de la maquette — `null` : elle ne les
+ * distingue pas. Un objet plus haut qu'eux, un conduit, un velux, n'y compte
+ * pas ; ni ce qui est au-delà, le jardin, la terrasse.
  */
-export function wallTop(nodes: Iterable<ModelNode>): number | null {
-  let top = -Infinity;
-  for (const node of nodes) if (structureOf(node.name)?.type === 'wall') top = Math.max(top, node.max[1]);
-  return Number.isFinite(top) ? top : null;
+export function wallBounds(nodes: Iterable<ModelNode>): Box | null {
+  const walls = [...nodes].filter(node => structureOf(node.name)?.type === 'wall');
+  return walls.length ? union(walls) : null;
 }
 
 /**
