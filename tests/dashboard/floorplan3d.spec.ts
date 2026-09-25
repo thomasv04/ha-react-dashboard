@@ -336,19 +336,20 @@ test('as the background of the screensaver, the house turns alone, and the page 
   };
   expect((await request.put(`${API}/api/config`, { data: config })).ok()).toBeTruthy();
   try {
-    // La veille, dès le chargement, sur l'accueil : elle ouvre la maison.
+    // La veille, dès le chargement, sur l'accueil : elle montre la maison, sans y naviguer.
     await page.goto('/?hrd_screensaver=true');
     const overlay = page.getByRole('button', { name: "Fermer l'écran de veille" });
     await expect(overlay).toBeVisible({ timeout: 60_000 });
-    await expect(page).toHaveURL(/#maison$/);
     await expect(page.locator('[data-floorplan-3d] canvas')).toBeVisible();
+    await expect(page).not.toHaveURL(/#maison/);
     // Seule : ni pastilles, ni boutons.
     await expect(page.locator('[data-floorplan-item="temp"]')).toHaveCSS('opacity', '0', { timeout: 60_000 });
     await expect(page.locator('[data-tour="floorplan-buttons"]')).toHaveCount(0);
 
+    // En partant, l'accueil, où l'on était.
     await overlay.click();
     await expect(overlay).toBeHidden();
-    await expect(page).not.toHaveURL(/#maison/);
+    await expect(page.locator('[data-floorplan-3d]')).toHaveCount(0);
   } finally {
     await request.put(`${API}/api/config`, { data: before });
   }

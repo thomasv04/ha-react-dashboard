@@ -21,7 +21,7 @@ import { usePages, type FloorplanConfig } from '@/context/PageContext';
 import { useDashboardLayout, useEditMode, type FloorplanPos, type GridWidget } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useMoreInfoOptional } from '@/context/MoreInfoContext';
-import { useWallPanel } from '@/context/WallPanelContext';
+import { useScreensaverPlan, useWallPanel } from '@/context/WallPanelContext';
 import { FreeGridScope } from '@/components/layout/DashboardGrid';
 import { AlarmModeModal } from '@/components/cards/AlarmCard/AlarmCard';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
@@ -238,7 +238,8 @@ export function FloorplanView() {
   const { getWidgetConfig, updateWidgetConfig } = useWidgetConfig();
   // Sous l'écran de veille, la page reste montée : rien n'y bouge, pour rien —
   // sauf si elle en est le fond : la maison y tourne, seule, sans pastilles.
-  const { isActive: screensaver, config: wallPanel } = useWallPanel();
+  const { isActive: screensaver } = useWallPanel();
+  const screensaverPlan = useScreensaverPlan();
   const motionOk = useLowPowerMotion();
   const motionAllowed = motionOk && !screensaver;
   const { tokens, perfSettings } = useTheme();
@@ -310,7 +311,7 @@ export function FloorplanView() {
 
   const floorplan = currentPage?.floorplan;
   /** Fond de l'écran de veille : la maison seule. */
-  const backdrop = screensaver && !!currentPage && wallPanel.floorplan_page === currentPage.id;
+  const backdrop = screensaver && !!screensaverPlan && screensaverPlan === currentPage?.id;
   const image = floorplan?.image;
   const model = floorplan?.model;
   const widgets = layout.widgets.lg;

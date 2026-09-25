@@ -63,9 +63,18 @@ export interface Page {
 
 interface PageContextValue {
   pages: Page[];
+  /** La page affichée : celle où l'on a navigué, ou celle que montre l'écran de veille. */
   currentPageId: string;
   currentPage: Page | undefined;
+  /** La page où l'on a navigué — l'URL la suit, pas l'écran de veille. */
+  navigatedPageId: string;
   setCurrentPage: (id: string) => void;
+  /**
+   * Montre une page sans y naviguer — `null` : de nouveau celle où l'on est.
+   * L'écran de veille sur une maquette : ce qui navigue pendant ce temps (le
+   * retour à l'accueil) change la page d'en dessous, sans toucher à celle-ci.
+   */
+  showPage: (id: string | null) => void;
   addPage: (page: Omit<Page, 'id' | 'order'>) => string; // retourne l'id
   deletePage: (id: string) => void;
   updatePage: (id: string, updates: Partial<Page>) => void;
@@ -109,7 +118,9 @@ export function PageProvider({ children, initialPages }: PageProviderProps) {
     initialPages && initialPages.length > 0 ? (initialPages[0]?.id ?? 'home') : 'home'
   );
 
-  const currentPage = pages.find(p => p.id === currentPageId);
+  const [shownPageId, showPage] = useState<string | null>(null);
+  const visiblePageId = shownPageId && pages.some(p => p.id === shownPageId) ? shownPageId : currentPageId;
+  const currentPage = pages.find(p => p.id === visiblePageId);
 
   const setCurrentPage = useCallback(
     (id: string) => {
@@ -158,9 +169,11 @@ export function PageProvider({ children, initialPages }: PageProviderProps) {
     <PageContext.Provider
       value={{
         pages,
-        currentPageId,
+        currentPageId: visiblePageId,
         currentPage,
+        navigatedPageId: currentPageId,
         setCurrentPage,
+        showPage,
         addPage,
         deletePage,
         updatePage,

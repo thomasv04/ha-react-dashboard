@@ -13,12 +13,12 @@ import { PageTabs } from '@/components/layout/PageTabs';
 import { PageBadges } from '@/components/layout/PageBadges';
 import { MoreInfoModal } from '@/components/modals/MoreInfoModal';
 import { LoadingScreen } from '@/components/layout/LoadingScreen';
-import { lazy, Suspense, useEffect, useRef, useState, memo } from 'react';
+import { lazy, Suspense, useEffect, useState, memo } from 'react';
 import { AnimatePresence, LayoutGroup } from 'framer-motion';
 
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 import { usePageRouting } from '@/hooks/usePageRouting';
-import { WallPanelProvider, useWallPanel } from '@/context/WallPanelContext';
+import { WallPanelProvider, useScreensaverPlan, useWallPanel } from '@/context/WallPanelContext';
 import { WallPanelOverlay } from '@/components/wallpanel/WallPanelOverlay';
 import { useIdleDetector } from '@/hooks/useIdleDetector';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
@@ -100,33 +100,22 @@ function ReturnHomeWatcher() {
 }
 
 /**
- * Surveille l'entité HA `screensaver_entity` via WebSocket pour
- * activer/désactiver le WallPanel depuis Home Assistant.
- */
-/**
- * Écran de veille sur une maquette (`floorplan_page`) : la veille ouvre sa
- * page Plan, et rend en partant la page qu'on avait — celle de l'accueil si
- * l'inactivité y a ramené entre-temps.
+ * Écran de veille sur une maquette (`floorplan_page`) : la veille montre sa
+ * page Plan sans y naviguer. En partant, on retrouve la page où l'on était —
+ * celle de l'accueil si l'inactivité y a ramené entre-temps.
  */
 function ScreensaverPlanWatcher() {
-  const { isActive, config } = useWallPanel();
-  const { pages, currentPageId, setCurrentPage } = usePages();
-  const plan = pages.find(p => p.id === config.floorplan_page && p.type === 'floorplan')?.id;
-  const back = useRef<string | null>(null);
-  useEffect(() => {
-    if (isActive && plan) {
-      if (currentPageId === plan) return;
-      back.current = currentPageId;
-      setCurrentPage(plan);
-    } else if (!isActive && back.current !== null) {
-      const page = back.current;
-      back.current = null;
-      setCurrentPage(page);
-    }
-  }, [isActive, plan, currentPageId, setCurrentPage]);
+  const { isActive } = useWallPanel();
+  const plan = useScreensaverPlan();
+  const { showPage } = usePages();
+  useEffect(() => showPage(isActive && plan ? plan : null), [isActive, plan, showPage]);
   return null;
 }
 
+/**
+ * Surveille l'entité HA `screensaver_entity` via WebSocket pour
+ * activer/désactiver le WallPanel depuis Home Assistant.
+ */
 function ScreensaverEntityWatcher() {
   const { config, activate, deactivate, isActive } = useWallPanel();
   const entityId = config.screensaver_entity ?? '';

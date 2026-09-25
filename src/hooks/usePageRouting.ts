@@ -8,7 +8,9 @@ import { usePages } from '@/context/PageContext';
  * - Écoute les changements de hash (bouton back du navigateur)
  */
 export function usePageRouting() {
-  const { currentPageId, setCurrentPage, pages } = usePages();
+  // La page où l'on a navigué, pas celle que montre l'écran de veille : la
+  // veille ne réécrit pas l'URL, et le retour de `hashchange` ne l'y fige pas.
+  const { navigatedPageId: currentPageId, setCurrentPage, pages } = usePages();
 
   // Lire la page depuis le hash au montage
   useEffect(() => {
