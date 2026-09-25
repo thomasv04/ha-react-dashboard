@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **40 tâches sur 43** — phases A à H et J, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
+**État global** : **41 tâches sur 43** — phases A à H et J, `I1`, `I2` et `I4`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -511,7 +511,16 @@ murs, le toit, tournent avec la maison et passent derrière les murs.
   coins, sur le toit ou au sol) : un champ de cellules généré, qui s'illumine
   avec la production. Pour une maquette qui n'a pas les siens.
 
-### [ ] I4 — Rejouer l'énergie
+### [x] I4 — Rejouer l'énergie
+
+> **Fait** : la relecture demande aussi l'historique des capteurs des câbles
+> — leurs seuls états (`minimal_response`, `no_attributes`) : un capteur de
+> puissance change toutes les quelques secondes, et sa journée, attributs
+> compris, pèserait des mégaoctets. Chaque câble rejoue le courant de
+> l'instant, dans son sens, à sa vitesse ; l'unité (W ou kW) vient du direct.
+> Sans historique, il se repose, comme avant. Mock : les panneaux produisent
+> au soleil (une cloche de 7 h à 20 h), la maison consomme au réveil et le
+> soir, le réseau comble — testé.
 
 - **Quoi** : la relecture des 24 heures (`H2`) rejoue aussi les flux, d'après
   l'historique des capteurs de puissance — la production qui monte à midi.

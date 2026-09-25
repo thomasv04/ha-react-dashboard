@@ -315,7 +315,11 @@ export function FloorplanView() {
   const parts = normalizeParts(floorplan?.parts);
   /** Ouvertures de la maquette elle-même : le type de leurs familles, et leurs liaisons. */
   const openingsConfig = normalizeOpenings(floorplan?.openings);
-  const replay = useReplay([...glows.map(g => g.entityId), ...parts.map(p => p.entityId), ...openingsConfig.links.map(l => l.entityId)]);
+  const cables = normalizeCables(floorplan?.cables);
+  const replay = useReplay(
+    [...glows.map(g => g.entityId), ...parts.map(p => p.entityId), ...openingsConfig.links.map(l => l.entityId)],
+    cables.map(c => c.entityId)
+  );
   const closeReplay = replay.close;
   /** État d'une entité à l'instant rejoué — `undefined` en direct, ou sans historique. */
   const replayed = (entityId: string) => (replay.span ? stateAt(replay.history[entityId], replay.time) : undefined);
@@ -400,7 +404,6 @@ export function FloorplanView() {
   const rooms = normalizeRooms(floorplan?.rooms);
   /** La pièce où tombe ce point (x, z) du sol. */
   const roomAt = (x: number, z: number) => rooms.find(r => pointInPolygon(x, z, r.points));
-  const cables = normalizeCables(floorplan?.cables);
   // Ce qui circule dans chaque câble — celui qu'on vient de tracer compris : on
   // voit son sens en choisissant son entité.
   const allCables = [...cables, ...(cableDraft?.cable ? [cableDraft.cable] : [])];
@@ -446,7 +449,8 @@ export function FloorplanView() {
   // Derrière la maquette : le ciel de l'heure, sauf si la page garde le fond du thème.
   const sky = model && floorplan?.sky !== false ? skyColors(sunElevation, clouds) : null;
 
-  // Rejouée, la maison n'a pas encore l'historique de ses câbles : ils se reposent.
+  // Rejouée, l'énergie de l'instant — l'unité, que l'historique n'a pas, du
+  // direct ; sans historique, le câble se repose.
   // ── Étages ─────────────────────────────────────────────────────────────────
   /** Niveaux d'une maison à étages — aucun de plain-pied. */
   const levels = (detected && detected.model === model ? detected.openings?.levels : undefined) ?? [];
@@ -458,12 +462,18 @@ export function FloorplanView() {
 
   const cablesProp: CableProp[] = allCables
     .filter(c => c.points.some(p => !aboveLevel(p[1])))
-    .map(c => ({
-      ...c,
-      ...(replaying
-        ? { direction: 0 as const, watts: null }
-        : cableFlow(entities[c.entityId]?.state, entities[c.entityId]?.attributes, c.invert)),
-    }));
+    .map(c => {
+      const live = entities[c.entityId];
+      const past = replayed(c.entityId);
+      return {
+        ...c,
+        ...(past
+          ? cableFlow(past.state, { ...live?.attributes, ...past.attributes }, c.invert)
+          : replaying
+            ? { direction: 0 as const, watts: null }
+            : cableFlow(live?.state, live?.attributes, c.invert)),
+      };
+    });
   const focusRoom = rooms.find(r => r.id === focusId);
 
   const lamps: Lamp[] = model

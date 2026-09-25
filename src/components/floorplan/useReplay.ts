@@ -12,27 +12,44 @@ const TICK_MS = 50;
 
 type History = Record<string, HistoryEntry[]>;
 
-/** L'historique de ces entités sur la période : demandé à HA, simulé en mode mock. */
-async function loadHistory(connection: Connection | null | undefined, entityIds: string[], start: number, end: number): Promise<History> {
-  if (import.meta.env.MODE === 'mock') return (await import('@/mocks/demoHistory')).demoHistory(entityIds, start, end);
-  if (!connection || !entityIds.length) return {};
-  return connection.sendMessagePromise<History>({
-    type: 'history/history_during_period',
-    start_time: new Date(start).toISOString(),
-    end_time: new Date(end).toISOString(),
-    entity_ids: entityIds,
-    // Luminosité d'une lampe, position d'un volet : des attributs, qui changent sans l'état.
-    minimal_response: false,
-    no_attributes: false,
-    significant_changes_only: false,
-  });
+/**
+ * L'historique de ces entités sur la période : demandé à HA, simulé en mode
+ * mock. `statesOnly` : sans leurs attributs — un capteur de puissance change
+ * toutes les quelques secondes, et sa journée, attributs compris, pèserait des
+ * mégaoctets.
+ */
+async function loadHistory(
+  connection: Connection | null | undefined,
+  entityIds: string[],
+  statesOnly: string[],
+  start: number,
+  end: number
+): Promise<History> {
+  if (import.meta.env.MODE === 'mock') return (await import('@/mocks/demoHistory')).demoHistory([...entityIds, ...statesOnly], start, end);
+  if (!connection) return {};
+  const period = (ids: string[], attributes: boolean) =>
+    ids.length
+      ? connection.sendMessagePromise<History>({
+          type: 'history/history_during_period',
+          start_time: new Date(start).toISOString(),
+          end_time: new Date(end).toISOString(),
+          entity_ids: ids,
+          // Luminosité d'une lampe, position d'un volet : des attributs, qui changent sans l'état.
+          minimal_response: !attributes,
+          no_attributes: !attributes,
+          significant_changes_only: false,
+        })
+      : Promise.resolve<History>({});
+  const [full, light] = await Promise.all([period(entityIds, true), period(statesOnly, false)]);
+  return { ...full, ...light };
 }
 
 /**
  * Rejouer les 24 dernières heures : l'instant rejoué, sa lecture accélérée, et
- * l'historique de ces entités. `span` nul : on est en direct.
+ * l'historique de ces entités — de `statesOnly`, sans leurs attributs. `span`
+ * nul : on est en direct.
  */
-export function useReplay(entityIds: string[]) {
+export function useReplay(entityIds: string[], statesOnly: string[] = []) {
   const connection = useHass(s => s.connection);
   const [span, setSpan] = useState<{ start: number; end: number } | null>(null);
   const [time, setTime] = useState(0);
@@ -71,7 +88,7 @@ export function useReplay(entityIds: string[]) {
       setHistory({});
       // Sans historique, lampes et portes restent dans leur état du moment.
       const id = ++request.current;
-      loadHistory(connection, entityIds, start, end).then(
+      loadHistory(connection, entityIds, statesOnly, start, end).then(
         result => id === request.current && setHistory(result ?? {}),
         () => {}
       );
