@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **36 tâches sur 39** — phases A à H et J, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
+**État global** : **37 tâches sur 40** — phases A à H et J, `I1` et `I2`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -377,6 +377,20 @@ Le reste est indépendant.
 
 - **Quoi** : option : une lueur autour de chaque lampe allumée, de sa
   couleur.
+
+### [x] G4 — Vue sécurité
+
+> **Fait** : un bouton bouclier, à côté de la vue thermique, dès que la page
+> a une porte ou une fenêtre à surveiller. Les portes, fenêtres, baies et
+> portes de garage restées ouvertes — dessinées, de la maquette, ou pastilles
+> d'un contact — se cernent de rouge, par-dessus tout : on les voit au
+> travers des murs. Pas les volets, qu'on laisse ouverts sans rien craindre.
+> En haut, « Tout est fermé », ou « 2 ouvertes : Porte d'entrée, Baie » —
+> une porte et sa pastille ne comptent qu'une fois. Hors édition et hors
+> relecture. Test E2E : la porte de la chambre, liée au cellier ouvert, seule
+> cernée.
+
+- **Quoi** : d'un coup d'œil en partant, ce qui est resté ouvert.
 
 ---
 

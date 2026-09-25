@@ -205,6 +205,8 @@ interface Floorplan3DProps {
   onHover?: (anchor: Vec3 | null, node: string | null) => void;
   /** Ouverture de la maquette cernée, par-dessus tout : celle qu'on survole, celle qu'on lie. */
   highlight?: string | null;
+  /** Vue sécurité : les ouvertures restées ouvertes, chacune par deux coins opposés, cernées de rouge. */
+  alerts?: [Vec3, Vec3][];
   /** La maison tournée à la main. */
   onOrbit?: () => void;
   /** Rectangle en cours de dessin : deux coins opposés, dans les coordonnées de la maquette. */
@@ -365,6 +367,8 @@ interface Stage {
   outline: Group | null;
   /** Contour de l'ouverture cernée, créé au premier besoin. */
   highlight: LineSegments | null;
+  /** Contours rouges de la vue sécurité. */
+  alerts: Group;
   /** Tracés au sol. */
   floors: Group;
   /** Retouches des matériaux de la maquette (coupe, découpes), partagées par tous. */
@@ -1119,11 +1123,47 @@ function placeHighlight(s: Stage, id: string | null | undefined) {
     s.highlight.renderOrder = 10;
     s.scene.add(s.highlight);
   }
-  const min = s.root.localToWorld(new Vector3(...opening.min));
-  const max = s.root.localToWorld(new Vector3(...opening.max));
-  s.highlight.position.addVectors(min, max).multiplyScalar(0.5);
-  s.highlight.scale.subVectors(max, min).max(new Vector3(0.01, 0.01, 0.01));
+  fitOutline(s.root, s.highlight, opening.min, opening.max);
   s.highlight.visible = true;
+  s.render('draw');
+}
+
+/** Pose un contour de boîte (un cube unité) sur deux coins opposés de la maquette. */
+function fitOutline(root: Object3D, line: LineSegments, a: Vec3, b: Vec3) {
+  const min = root.localToWorld(new Vector3(Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.min(a[2], b[2])));
+  const max = root.localToWorld(new Vector3(Math.max(a[0], b[0]), Math.max(a[1], b[1]), Math.max(a[2], b[2])));
+  line.position.addVectors(min, max).multiplyScalar(0.5);
+  line.scale.subVectors(max, min).max(new Vector3(0.01, 0.01, 0.01));
+}
+
+/** Rouge d'une ouverture restée ouverte. */
+const ALERT_COLOR = 0xf87171;
+
+/**
+ * Vue sécurité : chaque porte, fenêtre ou baie restée ouverte, cernée de
+ * rouge par-dessus tout — on la voit au travers des murs. Tout refait à chaque
+ * changement : elles sont peu nombreuses. Leur nombre se lit sur la page.
+ */
+function placeAlerts(s: Stage, boxes: [Vec3, Vec3][]) {
+  for (const line of [...s.alerts.children] as LineSegments[]) {
+    line.geometry.dispose();
+    (line.material as Material).dispose();
+    s.alerts.remove(line);
+  }
+  const root = s.root;
+  if (root) {
+    for (const [a, b] of boxes) {
+      const line = new LineSegments(
+        new EdgesGeometry(new BoxGeometry(1, 1, 1)),
+        new LineBasicMaterial({ color: ALERT_COLOR, depthTest: false, transparent: true })
+      );
+      line.renderOrder = 10;
+      fitOutline(root, line, a, b);
+      s.alerts.add(line);
+    }
+  }
+  const host = s.renderer.domElement.parentElement;
+  if (host) host.dataset.floorplanAlerts = String(s.alerts.children.length);
   s.render('draw');
 }
 
@@ -1248,6 +1288,7 @@ export default function Floorplan3D({
   onOrbit,
   outline,
   highlight,
+  alerts,
   floors,
   focus,
   anchors,
@@ -1264,6 +1305,7 @@ export default function Floorplan3D({
     lamps,
     parts,
     openings,
+    alerts,
     cables,
     floors,
     anchors,
@@ -1282,6 +1324,7 @@ export default function Floorplan3D({
       lamps,
       parts,
       openings,
+      alerts,
       cables,
       floors,
       anchors,
@@ -1454,6 +1497,7 @@ export default function Floorplan3D({
       flowRunning: false,
       outline: null,
       highlight: null,
+      alerts: new Group(),
       floors: new Group(),
       uniforms,
       cutaway: false,
@@ -1467,7 +1511,7 @@ export default function Floorplan3D({
       spinning: false,
     };
     stage.current = s;
-    scene.add(s.floors);
+    scene.add(s.floors, s.alerts);
     resize();
 
     // Un clic pose ; un glisser fait tourner la caméra et ne pose rien.
@@ -1592,6 +1636,7 @@ export default function Floorplan3D({
         s.openings.clear();
         reportOpenings(s);
         placeHighlight(s, null);
+        placeAlerts(s, latest.current.alerts ?? []);
         latest.current.onOpenings?.(s.model?.detected ?? null);
         placeOpenings(s, latest.current.openings ?? []);
         // Placés d'après la maquette : tous reconstruits sur la nouvelle.
@@ -1696,6 +1741,11 @@ export default function Floorplan3D({
   useEffect(() => {
     if (stage.current) placeHighlight(stage.current, highlight);
   }, [highlight]);
+
+  const alertsKey = JSON.stringify(alerts ?? []);
+  useEffect(() => {
+    if (stage.current) placeAlerts(stage.current, latest.current.alerts ?? []);
+  }, [alertsKey]);
 
   const outlineKey = JSON.stringify(outline ?? null);
   useEffect(() => {

@@ -26,6 +26,8 @@ interface FloorplanItemProps {
   hidden?: boolean;
   /** Quelqu'un est là (mouvement, présence) : une lueur respire sous la pastille. */
   breathing?: boolean;
+  /** Vue sécurité : son contact est ouvert, elle se cerne de rouge. */
+  alert?: boolean;
 }
 
 /**
@@ -66,6 +68,7 @@ export function FloorplanItem({
   faded,
   hidden,
   breathing,
+  alert,
 }: FloorplanItemProps) {
   const { t } = useI18n();
   const { updateWidget, removeWidget } = useDashboardLayout();
@@ -124,7 +127,12 @@ export function FloorplanItem({
       // Le calque des éléments laisse passer les clics vers le plan ; chaque
       // élément les reprend. Le clic s'arrête ici : sinon, sur le plan, il
       // poserait une pastille en plus.
-      className={cn('absolute pointer-events-auto transition-opacity duration-500', faded && 'opacity-20', hidden && 'opacity-0')}
+      className={cn(
+        'absolute pointer-events-auto transition-opacity duration-500',
+        faded && 'opacity-20',
+        hidden && 'opacity-0',
+        alert && 'rounded-full ring-2 ring-red-400 shadow-[0_0_14px_rgba(248,113,113,0.55)]'
+      )}
       inert={faded || hidden}
       onClick={e => e.stopPropagation()}
       style={{

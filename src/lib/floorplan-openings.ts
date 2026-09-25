@@ -871,6 +871,10 @@ export function suggestLinks(
   return suggestions.filter(s => suggestions.filter(o => o.entityId === s.entityId).length === 1);
 }
 
+/** Un contact d'ouverture — porte, fenêtre, ouvrant, porte de garage —, pas un détecteur de mouvement. */
+export const isContact = (entityId: string, deviceClass: unknown) =>
+  entityId.startsWith('binary_sensor.') && movableKinds({ entityId, deviceClass }).length > 0;
+
 /** Les entités d'une maison qui pourraient mouvoir une ouverture : contacts de porte ou de fenêtre, volets. */
 export function linkCandidates(entities: Record<string, { attributes?: Record<string, unknown> }> | undefined): LinkCandidate[] {
   return Object.entries(entities ?? {}).flatMap(([entityId, entity]) => {

@@ -11,6 +11,8 @@ import {
   Layers,
   Map as MapIcon,
   RotateCcw,
+  ShieldAlert,
+  ShieldCheck,
   Sun,
   Thermometer,
   type LucideIcon,
@@ -67,6 +69,7 @@ import {
 } from '@/lib/floorplan';
 import {
   familyKind,
+  isContact,
   linkCandidates,
   normalizeOpenings,
   openingLabel,
@@ -78,6 +81,7 @@ import {
   type OpeningKind,
   type OpeningLink,
 } from '@/lib/floorplan-openings';
+import { friendlyName } from '@/lib/ha-service';
 import { cn, isTypingTarget } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import type { ChipCardConfig, WidgetConfig } from '@/types/widget-configs';
@@ -255,6 +259,8 @@ export function FloorplanView() {
   const [draft, setDraft] = useState<PartDraft | null>(null);
   /** Vue thermique : chaque pièce colorée selon sa température. */
   const [thermal, setThermal] = useState(false);
+  /** Vue sécurité : les portes et fenêtres restées ouvertes, en rouge. */
+  const [security, setSecurity] = useState(false);
   /** Pièce vers laquelle la caméra a volé, hors édition. */
   const [focusId, setFocusId] = useState<string | null>(null);
   /** Boussole : la maison tourne avec le téléphone. */
@@ -477,6 +483,30 @@ export function FloorplanView() {
   const modelOpenings = detected && detected.model === model ? detected.openings : undefined;
   /** Famille d'une ouverture, telle que la maquette l'a lue : son nœud seul ne la dit pas toujours (`Fenetre_sal_1_1`). */
   const familyOf = (node: string) => modelOpenings?.openings.find(o => o.id === node)?.family ?? parseNodeName(node).family;
+
+  // ── Vue sécurité ───────────────────────────────────────────────────────────
+  /**
+   * Ce qui ferme la maison : portes, fenêtres, baies, portes de garage — pas
+   * les volets, qu'on laisse ouverts sans rien craindre. Les dessinées et
+   * celles de la maquette, par deux coins pour les cerner ; les pastilles d'un
+   * contact, qui se cernent elles-mêmes.
+   */
+  const guards: { entityId: string; box?: [Vec3, Vec3]; chip?: string }[] = [
+    ...parts.filter(p => p.kind !== 'shutter').map(p => ({ entityId: p.entityId, box: [p.a, p.b] as [Vec3, Vec3] })),
+    ...openingsConfig.links.flatMap(l => {
+      const found = modelOpenings?.openings.find(o => o.id === l.node);
+      const kind = familyKind(familyOf(l.node), openingsConfig.kinds);
+      return found && kind && kind !== 'shutter' ? [{ entityId: l.entityId, box: [found.min, found.max] as [Vec3, Vec3] }] : [];
+    }),
+    ...chips.flatMap(c =>
+      isContact(c.entityId, entities[c.entityId]?.attributes?.device_class) ? [{ entityId: c.entityId, chip: c.id }] : []
+    ),
+  ].filter(g => g.entityId);
+  const showSecurity = security && !isEditMode && !replaying;
+  const opened = showSecurity ? guards.filter(g => openness(entities[g.entityId]?.state, entities[g.entityId]?.attributes) > 0) : [];
+  /** Une fois chacune : une porte et sa pastille ne font qu'une. */
+  const openedNames = [...new Set(opened.map(g => g.entityId))].map(id => friendlyName(entities[id]) ?? id);
+  const alertChips = new Set(opened.flatMap(g => (g.chip ? [g.chip] : [])));
   // L'ouverture qu'on lie s'ouvre et se ferme, pour qu'on voie ses gonds et son sens.
   const previewing = openingDraft?.link.node;
   useEffect(() => {
@@ -827,6 +857,7 @@ export function FloorplanView() {
                   faded={replaying || (!!anchor && !!focusRoom && !pointInPolygon(anchor[0], anchor[2], focusRoom.points))}
                   hidden={!isEditMode && occluded.has(w.id)}
                   breathing={present.has(w.id)}
+                  alert={alertChips.has(w.id)}
                 />
               );
             })
@@ -1071,6 +1102,7 @@ export function FloorplanView() {
                         : undefined
                   }
                   highlight={previewing ?? unnamed?.id ?? hovered}
+                  alerts={opened.flatMap(g => (g.box ? [g.box] : []))}
                   onLoad={() => setLoadedModel(model)}
                   onError={kind => setFailure({ model, kind })}
                 />
@@ -1283,6 +1315,15 @@ export function FloorplanView() {
                     pressed={compass}
                   />
                 )}
+                {guards.length > 0 && !replaying && (
+                  <RoundButton
+                    icon={ShieldCheck}
+                    label={t('layout.floorplan.security')}
+                    onClick={() => setSecurity(on => !on)}
+                    pressed={security}
+                    on='text-red-300'
+                  />
+                )}
                 {roomTemperatures.some(Boolean) && !replaying && (
                   <RoundButton
                     icon={Thermometer}
@@ -1307,6 +1348,29 @@ export function FloorplanView() {
                     three.current?.resetView();
                   }}
                 />
+              </div>
+            )}
+            {showSecurity && (
+              <div
+                role='status'
+                className={cn(
+                  'absolute left-1/2 top-3 z-30 -translate-x-1/2 max-w-[calc(100%-8rem)] flex items-center gap-2 px-3.5 py-2 rounded-xl gc-overlay text-sm font-medium',
+                  openedNames.length ? 'text-red-200' : 'text-green-200'
+                )}
+              >
+                {openedNames.length ? (
+                  <ShieldAlert size={16} className='shrink-0 text-red-400' />
+                ) : (
+                  <ShieldCheck size={16} className='shrink-0 text-green-400' />
+                )}
+                <span className='truncate'>
+                  {openedNames.length
+                    ? t(openedNames.length > 1 ? 'layout.floorplan.securityOpenPlural' : 'layout.floorplan.securityOpen', {
+                        count: openedNames.length,
+                        names: openedNames.join(', '),
+                      })
+                    : t('layout.floorplan.securityClosed')}
+                </span>
               </div>
             )}
             {focusRoom && (

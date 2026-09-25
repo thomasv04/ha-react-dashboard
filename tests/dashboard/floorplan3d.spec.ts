@@ -533,6 +533,19 @@ test('in edit mode, the Openings tab proposes the entity named like an opening, 
   await expect.poll(() => savedLinks(request)).toContain('Volet_Chambre_1 cover.volet_chambre');
 });
 
+test('the security view circles in red what is left open, and says so', async ({ page }) => {
+  await openOpenings(page);
+  const security = page.getByRole('button', { name: 'Portes et fenêtres' });
+  await security.click();
+  // La porte de la chambre, liée au cellier, ouvert ; un volet ouvert ne compte pas.
+  await expect(page.getByRole('status')).toHaveText('1 ouverte : Porte du cellier');
+  await expect(openings(page)).toHaveAttribute('data-floorplan-alerts', '1');
+
+  await security.click();
+  await expect(page.getByRole('status')).toHaveCount(0);
+  await expect(openings(page)).toHaveAttribute('data-floorplan-alerts', '0');
+});
+
 test('in edit mode, a click on a real window of the model opens its link window', async ({ page }) => {
   await openOpenings(page);
   await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
