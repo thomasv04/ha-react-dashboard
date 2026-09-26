@@ -433,6 +433,15 @@ test('in edit mode, a click on the model places a chip anchored where it landed'
   await page.screenshot({ path: testInfo.outputPath('floorplan3d-edit.png'), animations: 'disabled' });
 });
 
+test('on a device that asks for less motion, the Ambiance tab says why the cables stay still', async ({ page }) => {
+  // Comme une tablette aux animations Android coupées : WebView en fait `prefers-reduced-motion`.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await openModel(page);
+  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
+  await page.getByRole('tab', { name: 'Ambiance' }).click();
+  await expect(page.getByRole('tabpanel')).toContainText("Cet appareil demande moins d'animations");
+});
+
 test('the Elements tab lists the lamps, and places one that only offers lights', async ({ page }) => {
   await openModel(page);
   await page.getByRole('button', { name: 'Modifier le dashboard' }).click();

@@ -489,8 +489,9 @@ export function FloorplanView() {
   const weatherState = entities[weatherId]?.state;
   const clouds = cloudiness(weatherState);
   // Pluie, neige, éclairs, courant dans les câbles : jamais en économie
-  // d'énergie, ni quand les animations sont réduites.
-  const animated = motionAllowed && !perfSettings.reduceAnimations;
+  // d'énergie, ni quand les animations sont réduites — ni sous l'écran de
+  // veille, sauf quand la maison en est le fond : elle s'y anime seule.
+  const animated = (backdrop ? motionOk : motionAllowed) && !perfSettings.reduceAnimations;
   const falling = model && animated ? precipitation(weatherState) : null;
   // Le givre quand il gèle dehors : immobile, il reste même sans animations.
   const frost = model ? frostOf(entities[weatherId]?.attributes) : 0;
@@ -1109,6 +1110,12 @@ export function FloorplanView() {
         domain='weather'
         onChange={id => setFloorplan({ weather: id })}
       />
+      {/* Câbles, pluie, rotation immobiles : que l'appareil dise pourquoi. */}
+      {(!motionOk || perfSettings.reduceAnimations) && (
+        <p className='px-0.5 text-[11px] leading-snug text-amber-200/80'>
+          {t(perfSettings.reduceAnimations ? 'layout.floorplan.motionOffSetting' : 'layout.floorplan.motionOffDevice')}
+        </p>
+      )}
       {MOCK && (
         <label className='flex items-center gap-2 text-xs text-white/60'>
           {t('layout.floorplan.mockSun')}

@@ -443,6 +443,8 @@
     "rooms": "Rooms",
     "roomRemove": "Remove the room",
     "thermal": "Room temperatures",
+    "motionOffSetting": "Animations are disabled on this device (Settings › Performance › “Disable animations”): cables, rain and rotation stay still.",
+    "motionOffDevice": "This device asks for less motion: cables, rain and rotation stay still. On Android: Developer options › “Animator duration scale”, or Accessibility › “Remove animations”.",
     "security": "Doors and windows",
     "securityAlarm": "Alarm, doors and windows",
     "alarm": "Alarm",

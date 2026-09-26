@@ -443,6 +443,8 @@
     "rooms": "Pièces",
     "roomRemove": "Retirer la pièce",
     "thermal": "Températures des pièces",
+    "motionOffSetting": "Animations coupées sur cet appareil (Réglages › Performance › « Désactiver les animations ») : câbles, pluie et rotation restent immobiles.",
+    "motionOffDevice": "Cet appareil demande moins d'animations : câbles, pluie et rotation restent immobiles. Sur Android : Options pour les développeurs › « Échelle de durée de l'animation », ou Accessibilité › « Supprimer les animations ».",
     "security": "Portes et fenêtres",
     "securityAlarm": "Alarme, portes et fenêtres",
     "alarm": "Alarme",
