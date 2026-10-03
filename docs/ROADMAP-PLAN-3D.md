@@ -958,6 +958,12 @@ désormais d'un coup d'œil ce qui s'y passe.
 
 ### [ ] L3 — Un animal qui se promène
 
+> **Reporté**, à ta demande, à un second temps. Le travail commencé est
+> dans le stash git « wip(plan): L3 » : un chat ou un chien en volumes simples
+> (`pet3d.ts`, sa promenade testée), qui contourne murs et meubles par des
+> rayons dans la maquette et se pose sur le sol qu'il touche. Il était
+> dessiné, mais restait introuvable à l'écran : c'est là qu'il faut reprendre.
+
 - **Quoi** : bonus demandé en cours de route. Un chat ou un chien, en
   volumes simples, qui se promène dans les pièces : il marche quelques
   secondes, s'assoit, repart ; il contourne murs et meubles, et change de
