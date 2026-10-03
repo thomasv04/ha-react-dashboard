@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **43 tâches sur 43** — toutes les phases, de A à J. `F1` reste à essayer sur un vrai Android.
+**État global** : **44 tâches sur 48** — les phases A à J, et `K1`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -812,3 +812,56 @@ le `k` des suivantes, et leurs liaisons avec. Le plugin, lui, reste tel quel.
 > rez-de-chaussée, paraît à l'étage.
 
 - **Quoi** : une maison à étages se lit étage par étage.
+
+---
+
+## Phase K — Un écran d'accueil autour de la maison
+
+Idée venue de captures de référence : la maison à droite, sur un ciel nuageux
+qui couvre tout l'écran ; à gauche, une colonne de widgets ; la météo écrite en
+grand sur le ciel ; en haut, des chips d'état et un menu d'icônes. La maison
+n'est plus une page parmi d'autres : c'est l'accueil.
+
+### [x] K1 — Une colonne de widgets à gauche
+
+> **Fait** ([FloorplanColumn.tsx](../src/components/floorplan/FloorplanColumn.tsx)) :
+> la maquette ne rétrécit pas — le canevas garde tout l'écran, et la caméra
+> décale le centre de sa vue (`setViewOffset`) de la moitié de la colonne. Le
+> ciel, la pluie, les cards posées en % restent où ils étaient ; pastilles et
+> clics suivent la caméra. La colonne fait un quart de l'écran, entre 15 et
+> 21 rem ; chaque widget, la hauteur de ses rangées de grille. En édition, le
+> panneau de réglages passe à sa droite. Démo : horloge, flux d'énergie,
+> agenda. Test E2E : la card météo rangée dans la colonne, gardée à
+> l'enregistrement, immobile quand la maison tourne.
+
+- **Quoi** : option « Colonne de widgets », onglet « Maquette ». La colonne
+  tient sur le bord gauche, la maquette se cadre dans ce qui reste à droite ;
+  le ciel, la pluie, les nuages passent sous les deux. Des widgets ordinaires,
+  qu'on ajoute, règle, monte, descend, agrandit et retire en édition ; une
+  card posée sur la maquette peut y passer. Fixes quand la maison tourne.
+  `floorplan.column` : les identifiants, dans l'ordre. Décocher l'option
+  rend ses widgets à la maquette. Masquée sur téléphone et en écran de veille.
+
+### [ ] K2 — Des nuages dans le ciel
+
+- **Quoi** : derrière la maison, des nuages qui dérivent lentement, d'autant
+  plus nombreux que l'entité météo est couverte, gris par temps de pluie,
+  sombres la nuit. Immobiles quand les animations sont coupées.
+
+### [ ] K3 — La météo, écrite sur le ciel
+
+- **Quoi** : en haut à droite, sans card : la température en grand,
+  l'état du ciel, le coucher (ou le lever) du soleil, le vent et l'humidité.
+  Option « Météo sur le ciel », onglet « Ambiance ».
+
+### [ ] K4 — Des chips d'état
+
+- **Quoi** : en haut à gauche de la maquette : l'alarme (son mode, la fenêtre
+  de choix au toucher), les lampes allumées (la liste, chacune basculable), les
+  portes et fenêtres ouvertes (la vue sécurité au toucher).
+
+### [ ] K5 — Le menu en haut à droite
+
+- **Quoi** : les boutons ronds du bas (sécurité, thermique, relecture,
+  recentrer, boussole) montent en une barre en haut à droite, suivis de
+  raccourcis vers les panneaux choisis en édition (`floorplan.panels`).

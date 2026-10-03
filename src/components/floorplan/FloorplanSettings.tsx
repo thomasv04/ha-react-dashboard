@@ -38,6 +38,7 @@ export function SettingsPanel({
   tool,
   onTool,
   hint,
+  left,
 }: {
   tabs: SettingsTabSpec[];
   /** Onglet ouvert — `null` : le panneau replié sur ses onglets et ses outils. */
@@ -47,11 +48,16 @@ export function SettingsPanel({
   onTool: (tool: Tool) => void;
   /** Ce qu'un clic fera, selon l'outil. */
   hint: string;
+  /** Décalage depuis le bord gauche (px) : à droite de la colonne de widgets. */
+  left?: number;
 }) {
   const { t } = useI18n();
   const open = tabs.find(spec => spec.id === tab);
   return (
-    <div className='absolute left-2 top-2 z-30 w-76 max-w-[calc(100%-1rem)] max-h-[calc(100%-1rem)] flex flex-col gap-2 p-2.5 rounded-2xl gc-overlay'>
+    <div
+      className='absolute left-2 top-2 z-30 w-76 max-w-[calc(100%-1rem)] max-h-[calc(100%-1rem)] flex flex-col gap-2 p-2.5 rounded-2xl gc-overlay'
+      style={left ? { left } : undefined}
+    >
       <div
         role='tablist'
         data-tour='floorplan-settings'

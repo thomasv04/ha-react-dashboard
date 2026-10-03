@@ -46,6 +46,11 @@ export interface FloorplanConfig {
   openings?: FloorplanOpenings;
   /** Champs de panneaux solaires posés sur la maquette, éclairés par leur production. */
   solar?: FloorplanSolar[];
+  /**
+   * Colonne de widgets sur le bord gauche, la maquette cadrée à droite : les
+   * identifiants de ses widgets, dans l'ordre. Absente : pas de colonne.
+   */
+  column?: string[];
 }
 
 export interface Page {

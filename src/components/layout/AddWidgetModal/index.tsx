@@ -15,9 +15,11 @@ import { ListRow } from './ListRow';
 
 interface AddWidgetModalProps {
   onClose: () => void;
+  /** Le widget ajouté — la colonne d'une page Plan l'y range. */
+  onAdded?: (id: string) => void;
 }
 
-export function AddWidgetModal({ onClose }: AddWidgetModalProps) {
+export function AddWidgetModal({ onClose, onAdded }: AddWidgetModalProps) {
   const { t } = useI18n();
   const { addWidgetByType } = useDashboardLayout();
   const { setEditingWidgetId, updateWidgetConfig } = useWidgetConfig();
@@ -57,6 +59,7 @@ export function AddWidgetModal({ onClose }: AddWidgetModalProps) {
       const isList = Array.isArray((defaultCfg as unknown as Record<string, unknown>)[entityConfigKey]);
       updateWidgetConfig(id, { ...defaultCfg, [entityConfigKey]: isList ? [entityId] : entityId } as WidgetConfig);
     }
+    if (id) onAdded?.(id);
     onClose();
     if (id) setEditingWidgetId(id);
   };

@@ -467,6 +467,25 @@ test('the Elements tab lists the lamps, and places one that only offers lights',
   await expect(page.getByText(/pour y poser une pastille/)).toBeVisible();
 });
 
+test('in edit mode, a card goes into the widget column, which stays put when the house turns', async ({ page, request }) => {
+  await openModel(page);
+  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
+  await page.getByRole('tab', { name: 'Maquette' }).click();
+  await page.getByRole('checkbox', { name: 'Colonne de widgets' }).check();
+  await page.getByRole('tab', { name: 'Maquette' }).click();
+
+  await page.locator('[data-floorplan-item="weather-3d"] [data-drag-handle]').click();
+  await page.getByRole('button', { name: 'Ranger dans la colonne' }).click();
+  const column = page.locator('[data-floorplan-column]');
+  await expect(column.locator('[data-column-item="weather-3d"]')).toBeVisible();
+  await expect(page.locator('[data-floorplan-item="weather-3d"]')).toHaveCount(0);
+
+  await expectSaved(page, request, 'column', (id: string) => id, ['weather-3d']);
+  const box = await column.boundingBox();
+  await orbit(page, 160);
+  expect(await column.boundingBox()).toEqual(box);
+});
+
 test('in edit mode, two clicks draw a door, which is kept once saved', async ({ page, request }) => {
   const click = await drawWith(page, 'Porte · volet', /côté gonds/);
   // Un pan du mur du fond, entre deux fenêtres : le coin bas, puis le coin haut opposé.

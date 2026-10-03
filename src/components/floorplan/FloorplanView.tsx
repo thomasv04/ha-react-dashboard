@@ -93,6 +93,7 @@ import { cn, isTypingTarget } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import type { ChipCardConfig, WidgetConfig } from '@/types/widget-configs';
 import type { CableProp, FloorOverlay, Floorplan3DHandle, Lamp, OpeningProp, PartProp, Project, SolarProp } from './Floorplan3D';
+import { FloorplanColumn } from './FloorplanColumn';
 import { FloorplanItem } from './FloorplanItem';
 import { LampList } from './FloorplanLamps';
 import { DraftPopover, type Around } from './FloorplanDrawn';
@@ -409,6 +410,13 @@ export function FloorplanView() {
   // Boussole, sur téléphone : proposée dès que l'appareil donne son
   // orientation. Dans l'appli Home Assistant, Android seulement, et en HTTPS.
   const isPhone = useIsMobile();
+  /** La colonne de widgets : ni sur un écran étroit, ni en fond d'écran de veille. */
+  const narrow = useIsMobile(768);
+  const columnIds = floorplan?.column;
+  const docked = new Set(columnIds);
+  const showColumn = !!model && !!columnIds && !backdrop && !narrow;
+  /** Largeur de la colonne (px) : un quart de l'écran, entre 15 et 21 rem. */
+  const columnWidth = Math.min(336, Math.max(240, area.w * 0.24));
   const [compassReady, setCompassReady] = useState(false);
   useEffect(() => {
     if (!isPhone || !model || compassReady) return;
@@ -945,7 +953,7 @@ export function FloorplanView() {
         <Projected projector={projector}>
           {toScreen =>
             widgets.map(w => {
-              if (showThermal && thermometers.has(w.id)) return null;
+              if ((showThermal && thermometers.has(w.id)) || docked.has(w.id)) return null;
               const anchor = model ? normalizeAnchor(w.pos?.anchor) : undefined;
               const projected = anchor ? toScreen(anchor) : undefined;
               // Accrochée à la maquette : rien à montrer tant qu'elle n'est pas
@@ -961,6 +969,7 @@ export function FloorplanView() {
                   planRef={planRef}
                   projected={projected}
                   onCommit={model && w.type === 'chip' ? reanchor(w) : undefined}
+                  onDock={showColumn && w.type !== 'chip' ? () => setFloorplan({ column: [...(columnIds ?? []), w.id] }) : undefined}
                   // Vol vers une pièce : les pastilles des autres pièces s'estompent.
                   // Rejouée, tout s'estompe : pastilles et cards montrent le présent.
                   faded={replaying || (!!anchor && !!focusRoom && !pointInPolygon(anchor[0], anchor[2], focusRoom.points))}
@@ -1079,6 +1088,12 @@ export function FloorplanView() {
         label={t('layout.floorplan.idleRotate')}
         checked={!!floorplan?.idleRotate}
         onChange={on => setFloorplan({ idleRotate: on })}
+      />
+      {/* Décochée, ses widgets reviennent sur la maquette. */}
+      <ToggleRow
+        label={t('layout.floorplan.column')}
+        checked={!!columnIds}
+        onChange={on => setFloorplan({ column: on ? [] : undefined })}
       />
     </>
   );
@@ -1228,6 +1243,7 @@ export function FloorplanView() {
                   nightLight={nightLight}
                   shadows={!perfSettings.disableShadows}
                   cutaway={floorplan?.cutaway !== false}
+                  inset={showColumn && area.w ? (columnWidth + 12) / area.w : 0}
                   // Ni en édition, où l'on règle la vue, ni en économie d'énergie,
                   // ni quand la boussole oriente la maison.
                   idleRotate={((!!floorplan?.idleRotate && motionAllowed) || (backdrop && motionOk)) && !isEditMode && !compass}
@@ -1286,6 +1302,7 @@ export function FloorplanView() {
               )}
             </Projected>
             {items}
+            {showColumn && <FloorplanColumn ids={columnIds} width={columnWidth} onChange={ids => setFloorplan({ column: ids })} />}
             {addPopover}
             <Projected projector={projector}>
               {toScreen => {
@@ -1679,6 +1696,7 @@ export function FloorplanView() {
         <SettingsPanel
           tab={panel === 'image' ? null : panel}
           onTab={setPanel}
+          left={showColumn ? columnWidth + 24 : undefined}
           tool={tool}
           onTool={next => {
             setTool(next);

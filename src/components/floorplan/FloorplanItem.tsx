@@ -1,5 +1,5 @@
 import { memo, useState, type RefObject } from 'react';
-import { Settings, Trash2 } from 'lucide-react';
+import { PanelLeft, Settings, Trash2 } from 'lucide-react';
 import { GridItem, WidgetIdProvider, WIDGET_LABELS } from '@/components/layout/DashboardGrid';
 import { WidgetErrorBoundary } from '@/components/ui/WidgetErrorBoundary';
 import { useDashboardLayout, type FloorplanPos, type GridWidget } from '@/context/DashboardLayoutContext';
@@ -28,6 +28,8 @@ interface FloorplanItemProps {
   breathing?: boolean;
   /** Vue sécurité : son contact est ouvert, elle se cerne de rouge. */
   alert?: boolean;
+  /** Ranger la card dans la colonne de widgets — absente : pas de colonne. */
+  onDock?: () => void;
 }
 
 /**
@@ -38,7 +40,15 @@ interface FloorplanItemProps {
  * actions, visibilité conditionnelle, styles d'état et frontière d'erreur
  * compris. En édition, il est inerte.
  */
-const ItemContent = memo(function ItemContent({ id, type, isEditMode }: { id: string; type: GridWidget['type']; isEditMode: boolean }) {
+export const ItemContent = memo(function ItemContent({
+  id,
+  type,
+  isEditMode,
+}: {
+  id: string;
+  type: GridWidget['type'];
+  isEditMode: boolean;
+}) {
   const Component = WIDGET_COMPONENTS[type];
   if (!Component) return null;
   return isEditMode ? (
@@ -69,6 +79,7 @@ export function FloorplanItem({
   hidden,
   breathing,
   alert,
+  onDock,
 }: FloorplanItemProps) {
   const { t } = useI18n();
   const { updateWidget, removeWidget } = useDashboardLayout();
@@ -172,6 +183,16 @@ export function FloorplanItem({
               >
                 <Settings size={13} />
               </button>
+              {onDock && (
+                <button
+                  onClick={onDock}
+                  title={t('layout.floorplan.columnDock')}
+                  aria-label={t('layout.floorplan.columnDock')}
+                  className='p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors'
+                >
+                  <PanelLeft size={13} />
+                </button>
+              )}
               <button
                 onClick={() => removeWidget(widget.id)}
                 title={t('layout.removeWidget')}

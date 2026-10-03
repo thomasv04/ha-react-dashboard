@@ -194,6 +194,8 @@ interface Floorplan3DProps {
   cutaway: boolean;
   /** Tourner lentement après une minute sans geste. */
   idleRotate: boolean;
+  /** Part de la largeur, à gauche, que couvre une colonne de widgets : la maison se centre dans le reste. */
+  inset?: number;
   /** Une lueur autour de chaque lampe allumée, de sa couleur. */
   lampGlow: boolean;
   /** Boussole : la maison tourne avec le téléphone — ce qui est en haut de l'écran est devant soi. */
@@ -404,6 +406,10 @@ interface Stage {
   /** Retouches des matériaux de la maquette (coupe, découpes), partagées par tous. */
   uniforms: ModelUniforms;
   cutaway: boolean;
+  /** Part de la largeur couverte à gauche (`inset`). */
+  inset: number;
+  /** Recadre la caméra sur la taille du canevas et la place laissée à droite. */
+  resize: () => void;
   /** Géométrie de la coupe — `null` tant qu'aucune maquette n'est chargée. */
   cut: CutState | null;
   /** Vue d'avant le vol vers une pièce : le retour y ramène. */
@@ -544,7 +550,7 @@ function floorAt(s: Stage, clientX: number, clientY: number, y: number): [number
  */
 function fitDistance(s: Stage, radius: number) {
   const vertical = (FOV * Math.PI) / 180;
-  const horizontal = 2 * Math.atan(Math.tan(vertical / 2) * s.camera.aspect);
+  const horizontal = 2 * Math.atan(Math.tan(vertical / 2) * s.camera.aspect * (1 - s.inset));
   return radius / Math.sin(Math.min(vertical, horizontal) / 2);
 }
 
@@ -1397,6 +1403,7 @@ export default function Floorplan3D(props: Floorplan3DProps) {
     nightLight,
     shadows,
     cutaway,
+    inset = 0,
     idleRotate,
     lampGlow,
     compass,
@@ -1558,6 +1565,12 @@ export default function Floorplan3D(props: Floorplan3DProps) {
       if (!w || !h) return;
       renderer.setSize(w, h);
       cam.aspect = w / h;
+      // Une colonne couvre la gauche : le centre de la vue glisse à droite, de
+      // moitié — la maison se centre dans ce qui reste. Pastilles et clics
+      // suivent : ils passent par la caméra.
+      const inset = (stage.current?.inset ?? 0) * w;
+      if (inset) cam.setViewOffset(w, h, -inset / 2, 0, w, h);
+      else cam.clearViewOffset();
       cam.updateProjectionMatrix();
       render('view');
     };
@@ -1594,6 +1607,8 @@ export default function Floorplan3D(props: Floorplan3DProps) {
       floors: new Group(),
       uniforms,
       cutaway: false,
+      inset: latest.current.inset ?? 0,
+      resize,
       cut: null,
       home: null,
       flight: 0,
@@ -1882,6 +1897,14 @@ export default function Floorplan3D(props: Floorplan3DProps) {
     applyCutaway(s);
     s.render();
   }, [cutaway]);
+
+  // ── Colonne de widgets ─────────────────────────────────────────────────────
+  useEffect(() => {
+    const s = stage.current;
+    if (!s || s.inset === inset) return;
+    s.inset = inset;
+    s.resize();
+  }, [inset]);
 
   // ── Boussole ───────────────────────────────────────────────────────────────
   // La caméra regarde vers le cap du téléphone. Elle le suit en douceur, et

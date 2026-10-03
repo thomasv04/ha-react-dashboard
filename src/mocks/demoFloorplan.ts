@@ -2,6 +2,7 @@ import type { DashboardConfigV2, GridWidget } from '@/context/DashboardLayoutCon
 import type { EnergySource, FloorplanCable, FloorplanPart, FloorplanRoom } from '@/lib/floorplan';
 import type { FloorplanOpenings } from '@/lib/floorplan-openings';
 import type { WidgetConfigs } from '@/types/widget-configs';
+import { DEFAULT_WIDGET_CONFIGS } from '@/widgets';
 
 /**
  * Mode mock (`vite --mode mock`) : une page « Maison 3D » toujours présente,
@@ -41,6 +42,10 @@ const WIDGETS: GridWidget[] = [
   chip('demo-batterie', [-4.1, 0.3, 1.6]),
   // Une card n'est pas accrochée : elle reste posée en % de l'écran.
   { id: 'demo-meteo', type: 'weather', x: 0, y: 0, w: 2, h: 1, pos: { x: 88, y: 22, w: 20, h: 32 } },
+  // La colonne de gauche : des widgets ordinaires, à la hauteur de leurs rangées.
+  { id: 'demo-horloge', type: 'clock', x: 0, y: 0, w: 3, h: 2 },
+  { id: 'demo-energie', type: 'energy_flow', x: 0, y: 0, w: 3, h: 3 },
+  { id: 'demo-agenda', type: 'calendar', x: 0, y: 0, w: 3, h: 3 },
 ];
 
 const CONFIGS = {
@@ -55,6 +60,9 @@ const CONFIGS = {
   'demo-temp-amis': { type: 'chip', entityId: 'sensor.temperature_chambre_amis' },
   'demo-meteo': { type: 'weather', entityId: 'weather.home' },
   'demo-batterie': { type: 'chip', entityId: 'sensor.solarflow_2400_ac_electric_level' },
+  'demo-horloge': { type: 'clock', showAnalog: false, showDate: true },
+  'demo-energie': DEFAULT_WIDGET_CONFIGS.energy_flow,
+  'demo-agenda': DEFAULT_WIDGET_CONFIGS.calendar,
 } as WidgetConfigs;
 
 /** Portes, fenêtres et volets dessinés sur la maquette. */
@@ -183,7 +191,16 @@ export function withDemoFloorplan(config: DashboardConfigV2): DashboardConfigV2 
     {
       id: ID,
       label: 'Maison 3D',
-      floorplan: { image: '', model: MODEL, idleRotate: true, lampGlow: true, parts: PARTS, rooms: ROOMS, cables: CABLES },
+      floorplan: {
+        image: '',
+        model: MODEL,
+        idleRotate: true,
+        lampGlow: true,
+        parts: PARTS,
+        rooms: ROOMS,
+        cables: CABLES,
+        column: ['demo-horloge', 'demo-energie', 'demo-agenda'],
+      },
       widgets: WIDGETS,
       configs: CONFIGS,
     },
