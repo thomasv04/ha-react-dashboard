@@ -75,7 +75,8 @@ test.beforeAll(async ({ request }) => {
     icon: 'Home',
     type: 'floorplan',
     order: 99,
-    floorplan: { image: '', model: MODEL, rooms },
+    // Les valeurs au sol masqueraient la pastille de température, que les tests suivent.
+    floorplan: { image: '', model: MODEL, rooms, floorValues: false },
   });
   // Un plan encore vide, où téléverser une maquette.
   config.pages.push({ id: 'vierge', label: 'Vierge', icon: 'Home', type: 'floorplan', order: 100, floorplan: { image: '' } });
@@ -220,6 +221,19 @@ test('the thermal view colours a room with the temperature measured in it', asyn
   await expect(page.getByText('20.4°', { exact: true })).toBeVisible();
   // La pastille du capteur s'efface : sa valeur est au centre de la pièce.
   await expect(page.getByText('20.4 °C')).toHaveCount(0);
+});
+
+test('the temperature of a room is written on its floor, and its chip steps aside', async ({ page, request }) => {
+  const before = await (await request.get(`${API}/api/config`)).json();
+  const config = structuredClone(before);
+  config.pages.find((p: { id: string }) => p.id === 'maison').floorplan.floorValues = true;
+  expect((await request.put(`${API}/api/config`, { data: config })).ok()).toBeTruthy();
+
+  await page.goto('/#maison');
+  await expect(page.locator('[data-floorplan-3d]')).toHaveAttribute('data-floorplan-labels', '20.4°', { timeout: 60_000 });
+  await expect(page.locator('[data-floorplan-item="temp"]')).toHaveCount(0);
+
+  expect((await request.put(`${API}/api/config`, { data: before })).ok()).toBeTruthy();
 });
 
 test('a tap on a room flies the camera to it, and Escape brings it back', async ({ page }) => {
@@ -467,6 +481,30 @@ test('the Elements tab lists the lamps, and places one that only offers lights',
   await expect(page.getByText(/pour y poser une pastille/)).toBeVisible();
 });
 
+test('in edit mode, a card goes into the widget column, which stays put when the house turns', async ({ page, request }) => {
+  await openModel(page);
+  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
+  await page.getByRole('tab', { name: 'Maquette' }).click();
+  await page.getByRole('checkbox', { name: 'Colonne de widgets' }).check();
+  await page.getByRole('tab', { name: 'Maquette' }).click();
+
+  await page.locator('[data-floorplan-item="weather-3d"] [data-drag-handle]').click();
+  await page.getByRole('button', { name: 'Ranger dans la colonne' }).click();
+  const column = page.locator('[data-floorplan-column]');
+  await expect(column.locator('[data-column-item="weather-3d"]')).toBeVisible();
+  await expect(page.locator('[data-floorplan-item="weather-3d"]')).toHaveCount(0);
+
+  await expectSaved(page, request, 'column', (id: string) => id, ['weather-3d']);
+  const box = await column.boundingBox();
+  await orbit(page, 160);
+  expect(await column.boundingBox()).toEqual(box);
+
+  // La colonne recadre la maquette : les tests suivants cliquent sur la maison telle qu'elle était.
+  const config = await (await request.get(`${API}/api/config`)).json();
+  delete config.pages.find((p: { id: string }) => p.id === 'maison').floorplan.column;
+  expect((await request.put(`${API}/api/config`, { data: config })).ok()).toBeTruthy();
+});
+
 test('in edit mode, two clicks draw a door, which is kept once saved', async ({ page, request }) => {
   const click = await drawWith(page, 'Porte · volet', /côté gonds/);
   // Un pan du mur du fond, entre deux fenêtres : le coin bas, puis le coin haut opposé.
@@ -655,6 +693,41 @@ test('a window linked to its shutter stays put: the shutter is set in front of i
   // La maquette n'a pas de tablier devant cette fenêtre : on en pose un, et elle ne s'enroule pas.
   await expect(openings(page)).toHaveAttribute('data-floorplan-parts', 'front-Fenetre_Salon_1');
   await expect(openings(page)).not.toHaveAttribute('data-floorplan-openings', /Fenetre_Salon/);
+});
+
+test('a window moves with its contact under a shutter of its own, and a lock sits on a door', async ({ page, request }) => {
+  const before = await (await request.get(`${API}/api/config`)).json();
+  await openOpenings(page);
+  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
+  await page.getByRole('tab', { name: 'Ouvertures' }).click();
+
+  await page.getByRole('button', { name: /^Fenetre_Salon/ }).click();
+  const window = page.getByRole('dialog', { name: 'Fenetre_Salon' });
+  await page.getByPlaceholder('Rechercher...').fill('fenetre_chambre');
+  await page.getByRole('button', { name: 'binary_sensor.fenetre_chambre', exact: true }).click();
+  await window.getByText('Sélectionner...').click();
+  await page.getByPlaceholder('Rechercher...').fill('volet_salon');
+  await page.getByRole('button', { name: 'cover.volet_salon', exact: true }).click();
+  await window.getByRole('button', { name: 'Lier' }).click();
+  // Le volet se pose devant ; la fenêtre, elle, s'ouvre avec son contact.
+  await expect(openings(page)).toHaveAttribute('data-floorplan-parts', 'front-Fenetre_Salon_1');
+  await expect(openings(page)).toHaveAttribute('data-floorplan-openings', /Fenetre_Salon_1=1/);
+
+  await page.getByRole('button', { name: /^Porte_Chambre/ }).click();
+  const door = page.getByRole('dialog', { name: /^Porte_Chambre/ });
+  // Le volet, puis la serrure : la dernière.
+  await door.getByText('Sélectionner...').last().click();
+  await page.getByPlaceholder('Rechercher...').fill('lock.garage');
+  await page.getByRole('button', { name: 'lock.garage', exact: true }).click();
+  await door.getByRole('button', { name: 'Lier', exact: true }).click();
+  await page.getByRole('button', { name: 'Sauvegarder' }).click();
+
+  // Déverrouillée : son cadenas, sur la porte, propose de la verrouiller.
+  const lock = page.locator('[data-floorplan-lock="lock.garage"]');
+  await lock.getByRole('button').click();
+  await expect(lock.getByRole('button', { name: 'Verrouiller' })).toBeVisible();
+
+  expect((await request.put(`${API}/api/config`, { data: before })).ok()).toBeTruthy();
 });
 
 test('in edit mode, the Openings tab proposes the entity named like an opening, linked in one click', async ({ page, request }) => {

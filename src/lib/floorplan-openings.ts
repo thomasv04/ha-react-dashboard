@@ -823,6 +823,10 @@ export interface OpeningLink {
   flip?: boolean;
   /** Ses gonds sont sur l'autre arête du battant. */
   hinge?: boolean;
+  /** Un volet (`cover`) posé devant elle, qui s'enroule de lui-même : le battant, lui, suit `entityId`. */
+  shutter?: string;
+  /** Sa serrure connectée (`lock`) : un cadenas sur la porte. */
+  lock?: string;
 }
 
 /** Les ouvertures d'une maquette (`floorplan.openings`) : le type de ses familles, et les liaisons. */
@@ -843,8 +847,17 @@ export function normalizeOpenings(value: unknown): { kinds: Record<string, Openi
   const links = (Array.isArray(config.links) ? config.links : []).flatMap((l: unknown) => {
     const link = (l && typeof l === 'object' ? l : {}) as Record<string, unknown>;
     if (typeof link.node !== 'string' || !link.node || typeof link.entityId !== 'string') return [];
+    const extra = (key: 'shutter' | 'lock', domain: string) =>
+      typeof link[key] === 'string' && link[key].startsWith(domain) ? { [key]: link[key] } : {};
     return [
-      { node: link.node, entityId: link.entityId, ...(link.flip === true && { flip: true }), ...(link.hinge === true && { hinge: true }) },
+      {
+        node: link.node,
+        entityId: link.entityId,
+        ...(link.flip === true && { flip: true }),
+        ...(link.hinge === true && { hinge: true }),
+        ...extra('shutter', 'cover.'),
+        ...extra('lock', 'lock.'),
+      },
     ];
   });
   return { kinds, links };

@@ -8,6 +8,7 @@ import {
   HemisphereLight,
   PCFShadowMap,
   PerspectiveCamera,
+  PlaneGeometry,
   BufferGeometry,
   BoxGeometry,
   Color,
@@ -137,6 +138,12 @@ export interface FloorOverlay {
   fill: number;
   /** Fermé : une pièce. Ouvert : un tracé en cours. */
   closed: boolean;
+  /** Le remplissage s'ajoute à ce qu'il couvre : une lueur, plutôt qu'un voile. */
+  glow?: boolean;
+  /** `false` : sans contour. */
+  edge?: boolean;
+  /** Écrit à plat au centre du sol : une valeur, et une plus petite dessous. */
+  label?: { text: string; sub?: string };
 }
 
 /** Porte, fenêtre ou volet, et son ouverture de l'instant (0 à 1). */
@@ -194,6 +201,8 @@ interface Floorplan3DProps {
   cutaway: boolean;
   /** Tourner lentement après une minute sans geste. */
   idleRotate: boolean;
+  /** Part de la largeur, à gauche, que couvre une colonne de widgets : la maison se centre dans le reste. */
+  inset?: number;
   /** Une lueur autour de chaque lampe allumée, de sa couleur. */
   lampGlow: boolean;
   /** Boussole : la maison tourne avec le téléphone — ce qui est en haut de l'écran est devant soi. */
@@ -404,6 +413,10 @@ interface Stage {
   /** Retouches des matériaux de la maquette (coupe, découpes), partagées par tous. */
   uniforms: ModelUniforms;
   cutaway: boolean;
+  /** Part de la largeur couverte à gauche (`inset`). */
+  inset: number;
+  /** Recadre la caméra sur la taille du canevas et la place laissée à droite. */
+  resize: () => void;
   /** Géométrie de la coupe — `null` tant qu'aucune maquette n'est chargée. */
   cut: CutState | null;
   /** Vue d'avant le vol vers une pièce : le retour y ramène. */
@@ -544,7 +557,7 @@ function floorAt(s: Stage, clientX: number, clientY: number, y: number): [number
  */
 function fitDistance(s: Stage, radius: number) {
   const vertical = (FOV * Math.PI) / 180;
-  const horizontal = 2 * Math.atan(Math.tan(vertical / 2) * s.camera.aspect);
+  const horizontal = 2 * Math.atan(Math.tan(vertical / 2) * s.camera.aspect * (1 - s.inset));
   return radius / Math.sin(Math.min(vertical, horizontal) / 2);
 }
 
@@ -1297,6 +1310,55 @@ function placeAlerts(s: Stage, boxes: [Vec3, Vec3][]) {
 const FLOOR_LIFT = 0.03;
 
 /** Remplis et cernés d'après leur contour ; tout refait à chaque changement — ils sont peu nombreux. */
+/**
+ * Une valeur écrite à plat au centre d'une pièce, comme peinte sur le sol :
+ * large de la moitié de la pièce au plus. Par-dessus les meubles — une table au
+ * milieu la cacherait —, et tournée vers la caméra (`faceLabels`).
+ */
+function floorLabel(world: Vector3[], y: number, { text, sub }: { text: string; sub?: string }) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 256;
+  const g = canvas.getContext('2d')!;
+  g.textAlign = 'center';
+  g.lineJoin = 'round';
+  g.shadowColor = 'rgba(0, 0, 0, 0.5)';
+  g.shadowBlur = 16;
+  // Un contour sombre sous le blanc : lisible sur un parquet clair comme sur un carrelage sombre.
+  const write = (value: string, size: number, y: number) => {
+    g.font = `800 ${size}px system-ui, sans-serif`;
+    g.lineWidth = size / 7;
+    g.strokeStyle = 'rgba(15, 23, 42, 0.6)';
+    g.strokeText(value, 256, y, 500);
+    g.fillStyle = '#ffffff';
+    g.fillText(value, 256, y, 500);
+  };
+  write(text, 132, sub ? 140 : 175);
+  if (sub) write(sub, 80, 228);
+  const map = new CanvasTexture(canvas);
+  map.colorSpace = SRGBColorSpace;
+  const box = new Box3().setFromPoints(world);
+  // La moitié de la pièce, mais ni illisible dans une salle d'eau, ni démesurée dans un séjour.
+  const width = Math.min(Math.max(Math.min(box.max.x - box.min.x, box.max.z - box.min.z) * 0.6, MODEL_SIZE * 0.1), MODEL_SIZE * 0.17);
+  const label = new Mesh(
+    new PlaneGeometry(width, width / 2),
+    new MeshBasicMaterial({ map, transparent: true, depthTest: false, depthWrite: false, toneMapped: false })
+  );
+  label.position.set((box.min.x + box.max.x) / 2, y + FLOOR_LIFT, (box.min.z + box.max.z) / 2);
+  label.renderOrder = 7;
+  label.userData.facesCamera = true;
+  return label;
+}
+
+/** Les valeurs écrites au sol, le haut du texte loin de la caméra : lisibles quel que soit le tour de la maison. */
+function faceLabels(s: Stage) {
+  for (const label of s.floors.children) {
+    if (!label.userData.facesCamera) continue;
+    const yaw = Math.atan2(s.camera.position.x - label.position.x, s.camera.position.z - label.position.z);
+    label.rotation.set(-Math.PI / 2, yaw, 0, 'YXZ');
+  }
+}
+
 function placeFloors(s: Stage, floors: FloorOverlay[]) {
   clearGroup(s.floors);
   const root = s.root;
@@ -1309,13 +1371,22 @@ function placeFloors(s: Stage, floors: FloorOverlay[]) {
         // Le contour dessiné dans le plan (x, z), couché au sol.
         const fill = new Mesh(
           new ShapeGeometry(new Shape(world.map(p => new Vector2(p.x, p.z)))),
-          new MeshBasicMaterial({ color: floor.color, transparent: true, opacity: floor.fill, depthWrite: false, side: DoubleSide })
+          new MeshBasicMaterial({
+            color: floor.color,
+            transparent: true,
+            opacity: floor.fill,
+            depthWrite: false,
+            side: DoubleSide,
+            ...(floor.glow && { blending: AdditiveBlending }),
+          })
         );
         fill.rotation.x = Math.PI / 2;
         fill.position.y = y;
         fill.renderOrder = 5;
         s.floors.add(fill);
       }
+      if (floor.label && world.length >= 3) s.floors.add(floorLabel(world, y, floor.label));
+      if (floor.edge === false) continue;
       const line = new (floor.closed ? LineLoop : Line)(
         new BufferGeometry().setAttribute(
           'position',
@@ -1330,6 +1401,12 @@ function placeFloors(s: Stage, floors: FloorOverlay[]) {
       s.floors.add(line);
     }
   }
+  faceLabels(s);
+  // Ce qui est écrit au sol, et le nombre de pièces en lueur : les tests le lisent sur le conteneur.
+  s.host.dataset.floorplanLabels = floors
+    .flatMap(f => (f.label ? [[f.label.text, f.label.sub].filter(Boolean).join(' ')] : []))
+    .join(' | ');
+  s.host.dataset.floorplanGlows = String(floors.filter(f => f.glow && f.fill > 0).length);
   s.render('draw');
 }
 
@@ -1397,6 +1474,7 @@ export default function Floorplan3D(props: Floorplan3DProps) {
     nightLight,
     shadows,
     cutaway,
+    inset = 0,
     idleRotate,
     lampGlow,
     compass,
@@ -1523,7 +1601,10 @@ export default function Floorplan3D(props: Floorplan3DProps) {
         // La maison tourne au repos : l'image bouge, sa finesse ne se voit pas — une densité de 1.
         const ratio = Math.min(window.devicePixelRatio, s.controls.autoRotate ? 1 : PIXEL_RATIO);
         if (renderer.getPixelRatio() !== ratio) renderer.setPixelRatio(ratio);
-        if (moved) updateCutaway(s);
+        if (moved) {
+          updateCutaway(s);
+          faceLabels(s);
+        }
         if (shadowsDirty) {
           renderer.shadowMap.needsUpdate = true;
           shadowsDirty = false;
@@ -1558,6 +1639,12 @@ export default function Floorplan3D(props: Floorplan3DProps) {
       if (!w || !h) return;
       renderer.setSize(w, h);
       cam.aspect = w / h;
+      // Une colonne couvre la gauche : le centre de la vue glisse à droite, de
+      // moitié — la maison se centre dans ce qui reste. Pastilles et clics
+      // suivent : ils passent par la caméra.
+      const inset = (stage.current?.inset ?? 0) * w;
+      if (inset) cam.setViewOffset(w, h, -inset / 2, 0, w, h);
+      else cam.clearViewOffset();
       cam.updateProjectionMatrix();
       render('view');
     };
@@ -1594,6 +1681,8 @@ export default function Floorplan3D(props: Floorplan3DProps) {
       floors: new Group(),
       uniforms,
       cutaway: false,
+      inset: latest.current.inset ?? 0,
+      resize,
       cut: null,
       home: null,
       flight: 0,
@@ -1882,6 +1971,14 @@ export default function Floorplan3D(props: Floorplan3DProps) {
     applyCutaway(s);
     s.render();
   }, [cutaway]);
+
+  // ── Colonne de widgets ─────────────────────────────────────────────────────
+  useEffect(() => {
+    const s = stage.current;
+    if (!s || s.inset === inset) return;
+    s.inset = inset;
+    s.resize();
+  }, [inset]);
 
   // ── Boussole ───────────────────────────────────────────────────────────────
   // La caméra regarde vers le cap du téléphone. Elle le suit en douceur, et

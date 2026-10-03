@@ -27,6 +27,7 @@ export const MOCK_ENTITIES: Record<string, MockEntityState> = {
   // Weather
   'weather.menneville': entity('weather.menneville', 'partly-cloudy', {
     temperature: 12,
+    humidity: 53,
     wind_speed: 18,
     wind_speed_unit: 'km/h',
     forecast: [
@@ -58,7 +59,10 @@ export const MOCK_ENTITIES: Record<string, MockEntityState> = {
 
   // Room temperatures
   'sensor.temperature_chambre_temperature': entity('sensor.temperature_chambre_temperature', '20.4', { unit_of_measurement: '°C' }),
-  'sensor.temperature_chambre_humidity': entity('sensor.temperature_chambre_humidity', '55', { unit_of_measurement: '%' }),
+  'sensor.temperature_chambre_humidity': entity('sensor.temperature_chambre_humidity', '55', {
+    unit_of_measurement: '%',
+    device_class: 'humidity',
+  }),
   'sensor.temperature_sejour': entity('sensor.temperature_sejour', '21.6', { device_class: 'temperature', unit_of_measurement: '°C' }),
   'sensor.temperature_cuisine': entity('sensor.temperature_cuisine', '22.9', { device_class: 'temperature', unit_of_measurement: '°C' }),
   'sensor.temperature_salle_de_bain': entity('sensor.temperature_salle_de_bain', '23.8', {
@@ -71,7 +75,13 @@ export const MOCK_ENTITIES: Record<string, MockEntityState> = {
   }),
 
   // Soleil : début d'après-midi, plein sud-sud-ouest (ciel et ombres de la page plan)
-  'sun.sun': entity('sun.sun', 'above_horizon', { elevation: 40, azimuth: 200, friendly_name: 'Soleil' }),
+  'sun.sun': entity('sun.sun', 'above_horizon', {
+    elevation: 40,
+    azimuth: 200,
+    next_setting: new Date(new Date().setHours(19, 16, 0, 0)).toISOString(),
+    next_rising: new Date(new Date().setHours(31, 42, 0, 0)).toISOString(),
+    friendly_name: 'Soleil',
+  }),
 
   // Ouvrants et présence (pastilles de la page plan)
   'binary_sensor.couloir_mouvement': entity('binary_sensor.couloir_mouvement', 'on', {
@@ -141,6 +151,7 @@ export const MOCK_ENTITIES: Record<string, MockEntityState> = {
   'alarm_control_panel.home_alarm': entity('alarm_control_panel.home_alarm', 'disarmed', {}),
   'weather.home': entity('weather.home', 'partly-cloudy', {
     temperature: 12,
+    humidity: 53,
     wind_speed: 18,
     wind_speed_unit: 'km/h',
     forecast: [

@@ -2,6 +2,7 @@ import type { DashboardConfigV2, GridWidget } from '@/context/DashboardLayoutCon
 import type { EnergySource, FloorplanCable, FloorplanPart, FloorplanRoom } from '@/lib/floorplan';
 import type { FloorplanOpenings } from '@/lib/floorplan-openings';
 import type { WidgetConfigs } from '@/types/widget-configs';
+import { DEFAULT_WIDGET_CONFIGS } from '@/widgets';
 
 /**
  * Mode mock (`vite --mode mock`) : une page « Maison 3D » toujours présente,
@@ -32,6 +33,7 @@ const WIDGETS: GridWidget[] = [
   chip('demo-chambre', [-2.88, 0.63, -6.58]),
   chip('demo-couloir', [-6.02, 1.63, -6.71]),
   chip('demo-temperature', [-11.2, 0.5, -4.6]),
+  chip('demo-humidite', [-10.6, 0.5, -4.2]),
   // Un capteur de température par pièce : la vue thermique les retrouve.
   chip('demo-temp-sejour', [-6.5, 0.5, 1.8]),
   chip('demo-temp-cuisine', [-11.4, 0.92, 0.2]),
@@ -39,8 +41,10 @@ const WIDGETS: GridWidget[] = [
   chip('demo-temp-amis', [-2.4, 0.5, -4.2]),
   // La batterie SolarFlow, où se rejoignent les câbles : son niveau.
   chip('demo-batterie', [-4.1, 0.3, 1.6]),
-  // Une card n'est pas accrochée : elle reste posée en % de l'écran.
-  { id: 'demo-meteo', type: 'weather', x: 0, y: 0, w: 2, h: 1, pos: { x: 88, y: 22, w: 20, h: 32 } },
+  // La colonne de gauche : des widgets ordinaires, à la hauteur de leurs rangées.
+  { id: 'demo-horloge', type: 'clock', x: 0, y: 0, w: 3, h: 2 },
+  { id: 'demo-energie', type: 'energy_flow', x: 0, y: 0, w: 3, h: 3 },
+  { id: 'demo-agenda', type: 'calendar', x: 0, y: 0, w: 3, h: 3 },
 ];
 
 const CONFIGS = {
@@ -49,12 +53,15 @@ const CONFIGS = {
   'demo-chambre': { type: 'chip', entityId: 'light.chambre', glow: true, glowSize: 12 },
   'demo-couloir': { type: 'chip', entityId: 'binary_sensor.couloir_mouvement' },
   'demo-temperature': { type: 'chip', entityId: 'sensor.temperature_chambre_temperature' },
+  'demo-humidite': { type: 'chip', entityId: 'sensor.temperature_chambre_humidity' },
   'demo-temp-sejour': { type: 'chip', entityId: 'sensor.temperature_sejour' },
   'demo-temp-cuisine': { type: 'chip', entityId: 'sensor.temperature_cuisine' },
   'demo-temp-bain': { type: 'chip', entityId: 'sensor.temperature_salle_de_bain' },
   'demo-temp-amis': { type: 'chip', entityId: 'sensor.temperature_chambre_amis' },
-  'demo-meteo': { type: 'weather', entityId: 'weather.home' },
   'demo-batterie': { type: 'chip', entityId: 'sensor.solarflow_2400_ac_electric_level' },
+  'demo-horloge': { type: 'clock', showAnalog: false, showDate: true },
+  'demo-energie': DEFAULT_WIDGET_CONFIGS.energy_flow,
+  'demo-agenda': DEFAULT_WIDGET_CONFIGS.calendar,
 } as WidgetConfigs;
 
 /** Portes, fenêtres et volets dessinés sur la maquette. */
@@ -183,7 +190,16 @@ export function withDemoFloorplan(config: DashboardConfigV2): DashboardConfigV2 
     {
       id: ID,
       label: 'Maison 3D',
-      floorplan: { image: '', model: MODEL, idleRotate: true, lampGlow: true, parts: PARTS, rooms: ROOMS, cables: CABLES },
+      floorplan: {
+        image: '',
+        model: MODEL,
+        idleRotate: true,
+        lampGlow: true,
+        parts: PARTS,
+        rooms: ROOMS,
+        cables: CABLES,
+        column: ['demo-horloge', 'demo-energie', 'demo-agenda'],
+      },
       widgets: WIDGETS,
       configs: CONFIGS,
     },

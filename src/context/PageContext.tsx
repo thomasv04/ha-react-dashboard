@@ -27,6 +27,10 @@ export interface FloorplanConfig {
   sky?: boolean;
   /** Une lueur autour de chaque lampe allumée, de sa couleur. */
   lampGlow?: boolean;
+  /** La température et l'humidité de chaque pièce écrites à plat sur son sol. Actif par défaut. */
+  floorValues?: boolean;
+  /** Le sol d'une pièce prend la couleur de sa lampe allumée, l'ambre d'une présence. Actif par défaut. */
+  livingRooms?: boolean;
   /**
    * Clarté de la maquette la nuit, de 0 (seules les lampes éclairent) à 1 : un
    * clair de lune, pour les pièces sans lampe reliée. Absente : `DEFAULT_NIGHT_LIGHT`.
@@ -34,6 +38,8 @@ export interface FloorplanConfig {
   nightLight?: number;
   /** Entité `weather` qui voile le soleil et grise le ciel — absente, la première trouvée. */
   weather?: string;
+  /** Sa température, l'état du ciel, le vent écrits en grand sur le ciel, en haut à droite. Actif par défaut. */
+  skyWeather?: boolean;
   /** Entité `alarm_control_panel` qu'arme le bouclier — absente, la première trouvée. */
   alarm?: string;
   /** Portes, fenêtres et volets dessinés sur la maquette, mus par leur entité. */
@@ -46,6 +52,13 @@ export interface FloorplanConfig {
   openings?: FloorplanOpenings;
   /** Champs de panneaux solaires posés sur la maquette, éclairés par leur production. */
   solar?: FloorplanSolar[];
+  /**
+   * Colonne de widgets sur le bord gauche, la maquette cadrée à droite : les
+   * identifiants de ses widgets, dans l'ordre. Absente : pas de colonne.
+   */
+  column?: string[];
+  /** Panneaux (`custom:<id>`) ouverts depuis le menu en haut à droite, après les vues. */
+  panels?: string[];
 }
 
 export interface Page {

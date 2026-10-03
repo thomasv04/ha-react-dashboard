@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   cableFlow,
   cloudiness,
+  cloudLook,
   compassHeading,
   containSize,
   flowDuration,
@@ -36,6 +37,7 @@ import {
   sunLighting,
   sunPosition,
   temperatureOf,
+  humidityOf,
   thermalColor,
   DEFAULT_WIDGET_SIZE,
   type HistoryEntry,
@@ -305,6 +307,18 @@ describe('skyColors', () => {
   });
 });
 
+describe('cloudLook', () => {
+  it('draws no cloud in a clear sky', () => {
+    expect(cloudLook(40, 0)).toBeNull();
+  });
+  it('covers more of the sky as it clouds over, white by day, grey when overcast, dark at night', () => {
+    expect(cloudLook(40, 0.75)!.threshold).toBeLessThan(cloudLook(40, 0.35)!.threshold);
+    expect(cloudLook(40, 0.35)!.color).toBe('#ffffff');
+    expect(cloudLook(40, 1)!.color).toBe('#969eaa');
+    expect(cloudLook(-20, 0.35)!.color).toBe('#343c4e');
+  });
+});
+
 describe('cloudiness', () => {
   it('reads the weather state, in both spellings of partly cloudy', () => {
     expect(cloudiness('sunny')).toBe(0);
@@ -521,6 +535,12 @@ describe('thermal view', () => {
     expect(temperatureOf('19', { device_class: 'temperature' })).toEqual({ value: 19, celsius: 19 });
     expect(temperatureOf('55', { unit_of_measurement: '%' })).toBeNull();
     expect(temperatureOf('unavailable', { unit_of_measurement: '°C' })).toBeNull();
+  });
+
+  it('reads a humidity, and not a battery level', () => {
+    expect(humidityOf('53', { device_class: 'humidity', unit_of_measurement: '%' })).toBe(53);
+    expect(humidityOf('80', { device_class: 'battery', unit_of_measurement: '%' })).toBeNull();
+    expect(humidityOf('unknown', { device_class: 'humidity' })).toBeNull();
   });
 
   it('colours a room from cold blue to hot red', () => {

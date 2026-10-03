@@ -333,6 +333,13 @@ export function temperatureOf(
   return { value, celsius: unit === '°F' ? ((value - 32) * 5) / 9 : value };
 }
 
+/** Humidité d'une entité, si c'en est une (classe `humidity` : un « % » seul serait aussi bien une batterie). */
+export function humidityOf(state: string | undefined, attributes: Record<string, unknown> | undefined): number | null {
+  if (attributes?.device_class !== 'humidity') return null;
+  const value = parseFloat(state ?? '');
+  return Number.isFinite(value) ? value : null;
+}
+
 // ── Murs en coupe ────────────────────────────────────────────────────────────
 
 /** Hauteur de coupe, en part de la hauteur de la maquette : des murets, juste au-dessus des plans de travail. */
@@ -477,6 +484,19 @@ const CLOUDS: Record<string, number> = {
 /** Couverture nuageuse d'après l'état d'une entité `weather` — inconnue : ciel clair. */
 export function cloudiness(state: string | undefined): number {
   return CLOUDS[state ?? ''] ?? 0;
+}
+
+/**
+ * Les nuages du ciel, d'après l'élévation du soleil et la couverture : leur
+ * couleur — blancs le jour, gris quand le ciel se bouche, sombres la nuit — et
+ * le seuil au-dessus duquel le bruit qui les dessine devient nuage : plus le
+ * ciel est couvert, plus il est bas. Ciel clair : aucun.
+ */
+export function cloudLook(elevation: number | undefined, clouds: number): { color: string; threshold: number } | null {
+  if (clouds <= 0) return null;
+  const day = clamp(((elevation ?? DEFAULT_SUN.elevation) + 6) / 12, 0, 1);
+  const lit = mix([255, 255, 255], [150, 158, 170], clamp((clouds - 0.6) / 0.4, 0, 1));
+  return { color: hex(mix([52, 60, 78], lit, day)), threshold: 0.62 - 0.22 * clouds };
 }
 
 /** Ce qui tombe du ciel, de 0 à 1 par sorte, et les éclairs d'un orage. */

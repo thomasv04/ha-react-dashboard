@@ -165,6 +165,63 @@ function Frost({ opacity }: { opacity: number }) {
   return <div ref={ref} className='fp-weather fp-frost' style={{ opacity }} />;
 }
 
+/** Largeur (px) d'une tuile de nuages : ils dérivent d'une tuile, puis recommencent, sans couture. */
+const CLOUD_TILE = 1600;
+/** Le temps d'une tuile : une dérive qu'on devine plus qu'on ne la voit. */
+const CLOUD_DRIFT_MS = 420_000;
+
+/** Une couleur `#rrggbb` en trois fractions, foncée d'autant (`shade`), pour une matrice de couleur SVG. */
+const channels = (color: string, shade = 1) => [1, 3, 5].map(i => ((parseInt(color.slice(i, i + 2), 16) / 255) * shade).toFixed(3));
+
+/**
+ * Une tuile de nuages : un bruit fractal, étiré en largeur, dont seul ce qui
+ * passe le seuil reste — un dessous plus sombre, le dessus éclairé, un peu
+ * plus haut : du relief. `stitchTiles` raccorde ses bords.
+ */
+const cloudTile = (color: string, threshold: number) => {
+  const alpha = (t: number) => `7 0 0 0 ${(-7 * t).toFixed(3)}`;
+  const matrix = (shade: number, t: number) => {
+    const [r, g, b] = channels(color, shade);
+    return `0 0 0 0 ${r} 0 0 0 0 ${g} 0 0 0 0 ${b} ${alpha(t)}`;
+  };
+  return `url("data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='${CLOUD_TILE}' height='600'><filter id='c' x='0' y='0' width='100%' height='100%'>` +
+      `<feTurbulence type='fractalNoise' baseFrequency='0.0028 0.0075' numOctaves='5' seed='4' stitchTiles='stitch' result='n'/>` +
+      `<feColorMatrix in='n' values='${matrix(0.7, threshold)}' result='shade'/>` +
+      `<feColorMatrix in='n' values='${matrix(1, threshold + 0.03)}'/><feOffset dy='-6' result='lit'/>` +
+      `<feMerge><feMergeNode in='shade'/><feMergeNode in='lit'/></feMerge></filter>` +
+      `<rect width='100%' height='100%' filter='url(#c)'/></svg>`
+  )}")`;
+};
+
+/**
+ * Les nuages, derrière la maison : d'autant plus nombreux que le ciel est
+ * couvert, de la couleur de l'heure (`cloudLook`). Ils dérivent lentement —
+ * le compositeur fait glisser la tuile, rien ne se repeint — ; immobiles sans
+ * animations (`moving`).
+ */
+export function Clouds({ color, threshold, moving }: { color: string; threshold: number; moving: boolean }) {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!moving) return;
+    const animation = ref.current?.animate([{ transform: 'none' }, { transform: `translateX(${-CLOUD_TILE}px)` }], {
+      duration: CLOUD_DRIFT_MS,
+      iterations: Infinity,
+      delay: -rand(0, CLOUD_DRIFT_MS),
+    });
+    return () => animation?.cancel();
+  }, [moving]);
+  return (
+    <div className='fp-weather fp-clouds'>
+      <i
+        ref={ref}
+        className='fp-layer'
+        style={{ inset: `0 ${-CLOUD_TILE}px 0 0`, backgroundImage: cloudTile(color, threshold), backgroundSize: `${CLOUD_TILE}px 100%` }}
+      />
+    </div>
+  );
+}
+
 /**
  * `falling` : ce qui tombe, `null` sans animation — économie d'énergie,
  * animations réduites. `frost` : le givre, de 0 à 1, immobile, toujours là.

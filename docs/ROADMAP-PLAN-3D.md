@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **43 tâches sur 43** — toutes les phases, de A à J. `F1` reste à essayer sur un vrai Android.
+**État global** : **51 tâches sur 52** — les phases A à K, `L1` et `L2`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -812,3 +812,160 @@ le `k` des suivantes, et leurs liaisons avec. Le plugin, lui, reste tel quel.
 > rez-de-chaussée, paraît à l'étage.
 
 - **Quoi** : une maison à étages se lit étage par étage.
+
+### [x] J14 — Une ouverture, plusieurs entités
+
+> **Fait** : une porte-fenêtre a souvent son contact, son volet et sa
+> serrure. La fenêtre de liaison propose, sous l'entité qui meut le battant,
+> un **volet** facultatif (`shutter`, un `cover`) — posé devant elle, il
+> s'enroule de lui-même pendant que le battant suit son contact ; lier un
+> volet comme entité principale fige toujours la fenêtre, comme avant — et une
+> **serrure** facultative (`lock`), sauf sur une fenêtre. La serrure paraît
+> sur la porte, à hauteur de poignée : un cadenas, ouvert et ambre quand elle
+> est déverrouillée, rouge quand elle est bloquée ; au toucher, son état et un
+> bouton pour la basculer — deux gestes, jamais une porte déverrouillée d'un
+> doigt qui passait. Une croix retire l'un ou l'autre. Le volet se rejoue avec
+> la journée. Test E2E : une fenêtre ouverte sous son volet fermé, puis le
+> cadenas d'une porte qui propose de la verrouiller.
+
+- **Quoi** : demandé en cours de route — sur une porte-fenêtre, on ne pouvait
+  lier qu'une entité : le contact ou le volet, pas les deux ; pas de serrure.
+
+---
+
+## Phase K — Un écran d'accueil autour de la maison
+
+Idée venue de captures de référence : la maison à droite, sur un ciel nuageux
+qui couvre tout l'écran ; à gauche, une colonne de widgets ; la météo écrite en
+grand sur le ciel ; en haut, des chips d'état et un menu d'icônes. La maison
+n'est plus une page parmi d'autres : c'est l'accueil.
+
+### [x] K1 — Une colonne de widgets à gauche
+
+> **Fait** ([FloorplanColumn.tsx](../src/components/floorplan/FloorplanColumn.tsx)) :
+> la maquette ne rétrécit pas — le canevas garde tout l'écran, et la caméra
+> décale le centre de sa vue (`setViewOffset`) de la moitié de la colonne. Le
+> ciel, la pluie, les cards posées en % restent où ils étaient ; pastilles et
+> clics suivent la caméra. La colonne fait un quart de l'écran, entre 15 et
+> 21 rem ; chaque widget, la hauteur de ses rangées de grille. En édition, le
+> panneau de réglages passe à sa droite. Démo : horloge, flux d'énergie,
+> agenda. Test E2E : la card météo rangée dans la colonne, gardée à
+> l'enregistrement, immobile quand la maison tourne.
+
+- **Quoi** : option « Colonne de widgets », onglet « Maquette ». La colonne
+  tient sur le bord gauche, la maquette se cadre dans ce qui reste à droite ;
+  le ciel, la pluie, les nuages passent sous les deux. Des widgets ordinaires,
+  qu'on ajoute, règle, monte, descend, agrandit et retire en édition ; une
+  card posée sur la maquette peut y passer. Fixes quand la maison tourne.
+  `floorplan.column` : les identifiants, dans l'ordre. Décocher l'option
+  rend ses widgets à la maquette. Masquée sur téléphone et en écran de veille.
+
+### [x] K2 — Des nuages dans le ciel
+
+> **Fait** ([FloorplanWeather.tsx](../src/components/floorplan/FloorplanWeather.tsx)) :
+> un bruit fractal SVG, étiré en largeur, dont seul ce qui passe un seuil
+> reste nuage — un dessous plus sombre, le dessus éclairé décalé vers le haut,
+> pour le relief. `cloudLook` (testée) donne le seuil et la couleur : aucun
+> nuage par ciel clair, blancs le jour, gris quand le ciel se bouche, sombres
+> la nuit. La tuile se raccorde à ses bords (`stitchTiles`) : elle dérive
+> d'une largeur en sept minutes, sans couture, glissée par le compositeur.
+> Le haut du ciel seulement, effacé vers l'horizon. Immobiles sans animations.
+
+- **Quoi** : derrière la maison, des nuages qui dérivent lentement, d'autant
+  plus nombreux que l'entité météo est couverte, gris par temps de pluie,
+  sombres la nuit. Immobiles quand les animations sont coupées.
+
+### [x] K3 — La météo, écrite sur le ciel
+
+> **Fait** ([FloorplanHud.tsx](../src/components/floorplan/FloorplanHud.tsx)) :
+> l'entité météo de la page — choisie, ou la première trouvée —, en blanc
+> ombré, lisible sur un nuage comme sur un ciel de nuit. Le prochain coucher
+> tant que le soleil est levé, le prochain lever ensuite (`sun.sun`). Active
+> par défaut ; pas en écran de veille. La démo perd sa card météo, qui faisait
+> doublon.
+
+- **Quoi** : en haut à droite, sans card : la température en grand,
+  l'état du ciel, le coucher (ou le lever) du soleil, le vent et l'humidité.
+  Option « Météo sur le ciel », onglet « Ambiance ».
+
+### [x] K4 — Des chips d'état
+
+> **Fait** (`StatusChips`, [FloorplanHud.tsx](../src/components/floorplan/FloorplanHud.tsx)) :
+> en haut à gauche, à droite de la colonne. L'alarme de la page, son mode au
+> libellé de la card Alarme, ouvre la fenêtre de choix du bouclier. Les lampes
+> — les pastilles d'une lumière — : « 3 lampes allumées », ou « Lampes
+> éteintes » ; au toucher, leur liste, les allumées d'abord, chacune basculée
+> d'un toucher (test unitaire). Ce qui ferme la maison : « 2 ouvertes », ou
+> « Tout est fermé » ; au toucher, la vue sécurité, dont le bandeau des noms
+> passe sous les chips. Le retour « ‹ Pièce » rejoint la rangée. Ni en
+> édition, ni en relecture, ni en écran de veille. Pas de « basculées » comme
+> sur la capture : HA ne distingue pas une fenêtre entrouverte.
+
+- **Quoi** : en haut à gauche de la maquette : l'alarme (son mode, la fenêtre
+  de choix au toucher), les lampes allumées (la liste, chacune basculable), les
+  portes et fenêtres ouvertes (la vue sécurité au toucher).
+
+### [x] K5 — Le menu en haut à droite
+
+> **Fait** : une barre de verre au-dessus de la météo — boussole, sécurité,
+> thermique, relecture, recentrer —, puis, après un trait, les panneaux
+> choisis dans l'onglet « Maquette » (`floorplan.panels`, des `custom:<id>`),
+> chacun avec son icône ; un panneau supprimé depuis disparaît du menu. La
+> barre de relecture reste seule en bas, à droite de la colonne. En bas à
+> droite, plus rien : la maison respire. Sur un écran étroit, les chips
+> passent sous le menu — côte à côte, elles le recouvraient (le test de la
+> boussole l'a vu) — et la météo du ciel s'efface, faute de place.
+
+- **Quoi** : les boutons ronds du bas (sécurité, thermique, relecture,
+  recentrer, boussole) montent en une barre en haut à droite, suivis de
+  raccourcis vers les panneaux choisis en édition (`floorplan.panels`).
+
+---
+
+## Phase L — Des pièces vivantes
+
+Les pièces dessinées (`C1`) ne servaient qu'au vol vers une pièce, à la vue
+thermique et à garder la lumière des lampes chez elles. Elles disent
+désormais d'un coup d'œil ce qui s'y passe.
+
+### [x] L1 — Les valeurs écrites au sol
+
+> **Fait** : une texture du texte, couchée au centre de la pièce, tournée à
+> chaque mouvement de caméra pour que son haut reste au loin — lisible quel
+> que soit le tour de la maison. Blanc à contour sombre, lisible sur un
+> parquet clair ; large de 60 % de la pièce, mais ni illisible dans une salle
+> d'eau ni démesurée dans un séjour. Par-dessus les meubles : une table au
+> milieu l'aurait cachée. L'humidité (classe `humidity` seulement : un « % »
+> seul serait aussi une batterie, `humidityOf` testée) s'écrit dessous. Ni en
+> édition, ni rejouée, ni en vue thermique, ni en veille. Test E2E : la
+> température au sol, la pastille effacée.
+
+- **Quoi** : la température et l'humidité de chaque pièce — la moyenne des
+  capteurs posés dedans — écrites à plat sur son sol, en perspective, comme
+  peintes. Les pastilles de ces capteurs s'effacent : leur valeur est au sol.
+  Option « Valeurs au sol », onglet « Ambiance ».
+
+### [x] L2 — Une pièce allumée se teinte
+
+> **Fait** : le sol de la pièce, additif — une lueur plutôt qu'un voile —,
+> d'autant plus vive que la lampe est forte ; ambre pour une présence, quand
+> aucune lampe n'y brille. Rejouée, la lueur suit les lampes de l'instant.
+> Masquée par les meubles, comme la lumière.
+
+- **Quoi** : le sol d'une pièce dont une lampe est allumée prend sa couleur,
+  en lueur ; celui d'une pièce où un détecteur de présence est déclenché,
+  une lueur ambre. Option « Pièces vivantes », onglet « Ambiance ».
+
+### [ ] L3 — Un animal qui se promène
+
+> **Reporté**, à ta demande, à un second temps. Le travail commencé est
+> dans le stash git « wip(plan): L3 » : un chat ou un chien en volumes simples
+> (`pet3d.ts`, sa promenade testée), qui contourne murs et meubles par des
+> rayons dans la maquette et se pose sur le sol qu'il touche. Il était
+> dessiné, mais restait introuvable à l'écran : c'est là qu'il faut reprendre.
+
+- **Quoi** : bonus demandé en cours de route. Un chat ou un chien, en
+  volumes simples, qui se promène dans les pièces : il marche quelques
+  secondes, s'assoit, repart ; il contourne murs et meubles, et change de
+  pièce d'un bond discret. Assis et immobile sans animations. Option
+  « Animal », onglet « Ambiance ».

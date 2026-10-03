@@ -8,6 +8,7 @@ import {
   DoorOpen,
   History as HistoryIcon,
   Image as ImageIcon,
+  LayoutGrid,
   Layers,
   Map as MapIcon,
   RotateCcw,
@@ -15,9 +16,13 @@ import {
   ShieldCheck,
   Sun,
   Thermometer,
+  Trash2,
   type LucideIcon,
 } from 'lucide-react';
 import { usePages, type FloorplanConfig } from '@/context/PageContext';
+import { usePanel } from '@/context/PanelContext';
+import { useCustomPanels } from '@/context/CustomPanelContext';
+import { resolveIcon, useIconCatalog } from '@/lib/lucide-icon-map';
 import { useDashboardLayout, useEditMode, type FloorplanPos, type GridWidget } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useMoreInfoOptional } from '@/context/MoreInfoContext';
@@ -25,6 +30,7 @@ import { useScreensaverPlan, useWallPanel } from '@/context/WallPanelContext';
 import { FreeGridScope } from '@/components/layout/DashboardGrid';
 import { AlarmModeModal } from '@/components/cards/AlarmCard/AlarmCard';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
+import { PanelSelectField } from '@/components/layout/WidgetEditModal/PanelSelectField';
 import { ImageBackgroundPicker } from '@/components/layout/ThemeControlsModal/ImageBackgroundPicker';
 import type { BackgroundConfig } from '@/config/themes';
 import { DEFAULT_WIDGET_CONFIGS } from '@/widgets';
@@ -39,6 +45,7 @@ import { colorAlpha } from '@/lib/color-value';
 import { useTheme } from '@/context/ThemeContext';
 import {
   cloudiness,
+  cloudLook,
   containSize,
   DEFAULT_NIGHT_LIGHT,
   DRAFT_COLOR,
@@ -68,6 +75,7 @@ import {
   stateAt,
   sunPosition,
   temperatureOf,
+  humidityOf,
   thermalColor,
   type FloorplanCable,
   type FloorplanPart,
@@ -93,6 +101,8 @@ import { cn, isTypingTarget } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import type { ChipCardConfig, WidgetConfig } from '@/types/widget-configs';
 import type { CableProp, FloorOverlay, Floorplan3DHandle, Lamp, OpeningProp, PartProp, Project, SolarProp } from './Floorplan3D';
+import { FloorplanColumn } from './FloorplanColumn';
+import { LockBadge, SkyWeather, StatusChips } from './FloorplanHud';
 import { FloorplanItem } from './FloorplanItem';
 import { LampList } from './FloorplanLamps';
 import { DraftPopover, type Around } from './FloorplanDrawn';
@@ -101,7 +111,7 @@ import { PartList, PartPopover } from './FloorplanParts';
 import { CableList, CableOverlay, CablePopover, SolarList, SolarPopover } from './FloorplanCables';
 import { ReplayBar } from './FloorplanReplay';
 import { RoomList, RoomNamePopover } from './FloorplanRooms';
-import { Weather } from './FloorplanWeather';
+import { Clouds, Weather } from './FloorplanWeather';
 import { useReplay } from './useReplay';
 import { ModelPicker } from './ModelPicker';
 import { EmptyTab, Segmented, SettingsPanel, ToggleRow, type SettingsTab, type Tool } from './FloorplanSettings';
@@ -149,6 +159,8 @@ const STARS = {
 
 /** Pièces : leur contour, en édition. */
 const ROOM_COLOR = '#60a5fa';
+/** Le sol d'une pièce où quelqu'un est là. */
+const PRESENCE_COLOR = '#f59e0b';
 /** En deçà (px) du premier sommet d'une pièce, du dernier point d'un câble, un clic ferme l'une, finit l'autre. */
 const CLOSE_PX = 14;
 
@@ -198,7 +210,7 @@ function Projected({ projector, children }: { projector: Projector; children: (t
   return children(point => project?.(point) ?? null);
 }
 
-/** Bouton rond, en bas de la maquette ; enfoncé, il prend la couleur `on`. */
+/** Bouton du menu, en haut à droite de la maquette ; enfoncé, il prend la couleur `on`. */
 function RoundButton({
   icon: Icon,
   label,
@@ -218,7 +230,10 @@ function RoundButton({
       aria-pressed={pressed}
       title={label}
       aria-label={label}
-      className={cn('p-2.5 rounded-xl gc-overlay transition-colors', pressed ? on : 'text-white/60 hover:text-white')}
+      className={cn(
+        'p-2.5 rounded-xl transition-colors',
+        pressed ? cn(on, 'bg-white/10') : 'text-white/60 hover:text-white hover:bg-white/8'
+      )}
     >
       <Icon size={16} />
     </button>
@@ -350,7 +365,11 @@ export function FloorplanView() {
   /** Champs de panneaux solaires. */
   const solarFields = normalizeSolar(floorplan?.solar);
   const replay = useReplay(
-    [...glows.map(g => g.entityId), ...parts.map(p => p.entityId), ...openingsConfig.links.map(l => l.entityId)],
+    [
+      ...glows.map(g => g.entityId),
+      ...parts.map(p => p.entityId),
+      ...openingsConfig.links.flatMap(l => [l.entityId, ...(l.shutter ? [l.shutter] : [])]),
+    ],
     [...cables.map(c => c.entityId), ...solarFields.map(f => f.entityId)]
   );
   const closeReplay = replay.close;
@@ -409,6 +428,18 @@ export function FloorplanView() {
   // Boussole, sur téléphone : proposée dès que l'appareil donne son
   // orientation. Dans l'appli Home Assistant, Android seulement, et en HTTPS.
   const isPhone = useIsMobile();
+  /** La colonne de widgets : ni sur un écran étroit, ni en fond d'écran de veille. */
+  const narrow = useIsMobile(768);
+  // Le menu en haut à droite : les vues, puis les panneaux choisis en édition.
+  useIconCatalog();
+  const { openPanel } = usePanel();
+  const { panels: customPanels } = useCustomPanels();
+  const menuPanels = (floorplan?.panels ?? []).flatMap(ref => customPanels.find(p => `custom:${p.id}` === ref) ?? []);
+  const columnIds = floorplan?.column;
+  const docked = new Set(columnIds);
+  const showColumn = !!model && !!columnIds && !backdrop && !narrow;
+  /** Largeur de la colonne (px) : un quart de l'écran, entre 15 et 21 rem. */
+  const columnWidth = Math.min(336, Math.max(240, area.w * 0.24));
   const [compassReady, setCompassReady] = useState(false);
   useEffect(() => {
     if (!isPhone || !model || compassReady) return;
@@ -462,7 +493,8 @@ export function FloorplanView() {
     weatherId,
     alarmId,
     ...parts.map(p => p.entityId),
-    ...openingsConfig.links.map(l => l.entityId),
+    ...openingsConfig.links.flatMap(l => [l.entityId, l.shutter ?? '', l.lock ?? '']),
+    ...(openingDraft ? [openingDraft.link.shutter ?? '', openingDraft.link.lock ?? ''] : []),
     ...(openingDraft ? [openingDraft.link.entityId] : []),
     ...allCables.map(c => c.entityId),
     ...solarFields.map(f => f.entityId),
@@ -497,6 +529,7 @@ export function FloorplanView() {
   const frost = model ? frostOf(entities[weatherId]?.attributes) : 0;
   // Derrière la maquette : le ciel de l'heure, sauf si la page garde le fond du thème.
   const sky = model && floorplan?.sky !== false ? skyColors(sunElevation, clouds) : null;
+  const cloudy = sky ? cloudLook(sunElevation, clouds) : null;
 
   // ── Étages ─────────────────────────────────────────────────────────────────
   /** Les objets de cette maquette-ci — `undefined` tant qu'elle n'est pas chargée. */
@@ -561,13 +594,21 @@ export function FloorplanView() {
   // ── Portes, fenêtres, volets ───────────────────────────────────────────────
   /** Famille d'une ouverture, telle que la maquette l'a lue : son nœud seul ne la dit pas toujours (`Fenetre_sal_1_1`). */
   const familyOf = (node: string) => modelOpenings?.openings.find(o => o.id === node)?.family ?? '';
-  /** Le volet d'une fenêtre que la maquette dessine sans le sien, posé devant elle — `null` : elle bouge elle-même. */
+  /**
+   * Le volet d'une fenêtre que la maquette dessine sans le sien, posé devant
+   * elle : celui de sa liaison (`shutter`), ou son entité même quand c'est un
+   * volet — elle ne bouge plus alors. `null` : pas de volet.
+   */
   const frontOf = (link: OpeningLink, kind: OpeningKind): FloorplanPart | null => {
     const found = modelOpenings?.openings.find(o => o.id === link.node);
-    const entity = { entityId: link.entityId, deviceClass: entities[link.entityId]?.attributes?.device_class };
-    if (!modelOpenings || !found || !shutsInFront(found.family, kind, entity)) return null;
-    return { id: `front-${link.node}`, kind: 'shutter', entityId: link.entityId, ...frontShutter(found, modelOpenings.center) };
+    const moves = (entityId: string) =>
+      !!found && shutsInFront(found.family, kind, { entityId, deviceClass: entities[entityId]?.attributes?.device_class });
+    const entityId = link.shutter && moves(link.shutter) ? link.shutter : moves(link.entityId) ? link.entityId : null;
+    if (!modelOpenings || !found || !entityId) return null;
+    return { id: `front-${link.node}`, kind: 'shutter', entityId, ...frontShutter(found, modelOpenings.center) };
   };
+  /** Son entité est le volet posé devant elle : l'ouverture ne bouge pas, et n'a rien à surveiller. */
+  const heldBy = (front: FloorplanPart | null, link: OpeningLink) => front?.entityId === link.entityId;
 
   // ── Vue sécurité ───────────────────────────────────────────────────────────
   /**
@@ -581,7 +622,7 @@ export function FloorplanView() {
     ...openingsConfig.links.flatMap(l => {
       const found = modelOpenings?.openings.find(o => o.id === l.node);
       const kind = familyKind(familyOf(l.node), openingsConfig.kinds);
-      return found && kind && kind !== 'shutter' && !frontOf(l, kind)
+      return found && kind && kind !== 'shutter' && !heldBy(frontOf(l, kind), l)
         ? [{ entityId: l.entityId, box: [found.min, found.max] as [Vec3, Vec3] }]
         : [];
     }),
@@ -590,6 +631,10 @@ export function FloorplanView() {
     ),
   ].filter(g => g.entityId);
   const showSecurity = security && !isEditMode && !replaying && !backdrop;
+  /** Ce qui est ouvert maintenant, une fois chacun : la chip le compte, vue sécurité ou pas. */
+  const openNow = [
+    ...new Set(guards.filter(g => openness(entities[g.entityId]?.state, entities[g.entityId]?.attributes) > 0).map(g => g.entityId)),
+  ];
   const opened = showSecurity ? guards.filter(g => openness(entities[g.entityId]?.state, entities[g.entityId]?.attributes) > 0) : [];
   /** Une fois chacune : une porte et sa pastille ne font qu'une. */
   const openedNames = [...new Set(opened.map(g => g.entityId))].map(id => friendlyName(entities[id]) ?? id);
@@ -617,9 +662,15 @@ export function FloorplanView() {
       return [{ link, kind, open: openness(entity?.state, entity?.attributes) }];
     }),
     ...(openingDraft?.kind ? [{ link: openingDraft.link, kind: openingDraft.kind, open: animated ? preview : DRAFT_OPENNESS }] : []),
-  ].map(m => ({ ...m, front: frontOf(m.link, m.kind) }));
+  ].map(m => {
+    const front = frontOf(m.link, m.kind);
+    // Un volet à lui suit sa propre entité ; celui qu'on règle s'ouvre et se ferme avec l'aperçu.
+    const shutter =
+      front && !heldBy(front, m.link) && m.link !== openingDraft?.link ? (replayed(front.entityId) ?? entities[front.entityId]) : null;
+    return { ...m, front, frontOpen: shutter ? openness(shutter.state, shutter.attributes) : m.open };
+  });
   const openingsProp: OpeningProp[] = moving.flatMap(({ link, kind, open, front }) =>
-    front ? [] : [{ id: link.node, kind, ...(link.flip && { flip: true }), ...(link.hinge && { hinge: true }), open }]
+    heldBy(front, link) ? [] : [{ id: link.node, kind, ...(link.flip && { flip: true }), ...(link.hinge && { hinge: true }), open }]
   );
 
   const partsProp: PartProp[] = [
@@ -630,7 +681,7 @@ export function FloorplanView() {
         return { ...p, open: openness(entity?.state, entity?.attributes) };
       }),
     ...(draft?.part ? [{ ...draft.part, open: DRAFT_OPENNESS }] : []),
-    ...moving.flatMap(({ front, open }) => (front && !aboveLevel(front.a[1]) ? [{ ...front, open }] : [])),
+    ...moving.flatMap(({ front, frontOpen }) => (front && !aboveLevel(front.a[1]) ? [{ ...front, open: frontOpen }] : [])),
   ];
 
   const setOpenings = (patch: Partial<FloorplanOpenings>) =>
@@ -681,7 +732,7 @@ export function FloorplanView() {
   /** La liaison enregistrée ; le type choisi vaut pour toute la famille. */
   const saveOpening = () => {
     if (!openingDraft?.link.entityId || !openingDraft.kind) return;
-    const { flip, hinge, ...link } = openingDraft.link;
+    const { flip, hinge, shutter, lock, ...link } = openingDraft.link;
     const family = familyOf(link.node);
     setOpenings({
       kinds:
@@ -690,7 +741,7 @@ export function FloorplanView() {
           : { ...openingsConfig.kinds, [family]: openingDraft.kind },
       links: [
         ...openingsConfig.links.filter(l => l.node !== link.node),
-        { ...link, ...(flip && { flip: true }), ...(hinge && { hinge: true }) },
+        { ...link, ...(flip && { flip: true }), ...(hinge && { hinge: true }), ...(shutter && { shutter }), ...(lock && { lock }) },
       ],
     });
     setOpeningDraft(null);
@@ -712,8 +763,25 @@ export function FloorplanView() {
     const mean = (key: 'value' | 'celsius') => readings.reduce((sum, r) => sum + r[key], 0) / readings.length;
     return { value: mean('value'), celsius: mean('celsius') };
   });
+  /** Pastilles d'humidité rattachées à une pièce : leur valeur s'écrit au sol, avec la température. */
+  const hygrometers = new Set<string>();
+  const roomHumidity = rooms.map(room => {
+    const readings = chips.flatMap(c => {
+      const reading =
+        c.anchor && pointInPolygon(c.anchor[0], c.anchor[2], room.points)
+          ? humidityOf(entities[c.entityId]?.state, entities[c.entityId]?.attributes)
+          : null;
+      if (reading !== null) hygrometers.add(c.id);
+      return reading !== null ? [reading] : [];
+    });
+    return readings.length ? readings.reduce((sum, r) => sum + r, 0) / readings.length : null;
+  });
   // Rejouée, la maison n'a que l'historique de ses lampes et de ses portes : pas de températures.
   const showThermal = thermal && !isEditMode && !replaying;
+  /** Valeurs écrites au sol : ni en édition, ni rejouées, ni en vue thermique — qui écrit les siennes —, ni en veille. */
+  const showValues = floorplan?.floorValues !== false && !isEditMode && !replaying && !showThermal && !backdrop;
+  /** Pièces vivantes : le sol prend la couleur d'une lampe allumée, ou l'ambre d'une présence. */
+  const showLiving = floorplan?.livingRooms !== false && !isEditMode && !showThermal;
   /** Pastilles d'un détecteur de mouvement ou de présence déclenché : une lueur respire dessous. */
   const present = new Set(chips.flatMap(c => (isPresence(entities[c.entityId]?.state, entities[c.entityId]?.attributes) ? [c.id] : [])));
 
@@ -733,7 +801,29 @@ export function FloorplanView() {
           ...rooms.filter(r => !aboveLevel(r.y)).map(r => ({ y: r.y, points: r.points, color: ROOM_COLOR, fill: 0.12, closed: true })),
           ...(roomDraft ? [{ y: roomDraft.y, points: roomPoints, color: DRAFT_COLOR, fill: 0.18, closed: roomPoints.length >= 3 }] : []),
         ]
-      : [];
+      : rooms.flatMap((r, i) => {
+          if (aboveLevel(r.y)) return [];
+          const inside = (anchor: Vec3 | undefined) => !!anchor && pointInPolygon(anchor[0], anchor[2], r.points);
+          const lit = showLiving ? lamps.find(l => l.color && !l.hidden && inside(l.anchor)) : undefined;
+          const someone = showLiving && !lit && chips.some(c => present.has(c.id) && inside(c.anchor));
+          const temperature = showValues ? roomTemperatures[i] : null;
+          const humidity = showValues ? roomHumidity[i] : null;
+          const percent = humidity !== null ? `${Math.round(humidity)} %` : undefined;
+          const label = temperature ? { text: `${temperature.value.toFixed(1)}°`, sub: percent } : percent && { text: percent };
+          if (!lit && !someone && !label) return [];
+          return [
+            {
+              y: r.y,
+              points: r.points,
+              color: lit?.color ? `rgb(${lit.color.join(', ')})` : PRESENCE_COLOR,
+              fill: lit ? 0.18 + 0.22 * lit.brightness : someone ? 0.2 : 0,
+              glow: true,
+              edge: false,
+              closed: true,
+              ...(label && { label }),
+            },
+          ];
+        });
 
   /**
    * Hors édition, les pastilles que la maquette cache s'effacent : leurs points
@@ -945,7 +1035,8 @@ export function FloorplanView() {
         <Projected projector={projector}>
           {toScreen =>
             widgets.map(w => {
-              if (showThermal && thermometers.has(w.id)) return null;
+              if (docked.has(w.id) || ((showThermal || showValues) && thermometers.has(w.id)) || (showValues && hygrometers.has(w.id)))
+                return null;
               const anchor = model ? normalizeAnchor(w.pos?.anchor) : undefined;
               const projected = anchor ? toScreen(anchor) : undefined;
               // Accrochée à la maquette : rien à montrer tant qu'elle n'est pas
@@ -961,6 +1052,7 @@ export function FloorplanView() {
                   planRef={planRef}
                   projected={projected}
                   onCommit={model && w.type === 'chip' ? reanchor(w) : undefined}
+                  onDock={showColumn && w.type !== 'chip' ? () => setFloorplan({ column: [...(columnIds ?? []), w.id] }) : undefined}
                   // Vol vers une pièce : les pastilles des autres pièces s'estompent.
                   // Rejouée, tout s'estompe : pastilles et cards montrent le présent.
                   faded={replaying || (!!anchor && !!focusRoom && !pointInPolygon(anchor[0], anchor[2], focusRoom.points))}
@@ -1080,6 +1172,31 @@ export function FloorplanView() {
         checked={!!floorplan?.idleRotate}
         onChange={on => setFloorplan({ idleRotate: on })}
       />
+      {/* Décochée, ses widgets reviennent sur la maquette. */}
+      <ToggleRow
+        label={t('layout.floorplan.column')}
+        checked={!!columnIds}
+        onChange={on => setFloorplan({ column: on ? [] : undefined })}
+      />
+      {/* Le menu en haut à droite : les panneaux qu'il ouvre, après les vues. */}
+      {menuPanels.map(panel => (
+        <div key={panel.id} className='flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white/5 text-xs text-white/70'>
+          <span className='flex-1 truncate'>{panel.name}</span>
+          <button
+            onClick={() => setFloorplan({ panels: floorplan?.panels?.filter(ref => ref !== `custom:${panel.id}`) })}
+            title={t('layout.floorplan.menuPanelRemove')}
+            aria-label={t('layout.floorplan.menuPanelRemove')}
+            className='p-1 rounded-md text-red-300 hover:bg-red-500/20'
+          >
+            <Trash2 size={12} />
+          </button>
+        </div>
+      ))}
+      <PanelSelectField
+        label={t('layout.floorplan.menuPanelAdd')}
+        value=''
+        onChange={ref => ref && !floorplan?.panels?.includes(ref) && setFloorplan({ panels: [...(floorplan?.panels ?? []), ref] })}
+      />
     </>
   );
 
@@ -1109,6 +1226,21 @@ export function FloorplanView() {
         value={weatherId}
         domain='weather'
         onChange={id => setFloorplan({ weather: id })}
+      />
+      <ToggleRow
+        label={t('layout.floorplan.floorValues')}
+        checked={floorplan?.floorValues !== false}
+        onChange={on => setFloorplan({ floorValues: on })}
+      />
+      <ToggleRow
+        label={t('layout.floorplan.livingRooms')}
+        checked={floorplan?.livingRooms !== false}
+        onChange={on => setFloorplan({ livingRooms: on })}
+      />
+      <ToggleRow
+        label={t('layout.floorplan.skyWeather')}
+        checked={floorplan?.skyWeather !== false}
+        onChange={on => setFloorplan({ skyWeather: on })}
       />
       {/* Câbles, pluie, rotation immobiles : que l'appareil dise pourquoi. */}
       {(!motionOk || perfSettings.reduceAnimations) && (
@@ -1211,6 +1343,7 @@ export function FloorplanView() {
             {sky && sky.stars > 0 && (
               <div className='absolute inset-0 rounded-[1.25rem] pointer-events-none' style={{ ...STARS, opacity: sky.stars }} />
             )}
+            {cloudy && <Clouds {...cloudy} moving={animated} />}
             {failed ? (
               <p className='m-auto absolute inset-0 h-fit w-fit max-w-sm px-4 py-3 rounded-2xl gc-overlay text-sm text-white/70 text-center'>
                 {t(failed === 'webgl' ? 'layout.floorplan.webglError' : 'layout.floorplan.modelError')}
@@ -1228,6 +1361,7 @@ export function FloorplanView() {
                   nightLight={nightLight}
                   shadows={!perfSettings.disableShadows}
                   cutaway={floorplan?.cutaway !== false}
+                  inset={showColumn && area.w ? (columnWidth + 12) / area.w : 0}
                   // Ni en édition, où l'on règle la vue, ni en économie d'énergie,
                   // ni quand la boussole oriente la maison.
                   idleRotate={((!!floorplan?.idleRotate && motionAllowed) || (backdrop && motionOk)) && !isEditMode && !compass}
@@ -1286,6 +1420,90 @@ export function FloorplanView() {
               )}
             </Projected>
             {items}
+            {/* Les serrures des portes, à hauteur de poignée. */}
+            {!isEditMode && !backdrop && !replaying && (
+              <Projected projector={projector}>
+                {toScreen =>
+                  openingsConfig.links.map(link => {
+                    const found = link.lock && modelOpenings?.openings.find(o => o.id === link.node);
+                    if (!link.lock || !found || aboveLevel(found.min[1])) return null;
+                    const at = toScreen([
+                      (found.min[0] + found.max[0]) / 2,
+                      found.min[1] + (found.max[1] - found.min[1]) * 0.45,
+                      (found.min[2] + found.max[2]) / 2,
+                    ]);
+                    return at && <LockBadge key={link.node} entityId={link.lock} entity={entities[link.lock]} at={at} />;
+                  })
+                }
+              </Projected>
+            )}
+            {showColumn && <FloorplanColumn ids={columnIds} width={columnWidth} onChange={ids => setFloorplan({ column: ids })} />}
+            {/* En haut à droite : la météo, écrite sur le ciel. */}
+            {!backdrop && (
+              <div className='absolute right-3 top-3 z-20 flex flex-col items-end gap-4 pointer-events-none'>
+                {loaded && !isEditMode && (
+                  <div data-tour='floorplan-buttons' className='flex gap-0.5 p-1 rounded-2xl gc-overlay pointer-events-auto'>
+                    {compassReady && isPhone && (
+                      <RoundButton
+                        icon={Compass}
+                        label={t('layout.floorplan.compass')}
+                        onClick={() => setCompass(on => !on)}
+                        pressed={compass}
+                      />
+                    )}
+                    {(guards.length > 0 || alarm) && !replaying && (
+                      <RoundButton
+                        icon={ShieldCheck}
+                        label={t(alarm ? 'layout.floorplan.securityAlarm' : 'layout.floorplan.security')}
+                        onClick={() => {
+                          // Avec une alarme, la vue sécurité s'ouvre sur le choix de son mode.
+                          if (!security && alarm) setAlarmOpen(true);
+                          setSecurity(on => !on);
+                        }}
+                        pressed={security}
+                        on='text-red-300'
+                      />
+                    )}
+                    {roomTemperatures.some(Boolean) && !replaying && (
+                      <RoundButton
+                        icon={Thermometer}
+                        label={t('layout.floorplan.thermal')}
+                        onClick={() => setThermal(on => !on)}
+                        pressed={thermal}
+                        on='text-orange-300'
+                      />
+                    )}
+                    <RoundButton
+                      icon={HistoryIcon}
+                      label={t('layout.floorplan.replay')}
+                      onClick={() => (replaying ? closeReplay() : replay.open())}
+                      pressed={replaying}
+                    />
+                    <RoundButton
+                      icon={RotateCcw}
+                      label={t('layout.floorplan.resetView')}
+                      onClick={() => {
+                        setFocusId(null);
+                        setCompass(false);
+                        three.current?.resetView();
+                      }}
+                    />
+                    {menuPanels.length > 0 && <span aria-hidden className='w-px my-1.5 mx-1 bg-white/15' />}
+                    {menuPanels.map(panel => (
+                      <RoundButton
+                        key={panel.id}
+                        icon={resolveIcon(panel.icon) ?? LayoutGrid}
+                        label={panel.name}
+                        onClick={() => openPanel(`custom:${panel.id}`)}
+                      />
+                    ))}
+                  </div>
+                )}
+                {entities[weatherId] && floorplan?.skyWeather !== false && !narrow && (
+                  <SkyWeather weather={entities[weatherId]} sun={sunEntity} />
+                )}
+              </div>
+            )}
             {addPopover}
             <Projected projector={projector}>
               {toScreen => {
@@ -1462,62 +1680,15 @@ export function FloorplanView() {
                 onCancel={() => setDraft(null)}
               />
             )}
-            {loaded && !isEditMode && !backdrop && (
-              <div data-tour='floorplan-buttons' className={cn('absolute right-3 bottom-3 z-30 flex gap-2', replay.span && 'left-3')}>
-                {replay.span && (
-                  <ReplayBar
-                    start={replay.span.start}
-                    end={replay.span.end}
-                    time={replay.time}
-                    running={replay.running}
-                    onSeek={replay.seek}
-                    onToggle={replay.toggle}
-                  />
-                )}
-                {compassReady && isPhone && (
-                  <RoundButton
-                    icon={Compass}
-                    label={t('layout.floorplan.compass')}
-                    onClick={() => setCompass(on => !on)}
-                    pressed={compass}
-                  />
-                )}
-                {(guards.length > 0 || alarm) && !replaying && (
-                  <RoundButton
-                    icon={ShieldCheck}
-                    label={t(alarm ? 'layout.floorplan.securityAlarm' : 'layout.floorplan.security')}
-                    onClick={() => {
-                      // Avec une alarme, la vue sécurité s'ouvre sur le choix de son mode.
-                      if (!security && alarm) setAlarmOpen(true);
-                      setSecurity(on => !on);
-                    }}
-                    pressed={security}
-                    on='text-red-300'
-                  />
-                )}
-                {roomTemperatures.some(Boolean) && !replaying && (
-                  <RoundButton
-                    icon={Thermometer}
-                    label={t('layout.floorplan.thermal')}
-                    onClick={() => setThermal(on => !on)}
-                    pressed={thermal}
-                    on='text-orange-300'
-                  />
-                )}
-                <RoundButton
-                  icon={HistoryIcon}
-                  label={t('layout.floorplan.replay')}
-                  onClick={() => (replaying ? closeReplay() : replay.open())}
-                  pressed={replaying}
-                />
-                <RoundButton
-                  icon={RotateCcw}
-                  label={t('layout.floorplan.resetView')}
-                  onClick={() => {
-                    setFocusId(null);
-                    setCompass(false);
-                    three.current?.resetView();
-                  }}
+            {replay.span && !isEditMode && !backdrop && (
+              <div className='absolute right-3 bottom-3 z-30 flex' style={{ left: showColumn ? columnWidth + 24 : 12 }}>
+                <ReplayBar
+                  start={replay.span.start}
+                  end={replay.span.end}
+                  time={replay.time}
+                  running={replay.running}
+                  onSeek={replay.seek}
+                  onToggle={replay.toggle}
                 />
               </div>
             )}
@@ -1564,22 +1735,6 @@ export function FloorplanView() {
                 </button>
               </div>
             )}
-            {showSecurity && (
-              <div
-                role='status'
-                className={cn(
-                  'absolute left-1/2 top-3 z-30 -translate-x-1/2 max-w-[calc(100%-8rem)] flex items-center gap-2 px-3.5 py-2 rounded-xl gc-overlay text-sm font-medium',
-                  openedNames.length ? 'text-red-200' : 'text-green-200'
-                )}
-              >
-                {openedNames.length ? (
-                  <ShieldAlert size={16} className='shrink-0 text-red-400' />
-                ) : (
-                  <ShieldCheck size={16} className='shrink-0 text-green-400' />
-                )}
-                <span className='truncate'>{securityText}</span>
-              </div>
-            )}
             {alarm && (
               <AlarmModeModal
                 entityId={alarmId}
@@ -1597,17 +1752,54 @@ export function FloorplanView() {
                 }
               />
             )}
-            {focusRoom && (
-              <motion.button
-                initial={motionAllowed ? { opacity: 0, x: -8 } : false}
-                animate={{ opacity: 1, x: 0 }}
-                onClick={() => setFocusId(null)}
-                title={t('layout.floorplan.focusBack')}
-                className='absolute left-3 top-3 z-30 flex items-center gap-1 pl-2 pr-3.5 py-2 rounded-xl gc-overlay text-sm font-medium text-white/85 hover:text-white transition-colors'
+            {/* En haut à gauche, à droite de la colonne : le retour à toute la maison, les chips d'état. */}
+            {loaded && !isEditMode && !backdrop && (
+              // Sur un écran étroit, sous le menu : côte à côte, ils se recouvraient.
+              <div
+                className='absolute z-30 flex flex-wrap items-start gap-2 max-w-[55%] pointer-events-none *:pointer-events-auto'
+                style={{ left: showColumn ? columnWidth + 24 : 12, top: narrow ? 64 : 12 }}
               >
-                <ChevronLeft size={16} />
-                {focusRoom.name}
-              </motion.button>
+                {focusRoom && (
+                  <motion.button
+                    initial={motionAllowed ? { opacity: 0, x: -8 } : false}
+                    animate={{ opacity: 1, x: 0 }}
+                    onClick={() => setFocusId(null)}
+                    title={t('layout.floorplan.focusBack')}
+                    className='flex items-center gap-1 pl-2 pr-3.5 py-2 rounded-xl gc-overlay text-sm font-medium text-white/85 hover:text-white transition-colors'
+                  >
+                    <ChevronLeft size={16} />
+                    {focusRoom.name}
+                  </motion.button>
+                )}
+                {!replaying && (
+                  <StatusChips
+                    alarm={alarm}
+                    onAlarm={() => setAlarmOpen(true)}
+                    lamps={[...new Set(lampChips.map(c => c.entityId))].map(entityId => ({ entityId, entity: entities[entityId] }))}
+                    open={guards.length ? openNow : null}
+                    security={security}
+                    onSecurity={() => setSecurity(on => !on)}
+                  />
+                )}
+                {/* Sous les chips, ce qui est resté ouvert, par son nom. */}
+                {showSecurity && <span className='basis-full h-0' />}
+                {showSecurity && (
+                  <div
+                    role='status'
+                    className={cn(
+                      'max-w-full flex items-center gap-2 px-3.5 py-2 rounded-xl gc-overlay text-sm font-medium',
+                      openedNames.length ? 'text-red-200' : 'text-green-200'
+                    )}
+                  >
+                    {openedNames.length ? (
+                      <ShieldAlert size={16} className='shrink-0 text-red-400' />
+                    ) : (
+                      <ShieldCheck size={16} className='shrink-0 text-green-400' />
+                    )}
+                    <span className='truncate'>{securityText}</span>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         ) : !image ? (
@@ -1679,6 +1871,7 @@ export function FloorplanView() {
         <SettingsPanel
           tab={panel === 'image' ? null : panel}
           onTab={setPanel}
+          left={showColumn ? columnWidth + 24 : undefined}
           tool={tool}
           onTool={next => {
             setTool(next);
