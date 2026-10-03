@@ -39,6 +39,7 @@ import { colorAlpha } from '@/lib/color-value';
 import { useTheme } from '@/context/ThemeContext';
 import {
   cloudiness,
+  cloudLook,
   containSize,
   DEFAULT_NIGHT_LIGHT,
   DRAFT_COLOR,
@@ -94,6 +95,7 @@ import { useI18n } from '@/i18n';
 import type { ChipCardConfig, WidgetConfig } from '@/types/widget-configs';
 import type { CableProp, FloorOverlay, Floorplan3DHandle, Lamp, OpeningProp, PartProp, Project, SolarProp } from './Floorplan3D';
 import { FloorplanColumn } from './FloorplanColumn';
+import { SkyWeather } from './FloorplanHud';
 import { FloorplanItem } from './FloorplanItem';
 import { LampList } from './FloorplanLamps';
 import { DraftPopover, type Around } from './FloorplanDrawn';
@@ -102,7 +104,7 @@ import { PartList, PartPopover } from './FloorplanParts';
 import { CableList, CableOverlay, CablePopover, SolarList, SolarPopover } from './FloorplanCables';
 import { ReplayBar } from './FloorplanReplay';
 import { RoomList, RoomNamePopover } from './FloorplanRooms';
-import { Weather } from './FloorplanWeather';
+import { Clouds, Weather } from './FloorplanWeather';
 import { useReplay } from './useReplay';
 import { ModelPicker } from './ModelPicker';
 import { EmptyTab, Segmented, SettingsPanel, ToggleRow, type SettingsTab, type Tool } from './FloorplanSettings';
@@ -505,6 +507,7 @@ export function FloorplanView() {
   const frost = model ? frostOf(entities[weatherId]?.attributes) : 0;
   // Derrière la maquette : le ciel de l'heure, sauf si la page garde le fond du thème.
   const sky = model && floorplan?.sky !== false ? skyColors(sunElevation, clouds) : null;
+  const cloudy = sky ? cloudLook(sunElevation, clouds) : null;
 
   // ── Étages ─────────────────────────────────────────────────────────────────
   /** Les objets de cette maquette-ci — `undefined` tant qu'elle n'est pas chargée. */
@@ -1125,6 +1128,11 @@ export function FloorplanView() {
         domain='weather'
         onChange={id => setFloorplan({ weather: id })}
       />
+      <ToggleRow
+        label={t('layout.floorplan.skyWeather')}
+        checked={floorplan?.skyWeather !== false}
+        onChange={on => setFloorplan({ skyWeather: on })}
+      />
       {/* Câbles, pluie, rotation immobiles : que l'appareil dise pourquoi. */}
       {(!motionOk || perfSettings.reduceAnimations) && (
         <p className='px-0.5 text-[11px] leading-snug text-amber-200/80'>
@@ -1226,6 +1234,7 @@ export function FloorplanView() {
             {sky && sky.stars > 0 && (
               <div className='absolute inset-0 rounded-[1.25rem] pointer-events-none' style={{ ...STARS, opacity: sky.stars }} />
             )}
+            {cloudy && <Clouds {...cloudy} moving={animated} />}
             {failed ? (
               <p className='m-auto absolute inset-0 h-fit w-fit max-w-sm px-4 py-3 rounded-2xl gc-overlay text-sm text-white/70 text-center'>
                 {t(failed === 'webgl' ? 'layout.floorplan.webglError' : 'layout.floorplan.modelError')}
@@ -1303,6 +1312,12 @@ export function FloorplanView() {
             </Projected>
             {items}
             {showColumn && <FloorplanColumn ids={columnIds} width={columnWidth} onChange={ids => setFloorplan({ column: ids })} />}
+            {/* En haut à droite : la météo, écrite sur le ciel. */}
+            {!backdrop && (
+              <div className='absolute right-4 top-3 z-20 flex flex-col items-end gap-3 pointer-events-none'>
+                {entities[weatherId] && floorplan?.skyWeather !== false && <SkyWeather weather={entities[weatherId]} sun={sunEntity} />}
+              </div>
+            )}
             {addPopover}
             <Projected projector={projector}>
               {toScreen => {

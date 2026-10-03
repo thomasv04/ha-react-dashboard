@@ -34,6 +34,8 @@ export interface FloorplanConfig {
   nightLight?: number;
   /** Entité `weather` qui voile le soleil et grise le ciel — absente, la première trouvée. */
   weather?: string;
+  /** Sa température, l'état du ciel, le vent écrits en grand sur le ciel, en haut à droite. Actif par défaut. */
+  skyWeather?: boolean;
   /** Entité `alarm_control_panel` qu'arme le bouclier — absente, la première trouvée. */
   alarm?: string;
   /** Portes, fenêtres et volets dessinés sur la maquette, mus par leur entité. */

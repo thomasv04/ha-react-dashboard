@@ -479,6 +479,19 @@ export function cloudiness(state: string | undefined): number {
   return CLOUDS[state ?? ''] ?? 0;
 }
 
+/**
+ * Les nuages du ciel, d'après l'élévation du soleil et la couverture : leur
+ * couleur — blancs le jour, gris quand le ciel se bouche, sombres la nuit — et
+ * le seuil au-dessus duquel le bruit qui les dessine devient nuage : plus le
+ * ciel est couvert, plus il est bas. Ciel clair : aucun.
+ */
+export function cloudLook(elevation: number | undefined, clouds: number): { color: string; threshold: number } | null {
+  if (clouds <= 0) return null;
+  const day = clamp(((elevation ?? DEFAULT_SUN.elevation) + 6) / 12, 0, 1);
+  const lit = mix([255, 255, 255], [150, 158, 170], clamp((clouds - 0.6) / 0.4, 0, 1));
+  return { color: hex(mix([52, 60, 78], lit, day)), threshold: 0.62 - 0.22 * clouds };
+}
+
 /** Ce qui tombe du ciel, de 0 à 1 par sorte, et les éclairs d'un orage. */
 export interface Precipitation {
   rain: number;

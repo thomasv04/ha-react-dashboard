@@ -837,6 +837,13 @@ select {
   border-radius: 1.25rem;
 }
 
+/* Les nuages tiennent le haut du ciel, et s'effacent vers l'horizon. */
+.fp-clouds {
+  bottom: 30%;
+  -webkit-mask-image: linear-gradient(to bottom, #000 35%, transparent);
+  mask-image: linear-gradient(to bottom, #000 35%, transparent);
+}
+
 /* Un calque de ce qui tombe : sa tuile se répète, le composant le place. */
 .fp-layer {
   position: absolute;

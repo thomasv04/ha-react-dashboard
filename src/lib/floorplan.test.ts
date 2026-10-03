@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   cableFlow,
   cloudiness,
+  cloudLook,
   compassHeading,
   containSize,
   flowDuration,
@@ -302,6 +303,18 @@ describe('skyColors', () => {
 
   it('assumes an afternoon sky when sun.sun is missing', () => {
     expect(skyColors(undefined)).toEqual(skyColors(40));
+  });
+});
+
+describe('cloudLook', () => {
+  it('draws no cloud in a clear sky', () => {
+    expect(cloudLook(40, 0)).toBeNull();
+  });
+  it('covers more of the sky as it clouds over, white by day, grey when overcast, dark at night', () => {
+    expect(cloudLook(40, 0.75)!.threshold).toBeLessThan(cloudLook(40, 0.35)!.threshold);
+    expect(cloudLook(40, 0.35)!.color).toBe('#ffffff');
+    expect(cloudLook(40, 1)!.color).toBe('#969eaa');
+    expect(cloudLook(-20, 0.35)!.color).toBe('#343c4e');
   });
 });
 

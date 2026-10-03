@@ -40,8 +40,6 @@ const WIDGETS: GridWidget[] = [
   chip('demo-temp-amis', [-2.4, 0.5, -4.2]),
   // La batterie SolarFlow, où se rejoignent les câbles : son niveau.
   chip('demo-batterie', [-4.1, 0.3, 1.6]),
-  // Une card n'est pas accrochée : elle reste posée en % de l'écran.
-  { id: 'demo-meteo', type: 'weather', x: 0, y: 0, w: 2, h: 1, pos: { x: 88, y: 22, w: 20, h: 32 } },
   // La colonne de gauche : des widgets ordinaires, à la hauteur de leurs rangées.
   { id: 'demo-horloge', type: 'clock', x: 0, y: 0, w: 3, h: 2 },
   { id: 'demo-energie', type: 'energy_flow', x: 0, y: 0, w: 3, h: 3 },
@@ -58,7 +56,6 @@ const CONFIGS = {
   'demo-temp-cuisine': { type: 'chip', entityId: 'sensor.temperature_cuisine' },
   'demo-temp-bain': { type: 'chip', entityId: 'sensor.temperature_salle_de_bain' },
   'demo-temp-amis': { type: 'chip', entityId: 'sensor.temperature_chambre_amis' },
-  'demo-meteo': { type: 'weather', entityId: 'weather.home' },
   'demo-batterie': { type: 'chip', entityId: 'sensor.solarflow_2400_ac_electric_level' },
   'demo-horloge': { type: 'clock', showAnalog: false, showDate: true },
   'demo-energie': DEFAULT_WIDGET_CONFIGS.energy_flow,

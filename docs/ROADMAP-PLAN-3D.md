@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **44 tâches sur 48** — les phases A à J, et `K1`. `F1` reste à essayer sur un vrai Android.
+**État global** : **46 tâches sur 48** — les phases A à J, `K1` à `K3`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -842,13 +842,29 @@ n'est plus une page parmi d'autres : c'est l'accueil.
   `floorplan.column` : les identifiants, dans l'ordre. Décocher l'option
   rend ses widgets à la maquette. Masquée sur téléphone et en écran de veille.
 
-### [ ] K2 — Des nuages dans le ciel
+### [x] K2 — Des nuages dans le ciel
+
+> **Fait** ([FloorplanWeather.tsx](../src/components/floorplan/FloorplanWeather.tsx)) :
+> un bruit fractal SVG, étiré en largeur, dont seul ce qui passe un seuil
+> reste nuage — un dessous plus sombre, le dessus éclairé décalé vers le haut,
+> pour le relief. `cloudLook` (testée) donne le seuil et la couleur : aucun
+> nuage par ciel clair, blancs le jour, gris quand le ciel se bouche, sombres
+> la nuit. La tuile se raccorde à ses bords (`stitchTiles`) : elle dérive
+> d'une largeur en sept minutes, sans couture, glissée par le compositeur.
+> Le haut du ciel seulement, effacé vers l'horizon. Immobiles sans animations.
 
 - **Quoi** : derrière la maison, des nuages qui dérivent lentement, d'autant
   plus nombreux que l'entité météo est couverte, gris par temps de pluie,
   sombres la nuit. Immobiles quand les animations sont coupées.
 
-### [ ] K3 — La météo, écrite sur le ciel
+### [x] K3 — La météo, écrite sur le ciel
+
+> **Fait** ([FloorplanHud.tsx](../src/components/floorplan/FloorplanHud.tsx)) :
+> l'entité météo de la page — choisie, ou la première trouvée —, en blanc
+> ombré, lisible sur un nuage comme sur un ciel de nuit. Le prochain coucher
+> tant que le soleil est levé, le prochain lever ensuite (`sun.sun`). Active
+> par défaut ; pas en écran de veille. La démo perd sa card météo, qui faisait
+> doublon.
 
 - **Quoi** : en haut à droite, sans card : la température en grand,
   l'état du ciel, le coucher (ou le lever) du soleil, le vent et l'humidité.
