@@ -53,6 +53,8 @@ export interface FloorplanConfig {
    * identifiants de ses widgets, dans l'ordre. Absente : pas de colonne.
    */
   column?: string[];
+  /** Panneaux (`custom:<id>`) ouverts depuis le menu en haut à droite, après les vues. */
+  panels?: string[];
 }
 
 export interface Page {

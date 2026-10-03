@@ -484,6 +484,11 @@ test('in edit mode, a card goes into the widget column, which stays put when the
   const box = await column.boundingBox();
   await orbit(page, 160);
   expect(await column.boundingBox()).toEqual(box);
+
+  // La colonne recadre la maquette : les tests suivants cliquent sur la maison telle qu'elle était.
+  const config = await (await request.get(`${API}/api/config`)).json();
+  delete config.pages.find((p: { id: string }) => p.id === 'maison').floorplan.column;
+  expect((await request.put(`${API}/api/config`, { data: config })).ok()).toBeTruthy();
 });
 
 test('in edit mode, two clicks draw a door, which is kept once saved', async ({ page, request }) => {

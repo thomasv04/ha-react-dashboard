@@ -397,6 +397,8 @@
     "columnShorter": "Shorter",
     "columnTaller": "Taller",
     "columnDock": "Move to the column",
+    "menuPanelAdd": "Panel to open from the menu",
+    "menuPanelRemove": "Remove from the menu",
     "sky": "Sky",
     "skyWeather": "Weather on the sky",
     "skySunset": "Sunset {time}",

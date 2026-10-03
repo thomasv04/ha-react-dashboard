@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **47 tâches sur 48** — les phases A à J, `K1` à `K4`. `F1` reste à essayer sur un vrai Android.
+**État global** : **48 tâches sur 48** — toutes les phases, de A à K. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -887,7 +887,16 @@ n'est plus une page parmi d'autres : c'est l'accueil.
   de choix au toucher), les lampes allumées (la liste, chacune basculable), les
   portes et fenêtres ouvertes (la vue sécurité au toucher).
 
-### [ ] K5 — Le menu en haut à droite
+### [x] K5 — Le menu en haut à droite
+
+> **Fait** : une barre de verre au-dessus de la météo — boussole, sécurité,
+> thermique, relecture, recentrer —, puis, après un trait, les panneaux
+> choisis dans l'onglet « Maquette » (`floorplan.panels`, des `custom:<id>`),
+> chacun avec son icône ; un panneau supprimé depuis disparaît du menu. La
+> barre de relecture reste seule en bas, à droite de la colonne. En bas à
+> droite, plus rien : la maison respire. Sur un écran étroit, les chips
+> passent sous le menu — côte à côte, elles le recouvraient (le test de la
+> boussole l'a vu) — et la météo du ciel s'efface, faute de place.
 
 - **Quoi** : les boutons ronds du bas (sécurité, thermique, relecture,
   recentrer, boussole) montent en une barre en haut à droite, suivis de

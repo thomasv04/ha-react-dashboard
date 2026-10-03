@@ -397,6 +397,8 @@
     "columnShorter": "Moins haut",
     "columnTaller": "Plus haut",
     "columnDock": "Ranger dans la colonne",
+    "menuPanelAdd": "Panneau à ouvrir depuis le menu",
+    "menuPanelRemove": "Retirer du menu",
     "sky": "Ciel",
     "skyWeather": "Météo sur le ciel",
     "skySunset": "Coucher {time}",
