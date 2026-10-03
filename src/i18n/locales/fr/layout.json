@@ -406,6 +406,8 @@
     "skyWind": "Vent {value}",
     "skyHumidity": "Humidité {value} %",
     "lampGlow": "Lueur des lampes",
+    "floorValues": "Valeurs au sol",
+    "livingRooms": "Pièces vivantes",
     "lamps": "Lampes",
     "lampAdd": "Poser une lampe",
     "lampRemove": "Retirer la lampe",

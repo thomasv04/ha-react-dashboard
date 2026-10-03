@@ -75,7 +75,8 @@ test.beforeAll(async ({ request }) => {
     icon: 'Home',
     type: 'floorplan',
     order: 99,
-    floorplan: { image: '', model: MODEL, rooms },
+    // Les valeurs au sol masqueraient la pastille de température, que les tests suivent.
+    floorplan: { image: '', model: MODEL, rooms, floorValues: false },
   });
   // Un plan encore vide, où téléverser une maquette.
   config.pages.push({ id: 'vierge', label: 'Vierge', icon: 'Home', type: 'floorplan', order: 100, floorplan: { image: '' } });
@@ -220,6 +221,19 @@ test('the thermal view colours a room with the temperature measured in it', asyn
   await expect(page.getByText('20.4°', { exact: true })).toBeVisible();
   // La pastille du capteur s'efface : sa valeur est au centre de la pièce.
   await expect(page.getByText('20.4 °C')).toHaveCount(0);
+});
+
+test('the temperature of a room is written on its floor, and its chip steps aside', async ({ page, request }) => {
+  const before = await (await request.get(`${API}/api/config`)).json();
+  const config = structuredClone(before);
+  config.pages.find((p: { id: string }) => p.id === 'maison').floorplan.floorValues = true;
+  expect((await request.put(`${API}/api/config`, { data: config })).ok()).toBeTruthy();
+
+  await page.goto('/#maison');
+  await expect(page.locator('[data-floorplan-3d]')).toHaveAttribute('data-floorplan-labels', '20.4°', { timeout: 60_000 });
+  await expect(page.locator('[data-floorplan-item="temp"]')).toHaveCount(0);
+
+  expect((await request.put(`${API}/api/config`, { data: before })).ok()).toBeTruthy();
 });
 
 test('a tap on a room flies the camera to it, and Escape brings it back', async ({ page }) => {

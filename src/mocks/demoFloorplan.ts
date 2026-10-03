@@ -33,6 +33,7 @@ const WIDGETS: GridWidget[] = [
   chip('demo-chambre', [-2.88, 0.63, -6.58]),
   chip('demo-couloir', [-6.02, 1.63, -6.71]),
   chip('demo-temperature', [-11.2, 0.5, -4.6]),
+  chip('demo-humidite', [-10.6, 0.5, -4.2]),
   // Un capteur de température par pièce : la vue thermique les retrouve.
   chip('demo-temp-sejour', [-6.5, 0.5, 1.8]),
   chip('demo-temp-cuisine', [-11.4, 0.92, 0.2]),
@@ -52,6 +53,7 @@ const CONFIGS = {
   'demo-chambre': { type: 'chip', entityId: 'light.chambre', glow: true, glowSize: 12 },
   'demo-couloir': { type: 'chip', entityId: 'binary_sensor.couloir_mouvement' },
   'demo-temperature': { type: 'chip', entityId: 'sensor.temperature_chambre_temperature' },
+  'demo-humidite': { type: 'chip', entityId: 'sensor.temperature_chambre_humidity' },
   'demo-temp-sejour': { type: 'chip', entityId: 'sensor.temperature_sejour' },
   'demo-temp-cuisine': { type: 'chip', entityId: 'sensor.temperature_cuisine' },
   'demo-temp-bain': { type: 'chip', entityId: 'sensor.temperature_salle_de_bain' },

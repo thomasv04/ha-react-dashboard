@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **49 tâches sur 49** — toutes les phases, de A à K. `F1` reste à essayer sur un vrai Android.
+**État global** : **51 tâches sur 52** — les phases A à K, `L1` et `L2`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -919,3 +919,47 @@ n'est plus une page parmi d'autres : c'est l'accueil.
 - **Quoi** : les boutons ronds du bas (sécurité, thermique, relecture,
   recentrer, boussole) montent en une barre en haut à droite, suivis de
   raccourcis vers les panneaux choisis en édition (`floorplan.panels`).
+
+---
+
+## Phase L — Des pièces vivantes
+
+Les pièces dessinées (`C1`) ne servaient qu'au vol vers une pièce, à la vue
+thermique et à garder la lumière des lampes chez elles. Elles disent
+désormais d'un coup d'œil ce qui s'y passe.
+
+### [x] L1 — Les valeurs écrites au sol
+
+> **Fait** : une texture du texte, couchée au centre de la pièce, tournée à
+> chaque mouvement de caméra pour que son haut reste au loin — lisible quel
+> que soit le tour de la maison. Blanc à contour sombre, lisible sur un
+> parquet clair ; large de 60 % de la pièce, mais ni illisible dans une salle
+> d'eau ni démesurée dans un séjour. Par-dessus les meubles : une table au
+> milieu l'aurait cachée. L'humidité (classe `humidity` seulement : un « % »
+> seul serait aussi une batterie, `humidityOf` testée) s'écrit dessous. Ni en
+> édition, ni rejouée, ni en vue thermique, ni en veille. Test E2E : la
+> température au sol, la pastille effacée.
+
+- **Quoi** : la température et l'humidité de chaque pièce — la moyenne des
+  capteurs posés dedans — écrites à plat sur son sol, en perspective, comme
+  peintes. Les pastilles de ces capteurs s'effacent : leur valeur est au sol.
+  Option « Valeurs au sol », onglet « Ambiance ».
+
+### [x] L2 — Une pièce allumée se teinte
+
+> **Fait** : le sol de la pièce, additif — une lueur plutôt qu'un voile —,
+> d'autant plus vive que la lampe est forte ; ambre pour une présence, quand
+> aucune lampe n'y brille. Rejouée, la lueur suit les lampes de l'instant.
+> Masquée par les meubles, comme la lumière.
+
+- **Quoi** : le sol d'une pièce dont une lampe est allumée prend sa couleur,
+  en lueur ; celui d'une pièce où un détecteur de présence est déclenché,
+  une lueur ambre. Option « Pièces vivantes », onglet « Ambiance ».
+
+### [ ] L3 — Un animal qui se promène
+
+- **Quoi** : bonus demandé en cours de route. Un chat ou un chien, en
+  volumes simples, qui se promène dans les pièces : il marche quelques
+  secondes, s'assoit, repart ; il contourne murs et meubles, et change de
+  pièce d'un bond discret. Assis et immobile sans animations. Option
+  « Animal », onglet « Ambiance ».

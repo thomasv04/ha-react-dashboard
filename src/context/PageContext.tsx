@@ -27,6 +27,10 @@ export interface FloorplanConfig {
   sky?: boolean;
   /** Une lueur autour de chaque lampe allumée, de sa couleur. */
   lampGlow?: boolean;
+  /** La température et l'humidité de chaque pièce écrites à plat sur son sol. Actif par défaut. */
+  floorValues?: boolean;
+  /** Le sol d'une pièce prend la couleur de sa lampe allumée, l'ambre d'une présence. Actif par défaut. */
+  livingRooms?: boolean;
   /**
    * Clarté de la maquette la nuit, de 0 (seules les lampes éclairent) à 1 : un
    * clair de lune, pour les pièces sans lampe reliée. Absente : `DEFAULT_NIGHT_LIGHT`.

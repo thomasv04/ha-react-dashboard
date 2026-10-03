@@ -406,6 +406,8 @@
     "skyWind": "Wind {value}",
     "skyHumidity": "Humidity {value}%",
     "lampGlow": "Lamp glow",
+    "floorValues": "Values on the floor",
+    "livingRooms": "Living rooms",
     "lamps": "Lamps",
     "lampAdd": "Place a lamp",
     "lampRemove": "Remove the lamp",

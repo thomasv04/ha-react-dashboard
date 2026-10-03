@@ -333,6 +333,13 @@ export function temperatureOf(
   return { value, celsius: unit === '°F' ? ((value - 32) * 5) / 9 : value };
 }
 
+/** Humidité d'une entité, si c'en est une (classe `humidity` : un « % » seul serait aussi bien une batterie). */
+export function humidityOf(state: string | undefined, attributes: Record<string, unknown> | undefined): number | null {
+  if (attributes?.device_class !== 'humidity') return null;
+  const value = parseFloat(state ?? '');
+  return Number.isFinite(value) ? value : null;
+}
+
 // ── Murs en coupe ────────────────────────────────────────────────────────────
 
 /** Hauteur de coupe, en part de la hauteur de la maquette : des murets, juste au-dessus des plans de travail. */

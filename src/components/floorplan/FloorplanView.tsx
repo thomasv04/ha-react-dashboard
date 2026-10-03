@@ -75,6 +75,7 @@ import {
   stateAt,
   sunPosition,
   temperatureOf,
+  humidityOf,
   thermalColor,
   type FloorplanCable,
   type FloorplanPart,
@@ -158,6 +159,8 @@ const STARS = {
 
 /** Pièces : leur contour, en édition. */
 const ROOM_COLOR = '#60a5fa';
+/** Le sol d'une pièce où quelqu'un est là. */
+const PRESENCE_COLOR = '#f59e0b';
 /** En deçà (px) du premier sommet d'une pièce, du dernier point d'un câble, un clic ferme l'une, finit l'autre. */
 const CLOSE_PX = 14;
 
@@ -760,8 +763,25 @@ export function FloorplanView() {
     const mean = (key: 'value' | 'celsius') => readings.reduce((sum, r) => sum + r[key], 0) / readings.length;
     return { value: mean('value'), celsius: mean('celsius') };
   });
+  /** Pastilles d'humidité rattachées à une pièce : leur valeur s'écrit au sol, avec la température. */
+  const hygrometers = new Set<string>();
+  const roomHumidity = rooms.map(room => {
+    const readings = chips.flatMap(c => {
+      const reading =
+        c.anchor && pointInPolygon(c.anchor[0], c.anchor[2], room.points)
+          ? humidityOf(entities[c.entityId]?.state, entities[c.entityId]?.attributes)
+          : null;
+      if (reading !== null) hygrometers.add(c.id);
+      return reading !== null ? [reading] : [];
+    });
+    return readings.length ? readings.reduce((sum, r) => sum + r, 0) / readings.length : null;
+  });
   // Rejouée, la maison n'a que l'historique de ses lampes et de ses portes : pas de températures.
   const showThermal = thermal && !isEditMode && !replaying;
+  /** Valeurs écrites au sol : ni en édition, ni rejouées, ni en vue thermique — qui écrit les siennes —, ni en veille. */
+  const showValues = floorplan?.floorValues !== false && !isEditMode && !replaying && !showThermal && !backdrop;
+  /** Pièces vivantes : le sol prend la couleur d'une lampe allumée, ou l'ambre d'une présence. */
+  const showLiving = floorplan?.livingRooms !== false && !isEditMode && !showThermal;
   /** Pastilles d'un détecteur de mouvement ou de présence déclenché : une lueur respire dessous. */
   const present = new Set(chips.flatMap(c => (isPresence(entities[c.entityId]?.state, entities[c.entityId]?.attributes) ? [c.id] : [])));
 
@@ -781,7 +801,29 @@ export function FloorplanView() {
           ...rooms.filter(r => !aboveLevel(r.y)).map(r => ({ y: r.y, points: r.points, color: ROOM_COLOR, fill: 0.12, closed: true })),
           ...(roomDraft ? [{ y: roomDraft.y, points: roomPoints, color: DRAFT_COLOR, fill: 0.18, closed: roomPoints.length >= 3 }] : []),
         ]
-      : [];
+      : rooms.flatMap((r, i) => {
+          if (aboveLevel(r.y)) return [];
+          const inside = (anchor: Vec3 | undefined) => !!anchor && pointInPolygon(anchor[0], anchor[2], r.points);
+          const lit = showLiving ? lamps.find(l => l.color && !l.hidden && inside(l.anchor)) : undefined;
+          const someone = showLiving && !lit && chips.some(c => present.has(c.id) && inside(c.anchor));
+          const temperature = showValues ? roomTemperatures[i] : null;
+          const humidity = showValues ? roomHumidity[i] : null;
+          const percent = humidity !== null ? `${Math.round(humidity)} %` : undefined;
+          const label = temperature ? { text: `${temperature.value.toFixed(1)}°`, sub: percent } : percent && { text: percent };
+          if (!lit && !someone && !label) return [];
+          return [
+            {
+              y: r.y,
+              points: r.points,
+              color: lit?.color ? `rgb(${lit.color.join(', ')})` : PRESENCE_COLOR,
+              fill: lit ? 0.18 + 0.22 * lit.brightness : someone ? 0.2 : 0,
+              glow: true,
+              edge: false,
+              closed: true,
+              ...(label && { label }),
+            },
+          ];
+        });
 
   /**
    * Hors édition, les pastilles que la maquette cache s'effacent : leurs points
@@ -993,7 +1035,8 @@ export function FloorplanView() {
         <Projected projector={projector}>
           {toScreen =>
             widgets.map(w => {
-              if ((showThermal && thermometers.has(w.id)) || docked.has(w.id)) return null;
+              if (docked.has(w.id) || ((showThermal || showValues) && thermometers.has(w.id)) || (showValues && hygrometers.has(w.id)))
+                return null;
               const anchor = model ? normalizeAnchor(w.pos?.anchor) : undefined;
               const projected = anchor ? toScreen(anchor) : undefined;
               // Accrochée à la maquette : rien à montrer tant qu'elle n'est pas
@@ -1183,6 +1226,16 @@ export function FloorplanView() {
         value={weatherId}
         domain='weather'
         onChange={id => setFloorplan({ weather: id })}
+      />
+      <ToggleRow
+        label={t('layout.floorplan.floorValues')}
+        checked={floorplan?.floorValues !== false}
+        onChange={on => setFloorplan({ floorValues: on })}
+      />
+      <ToggleRow
+        label={t('layout.floorplan.livingRooms')}
+        checked={floorplan?.livingRooms !== false}
+        onChange={on => setFloorplan({ livingRooms: on })}
       />
       <ToggleRow
         label={t('layout.floorplan.skyWeather')}
