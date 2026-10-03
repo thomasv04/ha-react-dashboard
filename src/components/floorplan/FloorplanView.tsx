@@ -95,7 +95,7 @@ import { useI18n } from '@/i18n';
 import type { ChipCardConfig, WidgetConfig } from '@/types/widget-configs';
 import type { CableProp, FloorOverlay, Floorplan3DHandle, Lamp, OpeningProp, PartProp, Project, SolarProp } from './Floorplan3D';
 import { FloorplanColumn } from './FloorplanColumn';
-import { SkyWeather } from './FloorplanHud';
+import { SkyWeather, StatusChips } from './FloorplanHud';
 import { FloorplanItem } from './FloorplanItem';
 import { LampList } from './FloorplanLamps';
 import { DraftPopover, type Around } from './FloorplanDrawn';
@@ -601,6 +601,10 @@ export function FloorplanView() {
     ),
   ].filter(g => g.entityId);
   const showSecurity = security && !isEditMode && !replaying && !backdrop;
+  /** Ce qui est ouvert maintenant, une fois chacun : la chip le compte, vue sécurité ou pas. */
+  const openNow = [
+    ...new Set(guards.filter(g => openness(entities[g.entityId]?.state, entities[g.entityId]?.attributes) > 0).map(g => g.entityId)),
+  ];
   const opened = showSecurity ? guards.filter(g => openness(entities[g.entityId]?.state, entities[g.entityId]?.attributes) > 0) : [];
   /** Une fois chacune : une porte et sa pastille ne font qu'une. */
   const openedNames = [...new Set(opened.map(g => g.entityId))].map(id => friendlyName(entities[id]) ?? id);
@@ -1596,22 +1600,6 @@ export function FloorplanView() {
                 </button>
               </div>
             )}
-            {showSecurity && (
-              <div
-                role='status'
-                className={cn(
-                  'absolute left-1/2 top-3 z-30 -translate-x-1/2 max-w-[calc(100%-8rem)] flex items-center gap-2 px-3.5 py-2 rounded-xl gc-overlay text-sm font-medium',
-                  openedNames.length ? 'text-red-200' : 'text-green-200'
-                )}
-              >
-                {openedNames.length ? (
-                  <ShieldAlert size={16} className='shrink-0 text-red-400' />
-                ) : (
-                  <ShieldCheck size={16} className='shrink-0 text-green-400' />
-                )}
-                <span className='truncate'>{securityText}</span>
-              </div>
-            )}
             {alarm && (
               <AlarmModeModal
                 entityId={alarmId}
@@ -1629,17 +1617,53 @@ export function FloorplanView() {
                 }
               />
             )}
-            {focusRoom && (
-              <motion.button
-                initial={motionAllowed ? { opacity: 0, x: -8 } : false}
-                animate={{ opacity: 1, x: 0 }}
-                onClick={() => setFocusId(null)}
-                title={t('layout.floorplan.focusBack')}
-                className='absolute left-3 top-3 z-30 flex items-center gap-1 pl-2 pr-3.5 py-2 rounded-xl gc-overlay text-sm font-medium text-white/85 hover:text-white transition-colors'
+            {/* En haut à gauche, à droite de la colonne : le retour à toute la maison, les chips d'état. */}
+            {loaded && !isEditMode && !backdrop && (
+              <div
+                className='absolute top-3 z-30 flex flex-wrap items-start gap-2 max-w-[55%]'
+                style={{ left: showColumn ? columnWidth + 24 : 12 }}
               >
-                <ChevronLeft size={16} />
-                {focusRoom.name}
-              </motion.button>
+                {focusRoom && (
+                  <motion.button
+                    initial={motionAllowed ? { opacity: 0, x: -8 } : false}
+                    animate={{ opacity: 1, x: 0 }}
+                    onClick={() => setFocusId(null)}
+                    title={t('layout.floorplan.focusBack')}
+                    className='flex items-center gap-1 pl-2 pr-3.5 py-2 rounded-xl gc-overlay text-sm font-medium text-white/85 hover:text-white transition-colors'
+                  >
+                    <ChevronLeft size={16} />
+                    {focusRoom.name}
+                  </motion.button>
+                )}
+                {!replaying && (
+                  <StatusChips
+                    alarm={alarm}
+                    onAlarm={() => setAlarmOpen(true)}
+                    lamps={[...new Set(lampChips.map(c => c.entityId))].map(entityId => ({ entityId, entity: entities[entityId] }))}
+                    open={guards.length ? openNow : null}
+                    security={security}
+                    onSecurity={() => setSecurity(on => !on)}
+                  />
+                )}
+                {/* Sous les chips, ce qui est resté ouvert, par son nom. */}
+                {showSecurity && <span className='basis-full h-0' />}
+                {showSecurity && (
+                  <div
+                    role='status'
+                    className={cn(
+                      'max-w-full flex items-center gap-2 px-3.5 py-2 rounded-xl gc-overlay text-sm font-medium',
+                      openedNames.length ? 'text-red-200' : 'text-green-200'
+                    )}
+                  >
+                    {openedNames.length ? (
+                      <ShieldAlert size={16} className='shrink-0 text-red-400' />
+                    ) : (
+                      <ShieldCheck size={16} className='shrink-0 text-green-400' />
+                    )}
+                    <span className='truncate'>{securityText}</span>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         ) : !image ? (

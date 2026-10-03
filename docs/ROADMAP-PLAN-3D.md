@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **46 tâches sur 48** — les phases A à J, `K1` à `K3`. `F1` reste à essayer sur un vrai Android.
+**État global** : **47 tâches sur 48** — les phases A à J, `K1` à `K4`. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -870,7 +870,18 @@ n'est plus une page parmi d'autres : c'est l'accueil.
   l'état du ciel, le coucher (ou le lever) du soleil, le vent et l'humidité.
   Option « Météo sur le ciel », onglet « Ambiance ».
 
-### [ ] K4 — Des chips d'état
+### [x] K4 — Des chips d'état
+
+> **Fait** (`StatusChips`, [FloorplanHud.tsx](../src/components/floorplan/FloorplanHud.tsx)) :
+> en haut à gauche, à droite de la colonne. L'alarme de la page, son mode au
+> libellé de la card Alarme, ouvre la fenêtre de choix du bouclier. Les lampes
+> — les pastilles d'une lumière — : « 3 lampes allumées », ou « Lampes
+> éteintes » ; au toucher, leur liste, les allumées d'abord, chacune basculée
+> d'un toucher (test unitaire). Ce qui ferme la maison : « 2 ouvertes », ou
+> « Tout est fermé » ; au toucher, la vue sécurité, dont le bandeau des noms
+> passe sous les chips. Le retour « ‹ Pièce » rejoint la rangée. Ni en
+> édition, ni en relecture, ni en écran de veille. Pas de « basculées » comme
+> sur la capture : HA ne distingue pas une fenêtre entrouverte.
 
 - **Quoi** : en haut à gauche de la maquette : l'alarme (son mode, la fenêtre
   de choix au toucher), les lampes allumées (la liste, chacune basculable), les

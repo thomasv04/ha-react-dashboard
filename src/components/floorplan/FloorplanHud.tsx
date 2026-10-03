@@ -1,5 +1,10 @@
+import { useState } from 'react';
+import { useHass } from '@hakit/core';
 import type { HassEntity } from 'home-assistant-js-websocket';
+import { DoorClosed, DoorOpen, Lightbulb, ShieldAlert, ShieldCheck, ShieldOff, type LucideIcon } from 'lucide-react';
 import { useFormats } from '@/hooks/useFormats';
+import { callHAService, friendlyName, toggleService } from '@/lib/ha-service';
+import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 
 /** Lisible sur un ciel clair comme sur un ciel de nuit. */
@@ -30,12 +35,142 @@ export function SkyWeather({ weather, sun }: { weather: HassEntity; sun: HassEnt
   ].filter(Boolean);
 
   return (
-    <div data-floorplan-weather className='text-right text-white pointer-events-none select-none' style={ON_SKY}>
+    <div
+      data-floorplan-weather
+      // Un voile à peine sombre derrière le texte : sur un nuage blanc, l'ombre seule ne suffit pas.
+      className='-m-6 p-6 text-right text-white pointer-events-none select-none bg-[radial-gradient(closest-side,rgb(15_23_42/0.28),transparent)]'
+      style={ON_SKY}
+    >
       {typeof a.temperature === 'number' && (
         <p className='text-[clamp(3rem,7cqi,5.5rem)] font-extralight leading-none tabular-nums'>{Math.round(a.temperature)}°</p>
       )}
       <p className='mt-1 text-lg font-semibold'>{condition}</p>
       {details.length > 0 && <p className='text-sm text-white/85'>{details.join(' · ')}</p>}
     </div>
+  );
+}
+
+/** Une chip d'état, en haut de la maquette ; enfoncée, elle prend la couleur `on`. */
+function StatusChip({
+  icon: Icon,
+  label,
+  onClick,
+  pressed,
+  tone = 'text-white/60',
+}: {
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+  pressed?: boolean;
+  tone?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={pressed}
+      className={cn(
+        'flex items-center gap-1.5 pl-2.5 pr-3.5 py-2 rounded-full gc-overlay text-sm font-medium whitespace-nowrap transition-colors',
+        pressed ? 'text-white ring-1 ring-white/30' : 'text-white/85 hover:text-white'
+      )}
+    >
+      <Icon size={15} className={cn('shrink-0', tone)} />
+      {label}
+    </button>
+  );
+}
+
+const ALARM_ICON: Record<string, LucideIcon> = { disarmed: ShieldOff, triggered: ShieldAlert };
+
+/**
+ * Les chips d'état, en haut à gauche de la maquette : l'alarme — son mode, la
+ * fenêtre de choix au toucher —, les lampes allumées — leur liste, chacune
+ * basculable —, ce qui est resté ouvert — la vue sécurité au toucher.
+ */
+export function StatusChips({
+  alarm,
+  onAlarm,
+  lamps,
+  open,
+  security,
+  onSecurity,
+}: {
+  /** Absente : pas de chip d'alarme. */
+  alarm?: HassEntity;
+  onAlarm: () => void;
+  /** Les lumières des lampes de la page. */
+  lamps: { entityId: string; entity?: HassEntity }[];
+  /** Les noms de ce qui est ouvert — `null` : rien à surveiller. */
+  open: string[] | null;
+  security: boolean;
+  onSecurity: () => void;
+}) {
+  const { t } = useI18n();
+  const helpers = useHass(s => s.helpers);
+  const [listing, setListing] = useState(false);
+  const lit = lamps.filter(l => l.entity?.state === 'on');
+
+  return (
+    <>
+      {alarm && (
+        <StatusChip
+          icon={ALARM_ICON[alarm.state] ?? ShieldCheck}
+          tone={alarm.state === 'triggered' ? 'text-red-400' : alarm.state === 'disarmed' ? 'text-white/60' : 'text-green-400'}
+          label={t(`widgets.alarm.${alarm.state}`).startsWith('widgets.') ? alarm.state : t(`widgets.alarm.${alarm.state}`)}
+          onClick={onAlarm}
+        />
+      )}
+      {lamps.length > 0 && (
+        <div className='relative'>
+          <StatusChip
+            icon={Lightbulb}
+            tone={lit.length ? 'text-amber-300' : 'text-white/60'}
+            label={
+              lit.length
+                ? t(lit.length > 1 ? 'layout.floorplan.lightsOnPlural' : 'layout.floorplan.lightsOn', { count: lit.length })
+                : t('layout.floorplan.lightsOff')
+            }
+            onClick={() => setListing(on => !on)}
+            pressed={listing}
+          />
+          {listing && (
+            <>
+              {/* Un toucher ailleurs referme la liste. */}
+              <div className='fixed inset-0 z-10' onClick={() => setListing(false)} />
+              <ul className='absolute left-0 top-full mt-2 z-20 min-w-56 max-h-72 overflow-y-auto p-1.5 rounded-2xl gc-overlay'>
+                {[...lit, ...lamps.filter(l => !lit.includes(l))].map(({ entityId, entity }) => {
+                  const on = entity?.state === 'on';
+                  return (
+                    <li key={entityId}>
+                      <button
+                        onClick={() => callHAService(helpers, ...toggleService('light', on), { entity_id: entityId })}
+                        aria-pressed={on}
+                        className='w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm text-left text-white/85 hover:bg-white/8'
+                      >
+                        <Lightbulb size={15} className={on ? 'text-amber-300' : 'text-white/35'} />
+                        <span className='flex-1 truncate'>{friendlyName(entity) ?? entityId}</span>
+                        <span className={cn('text-xs', on ? 'text-amber-200' : 'text-white/40')}>{t(on ? 'common.on' : 'common.off')}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+      {open && (
+        <StatusChip
+          icon={open.length ? DoorOpen : DoorClosed}
+          tone={open.length ? 'text-amber-300' : 'text-green-400'}
+          label={
+            open.length
+              ? t(open.length > 1 ? 'layout.floorplan.openCountPlural' : 'layout.floorplan.openCount', { count: open.length })
+              : t('layout.floorplan.securityClosed')
+          }
+          onClick={onSecurity}
+          pressed={security}
+        />
+      )}
+    </>
   );
 }
