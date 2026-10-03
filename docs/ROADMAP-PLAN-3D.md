@@ -16,7 +16,7 @@ reprendre le travail dans une nouvelle session, sans contexte.
 phases (animations, découpe de la maquette) ; `D1` demande les pièces de `C1`.
 Le reste est indépendant.
 
-**État global** : **48 tâches sur 48** — toutes les phases, de A à K. `F1` reste à essayer sur un vrai Android.
+**État global** : **49 tâches sur 49** — toutes les phases, de A à K. `F1` reste à essayer sur un vrai Android.
 
 ---
 
@@ -812,6 +812,24 @@ le `k` des suivantes, et leurs liaisons avec. Le plugin, lui, reste tel quel.
 > rez-de-chaussée, paraît à l'étage.
 
 - **Quoi** : une maison à étages se lit étage par étage.
+
+### [x] J14 — Une ouverture, plusieurs entités
+
+> **Fait** : une porte-fenêtre a souvent son contact, son volet et sa
+> serrure. La fenêtre de liaison propose, sous l'entité qui meut le battant,
+> un **volet** facultatif (`shutter`, un `cover`) — posé devant elle, il
+> s'enroule de lui-même pendant que le battant suit son contact ; lier un
+> volet comme entité principale fige toujours la fenêtre, comme avant — et une
+> **serrure** facultative (`lock`), sauf sur une fenêtre. La serrure paraît
+> sur la porte, à hauteur de poignée : un cadenas, ouvert et ambre quand elle
+> est déverrouillée, rouge quand elle est bloquée ; au toucher, son état et un
+> bouton pour la basculer — deux gestes, jamais une porte déverrouillée d'un
+> doigt qui passait. Une croix retire l'un ou l'autre. Le volet se rejoue avec
+> la journée. Test E2E : une fenêtre ouverte sous son volet fermé, puis le
+> cadenas d'une porte qui propose de la verrouiller.
+
+- **Quoi** : demandé en cours de route — sur une porte-fenêtre, on ne pouvait
+  lier qu'une entité : le contact ou le volet, pas les deux ; pas de serrure.
 
 ---
 

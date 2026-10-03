@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useHass } from '@hakit/core';
 import type { HassEntity } from 'home-assistant-js-websocket';
-import { DoorClosed, DoorOpen, Lightbulb, ShieldAlert, ShieldCheck, ShieldOff, type LucideIcon } from 'lucide-react';
+import { DoorClosed, DoorOpen, Lightbulb, Lock, LockOpen, ShieldAlert, ShieldCheck, ShieldOff, type LucideIcon } from 'lucide-react';
 import { useFormats } from '@/hooks/useFormats';
 import { callHAService, friendlyName, toggleService } from '@/lib/ha-service';
 import { cn } from '@/lib/utils';
@@ -38,7 +38,7 @@ export function SkyWeather({ weather, sun }: { weather: HassEntity; sun: HassEnt
     <div
       data-floorplan-weather
       // Un voile à peine sombre derrière le texte : sur un nuage blanc, l'ombre seule ne suffit pas.
-      className='-m-6 p-6 text-right text-white pointer-events-none select-none bg-[radial-gradient(closest-side,rgb(15_23_42/0.28),transparent)]'
+      className='-m-6 p-6 text-right text-white pointer-events-none select-none bg-[radial-gradient(closest-side,rgb(15_23_42/0.4),transparent)]'
       style={ON_SKY}
     >
       {typeof a.temperature === 'number' && (
@@ -172,5 +172,59 @@ export function StatusChips({
         />
       )}
     </>
+  );
+}
+
+/**
+ * La serrure connectée d'une porte, posée dessus (`at`, en % du plan) : un
+ * cadenas fermé, ou ouvert et ambre quand elle est déverrouillée — rouge,
+ * bloquée. Au toucher, son état et de quoi la basculer : deux gestes, jamais
+ * une porte déverrouillée d'un doigt qui passait.
+ */
+export function LockBadge({ entityId, entity, at }: { entityId: string; entity?: HassEntity; at: { x: number; y: number } }) {
+  const { t } = useI18n();
+  const helpers = useHass(s => s.helpers);
+  const [asking, setAsking] = useState(false);
+  const state = entity?.state ?? 'unavailable';
+  const locked = state === 'locked';
+  const label = t(`widgets.lock.${state}`).startsWith('widgets.') ? state : t(`widgets.lock.${state}`);
+  const name = friendlyName(entity) ?? entityId;
+  return (
+    <div data-floorplan-lock={entityId} className='absolute z-10' style={{ left: `${at.x}%`, top: `${at.y}%`, translate: '-50% -50%' }}>
+      <button
+        onClick={e => {
+          e.stopPropagation();
+          setAsking(on => !on);
+        }}
+        title={`${name} · ${label}`}
+        aria-label={`${name} · ${label}`}
+        aria-expanded={asking}
+        className={cn(
+          'flex items-center justify-center w-8 h-8 rounded-full gc-overlay shadow-lg',
+          state === 'jammed' ? 'text-red-400 ring-2 ring-red-400/60' : locked ? 'text-white/80' : 'text-amber-300 ring-2 ring-amber-300/50'
+        )}
+      >
+        {locked ? <Lock size={15} /> : <LockOpen size={15} />}
+      </button>
+      {asking && (
+        <>
+          <div className='fixed inset-0 z-10' onClick={() => setAsking(false)} />
+          <div className='absolute left-1/2 top-full mt-2 z-20 -translate-x-1/2 w-52 flex flex-col gap-2 p-2.5 rounded-2xl gc-overlay'>
+            <p className='text-sm font-medium text-white/90 truncate'>{name}</p>
+            <p className={cn('text-xs', locked ? 'text-white/55' : 'text-amber-200')}>{label}</p>
+            <button
+              onClick={() => {
+                callHAService(helpers, 'lock', locked ? 'unlock' : 'lock', { entity_id: entityId });
+                setAsking(false);
+              }}
+              className='flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-white/10 text-white hover:bg-white/15'
+            >
+              {locked ? <LockOpen size={13} /> : <Lock size={13} />}
+              {t(locked ? 'layout.floorplan.lockUnlock' : 'layout.floorplan.lockLock')}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
   );
 }

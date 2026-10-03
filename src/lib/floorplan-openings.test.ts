@@ -462,6 +462,14 @@ describe('normalizeOpenings', () => {
     });
     expect(normalizeOpenings(undefined)).toEqual({ kinds: {}, links: [] });
   });
+
+  it('keeps the shutter and the lock of an opening, each of its own domain', () => {
+    const links = [
+      { node: 'Baie_Chambre_1', entityId: 'binary_sensor.baie', shutter: 'cover.volet_chambre', lock: 'lock.baie' },
+      { node: 'Porte_1', entityId: 'binary_sensor.porte', shutter: 'binary_sensor.x', lock: 3 },
+    ];
+    expect(normalizeOpenings({ links }).links).toEqual([links[0], { node: 'Porte_1', entityId: 'binary_sensor.porte' }]);
+  });
 });
 
 describe('familyKind', () => {

@@ -681,6 +681,41 @@ test('a window linked to its shutter stays put: the shutter is set in front of i
   await expect(openings(page)).not.toHaveAttribute('data-floorplan-openings', /Fenetre_Salon/);
 });
 
+test('a window moves with its contact under a shutter of its own, and a lock sits on a door', async ({ page, request }) => {
+  const before = await (await request.get(`${API}/api/config`)).json();
+  await openOpenings(page);
+  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
+  await page.getByRole('tab', { name: 'Ouvertures' }).click();
+
+  await page.getByRole('button', { name: /^Fenetre_Salon/ }).click();
+  const window = page.getByRole('dialog', { name: 'Fenetre_Salon' });
+  await page.getByPlaceholder('Rechercher...').fill('fenetre_chambre');
+  await page.getByRole('button', { name: 'binary_sensor.fenetre_chambre', exact: true }).click();
+  await window.getByText('Sélectionner...').click();
+  await page.getByPlaceholder('Rechercher...').fill('volet_salon');
+  await page.getByRole('button', { name: 'cover.volet_salon', exact: true }).click();
+  await window.getByRole('button', { name: 'Lier' }).click();
+  // Le volet se pose devant ; la fenêtre, elle, s'ouvre avec son contact.
+  await expect(openings(page)).toHaveAttribute('data-floorplan-parts', 'front-Fenetre_Salon_1');
+  await expect(openings(page)).toHaveAttribute('data-floorplan-openings', /Fenetre_Salon_1=1/);
+
+  await page.getByRole('button', { name: /^Porte_Chambre/ }).click();
+  const door = page.getByRole('dialog', { name: /^Porte_Chambre/ });
+  // Le volet, puis la serrure : la dernière.
+  await door.getByText('Sélectionner...').last().click();
+  await page.getByPlaceholder('Rechercher...').fill('lock.garage');
+  await page.getByRole('button', { name: 'lock.garage', exact: true }).click();
+  await door.getByRole('button', { name: 'Lier', exact: true }).click();
+  await page.getByRole('button', { name: 'Sauvegarder' }).click();
+
+  // Déverrouillée : son cadenas, sur la porte, propose de la verrouiller.
+  const lock = page.locator('[data-floorplan-lock="lock.garage"]');
+  await lock.getByRole('button').click();
+  await expect(lock.getByRole('button', { name: 'Verrouiller' })).toBeVisible();
+
+  expect((await request.put(`${API}/api/config`, { data: before })).ok()).toBeTruthy();
+});
+
 test('in edit mode, the Openings tab proposes the entity named like an opening, linked in one click', async ({ page, request }) => {
   await openOpenings(page);
   await page.getByRole('button', { name: 'Modifier le dashboard' }).click();

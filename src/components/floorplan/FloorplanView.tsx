@@ -101,7 +101,7 @@ import { useI18n } from '@/i18n';
 import type { ChipCardConfig, WidgetConfig } from '@/types/widget-configs';
 import type { CableProp, FloorOverlay, Floorplan3DHandle, Lamp, OpeningProp, PartProp, Project, SolarProp } from './Floorplan3D';
 import { FloorplanColumn } from './FloorplanColumn';
-import { SkyWeather, StatusChips } from './FloorplanHud';
+import { LockBadge, SkyWeather, StatusChips } from './FloorplanHud';
 import { FloorplanItem } from './FloorplanItem';
 import { LampList } from './FloorplanLamps';
 import { DraftPopover, type Around } from './FloorplanDrawn';
@@ -362,7 +362,11 @@ export function FloorplanView() {
   /** Champs de panneaux solaires. */
   const solarFields = normalizeSolar(floorplan?.solar);
   const replay = useReplay(
-    [...glows.map(g => g.entityId), ...parts.map(p => p.entityId), ...openingsConfig.links.map(l => l.entityId)],
+    [
+      ...glows.map(g => g.entityId),
+      ...parts.map(p => p.entityId),
+      ...openingsConfig.links.flatMap(l => [l.entityId, ...(l.shutter ? [l.shutter] : [])]),
+    ],
     [...cables.map(c => c.entityId), ...solarFields.map(f => f.entityId)]
   );
   const closeReplay = replay.close;
@@ -486,7 +490,8 @@ export function FloorplanView() {
     weatherId,
     alarmId,
     ...parts.map(p => p.entityId),
-    ...openingsConfig.links.map(l => l.entityId),
+    ...openingsConfig.links.flatMap(l => [l.entityId, l.shutter ?? '', l.lock ?? '']),
+    ...(openingDraft ? [openingDraft.link.shutter ?? '', openingDraft.link.lock ?? ''] : []),
     ...(openingDraft ? [openingDraft.link.entityId] : []),
     ...allCables.map(c => c.entityId),
     ...solarFields.map(f => f.entityId),
@@ -586,13 +591,21 @@ export function FloorplanView() {
   // ── Portes, fenêtres, volets ───────────────────────────────────────────────
   /** Famille d'une ouverture, telle que la maquette l'a lue : son nœud seul ne la dit pas toujours (`Fenetre_sal_1_1`). */
   const familyOf = (node: string) => modelOpenings?.openings.find(o => o.id === node)?.family ?? '';
-  /** Le volet d'une fenêtre que la maquette dessine sans le sien, posé devant elle — `null` : elle bouge elle-même. */
+  /**
+   * Le volet d'une fenêtre que la maquette dessine sans le sien, posé devant
+   * elle : celui de sa liaison (`shutter`), ou son entité même quand c'est un
+   * volet — elle ne bouge plus alors. `null` : pas de volet.
+   */
   const frontOf = (link: OpeningLink, kind: OpeningKind): FloorplanPart | null => {
     const found = modelOpenings?.openings.find(o => o.id === link.node);
-    const entity = { entityId: link.entityId, deviceClass: entities[link.entityId]?.attributes?.device_class };
-    if (!modelOpenings || !found || !shutsInFront(found.family, kind, entity)) return null;
-    return { id: `front-${link.node}`, kind: 'shutter', entityId: link.entityId, ...frontShutter(found, modelOpenings.center) };
+    const moves = (entityId: string) =>
+      !!found && shutsInFront(found.family, kind, { entityId, deviceClass: entities[entityId]?.attributes?.device_class });
+    const entityId = link.shutter && moves(link.shutter) ? link.shutter : moves(link.entityId) ? link.entityId : null;
+    if (!modelOpenings || !found || !entityId) return null;
+    return { id: `front-${link.node}`, kind: 'shutter', entityId, ...frontShutter(found, modelOpenings.center) };
   };
+  /** Son entité est le volet posé devant elle : l'ouverture ne bouge pas, et n'a rien à surveiller. */
+  const heldBy = (front: FloorplanPart | null, link: OpeningLink) => front?.entityId === link.entityId;
 
   // ── Vue sécurité ───────────────────────────────────────────────────────────
   /**
@@ -606,7 +619,7 @@ export function FloorplanView() {
     ...openingsConfig.links.flatMap(l => {
       const found = modelOpenings?.openings.find(o => o.id === l.node);
       const kind = familyKind(familyOf(l.node), openingsConfig.kinds);
-      return found && kind && kind !== 'shutter' && !frontOf(l, kind)
+      return found && kind && kind !== 'shutter' && !heldBy(frontOf(l, kind), l)
         ? [{ entityId: l.entityId, box: [found.min, found.max] as [Vec3, Vec3] }]
         : [];
     }),
@@ -646,9 +659,15 @@ export function FloorplanView() {
       return [{ link, kind, open: openness(entity?.state, entity?.attributes) }];
     }),
     ...(openingDraft?.kind ? [{ link: openingDraft.link, kind: openingDraft.kind, open: animated ? preview : DRAFT_OPENNESS }] : []),
-  ].map(m => ({ ...m, front: frontOf(m.link, m.kind) }));
+  ].map(m => {
+    const front = frontOf(m.link, m.kind);
+    // Un volet à lui suit sa propre entité ; celui qu'on règle s'ouvre et se ferme avec l'aperçu.
+    const shutter =
+      front && !heldBy(front, m.link) && m.link !== openingDraft?.link ? (replayed(front.entityId) ?? entities[front.entityId]) : null;
+    return { ...m, front, frontOpen: shutter ? openness(shutter.state, shutter.attributes) : m.open };
+  });
   const openingsProp: OpeningProp[] = moving.flatMap(({ link, kind, open, front }) =>
-    front ? [] : [{ id: link.node, kind, ...(link.flip && { flip: true }), ...(link.hinge && { hinge: true }), open }]
+    heldBy(front, link) ? [] : [{ id: link.node, kind, ...(link.flip && { flip: true }), ...(link.hinge && { hinge: true }), open }]
   );
 
   const partsProp: PartProp[] = [
@@ -659,7 +678,7 @@ export function FloorplanView() {
         return { ...p, open: openness(entity?.state, entity?.attributes) };
       }),
     ...(draft?.part ? [{ ...draft.part, open: DRAFT_OPENNESS }] : []),
-    ...moving.flatMap(({ front, open }) => (front && !aboveLevel(front.a[1]) ? [{ ...front, open }] : [])),
+    ...moving.flatMap(({ front, frontOpen }) => (front && !aboveLevel(front.a[1]) ? [{ ...front, open: frontOpen }] : [])),
   ];
 
   const setOpenings = (patch: Partial<FloorplanOpenings>) =>
@@ -710,7 +729,7 @@ export function FloorplanView() {
   /** La liaison enregistrée ; le type choisi vaut pour toute la famille. */
   const saveOpening = () => {
     if (!openingDraft?.link.entityId || !openingDraft.kind) return;
-    const { flip, hinge, ...link } = openingDraft.link;
+    const { flip, hinge, shutter, lock, ...link } = openingDraft.link;
     const family = familyOf(link.node);
     setOpenings({
       kinds:
@@ -719,7 +738,7 @@ export function FloorplanView() {
           : { ...openingsConfig.kinds, [family]: openingDraft.kind },
       links: [
         ...openingsConfig.links.filter(l => l.node !== link.node),
-        { ...link, ...(flip && { flip: true }), ...(hinge && { hinge: true }) },
+        { ...link, ...(flip && { flip: true }), ...(hinge && { hinge: true }), ...(shutter && { shutter }), ...(lock && { lock }) },
       ],
     });
     setOpeningDraft(null);
@@ -1348,6 +1367,23 @@ export function FloorplanView() {
               )}
             </Projected>
             {items}
+            {/* Les serrures des portes, à hauteur de poignée. */}
+            {!isEditMode && !backdrop && !replaying && (
+              <Projected projector={projector}>
+                {toScreen =>
+                  openingsConfig.links.map(link => {
+                    const found = link.lock && modelOpenings?.openings.find(o => o.id === link.node);
+                    if (!link.lock || !found || aboveLevel(found.min[1])) return null;
+                    const at = toScreen([
+                      (found.min[0] + found.max[0]) / 2,
+                      found.min[1] + (found.max[1] - found.min[1]) * 0.45,
+                      (found.min[2] + found.max[2]) / 2,
+                    ]);
+                    return at && <LockBadge key={link.node} entityId={link.lock} entity={entities[link.lock]} at={at} />;
+                  })
+                }
+              </Projected>
+            )}
             {showColumn && <FloorplanColumn ids={columnIds} width={columnWidth} onChange={ids => setFloorplan({ column: ids })} />}
             {/* En haut à droite : la météo, écrite sur le ciel. */}
             {!backdrop && (

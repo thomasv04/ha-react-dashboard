@@ -391,6 +391,24 @@ export function OpeningPopover({
       <Icon size={12} /> {text}
     </button>
   );
+  /** Une entité de plus, facultative — le volet devant, la serrure —, qu'une croix retire. */
+  const extra = (key: 'shutter' | 'lock', domain: string, text: string) => (
+    <div className='flex items-end gap-1'>
+      <div className='flex-1 min-w-0'>
+        <EntityPicker label={text} value={link[key] ?? ''} domain={domain} onChange={id => onChange({ ...link, [key]: id })} />
+      </div>
+      {link[key] && (
+        <button
+          onClick={() => onChange({ ...link, [key]: undefined })}
+          title={t('layout.floorplan.openingExtraClear')}
+          aria-label={t('layout.floorplan.openingExtraClear')}
+          className='p-2 rounded-lg text-white/50 hover:text-white'
+        >
+          <X size={13} />
+        </button>
+      )}
+    </div>
+  );
   return (
     <DraftPopover title={label} onCancel={onCancel} around={around}>
       <EntityPicker autoOpen={!link.entityId} label='' value={link.entityId} domain={['cover', 'binary_sensor']} onChange={choose} />
@@ -401,6 +419,9 @@ export function OpeningPopover({
         icons={OPENING_ICONS}
         label={k => t(`layout.floorplan.openingKindsShort.${k}`)}
       />
+      {/* Une porte-fenêtre a souvent son contact, son volet, sa serrure : chacun le sien. */}
+      {kind && kind !== 'shutter' && kind !== 'garage' && extra('shutter', 'cover', t('layout.floorplan.openingShutter'))}
+      {kind && kind !== 'shutter' && kind !== 'window' && extra('lock', 'lock', t('layout.floorplan.openingLock'))}
       {count > 1 && (
         <p className='px-1 text-[10px] leading-snug text-white/40'>{t('layout.floorplan.openingFamilyWide', { name: family, count })}</p>
       )}
