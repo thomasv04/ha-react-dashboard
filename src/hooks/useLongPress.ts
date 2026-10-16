@@ -34,6 +34,9 @@ export function useLongPress(onLongPress: () => void, duration = 500) {
     (e: React.PointerEvent) => {
       // Only primary pointer (finger or left mouse)
       if (e.button !== undefined && e.button !== 0) return;
+      // Un curseur se règle doigt posé, souvent sans dépasser le seuil de
+      // glissement : l'appui long ouvrirait la fiche en plein réglage (#41).
+      if ((e.target as Element | undefined)?.closest('input, select, textarea')) return;
       moved.current = false;
       origin.current = { x: e.clientX, y: e.clientY };
       timer.current = setTimeout(() => {
