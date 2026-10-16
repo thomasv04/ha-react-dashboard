@@ -53,18 +53,15 @@ const PRESETS = [
   { value: 'sleep', Icon: Moon },
 ] as const;
 
-// ─── usePrevious ──────────────────────────────────────────────────────────────
-function usePrevious<T>(value: T): T | undefined {
-  const ref = useRef<T | undefined>(undefined);
-  const [prev, setPrev] = React.useState<T | undefined>(undefined);
-  useEffect(() => {
-    setPrev(ref.current);
-    ref.current = value;
-  });
-  return prev;
-}
-
 // ─── Single digit with animation (per position) ──────────────────────────────
+// Le sens passe par `custom` : AnimatePresence le transmet aussi au chiffre qui
+// sort, qui sinon gardait le sens de son propre rendu et partait à contresens.
+const digitVariants = {
+  enter: (dir: number) => ({ opacity: 0, translateY: 22 * dir }),
+  center: { opacity: 1, translateY: 0 },
+  exit: (dir: number) => ({ opacity: 0, translateY: -22 * dir }),
+};
+
 function AnimatedDigit({
   digit,
   x,
@@ -80,16 +77,21 @@ function AnimatedDigit({
   fontWeight?: string;
   fill?: string;
 }) {
-  const prev = usePrevious(digit);
-  const direction = prev !== undefined && digit > prev ? 'up' : 'down';
+  // Sens du dernier changement, dérivé pendant le rendu (et non dans un effet,
+  // qui avait un rendu de retard) : 1 = monte, -1 = descend.
+  const [last, setLast] = useState({ digit, dir: -1 });
+  const dir = digit === last.digit ? last.dir : digit > last.digit ? 1 : -1;
+  if (digit !== last.digit) setLast({ digit, dir });
 
   return (
-    <AnimatePresence mode='sync'>
+    <AnimatePresence mode='sync' custom={dir}>
       <motion.g
         key={digit}
-        initial={{ opacity: 0, translateY: direction === 'up' ? 22 : -22 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        exit={{ opacity: 0, translateY: direction === 'up' ? -22 : 22 }}
+        custom={dir}
+        variants={digitVariants}
+        initial='enter'
+        animate='center'
+        exit='exit'
         transition={{ type: 'spring', stiffness: 400, damping: 30 }}
       >
         <text x={x} y={y} textAnchor='middle' fill={fill} fontSize={fontSize} fontWeight={fontWeight} fontFamily='inherit'>
@@ -151,6 +153,8 @@ export function ThermostatCard() {
 
   const svgRef = useRef<SVGSVGElement>(null);
   const isDraggingRef = useRef(false);
+  // Le geste en cours a-t-il commencé sur l'anneau ? Lu par le `click` qui le termine.
+  const ownsGestureRef = useRef(false);
   const localTargetRef = useRef<number>(20);
   const [localTarget, setLocalTarget] = useState<number>(20);
 
@@ -184,8 +188,10 @@ export function ThermostatCard() {
   const currentFraction = clamp((current - minT) / (maxT - minT), 0, 1);
   const currentDeg = START_DEG + Math.max(1, currentFraction * SWEEP_DEG);
 
-  const tempInt = Math.floor(localTarget);
-  const tempDec = Math.round((localTarget - tempInt) * 10);
+  // Par dixièmes entiers : `21.96` donnait sinon « 21.10 ».
+  const tenths = Math.round(localTarget * 10);
+  const tempInt = Math.floor(tenths / 10);
+  const tempDec = tenths - tempInt * 10;
 
   function coordToTemp(clientX: number, clientY: number): number {
     const svg = svgRef.current;
@@ -202,7 +208,9 @@ export function ThermostatCard() {
     } else if (deg <= START_DEG - 360 + SWEEP_DEG) {
       normalized = deg + 360 - START_DEG;
     } else {
-      return localTargetRef.current;
+      // Ouverture en bas du cadran : on se cale sur la borne la plus proche.
+      // Figer la valeur rendait le min et le max inatteignables d'un geste vif.
+      normalized = deg >= START_DEG - (360 - SWEEP_DEG) / 2 ? 0 : SWEEP_DEG;
     }
 
     const frac = clamp(normalized / SWEEP_DEG, 0, 1);
@@ -214,7 +222,22 @@ export function ThermostatCard() {
     setLocalTarget(t);
   }
 
+  /** Le pointeur est-il sur l'anneau ? Le centre (les chiffres) n'est pas une poignée. */
+  function isOnRing(clientX: number, clientY: number): boolean {
+    const svg = svgRef.current;
+    if (!svg) return false;
+    const rect = svg.getBoundingClientRect();
+    const x = (clientX - rect.left) * (270 / rect.width) - CX;
+    const y = (clientY - rect.top) * (270 / rect.height) - CY;
+    return Math.hypot(x, y) >= R - STROKE * 1.5;
+  }
+
   function onPointerDown(e: React.PointerEvent<SVGSVGElement>) {
+    ownsGestureRef.current = e.button === 0 && isOnRing(e.clientX, e.clientY);
+    if (!ownsGestureRef.current) return;
+    // Le geste appartient à la jauge : sans ça, la case de la grille lance son
+    // appui long, et un réglage lent (moins de 10 px en 500 ms) ouvre la fiche.
+    e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
     isDraggingRef.current = true;
     updateLocalTarget(coordToTemp(e.clientX, e.clientY));
@@ -226,6 +249,8 @@ export function ThermostatCard() {
   function onPointerUp() {
     if (!isDraggingRef.current) return;
     isDraggingRef.current = false;
+    // Un simple appui sur la valeur déjà réglée ne déclenche aucun appel.
+    if (localTargetRef.current === haTemp) return;
     helpers.callService({
       domain: 'climate',
       service: 'set_temperature',
@@ -233,6 +258,15 @@ export function ThermostatCard() {
       serviceData: { temperature: localTargetRef.current },
     });
     playFeedback('slider_tick');
+  }
+  /** Geste interrompu par le système : on revient à la consigne réelle, sans rien envoyer. */
+  function onPointerCancel() {
+    isDraggingRef.current = false;
+    updateLocalTarget(haTemp ?? 20);
+  }
+  /** Le `click` de fin de réglage ne doit pas remonter jusqu'à la case, qui ouvrirait la fiche. */
+  function onClick(e: React.MouseEvent) {
+    if (ownsGestureRef.current) e.stopPropagation();
   }
 
   function selectPreset(e: React.MouseEvent, option: string) {
@@ -273,7 +307,8 @@ export function ThermostatCard() {
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
+          onPointerCancel={onPointerCancel}
+          onClick={onClick}
         >
           <defs>
             <linearGradient id='tempGradient' gradientUnits='userSpaceOnUse' x1='17' y1='0' x2='253' y2='0'>
