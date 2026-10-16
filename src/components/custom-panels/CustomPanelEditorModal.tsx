@@ -493,7 +493,7 @@ export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
   // au rechargement. Il s'enregistre maintenant depuis ici.
   const handleClose = async () => {
     syncToContext(localPanels);
-    await saveConfig({
+    const saved = await saveConfig({
       version: 2,
       pages,
       layouts: allLayouts,
@@ -504,7 +504,7 @@ export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
       customPanels: localPanels,
       dock,
     });
-    onClose();
+    if (saved) onClose();
   };
 
   /** Fermeture : un brouillon modifié ne sort pas d'ici sans un choix explicite. */

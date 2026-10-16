@@ -35,7 +35,7 @@ function anchorStyle(config: WallPanelConfig): { className: string; style: React
 }
 
 /** Enregistre la disposition et les configs de l'ecran de veille sur le serveur. */
-export type WallPanelSave = (layout: DashboardLayout, widgetConfigs: WidgetConfigs) => void;
+export type WallPanelSave = (layout: DashboardLayout, widgetConfigs: WidgetConfigs) => Promise<boolean>;
 
 // Single fake page used by the nested DashboardLayoutProvider
 const WALLPANEL_PAGES: Page[] = [{ id: 'wallpanel', label: 'WallPanel', type: 'grid', order: 0 }];
@@ -64,12 +64,13 @@ function WallPanelEditActions({ onSave }: { onSave?: WallPanelSave }) {
   // le dashboard en edition et l'enregistrer *aussi*, sans quoi la disposition
   // de l'ecran de veille disparaissait au rechargement. `onSave` vient de
   // l'overlay, qui a acces a la config complete.
-  const handleSave = () => {
+  const handleSave = async () => {
     const wpLayout = allLayouts['wallpanel'] ?? null;
     const wpConfigs = allWidgetConfigsByPage['wallpanel'] ?? {};
     if (wpLayout) setWallPanelLayout(wpLayout);
     setWallPanelWidgetConfigs(wpConfigs);
-    if (wpLayout) onSave?.(wpLayout, wpConfigs);
+    // Refus du serveur : on reste en édition, le toast a prévenu.
+    if (wpLayout && onSave && !(await onSave(wpLayout, wpConfigs))) return;
     exitWallPanelEditMode();
   };
 

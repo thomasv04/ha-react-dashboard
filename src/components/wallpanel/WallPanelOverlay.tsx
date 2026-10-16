@@ -44,7 +44,7 @@ function WallPanelEditSession() {
   // les widgets de la veille disparaissaient au rechargement.
   const persist: WallPanelSave = useCallback(
     (layout, widgetConfigs) => {
-      void saveConfig({
+      return saveConfig({
         version: 2,
         pages,
         layouts: allLayouts,

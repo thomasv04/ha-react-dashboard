@@ -67,7 +67,7 @@ export function EditButton() {
 
   const handleSave = async () => {
     saveLayout();
-    await saveConfig({
+    const saved = await saveConfig({
       version: 2,
       pages,
       layouts: allLayouts,
@@ -80,7 +80,8 @@ export function EditButton() {
       customPanels,
       dock,
     });
-    setEditMode(false);
+    // Sur un refus, on reste en édition : le toast prévient, rien n'est perdu.
+    if (saved) setEditMode(false);
   };
 
   return (
