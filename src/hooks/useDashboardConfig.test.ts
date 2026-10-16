@@ -185,6 +185,32 @@ describe('useDashboardConfig', () => {
     expect(result.current.pages).toEqual(pagesBefore);
   });
 
+  it('prévient et renvoie false quand le serveur refuse la sauvegarde (500)', async () => {
+    mockFetch({ message: 'No config found' });
+
+    const { result } = renderHook(() => useDashboardConfig());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    const pagesBefore = result.current.pages;
+
+    (global.fetch as Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      headers: new Headers(),
+      json: () => Promise.resolve({ error: 'Internal Server Error' }),
+    });
+
+    let saved: boolean | undefined;
+    await act(async () => {
+      saved = await result.current.saveConfig(NEW_CONFIG);
+    });
+
+    // Un refus silencieux laissait croire la config enregistrée : elle
+    // disparaissait au rechargement.
+    expect(saved).toBe(false);
+    expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ description: 'dashboard.saveFailed' }));
+    expect(result.current.pages).toEqual(pagesBefore);
+  });
+
   it('écarte les widgets illisibles au lieu de laisser planter le rendu', async () => {
     mockFetch({
       version: 2,

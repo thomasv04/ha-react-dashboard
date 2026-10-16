@@ -89,7 +89,7 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
 
   const save = async (next: WallPanelConfig = draft) => {
     updateConfig(next);
-    await saveConfig({
+    return saveConfig({
       version: 2,
       pages,
       layouts: allLayouts,
@@ -101,8 +101,7 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
   };
 
   const handleSave = async () => {
-    await save();
-    onClose();
+    if (await save()) onClose();
   };
 
   /** Fermeture : rien ne sort d'ici sans un choix explicite. */

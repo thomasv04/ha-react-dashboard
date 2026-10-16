@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const saveConfig = vi.fn().mockResolvedValue(undefined);
+const saveConfig = vi.fn().mockResolvedValue(true);
 const onClose = vi.fn();
 const PANEL = { id: 'p1', name: 'Volets', blocks: [] };
 
