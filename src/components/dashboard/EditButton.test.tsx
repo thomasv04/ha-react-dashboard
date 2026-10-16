@@ -35,7 +35,7 @@ import { EditButton } from './EditButton';
 beforeEach(() => vi.clearAllMocks());
 
 describe('EditButton — sauvegarde', () => {
-  it("reste en mode édition quand le serveur refuse la sauvegarde", async () => {
+  it('reste en mode édition quand le serveur refuse la sauvegarde', async () => {
     // Quitter l'édition après un refus faisait croire à une sauvegarde réussie :
     // les changements disparaissaient au rechargement.
     saveConfig.mockResolvedValue(false);
