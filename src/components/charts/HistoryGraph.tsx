@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import type { HistoryPoint } from '@/hooks/useEntityHistory';
 import { useI18n } from '@/i18n';
 
@@ -33,6 +33,9 @@ function formatTime(d: Date): string {
 
 export function HistoryGraph({ data, height = 350, color = '#60a5fa' }: HistoryGraphProps) {
   const { t } = useI18n();
+  // Un id par instance : fixe, `url(#…)` renverrait au dégradé du premier graphe
+  // de la page, et à sa couleur (#42).
+  const gradId = useId();
   const graphWidth = W - PADDING_LEFT - PADDING_RIGHT;
   const graphHeight = height - PADDING_TOP - PADDING_BOTTOM;
 
@@ -89,7 +92,7 @@ export function HistoryGraph({ data, height = 350, color = '#60a5fa' }: HistoryG
   return (
     <svg width={W} height={height} viewBox={`0 0 ${W} ${height}`} className='w-full overflow-visible' preserveAspectRatio='xMidYMid meet'>
       <defs>
-        <linearGradient id='history-grad' x1='0' y1='0' x2='0' y2='1'>
+        <linearGradient id={gradId} x1='0' y1='0' x2='0' y2='1'>
           <stop offset='0%' stopColor={color} stopOpacity={0.3} />
           <stop offset='100%' stopColor={color} stopOpacity={0} />
         </linearGradient>
@@ -139,7 +142,7 @@ export function HistoryGraph({ data, height = 350, color = '#60a5fa' }: HistoryG
       ))}
 
       {/* Area fill */}
-      <path d={areaPath} fill='url(#history-grad)' />
+      <path d={areaPath} fill={`url(#${gradId})`} />
 
       {/* Line */}
       <path d={linePath} fill='none' stroke={color} strokeWidth={2} strokeLinecap='round' strokeLinejoin='round' />
