@@ -15,7 +15,12 @@ WORKDIR /app
 
 # Copy manifests first to leverage Docker layer cache
 COPY package*.json ./
-RUN npm ci
+# `--ignore-scripts` : better-sqlite3 13 livre ses binaires dans le paquet
+# (`prebuilds/`) et se déclare `gypfile: false`, mais le npm 10 de l'image lit
+# ses métadonnées dans le lockfile, qui n'enregistre pas ce champ : voyant
+# `binding.gyp`, il lance `node-gyp rebuild`, qui échoue faute de Python. Le
+# build n'a besoin d'aucun script d'installation (esbuild, ssh2… n'y servent pas).
+RUN npm ci --ignore-scripts
 
 # Copy source (excluding files listed in .dockerignore if present)
 COPY . .
@@ -32,7 +37,9 @@ WORKDIR /app
 
 # Install ONLY production dependencies (Express + SQLite)
 COPY package*.json ./
-RUN npm ci --omit=dev
+# Aucune dépendance de production n'a de script d'installation : better-sqlite3
+# charge le binaire précompilé du paquet (cf. l'étape builder).
+RUN npm ci --omit=dev --ignore-scripts
 
 # Copy the Node.js backend server
 COPY server.js .
