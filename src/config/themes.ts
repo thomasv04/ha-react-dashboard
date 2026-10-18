@@ -1,5 +1,5 @@
 /** Thèmes livrés avec le dashboard, dont les tokens sont connus au build. */
-export type BuiltInThemeId = 'dark' | 'light' | 'glass' | 'midnight' | 'emerald' | 'clay' | 'clay-dark';
+export type BuiltInThemeId = 'dark' | 'light' | 'glass' | 'midnight' | 'emerald' | 'clay' | 'clay-dark' | 'sea-glass';
 
 /**
  * `ha` désigne le thème importé de Home Assistant. Il n'a délibérément pas
@@ -233,6 +233,32 @@ export const THEMES: Record<BuiltInThemeId, { label: string; tokens: ThemeTokens
       statusWarning: '#fbbf24',
       statusError: '#f87171',
       statusInfo: '#818cf8',
+    },
+  },
+  'sea-glass': {
+    label: 'Sea Glass',
+    tokens: {
+      // Material 4 « Sea Glass » : papier chaud, cards presque blanches, et les
+      // éléments interactifs en galets de verre dépoli pastel (cf. index.css).
+      mode: 'clay',
+      light: true,
+      bgPrimary: '#f3f1ec',
+      bgCard: '#fbfaf7',
+      bgCardHover: '#ffffff',
+      textPrimary: '#1f3a32',
+      textSecondary: 'rgba(31, 58, 50, 0.72)',
+      textMuted: 'rgba(31, 58, 50, 0.48)',
+      accent: '#5fa98e',
+      accentHover: '#b49ac7',
+      border: 'rgba(31, 58, 50, 0.09)',
+      glassBlur: 0,
+      glassOpacity: 1,
+      shadowColor: 'rgba(60, 64, 48, 0.10)',
+      shadowHighlight: 'rgba(255, 255, 255, 0.9)',
+      statusSuccess: '#4f9e7f',
+      statusWarning: '#d9a35b',
+      statusError: '#d97a6c',
+      statusInfo: '#6f9fd6',
     },
   },
 };
