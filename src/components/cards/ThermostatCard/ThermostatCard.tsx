@@ -53,6 +53,11 @@ const PRESETS = [
   { value: 'sleep', Icon: Moon },
 ] as const;
 
+// Teintes du thème, en `style` : un attribut `fill` n'accepte pas `var()`.
+const TEXT = 'var(--dash-text-primary, #fff)';
+const TEXT_SECONDARY = 'var(--dash-text-secondary, rgba(255, 255, 255, 0.7))';
+const TEXT_MUTED = 'var(--dash-text-muted, rgba(255, 255, 255, 0.4))';
+
 // ─── Single digit with animation (per position) ──────────────────────────────
 // Le sens passe par `custom` : AnimatePresence le transmet aussi au chiffre qui
 // sort, qui sinon gardait le sens de son propre rendu et partait à contresens.
@@ -68,7 +73,7 @@ function AnimatedDigit({
   y,
   fontSize = 64,
   fontWeight = '700',
-  fill = 'white',
+  fill = TEXT,
 }: {
   digit: number;
   x: number;
@@ -94,7 +99,7 @@ function AnimatedDigit({
         exit='exit'
         transition={{ type: 'spring', stiffness: 400, damping: 30 }}
       >
-        <text x={x} y={y} textAnchor='middle' fill={fill} fontSize={fontSize} fontWeight={fontWeight} fontFamily='inherit'>
+        <text x={x} y={y} textAnchor='middle' style={{ fill }} fontSize={fontSize} fontWeight={fontWeight} fontFamily='inherit'>
           {digit}
         </text>
       </motion.g>
@@ -111,7 +116,7 @@ function AnimatedSvgDigits({
   y,
   fontSize = 64,
   fontWeight = '700',
-  fill = 'white',
+  fill = TEXT,
 }: {
   value: number;
   rightX: number;
@@ -320,6 +325,35 @@ export function ThermostatCard() {
             <filter id='thumbShadow' x='-50%' y='-50%' width='200%' height='200%'>
               <feDropShadow dx='0' dy='2' stdDeviation='4' floodColor='black' floodOpacity='0.3' />
             </filter>
+            {/* Verre de mer (thème Sea Glass, via `.thermostat-arc`) : ombre
+                teintée par l'arc lui-même, reflet de tube et voile dépoli. */}
+            <filter id='seaGlassArc' x='-20%' y='-20%' width='140%' height='160%'>
+              <feGaussianBlur in='SourceGraphic' stdDeviation='6' result='blur' />
+              <feOffset in='blur' dy='8' result='drop' />
+              <feComponentTransfer in='drop' result='shadow'>
+                <feFuncA type='linear' slope='0.5' />
+              </feComponentTransfer>
+              <feFlood floodColor='white' floodOpacity='0.15' />
+              <feComposite in2='SourceAlpha' operator='in' result='frost' />
+              <feGaussianBlur in='SourceAlpha' stdDeviation='3' result='bump' />
+              <feSpecularLighting
+                in='bump'
+                surfaceScale='5'
+                specularConstant='0.6'
+                specularExponent='20'
+                lightingColor='white'
+                result='spec'
+              >
+                <fePointLight x='135' y='-120' z='260' />
+              </feSpecularLighting>
+              <feComposite in='spec' in2='SourceAlpha' operator='in' result='shine' />
+              <feMerge>
+                <feMergeNode in='shadow' />
+                <feMergeNode in='SourceGraphic' />
+                <feMergeNode in='frost' />
+                <feMergeNode in='shine' />
+              </feMerge>
+            </filter>
             <clipPath id='centerClip'>
               <circle cx={CX} cy={CY} r={R - STROKE / 2 - 8} />
             </clipPath>
@@ -332,10 +366,18 @@ export function ThermostatCard() {
             stroke='url(#tempGradient)'
             strokeWidth={STROKE}
             strokeLinecap='round'
+            className='thermostat-track'
             opacity='0.15'
           />
           {/* Arc actif — jusqu'à la cible (endDeg) */}
-          <path d={arcPath(START_DEG, endDeg)} fill='none' stroke='url(#tempGradient)' strokeWidth={STROKE} strokeLinecap='round' />
+          <path
+            className='thermostat-arc'
+            d={arcPath(START_DEG, endDeg)}
+            fill='none'
+            stroke='url(#tempGradient)'
+            strokeWidth={STROKE}
+            strokeLinecap='round'
+          />
           {/* Ronds de rattrapage : entre current et target, seulement si target > current */}
           {endDeg > currentDeg &&
             endDeg - currentDeg > 5 &&
@@ -367,26 +409,26 @@ export function ThermostatCard() {
           />
           {/* Zone texte centrale */}
           <g clipPath='url(#centerClip)'>
-            <text x={CX} y={CY - 28} textAnchor='middle' fill='rgba(255,255,255,0.55)' fontSize='11' letterSpacing='2' fontFamily='inherit'>
+            <text
+              x={CX}
+              y={CY - 28}
+              textAnchor='middle'
+              style={{ fill: TEXT_SECONDARY }}
+              fontSize='11'
+              letterSpacing='2'
+              fontFamily='inherit'
+            >
               {actionLabel}
             </text>
             <AnimatedSvgDigits value={tempInt} rightX={CX + 9} y={CY + 28} />
-            <text
-              x={CX + 9}
-              y={CY + 28}
-              textAnchor='start'
-              fill='rgba(255,255,255,0.85)'
-              fontSize={64}
-              fontWeight='700'
-              fontFamily='inherit'
-            >
+            <text x={CX + 9} y={CY + 28} textAnchor='start' style={{ fill: TEXT }} fontSize={64} fontWeight='700' fontFamily='inherit'>
               .
             </text>
-            <AnimatedDigit digit={tempDec} x={CX + 28 + DIGIT_W / 2} y={CY + 28} fill='rgba(255,255,255,0.85)' />
-            <text x={CX + 68} y={CY - 8} textAnchor='start' fill='white' fontSize='16' fontWeight='500' fontFamily='inherit'>
+            <AnimatedDigit digit={tempDec} x={CX + 28 + DIGIT_W / 2} y={CY + 28} />
+            <text x={CX + 68} y={CY - 8} textAnchor='start' style={{ fill: TEXT }} fontSize='16' fontWeight='500' fontFamily='inherit'>
               °C
             </text>
-            <text x={CX} y={CY + 54} textAnchor='middle' fill='rgba(255,255,255,0.35)' fontSize='11' fontFamily='inherit'>
+            <text x={CX} y={CY + 54} textAnchor='middle' style={{ fill: TEXT_MUTED }} fontSize='11' fontFamily='inherit'>
               ● {current.toFixed(1)} °C
             </text>
           </g>

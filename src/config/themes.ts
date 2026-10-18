@@ -1,5 +1,5 @@
 /** Thèmes livrés avec le dashboard, dont les tokens sont connus au build. */
-export type BuiltInThemeId = 'dark' | 'light' | 'glass' | 'midnight' | 'emerald' | 'clay' | 'clay-dark';
+export type BuiltInThemeId = 'dark' | 'light' | 'glass' | 'midnight' | 'emerald' | 'clay' | 'clay-dark' | 'sea-glass' | 'sea-glass-dark';
 
 /**
  * `ha` désigne le thème importé de Home Assistant. Il n'a délibérément pas
@@ -28,6 +28,22 @@ export function isKnownTheme(id: string): id is ThemeId {
 }
 
 export type ThemeMode = 'glass' | 'clay';
+
+/** `#rrggbb` → teinte au format de `cardTint` (`'r g b'`). */
+export function hexToTint(hex: string): string {
+  return [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)).join(' ');
+}
+
+/** Teinte au format de `cardTint` (`'r g b'`) → `#rrggbb`, pour `<input type="color">`. */
+export function tintToHex(tint: string): string {
+  return (
+    '#' +
+    tint
+      .split(' ')
+      .map(n => Number(n).toString(16).padStart(2, '0'))
+      .join('')
+  );
+}
 
 export interface ThemeTokens {
   /** Fond principal du dashboard */
@@ -233,6 +249,57 @@ export const THEMES: Record<BuiltInThemeId, { label: string; tokens: ThemeTokens
       statusWarning: '#fbbf24',
       statusError: '#f87171',
       statusInfo: '#818cf8',
+    },
+  },
+  'sea-glass': {
+    label: 'Sea Glass',
+    tokens: {
+      // Material 4 « Sea Glass » : papier chaud, cards presque blanches, et les
+      // éléments interactifs en galets de verre dépoli pastel (cf. index.css).
+      mode: 'clay',
+      light: true,
+      bgPrimary: '#f3f1ec',
+      cardTint: '251 250 247',
+      bgCard: '#fbfaf7',
+      bgCardHover: '#ffffff',
+      textPrimary: '#1f3a32',
+      textSecondary: 'rgba(31, 58, 50, 0.72)',
+      textMuted: 'rgba(31, 58, 50, 0.48)',
+      accent: '#5fa98e',
+      accentHover: '#b49ac7',
+      border: 'rgba(31, 58, 50, 0.09)',
+      glassBlur: 20,
+      glassOpacity: 0.82,
+      shadowColor: 'rgba(60, 64, 48, 0.10)',
+      shadowHighlight: 'rgba(255, 255, 255, 0.9)',
+      statusSuccess: '#4f9e7f',
+      statusWarning: '#d9a35b',
+      statusError: '#d97a6c',
+      statusInfo: '#6f9fd6',
+    },
+  },
+  'sea-glass-dark': {
+    label: 'Sea Glass Sombre',
+    tokens: {
+      mode: 'clay',
+      bgPrimary: '#0e1716',
+      cardTint: '22 33 31',
+      bgCard: '#16211f',
+      bgCardHover: '#1b2826',
+      textPrimary: '#e4f1eb',
+      textSecondary: 'rgba(228, 241, 235, 0.72)',
+      textMuted: 'rgba(228, 241, 235, 0.46)',
+      accent: '#5fa98e',
+      accentHover: '#9a7fb4',
+      border: 'rgba(196, 229, 214, 0.08)',
+      glassBlur: 22,
+      glassOpacity: 0.78,
+      shadowColor: 'rgba(0, 0, 0, 0.5)',
+      shadowHighlight: 'rgba(255, 255, 255, 0.05)',
+      statusSuccess: '#6cc4a1',
+      statusWarning: '#e5b670',
+      statusError: '#e38b7e',
+      statusInfo: '#86b3e3',
     },
   },
 };
