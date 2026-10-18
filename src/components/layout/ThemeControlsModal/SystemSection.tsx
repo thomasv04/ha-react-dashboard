@@ -153,7 +153,12 @@ export function SystemSection() {
     setLayoutSettings(snapshot.theme.layoutSettings);
 
     // Apply dashboard config
-    saveConfig(snapshot.dashboard);
+    if (!(await saveConfig(snapshot.dashboard))) {
+      setImportStatus('error');
+      setImportError(t('dashboard.saveFailed'));
+      setConfirmImport(false);
+      return;
+    }
 
     setImportStatus('success');
     setConfirmImport(false);

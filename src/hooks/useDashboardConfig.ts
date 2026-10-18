@@ -297,8 +297,10 @@ export function useDashboardConfig() {
   }, []);
 
   // Save full config v2 (pages + all layouts + all widget configs)
+  // Renvoie `true` seulement si le serveur a accepté : les appelants ne ferment
+  // une modale ou ne quittent l'édition qu'à cette condition.
   const saveConfig = useCallback(
-    async (config: DashboardConfigV2) => {
+    async (config: DashboardConfigV2): Promise<boolean> => {
       setIsSaving(true);
       try {
         const response = await apiFetch('/api/config', {
@@ -322,20 +324,27 @@ export function useDashboardConfig() {
             description: t('dashboard.conflictDescription'),
             sound: false,
           });
-          return;
+          return false;
         }
 
-        if (response.ok) {
-          const revision = response.headers.get('X-Config-Revision');
-          if (revision !== null) serverRevision = Number(revision);
-          setPages(config.pages);
-          setAllLayouts(config.layouts);
-          setAllWidgetConfigs(config.widgetConfigs);
-          writeCache(config);
+        // 413 (config trop lourde), 403, 429, 500… : sans ce message, le refus
+        // passait inaperçu et les changements disparaissaient au rechargement.
+        if (!response.ok) {
+          addToast({ title: t('common.error'), description: t('dashboard.saveFailed'), sound: false });
+          return false;
         }
+
+        const revision = response.headers.get('X-Config-Revision');
+        if (revision !== null) serverRevision = Number(revision);
+        setPages(config.pages);
+        setAllLayouts(config.layouts);
+        setAllWidgetConfigs(config.widgetConfigs);
+        writeCache(config);
+        return true;
       } catch (err) {
         console.error('Erreur lors de la sauvegarde:', err);
         addToast({ title: t('common.error'), description: t('dashboard.saveFailed'), sound: false });
+        return false;
       } finally {
         setIsSaving(false);
       }

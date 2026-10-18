@@ -59,3 +59,17 @@ test('ignore le bouton secondaire', () => {
 
   expect(onLongPress).not.toHaveBeenCalled();
 });
+
+test('ignore un appui sur un curseur, même maintenu (#41)', () => {
+  const onLongPress = vi.fn();
+  const { result } = renderHook(() => useLongPress(onLongPress, 500));
+  const card = document.createElement('div');
+  const range = card.appendChild(document.createElement('input'));
+  range.type = 'range';
+
+  // Doigt posé sur le curseur de luminosité, glissé lentement ou immobile.
+  act(() => result.current.handlers.onPointerDown({ ...ptr(100, 100), target: range } as unknown as React.PointerEvent));
+  act(() => void vi.advanceTimersByTime(600));
+
+  expect(onLongPress).not.toHaveBeenCalled();
+});
