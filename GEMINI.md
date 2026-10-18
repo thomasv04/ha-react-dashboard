@@ -36,6 +36,12 @@ Lors de l'ajout d'un widget, TOUS ces fichiers doivent être mis à jour :
 ## 🎨 Composants UI Spécifiques
 - **Sélection de Panneau :** Toujours utiliser `PanelSelectField` au lieu d'un `<select>` natif pour lier un widget à un panneau (built-in ou custom).
 
+## 🌗 Thèmes & CSS — shadow root (MANDATOIRE)
+- En mode carte HA, le dashboard est rendu **dans une shadow root** avec sa propre copie de `dashboard.css` ; le serveur de dev (SPA) ne reproduit pas ce contexte.
+- `ThemeContext` pose `theme-*` / `perf-*` / `data-theme` sur `<html>` ; `mirrorThemeClasses` (`src/lib/theme-classes.ts`) les recopie sur le conteneur de l'app dans la shadow root.
+- **Jamais** `:root.theme-x` ni `html.theme-x` dans une règle de thème : écrire `.theme-x …`, ou `.theme-x.theme-x` pour garder la spécificité de `:root`. `:root { --var }` reste valable pour des variables.
+- Une nouvelle classe d'état sur `<html>` doit commencer par `theme-` ou `perf-` (sinon étendre le motif de `theme-classes.ts`).
+
 ## 🖥️ API Serveur
 - `/api/config` (GET/PUT) : Layout du dashboard (limite 2 Mo).
 - `/api/settings/current` : Paramètres par appareil.

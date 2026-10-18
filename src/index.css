@@ -748,7 +748,13 @@ select {
    (boutons, chips, dock) : pastel dépoli, reflet en haut, bord plus dense en
    bas, grain, et une ombre portée teintée par le galet — c'est elle qui fait
    « verre » plutôt que « plastique ». La variante sombre (`theme-sea-glass-dark`,
-   plus bas) ne redéfinit que les teintes. */
+   plus bas) ne redéfinit que les teintes.
+
+   Jamais `:root.theme-…` ni `html.theme-…` : en mode carte Home Assistant, cette
+   feuille vit aussi dans une shadow root, où `<html>` est hors d'atteinte. Les
+   classes de thème y sont recopiées sur le conteneur de l'app
+   (`mirrorThemeClasses`) ; une classe doublée (`.theme-sea-glass.theme-sea-glass`)
+   donne la spécificité qu'apportait `:root` et vise les deux. */
 
 .theme-sea-glass {
   /* Teinte du galet (RGB brut), sa version dense pour le bord et l'ombre, et
@@ -772,7 +778,7 @@ select {
    nuances claires, pensées comme encre sur fond nuit, se fondent dans un neutre
    — sombre sur le papier, clair la nuit. Neutre et non l'encre verte du thème :
    mélangé à du vert, le violet tournerait au bleu. */
-:root.theme-sea-glass {
+.theme-sea-glass.theme-sea-glass {
   --sg-shade: #1b1f1e;
   --sg-p200: 30%;
   --sg-p300: 40%;
@@ -859,7 +865,7 @@ select {
   --color-pink-500: var(--sg-pink);
 }
 
-:root.theme-sea-glass-dark {
+.theme-sea-glass-dark.theme-sea-glass-dark {
   --sg-shade: #f4f6f5;
   --sg-p200: 45%;
   --sg-p300: 58%;
@@ -916,14 +922,14 @@ select {
    L'espace devant écarte les variantes `hover:bg-white/…`, qui ne doivent rien
    peindre au repos. `:root` pour passer devant le remap gris de
    `.theme-light-surface`, plus bas. */
-:root.theme-sea-glass [class*=':bg-white/'] {
+.theme-sea-glass.theme-sea-glass [class*=':bg-white/'] {
   background-color: transparent !important;
 }
 
-:root.theme-sea-glass [class*=':bg-white/']:hover,
-:root.theme-sea-glass [class^='bg-white/'],
-:root.theme-sea-glass [class*=' bg-white/'],
-:root.theme-sea-glass [class*=' from-black/'] {
+.theme-sea-glass.theme-sea-glass [class*=':bg-white/']:hover,
+.theme-sea-glass.theme-sea-glass [class^='bg-white/'],
+.theme-sea-glass.theme-sea-glass [class*=' bg-white/'],
+.theme-sea-glass.theme-sea-glass [class*=' from-black/'] {
   background: rgb(var(--sg-glass) / var(--sg-wash)) !important;
 }
 
@@ -975,7 +981,7 @@ select {
 
    Inline, la teinte n'est lisible que dans le fond lui-même : leur
    `currentColor` est l'encre du texte, pas leur couleur. Ombre menthe neutre. */
-:root.theme-sea-glass .gc button[style*='background: rgba']:not([style*='rgba(255, 255, 255']) {
+.theme-sea-glass.theme-sea-glass .gc button[style*='background: rgba']:not([style*='rgba(255, 255, 255']) {
   background-image:
     var(--sg-grain),
     radial-gradient(130% 80% at 50% 0%, rgb(255 255 255 / calc(0.55 * var(--sg-shine))), rgb(255 255 255 / 0) 62%) !important;
@@ -991,7 +997,7 @@ select {
    leur teinte. Le galet en garde la teinte mais à clarté fixe et chroma
    plafonnée — pastel sur le papier, joyau sourd la nuit — comme les galets
    menthe et lavande. */
-:root.theme-sea-glass
+.theme-sea-glass.theme-sea-glass
   .gc
   button[class*=' bg-']:not([class*=' bg-white/'], [class*=' bg-gradient'], [class*=' bg-transparent'], .gc-btn) {
   --sg-tint: oklch(from currentColor var(--sg-tint-l) min(calc(c * 1.6), var(--sg-tint-c)) h);
@@ -1013,13 +1019,13 @@ select {
    d'état) et les boutons inactifs. Pas d'ombre teintée ni de relief : elles ne
    se pressent pas, elles se posent. Les halos flous (`absolute`, `blur`)
    restent tels quels. */
-:root.theme-sea-glass .gc [class^='bg-white/']:not(input),
-:root.theme-sea-glass .gc [class*=' bg-white/']:not(input, button),
-:root.theme-sea-glass .gc [class*=' from-black/'],
-:root.theme-sea-glass
+.theme-sea-glass.theme-sea-glass .gc [class^='bg-white/']:not(input),
+.theme-sea-glass.theme-sea-glass .gc [class*=' bg-white/']:not(input, button),
+.theme-sea-glass.theme-sea-glass .gc [class*=' from-black/'],
+.theme-sea-glass.theme-sea-glass
   .gc
   div[class*='rounded'][style*='background: rgba']:not([class*='absolute'], [class*='blur']),
-:root.theme-sea-glass
+.theme-sea-glass.theme-sea-glass
   .gc
   div[class*='rounded'][class*=' bg-']:not([class*=' bg-white/'], [class*=' bg-gradient'], [class*='absolute'], [class*='blur']) {
   background-image:

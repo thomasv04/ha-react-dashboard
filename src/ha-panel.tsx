@@ -26,6 +26,7 @@ import { BackgroundLayer } from '@/components/layout/BackgroundLayer';
 import { LoadingScreen } from '@/components/layout/LoadingScreen';
 import { I18nProvider } from '@/i18n';
 import { setPanelAuth } from '@/lib/api-base';
+import { mirrorThemeClasses } from '@/lib/theme-classes';
 import './index.css';
 
 function HAToastBridge() {
@@ -137,6 +138,10 @@ export function mountDashboard(host: HTMLElement): DashboardHandle {
     // laissait voir celui de HA — une bande sombre en bas. Le glisser-déposer
     // suit tout seul, `findScroller` remonte au premier ancêtre scrollable.
     mountPoint.style.cssText = 'width:100%;height:100%;position:absolute;inset:0;overflow-y:auto;';
+    // Les règles de thème (`.theme-sea-glass .gc`…) ne voient pas `<html>`
+    // depuis la shadow root : on y recopie ses classes, pour la vie de la page
+    // comme l'arbre lui-même.
+    mirrorThemeClasses(mountPoint);
     root = createRoot(mountPoint);
   }
 

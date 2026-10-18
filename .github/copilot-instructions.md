@@ -117,3 +117,14 @@ import { PanelSelectField } from '@/components/layout/WidgetEditModal/PanelSelec
 - Displays built-in panels with emoji icons, custom panels in a separate group
 - Renders as a styled dropdown portal — respects the current theme
 - `value` / `onChange` use the `PanelId` string format (`'lumieres'`, `'custom:my-id'`, or `''` for none)
+
+## Themes & CSS — the dashboard also lives in a shadow root (MANDATORY)
+
+As a Home Assistant card (`ha-card.ts` → `ha-panel.tsx`) the dashboard renders **inside the shadow root** of `hui-panel-view`, with its own copy of `dashboard.css`. The dev server (SPA) does **not** reproduce this: a rule can work locally and do nothing for users.
+
+`ThemeContext` puts `theme-*` / `perf-*` classes and `data-theme` on `<html>`, outside the shadow root; `mirrorThemeClasses` (`src/lib/theme-classes.ts`) copies them onto the app container inside it. Only CSS variables cross the boundary on their own (inheritance).
+
+- **Never** use `:root.theme-x`, `html.theme-x` or `:root[data-…]` in a theme rule. Write `.theme-x …`; to keep `:root.theme-x` specificity, double the class: `.theme-x.theme-x`.
+- `:root { --var }` is fine for **variables**: set on `<html>`, inherited into the shadow root.
+- A new state class on `<html>` must start with `theme-` or `perf-` to be mirrored — otherwise extend the pattern in `theme-classes.ts`.
+- Check theme changes **in card mode too**: in HA, `document.documentElement.className` must show up on the `div` child of `ha-react-dashboard-panel`.

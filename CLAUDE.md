@@ -208,6 +208,32 @@ import { PanelSelectField } from '@/components/layout/WidgetEditModal/PanelSelec
 - Renders as a styled dropdown portal — respects the current theme
 - `value` / `onChange` use the `PanelId` string format (`'lumieres'`, `'custom:my-id'`, or `''` for none)
 
+## Thèmes et CSS — le dashboard vit aussi dans une shadow root (MANDATORY)
+
+En mode carte Home Assistant (`ha-card.ts` → `ha-panel.tsx`), le dashboard est
+rendu **dans la shadow root** de `hui-panel-view`, avec sa propre copie de
+`dashboard.css`. Le serveur de dev (`npm run dev`, SPA) ne reproduit **pas** ce
+contexte : une règle peut marcher en local et ne rien faire chez l'utilisateur.
+
+`ThemeContext` pose les classes `theme-*` / `perf-*` et `data-theme` sur
+`<html>`, hors de la shadow root. `mirrorThemeClasses` (`src/lib/theme-classes.ts`)
+les recopie sur le conteneur de l'app à l'intérieur. Seules les variables CSS
+traversent d'elles-mêmes la frontière (héritage).
+
+Règles :
+
+- **Jamais** `:root.theme-x`, `html.theme-x` ni `:root[data-…]` dans une règle de
+  thème : `<html>` n'existe pas dans la shadow root. Écrire `.theme-x …`. Pour
+  retrouver la spécificité de `:root.theme-x`, doubler la classe :
+  `.theme-x.theme-x`.
+- `:root { --var }` reste valable pour des **variables** : elles sont posées
+  sur `<html>` et héritées dans la shadow root.
+- Une nouvelle classe d'état posée sur `<html>` doit commencer par `theme-` ou
+  `perf-` pour être recopiée — sinon, l'ajouter au motif de `theme-classes.ts`.
+- Un changement de thème se vérifie **aussi en mode carte** : dans le dashboard
+  HA, `document.documentElement.className` doit se retrouver sur le `div` enfant
+  de `ha-react-dashboard-panel`.
+
 ## Server API
 
 - `GET/PUT /api/config` — dashboard layout (2 MB limit)
