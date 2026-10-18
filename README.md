@@ -37,7 +37,7 @@ widgets configurables, panneaux sur mesure, mise à jour en temps réel.
 - ✅ **Real-time Updates** — WebSocket integration with Home Assistant
 - ✅ **Cloud Storage** — Save layout to Home Assistant (per-user)
 - ✅ **No Authentication (Add-on mode)** — Automatic HA session management
-- ✅ **Dark Theme** — Tailwind CSS + custom theme
+- ✅ **Thèmes** — Sombre, Clair, Verre, Minuit, Émeraude, Clay, Sea Glass (clair et sombre), ou un thème repris de Home Assistant ; opacité, flou et couleur des cards réglables
 - ✅ **Storybook Stories** — All components documented
 
 ---
@@ -226,6 +226,15 @@ python -m venv .venv-test
 ```bash
 docker run --rm -v "/$PWD://w" -w //w python:3.14-slim sh -c "pip install -q -r requirements-test.txt && pytest"
 ```
+
+### Thèmes : le mode carte n'est pas le serveur de dev
+
+Installé via HACS, le dashboard est une carte Lovelace rendue **dans une shadow
+root**, avec sa propre copie de la feuille de style. Le serveur de dev (SPA) ne
+reproduit pas ce contexte. Les classes de thème posées sur `<html>` y sont
+recopiées par `mirrorThemeClasses` (`src/lib/theme-classes.ts`) : une règle de
+thème s'écrit donc `.theme-x …`, jamais `:root.theme-x` ni `html.theme-x`, qui
+ne trouveraient pas `<html>` depuis la shadow root. Détails dans `CLAUDE.md`.
 
 ### Example Dev Session
 
