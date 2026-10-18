@@ -743,18 +743,23 @@ select {
 }
 
 /* ── Sea Glass (Material 4) ──────────────────────────────────────────────────
-   Hérite du clay clair (`theme-clay`) et ne change que les matières. Deux en
-   tout : le papier (cards presque blanches, bord fin, ombre ample et diffuse)
-   et le verre de mer (boutons, chips, dock) : pastel dépoli, reflet en haut,
-   bord plus dense en bas, grain, et une ombre portée teintée par le galet —
-   c'est elle qui fait « verre » plutôt que « plastique ». */
+   Hérite du clay (`theme-clay`) et ne change que les matières. Deux en tout :
+   le papier (cards unies, bord fin, ombre ample et diffuse) et le verre de mer
+   (boutons, chips, dock) : pastel dépoli, reflet en haut, bord plus dense en
+   bas, grain, et une ombre portée teintée par le galet — c'est elle qui fait
+   « verre » plutôt que « plastique ». La variante sombre (`theme-sea-glass-dark`,
+   plus bas) ne redéfinit que les teintes. */
 
 .theme-sea-glass {
   /* Teinte du galet (RGB brut), sa version dense pour le bord et l'ombre, et
      l'encre posée dessus. Menthe par défaut ; le dock passe en lavande. */
   --sg-glass: 196 229 214;
+  --sg-glass-soft: 222 240 232;
   --sg-deep: 104 171 146;
   --sg-ink: 31 74 60;
+  /* Force des reflets blancs, et opacité du voile des surfaces neutres. */
+  --sg-shine: 1;
+  --sg-wash: 0.42;
   --sg-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .7 -.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
@@ -783,19 +788,28 @@ select {
   box-shadow: 0 10px 28px -14px rgba(60, 64, 48, 0.2) !important;
 }
 
-/* Modales et popovers en papier aussi : le remap du texte clair en sombre
-   (`theme-light-surface`) les rendrait illisibles sur le fond nuit du clay. */
+/* Modales et popovers dans la teinte des cards : sur le fond nuit du clay, le
+   remap du texte clair en sombre (`theme-light-surface`) les rendrait
+   illisibles en clair. */
 .theme-sea-glass .gc-overlay {
-  background: rgba(251, 250, 247, 0.97);
+  background: color-mix(in srgb, var(--dash-bg-card) 97%, transparent);
   border-color: var(--dash-border);
 }
 
 /* Surfaces neutres des widgets (`bg-white/…`, que le thème clair remappe en
    gris, et les boutons inactifs `from-black/…`) : un voile de verre pâle.
-   `:root` pour passer devant le remap gris de `.theme-light-surface`, plus bas. */
-:root.theme-sea-glass [class*='bg-white\/'],
-:root.theme-sea-glass [class*='from-black\/'] {
-  background: rgb(var(--sg-glass) / 0.42) !important;
+   L'espace devant écarte les variantes `hover:bg-white/…`, qui ne doivent rien
+   peindre au repos. `:root` pour passer devant le remap gris de
+   `.theme-light-surface`, plus bas. */
+:root.theme-sea-glass [class*=':bg-white/'] {
+  background-color: transparent !important;
+}
+
+:root.theme-sea-glass [class*=':bg-white/']:hover,
+:root.theme-sea-glass [class^='bg-white/'],
+:root.theme-sea-glass [class*=' bg-white/'],
+:root.theme-sea-glass [class*=' from-black/'] {
+  background: rgb(var(--sg-glass) / var(--sg-wash)) !important;
 }
 
 /* Verre de mer : boutons, chips, dock, et dans les cards les boutons neutres
@@ -803,35 +817,35 @@ select {
 .theme-sea-glass .gc-btn,
 .theme-sea-glass .gc-pill,
 .theme-sea-glass .gc-inner,
-.theme-sea-glass .gc button[class*='bg-white\/'],
-.theme-sea-glass .gc button[class*='from-white\/'] {
+.theme-sea-glass .gc button[class*=' bg-white/'],
+.theme-sea-glass .gc button[class*=' from-white/'] {
   background:
     var(--sg-grain),
-    radial-gradient(130% 80% at 50% 0%, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 62%),
+    radial-gradient(130% 80% at 50% 0%, rgb(255 255 255 / calc(0.6 * var(--sg-shine))), rgb(255 255 255 / 0) 62%),
     linear-gradient(180deg, rgb(var(--sg-glass) / 0.8), rgb(var(--sg-glass))) !important;
   border: none !important;
   color: rgb(var(--sg-ink));
   box-shadow:
-    inset 0 1.5px 1px rgba(255, 255, 255, 0.8),
+    inset 0 1.5px 1px rgb(255 255 255 / calc(0.8 * var(--sg-shine))),
     inset 0 -3px 6px rgb(var(--sg-deep) / 0.35),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.3),
+    inset 0 0 0 1px rgb(255 255 255 / calc(0.3 * var(--sg-shine))),
     0 9px 16px -7px rgb(var(--sg-deep) / 0.6),
     0 1px 2px rgba(31, 58, 50, 0.06) !important;
 }
 
 .theme-sea-glass .gc-btn:hover,
-.theme-sea-glass .gc button[class*='bg-white\/']:hover,
-.theme-sea-glass .gc button[class*='from-white\/']:hover {
+.theme-sea-glass .gc button[class*=' bg-white/']:hover,
+.theme-sea-glass .gc button[class*=' from-white/']:hover {
   transform: translateY(-1px);
   filter: brightness(1.03) saturate(1.08);
 }
 
 .theme-sea-glass .gc-btn:active,
-.theme-sea-glass .gc button[class*='bg-white\/']:active,
-.theme-sea-glass .gc button[class*='from-white\/']:active {
+.theme-sea-glass .gc button[class*=' bg-white/']:active,
+.theme-sea-glass .gc button[class*=' from-white/']:active {
   transform: translateY(1px) scale(0.98);
   box-shadow:
-    inset 0 1.5px 1px rgba(255, 255, 255, 0.7),
+    inset 0 1.5px 1px rgb(255 255 255 / calc(0.7 * var(--sg-shine))),
     inset 0 -2px 4px rgb(var(--sg-deep) / 0.3),
     0 4px 8px -5px rgb(var(--sg-deep) / 0.6) !important;
 }
@@ -839,9 +853,9 @@ select {
 /* Les tuiles (gc-inner) servent aussi de grands conteneurs de rangées : un
    verre plus clair et une ombre plus courte, pour ne pas écraser leur contenu. */
 .theme-sea-glass .gc-inner {
-  --sg-glass: 222 240 232;
+  --sg-glass: var(--sg-glass-soft);
   box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.8),
+    inset 0 1px 1px rgb(255 255 255 / calc(0.8 * var(--sg-shine))),
     inset 0 -2px 4px rgb(var(--sg-deep) / 0.2),
     0 6px 12px -8px rgb(var(--sg-deep) / 0.5) !important;
 }
@@ -859,6 +873,50 @@ select {
   --sg-glass: 228 214 238;
   --sg-deep: 160 128 184;
   --sg-ink: 84 54 104;
+}
+
+/* Les états sélectionnés écrivent en bleu très pâle (`text-blue-100…300`),
+   pensé pour un fond sombre : sur le papier, une encre bleue lisible. */
+.theme-sea-glass.theme-light-surface [class*='text-blue-1'],
+.theme-sea-glass.theme-light-surface [class*='text-blue-2'],
+.theme-sea-glass.theme-light-surface [class*='text-blue-3'] {
+  color: #2f5f8a !important;
+}
+
+/* ── Sea Glass sombre : du verre de mer à la tombée de la nuit ────────────────
+   Mêmes matières, teintes plus profondes : le galet garde sa couleur mais
+   s'assombrit, ses reflets s'atténuent et son ombre se fond dans la nuit. */
+
+.theme-sea-glass-dark {
+  --sg-glass: 62 116 100;
+  --sg-glass-soft: 34 54 49;
+  --sg-deep: 24 58 48;
+  --sg-ink: 222 244 235;
+  --sg-shine: 0.32;
+  --sg-wash: 0.16;
+}
+
+.theme-sea-glass-dark .gc,
+.theme-sea-glass-dark .gc-light {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 40px -18px rgba(0, 0, 0, 0.6) !important;
+}
+
+.theme-sea-glass-dark .gc:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 24px 48px -20px rgba(0, 0, 0, 0.7) !important;
+}
+
+.theme-sea-glass-dark input[type='range']::-webkit-slider-thumb {
+  background: #8fd0b6;
+}
+
+.theme-sea-glass-dark .gc-pill {
+  --sg-glass: 88 72 110;
+  --sg-deep: 40 28 56;
+  --sg-ink: 238 228 246;
 }
 
 /* ── Mobile & compact layout modes ───────────────────────────────────────── */

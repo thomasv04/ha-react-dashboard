@@ -352,7 +352,8 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     const isClay = tokens.mode === 'clay';
     root.classList.toggle('theme-clay', isClay);
     root.classList.toggle('theme-clay-dark', isClay && themeId === 'clay-dark');
-    root.classList.toggle('theme-sea-glass', themeId === 'sea-glass');
+    root.classList.toggle('theme-sea-glass', themeId === 'sea-glass' || themeId === 'sea-glass-dark');
+    root.classList.toggle('theme-sea-glass-dark', themeId === 'sea-glass-dark');
     // Any light-surface theme (clay light *and* the plain light theme) needs the
     // hardcoded `text-white/*` utilities remapped to dark text, otherwise the
     // cards turn white and the text stays invisible.
