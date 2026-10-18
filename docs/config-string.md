@@ -54,7 +54,8 @@ HADASH2:<base64>
       "reduceBlur": false,
       "reduceAnimations": false,
       "disableShadows": false,
-      "disableModalAnimation": false
+      "disableModalAnimation": false,
+      "lowQualityCamera": false
     },
     "autoTheme": {
       "enabled": false,

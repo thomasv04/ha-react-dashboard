@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
+import { ThemeContext } from '@/context/ThemeContext';
 
 const hasBrowserApis = () => typeof globalThis.window !== 'undefined' && typeof globalThis.document !== 'undefined';
 
@@ -20,6 +21,8 @@ function addMediaListener(query: MediaQueryList | null, listener: () => void): (
 
 export function useLowPowerMotion(): boolean {
   const [motionAllowed, setMotionAllowed] = useState(getMotionAllowed);
+  // Contexte facultatif : hors provider (tests, stories), seul le système décide.
+  const perfOff = useContext(ThemeContext)?.perfSettings.reduceAnimations ?? false;
 
   useEffect(() => {
     if (!hasBrowserApis()) return;
@@ -39,5 +42,5 @@ export function useLowPowerMotion(): boolean {
     };
   }, []);
 
-  return motionAllowed;
+  return motionAllowed && !perfOff;
 }

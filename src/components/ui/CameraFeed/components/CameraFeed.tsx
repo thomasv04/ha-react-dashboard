@@ -1,5 +1,6 @@
-import { useRef, useEffect, useState, useCallback, useMemo, memo } from 'react';
+import { useRef, useEffect, useState, useCallback, useMemo, useContext, memo } from 'react';
 import { useStreamActive } from '@/hooks/useStreamActive';
+import { ThemeContext } from '@/context/ThemeContext';
 import { Camera, Loader2 } from 'lucide-react';
 import { useCamera, useHass } from '@hakit/core';
 import type { FilterByDomain, EntityName } from '@hakit/core';
@@ -97,6 +98,46 @@ const MjpegFeed = memo(function MjpegFeed({ entityId, className, posterEntity, o
           referrerPolicy='no-referrer'
           onError={handleError}
         />
+      )}
+    </div>
+  );
+});
+
+/** Cadence de l'image fixe du mode « caméras légères ». */
+const SNAPSHOT_REFRESH_MS = 5_000;
+
+/**
+ * Mode « caméras légères » : une image fixe (`entity_picture`) rechargée toutes
+ * les 5 s, à la place d'un flux vidéo décodé en continu. Sur une petite
+ * tablette, décoder un 2560×1920 pour l'afficher à 650×250 est le poste le plus
+ * lourd du dashboard.
+ */
+const SnapshotFeed = memo(function SnapshotFeed({ entityId, className, posterEntity, onProtocol }: CameraFeedProps) {
+  const holderRef = useRef<HTMLDivElement>(null);
+  const active = useStreamActive(holderRef);
+  const picture = useEntityPicture(posterEntity ?? entityId);
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    onProtocol?.(null);
+  }, [onProtocol]);
+
+  useEffect(() => {
+    if (!active) return;
+    const timer = setInterval(() => setTick(n => n + 1), SNAPSHOT_REFRESH_MS);
+    return () => clearInterval(timer);
+  }, [active]);
+
+  const src = picture ? `${picture}${picture.includes('?') ? '&' : '?'}_t=${tick}` : undefined;
+
+  return (
+    <div ref={holderRef} className={cn('relative', className)}>
+      {src ? (
+        <img src={src} alt='' className='absolute inset-0 w-full h-full object-cover' referrerPolicy='no-referrer' />
+      ) : (
+        <div className='absolute inset-0 flex items-center justify-center text-white/20'>
+          <Camera size={28} />
+        </div>
       )}
     </div>
   );
@@ -353,12 +394,18 @@ export function CameraFeed({ entityId, className, streamMode = 'auto', posterEnt
     s => !!(((s.entities?.[entityId]?.attributes as { supported_features?: number })?.supported_features ?? 0) & 2)
   );
 
+  const lowQuality = useContext(ThemeContext)?.perfSettings.lowQualityCamera ?? false;
+
   if (!exists) {
     return (
       <div className={cn('flex items-center justify-center text-white/20', className)}>
         <Camera size={28} />
       </div>
     );
+  }
+
+  if (lowQuality) {
+    return <SnapshotFeed entityId={entityId} className={className} posterEntity={posterEntity} onProtocol={onProtocol} />;
   }
 
   if (streamMode === 'hls' || (streamMode === 'auto' && supportsStream)) {

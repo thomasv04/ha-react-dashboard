@@ -25,6 +25,7 @@ vi.mock('hls.js', () => ({
 }));
 
 const { CameraFeed } = await import('../components/CameraFeed');
+const { ThemeContext } = await import('@/context/ThemeContext');
 
 describe('CameraFeed', () => {
   afterEach(() => {
@@ -87,6 +88,17 @@ describe('CameraFeed', () => {
     const { container } = render(<CameraFeed entityId='camera.front_door' streamMode='hls' />);
     expect(container.querySelector('video')).toBeInTheDocument();
     expect(container.querySelector('[data-testid="webrtc-feed"]')).not.toBeInTheDocument();
+  });
+
+  it('caméras légères : une image fixe, ni vidéo ni flux', () => {
+    const { container } = render(
+      <ThemeContext.Provider value={{ perfSettings: { lowQualityCamera: true } } as never}>
+        <CameraFeed entityId='camera.couloir_snapshot' streamMode='hls' />
+      </ThemeContext.Provider>
+    );
+    expect(container.querySelector('video')).not.toBeInTheDocument();
+    expect(container.querySelector('img')?.getAttribute('src')).toContain('/api/camera_proxy/camera.couloir_snapshot?token=xyz&_t=');
+    expect(mockUseCamera).not.toHaveBeenCalled();
   });
 });
 

@@ -36,6 +36,8 @@ export interface PerfSettings {
   reduceAnimations: boolean;
   disableShadows: boolean;
   disableModalAnimation: boolean;
+  /** Caméras : une image fixe rafraîchie toutes les 5 s à la place du flux vidéo. */
+  lowQualityCamera: boolean;
 }
 
 const DEFAULT_PERF_SETTINGS: PerfSettings = {
@@ -43,6 +45,7 @@ const DEFAULT_PERF_SETTINGS: PerfSettings = {
   reduceAnimations: false,
   disableShadows: false,
   disableModalAnimation: false,
+  lowQualityCamera: false,
 };
 
 export interface LayoutSettings {

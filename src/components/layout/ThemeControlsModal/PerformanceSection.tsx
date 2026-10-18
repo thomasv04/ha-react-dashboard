@@ -139,6 +139,12 @@ export function PerformanceSection() {
           label={t('settings.performance_section.disableModalAnimation')}
           description={t('settings.performance_section.disableModalAnimationDesc')}
         />
+        <PerfToggle
+          checked={perfSettings.lowQualityCamera}
+          onChange={() => toggle('lowQualityCamera')}
+          label={t('settings.performance_section.lowQualityCamera')}
+          description={t('settings.performance_section.lowQualityCameraDesc')}
+        />
       </div>
     </div>
   );
