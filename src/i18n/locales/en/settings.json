@@ -9,6 +9,8 @@
     "theme": "Theme",
     "cardOpacity": "Card opacity",
     "cardBlur": "Card blur",
+    "cardColor": "Card color",
+    "cardColorReset": "Theme color",
     "background": "Background",
     "backgroundSolid": "Color",
     "backgroundGradient": "Gradient",

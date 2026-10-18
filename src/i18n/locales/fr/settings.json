@@ -9,6 +9,8 @@
     "theme": "Thème",
     "cardOpacity": "Opacité des cards",
     "cardBlur": "Flou des cards",
+    "cardColor": "Couleur des cards",
+    "cardColorReset": "Couleur du thème",
     "background": "Fond d'écran",
     "backgroundSolid": "Couleur",
     "backgroundGradient": "Gradient",

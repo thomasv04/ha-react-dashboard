@@ -1,5 +1,14 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
-import { THEMES, HA_THEME_ID, themeTokens, isKnownTheme, type ThemeId, type ThemeTokens, type BackgroundConfig } from '@/config/themes';
+import {
+  THEMES,
+  HA_THEME_ID,
+  themeTokens,
+  isKnownTheme,
+  hexToTint,
+  type ThemeId,
+  type ThemeTokens,
+  type BackgroundConfig,
+} from '@/config/themes';
 import { useSettingsSync } from '@/hooks/useSettingsSync';
 
 export interface AutoThemeConfig {
@@ -46,6 +55,9 @@ export interface LayoutSettings {
   /** Flou du fond des cards en px (0–40). Absent : celui du thème, remis à
       zéro à chaque changement de thème, comme l'opacité. */
   cardBlur?: number;
+  /** Couleur des cards (`#rrggbb`), pour les thèmes à teinte (`cardTint`).
+      Absente : celle du thème, remise à zéro comme le flou. */
+  cardColor?: string;
 }
 
 const DEFAULT_LAYOUT_SETTINGS: LayoutSettings = {
@@ -333,8 +345,9 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     // qu'aucune règle CSS ne lisait. On recompose la surface à partir de la
     // teinte du thème pour que le curseur agisse réellement sur les cards.
     if (tokens.cardTint) {
-      root.style.setProperty('--dash-bg-card', `rgba(${tokens.cardTint} / ${cardOpacity})`);
-      root.style.setProperty('--dash-bg-card-hover', `rgba(${tokens.cardTint} / ${Math.min(1, cardOpacity * 1.5 + 0.02)})`);
+      const tint = layoutSettings.cardColor ? hexToTint(layoutSettings.cardColor) : tokens.cardTint;
+      root.style.setProperty('--dash-bg-card', `rgba(${tint} / ${cardOpacity})`);
+      root.style.setProperty('--dash-bg-card-hover', `rgba(${tint} / ${Math.min(1, cardOpacity * 1.5 + 0.02)})`);
     } else {
       root.style.setProperty('--dash-bg-card', tokens.bgCard);
       root.style.setProperty('--dash-bg-card-hover', tokens.bgCardHover);
@@ -364,7 +377,7 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     root.dataset.theme = tokens.light ? 'light' : 'dark';
     root.style.setProperty('--dash-shadow-color', tokens.shadowColor ?? '');
     root.style.setProperty('--dash-shadow-highlight', tokens.shadowHighlight ?? '');
-  }, [tokens, cardOpacity, themeId, layoutSettings.cardBlur]);
+  }, [tokens, cardOpacity, themeId, layoutSettings.cardBlur, layoutSettings.cardColor]);
 
   // Layout CSS variables
   useEffect(() => {
@@ -416,7 +429,7 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
   const setTheme = useCallback((id: ThemeId) => {
     setThemeId(id);
     setCardOpacityState(themeTokens(id).glassOpacity);
-    setLayoutSettingsState(s => ({ ...s, cardBlur: undefined }));
+    setLayoutSettingsState(s => ({ ...s, cardBlur: undefined, cardColor: undefined }));
   }, []);
 
   const setBackground = useCallback((bg: BackgroundConfig) => setBackgroundState(bg), []);

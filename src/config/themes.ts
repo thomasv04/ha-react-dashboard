@@ -29,6 +29,22 @@ export function isKnownTheme(id: string): id is ThemeId {
 
 export type ThemeMode = 'glass' | 'clay';
 
+/** `#rrggbb` → teinte au format de `cardTint` (`'r g b'`). */
+export function hexToTint(hex: string): string {
+  return [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)).join(' ');
+}
+
+/** Teinte au format de `cardTint` (`'r g b'`) → `#rrggbb`, pour `<input type="color">`. */
+export function tintToHex(tint: string): string {
+  return (
+    '#' +
+    tint
+      .split(' ')
+      .map(n => Number(n).toString(16).padStart(2, '0'))
+      .join('')
+  );
+}
+
 export interface ThemeTokens {
   /** Fond principal du dashboard */
   bgPrimary: string;
