@@ -818,7 +818,8 @@ select {
 .theme-sea-glass .gc-pill,
 .theme-sea-glass .gc-inner,
 .theme-sea-glass .gc button[class*=' bg-white/'],
-.theme-sea-glass .gc button[class*=' from-white/'] {
+.theme-sea-glass .gc button[class*=' from-white/'],
+.theme-sea-glass .gc button[style*='background: rgba(255, 255, 255'] {
   background:
     var(--sg-grain),
     radial-gradient(130% 80% at 50% 0%, rgb(255 255 255 / calc(0.6 * var(--sg-shine))), rgb(255 255 255 / 0) 62%),
@@ -835,19 +836,104 @@ select {
 
 .theme-sea-glass .gc-btn:hover,
 .theme-sea-glass .gc button[class*=' bg-white/']:hover,
-.theme-sea-glass .gc button[class*=' from-white/']:hover {
+.theme-sea-glass .gc button[class*=' from-white/']:hover,
+.theme-sea-glass .gc button[style*='background: rgba(255, 255, 255']:hover {
   transform: translateY(-1px);
   filter: brightness(1.03) saturate(1.08);
 }
 
 .theme-sea-glass .gc-btn:active,
 .theme-sea-glass .gc button[class*=' bg-white/']:active,
-.theme-sea-glass .gc button[class*=' from-white/']:active {
+.theme-sea-glass .gc button[class*=' from-white/']:active,
+.theme-sea-glass .gc button[style*='background: rgba(255, 255, 255']:active {
   transform: translateY(1px) scale(0.98);
   box-shadow:
     inset 0 1.5px 1px rgb(255 255 255 / calc(0.7 * var(--sg-shine))),
     inset 0 -2px 4px rgb(var(--sg-deep) / 0.3),
     0 4px 8px -5px rgb(var(--sg-deep) / 0.6) !important;
+}
+
+/* Galets teintés : les boutons qui portent leur propre couleur (modes de
+   l'alarme, commandes de l'aspirateur, volets, cadenas…), en classe
+   `bg-<couleur>/…` ou en style inline. Ils gardent leur teinte et prennent la
+   matière : reflet, grain, liseré clair, ombre portée.
+
+   Inline, la teinte n'est lisible que dans le fond lui-même : leur
+   `currentColor` est l'encre du texte, pas leur couleur. Ombre menthe neutre. */
+:root.theme-sea-glass .gc button[style*='background: rgba']:not([style*='rgba(255, 255, 255']) {
+  background-image:
+    var(--sg-grain),
+    radial-gradient(130% 80% at 50% 0%, rgb(255 255 255 / calc(0.55 * var(--sg-shine))), rgb(255 255 255 / 0) 62%) !important;
+  border-color: transparent !important;
+  box-shadow:
+    inset 0 1.5px 1px rgb(255 255 255 / calc(0.75 * var(--sg-shine))),
+    inset 0 -3px 6px rgb(var(--sg-deep) / 0.18),
+    0 9px 16px -7px rgb(var(--sg-deep) / 0.4),
+    0 1px 2px rgba(31, 58, 50, 0.06) !important;
+}
+
+/* En classe, `text-<couleur>` accompagne `bg-<couleur>` : `currentColor` est
+   leur teinte, qui densifie la couleur et colore l'ombre. */
+:root.theme-sea-glass
+  .gc
+  button[class*=' bg-']:not([class*=' bg-white/'], [class*=' bg-gradient'], [class*=' bg-transparent'], .gc-btn) {
+  background-image:
+    var(--sg-grain),
+    radial-gradient(130% 80% at 50% 0%, rgb(255 255 255 / calc(0.55 * var(--sg-shine))), rgb(255 255 255 / 0) 62%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, currentColor 14%, transparent),
+      color-mix(in srgb, currentColor 28%, transparent)
+    ) !important;
+  border-color: transparent !important;
+  box-shadow:
+    inset 0 1.5px 1px rgb(255 255 255 / calc(0.75 * var(--sg-shine))),
+    inset 0 -3px 6px color-mix(in srgb, currentColor 22%, transparent),
+    0 9px 16px -7px color-mix(in srgb, currentColor 45%, transparent),
+    0 1px 2px rgba(31, 58, 50, 0.06) !important;
+}
+
+/* Sur le papier, leur encre (pensée pour un fond nuit : `text-yellow-300`…)
+   s'assombrit dans sa propre teinte pour rester lisible. */
+.theme-sea-glass.theme-light-surface
+  .gc
+  button[class*=' bg-']:not([class*=' bg-white/'], [class*=' bg-gradient'], [class*=' bg-transparent'], .gc-btn)
+  > * {
+  color: oklch(from currentColor calc(l * 0.62) c h);
+}
+
+/* Verre dépoli : les tuiles d'information (icônes, prévisions, pastilles
+   d'état) et les boutons inactifs. Pas d'ombre teintée ni de relief : elles ne
+   se pressent pas, elles se posent. Les halos flous (`absolute`, `blur`)
+   restent tels quels. */
+:root.theme-sea-glass .gc [class^='bg-white/']:not(input),
+:root.theme-sea-glass .gc [class*=' bg-white/']:not(input, button),
+:root.theme-sea-glass .gc [class*=' from-black/'],
+:root.theme-sea-glass
+  .gc
+  div[class*='rounded'][style*='background: rgba']:not([class*='absolute'], [class*='blur']),
+:root.theme-sea-glass
+  .gc
+  div[class*='rounded'][class*=' bg-']:not([class*=' bg-white/'], [class*=' bg-gradient'], [class*='absolute'], [class*='blur']) {
+  background-image:
+    var(--sg-grain),
+    radial-gradient(130% 80% at 50% 0%, rgb(255 255 255 / calc(0.5 * var(--sg-shine))), rgb(255 255 255 / 0) 65%) !important;
+  border-color: transparent !important;
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255 / calc(0.7 * var(--sg-shine))),
+    inset 0 -2px 4px rgb(var(--sg-deep) / 0.12),
+    0 5px 10px -7px rgb(var(--sg-deep) / 0.45) !important;
+}
+
+/* Thermostat : l'arc en tube de verre de mer (filtre défini dans le SVG de la
+   card), la piste en sillon de verre pâle plutôt qu'en arc-en-ciel délavé. */
+.theme-sea-glass .thermostat-arc {
+  filter: url(#seaGlassArc);
+}
+
+.theme-sea-glass .thermostat-track {
+  stroke: rgb(var(--sg-glass));
+  opacity: 0.55;
 }
 
 /* Les tuiles (gc-inner) servent aussi de grands conteneurs de rangées : un
@@ -894,6 +980,9 @@ select {
   --sg-ink: 222 244 235;
   --sg-shine: 0.32;
   --sg-wash: 0.16;
+  /* Pas de grain : de nuit, ses points blancs se lisent comme des paillettes.
+     Le dépoli tient au reflet et au liseré. */
+  --sg-grain: none;
 }
 
 .theme-sea-glass-dark .gc,
