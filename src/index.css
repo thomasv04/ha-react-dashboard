@@ -33,12 +33,17 @@
 
 /* ── Performance modes ──────────────────────────────────────────────────────── */
 
-/* Reduce blur: drop backdrop-filter to minimal value on all glass elements */
-.perf-reduce-blur .gc,
-.perf-reduce-blur .gc-light,
-.perf-reduce-blur .gc-overlay {
-  -webkit-backdrop-filter: blur(4px) !important;
-  backdrop-filter: blur(4px) !important;
+/* Reduce blur: no backdrop-filter anywhere (cards, pills, nav bar, Tailwind
+   `backdrop-blur-*`), and no decorative `blur-*` blobs. Each one is a GPU layer
+   re-rendered on every frame behind it. */
+.perf-reduce-blur,
+.perf-reduce-blur * {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.perf-reduce-blur [class*='blur-'] {
+  filter: none !important;
 }
 
 /* Sans flou, un panneau à 55 % ne serait plus lisible : le rendre opaque. */
@@ -48,7 +53,8 @@
 
 /* Disable shadows: remove box-shadow GPU compositing */
 .perf-no-shadows .gc,
-.perf-no-shadows .gc-light {
+.perf-no-shadows .gc-light,
+.perf-no-shadows [class*='shadow-'] {
   box-shadow: none !important;
 }
 
