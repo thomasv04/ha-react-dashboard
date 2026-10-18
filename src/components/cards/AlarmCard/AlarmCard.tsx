@@ -125,6 +125,8 @@ function getVisual(state: AlarmState, t: (k: string) => string): AlarmVisual {
 // ── Per-mode metadata ─────────────────────────────────────────────────────────
 interface ModeConfig {
   mode: ArmMode;
+  /** État de l'entité une fois ce mode pris. */
+  state: AlarmState;
   service: string;
   labelKey: string;
   Icon: typeof Home;
@@ -137,6 +139,7 @@ interface ModeConfig {
 const MODE_CONFIGS: ModeConfig[] = [
   {
     mode: 'disarm',
+    state: 'disarmed',
     service: 'alarm_disarm',
     labelKey: 'widgets.alarm.disarm',
     Icon: ShieldOff,
@@ -147,6 +150,7 @@ const MODE_CONFIGS: ModeConfig[] = [
   },
   {
     mode: 'home',
+    state: 'armed_home',
     service: 'alarm_arm_home',
     labelKey: 'widgets.alarm.modeHome',
     Icon: Home,
@@ -157,6 +161,7 @@ const MODE_CONFIGS: ModeConfig[] = [
   },
   {
     mode: 'away',
+    state: 'armed_away',
     service: 'alarm_arm_away',
     labelKey: 'widgets.alarm.modeAway',
     Icon: LogOut,
@@ -167,6 +172,7 @@ const MODE_CONFIGS: ModeConfig[] = [
   },
   {
     mode: 'night',
+    state: 'armed_night',
     service: 'alarm_arm_night',
     labelKey: 'widgets.alarm.modeNight',
     Icon: Moon,
@@ -177,6 +183,7 @@ const MODE_CONFIGS: ModeConfig[] = [
   },
   {
     mode: 'vacation',
+    state: 'armed_vacation',
     service: 'alarm_arm_vacation',
     labelKey: 'widgets.alarm.modeVacation',
     Icon: Plane,
@@ -488,10 +495,8 @@ export function AlarmCard() {
 
   const visual = getVisual(alarm.state, t);
   const name = config?.name ?? friendlyName(alarm) ?? t('widgets.alarm.label');
-  const isArmed = alarm.state.startsWith('armed_');
   const requireCode = config?.requireCode !== false;
   const activeModes = config?.armModes ?? DEFAULT_MODES;
-  const ringFill = isArmed || alarm.state === 'triggered' ? 1 : alarm.state === 'arming' || alarm.state === 'pending' ? 0.5 : 0.15;
 
   // Une rangée de grille (80 px) ne peut pas contenir en-tête + anneau + label
   // empilés : sous ~120 px on bascule sur une disposition en ligne.
@@ -499,11 +504,13 @@ export function AlarmCard() {
   const isTiny = cardW < 180 || cardH < 180;
   const isSmall = cardW < 240 || cardH < 240;
   const showButtons = cardH >= 200 && !isTiny;
-  const ringSize = isTiny ? 64 : isSmall ? 80 : 96;
-  const iconSize = isTiny ? 20 : isSmall ? 22 : 26;
-  const iconBubble = isTiny ? 'w-9 h-9 rounded-xl' : isSmall ? 'w-11 h-11 rounded-2xl' : 'w-14 h-14 rounded-2xl';
+  const pebbleSize = isTiny ? 'w-12 h-12' : isSmall ? 'w-16 h-16' : 'w-20 h-20';
+  const iconSize = isTiny ? 20 : isSmall ? 26 : 32;
 
   const visibleModes = MODE_CONFIGS.filter(m => activeModes.includes(m.mode));
+  // Libellé sous l'icône seulement si chaque segment garde ~58 px : en deçà,
+  // « Désarmer » déborde. La barre retire le padding de la card (28) et le sien (8).
+  const showModeLabels = (cardW - 36) / Math.max(visibleModes.length, 1) >= 58;
 
   function openModal(mode: ArmMode) {
     setPendingMode(mode);
@@ -570,65 +577,60 @@ export function AlarmCard() {
         ) : (
           <>
             {/* Header */}
-            <div className='flex items-center justify-between mb-1'>
-              <span className={cn('text-white/40 font-medium truncate', isTiny ? 'text-[10px]' : 'text-xs')}>{name}</span>
-              <div className={cn('rounded-lg flex items-center justify-center shrink-0', visual.bgClass, isTiny ? 'w-5 h-5' : 'w-6 h-6')}>
-                <visual.Icon size={isTiny ? 10 : 13} className={visual.textClass} />
-              </div>
-            </div>
+            <span className={cn('text-white/40 font-medium truncate', isTiny ? 'text-[10px]' : 'text-xs')}>{name}</span>
 
-            {/* Ring + icon */}
-            <div className='flex-1 flex items-center justify-center min-h-0'>
-              <div className='relative flex items-center justify-center' style={{ width: ringSize, height: ringSize }}>
-                <AlarmRing size={ringSize} fill={ringFill} color={visual.ringColor} pulse={visual.pulse} />
-                <div
-                  className='absolute rounded-full opacity-15 blur-2xl pointer-events-none'
-                  style={{ width: ringSize * 0.7, height: ringSize * 0.7, background: visual.ringColor }}
-                />
-                <motion.div
-                  animate={visual.pulse ? { scale: [1, 1.08, 1] } : {}}
-                  transition={visual.pulse ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' } : {}}
-                  className={cn('flex items-center justify-center border', iconBubble, visual.bgClass, visual.borderClass)}
-                >
-                  <visual.Icon size={iconSize} className={visual.textClass} />
-                </motion.div>
-              </div>
-            </div>
-
-            {/* Status label */}
-            <div className='text-center mt-1'>
+            {/* Galet d'état : un toucher ouvre le clavier, comme la card. */}
+            <div className='flex-1 flex flex-col items-center justify-center gap-2 min-h-0'>
+              <motion.button
+                animate={visual.pulse ? { scale: [1, 1.06, 1] } : {}}
+                transition={visual.pulse ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' } : {}}
+                whileTap={{ scale: 0.94 }}
+                onClick={e => {
+                  e.stopPropagation();
+                  openModal(activeModes[0] ?? 'disarm');
+                }}
+                aria-label={visual.label}
+                className={cn(
+                  'shrink-0 rounded-full border flex items-center justify-center',
+                  pebbleSize,
+                  visual.bgClass,
+                  visual.borderClass,
+                  visual.textClass
+                )}
+              >
+                <visual.Icon size={iconSize} />
+              </motion.button>
               <span className={cn('font-semibold', visual.textClass, isTiny ? 'text-[10px]' : isSmall ? 'text-xs' : 'text-sm')}>
                 {visual.label}
               </span>
             </div>
 
-            {/* Mode buttons — dynamic */}
+            {/* Modes en barre segmentée : le mode en vigueur ressort en galet. */}
             {showButtons && visibleModes.length > 0 && (
-              <div
-                className='mt-2.5 grid gap-1'
-                style={{ gridTemplateColumns: `repeat(${Math.min(visibleModes.length, isSmall ? 2 : 4)}, 1fr)` }}
-              >
-                {visibleModes.map(m => (
-                  <motion.button
-                    key={m.mode}
-                    whileTap={{ scale: 0.91 }}
-                    onClick={e => {
-                      e.stopPropagation();
-                      openModal(m.mode);
-                    }}
-                    className={cn(
-                      'flex flex-col items-center gap-0.5 rounded-xl border transition-colors',
-                      isSmall ? 'py-1.5 text-[9px]' : 'py-2 text-[10px]',
-                      m.bgClass,
-                      m.hoverClass,
-                      m.borderClass,
-                      m.textClass
-                    )}
-                  >
-                    <m.Icon size={isSmall ? 10 : 12} />
-                    <span className='font-semibold leading-tight'>{t(m.labelKey)}</span>
-                  </motion.button>
-                ))}
+              <div className='mt-2.5 flex gap-1 p-1 rounded-[20px] bg-white/5 border border-white/8'>
+                {visibleModes.map(m => {
+                  const current = m.state === alarm.state;
+                  return (
+                    <motion.button
+                      key={m.mode}
+                      whileTap={{ scale: 0.94 }}
+                      onClick={e => {
+                        e.stopPropagation();
+                        openModal(m.mode);
+                      }}
+                      title={t(m.labelKey)}
+                      aria-pressed={current}
+                      className={cn(
+                        'flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 rounded-2xl border transition-colors',
+                        isSmall ? 'py-1.5 text-[9px]' : 'py-2 text-[10px]',
+                        current ? cn(m.bgClass, m.borderClass, m.textClass) : 'border-transparent text-white/45 hover:text-white/75'
+                      )}
+                    >
+                      <m.Icon size={isSmall ? 12 : 14} />
+                      {showModeLabels && <span className='font-semibold leading-tight truncate max-w-full'>{t(m.labelKey)}</span>}
+                    </motion.button>
+                  );
+                })}
               </div>
             )}
           </>
