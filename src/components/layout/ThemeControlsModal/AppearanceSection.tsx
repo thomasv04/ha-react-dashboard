@@ -12,7 +12,20 @@ import { cn } from '@/lib/utils';
 
 export function AppearanceSection() {
   const { t } = useI18n();
-  const { themeId, tokens, setTheme, background, setBackground, cardOpacity, setCardOpacity, autoTheme, setAutoTheme } = useTheme();
+  const {
+    themeId,
+    tokens,
+    setTheme,
+    background,
+    setBackground,
+    cardOpacity,
+    setCardOpacity,
+    layoutSettings,
+    setLayoutSettings,
+    autoTheme,
+    setAutoTheme,
+  } = useTheme();
+  const cardBlur = layoutSettings.cardBlur ?? tokens.glassBlur;
 
   return (
     <div className='flex flex-col gap-7'>
@@ -43,8 +56,9 @@ export function AppearanceSection() {
         </div>
       </div>
 
-      {/* Card opacity (hidden in clay mode — cards are opaque) */}
-      {tokens.mode !== 'clay' && (
+      {/* Card opacity (hidden in clay mode — cards are opaque — unless the theme
+          gives a tint to recompose them, like Sea Glass) */}
+      {(tokens.mode !== 'clay' || tokens.cardTint) && (
         <div>
           <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
             <Sliders size={12} /> {t('settings.appearance_section.cardOpacity')}
@@ -59,6 +73,26 @@ export function AppearanceSection() {
               className='flex-1 accent-blue-500'
             />
             <span className='text-white/50 text-sm w-10 text-right tabular-nums'>{Math.round(cardOpacity * 100)}%</span>
+          </div>
+        </div>
+      )}
+
+      {/* Flou du fond des cards : ce qui transparaît du fond d'écran */}
+      {(tokens.mode !== 'clay' || tokens.cardTint) && (
+        <div>
+          <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
+            <Sliders size={12} /> {t('settings.appearance_section.cardBlur')}
+          </h3>
+          <div className='flex items-center gap-3'>
+            <input
+              type='range'
+              min={0}
+              max={40}
+              value={cardBlur}
+              onChange={e => setLayoutSettings({ ...layoutSettings, cardBlur: parseInt(e.target.value, 10) })}
+              className='flex-1 accent-blue-500'
+            />
+            <span className='text-white/50 text-sm w-10 text-right tabular-nums'>{cardBlur}px</span>
           </div>
         </div>
       )}

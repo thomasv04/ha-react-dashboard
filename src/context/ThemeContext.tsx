@@ -43,6 +43,9 @@ export interface LayoutSettings {
   cardRadius: number;
   /** Row height in px (60–160) */
   rowHeight: number;
+  /** Flou du fond des cards en px (0–40). Absent : celui du thème, remis à
+      zéro à chaque changement de thème, comme l'opacité. */
+  cardBlur?: number;
 }
 
 const DEFAULT_LAYOUT_SETTINGS: LayoutSettings = {
@@ -341,7 +344,7 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--dash-text-muted', tokens.textMuted);
     root.style.setProperty('--dash-accent', tokens.accent);
     root.style.setProperty('--dash-border', tokens.border);
-    root.style.setProperty('--dash-glass-blur', `${tokens.glassBlur}px`);
+    root.style.setProperty('--dash-glass-blur', `${layoutSettings.cardBlur ?? tokens.glassBlur}px`);
     root.style.setProperty('--dash-glass-opacity', String(cardOpacity));
     root.style.setProperty('--dash-status-success', tokens.statusSuccess);
     root.style.setProperty('--dash-status-warning', tokens.statusWarning);
@@ -361,7 +364,7 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     root.dataset.theme = tokens.light ? 'light' : 'dark';
     root.style.setProperty('--dash-shadow-color', tokens.shadowColor ?? '');
     root.style.setProperty('--dash-shadow-highlight', tokens.shadowHighlight ?? '');
-  }, [tokens, cardOpacity, themeId]);
+  }, [tokens, cardOpacity, themeId, layoutSettings.cardBlur]);
 
   // Layout CSS variables
   useEffect(() => {
@@ -413,6 +416,7 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
   const setTheme = useCallback((id: ThemeId) => {
     setThemeId(id);
     setCardOpacityState(themeTokens(id).glassOpacity);
+    setLayoutSettingsState(s => ({ ...s, cardBlur: undefined }));
   }, []);
 
   const setBackground = useCallback((bg: BackgroundConfig) => setBackgroundState(bg), []);

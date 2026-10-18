@@ -8,6 +8,7 @@
   "appearance_section": {
     "theme": "Thème",
     "cardOpacity": "Opacité des cards",
+    "cardBlur": "Flou des cards",
     "background": "Fond d'écran",
     "backgroundSolid": "Couleur",
     "backgroundGradient": "Gradient",

@@ -866,6 +866,15 @@ select {
   --sg-p400: 72%;
 }
 
+/* Papier givré : translucide, il laisse deviner le fond d'écran à travers un
+   flou — opacité et flou suivent les curseurs des réglages (`--dash-bg-card`,
+   `--dash-glass-blur`). Le clay, dont on hérite, coupe le flou : on le rend,
+   sauf si l'appareil a demandé de le réduire. */
+.theme-sea-glass:not(.perf-reduce-blur) .gc,
+.theme-sea-glass:not(.perf-reduce-blur) .gc-light {
+  -webkit-backdrop-filter: blur(var(--dash-glass-blur)) saturate(140%) !important;
+  backdrop-filter: blur(var(--dash-glass-blur)) saturate(140%) !important;
+}
 
 /* Papier */
 .theme-sea-glass .gc {
@@ -892,11 +901,13 @@ select {
   box-shadow: 0 10px 28px -14px rgba(60, 64, 48, 0.2) !important;
 }
 
-/* Modales et popovers dans la teinte des cards : sur le fond nuit du clay, le
-   remap du texte clair en sombre (`theme-light-surface`) les rendrait
-   illisibles en clair. */
+/* Modales et popovers dans la teinte du fond, quasi opaques quel que soit le
+   curseur d'opacité des cards : sur le fond nuit du clay, le remap du texte
+   clair en sombre (`theme-light-surface`) les rendrait illisibles en clair. */
 .theme-sea-glass .gc-overlay {
-  background: color-mix(in srgb, var(--dash-bg-card) 97%, transparent);
+  background: color-mix(in srgb, var(--dash-bg-primary) 94%, transparent);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(140%);
   border-color: var(--dash-border);
 }
 
