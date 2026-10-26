@@ -56,7 +56,7 @@ async function tryResolve(connection: Connection, id: string, baseUrl: string): 
  *  - If ID is an album/folder: browses children, resolves each playable child
  *  - Falls back to [] on any error
  */
-async function resolveMediaSourceId(connection: Connection, id: string): Promise<string[]> {
+export async function resolveMediaSourceId(connection: Connection, id: string): Promise<string[]> {
   const baseUrl = haBaseUrl(connection);
 
   // First try resolving directly (file-level ID)
@@ -70,7 +70,9 @@ async function resolveMediaSourceId(connection: Connection, id: string): Promise
       media_content_id: id,
     });
 
-    const playable = browse.children?.filter(c => c.can_play) ?? [];
+    // Filtrer sur la classe, pas sur can_play : Immich marque ses images
+    // can_play=false (seules ses vidéos sont « jouables »).
+    const playable = browse.children?.filter(c => c.media_class === 'image' || c.media_class === 'video') ?? [];
     if (!playable.length) {
       console.warn(`[WallPanel] No playable children found when browsing ${id}`);
       return [];

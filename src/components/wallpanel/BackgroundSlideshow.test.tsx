@@ -1,7 +1,7 @@
 import { createRef } from 'react';
 import { render, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { BackgroundSlideshow, type SlideshowHandle } from './BackgroundSlideshow';
+import { BackgroundSlideshow, isVideoUrl, type SlideshowHandle } from './BackgroundSlideshow';
 import { DEFAULT_WALLPANEL_CONFIG } from '@/types/wallpanel';
 
 const URLS = ['/a.jpg', '/b.jpg', '/c.jpg'];
@@ -53,5 +53,14 @@ describe('BackgroundSlideshow', () => {
     const onCountChange = vi.fn();
     render(<BackgroundSlideshow config={config} onCountChange={onCountChange} />);
     expect(onCountChange).toHaveBeenCalledWith(3);
+  });
+});
+
+describe('isVideoUrl', () => {
+  it('reconnaît les vidéos Immich et les extensions vidéo, pas les images', () => {
+    expect(isVideoUrl('/immich/e/a/fullsize/video/mp4?authSig=x')).toBe(true);
+    expect(isVideoUrl('https://h/clip.MOV')).toBe(true);
+    expect(isVideoUrl('/immich/e/a/fullsize/image/jpeg?authSig=x')).toBe(false);
+    expect(isVideoUrl('/local/video/photo.jpg')).toBe(false);
   });
 });

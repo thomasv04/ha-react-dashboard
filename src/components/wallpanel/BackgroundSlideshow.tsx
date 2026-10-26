@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useImperativeHandle, type Ref } from 'react';
+import { useState, useEffect, useCallback, useImperativeHandle, type CSSProperties, type Ref } from 'react';
 import type { WallPanelConfig } from '@/types/wallpanel';
 import { useResolvedMediaUrls } from '@/hooks/useResolvedMediaUrls';
 
@@ -28,6 +28,22 @@ function shuffleArray<T>(arr: T[]): T[] {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+/**
+ * Vidéo d'après l'URL : extension connue, ou chemin finissant par un type MIME
+ * vidéo (`…/fullsize/video/mp4?authSig=…` chez Immich).
+ */
+export const isVideoUrl = (url: string) => /(\.(mp4|webm|mov|m4v)|\/video\/[\w+-]+)(\?|$)/i.test(url);
+
+/**
+ * Une diapositive : vidéo muette en boucle ou image. Muette, sinon le
+ * navigateur refuse la lecture automatique.
+ */
+function Slide({ src, style }: { src: string; style: CSSProperties }) {
+  const className = 'absolute inset-0 w-full h-full transition-opacity duration-1000';
+  if (isVideoUrl(src)) return <video src={src} className={className} style={style} autoPlay muted loop playsInline />;
+  return <img src={src} className={className} style={style} alt='' />;
 }
 
 function BlurBg({ src, opacity }: { src: string; opacity: number }) {
@@ -118,31 +134,27 @@ export function BackgroundSlideshow({ config, ref, onCountChange }: BackgroundSl
         </>
       )}
       {/* Image courante */}
-      <img
+      <Slide
         key={`cur-${currentIdx}`}
         src={orderedUrls[currentIdx]}
-        className='absolute inset-0 w-full h-full transition-opacity duration-1000'
         style={{
           objectFit: config.image_fit,
           opacity: transitioning ? 0 : 1,
           filter: blurPx > 0 ? `blur(${blurPx}px)` : undefined,
           transform: blurPx > 0 ? 'scale(1.05)' : undefined,
         }}
-        alt=''
       />
       {/* Prochaine image (pré-chargée derrière) */}
       {orderedUrls.length > 1 && (
-        <img
+        <Slide
           key={`next-${nextIdx}`}
           src={orderedUrls[nextIdx]}
-          className='absolute inset-0 w-full h-full transition-opacity duration-1000'
           style={{
             objectFit: config.image_fit,
             opacity: transitioning ? 1 : 0,
             filter: blurPx > 0 ? `blur(${blurPx}px)` : undefined,
             transform: blurPx > 0 ? 'scale(1.05)' : undefined,
           }}
-          alt=''
         />
       )}
       {/* Vignette subtile pour améliorer la lisibilité des widgets */}
