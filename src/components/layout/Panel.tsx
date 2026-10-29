@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { useEffect, useRef, useCallback } from 'react';
 import { usePanel } from '@/context/PanelContext';
 import type { ReactNode } from 'react';
+import { useI18n } from '@/i18n';
 
 interface PanelProps {
   children: ReactNode;
@@ -15,6 +16,7 @@ interface PanelProps {
 }
 
 export function Panel({ children, title, icon, wide = false, actions }: PanelProps) {
+  const { t } = useI18n();
   const { closePanel, autoCloseMs } = usePanel();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -42,45 +44,41 @@ export function Panel({ children, title, icon, wide = false, actions }: PanelPro
         e.stopPropagation();
         resetTimer();
       }}
-      className={`w-full gc rounded-3xl overflow-hidden flex flex-col max-h-[85vh] ${wide ? 'max-w-4xl' : 'max-w-2xl'}`}
+      className={`flex max-h-[85vh] w-full flex-col overflow-hidden rounded-[var(--ds-radius-2xl)] bg-[var(--ds-sheet)] text-[var(--ds-ink)] shadow-[var(--ds-shadow-sheet)] ${wide ? 'max-w-4xl' : 'max-w-2xl'}`}
     >
       {/* Header */}
-      <div className='flex items-center justify-between px-6 py-4 border-b border-white/8'>
-        <div className='flex items-center gap-3 text-white'>
-          {icon && <span className='text-white/70'>{icon}</span>}
-          <h2 className='text-lg font-semibold'>{title}</h2>
+      <div className='flex items-center justify-between gap-3 px-6 pb-3 pt-6'>
+        <div className='flex min-w-0 items-center gap-3'>
+          {icon && <span className='shrink-0 text-[var(--ds-ink-muted)]'>{icon}</span>}
+          <h2 className='truncate text-[22px] font-bold'>{title}</h2>
         </div>
         <div className='flex items-center gap-2'>
           {actions}
           {/* Auto-close progress bar */}
           {autoCloseMs && (
-            <div className='w-16 h-1 bg-white/10 rounded-full overflow-hidden'>
+            <div className='h-1.5 w-16 overflow-hidden rounded-full bg-[var(--ds-surface-3)]'>
               <motion.div
                 key={autoCloseMs}
                 initial={{ width: '100%' }}
                 animate={{ width: '0%' }}
                 transition={{ duration: autoCloseMs / 1000, ease: 'linear' }}
-                className='h-full bg-white/40 rounded-full'
+                className='h-full rounded-full bg-[var(--ds-ink-muted)]'
               />
             </div>
           )}
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+          <button
             onClick={closePanel}
-            aria-label='Fermer'
-            // `touch-target` : la pastille reste à 32 px visuellement, mais sa
-            // zone de contact monte à 44 px — elle est isolée, aucun risque de
-            // chevauchement avec un contrôle voisin.
-            className='touch-target w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/60 hover:text-white transition-colors'
+            aria-label={t('common.close')}
+            title={t('common.close')}
+            className='flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'
           >
-            <X size={16} />
-          </motion.button>
+            <X size={18} strokeWidth={2.5} />
+          </button>
         </div>
       </div>
 
       {/* Content */}
-      <div className={`overflow-y-auto p-4 flex flex-col gap-3 ${wide ? 'flex-1 min-h-0' : ''}`}>{children}</div>
+      <div className={`flex flex-col gap-3 overflow-y-auto px-6 pb-6 pt-1 ${wide ? 'min-h-0 flex-1' : ''}`}>{children}</div>
     </motion.div>
   );
 }
@@ -99,7 +97,7 @@ export function PanelOverlay({ children }: { children: ReactNode }) {
             initial='hidden'
             animate='visible'
             exit='exit'
-            className='fixed inset-0 z-40 bg-black/45 backdrop-blur-sm'
+            className='fixed inset-0 z-40 bg-black/50'
           />
           {/* Wrapper — clicking here (outside panel card) closes it.
               `pb-28` à toutes les tailles : le dock flotte au-dessus de cette

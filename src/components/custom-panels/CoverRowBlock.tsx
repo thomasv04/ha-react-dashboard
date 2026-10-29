@@ -81,19 +81,19 @@ export function CoverRowBlockRenderer({ block, card = false }: { block: CoverRow
     ];
 
     return (
-      <div {...openProps} className='gc-inner rounded-2xl p-3 cursor-pointer transition-colors hover:bg-white/5'>
+      <div {...openProps} className='cursor-pointer rounded-[var(--ds-radius-xl)] bg-[var(--ds-sheet-section)] p-4'>
         <div className='flex items-center gap-3'>
           <div
             className={cn(
-              'w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0',
-              isOpen ? 'bg-blue-500/20 text-blue-300' : 'bg-white/8 text-white/40'
+              'flex size-11 flex-shrink-0 items-center justify-center rounded-full',
+              isOpen ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'bg-[var(--ds-surface-3)]'
             )}
           >
-            <Blinds size={16} />
+            <Blinds size={20} />
           </div>
           <div className='min-w-0'>
-            <div className='text-white font-medium text-sm truncate'>{label}</div>
-            <div className='text-white/40 text-xs mt-0.5'>{stateLabel}</div>
+            <div className='truncate text-[17px] font-semibold'>{label}</div>
+            <div className='text-sm text-[var(--ds-ink-muted)]'>{stateLabel}</div>
           </div>
         </div>
 
@@ -106,7 +106,7 @@ export function CoverRowBlockRenderer({ block, card = false }: { block: CoverRow
               onClick={() => call(c.service)}
               disabled={c.disabled}
               aria-label={c.label}
-              className='h-11 rounded-xl gc-btn text-white/70 flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none'
+              className='flex h-[52px] items-center justify-center rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)] disabled:pointer-events-none disabled:opacity-30'
             >
               <c.icon size={18} />
             </motion.button>
@@ -119,18 +119,18 @@ export function CoverRowBlockRenderer({ block, card = false }: { block: CoverRow
   return (
     <div
       {...openProps}
-      className='flex items-center justify-between gc-inner rounded-2xl px-4 py-3 cursor-pointer transition-colors hover:bg-white/5'
+      className='flex cursor-pointer items-center justify-between rounded-[var(--ds-radius-xl)] bg-[var(--ds-sheet-section)] px-5 py-4'
     >
       <div>
-        <div className='text-white font-medium text-sm'>{label}</div>
-        <div className='text-white/40 text-xs mt-0.5'>{pos !== undefined ? `${pos}%` : cover.state}</div>
+        <div className='text-[17px] font-semibold'>{label}</div>
+        <div className='text-sm text-[var(--ds-ink-muted)]'>{pos !== undefined ? `${pos} %` : cover.state}</div>
       </div>
       <div className='flex items-center gap-3' onClick={stop}>
-        <div className='w-16 h-1.5 bg-white/8 rounded-full overflow-hidden'>
+        <div className='h-2 w-16 overflow-hidden rounded-full bg-[var(--ds-surface-3)]'>
           <motion.div
             animate={{ width: `${pos ?? 0}%` }}
             transition={{ duration: DURATION_HERO }}
-            className={cn('h-full rounded-full', isOpen ? 'bg-blue-400' : 'bg-zinc-600')}
+            className={cn('h-full rounded-full', isOpen ? 'bg-[var(--ds-tile-on)]' : 'bg-[var(--ds-ink-muted)]')}
           />
         </div>
         <div className='flex gap-1'>
@@ -138,24 +138,27 @@ export function CoverRowBlockRenderer({ block, card = false }: { block: CoverRow
             whileTap={{ scale: 0.9 }}
             {...coverArrowMotion(cover.state, 'up', motionAllowed)}
             onClick={() => call('open_cover')}
-            className='w-8 h-8 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 flex items-center justify-center'
+            aria-label={t('widgets.cover.openAction')}
+            className='flex size-11 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'
           >
-            <ChevronsUp size={14} />
+            <ChevronsUp size={18} />
           </motion.button>
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => call('stop_cover')}
-            className='w-8 h-8 rounded-xl gc-btn text-white/60 flex items-center justify-center'
+            aria-label={t('common.stop')}
+            className='flex size-11 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'
           >
-            <Square size={12} />
+            <Square size={16} />
           </motion.button>
           <motion.button
             whileTap={{ scale: 0.9 }}
             {...coverArrowMotion(cover.state, 'down', motionAllowed)}
             onClick={() => call('close_cover')}
-            className='w-8 h-8 rounded-xl gc-btn text-white/60 flex items-center justify-center'
+            aria-label={t('widgets.cover.closeAction')}
+            className='flex size-11 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'
           >
-            <ChevronsDown size={14} />
+            <ChevronsDown size={18} />
           </motion.button>
         </div>
       </div>
