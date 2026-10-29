@@ -35,7 +35,7 @@ const MINIMAL_SNAPSHOT: ConfigSnapshot = {
 const LARGE_SNAPSHOT: ConfigSnapshot = {
   v: 1,
   theme: {
-    themeId: 'clay',
+    themeId: 'light',
     background: {
       mode: 'gradient',
       color1: '#1a1a2e',

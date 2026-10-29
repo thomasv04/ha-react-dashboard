@@ -1,5 +1,5 @@
 /** Thèmes livrés avec le dashboard, dont les tokens sont connus au build. */
-export type BuiltInThemeId = 'dark' | 'light' | 'glass' | 'midnight' | 'emerald' | 'clay' | 'clay-dark' | 'sea-glass' | 'sea-glass-dark';
+export type BuiltInThemeId = 'dark' | 'light';
 
 /**
  * `ha` désigne le thème importé de Home Assistant. Il n'a délibérément pas
@@ -27,7 +27,18 @@ export function isKnownTheme(id: string): id is ThemeId {
   return id === HA_THEME_ID || id in THEMES;
 }
 
-export type ThemeMode = 'glass' | 'clay';
+/** Thèmes clairs retirés en 4.0 : leurs utilisateurs passent au thème clair. */
+const RETIRED_LIGHT_THEMES = new Set(['clay', 'sea-glass']);
+
+/**
+ * Ramène un identifiant enregistré (réglages, import, autre appareil) sur un
+ * thème qui existe encore. La 4.0 n'a gardé que `dark` et `light` : les sept
+ * autres thèmes basculent sur celui des deux qui leur ressemble.
+ */
+export function normalizeThemeId(id: string | undefined): ThemeId {
+  if (id && isKnownTheme(id)) return id;
+  return id && RETIRED_LIGHT_THEMES.has(id) ? 'light' : 'dark';
+}
 
 /** `#rrggbb` → teinte au format de `cardTint` (`'r g b'`). */
 export function hexToTint(hex: string): string {
@@ -72,7 +83,6 @@ export interface ThemeTokens {
    * Teinte de la surface des cards, en composantes RGB brutes (`'255 255 255'`).
    * Quand elle est définie, `--dash-bg-card` est recomposé à partir de cette
    * teinte et du curseur d'opacité — c'est ce qui rend le curseur fonctionnel.
-   * Les thèmes opaques (clay) l'omettent et gardent `bgCard` tel quel.
    */
   cardTint?: string;
   /** Surface claire : le texte hardcodé en blanc doit être remappé en sombre */
@@ -85,221 +95,54 @@ export interface ThemeTokens {
   statusError: string;
   /** Statut : bleu */
   statusInfo: string;
-  /** Mode de rendu : glass (défaut) ou clay */
-  mode?: ThemeMode;
-  /** Couleur de l'ombre externe douce (clay) */
-  shadowColor?: string;
-  /** Couleur de la surbrillance interne (clay) */
-  shadowHighlight?: string;
 }
 
+/**
+ * Valeurs reprises du design system « HA Dashboard v2 » (`src/design/tokens.json`) :
+ * surfaces opaques, d'où un flou nul et une opacité pleine.
+ */
 export const THEMES: Record<BuiltInThemeId, { label: string; tokens: ThemeTokens }> = {
   dark: {
     label: 'Sombre',
     tokens: {
-      // Un fond légèrement plus sombre que les cards donne aux ombres portées
-      // la marge de luminance dont elles ont besoin pour être visibles.
-      bgPrimary: '#08080f',
-      cardTint: '255 255 255',
-      bgCard: 'rgba(255, 255, 255, 0.065)',
-      bgCardHover: 'rgba(255, 255, 255, 0.10)',
-      textPrimary: '#ffffff',
-      textSecondary: 'rgba(255, 255, 255, 0.78)',
-      textMuted: 'rgba(255, 255, 255, 0.52)',
-      accent: '#3b82f6',
-      accentHover: '#60a5fa',
-      border: 'rgba(255, 255, 255, 0.12)',
-      glassBlur: 20,
-      glassOpacity: 0.065,
-      statusSuccess: '#22c55e',
-      statusWarning: '#f59e0b',
-      statusError: '#ef4444',
-      statusInfo: '#3b82f6',
+      bgPrimary: '#07090c',
+      cardTint: '34 40 51',
+      bgCard: '#222833',
+      bgCardHover: '#2a313d',
+      textPrimary: '#eef1f5',
+      textSecondary: '#c6cdd8',
+      textMuted: '#aab4c3',
+      accent: '#3b74e8',
+      accentHover: '#5b8cf0',
+      border: 'rgba(255, 255, 255, 0.08)',
+      glassBlur: 0,
+      glassOpacity: 1,
+      statusSuccess: '#3ecf7a',
+      statusWarning: '#f28c4b',
+      statusError: '#e8466b',
+      statusInfo: '#3b74e8',
     },
   },
   light: {
     label: 'Clair',
     tokens: {
       light: true,
-      bgPrimary: '#eef1f6',
+      bgPrimary: '#e8ecf2',
       cardTint: '255 255 255',
-      bgCard: 'rgba(255, 255, 255, 0.86)',
-      bgCardHover: 'rgba(255, 255, 255, 0.95)',
-      textPrimary: '#141a25',
-      textSecondary: 'rgba(20, 26, 37, 0.72)',
-      textMuted: 'rgba(20, 26, 37, 0.48)',
-      accent: '#2563eb',
-      accentHover: '#3b82f6',
-      border: 'rgba(15, 23, 42, 0.10)',
-      glassBlur: 20,
-      glassOpacity: 0.86,
-      statusSuccess: '#16a34a',
-      statusWarning: '#d97706',
-      statusError: '#dc2626',
-      statusInfo: '#2563eb',
-    },
-  },
-  glass: {
-    label: 'Verre',
-    tokens: {
-      bgPrimary: '#0c0c1c',
-      cardTint: '255 255 255',
-      bgCard: 'rgba(255, 255, 255, 0.075)',
-      bgCardHover: 'rgba(255, 255, 255, 0.11)',
-      textPrimary: '#ffffff',
-      textSecondary: 'rgba(255, 255, 255, 0.76)',
-      textMuted: 'rgba(255, 255, 255, 0.5)',
-      accent: '#8b5cf6',
-      accentHover: '#a78bfa',
-      border: 'rgba(255, 255, 255, 0.14)',
-      // 24px au lieu de 30 : différence visuelle nulle, coût GPU nettement
-      // plus bas quand ~20 cards floutent le fond en même temps.
-      glassBlur: 24,
-      glassOpacity: 0.075,
-      statusSuccess: '#34d399',
-      statusWarning: '#fbbf24',
-      statusError: '#f87171',
-      statusInfo: '#818cf8',
-    },
-  },
-  midnight: {
-    label: 'Minuit',
-    tokens: {
-      bgPrimary: '#020617',
-      cardTint: '38 52 74',
-      bgCard: 'rgba(38, 52, 74, 0.62)',
-      bgCardHover: 'rgba(38, 52, 74, 0.8)',
-      textPrimary: '#e2e8f0',
-      textSecondary: '#b6c2d3',
-      textMuted: '#7d8ba1',
-      accent: '#06b6d4',
-      accentHover: '#22d3ee',
-      border: 'rgba(148, 163, 184, 0.28)',
-      glassBlur: 16,
-      glassOpacity: 0.62,
-      statusSuccess: '#10b981',
-      statusWarning: '#f59e0b',
-      statusError: '#ef4444',
-      statusInfo: '#06b6d4',
-    },
-  },
-  emerald: {
-    label: 'Émeraude',
-    tokens: {
-      bgPrimary: '#021a14',
-      cardTint: '8 92 70',
-      bgCard: 'rgba(8, 92, 70, 0.45)',
-      bgCardHover: 'rgba(8, 92, 70, 0.62)',
-      textPrimary: '#ecfdf5',
-      textSecondary: '#b6f0d8',
-      textMuted: '#7fd4b4',
-      accent: '#10b981',
-      accentHover: '#34d399',
-      border: 'rgba(52, 211, 153, 0.24)',
-      glassBlur: 20,
-      glassOpacity: 0.45,
-      statusSuccess: '#34d399',
-      statusWarning: '#fbbf24',
-      statusError: '#f87171',
-      statusInfo: '#67e8f9',
-    },
-  },
-  clay: {
-    label: 'Clay Clair',
-    tokens: {
-      mode: 'clay',
-      light: true,
-      bgPrimary: '#e8e4df',
-      bgCard: '#f0ece7',
-      bgCardHover: '#f5f1ed',
-      textPrimary: '#2d2a26',
-      textSecondary: 'rgba(45, 42, 38, 0.65)',
-      textMuted: 'rgba(45, 42, 38, 0.4)',
-      accent: '#7c6bf5',
-      accentHover: '#9688f7',
-      border: 'rgba(0, 0, 0, 0.06)',
+      bgCard: '#ffffff',
+      bgCardHover: '#f6f8fb',
+      textPrimary: '#1b2230',
+      textSecondary: '#3a4558',
+      textMuted: '#4a5568',
+      accent: '#2456d6',
+      accentHover: '#1d4bc0',
+      border: 'rgba(27, 34, 48, 0.08)',
       glassBlur: 0,
       glassOpacity: 1,
-      shadowColor: 'rgba(0, 0, 0, 0.12)',
-      shadowHighlight: 'rgba(255, 255, 255, 0.7)',
-      statusSuccess: '#34d399',
-      statusWarning: '#fbbf24',
-      statusError: '#f87171',
-      statusInfo: '#818cf8',
-    },
-  },
-  'clay-dark': {
-    label: 'Clay Sombre',
-    tokens: {
-      mode: 'clay',
-      bgPrimary: '#1e1b2e',
-      bgCard: '#2a2740',
-      bgCardHover: '#322f4a',
-      textPrimary: '#f0ecf9',
-      textSecondary: 'rgba(240, 236, 249, 0.7)',
-      textMuted: 'rgba(240, 236, 249, 0.4)',
-      accent: '#9688f7',
-      accentHover: '#b0a4fa',
-      border: 'rgba(255, 255, 255, 0.08)',
-      glassBlur: 0,
-      glassOpacity: 1,
-      shadowColor: 'rgba(0, 0, 0, 0.6)',
-      shadowHighlight: 'rgba(255, 255, 255, 0.08)',
-      statusSuccess: '#34d399',
-      statusWarning: '#fbbf24',
-      statusError: '#f87171',
-      statusInfo: '#818cf8',
-    },
-  },
-  'sea-glass': {
-    label: 'Sea Glass',
-    tokens: {
-      // Material 4 « Sea Glass » : papier chaud, cards presque blanches, et les
-      // éléments interactifs en galets de verre dépoli pastel (cf. index.css).
-      mode: 'clay',
-      light: true,
-      bgPrimary: '#f3f1ec',
-      cardTint: '251 250 247',
-      bgCard: '#fbfaf7',
-      bgCardHover: '#ffffff',
-      textPrimary: '#1f3a32',
-      textSecondary: 'rgba(31, 58, 50, 0.72)',
-      textMuted: 'rgba(31, 58, 50, 0.48)',
-      accent: '#5fa98e',
-      accentHover: '#b49ac7',
-      border: 'rgba(31, 58, 50, 0.09)',
-      glassBlur: 20,
-      glassOpacity: 0.82,
-      shadowColor: 'rgba(60, 64, 48, 0.10)',
-      shadowHighlight: 'rgba(255, 255, 255, 0.9)',
-      statusSuccess: '#4f9e7f',
-      statusWarning: '#d9a35b',
-      statusError: '#d97a6c',
-      statusInfo: '#6f9fd6',
-    },
-  },
-  'sea-glass-dark': {
-    label: 'Sea Glass Sombre',
-    tokens: {
-      mode: 'clay',
-      bgPrimary: '#0e1716',
-      cardTint: '22 33 31',
-      bgCard: '#16211f',
-      bgCardHover: '#1b2826',
-      textPrimary: '#e4f1eb',
-      textSecondary: 'rgba(228, 241, 235, 0.72)',
-      textMuted: 'rgba(228, 241, 235, 0.46)',
-      accent: '#5fa98e',
-      accentHover: '#9a7fb4',
-      border: 'rgba(196, 229, 214, 0.08)',
-      glassBlur: 22,
-      glassOpacity: 0.78,
-      shadowColor: 'rgba(0, 0, 0, 0.5)',
-      shadowHighlight: 'rgba(255, 255, 255, 0.05)',
-      statusSuccess: '#6cc4a1',
-      statusWarning: '#e5b670',
-      statusError: '#e38b7e',
-      statusInfo: '#86b3e3',
+      statusSuccess: '#2f9e5c',
+      statusWarning: '#c2571c',
+      statusError: '#d6345a',
+      statusInfo: '#2456d6',
     },
   },
 };

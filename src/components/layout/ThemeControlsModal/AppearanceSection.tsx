@@ -56,9 +56,8 @@ export function AppearanceSection() {
         </div>
       </div>
 
-      {/* Card opacity (hidden in clay mode — cards are opaque — unless the theme
-          gives a tint to recompose them, like Sea Glass) */}
-      {(tokens.mode !== 'clay' || tokens.cardTint) && (
+      {/* Card opacity: only themes with a tint can recompose the card surface */}
+      {tokens.cardTint && (
         <div>
           <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
             <Sliders size={12} /> {t('settings.appearance_section.cardOpacity')}
@@ -78,7 +77,7 @@ export function AppearanceSection() {
       )}
 
       {/* Flou du fond des cards : ce qui transparaît du fond d'écran */}
-      {(tokens.mode !== 'clay' || tokens.cardTint) && (
+      {tokens.cardTint && (
         <div>
           <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
             <Sliders size={12} /> {t('settings.appearance_section.cardBlur')}

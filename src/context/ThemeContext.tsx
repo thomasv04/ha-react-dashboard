@@ -3,7 +3,7 @@ import {
   THEMES,
   HA_THEME_ID,
   themeTokens,
-  isKnownTheme,
+  normalizeThemeId,
   hexToTint,
   type ThemeId,
   type ThemeTokens,
@@ -210,6 +210,11 @@ const DEFAULT_AUTO_THEME: AutoThemeConfig = {
   illuminanceThreshold: 50,
 };
 
+/** Les thèmes jour/nuit enregistrés peuvent désigner un thème retiré en 4.0. */
+function withKnownThemes(cfg: AutoThemeConfig): AutoThemeConfig {
+  return { ...cfg, lightTheme: normalizeThemeId(cfg.lightTheme), darkTheme: normalizeThemeId(cfg.darkTheme) };
+}
+
 function loadSettings(): {
   themeId: ThemeId;
   background: BackgroundConfig;
@@ -238,7 +243,7 @@ function loadSettings(): {
         behaviourSettings?: Partial<BehaviourSettings>;
         importedTheme?: ImportedTheme | null;
       };
-      const themeId = parsed.themeId ?? 'dark';
+      const themeId = normalizeThemeId(parsed.themeId);
       // Avant la v2 le curseur d'opacité n'était branché sur rien : la valeur
       // stockée n'a jamais reflété un choix visible. On repart du défaut du
       // thème une fois, sinon tout le monde hériterait d'une card à 4 %.
@@ -249,7 +254,7 @@ function loadSettings(): {
         background: parsed.background ?? { mode: 'solid' },
         cardOpacity,
         perfSettings: { ...DEFAULT_PERF_SETTINGS, ...(parsed.perfSettings ?? {}) },
-        autoTheme: { ...DEFAULT_AUTO_THEME, ...(parsed.autoTheme ?? {}) },
+        autoTheme: withKnownThemes({ ...DEFAULT_AUTO_THEME, ...(parsed.autoTheme ?? {}) }),
         layoutSettings: { ...DEFAULT_LAYOUT_SETTINGS, ...(parsed.layoutSettings ?? {}) },
         soundSettings: { ...DEFAULT_SOUND_SETTINGS, ...(parsed.soundSettings ?? {}) },
         regionalSettings: { ...DEFAULT_REGIONAL_SETTINGS, ...(parsed.regionalSettings ?? {}) },
@@ -321,17 +326,16 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     ]
   );
   const handleRemoteUpdate = useCallback((remote: typeof syncedSettings) => {
-    if (remote.themeId && isKnownTheme(remote.themeId)) {
-      setThemeId(remote.themeId);
+    if (remote.themeId) {
+      const id = normalizeThemeId(remote.themeId);
+      setThemeId(id);
       // Même migration que dans `loadSettings` : une opacité venue d'un
       // enregistrement pré-v2 n'a jamais été appliquée, on ne la ressuscite pas.
-      setCardOpacityState(
-        remote.v === SETTINGS_VERSION && remote.cardOpacity != null ? remote.cardOpacity : themeTokens(remote.themeId).glassOpacity
-      );
+      setCardOpacityState(remote.v === SETTINGS_VERSION && remote.cardOpacity != null ? remote.cardOpacity : themeTokens(id).glassOpacity);
     }
     if (remote.background) setBackgroundState(remote.background);
     if (remote.perfSettings) setPerfSettingsState({ ...DEFAULT_PERF_SETTINGS, ...remote.perfSettings });
-    if (remote.autoTheme) setAutoThemeState({ ...DEFAULT_AUTO_THEME, ...remote.autoTheme });
+    if (remote.autoTheme) setAutoThemeState(withKnownThemes({ ...DEFAULT_AUTO_THEME, ...remote.autoTheme }));
     if (remote.layoutSettings) setLayoutSettingsState({ ...DEFAULT_LAYOUT_SETTINGS, ...remote.layoutSettings });
     if (remote.soundSettings) setSoundSettingsState({ ...DEFAULT_SOUND_SETTINGS, ...remote.soundSettings });
     if (remote.regionalSettings) setRegionalSettingsState({ ...DEFAULT_REGIONAL_SETTINGS, ...remote.regionalSettings });
@@ -367,20 +371,12 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--dash-status-error', tokens.statusError);
     root.style.setProperty('--dash-status-info', tokens.statusInfo);
 
-    // Clay-specific variables & class
-    const isClay = tokens.mode === 'clay';
-    root.classList.toggle('theme-clay', isClay);
-    root.classList.toggle('theme-clay-dark', isClay && themeId === 'clay-dark');
-    root.classList.toggle('theme-sea-glass', themeId === 'sea-glass' || themeId === 'sea-glass-dark');
-    root.classList.toggle('theme-sea-glass-dark', themeId === 'sea-glass-dark');
-    // Any light-surface theme (clay light *and* the plain light theme) needs the
-    // hardcoded `text-white/*` utilities remapped to dark text, otherwise the
-    // cards turn white and the text stays invisible.
+    // A light-surface theme needs the hardcoded `text-white/*` utilities
+    // remapped to dark text, otherwise the cards turn white and the text stays
+    // invisible.
     root.classList.toggle('theme-light-surface', !!tokens.light);
     root.dataset.theme = tokens.light ? 'light' : 'dark';
-    root.style.setProperty('--dash-shadow-color', tokens.shadowColor ?? '');
-    root.style.setProperty('--dash-shadow-highlight', tokens.shadowHighlight ?? '');
-  }, [tokens, cardOpacity, themeId, layoutSettings.cardBlur, layoutSettings.cardColor]);
+  }, [tokens, cardOpacity, layoutSettings.cardBlur, layoutSettings.cardColor]);
 
   // Layout CSS variables
   useEffect(() => {
@@ -429,7 +425,9 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     importedTheme,
   ]);
 
-  const setTheme = useCallback((id: ThemeId) => {
+  const setTheme = useCallback((requested: ThemeId) => {
+    // Un import de configuration peut encore porter un thème retiré en 4.0.
+    const id = normalizeThemeId(requested);
     setThemeId(id);
     setCardOpacityState(themeTokens(id).glassOpacity);
     setLayoutSettingsState(s => ({ ...s, cardBlur: undefined, cardColor: undefined }));
