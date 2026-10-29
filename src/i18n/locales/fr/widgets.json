@@ -57,13 +57,6 @@
     "notFound": "Entité introuvable",
     "currentTemp": "Température actuelle",
     "description": "Contrôle un thermostat climate.xxx avec la température cible.",
-    "heating": "CHAUFFER À",
-    "cooling": "REFROIDIR À",
-    "idle": "EN VEILLE",
-    "off": "ÉTEINT",
-    "fan_only": "VENTILATION",
-    "drying": "SÉCHAGE",
-    "preheating": "PRÉCHAUFFE",
     "dispositions": {
       "horizontal": {
         "label": "Horizontale"
@@ -85,6 +78,19 @@
       "showInfoPanel": {
         "label": "Panneau info (More Info)"
       }
+    },
+    "currently": "Actuellement {value}",
+    "decrease": "Baisser la consigne",
+    "increase": "Monter la consigne",
+    "mode": "Mode",
+    "modes": {
+      "heat": "Chauffage",
+      "cool": "Clim",
+      "heat_cool": "Chaud / froid",
+      "auto": "Auto",
+      "dry": "Déshumidif.",
+      "fan_only": "Ventilation",
+      "off": "Arrêt"
     }
   },
   "light": {
@@ -198,6 +204,7 @@
     "notFound": "Volet introuvable",
     "openAction": "OUVRIR",
     "closeAction": "FERMER",
+    "stopAction": "ARRÊTER",
     "presetClosed": "FERMÉ",
     "presetOpen": "OUVERT",
     "percentOpen": "{value}% ouvert",

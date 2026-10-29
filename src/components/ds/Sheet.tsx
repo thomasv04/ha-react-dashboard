@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { DURATION_FAST } from '@/lib/motion-tokens';
@@ -6,7 +7,8 @@ import { DURATION_FAST } from '@/lib/motion-tokens';
 /**
  * Feuille superposée sur le côté droit : le réglage détaillé d'un appareil
  * (lumière, thermostat…) sans quitter l'écran. Échap et un appui hors de la
- * feuille la referment.
+ * feuille la referment. Rendue dans `document.body`, comme les autres
+ * superpositions des cards : une case de la grille la rognerait.
  */
 export function Sheet({
   open,
@@ -30,7 +32,7 @@ export function Sheet({
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <>
@@ -72,6 +74,7 @@ export function Sheet({
           </motion.section>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

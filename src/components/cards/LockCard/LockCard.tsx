@@ -1,6 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
-import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { Lock, LockOpen, TriangleAlert, DoorOpen } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
@@ -9,9 +7,10 @@ import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useI18n } from '@/i18n';
-import { cn } from '@/lib/utils';
 import type { LockCardConfig } from '@/types/widget-configs';
 import { friendlyName } from '@/lib/ha-service';
+import { DeviceTile } from '@/components/ds/DeviceTile';
+import { Chip } from '@/components/ds/Chip';
 
 /** `LockEntityFeature.OPEN` — le pêne peut être escamoté (gâche électrique) */
 const FEATURE_OPEN = 1;
@@ -50,8 +49,8 @@ export function LockCard() {
 
   if (!entity) {
     return (
-      <div ref={cardRef} className='gc rounded-3xl p-4 flex items-center justify-center h-full'>
-        <span className='text-white/30 text-sm'>{t('widgets.lock.notFound')}</span>
+      <div ref={cardRef} className='gc flex h-full items-center justify-center p-4'>
+        <span className='text-sm text-[var(--ds-ink-muted)]'>{t('widgets.lock.notFound')}</span>
       </div>
     );
   }
@@ -67,8 +66,7 @@ export function LockCard() {
     playFeedback(service === 'lock' ? 'lock' : 'unlock');
   };
 
-  const handleToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleToggle = () => {
     if (isLocked) {
       // Déverrouiller est l'action irréversible : elle seule peut demander deux
       // appuis. Verrouiller reste immédiat.
@@ -84,9 +82,6 @@ export function LockCard() {
     setConfirming(false);
   };
 
-  const accent = isJammed ? '#fbbf24' : isLocked ? '#34d399' : '#f87171';
-  const StateIcon = isJammed ? TriangleAlert : isLocked ? Lock : LockOpen;
-
   const label = confirming
     ? t('widgets.lock.confirmUnlock')
     : isJammed
@@ -98,76 +93,20 @@ export function LockCard() {
           : t('widgets.lock.unlocked');
 
   return (
-    <motion.div
-      ref={cardRef}
-      {...CARD_ENTRANCE}
-      className={cn(
-        'gc rounded-3xl h-full overflow-hidden select-none',
-        size.squat ? 'px-3 py-2 flex items-center gap-3' : 'p-3.5 flex flex-col'
-      )}
-      style={{
-        background: `linear-gradient(180deg, ${accent}1f, ${accent}0d)`,
-        borderColor: `${accent}3a`,
-      }}
-    >
-      {size.squat ? (
-        <>
-          <button
-            onClick={handleToggle}
-            className='w-10 h-10 rounded-xl border flex items-center justify-center shrink-0'
-            style={{ background: `${accent}1f`, borderColor: `${accent}40` }}
-          >
-            <StateIcon size={18} style={{ color: accent }} />
-          </button>
-          <div className='flex-1 min-w-0'>
-            <div className='text-white/40 text-xs font-medium truncate'>{name}</div>
-            <div className='text-xs font-semibold truncate' style={{ color: accent }}>
-              {label}
-            </div>
-          </div>
-        </>
-      ) : (
-        <>
-          <div className='flex items-center justify-between shrink-0'>
-            <span className='text-white/40 text-xs font-medium truncate'>{name}</span>
-          </div>
-
-          <div className='flex items-center justify-center flex-1 min-h-0'>
-            <motion.button
-              whileTap={{ scale: 0.92 }}
-              onClick={handleToggle}
-              className={cn(
-                'relative border flex items-center justify-center transition-all duration-300',
-                size.compact ? 'w-14 h-14 rounded-2xl' : 'w-16 h-16 rounded-2xl'
-              )}
-              style={{ background: `${accent}1f`, borderColor: `${accent}40` }}
-            >
-              <div className='absolute inset-0 rounded-2xl blur-xl opacity-20 pointer-events-none' style={{ background: accent }} />
-              <StateIcon size={size.compact ? 24 : 28} className='relative' style={{ color: accent }} />
-            </motion.button>
-          </div>
-
-          <div className='text-center shrink-0 mt-1.5'>
-            <span className='text-xs font-semibold' style={{ color: confirming ? '#fbbf24' : accent }}>
-              {label}
-            </span>
-          </div>
-
-          {/* Ouverture du pêne : action distincte, jamais fusionnée au toggle */}
-          {supportsOpen && !size.compact && (
-            <button
-              onClick={e => {
-                e.stopPropagation();
-                call('open');
-              }}
-              className='mt-2 shrink-0 flex items-center justify-center gap-1.5 py-1.5 rounded-xl border border-white/8 bg-white/5 text-white/50 text-[11px] font-semibold hover:bg-white/8 transition-colors'
-            >
-              <DoorOpen size={12} />
-              {t('widgets.lock.openAction')}
-            </button>
-          )}
-        </>
-      )}
-    </motion.div>
+    <div ref={cardRef} className='h-full'>
+      <DeviceTile
+        name={name}
+        state={label}
+        icon={isJammed ? TriangleAlert : isLocked ? Lock : LockOpen}
+        // Verrouillée = état sûr, mis en avant. Une demande de confirmation
+        // repasse la tuile en neutre : on voit que le prochain appui ouvre.
+        active={isLocked && !confirming}
+        onToggle={handleToggle}
+        layout={size.squat ? 'row' : 'stack'}
+      >
+        {/* Ouverture du pêne : action distincte, jamais fusionnée au bouton */}
+        {supportsOpen && !size.compact && <Chip icon={DoorOpen} label={t('widgets.lock.openAction')} onClick={() => call('open')} />}
+      </DeviceTile>
+    </div>
   );
 }

@@ -57,13 +57,6 @@
     "notFound": "Entity not found",
     "currentTemp": "Current temperature",
     "description": "Controls a climate.xxx thermostat with target temperature.",
-    "heating": "HEATING TO",
-    "cooling": "COOLING TO",
-    "idle": "IDLE",
-    "off": "OFF",
-    "fan_only": "FAN ONLY",
-    "drying": "DRYING",
-    "preheating": "PREHEATING",
     "dispositions": {
       "horizontal": {
         "label": "Horizontal"
@@ -85,6 +78,19 @@
       "showInfoPanel": {
         "label": "Info panel (More Info)"
       }
+    },
+    "currently": "Currently {value}",
+    "decrease": "Lower the setpoint",
+    "increase": "Raise the setpoint",
+    "mode": "Mode",
+    "modes": {
+      "heat": "Heat",
+      "cool": "Cool",
+      "heat_cool": "Heat / cool",
+      "auto": "Auto",
+      "dry": "Dry",
+      "fan_only": "Fan",
+      "off": "Off"
     }
   },
   "light": {
@@ -198,6 +204,7 @@
     "notFound": "Cover not found",
     "openAction": "OPEN",
     "closeAction": "CLOSE",
+    "stopAction": "STOP",
     "presetClosed": "CLOSED",
     "presetOpen": "OPEN",
     "percentOpen": "{value}% open",

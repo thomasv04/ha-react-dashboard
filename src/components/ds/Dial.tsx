@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useRef, type PointerEvent, type ReactNode } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -60,6 +60,23 @@ function Arc({ segment, color }: { segment: Segment; color: string }) {
   );
 }
 
+/**
+ * Valeur sous le pointeur, ou `null` hors de l'anneau (le centre et l'ouverture
+ * restent à la case et aux boutons). Coordonnées dans le viewBox de 200.
+ * Exporté pour être testé.
+ */
+export function valueAtPoint(x: number, y: number, min: number, max: number, step: number): number | null {
+  if (Math.hypot(x - 100, y - 100) < RADIUS - STROKE * 1.5) return null;
+  const start = 90 + (360 - SWEEP) / 2;
+  const deg = (Math.atan2(y - 100, x - 100) * 180) / Math.PI;
+  let along = (((deg - start) % 360) + 360) % 360;
+  // Dans l'ouverture du bas : la borne la plus proche, pour que le min et le max
+  // restent atteignables d'un geste vif.
+  if (along > SWEEP) along = along > SWEEP + (360 - SWEEP) / 2 ? 0 : SWEEP;
+  const raw = min + (along / SWEEP) * (max - min);
+  return Math.min(max, Math.max(min, Math.round(raw / step) * step));
+}
+
 export interface DialMode<T extends string> {
   id: T;
   label: string;
@@ -76,6 +93,7 @@ export function Dial<T extends string>({
   max,
   step = 0.5,
   onChange,
+  onDrag,
   mode = 'heat',
   display,
   caption,
@@ -91,6 +109,8 @@ export function Dial<T extends string>({
   max: number;
   step?: number;
   onChange: (value: number) => void;
+  /** Valeur suivie pendant un glisser sur l'anneau ; `onChange` part au lâcher. */
+  onDrag?: (value: number) => void;
   /** Sens et couleur du remplissage */
   mode?: 'heat' | 'cool';
   /** Consigne affichée au centre (« 21° ») */
@@ -106,6 +126,48 @@ export function Dial<T extends string>({
   labels: { decrease: string; increase: string; modes?: string };
 }) {
   const geometry = dialGeometry(value, min, max, mode);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<number | null>(null);
+  // Le geste en cours a-t-il commencé sur l'anneau ? Lu par le `click` qui le termine.
+  const ownsGestureRef = useRef(false);
+  // Valeur au début du geste : `onDrag` fait déjà suivre `value`, la comparer
+  // à elle au lâcher n'enverrait jamais rien.
+  const startRef = useRef(value);
+
+  const pointValue = (e: PointerEvent) => {
+    const rect = boxRef.current!.getBoundingClientRect();
+    return valueAtPoint(((e.clientX - rect.left) / rect.width) * 200, ((e.clientY - rect.top) / rect.height) * 200, min, max, step);
+  };
+
+  // Le glisser appartient au cadran : sans `stopPropagation`, la case de la
+  // grille lancerait son appui long et ouvrirait la fiche. Les boutons (modes,
+  // flèches) gardent leurs appuis.
+  const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    ownsGestureRef.current = false;
+    if (e.button !== 0 || (e.target as Element).closest('button')) return;
+    const v = pointValue(e);
+    if (v === null) return;
+    ownsGestureRef.current = true;
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    startRef.current = value;
+    dragRef.current = v;
+    onDrag?.(v);
+  };
+  const onPointerMove = (e: PointerEvent) => {
+    if (dragRef.current === null) return;
+    const v = pointValue(e);
+    if (v === null) return;
+    dragRef.current = v;
+    onDrag?.(v);
+  };
+  const onPointerUp = (e: PointerEvent) => {
+    if (dragRef.current === null) return;
+    e.stopPropagation();
+    const v = dragRef.current;
+    dragRef.current = null;
+    if (v !== startRef.current) onChange(v);
+  };
   const color = mode === 'heat' ? 'var(--ds-heat)' : 'var(--ds-cool)';
   const clamp = (v: number) => Math.min(max, Math.max(min, v));
 
@@ -117,7 +179,16 @@ export function Dial<T extends string>({
     'absolute top-[74%] flex size-[12%] min-h-11 min-w-11 items-center justify-center rounded-full bg-[var(--ds-surface-3)] text-[var(--ds-ink)] disabled:opacity-40';
 
   return (
-    <div className='@container relative aspect-square w-full'>
+    <div
+      ref={boxRef}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={() => (dragRef.current = null)}
+      // Le `click` de fin de réglage ne doit pas remonter jusqu'à la case, qui ouvrirait la fiche.
+      onClick={e => ownsGestureRef.current && e.stopPropagation()}
+      className='@container relative aspect-square w-full touch-none select-none'
+    >
       <svg viewBox='0 0 200 200' className='size-full' aria-hidden='true'>
         <Arc segment={geometry.track} color='var(--ds-surface-3)' />
         <Arc segment={geometry.fill} color={color} />
@@ -170,7 +241,7 @@ export function Dial<T extends string>({
             disabled={value <= min}
             aria-label={labels.decrease}
             title={labels.decrease}
-            className={cn(arrow, '-left-[2%]')}
+            className={cn(arrow, '-left-[6%]')}
           >
             <ChevronDown size={20} />
           </button>
@@ -179,7 +250,7 @@ export function Dial<T extends string>({
             disabled={value >= max}
             aria-label={labels.increase}
             title={labels.increase}
-            className={cn(arrow, '-right-[2%]')}
+            className={cn(arrow, '-right-[6%]')}
           >
             <ChevronUp size={20} />
           </button>

@@ -3,8 +3,11 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 vi.mock('@/i18n', () => ({
   useI18n: () => ({
-    t: (k: string) => {
-      const map: Record<string, string> = { 'widgets.cover.notFound': 'Entité introuvable' };
+    t: (k: string, params?: Record<string, string | number>) => {
+      const map: Record<string, string> = {
+        'widgets.cover.notFound': 'Entité introuvable',
+        'widgets.cover.percentOpen': `${params?.value}% ouvert`,
+      };
       return map[k] ?? k;
     },
     tArray: () => [],
