@@ -86,23 +86,34 @@ export function EditButton() {
 
   return (
     <>
-      {/* `left-16` + `flex-wrap` : la barre partait vers la gauche sans limite
-          et, sur mobile, passait sous le bouton Apparence (fixe en haut à
-          gauche) puis débordait de l'écran. Bornée à droite du bouton, elle
-          repasse à la ligne au lieu de recouvrir quoi que ce soit. */}
-      {/* `pointer-events-none` : la barre s'étend sur toute la largeur alors que
-          ses boutons sont calés à droite. Au-dessus de `lg` la rangée d'onglets
-          repasse sous elle (`lg:mt-0`), et cette bande vide interceptait les
-          clics sur WallPanel et Panneaux — seuls leurs derniers pixels
-          répondaient. Les enfants réactivent le pointeur. */}
-      <div className='fixed top-4 left-16 right-4 z-50 flex flex-wrap items-center justify-end gap-2 pointer-events-none'>
+      {/* À droite du bouton du lanceur, dans la barre du haut. `flex-wrap` :
+          sur une fenêtre étroite les actions d'édition repassent à la ligne au
+          lieu de recouvrir l'heure. Le conteneur laisse passer les clics, seuls
+          les boutons les captent. */}
+      <div className='fixed top-[30px] left-[96px] sm:left-[116px] right-4 z-50 flex flex-wrap items-center gap-2 pointer-events-none'>
+        {/* Bouton toggle édition */}
+        <motion.button
+          onClick={() => (isEditMode ? setEditMode(false) : enterEditMode())}
+          whileTap={{ scale: 0.92 }}
+          data-tour='edit'
+          title={isEditMode ? t('dashboard.editTooltipExit') : t('dashboard.editTooltipEnter')}
+          aria-label={isEditMode ? t('dashboard.editTooltipExit') : t('dashboard.editTooltipEnter')}
+          className={`flex size-[52px] items-center justify-center rounded-full transition-colors pointer-events-auto ${
+            isEditMode
+              ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'
+              : 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)] hover:bg-[var(--ds-surface-2)]'
+          }`}
+        >
+          {isEditMode ? <Check size={20} /> : <PencilLine size={20} />}
+        </motion.button>
+
         <AnimatePresence>
           {isEditMode && (
             <motion.div
               key='edit-actions'
-              initial={{ opacity: 0, x: 20, scale: 0.9 }}
+              initial={{ opacity: 0, x: -20, scale: 0.9 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 20, scale: 0.9 }}
+              exit={{ opacity: 0, x: -20, scale: 0.9 }}
               transition={{ duration: DURATION_FAST }}
               className='flex items-center gap-2 pointer-events-auto'
             >
@@ -223,21 +234,6 @@ export function EditButton() {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Bouton toggle édition */}
-        <motion.button
-          onClick={() => (isEditMode ? setEditMode(false) : enterEditMode())}
-          whileTap={{ scale: 0.92 }}
-          data-tour='edit'
-          title={isEditMode ? t('dashboard.editTooltipExit') : t('dashboard.editTooltipEnter')}
-          className={`p-2.5 rounded-xl border transition-colors backdrop-blur-sm pointer-events-auto ${
-            isEditMode
-              ? 'bg-purple-500/30 border-purple-500/50 text-purple-200'
-              : 'bg-white/10 border-white/20 text-white/70 hover:text-white hover:bg-white/20'
-          }`}
-        >
-          {isEditMode ? <Check size={17} /> : <PencilLine size={17} />}
-        </motion.button>
       </div>
 
       {/* Modal ajout de widget */}

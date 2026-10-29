@@ -74,9 +74,7 @@
   "noEntityFound": "No {domain} entity found",
   "searchInDomain": "Search a {domain} entity…",
   "chooseEntityArrow": "Choose an entity →",
-  "customizeDock": "Customize the dock",
   "dock": "Dock",
-  "addPage": "Page",
   "newPage": "New page",
   "noIconFound": "No icon found",
   "noCustomIcon": "No custom icon",
@@ -305,11 +303,6 @@
     "presenceEntityDesc": "Widgets only show while this sensor detects someone; otherwise the photo gets the whole screen"
   },
   "panelNoneCreated": "No panel yet — create one from the edit mode.",
-  "dockLabelsOn": "Labels on",
-  "dockLabelsOff": "Labels off",
-  "dockRemove": "Remove from dock",
-  "dockAdd": "Add to dock",
-  "dockNoPanels": "No custom panel yet. Create one from the edit mode, then add it here.",
   "duplicateWidget": "Duplicate widget",
   "actions": {
     "intro": "Choose what a tap or a long press does on this card. “Default” keeps the widget's usual behaviour.",
@@ -369,9 +362,6 @@
   "weatherIconsCount": "{count} customised",
   "weatherIconsCountPlural": "{count} customised",
   "dispositionDefault": "Default",
-  "addPlan": "Floorplan",
-  "movePageLeft": "Move left",
-  "movePageRight": "Move right",
   "floorplan": {
     "newPage": "Floorplan",
     "image": "Floorplan image",
@@ -551,5 +541,24 @@
     "openingUnnamedHelp": "Sweet Home 3D exported it without a name: its own has an accent, or a sign the plugin refuses. In Sweet Home 3D, double-click it and change its “Name”: its type first, without accents or a trailing “#” — Window_Bedroom, Door_Kitchen… —, one name per opening. Then export the model again: it will link in one click.",
     "openingDrawAnyway": "Draw it instead",
     "openingSingle": "All in one piece: nothing can move. In Sweet Home 3D, remove the trailing “#” from its name."
+  },
+  "shell": {
+    "openLauncher": "Open apps",
+    "closeLauncher": "Close apps",
+    "favorites": "Favorites",
+    "apps": "All apps",
+    "settings": "Settings",
+    "screensaver": "Screensaver",
+    "customPanels": "Custom panels",
+    "tour": "Guided tour",
+    "releaseNotes": "What’s new",
+    "pinToRail": "Pin to the rail",
+    "unpinFromRail": "Unpin from the rail",
+    "pages": "Pages",
+    "home": "Home",
+    "movePageUp": "Move up",
+    "movePageDown": "Move down",
+    "deletePage": "Delete page",
+    "noPanels": "No panel yet"
   }
 }

@@ -4,16 +4,16 @@ import { DashboardLayoutProvider, useDashboardLayout } from '@/context/Dashboard
 import { WidgetConfigProvider } from '@/context/WidgetConfigContext';
 import { PageProvider } from '@/context/PageContext';
 import { MoreInfoProvider } from '@/context/MoreInfoContext';
-import { BottomNav } from '@/components/layout/BottomNav';
 import { PanelOverlay } from '@/components/layout/Panel';
 import { DashboardGrid, GridItem } from '@/components/layout/DashboardGrid';
 import { WidgetEditModal } from '@/components/layout/WidgetEditModal';
-import { ThemeControlsModal } from '@/components/layout/ThemeControlsModal';
-import { PageTabs } from '@/components/layout/PageTabs';
 import { PageBadges } from '@/components/layout/PageBadges';
+import { TopBar } from '@/components/shell/TopBar';
+import { NavRail } from '@/components/shell/NavRail';
+import { Launcher } from '@/components/shell/Launcher';
 import { MoreInfoModal } from '@/components/modals/MoreInfoModal';
 import { LoadingScreen } from '@/components/layout/LoadingScreen';
-import { lazy, Suspense, useEffect, useState, memo } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState, memo } from 'react';
 import { AnimatePresence, LayoutGroup } from 'framer-motion';
 
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
@@ -139,23 +139,25 @@ function DashboardContent() {
   // Use lg layout as canonical list of widget ids (all breakpoints share same ids)
   const widgets = layout.widgets.lg;
   const isFloorplan = currentPage?.type === 'floorplan';
+  const [launcherOpen, setLauncherOpen] = useState(false);
+  const closeLauncher = useCallback(() => setLauncherOpen(false), []);
 
   return (
     <LayoutGroup>
       <div className='min-h-screen w-full text-white overflow-x-hidden'>
-        {/* `pt-2` : l'en-tête (onglets, pastilles) mangeait un sixième de la hauteur
-            d'une tablette avant la première card. */}
-        {/* Page plan : tout l'écran, le plan prenant la hauteur que laissent les
-            onglets — il se lit d'un coup d'œil, sans défiler. */}
+        <TopBar onOpenLauncher={() => setLauncherOpen(true)} />
+        <NavRail />
+        <Launcher open={launcherOpen} onClose={closeLauncher} />
+
+        {/* Sous la barre du haut et à droite du rail ; sur téléphone le rail
+            passe en bas. Page plan : tout l'écran restant, le plan se lit
+            d'un coup d'œil, sans défiler. */}
         <div
           className={cn(
-            'mx-auto px-2 sm:px-4 md:px-5 pt-2 sm:pt-3',
-            isFloorplan ? 'h-dvh flex flex-col' : 'max-w-[1440px] pb-24 sm:pb-32 md:pb-36'
+            'pt-[112px] pl-3 pr-3 sm:pl-[124px] sm:pr-6',
+            isFloorplan ? 'h-dvh flex flex-col pb-24 sm:pb-6' : 'max-w-[1600px] pb-28 sm:pb-10'
           )}
         >
-          {/* Onglets de navigation entre pages */}
-          <PageTabs />
-
           {/* Pastilles d'état de la page — n'occupent aucune place si vides */}
           <PageBadges />
 
@@ -180,19 +182,13 @@ function DashboardContent() {
           )}
         </div>
 
-        {/* Bouton d'édition admin (fixe, top-right) */}
+        {/* Bouton d'édition admin, dans la barre du haut */}
         <EditButton />
-
-        {/* Bouton apparence / thèmes (fixe, top-left) */}
-        <ThemeControlsModal />
 
         {/* Widget edit modal */}
         <AnimatePresence>
           <WidgetEditModal />
         </AnimatePresence>
-
-        {/* Bottom nav */}
-        <BottomNav />
 
         {/* Panel overlay — le contenu vient d'une config éditable, il peut
             planter. Sans frontière, il emportait tout le dashboard avec lui. */}
