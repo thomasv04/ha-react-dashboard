@@ -13,6 +13,7 @@ import { NotificationSheet } from './NotificationSheet';
 import { NotificationBadge } from './NotificationBadge';
 import { useI18n } from '@/i18n';
 import { useUser } from '@hakit/core';
+import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { usePages } from '@/context/PageContext';
 import { useDashboardLayout } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -68,6 +69,10 @@ export function WallPanelOverlay() {
   // Fond sur une maquette : la page Plan, que la veille a ouverte dessous, se
   // voit au travers — ni voile noir, ni photos.
   const planBackdrop = !!useScreensaverPlan();
+  // Seul un `off` explicite masque : capteur indisponible ou introuvable, les
+  // widgets restent affichés plutôt que de disparaître sur une panne.
+  const presence = useSafeEntity(config.presence_entity ?? '');
+  const awayFromTablet = presence?.state === 'off';
 
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const [photoCount, setPhotoCount] = useState(0);
@@ -203,7 +208,13 @@ export function WallPanelOverlay() {
               ) : (
                 // Mode lecture seule – also needs its own provider so GridItem
                 // can look up widget positions from the wallpanel layout
-                hasWidgets && <WallPanelReadonlyShell />
+                <AnimatePresence>
+                  {hasWidgets && !awayFromTablet && (
+                    <motion.div key='wallpanel-widgets' initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                      <WallPanelReadonlyShell />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               )}
             </div>
 

@@ -8,6 +8,7 @@ import { useDashboardLayout } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
+import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { PanelSelectField } from '@/components/layout/WidgetEditModal/PanelSelectField';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
@@ -453,6 +454,30 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                         {extent === 100 ? t('layout.wallPanel.widgetSizeFull') : `${extent} %`}
                       </button>
                     ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className='text-white/55 text-xs font-medium'>{t('layout.wallPanel.presenceEntity')}</p>
+                  <p className='text-white/28 text-[10px] mt-0.5 mb-2'>{t('layout.wallPanel.presenceEntityDesc')}</p>
+                  <div className='flex items-center gap-2'>
+                    <div className='flex-1 min-w-0'>
+                      <EntityPicker
+                        label=''
+                        value={draft.presence_entity ?? ''}
+                        domain='binary_sensor'
+                        onChange={presence_entity => update({ presence_entity })}
+                      />
+                    </div>
+                    {draft.presence_entity && (
+                      <button
+                        onClick={() => update({ presence_entity: undefined })}
+                        aria-label={t('common.delete')}
+                        className='p-2 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/[0.08] transition-colors'
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
                   </div>
                 </div>
 
