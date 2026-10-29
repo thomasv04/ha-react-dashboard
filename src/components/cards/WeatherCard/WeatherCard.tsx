@@ -41,6 +41,7 @@ function ConditionIcon({
   }
   const fallback = conditionIcon(condition);
   const Icon = (custom ? resolveIcon(custom) : undefined) ?? fallback.Icon;
+  // eslint-disable-next-line react-hooks/static-components
   return <Icon size={size} aria-hidden='true' style={{ color: fallback.color }} />;
 }
 
