@@ -813,7 +813,8 @@
         "label": "Panneau info (More Info)"
       }
     },
-    "error": "[Erreur template : {message}]"
+    "error": "[Erreur template : {message}]",
+    "placeholder": "Carte template"
   },
   "vacuum": {
     "label": "Aspirateur",

@@ -813,7 +813,8 @@
         "label": "Info panel (More Info)"
       }
     },
-    "error": "[Template error: {message}]"
+    "error": "[Template error: {message}]",
+    "placeholder": "Template card"
   },
   "vacuum": {
     "label": "Vacuum",
