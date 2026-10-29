@@ -300,7 +300,9 @@
     "saved": "À jour",
     "widgetSize": "Place des widgets",
     "widgetSizeDesc": "Part de l'écran occupée par la grille",
-    "widgetSizeFull": "Plein"
+    "widgetSizeFull": "Plein",
+    "presenceEntity": "Capteur de présence",
+    "presenceEntityDesc": "Les widgets n'apparaissent que lorsque ce capteur détecte quelqu'un ; sinon la photo a tout l'écran"
   },
   "panelNoneCreated": "Aucun panneau pour l'instant — créez-en un depuis le mode édition.",
   "dockLabelsOn": "Libellés",

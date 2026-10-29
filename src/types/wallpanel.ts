@@ -73,6 +73,12 @@ export interface WallPanelConfig {
    * plus étroites.
    */
   widgetExtent?: number;
+  /**
+   * Capteur de présence (`binary_sensor`) devant la tablette. Défini, les
+   * widgets n'apparaissent que lorsqu'il est `on` : le reste du temps la photo
+   * a tout l'écran. Absent : widgets toujours visibles.
+   */
+  presence_entity?: string;
 }
 
 export const DEFAULT_GESTURES: WallPanelGestures = {
