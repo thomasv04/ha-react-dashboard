@@ -267,7 +267,12 @@
           "compact": "Compact (1 row)"
         }
       }
-    }
+    },
+    "previous": "Previous track",
+    "next": "Next track",
+    "play": "Play",
+    "pause": "Pause",
+    "volume": "Volume"
   },
   "person": {
     "label": "People",

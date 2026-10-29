@@ -1,8 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Music } from 'lucide-react';
-import { useRipple, RippleLayer } from '@/components/ui/Ripple';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -13,21 +10,9 @@ import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { cn } from '@/lib/utils';
 import { friendlyName } from '@/lib/ha-service';
+import { PillSlider } from '@/components/ds/PillSlider';
 
-// ── Compact layout (small widget, ≤ 2 rows) ────────────────────────────────────
-function CompactLayout({
-  name,
-  title,
-  artist,
-  cover,
-  isPlaying,
-  isOff,
-  volume: _volume,
-  onToggle,
-  onNext,
-  onPrev,
-  onVolume: _onVolume,
-}: {
+interface PlayerProps {
   name: string;
   title?: string;
   artist?: string;
@@ -35,244 +20,141 @@ function CompactLayout({
   isPlaying: boolean;
   isOff: boolean;
   volume: number;
+  progress: number;
+  duration: number;
   onToggle: () => void;
   onNext: () => void;
   onPrev: () => void;
   onVolume: (v: number) => void;
-}) {
+}
+
+function Cover({ cover, className, iconSize }: { cover?: string; className: string; iconSize: number }) {
+  return (
+    <div className={cn('flex shrink-0 items-center justify-center overflow-hidden bg-[var(--ds-surface-3)]', className)}>
+      {cover ? (
+        <img src={cover} alt='' className='size-full object-cover' />
+      ) : (
+        <Music size={iconSize} aria-hidden='true' className='text-[var(--ds-ink-muted)]' />
+      )}
+    </div>
+  );
+}
+
+/** Précédent, lecture/pause en grand, suivant — boutons ronds. */
+function Controls({
+  isPlaying,
+  onToggle,
+  onNext,
+  onPrev,
+  big,
+}: Pick<PlayerProps, 'isPlaying' | 'onToggle' | 'onNext' | 'onPrev'> & { big?: boolean }) {
+  const { t } = useI18n();
+  const side = cn('flex shrink-0 items-center justify-center rounded-full', big ? 'size-12' : 'size-10');
+  return (
+    <div className='flex shrink-0 items-center gap-2'>
+      <button onClick={onPrev} aria-label={t('widgets.media_player.previous')} title={t('widgets.media_player.previous')} className={side}>
+        <SkipBack size={big ? 22 : 18} fill='currentColor' />
+      </button>
+      <button
+        onClick={onToggle}
+        aria-label={isPlaying ? t('widgets.media_player.pause') : t('widgets.media_player.play')}
+        title={isPlaying ? t('widgets.media_player.pause') : t('widgets.media_player.play')}
+        className={cn('flex shrink-0 items-center justify-center rounded-full bg-[var(--ds-surface-3)]', big ? 'size-16' : 'size-12')}
+      >
+        {isPlaying ? (
+          <Pause size={big ? 26 : 20} fill='currentColor' />
+        ) : (
+          <Play size={big ? 26 : 20} fill='currentColor' className='ml-0.5' />
+        )}
+      </button>
+      <button onClick={onNext} aria-label={t('widgets.media_player.next')} title={t('widgets.media_player.next')} className={side}>
+        <SkipForward size={big ? 22 : 18} fill='currentColor' />
+      </button>
+    </div>
+  );
+}
+
+function Progress({ progress, duration }: { progress: number; duration: number }) {
+  if (duration <= 0) return null;
+  const pct = Math.min(100, (progress / duration) * 100);
+  return (
+    <div aria-hidden='true' className='h-1.5 shrink-0 overflow-hidden rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)]'>
+      <div
+        className='h-full rounded-[var(--ds-radius-pill)] bg-[var(--ds-ink)] transition-[width] duration-1000'
+        style={{ width: `${pct}%` }}
+      />
+    </div>
+  );
+}
+
+function Volume({ volume, onVolume }: Pick<PlayerProps, 'volume' | 'onVolume'>) {
+  const { t } = useI18n();
+  const pct = Math.round(volume * 100);
+  return (
+    <PillSlider
+      value={pct}
+      onChange={v => onVolume(v / 100)}
+      label={t('widgets.media_player.volume')}
+      valueText={`${pct} %`}
+      icon={Volume2}
+      className='h-11 shrink-0'
+    />
+  );
+}
+
+function TrackInfo({ name, title, artist, isOff }: Pick<PlayerProps, 'name' | 'title' | 'artist' | 'isOff'>) {
   const { t } = useI18n();
   return (
-    <div className='flex items-center gap-3 h-full'>
-      {/* Album art */}
-      <div className='w-12 h-12 shrink-0 rounded-xl overflow-hidden bg-white/5 flex items-center justify-center'>
-        {cover ? <img src={cover} alt='cover' className='w-full h-full object-cover' /> : <Music size={20} className='text-white/20' />}
+    <div className='min-w-0'>
+      <div className='truncate text-[17px] font-semibold leading-tight'>{isOff ? name : title || t('widgets.media_player.idle')}</div>
+      <div className='truncate text-sm text-[var(--ds-ink-muted)]'>
+        {isOff ? t('widgets.media_player.off') : [artist, name].filter(Boolean).join(' · ')}
       </div>
+    </div>
+  );
+}
 
-      {/* Info + controls */}
-      <div className='flex-1 min-w-0'>
-        <div className='text-white/40 text-[10px] uppercase tracking-wider truncate'>{name}</div>
-        {isOff ? (
-          <div className='text-white/20 text-xs mt-0.5'>{t('widgets.media_player.off')}</div>
-        ) : (
-          <div className='text-white text-xs font-medium truncate mt-0.5'>{title || t('widgets.media_player.idle')}</div>
-        )}
-        {artist && !isOff && <div className='text-white/40 text-[10px] truncate'>{artist}</div>}
+// ── Compact layout (small widget, ≤ 2 rows) ────────────────────────────────────
+function CompactLayout(p: PlayerProps) {
+  return (
+    <div className='flex h-full items-center gap-3 px-4'>
+      <Cover cover={p.cover} className='size-14 rounded-[var(--ds-radius-md)]' iconSize={22} />
+      <div className='min-w-0 flex-1'>
+        <TrackInfo {...p} />
       </div>
-
-      {/* Controls */}
-      <div className='flex items-center gap-1 shrink-0'>
-        <button onClick={onPrev} className='w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors'>
-          <SkipBack size={13} className='text-white/60' />
-        </button>
-        <button
-          onClick={onToggle}
-          className='w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 transition-colors'
-        >
-          {isPlaying ? <Pause size={14} className='text-white' /> : <Play size={14} className='text-white ml-0.5' />}
-        </button>
-        <button onClick={onNext} className='w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors'>
-          <SkipForward size={13} className='text-white/60' />
-        </button>
-      </div>
+      <Controls {...p} />
     </div>
   );
 }
 
 // ── Normal horizontal layout ───────────────────────────────────────────────────
-function HorizontalLayout({
-  name,
-  title,
-  artist,
-  cover,
-  isPlaying,
-  isOff,
-  volume,
-  progress,
-  duration,
-  onToggle,
-  onNext,
-  onPrev,
-  onVolume,
-}: {
-  name: string;
-  title?: string;
-  artist?: string;
-  cover?: string;
-  isPlaying: boolean;
-  isOff: boolean;
-  volume: number;
-  progress: number;
-  duration: number;
-  onToggle: () => void;
-  onNext: () => void;
-  onPrev: () => void;
-  onVolume: (v: number) => void;
-}) {
-  const { t } = useI18n();
-  const progressPct = duration > 0 ? Math.min(100, (progress / duration) * 100) : 0;
-
+function HorizontalLayout(p: PlayerProps) {
   return (
-    <div className='flex gap-4 h-full'>
-      {/* Album art */}
-      <div className='w-full max-w-[120px] aspect-square shrink-0 rounded-2xl overflow-hidden bg-white/5 flex items-center justify-center self-center'>
-        {cover ? <img src={cover} alt='cover' className='w-full h-full object-cover' /> : <Music size={36} className='text-white/20' />}
-      </div>
-
-      {/* Right side */}
-      <div className='flex flex-col justify-between flex-1 min-w-0 py-1'>
-        <div className='text-white/40 text-[10px] uppercase tracking-wider truncate'>{name}</div>
-
-        {isOff ? (
-          <div className='text-white/30 text-sm'>{t('widgets.media_player.off')}</div>
-        ) : (
-          <div>
-            <div className='text-white font-semibold truncate text-sm'>{title || t('widgets.media_player.idle')}</div>
-            {artist && <div className='text-white/50 text-xs truncate mt-0.5'>{artist}</div>}
-          </div>
-        )}
-
-        {/* Progress bar */}
-        {!isOff && duration > 0 && (
-          <div className='h-1 rounded-full bg-white/10 overflow-hidden'>
-            <div className='h-full rounded-full bg-white/60 transition-all duration-1000' style={{ width: `${progressPct}%` }} />
-          </div>
-        )}
-
-        {/* Controls */}
-        <div className='flex items-center gap-2'>
-          <button onClick={onPrev} className='w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors'>
-            <SkipBack size={15} className='text-white/60' />
-          </button>
-          <button
-            onClick={onToggle}
-            className='w-9 h-9 flex items-center justify-center rounded-xl bg-white/15 hover:bg-white/25 transition-colors'
-          >
-            {isPlaying ? <Pause size={16} className='text-white' /> : <Play size={16} className='text-white ml-0.5' />}
-          </button>
-          <button onClick={onNext} className='w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors'>
-            <SkipForward size={15} className='text-white/60' />
-          </button>
-
-          {/* Volume */}
-          <div className='flex items-center gap-1.5 ml-auto'>
-            <Volume2 size={12} className='text-white/30 shrink-0' />
-            <input
-              type='range'
-              min={0}
-              max={100}
-              value={Math.round(volume * 100)}
-              onChange={e => onVolume(parseInt(e.target.value, 10) / 100)}
-              onClick={e => e.stopPropagation()}
-              className='w-16 h-1 rounded-full appearance-none cursor-pointer bg-white/10
-                [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3
-                [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full
-                [&::-webkit-slider-thumb]:bg-white/80'
-              style={{
-                background: `linear-gradient(to right, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.4) ${Math.round(volume * 100)}%, rgba(255,255,255,0.1) ${Math.round(volume * 100)}%, rgba(255,255,255,0.1) 100%)`,
-              }}
-            />
-          </div>
+    <div className='flex h-full flex-col justify-between gap-3 p-[var(--ds-space-4)]'>
+      <div className='flex min-h-0 items-center gap-4'>
+        <Cover cover={p.cover} className='size-20 rounded-[var(--ds-radius-md)]' iconSize={30} />
+        <div className='min-w-0 flex-1'>
+          <TrackInfo {...p} />
         </div>
+        <Controls {...p} />
       </div>
+      {!p.isOff && <Progress progress={p.progress} duration={p.duration} />}
+      <Volume volume={p.volume} onVolume={p.onVolume} />
     </div>
   );
 }
 
 // ── Large vertical layout ──────────────────────────────────────────────────────
-function VerticalLayout({
-  name,
-  title,
-  artist,
-  cover,
-  isPlaying,
-  isOff,
-  volume,
-  progress,
-  duration,
-  onToggle,
-  onNext,
-  onPrev,
-  onVolume,
-}: {
-  name: string;
-  title?: string;
-  artist?: string;
-  cover?: string;
-  isPlaying: boolean;
-  isOff: boolean;
-  volume: number;
-  progress: number;
-  duration: number;
-  onToggle: () => void;
-  onNext: () => void;
-  onPrev: () => void;
-  onVolume: (v: number) => void;
-}) {
-  const { t } = useI18n();
-  const progressPct = duration > 0 ? Math.min(100, (progress / duration) * 100) : 0;
-
+function VerticalLayout(p: PlayerProps) {
   return (
-    <div className='flex flex-col h-full gap-3'>
-      {/* Album art — full width */}
-      <div className='w-full flex-1 min-h-0 rounded-2xl overflow-hidden bg-white/5 flex items-center justify-center'>
-        {cover ? <img src={cover} alt='cover' className='w-full h-full object-cover' /> : <Music size={48} className='text-white/20' />}
+    <div className='flex h-full flex-col gap-3 p-[var(--ds-space-4)]'>
+      <Cover cover={p.cover} className='min-h-0 w-full flex-1 rounded-[var(--ds-radius-lg)]' iconSize={48} />
+      <TrackInfo {...p} />
+      {!p.isOff && <Progress progress={p.progress} duration={p.duration} />}
+      <div className='flex shrink-0 justify-center'>
+        <Controls {...p} big />
       </div>
-
-      {/* Track info */}
-      <div className='shrink-0'>
-        <div className='text-white/40 text-[10px] uppercase tracking-wider truncate'>{name}</div>
-        {isOff ? (
-          <div className='text-white/30 text-sm mt-1'>{t('widgets.media_player.off')}</div>
-        ) : (
-          <>
-            <div className='text-white font-semibold truncate text-sm mt-0.5'>{title || t('widgets.media_player.idle')}</div>
-            {artist && <div className='text-white/50 text-xs truncate'>{artist}</div>}
-          </>
-        )}
-      </div>
-
-      {/* Progress */}
-      {!isOff && (
-        <div className='h-1 rounded-full bg-white/10 overflow-hidden shrink-0'>
-          <div className='h-full rounded-full bg-white/60 transition-all duration-1000' style={{ width: `${progressPct}%` }} />
-        </div>
-      )}
-
-      {/* Controls row */}
-      <div className='flex items-center justify-between shrink-0'>
-        <button onClick={onPrev} className='w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white/10 transition-colors'>
-          <SkipBack size={18} className='text-white/60' />
-        </button>
-        <button
-          onClick={onToggle}
-          className='w-12 h-12 flex items-center justify-center rounded-2xl bg-white/15 hover:bg-white/25 transition-colors'
-        >
-          {isPlaying ? <Pause size={20} className='text-white' /> : <Play size={20} className='text-white ml-0.5' />}
-        </button>
-        <button onClick={onNext} className='w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white/10 transition-colors'>
-          <SkipForward size={18} className='text-white/60' />
-        </button>
-      </div>
-
-      {/* Volume */}
-      <div className='flex items-center gap-2 shrink-0'>
-        <Volume2 size={12} className='text-white/30 shrink-0' />
-        <input
-          type='range'
-          min={0}
-          max={100}
-          value={Math.round(volume * 100)}
-          onChange={e => onVolume(parseInt(e.target.value, 10) / 100)}
-          onClick={e => e.stopPropagation()}
-          className='flex-1 h-1 rounded-full appearance-none cursor-pointer bg-white/10
-            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5
-            [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full
-            [&::-webkit-slider-thumb]:bg-white/80'
-          style={{
-            background: `linear-gradient(to right, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.4) ${Math.round(volume * 100)}%, rgba(255,255,255,0.1) ${Math.round(volume * 100)}%, rgba(255,255,255,0.1) 100%)`,
-          }}
-        />
-      </div>
+      <Volume volume={p.volume} onVolume={p.onVolume} />
     </div>
   );
 }
@@ -287,7 +169,6 @@ export function MediaPlayerCard() {
 
   const entity = useSafeEntity(entityId);
   const helpers = useHass(s => s.helpers);
-  const { ripples, trigger: triggerRipple } = useRipple();
   const playFeedback = useSoundFeedback();
 
   const haVolume = (entity?.attributes.volume_level as number | undefined) ?? 0;
@@ -308,13 +189,9 @@ export function MediaPlayerCard() {
 
   if (!entity) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className='gc rounded-3xl p-5 flex items-center justify-center h-full'
-      >
-        <span className='text-white/30 text-sm'>{t('widgets.media_player.notFound')}</span>
-      </motion.div>
+      <div className='gc flex h-full items-center justify-center p-5'>
+        <span className='text-sm text-[var(--ds-ink-muted)]'>{t('widgets.media_player.notFound')}</span>
+      </div>
     );
   }
 
@@ -352,7 +229,7 @@ export function MediaPlayerCard() {
   const disposition = config?.disposition ?? 'horizontal';
   const isCompact = config?.compact === true;
 
-  const sharedProps = {
+  const props: PlayerProps = {
     name,
     title,
     artist,
@@ -360,6 +237,8 @@ export function MediaPlayerCard() {
     isPlaying,
     isOff,
     volume,
+    progress: position,
+    duration,
     onToggle: handleToggle,
     onNext: handleNext,
     onPrev: handlePrev,
@@ -367,20 +246,14 @@ export function MediaPlayerCard() {
   };
 
   return (
-    <motion.div
-      {...CARD_ENTRANCE}
-      onPointerDown={triggerRipple}
-      className={cn('gc rounded-3xl p-4 h-full relative overflow-hidden', isPlaying && 'ring-1 ring-white/10')}
-    >
-      <RippleLayer ripples={ripples} color='rgba(255,255,255,0.05)' />
-
+    <div className='h-full overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] text-[var(--ds-ink)]'>
       {isCompact || disposition === 'compact' ? (
-        <CompactLayout {...sharedProps} />
+        <CompactLayout {...props} />
       ) : disposition === 'vertical' ? (
-        <VerticalLayout {...sharedProps} progress={position} duration={duration} />
+        <VerticalLayout {...props} />
       ) : (
-        <HorizontalLayout {...sharedProps} progress={position} duration={duration} />
+        <HorizontalLayout {...props} />
       )}
-    </motion.div>
+    </div>
   );
 }

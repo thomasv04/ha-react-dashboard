@@ -267,7 +267,12 @@
           "compact": "Compacte (1 ligne)"
         }
       }
-    }
+    },
+    "previous": "Morceau précédent",
+    "next": "Morceau suivant",
+    "play": "Lecture",
+    "pause": "Pause",
+    "volume": "Volume"
   },
   "person": {
     "label": "Personnes",
