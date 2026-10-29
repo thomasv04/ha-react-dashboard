@@ -1,7 +1,5 @@
 import { useRef, useState } from 'react';
-import { motion } from 'framer-motion';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
-import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { useHass } from '@hakit/core';
 import { useEntities } from '@/hooks/useEntities';
 import { CameraFeed } from '@/components/ui/CameraFeed/components/CameraFeed';
@@ -68,38 +66,24 @@ export function CameraCard() {
 
   const chips = (
     <>
-      {cameras.map((cam, i) => {
+      {cameras.map(cam => {
         const isActive = cam.name === selected;
         return (
-          <motion.button
+          <button
             key={cam.name}
-            initial={{ opacity: 0, x: asOverlay ? 0 : 14, y: asOverlay ? -8 : 0 }}
-            animate={{ opacity: 1, x: 0, y: 0 }}
-            transition={{ duration: 0.25, delay: i * 0.05 }}
-            whileTap={{ scale: 0.96 }}
+            aria-pressed={isActive}
             onClick={e => {
               e.stopPropagation();
               select(cam.name);
             }}
             className={cn(
-              'font-medium transition-all duration-200 whitespace-nowrap',
-              asOverlay
-                ? cn(
-                    // `min-h-8` : cible tactile praticable sur un bandeau posé
-                    // sur le flux, sans manger la vidéo.
-                    'px-3 min-h-8 rounded-full text-xs shrink-0 backdrop-blur-md border active:scale-95 transition-transform',
-                    isActive ? 'bg-white/85 text-black border-white/60' : 'bg-black/45 text-white/75 border-white/15'
-                  )
-                : cn(
-                    'w-full text-center px-3 py-2.5 rounded-2xl text-sm',
-                    isActive
-                      ? 'gc-inner text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]'
-                      : 'text-white/45 hover:text-white/75 hover:bg-white/5'
-                  )
+              'min-h-10 shrink-0 whitespace-nowrap rounded-[var(--ds-radius-pill)] px-4 text-sm font-semibold transition-colors',
+              asOverlay ? '' : 'w-full',
+              isActive ? 'bg-white text-[#1b2230]' : asOverlay ? 'bg-black/55 text-white' : 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)]'
             )}
           >
             {cam.name}
-          </motion.button>
+          </button>
         );
       })}
     </>
@@ -107,16 +91,16 @@ export function CameraCard() {
 
   if (!hasCamera) {
     return (
-      <div ref={cardRef} className='gc rounded-3xl p-5 h-full flex items-center justify-center text-center'>
-        <p className='text-white/35 text-xs leading-relaxed'>{t('widgets.camera.empty')}</p>
+      <div ref={cardRef} className='gc flex h-full items-center justify-center p-5 text-center'>
+        <p className='text-sm text-[var(--ds-ink-muted)]'>{t('widgets.camera.empty')}</p>
       </div>
     );
   }
 
   return (
-    <motion.div ref={cardRef} {...CARD_ENTRANCE} className='gc rounded-3xl p-3 flex gap-3 h-full'>
+    <div ref={cardRef} className='flex h-full gap-3 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)]'>
       {/* ── Single camera feed ── */}
-      <div className='flex-1 min-w-0 relative rounded-2xl overflow-hidden bg-black/50'>
+      <div className='relative min-w-0 flex-1 overflow-hidden bg-black'>
         <CameraFeed
           key={current.entityId}
           entityId={current.entityId}
@@ -128,23 +112,17 @@ export function CameraCard() {
 
         {/* Sélecteur en bandeau — cards étroites */}
         {asOverlay && showSelector && (
-          <div className='absolute top-0 left-0 right-0 pt-2 pb-4 px-2 bg-gradient-to-b from-black/55 to-transparent'>
-            <div className='flex gap-1.5 overflow-x-auto scrollbar-none'>{chips}</div>
+          <div className='absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-3 pb-3 pt-6'>
+            <div className='flex gap-2 overflow-x-auto scrollbar-none'>{chips}</div>
           </div>
         )}
 
         {/* Camera name overlay */}
-        <div className='absolute bottom-2 left-0 right-0 flex justify-center gap-1.5 pointer-events-none'>
-          <span className='text-xs text-white/75 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full'>{current.name}</span>
+        {/* Nom en haut à gauche, sur l'image, comme les vignettes de la maquette */}
+        <div className='pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 bg-gradient-to-b from-black/60 to-transparent px-3.5 pb-6 pt-3 text-white'>
+          <span className='truncate text-[17px] font-semibold'>{current.name}</span>
           {protocol && (
-            <span
-              className={cn(
-                'text-xs font-medium backdrop-blur-sm px-2 py-1 rounded-full',
-                protocol === 'HLS' ? 'bg-blue-500/30 text-blue-200' : 'bg-amber-500/30 text-amber-200'
-              )}
-            >
-              {protocol}
-            </span>
+            <span className='shrink-0 rounded-[var(--ds-radius-pill)] bg-black/55 px-2.5 py-1 text-xs font-semibold'>{protocol}</span>
           )}
         </div>
       </div>
@@ -153,8 +131,8 @@ export function CameraCard() {
       {/* `overflow-y-auto` : une installation avec beaucoup de caméras ne peut
           pas faire déborder la card, quelle que soit sa hauteur. */}
       {!asOverlay && showSelector && (
-        <div className='w-[110px] flex flex-col gap-1.5 justify-center shrink-0 overflow-y-auto scrollbar-none'>{chips}</div>
+        <div className='flex w-[130px] shrink-0 flex-col justify-center gap-2 overflow-y-auto py-3 pr-3 scrollbar-none'>{chips}</div>
       )}
-    </motion.div>
+    </div>
   );
 }
