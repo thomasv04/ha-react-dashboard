@@ -1062,7 +1062,9 @@
       "allowAdd": {
         "label": "Champ d'ajout"
       }
-    }
+    },
+    "add": "Ajouter une tâche",
+    "remaining": "{count} restantes"
   },
   "fan": {
     "label": "Ventilateur",

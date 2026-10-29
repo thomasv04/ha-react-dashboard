@@ -1062,7 +1062,9 @@
       "allowAdd": {
         "label": "Add field"
       }
-    }
+    },
+    "add": "Add an item",
+    "remaining": "{count} left"
   },
   "fan": {
     "label": "Fan",
