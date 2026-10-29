@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from 'react';
 import type { WidgetConfigs } from '@/types/widget-configs';
-import { compactVertically, firstFreeSlot, packWidgets } from '@/lib/grid-utils';
 import { isTypingTarget } from '@/lib/utils';
+import { EMPTY_LAYOUT, newPanel, toPanelLayout } from '@/lib/panel-grid';
 import { usePages, type Page } from '@/context/PageContext';
 import type { WallPanelConfig } from '@/types/wallpanel';
 import type { CustomPanel, DockConfig } from '@/types/custom-panel';
@@ -12,9 +12,9 @@ import type { ManifestWidgetType } from '@/widgets/registry';
 export { WIDGET_CATALOG, SIZE_PRESETS };
 
 /**
- * Configuration d'un widget sur la grille
- * - x, y: position en colonnes et lignes
- * - w, h: largeur et hauteur en unités de grille
+ * Un widget dans un panneau. Sa place vient de son rang dans le panneau : il
+ * n'a plus de coordonnées, seulement une taille en cases de la trame.
+ * - w, h: largeur en colonnes, hauteur en rangées
  */
 export interface GridWidget {
   id: string;
@@ -24,20 +24,12 @@ export interface GridWidget {
    * la main, et un script en regex vérifiait qu'elle suivait les manifestes.
    */
   type: ManifestWidgetType;
-  x: number;
-  y: number;
   w: number;
   h: number;
   static?: boolean;
   /** ID de la disposition choisie (ex: 'horizontal', 'vertical') */
   disposition?: string;
-  /**
-   * Position sur une page `floorplan`, en % du plan : centre de l'élément, et
-   * taille pour les widgets (une pastille prend celle de son contenu).
-   *
-   * À côté de `x/y/w/h` et non à leur place : le compactage au chargement,
-   * `firstFreeSlot` et « Réorganiser » réécrivent ceux-là en unités de grille.
-   */
+  /** Position sur une page `floorplan`, en % du plan : centre de l'élément, et taille pour les widgets. */
   pos?: FloorplanPos;
 }
 
@@ -55,7 +47,7 @@ export interface FloorplanPos {
 
 export type { WidgetCatalogEntry } from '@/config/widget-catalog';
 
-/** 3 presets de taille (compact/normal/large) par type de widget et par breakpoint */
+/** 3 presets de taille (compact/normal/large) par type de widget */
 export type SizePresetName = 'Compact' | 'Normal' | 'Large';
 export interface SizePreset {
   name: SizePresetName;
@@ -67,13 +59,23 @@ export interface SizePreset {
 // central que les manifestes suppriment. Les appelants utilisent déjà `?.`.
 export type WidgetSizePresets = Partial<Record<GridWidget['type'], Partial<Record<'lg' | 'md' | 'sm', SizePreset[]>>>>;
 
+/**
+ * Un panneau de l'Echo Show : un titre facultatif, une largeur en colonnes de
+ * la trame, et ses tuiles dans l'ordre où elles se rangent.
+ */
+export interface LayoutPanel {
+  id: string;
+  title?: string;
+  cols: number;
+  widgets: GridWidget[];
+}
+
+/**
+ * Une page : ses panneaux, côte à côte. Une seule disposition pour toutes les
+ * tailles d'écran — sur un écran étroit, les panneaux s'empilent.
+ */
 export interface DashboardLayout {
-  widgets: Record<'lg' | 'md' | 'sm', GridWidget[]>;
-  cols: {
-    lg: number; // Desktop (≥1200px) - 12 colonnes
-    md: number; // Tablet (768-1200px) - 8 colonnes
-    sm: number; // Mobile (<768px) - 4 colonnes
-  };
+  panels: LayoutPanel[];
 }
 
 /** Full dashboard config v1 (legacy) */
@@ -110,17 +112,23 @@ export interface DashboardConfigV2 {
 interface LayoutContextValue {
   layout: DashboardLayout;
   setLayout: (layout: DashboardLayout) => void;
-  addWidget: (widget: GridWidget) => void;
   removeWidget: (id: string) => void;
-  updateWidget: (id: string, updates: Partial<GridWidget>, breakpoint?: 'lg' | 'md' | 'sm') => void;
+  updateWidget: (id: string, updates: Partial<GridWidget>) => void;
   saveLayout: () => void;
-  addWidgetByType: (type: GridWidget['type']) => string;
-  /** Recopie un widget et sa configuration au premier emplacement libre */
+  /** Ajoute un widget à la fin d'un panneau — le dernier par défaut, créé s'il n'y en a aucun. */
+  addWidgetByType: (type: GridWidget['type'], panelId?: string) => string;
+  /** Recopie un widget et sa configuration, juste après l'original */
   duplicateWidget: (id: string) => string;
   /** Supprime plusieurs widgets en un seul geste (donc un seul « annuler ») */
   removeWidgets: (ids: string[]) => void;
-  /** Referme les trous de la mise en page courante, pour un breakpoint donné */
-  packLayout: (breakpoint: 'lg' | 'md' | 'sm') => void;
+  /** Range un widget dans un panneau, au rang `index` (à la fin si absent) */
+  moveWidget: (id: string, panelId: string, index?: number) => void;
+  addPanel: () => string;
+  updatePanel: (id: string, updates: Partial<Omit<LayoutPanel, 'id' | 'widgets'>>) => void;
+  /** Supprime un panneau et ses tuiles */
+  removePanel: (id: string) => void;
+  /** Décale un panneau d'un cran vers la gauche (-1) ou la droite (+1) */
+  movePanel: (id: string, delta: -1 | 1) => void;
   allLayouts: Record<string, DashboardLayout>;
   /** Revient au point de retour précédent (Ctrl+Z) */
   undo: () => void;
@@ -136,8 +144,8 @@ interface EditModeContextValue {
 }
 
 interface SizePresetsContextValue {
-  cycleSize: (id: string, breakpoint: 'lg' | 'md' | 'sm') => void;
-  getCurrentPresetName: (id: string, breakpoint: 'lg' | 'md' | 'sm') => SizePresetName | null;
+  cycleSize: (id: string) => void;
+  getCurrentPresetName: (id: string) => SizePresetName | null;
 }
 
 /** Combined type for the facade hook — backwards compatible */
@@ -152,24 +160,15 @@ const HISTORY_LIMIT = 20;
 /** Mutations plus rapprochées que ça = un seul point de retour. */
 const HISTORY_COALESCE_MS = 400;
 
-// Configuration par défaut (layouts différents par breakpoint)
-// On la garde ici au cas où l'API Node renvoie un fichier vide
-export const DEFAULT_LAYOUT: DashboardLayout = {
-  widgets: {
-    lg: [],
-    md: [],
-    sm: [],
-  },
-  cols: { lg: 12, md: 8, sm: 4 },
-};
+/** Page sans panneau — vierge, ou dont l'API a renvoyé un fichier vide. */
+export const DEFAULT_LAYOUT: DashboardLayout = EMPTY_LAYOUT;
 
-// 👉 Layout par défaut pour une page vide
-export const EMPTY_PAGE_LAYOUT: DashboardLayout = {
-  widgets: { lg: [], md: [], sm: [] },
-  cols: { lg: 12, md: 8, sm: 4 },
-};
+/** Applique `fn` à chaque panneau ; les autres pages ne bougent pas. */
+const mapPanels = (layout: DashboardLayout, fn: (p: LayoutPanel) => LayoutPanel): DashboardLayout => ({
+  ...layout,
+  panels: layout.panels.map(fn),
+});
 
-// 👉 NOUVEAU : On passe initialLayouts en prop depuis Dashboard.tsx !
 interface ProviderProps {
   children: ReactNode;
   initialLayouts?: Record<string, DashboardLayout>;
@@ -188,18 +187,7 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
   // Sync when server data loads (runs once after initial fetch completes)
   useEffect(() => {
     if (!initialLayouts || Object.keys(initialLayouts).length === 0) return;
-    const compacted: Record<string, DashboardLayout> = {};
-    for (const [pageId, l] of Object.entries(initialLayouts)) {
-      compacted[pageId] = {
-        ...l,
-        widgets: {
-          lg: compactVertically(l.widgets.lg, l.cols.lg),
-          md: compactVertically(l.widgets.md, l.cols.md),
-          sm: compactVertically(l.widgets.sm, l.cols.sm),
-        },
-      };
-    }
-    setLayouts(compacted);
+    setLayouts(Object.fromEntries(Object.entries(initialLayouts).map(([pageId, l]) => [pageId, toPanelLayout(l)])));
   }, [initialLayouts]);
 
   // Sync new/deleted pages: ensure every current page has a layout entry
@@ -212,9 +200,7 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
         if (pageIds.has(id)) updated[id] = l;
       }
       for (const page of pages) {
-        if (!(page.id in updated)) {
-          updated[page.id] = { ...EMPTY_PAGE_LAYOUT };
-        }
+        if (!(page.id in updated)) updated[page.id] = DEFAULT_LAYOUT;
       }
       return updated;
     });
@@ -314,252 +300,167 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
     // et les envoie via useDashboardConfig() !
   };
 
-  const setLayout = useCallback(
-    (newLayout: DashboardLayout) => {
+  /** Applique une transformation à la page courante, en un point de retour. */
+  const mutate = useCallback(
+    (fn: (layout: DashboardLayout) => DashboardLayout) => {
       pushHistory();
-      setLayouts(prev => ({ ...prev, [currentPageId]: newLayout }));
+      setLayouts(prev => ({ ...prev, [currentPageId]: fn(prev[currentPageId] ?? DEFAULT_LAYOUT) }));
     },
     [currentPageId, pushHistory]
   );
 
-  const addWidget = useCallback(
-    (widget: GridWidget, breakpoint: 'lg' | 'md' | 'sm' = 'lg') => {
-      pushHistory();
-      setLayouts(prev => {
-        const current = prev[currentPageId] ?? DEFAULT_LAYOUT;
-        return {
-          ...prev,
-          [currentPageId]: {
-            ...current,
-            widgets: {
-              ...current.widgets,
-              [breakpoint]: [...current.widgets[breakpoint], widget],
-            },
-          },
-        };
-      });
-    },
-    [currentPageId, pushHistory]
-  );
+  const setLayout = useCallback((newLayout: DashboardLayout) => mutate(() => newLayout), [mutate]);
 
-  // Supprime de tous les breakpoints
-  const removeWidget = useCallback(
-    (id: string) => {
-      pushHistory();
-      setLayouts(prev => {
-        const current = prev[currentPageId] ?? DEFAULT_LAYOUT;
-        return {
-          ...prev,
-          [currentPageId]: {
-            ...current,
-            widgets: {
-              lg: current.widgets.lg.filter(w => w.id !== id),
-              md: current.widgets.md.filter(w => w.id !== id),
-              sm: current.widgets.sm.filter(w => w.id !== id),
-            },
-          },
-        };
-      });
-    },
-    [currentPageId, pushHistory]
-  );
-
-  /**
-   * Supprime plusieurs widgets d'un coup, sur tous les breakpoints.
-   *
-   * Un seul point d'historique (`pushHistory` n'est appelé qu'une fois) : une
-   * suppression multiple est un geste, et devrait s'annuler d'un seul Ctrl+Z.
-   */
   const removeWidgets = useCallback(
     (ids: string[]) => {
       if (ids.length === 0) return;
       const doomed = new Set(ids);
-      pushHistory();
-      setLayouts(prev => {
-        const current = prev[currentPageId] ?? DEFAULT_LAYOUT;
-        return {
-          ...prev,
-          [currentPageId]: {
-            ...current,
-            widgets: {
-              lg: current.widgets.lg.filter(w => !doomed.has(w.id)),
-              md: current.widgets.md.filter(w => !doomed.has(w.id)),
-              sm: current.widgets.sm.filter(w => !doomed.has(w.id)),
-            },
-          },
-        };
-      });
+      mutate(l => mapPanels(l, p => ({ ...p, widgets: p.widgets.filter(w => !doomed.has(w.id)) })));
     },
-    [currentPageId, pushHistory]
+    [mutate]
   );
 
+  const removeWidget = useCallback((id: string) => removeWidgets([id]), [removeWidgets]);
+
   const updateWidget = useCallback(
-    (id: string, updates: Partial<GridWidget>, breakpoint: 'lg' | 'md' | 'sm' = 'lg') => {
-      pushHistory();
-      setLayouts(prev => {
-        const current = prev[currentPageId] ?? DEFAULT_LAYOUT;
-        return {
-          ...prev,
-          [currentPageId]: {
-            ...current,
-            widgets: {
-              ...current.widgets,
-              [breakpoint]: current.widgets[breakpoint].map(w => (w.id === id ? { ...w, ...updates } : w)),
-            },
-          },
-        };
-      });
-    },
-    [currentPageId, pushHistory]
+    (id: string, updates: Partial<GridWidget>) =>
+      mutate(l => mapPanels(l, p => ({ ...p, widgets: p.widgets.map(w => (w.id === id ? { ...w, ...updates } : w)) }))),
+    [mutate]
   );
 
   const addWidgetByType = useCallback(
-    (type: GridWidget['type']) => {
+    (type: GridWidget['type'], panelId?: string) => {
       // Try new disposition system first, fallback to WIDGET_CATALOG
-      const dispositions = WIDGET_DISPOSITIONS[type];
-      const disposition = dispositions?.[0];
+      const disposition = WIDGET_DISPOSITIONS[type]?.[0];
       const def = WIDGET_CATALOG.find(d => d.type === type);
       if (!disposition && !def) return '';
-      pushHistory();
       // Generate a unique id so the same type can be added multiple times
       const id = `${type}-${Date.now()}`;
-      setLayouts(prev => {
-        const current = prev[currentPageId] ?? DEFAULT_LAYOUT;
-        // Première place libre plutôt que `x: 0` tout en bas : un widget de
-        // demi-largeur se range à côté d'un autre au lieu d'ouvrir une rangée
-        // à moitié vide. C'est ce qui produisait des trous latéraux définitifs,
-        // puisque le compactage ne referme que la verticale.
-        const make = (bp: 'lg' | 'md' | 'sm'): GridWidget => {
-          const size = disposition ? disposition.defaultSize[bp] : def![bp];
-          const w = Math.min(size.w, current.cols[bp]);
-          const { x, y } = firstFreeSlot(current.widgets[bp], current.cols[bp], w, size.h);
-          return {
-            id,
-            type,
-            x,
-            y,
-            w,
-            h: size.h,
-            ...(disposition ? { disposition: disposition.id } : {}),
-          };
+      const size = disposition ? disposition.defaultSize.lg : def!.lg;
+      mutate(l => {
+        // Pas encore de panneau : le premier widget en crée un.
+        const panels = l.panels.length ? l.panels : [newPanel()];
+        const target = panels.find(p => p.id === panelId) ?? panels[panels.length - 1];
+        const widget: GridWidget = {
+          id,
+          type,
+          w: Math.min(size.w, target.cols),
+          h: size.h,
+          ...(disposition ? { disposition: disposition.id } : {}),
         };
-        return {
-          ...prev,
-          [currentPageId]: {
-            ...current,
-            widgets: {
-              lg: [...current.widgets.lg, make('lg')],
-              md: [...current.widgets.md, make('md')],
-              sm: [...current.widgets.sm, make('sm')],
-            },
-          },
-        };
+        return { ...l, panels: panels.map(p => (p.id === target.id ? { ...p, widgets: [...p.widgets, widget] } : p)) };
       });
       // Initialize widget config using the type's default (if one exists)
       const defaultCfg = DEFAULT_WIDGET_CONFIGS[type];
-      if (defaultCfg) {
-        widgetCfgUpdate(id, { ...defaultCfg });
-      }
+      if (defaultCfg) widgetCfgUpdate(id, { ...defaultCfg });
       return id;
     },
-    [currentPageId, widgetCfgUpdate, pushHistory]
+    [mutate, widgetCfgUpdate]
   );
 
   /**
-   * Recopie un widget, sa configuration comprise.
+   * Recopie un widget, sa configuration comprise, juste après l'original.
    *
    * C'est là tout l'intérêt : refaire à la main un thermostat ou un graphe
    * finement réglé, uniquement pour l'avoir sur une autre page, était le geste
    * le plus fastidieux du mode édition.
-   *
-   * La copie est placée au premier emplacement libre de chaque breakpoint —
-   * pas aux coordonnées de l'original, où elle se superposerait exactement.
    */
   const duplicateWidget = useCallback(
     (id: string) => {
-      const source = layoutsRef.current[currentPageId]?.widgets.lg.find(w => w.id === id);
+      const source = (layoutsRef.current[currentPageId] ?? DEFAULT_LAYOUT).panels.flatMap(p => p.widgets).find(w => w.id === id);
       if (!source) return '';
-
       const newId = `${source.type}-${Date.now()}`;
-      pushHistory();
-
-      setLayouts(prev => {
-        const current = prev[currentPageId] ?? DEFAULT_LAYOUT;
-        const widgets = { ...current.widgets };
-        for (const bp of ['lg', 'md', 'sm'] as const) {
-          const original = current.widgets[bp].find(w => w.id === id);
-          if (!original) continue;
-          const { x, y } = firstFreeSlot(current.widgets[bp], current.cols[bp], original.w, original.h);
-          widgets[bp] = [...current.widgets[bp], { ...original, id: newId, x, y }];
-        }
-        return { ...prev, [currentPageId]: { ...current, widgets } };
-      });
-
+      mutate(l =>
+        mapPanels(l, p => {
+          const at = p.widgets.findIndex(w => w.id === id);
+          if (at < 0) return p;
+          return { ...p, widgets: [...p.widgets.slice(0, at + 1), { ...source, id: newId }, ...p.widgets.slice(at + 1)] };
+        })
+      );
       const sourceConfig = getWidgetConfig(id);
       if (sourceConfig) widgetCfgUpdate(newId, { ...sourceConfig });
-
       return newId;
     },
-    [currentPageId, pushHistory, getWidgetConfig, widgetCfgUpdate]
+    [currentPageId, mutate, getWidgetConfig, widgetCfgUpdate]
   );
 
-  const packLayout = useCallback(
-    (breakpoint: 'lg' | 'md' | 'sm') => {
-      pushHistory();
-      setLayouts(prev => {
-        const current = prev[currentPageId] ?? DEFAULT_LAYOUT;
-        return {
-          ...prev,
-          [currentPageId]: {
-            ...current,
-            widgets: {
-              ...current.widgets,
-              [breakpoint]: packWidgets(current.widgets[breakpoint], current.cols[breakpoint]),
-            },
-          },
-        };
-      });
-    },
-    [currentPageId, pushHistory]
+  const moveWidget = useCallback(
+    (id: string, panelId: string, index?: number) =>
+      mutate(l => {
+        const widget = l.panels.flatMap(p => p.widgets).find(w => w.id === id);
+        if (!widget) return l;
+        return mapPanels(l, p => {
+          const rest = p.widgets.filter(w => w.id !== id);
+          if (p.id !== panelId) return rest.length === p.widgets.length ? p : { ...p, widgets: rest };
+          // Le rang est compté *avant* le retrait : déplacer vers la droite
+          // dans le même panneau décale d'une case.
+          const from = p.widgets.findIndex(w => w.id === id);
+          let at = index ?? rest.length;
+          if (from >= 0 && from < at) at -= 1;
+          at = Math.max(0, Math.min(at, rest.length));
+          return { ...p, widgets: [...rest.slice(0, at), { ...widget, w: Math.min(widget.w, p.cols) }, ...rest.slice(at)] };
+        });
+      }),
+    [mutate]
   );
+
+  const addPanel = useCallback(() => {
+    const panel = newPanel();
+    mutate(l => ({ ...l, panels: [...l.panels, panel] }));
+    return panel.id;
+  }, [mutate]);
+
+  const updatePanel = useCallback(
+    (id: string, updates: Partial<Omit<LayoutPanel, 'id' | 'widgets'>>) =>
+      mutate(l =>
+        mapPanels(l, p => {
+          if (p.id !== id) return p;
+          const next = { ...p, ...updates };
+          // Un panneau rétréci ramène ses tuiles trop larges à sa largeur.
+          return { ...next, widgets: next.widgets.map(w => (w.w > next.cols ? { ...w, w: next.cols } : w)) };
+        })
+      ),
+    [mutate]
+  );
+
+  const removePanel = useCallback((id: string) => mutate(l => ({ ...l, panels: l.panels.filter(p => p.id !== id) })), [mutate]);
+
+  const movePanel = useCallback(
+    (id: string, delta: -1 | 1) =>
+      mutate(l => {
+        const from = l.panels.findIndex(p => p.id === id);
+        const to = from + delta;
+        if (from < 0 || to < 0 || to >= l.panels.length) return l;
+        const panels = [...l.panels];
+        [panels[from], panels[to]] = [panels[to], panels[from]];
+        return { ...l, panels };
+      }),
+    [mutate]
+  );
+
+  const findWidget = (l: DashboardLayout, id: string) => l.panels.flatMap(p => p.widgets).find(w => w.id === id);
 
   const cycleSize = useCallback(
-    (id: string, breakpoint: 'lg' | 'md' | 'sm') => {
-      pushHistory();
-      setLayouts(prev => {
-        const current = prev[currentPageId] ?? DEFAULT_LAYOUT;
-        const widgets = current.widgets[breakpoint];
-        const widget = widgets.find(w => w.id === id);
-        if (!widget || widget.static) return prev;
-        const presets = SIZE_PRESETS[widget.type]?.[breakpoint];
-        if (!presets || presets.length === 0) return prev;
-        // Trouver le preset actuel par correspondance exacte w+h
-        const currentIdx = presets.findIndex(p => p.w === widget.w && p.h === widget.h);
-        const nextPreset = presets[(currentIdx + 1) % presets.length];
-        return {
-          ...prev,
-          [currentPageId]: {
-            ...current,
-            widgets: {
-              ...current.widgets,
-              [breakpoint]: widgets.map(w => (w.id === id ? { ...w, w: nextPreset.w, h: nextPreset.h } : w)),
-            },
-          },
-        };
-      });
+    (id: string) => {
+      const widget = findWidget(layoutsRef.current[currentPageId] ?? DEFAULT_LAYOUT, id);
+      if (!widget || widget.static) return;
+      const presets = SIZE_PRESETS[widget.type]?.lg;
+      if (!presets || presets.length === 0) return;
+      // Trouver le preset actuel par correspondance exacte w+h
+      const currentIdx = presets.findIndex(p => p.w === widget.w && p.h === widget.h);
+      const next = presets[(currentIdx + 1) % presets.length];
+      updateWidget(id, { w: next.w, h: next.h });
     },
-    [currentPageId, pushHistory]
+    [currentPageId, updateWidget]
   );
 
   const getCurrentPresetName = useCallback(
-    (id: string, breakpoint: 'lg' | 'md' | 'sm'): SizePresetName | null => {
-      const currentLayout = layouts[currentPageId] ?? DEFAULT_LAYOUT;
-      const widget = currentLayout.widgets[breakpoint]?.find(w => w.id === id);
+    (id: string): SizePresetName | null => {
+      const widget = findWidget(layouts[currentPageId] ?? DEFAULT_LAYOUT, id);
       if (!widget) return null;
-      const presets = SIZE_PRESETS[widget.type]?.[breakpoint];
+      const presets = SIZE_PRESETS[widget.type]?.lg;
       if (!presets) return null;
-      const match = presets.find(p => p.w === widget.w && p.h === widget.h);
-      return match?.name ?? 'Normal';
+      return presets.find(p => p.w === widget.w && p.h === widget.h)?.name ?? 'Normal';
     },
     [layouts, currentPageId]
   );
@@ -572,14 +473,17 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
     () => ({
       layout,
       setLayout,
-      addWidget,
       removeWidget,
       updateWidget,
       saveLayout,
       addWidgetByType,
       duplicateWidget,
       removeWidgets,
-      packLayout,
+      moveWidget,
+      addPanel,
+      updatePanel,
+      removePanel,
+      movePanel,
       allLayouts: layouts,
       undo,
       redo,
@@ -589,14 +493,17 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
     [
       layout,
       setLayout,
-      addWidget,
       removeWidget,
       updateWidget,
       saveLayout,
       addWidgetByType,
       duplicateWidget,
       removeWidgets,
-      packLayout,
+      moveWidget,
+      addPanel,
+      updatePanel,
+      removePanel,
+      movePanel,
       layouts,
       undo,
       redo,

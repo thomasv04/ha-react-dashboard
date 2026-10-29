@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION_FAST } from '@/lib/motion-tokens';
-import { PencilLine, Check, X, CloudUpload, Plus, Loader2, LayoutGrid, HelpCircle, Undo2, Redo2, Trash2 } from 'lucide-react';
+import { PencilLine, Check, X, CloudUpload, Plus, Loader2, HelpCircle, Undo2, Redo2, Trash2 } from 'lucide-react';
 import { useUser } from '@hakit/core';
 import { useDashboardLayout, useEditMode } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -12,7 +12,6 @@ import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 import { AddWidgetModal } from '@/components/layout/AddWidgetModal';
 import { HelpModal } from '@/components/onboarding/HelpModal';
 import { useI18n } from '@/i18n';
-import { useIsMobile } from '@/hooks/useIsMobile';
 import { useGridSelection } from '@/components/layout/DashboardGrid';
 import { useTheme } from '@/context/ThemeContext';
 
@@ -20,16 +19,9 @@ export function EditButton() {
   const { t } = useI18n();
   const user = useUser();
   const { isEditMode, setEditMode } = useEditMode();
-  const { saveLayout, allLayouts, packLayout, undo, redo, canUndo, canRedo, removeWidgets } = useDashboardLayout();
-  // Le tassement ne s'applique qu'au breakpoint affiché : les trois
-  // dispositions sont indépendantes. Les deux hooks sont appelés
-  // inconditionnellement — les enchaîner dans un ternaire sauterait le second
-  // appel selon le résultat du premier.
-  const isNarrow = useIsMobile(768);
-  const isMedium = useIsMobile(1200);
-  const breakpoint: 'lg' | 'md' | 'sm' = isNarrow ? 'sm' : isMedium ? 'md' : 'lg';
+  const { saveLayout, allLayouts, undo, redo, canUndo, canRedo, removeWidgets } = useDashboardLayout();
   const { allWidgetConfigsByPage } = useWidgetConfig();
-  const { pages, currentPage } = usePages();
+  const { pages } = usePages();
   const { config: wpConfig, wallPanelLayout, wallPanelWidgetConfigs } = useWallPanel();
   const { panels: customPanels, dock } = useCustomPanels();
   const selection = useGridSelection();
@@ -193,23 +185,6 @@ export function EditButton() {
                 <Plus size={15} />
                 <span className='hidden sm:inline'>{t('common.add')}</span>
               </button>
-
-              {/* Réorganiser — referme les trous de la mise en page courante.
-                  Action explicite, jamais automatique : appliquée sans le
-                  demander à une mise en page desktop soignée, elle déplacerait
-                  presque tous les widgets. Ne concerne que le breakpoint
-                  affiché, et reste annulable tant qu'on n'a pas sauvegardé.
-                  Absent d'un plan, où rien ne se range en grille. */}
-              {currentPage?.type !== 'floorplan' && (
-                <button
-                  onClick={() => packLayout(breakpoint)}
-                  title={t('dashboard.packTooltip')}
-                  className='flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white/70 hover:text-white text-sm font-medium transition-colors backdrop-blur-sm'
-                >
-                  <LayoutGrid size={15} />
-                  <span className='hidden sm:inline'>{t('dashboard.pack')}</span>
-                </button>
-              )}
 
               {/* Bouton Sauvegarder */}
               <button

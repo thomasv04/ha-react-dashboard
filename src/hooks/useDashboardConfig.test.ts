@@ -48,7 +48,7 @@ describe('useDashboardConfig', () => {
     const v2Config = {
       version: 2,
       pages: [{ id: 'home', label: 'Home', icon: 'LayoutGrid', type: 'grid', order: 0 }],
-      layouts: { home: { widgets: { lg: [], md: [], sm: [] } } },
+      layouts: { home: { panels: [{ id: 'p', title: 'Favoris', cols: 6, widgets: [{ id: 'w', type: 'light', w: 2, h: 2 }] }] } },
       widgetConfigs: { home: {} },
     };
     mockFetch(v2Config);
@@ -79,7 +79,7 @@ describe('useDashboardConfig', () => {
     // After migration the v1 layout ends up under "home" page. Les coordonnées
     // absentes du format v1 sont complétées plutôt que de faire disparaître la
     // carte (cf. `sanitizeWidget`).
-    expect(result.current.allLayouts.home.widgets.lg).toEqual([{ id: 'w1', type: 'light', x: 0, y: 0, w: 2, h: 2 }]);
+    expect(result.current.allLayouts.home.panels[0].widgets).toEqual([{ id: 'w1', type: 'light', w: 2, h: 2 }]);
   });
 
   it('handles "no config" (message response) by using defaults', async () => {
@@ -97,7 +97,7 @@ describe('useDashboardConfig', () => {
   const NEW_CONFIG = {
     version: 2 as const,
     pages: [{ id: 'custom', label: 'Custom', icon: 'Star', type: 'grid' as const, order: 0 }],
-    layouts: { custom: { widgets: { lg: [], md: [], sm: [] }, cols: { lg: 12, md: 8, sm: 4 } } },
+    layouts: { custom: { panels: [] } },
     widgetConfigs: { custom: {} },
   };
 
@@ -238,8 +238,8 @@ describe('useDashboardConfig', () => {
     // La carte sans type disparaît, celle dont la position est cassée survit
     // avec des coordonnées de repli — supprimer le travail de l'utilisateur
     // pour un `x` corrompu serait pire que le défaut lui-même.
-    expect(result.current.allLayouts.home.widgets.lg.map(w => w.id)).toEqual(['ok', 'position-cassée']);
-    expect(result.current.allLayouts.home.widgets.lg[1]).toMatchObject({ x: 0, y: 0, w: 2, h: 2 });
+    expect(result.current.allLayouts.home.panels[0].widgets.map(w => w.id)).toEqual(['ok', 'position-cassée']);
+    expect(result.current.allLayouts.home.panels[0].widgets[1]).toMatchObject({ w: 2, h: 2 });
     expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'dashboard.repairedTitle' }));
   });
 
@@ -292,7 +292,7 @@ describe('useDashboardConfig', () => {
     const cachedConfig = {
       version: 2,
       pages: [{ id: 'home', label: 'Depuis le cache', icon: 'LayoutGrid', type: 'grid', order: 0 }],
-      layouts: { home: { widgets: { lg: [], md: [], sm: [] }, cols: { lg: 12, md: 8, sm: 4 } } },
+      layouts: { home: { panels: [] } },
       widgetConfigs: { home: {} },
     };
     localStorage.setItem('ha-dashboard-config-cache', JSON.stringify(cachedConfig));

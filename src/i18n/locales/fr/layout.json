@@ -23,7 +23,7 @@
   "desktop": "Desktop",
   "tablet": "Tablette",
   "mobile": "Mobile",
-  "minSize": "Taille minimum : {w} colonnes × {h} lignes ({label})",
+  "minSize": "Taille minimum : {w} colonnes × {h} rangées",
   "tabs": {
     "config": "Configuration",
     "advanced": "Avancé",
@@ -563,5 +563,20 @@
     "movePageDown": "Descendre",
     "deletePage": "Supprimer la page",
     "noPanels": "Aucun panneau pour l’instant"
+  },
+  "panel": {
+    "untitled": "Panneau sans titre",
+    "title": "Titre du panneau",
+    "width": "{value} colonnes",
+    "narrower": "Plus étroit",
+    "wider": "Plus large",
+    "moveLeft": "Vers la gauche",
+    "moveRight": "Vers la droite",
+    "remove": "Supprimer le panneau",
+    "removeConfirm": "Supprimer ce panneau et ses tuiles ?",
+    "addTile": "Ajouter une tuile",
+    "addPanel": "Ajouter un panneau",
+    "moveTile": "Déplacer la tuile",
+    "resize": "Redimensionner"
   }
 }

@@ -9,6 +9,7 @@ import { GRID_GAP, GRID_ROW } from '@/lib/panel-grid';
 import { getMinSize } from '@/widgets';
 import { useI18n } from '@/i18n';
 import { ItemContent } from './FloorplanItem';
+import { layoutWidgets } from '@/lib/panel-grid';
 
 /** Petit bouton de la barre d'une card de la colonne, en édition. */
 function ToolButton({ icon: Icon, label, onClick, danger }: { icon: typeof Plus; label: string; onClick: () => void; danger?: boolean }) {
@@ -37,15 +38,14 @@ export function FloorplanColumn({ ids, width, onChange }: { ids: string[]; width
   const { layout, isEditMode, updateWidget, removeWidget } = useDashboardLayout();
   const { setEditingWidgetId } = useWidgetConfig();
   const [adding, setAdding] = useState(false);
-  const widgets = ids.flatMap(id => layout.widgets.lg.find(w => w.id === id) ?? []);
+  const widgets = ids.flatMap(id => layoutWidgets(layout).find(w => w.id === id) ?? []);
 
   const move = (i: number, by: -1 | 1) => {
     const next = widgets.map(w => w.id);
     [next[i], next[i + by]] = [next[i + by], next[i]];
     onChange(next);
   };
-  const resize = (w: GridWidget, by: -1 | 1) =>
-    updateWidget(w.id, { h: Math.max(getMinSize(w.type, 'lg', w.disposition).h, w.h + by) }, 'lg');
+  const resize = (w: GridWidget, by: -1 | 1) => updateWidget(w.id, { h: Math.max(getMinSize(w.type, 'lg', w.disposition).h, w.h + by) });
 
   return (
     <div data-floorplan-column className='absolute left-3 top-3 bottom-3 z-30 overflow-y-auto overscroll-contain' style={{ width }}>

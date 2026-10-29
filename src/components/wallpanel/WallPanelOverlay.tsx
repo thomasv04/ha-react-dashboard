@@ -20,6 +20,7 @@ import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 import type { WallPanelSave } from './WallPanelEditShell';
+import { layoutWidgets } from '@/lib/panel-grid';
 
 type Sheet = 'quick' | 'notifications';
 
@@ -65,7 +66,7 @@ export function WallPanelOverlay() {
   const { t } = useI18n();
   const user = useUser();
   const { isActive, deactivate, wallPanelLayout, config, isWallPanelEditMode, enterWallPanelEditMode } = useWallPanel();
-  const hasWidgets = wallPanelLayout.widgets.lg.length > 0;
+  const hasWidgets = layoutWidgets(wallPanelLayout).length > 0;
   // Fond sur une maquette : la page Plan, que la veille a ouverte dessous, se
   // voit au travers — ni voile noir, ni photos.
   const planBackdrop = !!useScreensaverPlan();

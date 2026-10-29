@@ -5,48 +5,45 @@ import { useI18n } from '@/i18n';
 
 interface CardLayoutTabProps {
   widgetId: string;
-  breakpoint: 'lg' | 'md' | 'sm';
 }
 
-export function CardLayoutTab({ widgetId, breakpoint }: CardLayoutTabProps) {
+export function CardLayoutTab({ widgetId }: CardLayoutTabProps) {
   const { t } = useI18n();
   const { layout, updateWidget } = useDashboardLayout();
-  const widget = layout.widgets[breakpoint]?.find(w => w.id === widgetId);
+  const panel = layout.panels.find(p => p.widgets.some(w => w.id === widgetId));
+  const widget = panel?.widgets.find(w => w.id === widgetId);
 
-  if (!widget) return null;
+  if (!panel || !widget) return null;
 
-  const cols = layout.cols[breakpoint];
+  // La tuile ne dépasse pas la largeur de son panneau.
+  const cols = panel.cols;
   const dispositions = WIDGET_DISPOSITIONS[widget.type] ?? [];
-  const minSize = getMinSize(widget.type, breakpoint, widget.disposition);
+  const minSize = getMinSize(widget.type, 'lg', widget.disposition);
 
   const maxW = cols;
   const maxH = 12;
 
   const setWidth = (w: number) => {
     const clamped = clamp(w, minSize.w, maxW);
-    updateWidget(widgetId, { w: clamped }, breakpoint);
+    updateWidget(widgetId, { w: clamped });
   };
 
   const setHeight = (h: number) => {
     const clamped = clamp(h, minSize.h, maxH);
-    updateWidget(widgetId, { h: clamped }, breakpoint);
+    updateWidget(widgetId, { h: clamped });
   };
 
   const setDisposition = (dispositionId: string) => {
     const newDisposition = dispositions.find(d => d.id === dispositionId);
     if (!newDisposition) return;
 
-    const newMin = newDisposition.minSize[breakpoint];
+    const newMin = newDisposition.minSize.lg;
 
-    updateWidget(
-      widgetId,
-      {
-        disposition: dispositionId,
-        w: clamp(widget.w, newMin.w, maxW),
-        h: Math.max(newMin.h, widget.h),
-      },
-      breakpoint
-    );
+    updateWidget(widgetId, {
+      disposition: dispositionId,
+      w: clamp(widget.w, newMin.w, maxW),
+      h: Math.max(newMin.h, widget.h),
+    });
   };
 
   return (
@@ -139,22 +136,19 @@ export function CardLayoutTab({ widgetId, breakpoint }: CardLayoutTabProps) {
             </div>
 
             {/* Grille miniature */}
-            <GridPreview cols={cols} widgetW={widget.w} widgetH={widget.h} widgetX={widget.x} />
+            <GridPreview cols={cols} widgetW={widget.w} widgetH={widget.h} />
           </div>
         </div>
       </div>
 
       {/* ── Info taille min ──────────────────────────────────── */}
-      <div className='text-[11px] text-white/20'>
-        Taille minimum : {minSize.w} colonnes × {minSize.h} lignes (
-        {breakpoint === 'lg' ? 'Desktop' : breakpoint === 'md' ? 'Tablette' : 'Mobile'})
-      </div>
+      <div className='text-[11px] text-white/20'>{t('layout.minSize', { w: minSize.w, h: minSize.h })}</div>
     </div>
   );
 }
 
 // ── Mini-grille de prévisualisation ─────────────────────────────────────────
-function GridPreview({ cols, widgetW, widgetH, widgetX }: { cols: number; widgetW: number; widgetH: number; widgetX: number }) {
+function GridPreview({ cols, widgetW, widgetH }: { cols: number; widgetW: number; widgetH: number }) {
   const displayRows = Math.max(widgetH + 1, 4);
 
   return (
@@ -168,7 +162,7 @@ function GridPreview({ cols, widgetW, widgetH, widgetX }: { cols: number; widget
       {Array.from({ length: displayRows * cols }, (_, i) => {
         const col = i % cols;
         const row = Math.floor(i / cols);
-        const isWidget = col >= widgetX && col < widgetX + widgetW && row >= 0 && row < widgetH;
+        const isWidget = col < widgetW && row < widgetH;
 
         return (
           <div

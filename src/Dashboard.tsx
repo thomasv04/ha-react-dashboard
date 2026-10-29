@@ -5,7 +5,7 @@ import { WidgetConfigProvider } from '@/context/WidgetConfigContext';
 import { PageProvider } from '@/context/PageContext';
 import { MoreInfoProvider } from '@/context/MoreInfoContext';
 import { PanelOverlay } from '@/components/layout/Panel';
-import { DashboardGrid, GridItem } from '@/components/layout/DashboardGrid';
+import { DashboardGrid } from '@/components/layout/DashboardGrid';
 import { WidgetEditModal } from '@/components/layout/WidgetEditModal';
 import { PageBadges } from '@/components/layout/PageBadges';
 import { TopBar } from '@/components/shell/TopBar';
@@ -13,7 +13,7 @@ import { NavRail } from '@/components/shell/NavRail';
 import { Launcher } from '@/components/shell/Launcher';
 import { MoreInfoModal } from '@/components/modals/MoreInfoModal';
 import { LoadingScreen } from '@/components/layout/LoadingScreen';
-import { lazy, Suspense, useCallback, useEffect, useState, memo } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, LayoutGroup } from 'framer-motion';
 
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
@@ -23,18 +23,6 @@ import { WallPanelOverlay } from '@/components/wallpanel/WallPanelOverlay';
 import { useIdleDetector } from '@/hooks/useIdleDetector';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { WIDGET_COMPONENTS } from '@/widgets';
-import type { GridWidget } from '@/context/DashboardLayoutContext';
-
-const WidgetItem = memo(function WidgetItem({ widget }: { widget: GridWidget }) {
-  const Component = WIDGET_COMPONENTS[widget.type];
-  if (!Component) return null;
-  return (
-    <GridItem id={widget.id}>
-      <Component />
-    </GridItem>
-  );
-});
 
 import { EditButton } from '@/components/dashboard/EditButton';
 import { ActivePanel } from '@/components/dashboard/ActivePanel';
@@ -48,6 +36,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { usePages } from '@/context/PageContext';
 import { usePanel } from '@/context/PanelContext';
 import { useMoreInfo } from '@/context/MoreInfoContext';
+import { layoutWidgets } from '@/lib/panel-grid';
 
 // La page plan ne se télécharge qu'à sa première visite : sans plan, rien à payer.
 const FloorplanView = lazy(() => import('@/components/floorplan/FloorplanView').then(m => ({ default: m.FloorplanView })));
@@ -137,7 +126,7 @@ function DashboardContent() {
   const isMobile = useIsMobile(640);
   const isCompact = useIsMobile(768) && !isMobile;
   // Use lg layout as canonical list of widget ids (all breakpoints share same ids)
-  const widgets = layout.widgets.lg;
+  const widgets = layoutWidgets(layout);
   const isFloorplan = currentPage?.type === 'floorplan';
   const [launcherOpen, setLauncherOpen] = useState(false);
   const closeLauncher = useCallback(() => setLauncherOpen(false), []);
@@ -171,11 +160,7 @@ function DashboardContent() {
             </WidgetErrorBoundary>
           ) : (
             <>
-              <DashboardGrid className={isMobile ? 'mobile-layout' : isCompact ? 'compact-layout' : undefined}>
-                {widgets.map(widget => (
-                  <WidgetItem key={widget.id} widget={widget} />
-                ))}
-              </DashboardGrid>
+              <DashboardGrid className={isMobile ? 'mobile-layout' : isCompact ? 'compact-layout' : undefined} />
 
               {widgets.length === 0 && <DashboardEmptyState />}
             </>

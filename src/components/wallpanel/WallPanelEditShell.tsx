@@ -5,10 +5,9 @@ import { useWallPanel } from '@/context/WallPanelContext';
 import { PageProvider, type Page } from '@/context/PageContext';
 import { WidgetConfigProvider, useWidgetConfig } from '@/context/WidgetConfigContext';
 import { DashboardLayoutProvider, useDashboardLayout, useEditMode } from '@/context/DashboardLayoutContext';
-import { DashboardGrid, GridItem } from '@/components/layout/DashboardGrid';
+import { DashboardGrid } from '@/components/layout/DashboardGrid';
 import { AddWidgetModal } from '@/components/layout/AddWidgetModal';
 import { WidgetEditModal } from '@/components/layout/WidgetEditModal';
-import { WIDGET_COMPONENTS } from '@/widgets';
 import { useI18n } from '@/i18n';
 import { widgetExtentOf, type WallPanelConfig, type WidgetAnchor } from '@/types/wallpanel';
 import type { WidgetConfigs } from '@/types/widget-configs';
@@ -113,31 +112,6 @@ function WallPanelEditActions({ onSave }: { onSave?: WallPanelSave }) {
 }
 
 /**
- * Renders the current wallpanel layout's widgets as GridItems.
- * Must be inside the nested DashboardLayoutProvider.
- */
-function WallPanelGridWidgets() {
-  const { layout } = useDashboardLayout();
-  const widgets = layout.widgets.lg;
-  return (
-    <>
-      {widgets.map(widget => {
-        // `WIDGET_COMPONENTS`, comme la grille du dashboard : une liste propre
-        // a l'ecran de veille n'en connaissait que dix, et tout widget ajoute
-        // depuis — camera, volet, aspirateur… — disparaissait sans un mot.
-        const Component = WIDGET_COMPONENTS[widget.type];
-        if (!Component) return null;
-        return (
-          <GridItem key={widget.id} id={widget.id}>
-            <Component />
-          </GridItem>
-        );
-      })}
-    </>
-  );
-}
-
-/**
  * Same isolated provider stack as WallPanelEditShell, but in readonly mode.
  * Required so DashboardGrid/GridItem can resolve widget positions from the
  * wallpanel layout rather than the main dashboard layout.
@@ -170,9 +144,7 @@ export function WallPanelReadonlyShell() {
               cette bande couvre toute la largeur, et en `auto` elle interceptait
               les balayages destinés au fond entre deux cards. */}
           <div className={`pointer-events-none ${anchorStyle(config).className}`} style={anchorStyle(config).style}>
-            <DashboardGrid readonly>
-              <WallPanelGridWidgets />
-            </DashboardGrid>
+            <DashboardGrid readonly />
           </div>
         </DashboardLayoutProvider>
       </WidgetConfigProvider>
@@ -205,9 +177,7 @@ export function WallPanelEditShell({ onSave }: { onSave?: WallPanelSave }) {
         <DashboardLayoutProvider initialLayouts={initialLayouts}>
           <WallPanelEditActions onSave={onSave} />
           <div className={`pointer-events-auto ${anchorStyle(config).className}`} style={anchorStyle(config).style}>
-            <DashboardGrid>
-              <WallPanelGridWidgets />
-            </DashboardGrid>
+            <DashboardGrid />
           </div>
         </DashboardLayoutProvider>
       </WidgetConfigProvider>

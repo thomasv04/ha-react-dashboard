@@ -8,6 +8,7 @@ import type { CustomPanel, DockConfig } from '@/types/custom-panel';
 import { useToast } from '@/context/ToastContext';
 import { useI18n } from '@/i18n';
 import { apiFetch } from '@/lib/api-base';
+import { layoutWidgets, toPanelLayout } from '@/lib/panel-grid';
 import { withDemoFloorplan } from '@/mocks/demoFloorplan';
 
 /** Au-delà, on considère le serveur injoignable et on rend depuis le cache. */
@@ -43,8 +44,8 @@ export type ConfigStatus =
 // Une fonction de garde suffit : le schéma est petit et stable. `zod` ajouterait
 // une dépendance et une deuxième définition de la même forme.
 
-/** Position de repli d'un widget dont les coordonnées sont illisibles. */
-const FALLBACK_BOX = { x: 0, y: 0, w: 2, h: 2 };
+/** Taille de repli d'un widget dont les dimensions sont illisibles. */
+const FALLBACK_BOX = { w: 2, h: 2 };
 
 /**
  * Rend un widget affichable, ou `null` s'il ne peut pas l'être.
@@ -53,9 +54,9 @@ const FALLBACK_BOX = { x: 0, y: 0, w: 2, h: 2 };
  *
  * - **`id` ou `type` manquant** → écarté. La grille indexe par `id` et le rendu
  *   choisit le composant par `type` : sans eux, il n'y a rien à afficher.
- * - **coordonnée illisible** → réparée. Une carte mal placée reste une carte que
- *   l'utilisateur a créée et configurée ; la supprimer pour un `x` corrompu
- *   détruirait son travail là où un déplacement suffit à réparer.
+ * - **dimension illisible** → réparée. Une carte mal dimensionnée reste une carte
+ *   que l'utilisateur a créée et configurée ; la supprimer pour un `w` corrompu
+ *   détruirait son travail là où un redimensionnement suffit à réparer.
  */
 function sanitizeWidget(w: unknown): GridWidget | null {
   if (!w || typeof w !== 'object') return null;
@@ -63,7 +64,7 @@ function sanitizeWidget(w: unknown): GridWidget | null {
   if (typeof g.id !== 'string' || typeof g.type !== 'string') return null;
 
   const box: Record<string, number> = {};
-  for (const k of ['x', 'y', 'w', 'h'] as const) {
+  for (const k of ['w', 'h'] as const) {
     box[k] = typeof g[k] === 'number' && Number.isFinite(g[k]) ? (g[k] as number) : FALLBACK_BOX[k];
   }
   return { ...g, ...box } as unknown as GridWidget;
@@ -82,23 +83,27 @@ function sanitizeConfig(config: DashboardConfigV2): { config: DashboardConfigV2;
   const pages = Array.isArray(config.pages) ? config.pages.filter(p => p && typeof p.id === 'string') : [...DEFAULT_PAGES];
   dropped += (Array.isArray(config.pages) ? config.pages.length : 0) - pages.length;
 
+  // Les dispositions d'avant la 4.0 (grilles libres en coordonnées) passent
+  // ici au format des panneaux.
+  const sanitizeLayout = (raw: unknown): DashboardLayout => {
+    const panels = toPanelLayout(raw).panels.filter(p => p && typeof p.id === 'string' && Array.isArray(p.widgets));
+    return {
+      panels: panels.map(p => {
+        const kept = p.widgets.map(sanitizeWidget).filter((w): w is GridWidget => w !== null);
+        dropped += p.widgets.length - kept.length;
+        return { ...p, cols: typeof p.cols === 'number' && p.cols > 0 ? p.cols : 12, widgets: kept };
+      }),
+    };
+  };
+
   const layouts: Record<string, DashboardLayout> = {};
-  for (const [pageId, layout] of Object.entries(config.layouts ?? {})) {
-    const widgets = { lg: [], md: [], sm: [] } as DashboardLayout['widgets'];
-    for (const bp of ['lg', 'md', 'sm'] as const) {
-      const list = layout?.widgets?.[bp];
-      if (!Array.isArray(list)) continue;
-      const kept = list.map(sanitizeWidget).filter((w): w is GridWidget => w !== null);
-      dropped += list.length - kept.length;
-      widgets[bp] = kept;
-    }
-    layouts[pageId] = { ...layout, widgets };
-  }
+  for (const [pageId, layout] of Object.entries(config.layouts ?? {})) layouts[pageId] = sanitizeLayout(layout);
+  const wallPanel = config.wallPanel && { ...config.wallPanel, layout: sanitizeLayout(config.wallPanel.layout) };
 
   // Aucune page valide : mieux vaut un dashboard vierge, où les réglages
   // restent accessibles, qu'un écran sans rien du tout.
   return {
-    config: { ...config, pages: pages.length ? pages : [...DEFAULT_PAGES], layouts },
+    config: { ...config, pages: pages.length ? pages : [...DEFAULT_PAGES], layouts, ...(wallPanel && { wallPanel }) },
     dropped,
   };
 }
@@ -115,7 +120,7 @@ export function wallPanelWidgetConfigsOf(v2: DashboardConfigV2): WidgetConfigs {
   const saved = v2.wallPanel?.widgetConfigs;
   if (saved && Object.keys(saved).length > 0) return saved;
 
-  const ids = new Set((v2.wallPanel?.layout?.widgets?.lg ?? []).map(w => w.id));
+  const ids = new Set(layoutWidgets(toPanelLayout(v2.wallPanel?.layout)).map(w => w.id));
   const harvested: WidgetConfigs = {};
   for (const configs of Object.values(v2.widgetConfigs ?? {})) {
     for (const [id, config] of Object.entries(configs)) {
@@ -166,7 +171,8 @@ function migrateConfig(data: unknown): DashboardConfigV2 {
 function readCache(): DashboardConfigV2 | null {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
-    return raw ? (JSON.parse(raw) as DashboardConfigV2) : null;
+    // Un cache écrit avant la 4.0 porte encore des grilles en coordonnées.
+    return raw ? sanitizeConfig(JSON.parse(raw) as DashboardConfigV2).config : null;
   } catch {
     return null;
   }
@@ -204,9 +210,7 @@ export function useDashboardConfig() {
   const [allLayouts, setAllLayouts] = useState<Record<string, DashboardLayout>>(initial.layouts);
   const [allWidgetConfigs, setAllWidgetConfigs] = useState<Record<string, WidgetConfigs>>(initial.widgetConfigs);
   const [wallPanelConfig, setWallPanelConfig] = useState<WallPanelConfig>(cached?.wallPanel?.config ?? DEFAULT_WALLPANEL_CONFIG);
-  const [wallPanelLayout, setWallPanelLayout] = useState<DashboardLayout>(
-    cached?.wallPanel?.layout ?? { ...DEFAULT_LAYOUT, widgets: { lg: [], md: [], sm: [] } }
-  );
+  const [wallPanelLayout, setWallPanelLayout] = useState<DashboardLayout>(cached?.wallPanel?.layout ?? DEFAULT_LAYOUT);
   const [wallPanelWidgetConfigs, setWallPanelWidgetConfigs] = useState<WidgetConfigs>(cached ? wallPanelWidgetConfigsOf(cached) : {});
   const [customPanels, setCustomPanels] = useState<CustomPanel[]>(cached?.customPanels ?? []);
   const [dock, setDock] = useState<DockConfig | undefined>(cached?.dock);

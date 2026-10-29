@@ -125,7 +125,7 @@ export function FloorplanItem({
       // `...widget.pos` : garde le point d'accroche d'une maquette 3D, que le
       // plan en image ne connaît pas.
       if (onCommit) onCommit(last, ev.clientX, ev.clientY);
-      else updateWidget(widget.id, { pos: { ...widget.pos, ...last } }, 'lg');
+      else updateWidget(widget.id, { pos: { ...widget.pos, ...last } });
     };
     target.addEventListener('pointermove', onMove);
     target.addEventListener('pointerup', onEnd);

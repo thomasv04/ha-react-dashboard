@@ -17,9 +17,11 @@ interface AddWidgetModalProps {
   onClose: () => void;
   /** Le widget ajouté — la colonne d'une page Plan l'y range. */
   onAdded?: (id: string) => void;
+  /** Panneau où poser le widget ; le dernier par défaut. */
+  panelId?: string;
 }
 
-export function AddWidgetModal({ onClose, onAdded }: AddWidgetModalProps) {
+export function AddWidgetModal({ onClose, onAdded, panelId }: AddWidgetModalProps) {
   const { t } = useI18n();
   const { addWidgetByType } = useDashboardLayout();
   const { setEditingWidgetId, updateWidgetConfig } = useWidgetConfig();
@@ -51,7 +53,7 @@ export function AddWidgetModal({ onClose, onAdded }: AddWidgetModalProps) {
   const selectedMeta = selected ? (WIDGET_META.find(m => m.type === selected) ?? null) : null;
 
   const handleAdd = (type: GridWidget['type'], entityId?: string, entityConfigKey?: string) => {
-    const id = addWidgetByType(type);
+    const id = addWidgetByType(type, panelId);
     if (id && entityId && entityConfigKey) {
       const defaultCfg = (DEFAULT_WIDGET_CONFIGS as Record<string, WidgetConfig>)[type] ?? {};
       // Une card qui agrège (agenda, pièce) attend une liste : y poser la

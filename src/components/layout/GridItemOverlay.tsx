@@ -1,169 +1,147 @@
 import { memo, useState } from 'react';
-import { MoveDiagonal, Pencil, Trash2, Settings, Copy } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { DURATION_MICRO } from '@/lib/motion-tokens';
-import { useDashboardLayout, useSizePresets, type GridWidget, type SizePresetName } from '@/context/DashboardLayoutContext';
+import { Copy, Lock, MoveDiagonal, Settings, Trash2 } from 'lucide-react';
+import { useDashboardLayout, useSizePresets, type GridWidget } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { WIDGET_DISPOSITIONS } from '@/widgets';
 import { useI18n } from '@/i18n';
-import type { Breakpoint } from './DashboardGrid';
+import { cn } from '@/lib/utils';
 
 interface GridItemOverlayProps {
   id: string;
   label: string;
   widget: GridWidget;
-  breakpoint: Breakpoint;
+  /** Appui sur le fond du calque : la tuile se déplace. */
+  onDragStart: (e: React.PointerEvent) => void;
   onResizeStart: (clientX: number, clientY: number) => void;
 }
 
-function GridItemOverlayInner({ id, label, widget, breakpoint, onResizeStart }: GridItemOverlayProps) {
+const ROUND = 'flex size-9 items-center justify-center rounded-full';
+
+/**
+ * Calque d'édition d'une tuile. Son fond se saisit pour la déplacer ; ses
+ * boutons — qui gardent leur geste pour eux — la configurent, la dupliquent, la
+ * suppriment, et son coin la redimensionne.
+ */
+function GridItemOverlayInner({ id, label, widget, onDragStart, onResizeStart }: GridItemOverlayProps) {
   const { t } = useI18n();
   const { removeWidget, duplicateWidget } = useDashboardLayout();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const { cycleSize, getCurrentPresetName } = useSizePresets();
   const { setEditingWidgetId } = useWidgetConfig();
   const hasDispositions = !!WIDGET_DISPOSITIONS[widget.type]?.length;
-  const presetName: SizePresetName | null = getCurrentPresetName(id, breakpoint);
+  const keep = (e: React.PointerEvent) => e.stopPropagation();
 
   if (widget.static) {
     return (
-      <div className='absolute top-2 right-2 z-10 flex items-center gap-1'>
+      <div className='absolute right-2 top-2 z-10 flex items-center gap-1.5'>
         <button
           onClick={() => setEditingWidgetId(id)}
-          className='p-1.5 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-400/70 hover:text-blue-300 transition-colors cursor-pointer'
-          title={`Configurer ${label}`}
+          className={cn(ROUND, 'bg-[var(--ds-accent)] text-white')}
+          title={t('layout.configureWidget')}
+          aria-label={t('layout.configureWidget')}
         >
-          <Settings size={11} />
+          <Settings size={16} />
         </button>
-        <div className='p-1.5 rounded-lg bg-black/30 border border-white/10 text-white/35' title={`${label} - widget fixe`}>
-          <Pencil size={11} />
-        </div>
+        <span className={cn(ROUND, 'bg-black/45 text-white')} title={label}>
+          <Lock size={14} />
+        </span>
       </div>
     );
   }
 
   return (
     <div
-      className='absolute inset-0 z-10 rounded-2xl overflow-hidden flex flex-col cursor-grab active:cursor-grabbing'
-      style={{ background: 'rgba(8, 12, 35, 0.55)' }}
-      data-drag-handle
+      onPointerDown={onDragStart}
+      title={t('layout.panel.moveTile')}
+      // `touch-none` : au doigt, le navigateur défilerait la page au lieu de
+      // laisser glisser la tuile.
+      className='absolute inset-0 z-10 flex cursor-grab touch-none flex-col rounded-[var(--ds-radius-lg)] bg-black/65 text-white outline-2 outline-dashed outline-white/40 active:cursor-grabbing'
     >
-      <div className='flex items-center justify-between px-3 pt-2.5'>
-        <span className='text-[11px] font-medium text-white/45'>{label}</span>
-        <div className='flex items-center gap-1'>
+      <div className='flex items-start justify-between gap-2 p-2'>
+        <span className='truncate pl-1 pt-1.5 text-sm font-semibold'>{label}</span>
+        <div className='flex shrink-0 items-center gap-1.5' onPointerDown={keep}>
           <button
-            onMouseDown={e => e.stopPropagation()}
             onClick={() => setEditingWidgetId(id)}
-            className='p-1.5 rounded-lg bg-blue-500/15 hover:bg-blue-500/35 text-blue-400/70 hover:text-blue-300 transition-colors cursor-pointer'
+            className={cn(ROUND, 'bg-[var(--ds-accent)]')}
             title={t('layout.configureWidget')}
+            aria-label={t('layout.configureWidget')}
           >
-            <Settings size={12} />
+            <Settings size={16} />
           </button>
           {/* Dupliquer — reprend aussi la configuration. Refaire à la main un
               thermostat ou un graphe finement réglé était le geste le plus
               fastidieux du mode édition. */}
           <button
-            onMouseDown={e => e.stopPropagation()}
             onClick={() => duplicateWidget(id)}
-            className='p-1.5 rounded-lg bg-white/8 hover:bg-white/20 text-white/50 hover:text-white transition-colors cursor-pointer'
+            className={cn(ROUND, 'bg-white/20')}
             title={t('layout.duplicateWidget')}
+            aria-label={t('layout.duplicateWidget')}
           >
-            <Copy size={12} />
+            <Copy size={16} />
           </button>
-          <div className='relative'>
-            <button
-              onMouseDown={e => e.stopPropagation()}
-              onClick={() => setConfirmingDelete(true)}
-              className='p-1.5 rounded-lg bg-red-500/15 hover:bg-red-500/35 text-red-400/70 hover:text-red-300 transition-colors cursor-pointer'
-              title={t('layout.removeWidget')}
-            >
-              <Trash2 size={12} />
-            </button>
-            <AnimatePresence>
-              {confirmingDelete && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9, y: -4 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, y: -4 }}
-                  transition={{ duration: DURATION_MICRO }}
-                  onMouseDown={e => e.stopPropagation()}
-                  className='absolute right-0 top-8 z-50 flex flex-col gap-1.5 p-2.5 rounded-xl bg-[#1a1a2e] border border-red-500/30 shadow-xl min-w-[140px]'
-                >
-                  <span className='text-[11px] text-white/70 font-medium whitespace-nowrap'>{t('layout.removeWidgetConfirm')}</span>
-                  <div className='flex gap-1.5'>
-                    <button
-                      onClick={() => setConfirmingDelete(false)}
-                      className='flex-1 text-[10px] px-2 py-1 rounded-lg bg-white/8 text-white/50 hover:bg-white/15 transition-colors cursor-pointer'
-                    >
-                      {t('layout.removeWidgetCancel')}
-                    </button>
-                    <button
-                      onClick={() => {
-                        removeWidget(id);
-                        setConfirmingDelete(false);
-                      }}
-                      className='flex-1 text-[10px] px-2 py-1 rounded-lg bg-red-500/25 text-red-300 hover:bg-red-500/40 transition-colors cursor-pointer'
-                    >
-                      {t('layout.removeWidgetConfirmBtn')}
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          <button
+            onClick={() => setConfirmingDelete(true)}
+            className={cn(ROUND, 'bg-[var(--ds-alert)]')}
+            title={t('layout.removeWidget')}
+            aria-label={t('layout.removeWidget')}
+          >
+            <Trash2 size={16} />
+          </button>
         </div>
       </div>
-      <div className='flex-1' />
-      <div className='flex items-center justify-between px-3 pb-2.5'>
-        <span className='text-[10px] text-white/25'>
-          {widget.w}c × {widget.h}r
-        </span>
-        {hasDispositions ? (
-          <button
-            onMouseDown={e => e.stopPropagation()}
-            onClick={() => setEditingWidgetId(id)}
-            className='flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/8 hover:bg-purple-500/25 border border-white/12 hover:border-purple-400/40 text-white/40 hover:text-purple-200 transition-all cursor-pointer'
-            title={t('layout.layout')}
-          >
-            <MoveDiagonal size={11} />
-            <span className='text-[10px] font-medium'>
-              {widget.w}×{widget.h}
-            </span>
-          </button>
-        ) : (
-          <button
-            onMouseDown={e => e.stopPropagation()}
-            onClick={() => cycleSize(id, breakpoint)}
-            className='flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/8 hover:bg-purple-500/25 border border-white/12 hover:border-purple-400/40 text-white/40 hover:text-purple-200 transition-all cursor-pointer'
-            title={t('layout.changeSize')}
-          >
-            <MoveDiagonal size={11} />
-            <span className='text-[10px] font-medium'>{presetName ?? t('layout.sizeNormal')}</span>
-          </button>
-        )}
-      </div>
-      {/* Resize handle (bottom-right corner) */}
-      {hasDispositions && (
+
+      {confirmingDelete && (
         <div
-          className='absolute bottom-0 right-0 w-6 h-6 cursor-se-resize z-20 flex items-center justify-center'
-          onMouseDown={e => {
+          className='mx-2 flex flex-col gap-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-1)] p-3 text-[var(--ds-ink)]'
+          onPointerDown={keep}
+        >
+          <span className='text-sm font-semibold'>{t('layout.removeWidgetConfirm')}</span>
+          <div className='flex gap-2'>
+            <button
+              onClick={() => setConfirmingDelete(false)}
+              className='h-9 flex-1 rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)] text-sm font-semibold'
+            >
+              {t('layout.removeWidgetCancel')}
+            </button>
+            <button
+              onClick={() => removeWidget(id)}
+              className='h-9 flex-1 rounded-[var(--ds-radius-pill)] bg-[var(--ds-alert)] text-sm font-semibold text-white'
+            >
+              {t('layout.removeWidgetConfirmBtn')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className='mt-auto flex items-end justify-between gap-2 p-2'>
+        {/* Une disposition se choisit dans la fiche ; sinon, les trois tailles prédéfinies tournent. */}
+        <button
+          onPointerDown={keep}
+          onClick={() => (hasDispositions ? setEditingWidgetId(id) : cycleSize(id))}
+          className='flex h-9 items-center gap-1.5 rounded-[var(--ds-radius-pill)] bg-white/20 px-3 text-sm font-semibold'
+          title={hasDispositions ? t('layout.layout') : t('layout.changeSize')}
+        >
+          <MoveDiagonal size={14} />
+          {hasDispositions ? `${widget.w}×${widget.h}` : (getCurrentPresetName(id) ?? t('layout.sizeNormal'))}
+        </button>
+        <span
+          role='button'
+          aria-label={t('layout.panel.resize')}
+          title={t('layout.panel.resize')}
+          className={cn(ROUND, 'cursor-se-resize bg-white/20')}
+          onPointerDown={e => {
             e.stopPropagation();
             e.preventDefault();
             onResizeStart(e.clientX, e.clientY);
           }}
-          onTouchStart={e => {
-            e.stopPropagation();
-            const touch = e.touches[0];
-            if (touch) onResizeStart(touch.clientX, touch.clientY);
-          }}
         >
-          <svg width='10' height='10' viewBox='0 0 10 10' className='text-white/30'>
+          <svg width='12' height='12' viewBox='0 0 10 10' aria-hidden='true'>
             <line x1='9' y1='1' x2='1' y2='9' stroke='currentColor' strokeWidth='1.5' />
             <line x1='9' y1='4' x2='4' y2='9' stroke='currentColor' strokeWidth='1.5' />
             <line x1='9' y1='7' x2='7' y2='9' stroke='currentColor' strokeWidth='1.5' />
           </svg>
-        </div>
-      )}
+        </span>
+      </div>
     </div>
   );
 }

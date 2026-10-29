@@ -114,6 +114,7 @@ import { Clouds, Weather } from './FloorplanWeather';
 import { useReplay } from './useReplay';
 import { ModelPicker } from './ModelPicker';
 import { EmptyTab, Segmented, SettingsPanel, ToggleRow, type SettingsTab, type Tool } from './FloorplanSettings';
+import { layoutWidgets } from '@/lib/panel-grid';
 
 // three.js ne se télécharge que pour une page qui a une maquette.
 const Floorplan3D = lazy(() => import('./Floorplan3D'));
@@ -330,7 +331,7 @@ export function FloorplanView() {
   const backdrop = screensaver && !!screensaverPlan && screensaverPlan === currentPage?.id;
   const image = floorplan?.image;
   const model = floorplan?.model;
-  const widgets = layout.widgets.lg;
+  const widgets = layoutWidgets(layout);
   /** Les pastilles : leur entité, leur point d'accroche sur la maquette. */
   const chips = widgets.flatMap(w => {
     if (w.type !== 'chip') return [];
@@ -942,7 +943,7 @@ export function FloorplanView() {
     if (!id) return;
     updateWidgetConfig(id, { ...DEFAULT_WIDGET_CONFIGS.chip, entityId } as WidgetConfig);
     // Rapproché de l'ajout : un seul point d'annulation pour les deux.
-    updateWidget(id, { pos: { x: at.x, y: at.y, ...(at.anchor && { anchor: at.anchor }) } }, 'lg');
+    updateWidget(id, { pos: { x: at.x, y: at.y, ...(at.anchor && { anchor: at.anchor }) } });
   };
 
   /** Un coin repris suit le pointeur, sur la maquette. */
@@ -964,10 +965,10 @@ export function FloorplanView() {
   /** Une pastille lâchée sur la maquette s'y raccroche là où elle tombe. */
   const reanchor = (w: GridWidget) => (next: FloorplanPos, clientX: number, clientY: number) => {
     const anchor = three.current?.pick(clientX, clientY);
-    if (anchor) updateWidget(w.id, { pos: { ...w.pos, ...next, anchor } }, 'lg');
+    if (anchor) updateWidget(w.id, { pos: { ...w.pos, ...next, anchor } });
     // Lâchée dans le vide : une pastille accrochée reste où elle était, une
     // pastille libre prend sa nouvelle place à l'écran.
-    else if (!w.pos?.anchor) updateWidget(w.id, { pos: { ...w.pos, ...next } }, 'lg');
+    else if (!w.pos?.anchor) updateWidget(w.id, { pos: { ...w.pos, ...next } });
   };
 
   const picker = <ImageBackgroundPicker imageUrl={image ?? ''} onChange={url => setFloorplan({ image: url })} />;

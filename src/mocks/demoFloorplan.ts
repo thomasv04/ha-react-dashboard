@@ -20,8 +20,6 @@ const MODEL = 'tests/dashboard/fixtures/smart-home-floor-plan.glb';
 const chip = (id: string, anchor: [number, number, number]): GridWidget => ({
   id,
   type: 'chip',
-  x: 0,
-  y: 0,
   w: 2,
   h: 1,
   pos: { x: 50, y: 50, anchor },
@@ -42,9 +40,9 @@ const WIDGETS: GridWidget[] = [
   // La batterie SolarFlow, où se rejoignent les câbles : son niveau.
   chip('demo-batterie', [-4.1, 0.3, 1.6]),
   // La colonne de gauche : des widgets ordinaires, à la hauteur de leurs rangées.
-  { id: 'demo-horloge', type: 'clock', x: 0, y: 0, w: 3, h: 2 },
-  { id: 'demo-energie', type: 'energy_flow', x: 0, y: 0, w: 3, h: 3 },
-  { id: 'demo-agenda', type: 'calendar', x: 0, y: 0, w: 3, h: 3 },
+  { id: 'demo-horloge', type: 'clock', w: 3, h: 2 },
+  { id: 'demo-energie', type: 'energy_flow', w: 3, h: 3 },
+  { id: 'demo-agenda', type: 'calendar', w: 3, h: 3 },
 ];
 
 const CONFIGS = {
@@ -222,7 +220,7 @@ export function withDemoFloorplan(config: DashboardConfigV2): DashboardConfigV2 
         ...next.pages,
         { id, label, icon: 'Home', type: 'floorplan', order: Math.max(-1, ...next.pages.map(p => p.order)) + 1, floorplan },
       ],
-      layouts: { ...next.layouts, [id]: { widgets: { lg: widgets, md: widgets, sm: widgets }, cols: { lg: 12, md: 8, sm: 4 } } },
+      layouts: { ...next.layouts, [id]: { panels: [{ id: 'main', cols: 12, widgets }] } },
       widgetConfigs: { ...next.widgetConfigs, [id]: configs },
     }),
     config

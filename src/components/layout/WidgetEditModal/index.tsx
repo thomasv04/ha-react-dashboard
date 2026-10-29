@@ -6,7 +6,7 @@ import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import type { WidgetConfig } from '@/types/widget-configs';
 import { WIDGET_FIELD_DEFS } from '@/widgets';
 import { EntityListField } from './EntityListField';
-import { WIDGET_LABELS, resolveBreakpoint } from '@/components/layout/DashboardGrid';
+import { WIDGET_LABELS } from '@/components/layout/DashboardGrid';
 import { IconPicker, GradientPicker } from '@/components/layout/WidgetPickers';
 import { TemplateEditor } from '@/components/layout/TemplateField';
 import { CardLayoutTab } from '@/components/layout/CardLayoutTab';
@@ -40,14 +40,6 @@ export function WidgetEditModal() {
   const hasDispositions = config ? !!WIDGET_DISPOSITIONS[config.type]?.length : false;
   const hasAdvanced = fields ? fields.some(f => f.fieldType === 'weather-icons') : false;
   const hasSounds = config ? !!WIDGET_SOUND_ACTIONS[config.type]?.length : false;
-
-  const [breakpoint, setBreakpoint] = useState(() => resolveBreakpoint(window.innerWidth));
-
-  useEffect(() => {
-    const handler = () => setBreakpoint(resolveBreakpoint(window.innerWidth));
-    window.addEventListener('resize', handler);
-    return () => window.removeEventListener('resize', handler);
-  }, []);
 
   const isGroup = config?.type === 'group';
 
@@ -420,7 +412,7 @@ export function WidgetEditModal() {
               {activeTab === 'visibility' && draft && (
                 <VisibilityTab draft={draft as Record<string, unknown>} updateField={updateField} widgetType={config?.type} />
               )}
-              {activeTab === 'layout' && hasDispositions && <CardLayoutTab widgetId={editingWidgetId} breakpoint={breakpoint} />}
+              {activeTab === 'layout' && hasDispositions && <CardLayoutTab widgetId={editingWidgetId} />}
               {activeTab === 'sound' && hasSounds && config && (
                 <SoundTab
                   widgetType={config.type}

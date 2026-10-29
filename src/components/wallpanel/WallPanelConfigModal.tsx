@@ -13,6 +13,7 @@ import { PanelSelectField } from '@/components/layout/WidgetEditModal/PanelSelec
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { gesturesOf, widgetExtentOf, type ImageFit, type MediaOrder, type WallPanelConfig, type WidgetAnchor } from '@/types/wallpanel';
+import { layoutWidgets } from '@/lib/panel-grid';
 
 /** Parts d'écran proposées — de la pleine largeur au quart. */
 const EXTENTS = [100, 75, 50, 33, 25];
@@ -483,8 +484,8 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
 
                 <div className='p-3 rounded-xl border border-white/[0.08] bg-white/[0.03] text-center'>
                   <p className='text-white/22 text-xs mb-2'>
-                    {wallPanelLayout.widgets.lg.length}{' '}
-                    {wallPanelLayout.widgets.lg.length !== 1
+                    {layoutWidgets(wallPanelLayout).length}{' '}
+                    {layoutWidgets(wallPanelLayout).length !== 1
                       ? t('layout.wallPanel.widgetCount_other')
                       : t('layout.wallPanel.widgetCount_one')}
                   </p>

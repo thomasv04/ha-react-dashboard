@@ -23,7 +23,7 @@
   "desktop": "Desktop",
   "tablet": "Tablet",
   "mobile": "Mobile",
-  "minSize": "Minimum size: {w} cols × {h} rows ({label})",
+  "minSize": "Minimum size: {w} columns × {h} rows",
   "tabs": {
     "config": "Configuration",
     "advanced": "Advanced",
@@ -563,5 +563,20 @@
     "movePageDown": "Move down",
     "deletePage": "Delete page",
     "noPanels": "No panel yet"
+  },
+  "panel": {
+    "untitled": "Untitled panel",
+    "title": "Panel title",
+    "width": "{value} columns",
+    "narrower": "Narrower",
+    "wider": "Wider",
+    "moveLeft": "Move left",
+    "moveRight": "Move right",
+    "remove": "Delete panel",
+    "removeConfirm": "Delete this panel and its tiles?",
+    "addTile": "Add a tile",
+    "addPanel": "Add a panel",
+    "moveTile": "Move tile",
+    "resize": "Resize"
   }
 }

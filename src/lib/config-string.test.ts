@@ -18,12 +18,7 @@ const MINIMAL_SNAPSHOT: ConfigSnapshot = {
   dashboard: {
     version: 2,
     pages: [{ id: 'home', label: 'Home', icon: '🏠', type: 'grid' as const, order: 0 }],
-    layouts: {
-      home: {
-        widgets: { lg: [], md: [], sm: [] },
-        cols: { lg: 12, md: 8, sm: 4 },
-      },
-    },
+    layouts: { home: { panels: [] } },
     widgetConfigs: { home: {} },
   },
 };
@@ -49,29 +44,21 @@ const LARGE_SNAPSHOT: ConfigSnapshot = {
     ],
     layouts: {
       home: {
-        widgets: {
-          lg: [
-            { id: 'w1', type: 'weather', x: 0, y: 0, w: 4, h: 3 },
-            { id: 'w2', type: 'light', x: 4, y: 0, w: 2, h: 2 },
-            { id: 'w3', type: 'thermostat', x: 6, y: 0, w: 3, h: 2 },
-            { id: 'w4', type: 'camera', x: 0, y: 3, w: 6, h: 4 },
-          ],
-          md: [
-            { id: 'w1', type: 'weather', x: 0, y: 0, w: 4, h: 3 },
-            { id: 'w2', type: 'light', x: 4, y: 0, w: 2, h: 2 },
-          ],
-          sm: [{ id: 'w1', type: 'weather', x: 0, y: 0, w: 4, h: 3 }],
-        },
-        cols: { lg: 12, md: 8, sm: 4 },
+        panels: [
+          {
+            id: 'main',
+            cols: 12,
+            widgets: [
+              { id: 'w1', type: 'weather', w: 4, h: 3 },
+              { id: 'w2', type: 'light', w: 2, h: 2 },
+              { id: 'w3', type: 'thermostat', w: 3, h: 2 },
+              { id: 'w4', type: 'camera', w: 6, h: 4 },
+            ],
+          },
+        ],
       },
-      media: {
-        widgets: { lg: [], md: [], sm: [] },
-        cols: { lg: 12, md: 8, sm: 4 },
-      },
-      security: {
-        widgets: { lg: [], md: [], sm: [] },
-        cols: { lg: 12, md: 8, sm: 4 },
-      },
+      media: { panels: [] },
+      security: { panels: [] },
     },
     widgetConfigs: {
       home: {
