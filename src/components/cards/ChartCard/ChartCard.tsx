@@ -1,6 +1,4 @@
 import { useRef, useState } from 'react';
-import { motion } from 'framer-motion';
-import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useEntityHistory } from '@/hooks/useEntityHistory';
 import { HistoryGraph } from '@/components/charts/HistoryGraph';
@@ -31,14 +29,14 @@ export function ChartCard() {
   const entityId = config?.entityId ?? '';
   const entity = useSafeEntity(entityId);
   // Avant le retour anticipé : un hook ne se saute pas.
-  const color = useColor(config?.color) ?? '#60a5fa';
+  const color = useColor(config?.color) ?? 'var(--ds-accent)';
   const hours = config?.hours ?? 24;
   const { data, loading } = useEntityHistory(entityId, hours);
 
   if (!entity) {
     return (
-      <div ref={cardRef} className='gc rounded-3xl p-4 flex items-center justify-center h-full'>
-        <span className='text-white/30 text-sm'>{t('widgets.chart.notFound')}</span>
+      <div ref={cardRef} className='gc flex h-full items-center justify-center p-4'>
+        <span className='text-sm text-[var(--ds-ink-muted)]'>{t('widgets.chart.notFound')}</span>
       </div>
     );
   }
@@ -49,24 +47,26 @@ export function ChartCard() {
   const variant = config?.variant ?? (Number.isNaN(parseFloat(entity.state)) ? 'timeline' : 'line');
 
   return (
-    <motion.div
+    <div
       ref={cardRef}
-      {...CARD_ENTRANCE}
-      className={cn('gc rounded-3xl h-full overflow-hidden select-none flex flex-col', size.squat ? 'px-3 py-1.5' : 'p-3.5')}
+      className={cn(
+        'flex h-full select-none flex-col overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] text-[var(--ds-ink)]',
+        size.squat ? 'justify-center gap-1 px-4' : 'gap-2 p-[var(--ds-space-4)]'
+      )}
     >
       {/* En-tête : sur une seule rangée, la valeur passe à côté du titre */}
-      <div className='flex items-baseline justify-between gap-2 shrink-0'>
-        <span className='text-white/40 text-xs font-medium truncate'>{name}</span>
-        <span className='text-white text-sm font-light tracking-tight shrink-0'>
+      <div className='flex shrink-0 items-baseline justify-between gap-3'>
+        <span className='truncate text-[17px] font-semibold'>{name}</span>
+        <span className={cn('shrink-0 font-light tracking-tight tabular-nums', size.squat ? 'text-xl' : 'text-3xl')}>
           {entity.state}
-          {unit && <span className='text-white/40 text-[10px] ml-0.5'>{unit}</span>}
+          {unit && <span className='ml-1 text-sm text-[var(--ds-ink-muted)]'>{unit}</span>}
         </span>
       </div>
 
       {/* Tracé */}
-      <div className='flex-1 min-h-0 flex items-center justify-center mt-1'>
+      <div className='flex min-h-0 flex-1 items-center justify-center'>
         {loading && data.length === 0 ? (
-          <span className='text-white/25 text-xs'>{t('common.loading')}</span>
+          <span className='text-sm text-[var(--ds-ink-muted)]'>{t('common.loading')}</span>
         ) : variant === 'timeline' ? (
           // La frise embarque sa propre liste d'évènements : illisible tant que
           // la card n'a pas au moins deux rangées.
@@ -75,7 +75,7 @@ export function ChartCard() {
           <HistoryGraph data={data} height={GRAPH_HEIGHT[size.h]} color={color} />
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -89,7 +89,7 @@ function TimelineStrip({ data }: { data: { time: Date; state: string }[] }) {
   const span = now - first || 1;
 
   return (
-    <div className='relative h-4 rounded-full overflow-hidden bg-white/5'>
+    <div className='relative h-4 overflow-hidden rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)]'>
       {data.map((p, i) => {
         const start = ((p.time.getTime() - first) / span) * 100;
         const end = i < data.length - 1 ? ((data[i + 1].time.getTime() - first) / span) * 100 : 100;
@@ -100,7 +100,7 @@ function TimelineStrip({ data }: { data: { time: Date; state: string }[] }) {
             style={{
               left: `${start}%`,
               width: `${Math.max(0.5, end - start)}%`,
-              backgroundColor: p.state === 'on' ? '#10b981' : '#6b7280',
+              backgroundColor: p.state === 'on' ? 'var(--ds-good)' : 'var(--ds-surface-3)',
             }}
           />
         );
