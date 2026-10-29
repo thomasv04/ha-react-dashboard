@@ -6,6 +6,7 @@ import { callHAService, friendlyName } from '@/lib/ha-service';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useFanSpeed } from '@/hooks/useFanSpeed';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { PillSlider } from '@/components/ds/PillSlider';
 import { MoreInfoHeader } from './MoreInfoHeader';
 import { MoreInfoLayout } from './MoreInfoLayout';
 import { InfoSidebar, type SidebarModule } from './sidebar';
@@ -18,8 +19,6 @@ const FEATURE_OSCILLATE = 2;
 const FEATURE_DIRECTION = 4;
 const FEATURE_PRESET_MODE = 8;
 
-const ACCENT = '#38bdf8';
-
 export default function FanMoreInfo({ entityId, widgetId }: { entityId: string; widgetId: string }) {
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
@@ -30,7 +29,7 @@ export default function FanMoreInfo({ entityId, widgetId }: { entityId: string; 
   const helpers = useHass(s => s.helpers);
   const { percentage, setPercentage } = useFanSpeed(entityId, entity?.attributes.percentage as number | undefined);
 
-  if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
+  if (!entity) return <div className='p-12 text-[var(--ds-ink-muted)] text-center'>{t('common.entityNotFound')}</div>;
 
   const call = (service: string, data?: Record<string, unknown>) => callHAService(helpers, 'fan', service, { entity_id: entityId }, data);
 
@@ -90,7 +89,7 @@ export default function FanMoreInfo({ entityId, widgetId }: { entityId: string; 
         icon={Fan}
         name={name}
         state={isOn ? t('widgets.fan.on') : t('widgets.fan.off')}
-        stateColor={isOn ? ACCENT : '#6b7280'}
+        stateColor={isOn ? 'var(--ds-tile-on)' : undefined}
       />
 
       {/* Interrupteur : l'hélice tourne d'autant plus vite que la vitesse est haute */}
@@ -99,12 +98,10 @@ export default function FanMoreInfo({ entityId, widgetId }: { entityId: string; 
           whileTap={{ scale: 0.94 }}
           onClick={() => call('toggle')}
           aria-label={name}
-          className='w-40 h-40 rounded-full flex items-center justify-center border-2 transition-colors'
-          style={
-            isOn
-              ? { background: `${ACCENT}18`, borderColor: `${ACCENT}59`, boxShadow: `0 0 60px -12px ${ACCENT}` }
-              : { background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' }
-          }
+          aria-pressed={isOn}
+          className={`flex size-40 items-center justify-center rounded-full transition-colors ${
+            isOn ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'bg-[var(--ds-sheet-section)] text-[var(--ds-ink-muted)]'
+          }`}
         >
           <motion.span
             className='flex'
@@ -115,7 +112,7 @@ export default function FanMoreInfo({ entityId, widgetId }: { entityId: string; 
                 : { duration: 0.3 }
             }
           >
-            <Fan size={64} strokeWidth={1.2} style={{ color: isOn ? ACCENT : 'rgba(255,255,255,0.2)' }} />
+            <Fan size={64} strokeWidth={1.2} />
           </motion.span>
         </motion.button>
       </div>
@@ -124,18 +121,16 @@ export default function FanMoreInfo({ entityId, widgetId }: { entityId: string; 
       {supportsSpeed && (
         <div className='mt-8 max-w-sm mx-auto'>
           <div className='flex justify-between mb-3'>
-            <span className='text-[10px] font-bold uppercase tracking-widest text-white/40'>{t('widgets.fan.speed')}</span>
-            <span className='text-white font-semibold tabular-nums'>{Math.round(percentage)}%</span>
+            <span className='text-[15px] font-bold text-[var(--ds-ink-muted)]'>{t('widgets.fan.speed')}</span>
+            <span className='text-[var(--ds-ink)] font-semibold tabular-nums'>{Math.round(percentage)}%</span>
           </div>
-          <input
-            type='range'
-            min={0}
-            max={100}
-            step={step}
+          <PillSlider
             value={percentage}
-            onChange={e => setPercentage(Number(e.target.value))}
-            aria-label={t('widgets.fan.speed')}
-            className='w-full h-3 accent-sky-400 cursor-pointer'
+            step={step}
+            onChange={setPercentage}
+            label={t('widgets.fan.speed')}
+            valueText={`${Math.round(percentage)} %`}
+            icon={Fan}
           />
         </div>
       )}
@@ -145,12 +140,10 @@ export default function FanMoreInfo({ entityId, widgetId }: { entityId: string; 
           {supportsOscillate && (
             <button
               onClick={() => call('oscillate', { oscillating: !oscillating })}
-              className='flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors'
-              style={
-                oscillating
-                  ? { background: `${ACCENT}18`, borderColor: `${ACCENT}35`, color: '#7dd3fc' }
-                  : { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.45)' }
-              }
+              aria-pressed={oscillating}
+              className={`flex h-11 items-center gap-2 rounded-[var(--ds-radius-pill)] px-5 text-[15px] font-semibold ${
+                oscillating ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'bg-[var(--ds-sheet-section)]'
+              }`}
             >
               <RefreshCw size={15} className={oscillating ? 'animate-spin [animation-duration:3s]' : undefined} />
               {t('widgets.fan.oscillate')}
@@ -159,7 +152,7 @@ export default function FanMoreInfo({ entityId, widgetId }: { entityId: string; 
           {supportsDirection && (
             <button
               onClick={() => call('set_direction', { direction: direction === 'forward' ? 'reverse' : 'forward' })}
-              className='flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/8 text-white/70 hover:text-white text-sm font-medium transition-colors'
+              className='flex h-11 items-center gap-2 rounded-[var(--ds-radius-pill)] bg-[var(--ds-sheet-section)] px-5 text-[15px] font-semibold'
             >
               {direction === 'forward' ? <RotateCw size={15} /> : <RotateCcw size={15} />}
               {direction === 'forward' ? t('widgets.fan.forward') : t('widgets.fan.reverse')}

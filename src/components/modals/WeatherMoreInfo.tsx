@@ -54,7 +54,7 @@ export default function WeatherMoreInfo({ entityId }: { entityId: string; widget
       .catch(() => setForecasts([]));
   }, [connection, entityId, forecastType]);
 
-  if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
+  if (!entity) return <div className='p-12 text-[var(--ds-ink-muted)] text-center'>{t('common.entityNotFound')}</div>;
 
   const temp = entity.attributes.temperature as number | undefined;
   const humidity = entity.attributes.humidity as number | undefined;
@@ -78,25 +78,25 @@ export default function WeatherMoreInfo({ entityId }: { entityId: string; widget
   ];
 
   return (
-    <div className='p-8 md:p-12'>
+    <div className='p-6'>
       <MoreInfoHeader icon={Cloud} name={friendlyName(entity) ?? entityId} state={conditionLabel} stateColor={color} />
 
       {/* Temperature */}
       {temp != null && (
-        <div className='text-6xl font-light text-white mt-4 mb-2'>
+        <div className='text-6xl font-light text-[var(--ds-ink)] mt-4 mb-2'>
           {temp}
-          <span className='text-3xl text-white/50'>°C</span>
+          <span className='text-3xl text-[var(--ds-ink-muted)]'>°C</span>
         </div>
       )}
 
       {/* Toggle hourly/daily */}
-      <div className='flex gap-1 bg-white/5 rounded-xl p-1 w-fit mt-4 mb-6'>
+      <div className='flex gap-1 bg-[var(--ds-sheet-section)] rounded-[var(--ds-radius-md)] p-1 w-fit mt-4 mb-6'>
         {(['hourly', 'daily'] as const).map(type => (
           <button
             key={type}
             onClick={() => setForecastType(type)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-              forecastType === type ? 'bg-white/15 text-white' : 'text-white/40 hover:text-white/60'
+            className={`h-10 rounded-[var(--ds-radius-sm)] px-4 text-sm font-semibold transition-colors ${
+              forecastType === type ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'text-[var(--ds-ink-muted)]'
             }`}
           >
             {t(`widgets.weather.${type}`)}
@@ -104,13 +104,13 @@ export default function WeatherMoreInfo({ entityId }: { entityId: string; widget
         ))}
       </div>
 
-      <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
+      <div className='flex flex-col gap-4'>
         {/* Left: Graph + Forecasts (2 cols) */}
-        <div className='lg:col-span-2 space-y-6'>
+        <div className='space-y-4'>
           {historyData.length >= 2 ? (
             <HistoryGraph data={historyData} color={color} />
           ) : (
-            <div className='flex items-center justify-center h-40 text-white/20 text-sm rounded-xl bg-white/[0.02]'>
+            <div className='flex items-center justify-center h-40 text-[var(--ds-ink-muted)] text-sm rounded-[var(--ds-radius-md)] bg-[var(--ds-sheet-section)]'>
               {t('widgets.weather.noHistory')}
             </div>
           )}
@@ -124,11 +124,11 @@ export default function WeatherMoreInfo({ entityId }: { entityId: string; widget
                 return (
                   <div
                     key={fc.datetime}
-                    className='flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 min-w-[60px] shrink-0'
+                    className='flex flex-col items-center gap-1.5 px-3 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-sheet-section)] min-w-[60px] shrink-0'
                   >
-                    <span className='text-[10px] text-white/40 uppercase'>{label}</span>
-                    <span className='text-sm text-white font-semibold'>{fc.temperature}°</span>
-                    {fc.templow != null && <span className='text-[10px] text-white/30'>{fc.templow}°</span>}
+                    <span className='text-xs font-semibold capitalize text-[var(--ds-ink-muted)]'>{label}</span>
+                    <span className='text-sm text-[var(--ds-ink)] font-semibold'>{fc.temperature}°</span>
+                    {fc.templow != null && <span className='text-xs text-[var(--ds-ink-muted)]'>{fc.templow}°</span>}
                   </div>
                 );
               })}
@@ -138,12 +138,12 @@ export default function WeatherMoreInfo({ entityId }: { entityId: string; widget
 
         {/* Right: Details (1 col) */}
         <div className='space-y-3'>
-          <h3 className='text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3'>{t('widgets.weather.details')}</h3>
+          <h3 className='text-[15px] font-bold text-[var(--ds-ink-muted)] mb-3'>{t('widgets.weather.details')}</h3>
           {details.map(d => (
             <div key={d.label} className='flex items-center gap-3 text-sm'>
-              <d.icon size={16} className='text-white/30 shrink-0' />
-              <span className='text-white/50'>{d.label}</span>
-              <span className='text-white font-medium ml-auto'>{d.value}</span>
+              <d.icon size={16} className='text-[var(--ds-ink-muted)] shrink-0' />
+              <span className='text-[var(--ds-ink-muted)]'>{d.label}</span>
+              <span className='text-[var(--ds-ink)] font-medium ml-auto'>{d.value}</span>
             </div>
           ))}
         </div>

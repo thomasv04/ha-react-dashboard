@@ -7,10 +7,12 @@ import { MoreInfoHeader } from './MoreInfoHeader';
 import { CameraFeed } from '@/components/ui/CameraFeed/components/CameraFeed';
 import type { CameraCardConfig } from '@/types/widget-types';
 import { friendlyName } from '@/lib/ha-service';
+import { useI18n } from '@/i18n';
 
 type CameraMode = 'stream' | 'snapshot';
 
 export default function CameraMoreInfo({ entityId, widgetId }: { entityId: string; widgetId: string }) {
+  const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
   const config = getWidgetConfig<CameraCardConfig>(widgetId);
   const connection = useHass(s => s.connection);
@@ -40,33 +42,35 @@ export default function CameraMoreInfo({ entityId, widgetId }: { entityId: strin
   }, []);
 
   return (
-    <div className='p-8 md:p-12'>
+    <div className='p-6'>
       <MoreInfoHeader
         icon={Camera}
         name={name}
         state={cameraEntity?.state ?? 'unknown'}
-        stateColor={cameraEntity?.state === 'idle' ? '#10b981' : '#60a5fa'}
+        stateColor={cameraEntity?.state === 'idle' ? 'var(--ds-good)' : 'var(--ds-accent)'}
       />
 
       {/* Mode toggle + refresh */}
       <div className='flex items-center gap-3 mt-4 mb-6'>
-        <div className='flex gap-1 bg-white/5 rounded-xl p-1'>
+        <div className='flex gap-1 bg-[var(--ds-sheet-section)] rounded-[var(--ds-radius-md)] p-1'>
           {(['stream', 'snapshot'] as const).map(m => (
             <button
               key={m}
               onClick={() => setMode(m)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                mode === m ? 'bg-white/15 text-white' : 'text-white/40 hover:text-white/60'
+              className={`h-10 rounded-[var(--ds-radius-sm)] px-4 text-sm font-semibold transition-colors ${
+                mode === m ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'text-[var(--ds-ink-muted)]'
               }`}
             >
-              {m === 'stream' ? 'STREAM' : 'SNAPSHOT'}
+              {m === 'stream' ? t('common.moreInfo.stream') : t('common.moreInfo.snapshot')}
             </button>
           ))}
         </div>
         {mode === 'snapshot' && (
           <button
             onClick={handleRefresh}
-            className='p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors'
+            aria-label={t('common.moreInfo.refresh')}
+            title={t('common.moreInfo.refresh')}
+            className='flex size-11 items-center justify-center rounded-full bg-[var(--ds-sheet-section)]'
           >
             <RefreshCw size={16} />
           </button>
@@ -74,7 +78,7 @@ export default function CameraMoreInfo({ entityId, widgetId }: { entityId: strin
       </div>
 
       {/* Video / Image */}
-      <div className='relative w-full rounded-2xl overflow-hidden bg-black/50 aspect-video'>
+      <div className='relative w-full rounded-[var(--ds-radius-lg)] overflow-hidden bg-black aspect-video'>
         {mode === 'stream' ? (
           // Même moteur que la card : une caméra RTSP passe en HLS, sinon MJPEG.
           <CameraFeed
@@ -86,7 +90,9 @@ export default function CameraMoreInfo({ entityId, widgetId }: { entityId: strin
         ) : accessToken ? (
           <img key={`snap-${refreshKey}`} src={snapshotUrl} alt={name} className='w-full h-full object-contain' />
         ) : (
-          <div className='flex items-center justify-center h-full text-white/30 text-sm'>Caméra non disponible</div>
+          <div className='flex items-center justify-center h-full text-[var(--ds-ink-muted)] text-sm'>
+            {t('common.moreInfo.cameraUnavailable')}
+          </div>
         )}
       </div>
     </div>

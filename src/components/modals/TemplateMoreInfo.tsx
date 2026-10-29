@@ -47,8 +47,8 @@ export default function TemplateMoreInfo({ entityId, widgetId }: { entityId: str
 
       {/* Resolved template content */}
       <div className='mt-6 space-y-4'>
-        {primaryInfo && <div className='text-2xl text-white font-semibold'>{primaryInfo}</div>}
-        {secondaryInfo && <div className='text-base text-white/60'>{secondaryInfo}</div>}
+        {primaryInfo && <div className='text-2xl text-[var(--ds-ink)] font-semibold'>{primaryInfo}</div>}
+        {secondaryInfo && <div className='text-base text-[var(--ds-ink-muted)]'>{secondaryInfo}</div>}
       </div>
 
       {/* History graph for numeric entities */}

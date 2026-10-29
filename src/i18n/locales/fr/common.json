@@ -40,6 +40,18 @@
     "netConsumption": "Consommation nette",
     "balanced": "Équilibré",
     "breakdown": "Répartition",
-    "hours": "{value} h"
+    "hours": "{value} h",
+    "info": "Informations",
+    "lastTriggered": "Dernière exécution",
+    "mode": "Mode",
+    "state": "État",
+    "location": "Localisation",
+    "zone": "Zone",
+    "coordinates": "Coordonnées",
+    "battery": "Batterie",
+    "cameraUnavailable": "Caméra non disponible",
+    "stream": "Direct",
+    "snapshot": "Image",
+    "refresh": "Actualiser"
   }
 }

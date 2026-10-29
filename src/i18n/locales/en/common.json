@@ -40,6 +40,18 @@
     "netConsumption": "Net consumption",
     "balanced": "Balanced",
     "breakdown": "Breakdown",
-    "hours": "{value} h"
+    "hours": "{value} h",
+    "info": "Information",
+    "lastTriggered": "Last triggered",
+    "mode": "Mode",
+    "state": "State",
+    "location": "Location",
+    "zone": "Zone",
+    "coordinates": "Coordinates",
+    "battery": "Battery",
+    "cameraUnavailable": "Camera unavailable",
+    "stream": "Live",
+    "snapshot": "Snapshot",
+    "refresh": "Refresh"
   }
 }

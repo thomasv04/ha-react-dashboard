@@ -76,8 +76,10 @@ function HorizontalBattery({ level, state }: { level: number; state: string }) {
 
       {/* Text beside battery */}
       <div className='flex flex-col'>
-        <span className='text-4xl font-bold text-white'>{level}%</span>
-        <span className={`text-sm font-medium mt-1 ${isCharging ? 'text-green-400' : isDischarging ? 'text-orange-400' : 'text-zinc-400'}`}>
+        <span className='text-4xl font-bold text-[var(--ds-ink)]'>{level}%</span>
+        <span
+          className={`text-sm font-medium mt-1 ${isCharging ? 'text-[var(--ds-good)]' : isDischarging ? 'text-[var(--ds-heat-ink)]' : 'text-[var(--ds-ink-muted)]'}`}
+        >
           {isCharging && <BatteryCharging size={14} className='inline mr-1' />}
           {isCharging ? 'En charge' : isDischarging ? 'En décharge' : 'Veille'}
         </span>
@@ -108,19 +110,12 @@ function FlowCard({
   active?: boolean;
 }) {
   return (
-    <div
-      className={`flex items-center gap-3 rounded-2xl px-4 py-3 border transition-all ${
-        active ? `bg-[${color}]/10 border-[${color}]/20` : 'bg-white/[0.03] border-white/[0.06]'
-      }`}
-      style={active ? { backgroundColor: `${color}15`, borderColor: `${color}30` } : undefined}
-    >
-      <div className='w-9 h-9 rounded-xl flex items-center justify-center' style={{ backgroundColor: `${color}20` }}>
-        <Icon size={18} style={{ color }} />
-      </div>
+    <div className='flex items-center gap-3 rounded-[var(--ds-radius-lg)] bg-[var(--ds-sheet-section)] px-4 py-3'>
+      <Icon size={22} aria-hidden='true' className='shrink-0' style={{ color: active ? color : 'var(--ds-ink-muted)' }} />
       <div className='flex-1 min-w-0'>
-        <p className='text-[10px] font-bold uppercase tracking-widest text-white/40'>{label}</p>
-        <p className='text-lg font-semibold text-white'>
-          {value} <span className='text-xs text-white/40'>{unit}</span>
+        <p className='text-[15px] font-bold text-[var(--ds-ink-muted)]'>{label}</p>
+        <p className='text-lg font-semibold text-[var(--ds-ink)]'>
+          {value} <span className='text-xs text-[var(--ds-ink-muted)]'>{unit}</span>
         </p>
       </div>
     </div>
@@ -161,7 +156,7 @@ export default function EnergyMoreInfo({ entityId, widgetId }: { entityId: strin
 
   const { data } = useEntityHistory(historyEntityId, historyHours);
 
-  if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
+  if (!entity) return <div className='p-12 text-[var(--ds-ink-muted)] text-center'>{t('common.entityNotFound')}</div>;
 
   const name = friendlyName(entity) ?? t('widgets.energy.defaultName');
   const level = Number(entity.state) || 0;
@@ -189,9 +184,9 @@ export default function EnergyMoreInfo({ entityId, widgetId }: { entityId: strin
   ];
 
   return (
-    <div className='p-8 md:p-12 lg:grid lg:grid-cols-5 lg:gap-8'>
+    <div className='flex flex-col gap-4 p-6'>
       {/* Left panel */}
-      <div className='lg:col-span-3 flex flex-col'>
+      <div className='flex flex-col'>
         <MoreInfoHeader icon={Zap} name={name} state={`${level}%`} stateColor='#facc15' />
 
         {/* Horizontal battery */}
@@ -214,15 +209,15 @@ export default function EnergyMoreInfo({ entityId, widgetId }: { entityId: strin
 
         {/* History tabs + graph */}
         <div className='mt-6'>
-          <div className='flex gap-1 bg-white/5 rounded-xl p-1 w-fit mb-4'>
+          <div className='flex gap-1 bg-[var(--ds-sheet-section)] rounded-[var(--ds-radius-md)] p-1 w-fit mb-4'>
             {historyTabs
               .filter(t => t.show)
               .map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setHistoryTab(tab.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold tracking-wider transition-colors ${
-                    historyTab === tab.id ? 'bg-white/15 text-white' : 'text-white/30 hover:text-white/50'
+                  className={`h-10 rounded-[var(--ds-radius-sm)] px-4 text-sm font-semibold transition-colors ${
+                    historyTab === tab.id ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'text-[var(--ds-ink-muted)]'
                   }`}
                 >
                   {tab.label}
@@ -235,7 +230,7 @@ export default function EnergyMoreInfo({ entityId, widgetId }: { entityId: strin
 
       {/* Right panel — Energy sidebar */}
       {showInfoPanel && (
-        <div className='lg:col-span-2 mt-8 lg:mt-0'>
+        <div>
           <InfoSidebar
             modules={
               [
@@ -257,7 +252,11 @@ export default function EnergyMoreInfo({ entityId, widgetId }: { entityId: strin
                       label: 'État',
                       value: packState === 'charging' ? 'En charge' : packState === 'discharging' ? 'En décharge' : 'Veille',
                       color:
-                        packState === 'charging' ? 'text-green-400' : packState === 'discharging' ? 'text-orange-400' : 'text-zinc-400',
+                        packState === 'charging'
+                          ? 'text-[var(--ds-good)]'
+                          : packState === 'discharging'
+                            ? 'text-[var(--ds-heat-ink)]'
+                            : 'text-[var(--ds-ink-muted)]',
                     },
                     ...(gridEntity ? [{ label: 'Puissance réseau', value: `${gridVal} ${gridUnit}` }] : []),
                   ],
