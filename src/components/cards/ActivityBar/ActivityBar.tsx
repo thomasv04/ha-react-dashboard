@@ -1,5 +1,3 @@
-import { motion } from 'framer-motion';
-import { DURATION_ENTRANCE, DURATION_MEDIUM } from '@/lib/motion-tokens';
 import { Activity, Lightbulb, Flame, Battery, Sun, ShieldOff, ShieldCheck } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useEffect, useState, useRef, createElement } from 'react';
@@ -10,8 +8,8 @@ import { useMoreInfoOptional } from '@/context/MoreInfoContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { resolveIcon } from '@/lib/lucide-icon-map';
 import { useColorResolver } from '@/hooks/useColor';
-import { colorAlpha } from '@/lib/color-value';
 import { isActiveState, toggleService } from '@/lib/ha-service';
+import { cn } from '@/lib/utils';
 import type { ActivityBarConfig, ActivityPill } from '@/types/widget-configs';
 
 type Translate = (key: string, params?: Record<string, string | number>) => string;
@@ -19,8 +17,8 @@ type Translate = (key: string, params?: Record<string, string | number>) => stri
 interface PillVisual {
   icon: React.ReactNode;
   label: string;
+  /** Teinte de l'icône. */
   color: string;
-  bgColor: string;
   hideOnMobile?: boolean;
 }
 
@@ -30,7 +28,6 @@ interface Pill extends PillVisual {
   state: string;
   action: NonNullable<ActivityPill['action']>;
   service?: string;
-  accent?: string;
 }
 
 interface Person {
@@ -49,48 +46,34 @@ const PRESETS: Record<string, (state: string, t: Translate) => PillVisual> = {
   alarm: (state, t) => {
     const armed = state !== 'disarmed';
     return {
-      icon: armed ? <ShieldCheck size={14} /> : <ShieldOff size={14} />,
+      icon: armed ? <ShieldCheck size={18} /> : <ShieldOff size={18} />,
       label: armed ? t('activityBar.alarmArmed') : t('activityBar.alarmDisarmed'),
-      color: armed ? 'text-red-400' : 'text-green-400',
-      bgColor: armed ? 'bg-red-400/10' : 'bg-green-400/10',
+      color: armed ? 'var(--ds-alert)' : 'var(--ds-good)',
     };
   },
   heater: (state, t) => {
     const isOn = state !== 'off';
     return {
-      icon: <Flame size={14} />,
+      icon: <Flame size={18} />,
       label: isOn ? t('activityBar.pelletOn') : t('activityBar.pelletOff'),
-      color: isOn ? 'text-orange-400' : 'text-white/40',
-      bgColor: isOn ? 'bg-orange-400/10' : 'bg-white/5',
+      color: isOn ? 'var(--ds-heat)' : 'var(--ds-ink-muted)',
     };
   },
   solar: (state, t) => {
     const lvl = Number(state);
-    let color = 'text-green-400';
-    let bgColor = 'bg-green-400/10';
-    if (lvl <= 25) {
-      color = 'text-red-400';
-      bgColor = 'bg-red-400/10';
-    } else if (lvl <= 60) {
-      color = 'text-yellow-400';
-      bgColor = 'bg-yellow-400/10';
-    }
-    return { icon: <Battery size={14} />, label: t('activityBar.battery', { value: state }), color, bgColor, hideOnMobile: true };
+    const color = lvl <= 25 ? 'var(--ds-alert)' : lvl <= 60 ? 'var(--ds-warm-light)' : 'var(--ds-good)';
+    return { icon: <Battery size={18} />, label: t('activityBar.battery', { value: state }), color, hideOnMobile: true };
   },
-  tempo: (state, t) => {
-    const colorMap: Record<string, { color: string; bgColor: string }> = {
-      Rouge: { color: 'text-red-400', bgColor: 'bg-red-400/10' },
-      Blanc: { color: 'text-white/80', bgColor: 'bg-white/10' },
-      Bleu: { color: 'text-blue-400', bgColor: 'bg-blue-400/10' },
-    };
-    const colorData = colorMap[state] ?? { color: 'text-blue-400', bgColor: 'bg-blue-400/10' };
-    return { icon: <Sun size={14} />, label: t('activityBar.tempo', { value: state }), ...colorData, hideOnMobile: true };
-  },
+  tempo: (state, t) => ({
+    icon: <Sun size={18} />,
+    label: t('activityBar.tempo', { value: state }),
+    color: state === 'Rouge' ? 'var(--ds-alert)' : state === 'Blanc' ? 'var(--ds-ink)' : 'var(--ds-accent)',
+    hideOnMobile: true,
+  }),
   temp: (state, t) => ({
-    icon: <Lightbulb size={14} />,
+    icon: <Lightbulb size={18} />,
     label: t('activityBar.temperature', { value: Number(state).toFixed(1) }),
-    color: 'text-pink-400',
-    bgColor: 'bg-pink-400/10',
+    color: 'var(--ds-ink-muted)',
     hideOnMobile: true,
   }),
 };
@@ -159,14 +142,13 @@ export function ActivityBar() {
       id: p.id,
       entityId: p.entityId,
       state: entity.state,
-      icon: customIcon ? createElement(customIcon, { size: 14 }) : (preset?.icon ?? <Activity size={14} />),
+      icon: customIcon ? createElement(customIcon, { size: 18 }) : (preset?.icon ?? <Activity size={18} />),
       // `hideLabel` : pastille icône seule, comme un badge Mushroom sans
       // `content`. Elle l'emporte sur le libellé du preset.
       label: p.hideLabel ? '' : (preset?.label ?? (p.label ? `${p.label} ${generic}` : generic)),
-      color: preset?.color ?? 'text-white/80',
-      bgColor: preset?.bgColor ?? 'bg-white/5',
+      // La couleur choisie dans la config l'emporte sur celle du preset.
+      color: resolveColor(p.color) ?? preset?.color ?? 'var(--ds-ink)',
       hideOnMobile: preset?.hideOnMobile,
-      accent: resolveColor(p.color),
       action: p.action ?? 'none',
       service: p.service,
     });
@@ -248,80 +230,60 @@ export function ActivityBar() {
     // `h-full` + `items-center` : la case du widget est rognée aux coins
     // arrondis, une pastille collée en haut à gauche y serait coupée.
     <div ref={containerRef} className='flex items-center justify-between w-full h-full gap-4 px-1'>
-      {/* Pills left */}
       {visiblePills.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: DURATION_ENTRANCE }}
-          className='flex gap-2 flex-wrap items-center'
-        >
-          {visiblePills.map((pill, i) => {
-            const clickable = pill.action !== 'none';
-            const common = {
-              initial: { opacity: 0, scale: 0.9 },
-              animate: { opacity: 1, scale: 1 },
-              transition: { duration: DURATION_MEDIUM, delay: i * 0.05 },
-              className: `${pill.accent ? '' : pill.bgColor} rounded-full ${
-                pill.label ? 'px-3 gap-2' : 'px-2'
-              } py-1.5 flex items-center text-xs border border-white/10 backdrop-blur-sm${
-                clickable ? ' cursor-pointer hover:border-white/25' : ''
-              }`,
-              style: pill.accent ? { backgroundColor: colorAlpha(pill.accent) } : undefined,
-            };
+        <div className='flex flex-wrap items-center gap-2'>
+          {visiblePills.map(pill => {
+            const className = cn(
+              'flex h-11 items-center rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-2)] text-[15px] font-semibold text-[var(--ds-ink)]',
+              pill.label ? 'gap-2 px-4' : 'px-3'
+            );
             const content = (
               <>
-                <span className={pill.accent ? undefined : pill.color} style={pill.accent ? { color: pill.accent } : undefined}>
+                <span aria-hidden='true' style={{ color: pill.color }}>
                   {pill.icon}
                 </span>
-                {pill.label && <span className='text-white/90 font-medium text-xs'>{pill.label}</span>}
+                {pill.label && <span>{pill.label}</span>}
               </>
             );
-            return clickable ? (
-              <motion.button key={pill.id} type='button' whileTap={{ scale: 0.94 }} onClick={e => handlePillClick(pill, e)} {...common}>
+            return pill.action !== 'none' ? (
+              <button key={pill.id} type='button' onClick={e => handlePillClick(pill, e)} className={cn(className, 'active:scale-95')}>
                 {content}
-              </motion.button>
+              </button>
             ) : (
-              <motion.div key={pill.id} {...common}>
+              <div key={pill.id} className={className}>
                 {content}
-              </motion.div>
+              </div>
             );
           })}
-        </motion.div>
+        </div>
       )}
 
-      {/* Avatars right (hidden on mobile) */}
+      {/* Les personnes à droite, masquées quand la place manque */}
       {!isMobile && persons.length > 0 && (
         <div className='flex items-center gap-2'>
           {persons.slice(0, 3).map(person => (
-            <motion.div
-              key={person.id}
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: DURATION_MEDIUM }}
-              className='relative'
-              title={person.name}
-            >
+            <div key={person.id} className='relative' title={person.name}>
               {person.avatar && !failedImages.has(person.id) ? (
                 <img
                   src={person.avatar}
                   alt={person.name}
-                  className='w-10 h-10 rounded-full border-2 border-white/20 object-cover'
+                  className='size-11 rounded-full object-cover'
                   onError={() => setFailedImages(prev => new Set([...prev, person.id]))}
                 />
               ) : (
-                <div className='w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-semibold text-xs border-2 border-white/20'>
+                <div className='flex size-11 items-center justify-center rounded-full bg-[var(--ds-surface-3)] text-sm font-semibold text-[var(--ds-ink)]'>
                   {person.name.charAt(0).toUpperCase()}
                 </div>
               )}
               {person.state && (
                 <div
-                  className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white/20 ${
-                    person.state === 'home' ? 'bg-green-500' : 'bg-gray-500'
-                  }`}
+                  className={cn(
+                    'absolute bottom-0 right-0 size-3 rounded-full ring-2 ring-[var(--ds-surface-1)]',
+                    person.state === 'home' ? 'bg-[var(--ds-good)]' : 'bg-[var(--ds-ink-muted)]'
+                  )}
                 />
               )}
-            </motion.div>
+            </div>
           ))}
         </div>
       )}
