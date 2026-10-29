@@ -2,14 +2,12 @@ export type MediaOrder = 'random' | 'sequential';
 /** Bord de l'écran où la grille de widgets se colle. */
 export type WidgetAnchor = 'top' | 'bottom' | 'left' | 'right';
 export type ImageFit = 'contain' | 'cover' | 'fill';
+/** `clock` : grande horloge en bas à gauche. `photo` : cadre photo, l'heure en haut à droite. */
+export type ClockLayout = 'clock' | 'photo';
 
 export interface WallPanelStyle {
   /** Flou de l'image de fond (pixels) */
   backgroundBlur?: number;
-  /** Opacité de la boîte d'info (0-1) */
-  infoBoxOpacity?: number;
-  /** Largeur de la boîte d'info (px) */
-  infoBoxWidth?: number;
   /**
    * En mode "contain", affiche une version floue et agrandie de l'image
    * en fond pour remplir les bandes noires (même effet que HA WallPanel
@@ -54,6 +52,8 @@ export interface WallPanelConfig {
    * ou vide : les photos.
    */
   floorplan_page?: string;
+  /** Disposition de l'heure. Défaut `clock`. */
+  clock_layout?: ClockLayout;
   /** Styles avancés */
   style: WallPanelStyle;
   /** Gestes tactiles. Absent dans les configs antérieures — lire via `gesturesOf`. */
@@ -122,8 +122,6 @@ export const DEFAULT_WALLPANEL_CONFIG: WallPanelConfig = {
   screensaver_entity: undefined,
   style: {
     backgroundBlur: 0,
-    infoBoxOpacity: 1,
-    infoBoxWidth: 380,
     containBlurBackground: false,
   },
   gestures: DEFAULT_GESTURES,

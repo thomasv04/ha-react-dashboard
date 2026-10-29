@@ -520,22 +520,29 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                   />
                 </div>
                 <div>
-                  <label className='text-white/55 text-xs font-medium block mb-1.5'>
-                    {t('layout.wallPanel.infoBoxWidth')} : <span className='text-white/80'>{draft.style.infoBoxWidth ?? 380}px</span>
-                  </label>
-                  <input
-                    type='range'
-                    min={200}
-                    max={600}
-                    step={10}
-                    value={draft.style.infoBoxWidth ?? 380}
-                    onChange={e =>
-                      update({
-                        style: { ...draft.style, infoBoxWidth: Number(e.target.value) },
-                      })
-                    }
-                    className='w-full accent-purple-500'
-                  />
+                  <p className='text-white/55 text-xs font-medium mb-2'>{t('layout.wallPanel.clockLayout')}</p>
+                  <div className='grid grid-cols-2 gap-2'>
+                    {(
+                      [
+                        ['clock', 'layout.wallPanel.clockLarge'],
+                        ['photo', 'layout.wallPanel.clockPhoto'],
+                      ] as const
+                    ).map(([id, labelKey]) => (
+                      <button
+                        key={id}
+                        onClick={() => update({ clock_layout: id })}
+                        aria-pressed={(draft.clock_layout ?? 'clock') === id}
+                        className={cn(
+                          'px-2 py-2 rounded-xl text-[11px] font-medium border transition-colors',
+                          (draft.clock_layout ?? 'clock') === id
+                            ? 'bg-purple-500/20 text-purple-200 border-purple-500/40'
+                            : 'bg-white/5 text-white/45 border-white/[0.08] hover:text-white/70'
+                        )}
+                      >
+                        {t(labelKey)}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </>
             )}

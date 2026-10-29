@@ -264,9 +264,7 @@
     "widgetCount_other": "{count} widgets configured",
     "openPreview": "Open preview",
     "backgroundBlur": "Background blur: {value}px",
-    "infoBoxWidth": "Info box width: {value}px",
     "editWidgets": "Edit widgets",
-    "touchToExit": "TOUCH TO EXIT",
     "dismissOverlay": "Dismiss screensaver",
     "gestures": {
       "tab": "Gestures",
@@ -300,7 +298,12 @@
     "widgetSizeDesc": "Share of the screen the grid takes",
     "widgetSizeFull": "Full",
     "presenceEntity": "Presence sensor",
-    "presenceEntityDesc": "Widgets only show while this sensor detects someone; otherwise the photo gets the whole screen"
+    "presenceEntityDesc": "Widgets only show while this sensor detects someone; otherwise the photo gets the whole screen",
+    "prevPhoto": "Previous photo",
+    "nextPhoto": "Next photo",
+    "clockLayout": "Time",
+    "clockLarge": "Large clock",
+    "clockPhoto": "Photo frame"
   },
   "panelNoneCreated": "No panel yet — create one from the edit mode.",
   "duplicateWidget": "Duplicate widget",

@@ -264,9 +264,7 @@
     "widgetCount_other": "{count} widgets configurés",
     "openPreview": "Ouvrir l'aperçu",
     "backgroundBlur": "Flou de fond : {value}px",
-    "infoBoxWidth": "Largeur boîte info : {value}px",
     "editWidgets": "Modifier les widgets",
-    "touchToExit": "TOUCHER POUR QUITTER",
     "dismissOverlay": "Fermer l'écran de veille",
     "gestures": {
       "tab": "Gestes",
@@ -300,7 +298,12 @@
     "widgetSizeDesc": "Part de l'écran occupée par la grille",
     "widgetSizeFull": "Plein",
     "presenceEntity": "Capteur de présence",
-    "presenceEntityDesc": "Les widgets n'apparaissent que lorsque ce capteur détecte quelqu'un ; sinon la photo a tout l'écran"
+    "presenceEntityDesc": "Les widgets n'apparaissent que lorsque ce capteur détecte quelqu'un ; sinon la photo a tout l'écran",
+    "prevPhoto": "Photo précédente",
+    "nextPhoto": "Photo suivante",
+    "clockLayout": "Heure",
+    "clockLarge": "Grande horloge",
+    "clockPhoto": "Cadre photo"
   },
   "panelNoneCreated": "Aucun panneau pour l'instant — créez-en un depuis le mode édition.",
   "duplicateWidget": "Dupliquer le widget",

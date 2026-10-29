@@ -1,29 +1,8 @@
-import { useEffect, useState } from 'react';
 import { useUser } from '@hakit/core';
-import { Cloud, CloudRain, CloudSnow, CloudSun, Grip, Moon, Sun, type LucideIcon } from 'lucide-react';
-import { useEntitiesByDomain } from '@/hooks/useEntities';
+import { Grip } from 'lucide-react';
+import { useNow, useWeatherNow } from '@/hooks/useWeatherNow';
 import { useFormats } from '@/hooks/useFormats';
 import { useI18n } from '@/i18n';
-
-const CONDITION_ICONS: Record<string, LucideIcon> = {
-  sunny: Sun,
-  'clear-night': Moon,
-  partlycloudy: CloudSun,
-  rainy: CloudRain,
-  pouring: CloudRain,
-  snowy: CloudSnow,
-  'snowy-rainy': CloudSnow,
-};
-
-/** Heure de la barre, rafraîchie assez souvent pour ne jamais rater une minute. */
-function useNow(): Date {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 10_000);
-    return () => clearInterval(id);
-  }, []);
-  return now;
-}
 
 /**
  * Barre du haut : lanceur d'apps à gauche, météo, heure et utilisateur à droite.
@@ -34,10 +13,7 @@ export function TopBar({ onOpenLauncher }: { onOpenLauncher: () => void }) {
   const { formatTime } = useFormats();
   const now = useNow();
   const user = useUser();
-  // Pas de réglage dédié : la première entité météo de l'installation.
-  const weather = useEntitiesByDomain('weather')[0];
-  const temperature = weather?.attributes.temperature as number | undefined;
-  const WeatherIcon = CONDITION_ICONS[weather?.state ?? ''] ?? Cloud;
+  const { temperature, Icon: WeatherIcon } = useWeatherNow();
 
   return (
     <header className='fixed inset-x-0 top-0 z-40 flex items-center justify-between px-6 sm:px-10 pt-6 pointer-events-none'>

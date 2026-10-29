@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useMotionValue } from 'framer-motion';
 import { DURATION_HERO, EASE_OUT } from '@/lib/motion-tokens';
-import { PencilLine } from 'lucide-react';
 import { useScreensaverPlan, useWallPanel } from '@/context/WallPanelContext';
 import { gesturesOf } from '@/types/wallpanel';
 import { BackgroundSlideshow, type SlideshowHandle } from './BackgroundSlideshow';
@@ -11,6 +10,7 @@ import { EdgeHints } from './EdgeHints';
 import { QuickPanelSheet } from './QuickPanelSheet';
 import { NotificationSheet } from './NotificationSheet';
 import { NotificationBadge } from './NotificationBadge';
+import { ScreensaverClock } from './ScreensaverClock';
 import { useI18n } from '@/i18n';
 import { useUser } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
@@ -230,33 +230,17 @@ export function WallPanelOverlay() {
               {sheet === 'notifications' && <NotificationSheet key='notifications' onClose={() => setSheet(null)} />}
             </AnimatePresence>
 
-            {/* ── Bouton d'édition (bas-droite) ──
-                Réservé aux administrateurs, comme le crayon du dashboard : il
-                ouvre `WallPanelEditShell`, qui active le mode édition global.
-                Sans ce garde, n'importe qui passant devant la tablette murale
-                pouvait éditer la disposition. */}
-            {!isWallPanelEditMode && !sheet && user?.is_admin && (
-              <button
-                className='absolute bottom-6 right-6 z-[201] p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white/50 hover:text-white transition-colors backdrop-blur-sm'
-                title={t('layout.wallPanel.editWidgets')}
-                aria-label={t('layout.wallPanel.editWidgets')}
-                onClick={e => {
-                  e.stopPropagation();
-                  enterWallPanelEditMode();
-                }}
-              >
-                <PencilLine size={16} />
-              </button>
-            )}
-
-            {/* ── Indicateur discret ── */}
+            {/* ── L'heure, et les flèches des photos ──
+                ⋮ ouvre l'édition, réservée aux administrateurs comme le crayon
+                du dashboard : sans ce garde, n'importe qui passant devant la
+                tablette murale pouvait éditer la disposition. */}
             {!isWallPanelEditMode && !sheet && (
-              <div
-                className='absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none'
-                style={{ color: 'rgba(255,255,255,0.18)', fontSize: 11, letterSpacing: '0.08em' }}
-              >
-                {t('layout.wallPanel.touchToExit')}
-              </div>
+              <ScreensaverClock
+                layout={config.clock_layout ?? 'clock'}
+                onPrev={canSwipePhotos ? () => slideshowRef.current?.go(-1) : undefined}
+                onNext={canSwipePhotos ? () => slideshowRef.current?.go(1) : undefined}
+                onMore={user?.is_admin ? enterWallPanelEditMode : undefined}
+              />
             )}
           </motion.div>
         </>
