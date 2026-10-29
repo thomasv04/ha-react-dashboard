@@ -67,6 +67,8 @@ export interface LayoutPanel {
   id: string;
   title?: string;
   cols: number;
+  /** Rangé sous le panneau précédent, dans sa colonne, plutôt qu'à sa droite. */
+  below?: boolean;
   widgets: GridWidget[];
 }
 
@@ -141,6 +143,9 @@ interface LayoutContextValue {
 interface EditModeContextValue {
   isEditMode: boolean;
   setEditMode: (v: boolean) => void;
+  /** Panneau seul en édition — `null` : toute la page. */
+  editPanelId: string | null;
+  setEditPanelId: (id: string | null) => void;
 }
 
 interface SizePresetsContextValue {
@@ -182,7 +187,13 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
   const [layouts, setLayouts] = useState<Record<string, DashboardLayout>>(() =>
     initialLayouts && Object.keys(initialLayouts).length > 0 ? initialLayouts : { home: DEFAULT_LAYOUT }
   );
-  const [isEditMode, setEditMode] = useState(false);
+  const [isEditMode, setEditModeState] = useState(false);
+  const [editPanelId, setEditPanelId] = useState<string | null>(null);
+  // Quitter l'édition oublie le panneau visé : la fois suivante, on part de toute la page.
+  const setEditMode = useCallback((v: boolean) => {
+    setEditModeState(v);
+    if (!v) setEditPanelId(null);
+  }, []);
 
   // Sync when server data loads (runs once after initial fetch completes)
   useEffect(() => {
@@ -465,7 +476,10 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
     [layouts, currentPageId]
   );
 
-  const editModeValue = useMemo<EditModeContextValue>(() => ({ isEditMode, setEditMode }), [isEditMode]);
+  const editModeValue = useMemo<EditModeContextValue>(
+    () => ({ isEditMode, setEditMode, editPanelId, setEditPanelId }),
+    [isEditMode, setEditMode, editPanelId]
+  );
 
   const sizePresetsValue = useMemo<SizePresetsContextValue>(() => ({ cycleSize, getCurrentPresetName }), [cycleSize, getCurrentPresetName]);
 

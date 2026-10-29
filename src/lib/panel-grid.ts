@@ -20,6 +20,12 @@ export const colsWidth = (cols: number) => cols * GRID_COL + (cols - 1) * GRID_G
 /** Combien de colonnes tiennent dans `width` px — au moins une. */
 export const colsThatFit = (width: number) => Math.max(1, Math.floor((width + GRID_GAP) / (GRID_COL + GRID_GAP)));
 
+/**
+ * Demande d'édition d'un seul panneau (`detail` : son id). La barre d'édition
+ * l'écoute : c'est elle qui garde le code d'accès et l'enregistrement.
+ */
+export const EDIT_PANEL_EVENT = 'ha-dashboard:edit-panel';
+
 export const newPanelId = () => `panel-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
 export const newPanel = (cols = PANEL_COLS_DEFAULT): LayoutPanel => ({ id: newPanelId(), cols, widgets: [] });

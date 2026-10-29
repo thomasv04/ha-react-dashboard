@@ -2,10 +2,23 @@ import { useDashboardLayout, useEditMode, type LayoutPanel } from '@/context/Das
 import { useState, useEffect, useLayoutEffect, useRef, createContext, useContext, memo, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Minus, Plus, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Minus, Pencil, Plus, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { useUser } from '@hakit/core';
+import { Sheet } from '@/components/ds/Sheet';
+import { SwitchTrack } from '@/components/ds/Switch';
 import { staggerGridContainer, staggerGridItem } from '@/lib/motion-variants';
 import { useLowPowerMotion } from '@/hooks/useLowPowerMotion';
-import { GRID_COL, GRID_GAP, GRID_ROW, PANEL_COLS_MAX, PANEL_COLS_MIN, colsThatFit, colsWidth, layoutWidgets } from '@/lib/panel-grid';
+import {
+  EDIT_PANEL_EVENT,
+  GRID_COL,
+  GRID_GAP,
+  GRID_ROW,
+  PANEL_COLS_MAX,
+  PANEL_COLS_MIN,
+  colsThatFit,
+  colsWidth,
+  layoutWidgets,
+} from '@/lib/panel-grid';
 import { getMinSize, WIDGET_COMPONENTS, WIDGET_META } from '@/widgets';
 import { GridItemOverlay } from './GridItemOverlay';
 import { AddWidgetModal } from './AddWidgetModal';
@@ -76,6 +89,9 @@ function useGridCtx() {
 /** Colonnes réellement disponibles dans le panneau : sa largeur, ou ce que l'écran laisse. */
 const PanelColsCtx = createContext(Infinity);
 
+/** Le panneau de la tuile est-il en édition ? Hors panneau (plan) : comme la page. */
+const PanelEditCtx = createContext(true);
+
 /**
  * Permet de rendre des `GridItem` **hors de la grille**, là où l'appelant les
  * positionne lui-même — une page plan. À utiliser avec `readonly` : ni glisser
@@ -138,7 +154,7 @@ const PANEL_PADDING = 22;
  */
 export function DashboardGrid({ readonly, className }: { readonly?: boolean; className?: string }) {
   const { layout, moveWidget, updateWidget, addPanel } = useDashboardLayout();
-  const { isEditMode: ctxEditMode } = useEditMode();
+  const { isEditMode: ctxEditMode, editPanelId } = useEditMode();
   const isEditMode = ctxEditMode && !readonly;
   const { t } = useI18n();
   const outerRef = useRef<HTMLDivElement>(null);
@@ -265,6 +281,13 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
     if (!isEditMode) setSelected(new Set());
   }, [isEditMode]);
 
+  // Colonnes : un panneau « sous le précédent » rejoint la colonne de celui-ci.
+  const columns: { panel: LayoutPanel; index: number }[][] = [];
+  layout.panels.forEach((panel, index) => {
+    if (panel.below && columns.length) columns[columns.length - 1].push({ panel, index });
+    else columns.push([{ panel, index }]);
+  });
+
   return (
     <GridCtx.Provider value={ctxValue}>
       <SelectionCtx.Provider value={selectionValue}>
@@ -280,18 +303,23 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
             className
           )}
         >
-          {layout.panels.map((panel, i) => (
-            <PanelSection
-              key={panel.id}
-              panel={panel}
-              cols={Math.min(panel.cols, fit)}
-              isEditMode={isEditMode}
-              first={i === 0}
-              last={i === layout.panels.length - 1}
-              stacked={stacked}
-            />
+          {columns.map(column => (
+            <div key={column[0].panel.id} className={cn('flex shrink-0 flex-col gap-[22px]', stacked && 'w-full')}>
+              {column.map(({ panel, index }) => (
+                <PanelSection
+                  key={panel.id}
+                  panel={panel}
+                  cols={Math.min(panel.cols, fit)}
+                  readonly={!!readonly}
+                  editing={isEditMode && (!editPanelId || editPanelId === panel.id)}
+                  first={index === 0}
+                  last={index === layout.panels.length - 1}
+                />
+              ))}
+            </div>
           ))}
-          {isEditMode && (
+          {/* Un panneau seul en édition : la page, elle, ne change pas. */}
+          {isEditMode && !editPanelId && (
             <button
               onClick={addPanel}
               className={cn(
@@ -311,147 +339,221 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
 
 const ROUND = 'flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--ds-surface-3)] disabled:opacity-30';
 
-/** Un panneau : son titre, puis ses tuiles rangées sur la trame. */
+/**
+ * Un panneau : son titre et ses deux boutons — réglages, modification —, puis
+ * ses tuiles rangées sur la trame.
+ *
+ * Les deux boutons passent par la barre d'édition (`EDIT_PANEL_EVENT`) : elle
+ * garde le code d'accès et l'enregistrement, et n'ouvre que ce panneau-là.
+ */
 function PanelSection({
   panel,
   cols,
-  isEditMode,
+  readonly,
+  editing,
   first,
   last,
-  stacked,
 }: {
   panel: LayoutPanel;
   cols: number;
-  isEditMode: boolean;
+  readonly: boolean;
+  editing: boolean;
   first: boolean;
   last: boolean;
-  stacked: boolean;
 }) {
   const { t } = useI18n();
-  const { updatePanel, removePanel, movePanel } = useDashboardLayout();
+  const isAdmin = !!useUser()?.is_admin;
   const { dropTarget, draggingId } = useGridCtx();
   const [adding, setAdding] = useState(false);
-  const [confirming, setConfirming] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  // ⚙ hors édition : on attend d'y être entré (code éventuel) pour ouvrir.
+  const [settingsWanted, setSettingsWanted] = useState(false);
   const dropAtEnd = dropTarget?.panelId === panel.id && dropTarget.index >= panel.widgets.length;
+  const controls = isAdmin && !readonly;
+
+  useEffect(() => {
+    if (!settingsWanted || !editing) return;
+    setSettingsWanted(false);
+    setSettingsOpen(true);
+  }, [settingsWanted, editing]);
+
+  const requestEdit = () => window.dispatchEvent(new CustomEvent(EDIT_PANEL_EVENT, { detail: panel.id }));
 
   return (
     <PanelColsCtx.Provider value={cols}>
-      <section
-        data-panel-id={panel.id}
-        className={cn(
-          'flex shrink-0 flex-col gap-3.5 rounded-[30px] bg-[var(--ds-surface-1)] p-[22px] text-[var(--ds-ink)]',
-          stacked && 'w-full'
-        )}
-      >
-        {isEditMode ? (
-          <div className='flex flex-wrap items-center gap-2'>
-            <input
-              value={panel.title ?? ''}
-              onChange={e => updatePanel(panel.id, { title: e.target.value || undefined })}
-              placeholder={t('layout.panel.untitled')}
-              aria-label={t('layout.panel.title')}
-              className='h-10 min-w-0 flex-1 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] px-3 text-xl font-semibold outline-none placeholder:text-[var(--ds-ink-muted)]'
-            />
+      <PanelEditCtx.Provider value={editing}>
+        <section
+          data-panel-id={panel.id}
+          className={cn(
+            'flex w-full flex-col gap-3.5 rounded-[30px] bg-[var(--ds-surface-1)] p-[22px] text-[var(--ds-ink)]',
+            editing && 'outline-2 outline-dashed outline-[var(--ds-accent)]'
+          )}
+        >
+          {(panel.title || controls) && (
+            <div className='flex min-h-10 items-center gap-2'>
+              <h2 className='mx-1.5 min-w-0 flex-1 truncate text-xl font-semibold'>{panel.title}</h2>
+              {controls && (
+                <>
+                  <button
+                    onClick={() => (editing ? setSettingsOpen(true) : (setSettingsWanted(true), requestEdit()))}
+                    aria-label={t('layout.panel.settings')}
+                    title={t('layout.panel.settings')}
+                    className={ROUND}
+                  >
+                    <SlidersHorizontal size={18} />
+                  </button>
+                  {!editing && (
+                    <button onClick={requestEdit} aria-label={t('layout.panel.edit')} title={t('layout.panel.edit')} className={ROUND}>
+                      <Pencil size={18} />
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          <div
+            data-panel-grid
+            className={cn(
+              'rounded-[var(--ds-radius-lg)]',
+              dropAtEnd && draggingId && 'outline-dashed outline-2 outline-[var(--ds-accent)]'
+            )}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: `repeat(${cols}, ${GRID_COL}px)`,
+              gridAutoRows: `${GRID_ROW}px`,
+              // `dense` : une petite tuile comble le trou laissé par une grande.
+              gridAutoFlow: 'row dense',
+              gap: GRID_GAP,
+              // Un panneau vide garde sa largeur : on voit où déposer.
+              minWidth: colsWidth(cols),
+            }}
+          >
+            {panel.widgets.map(widget => {
+              const Component = WIDGET_COMPONENTS[widget.type];
+              if (!Component) return null;
+              return (
+                <GridItem key={widget.id} id={widget.id}>
+                  <Component />
+                </GridItem>
+              );
+            })}
+            {editing && (
+              <button
+                onClick={() => setAdding(true)}
+                aria-label={t('layout.panel.addTile')}
+                title={t('layout.panel.addTile')}
+                className='flex items-center justify-center rounded-[var(--ds-radius-lg)] border-2 border-dashed border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
+                style={{ gridColumn: `span ${Math.min(2, cols)}`, gridRow: 'span 2' }}
+              >
+                <Plus size={28} />
+              </button>
+            )}
+          </div>
+        </section>
+        <AnimatePresence>{adding && <AddWidgetModal panelId={panel.id} onClose={() => setAdding(false)} />}</AnimatePresence>
+        <PanelSettings panel={panel} open={settingsOpen} onClose={() => setSettingsOpen(false)} first={first} last={last} />
+      </PanelEditCtx.Provider>
+    </PanelColsCtx.Provider>
+  );
+}
+
+/** Réglages d'un panneau, dans une feuille : titre, largeur, place, suppression. */
+function PanelSettings({
+  panel,
+  open,
+  onClose,
+  first,
+  last,
+}: {
+  panel: LayoutPanel;
+  open: boolean;
+  onClose: () => void;
+  first: boolean;
+  last: boolean;
+}) {
+  const { t } = useI18n();
+  const { updatePanel, removePanel, movePanel } = useDashboardLayout();
+  const [confirming, setConfirming] = useState(false);
+  const row = 'flex items-center justify-between gap-3 rounded-[var(--ds-radius-xl)] bg-[var(--ds-sheet-section)] p-4';
+
+  return (
+    <Sheet open={open} onClose={onClose} title={panel.title || t('layout.panel.untitled')} closeLabel={t('common.close')}>
+      <div className='flex flex-col gap-3'>
+        <label className='flex flex-col gap-2 rounded-[var(--ds-radius-xl)] bg-[var(--ds-sheet-section)] p-4'>
+          <span className='text-[15px] font-bold'>{t('layout.panel.title')}</span>
+          <input
+            value={panel.title ?? ''}
+            onChange={e => updatePanel(panel.id, { title: e.target.value || undefined })}
+            placeholder={t('layout.panel.untitled')}
+            className='h-11 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] px-3 text-[17px] font-semibold outline-none placeholder:text-[var(--ds-ink-muted)]'
+          />
+        </label>
+
+        <div className={row}>
+          <span className='text-[15px] font-bold'>{t('layout.panel.width_label')}</span>
+          <div className='flex items-center gap-2'>
             <button
               onClick={() => updatePanel(panel.id, { cols: panel.cols - 1 })}
               disabled={panel.cols <= PANEL_COLS_MIN}
               aria-label={t('layout.panel.narrower')}
-              title={t('layout.panel.narrower')}
               className={ROUND}
             >
               <Minus size={18} />
             </button>
-            <span className='min-w-[6ch] text-center text-sm text-[var(--ds-ink-muted)] tabular-nums'>
-              {t('layout.panel.width', { value: panel.cols })}
-            </span>
+            <span className='min-w-[10ch] text-center text-sm tabular-nums'>{t('layout.panel.width', { value: panel.cols })}</span>
             <button
               onClick={() => updatePanel(panel.id, { cols: panel.cols + 1 })}
               disabled={panel.cols >= PANEL_COLS_MAX}
               aria-label={t('layout.panel.wider')}
-              title={t('layout.panel.wider')}
               className={ROUND}
             >
               <Plus size={18} />
             </button>
-            <button
-              onClick={() => movePanel(panel.id, -1)}
-              disabled={first}
-              aria-label={t('layout.panel.moveLeft')}
-              title={t('layout.panel.moveLeft')}
-              className={ROUND}
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              onClick={() => movePanel(panel.id, 1)}
-              disabled={last}
-              aria-label={t('layout.panel.moveRight')}
-              title={t('layout.panel.moveRight')}
-              className={ROUND}
-            >
-              <ChevronRight size={18} />
-            </button>
-            {/* Vide, il part d'un geste ; avec des tuiles, on confirme. */}
-            {confirming ? (
-              <button
-                onClick={() => removePanel(panel.id)}
-                className='h-10 rounded-[var(--ds-radius-pill)] bg-[var(--ds-alert)] px-4 text-sm font-semibold text-white'
-              >
-                {t('layout.panel.removeConfirm')}
-              </button>
-            ) : (
-              <button
-                onClick={() => (panel.widgets.length ? setConfirming(true) : removePanel(panel.id))}
-                aria-label={t('layout.panel.remove')}
-                title={t('layout.panel.remove')}
-                className={cn(ROUND, 'text-[var(--ds-alert)]')}
-              >
-                <Trash2 size={18} />
-              </button>
-            )}
           </div>
-        ) : (
-          panel.title && <h2 className='mx-1.5 text-xl font-semibold'>{panel.title}</h2>
+        </div>
+
+        {!first && (
+          <button
+            role='switch'
+            aria-checked={!!panel.below}
+            onClick={() => updatePanel(panel.id, { below: !panel.below || undefined })}
+            className={cn(row, 'text-left')}
+          >
+            <span>
+              <span className='block text-[15px] font-bold'>{t('layout.panel.below')}</span>
+              <span className='block text-sm text-[var(--ds-ink-muted)]'>{t('layout.panel.belowDesc')}</span>
+            </span>
+            <SwitchTrack on={!!panel.below} />
+          </button>
         )}
 
-        <div
-          data-panel-grid
-          className={cn('rounded-[var(--ds-radius-lg)]', dropAtEnd && draggingId && 'outline-dashed outline-2 outline-[var(--ds-accent)]')}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${cols}, ${GRID_COL}px)`,
-            gridAutoRows: `${GRID_ROW}px`,
-            // `dense` : une petite tuile comble le trou laissé par une grande.
-            gridAutoFlow: 'row dense',
-            gap: GRID_GAP,
-            // Un panneau vide garde sa largeur : on voit où déposer.
-            minWidth: colsWidth(cols),
-          }}
-        >
-          {panel.widgets.map(widget => {
-            const Component = WIDGET_COMPONENTS[widget.type];
-            if (!Component) return null;
-            return (
-              <GridItem key={widget.id} id={widget.id}>
-                <Component />
-              </GridItem>
-            );
-          })}
-          {isEditMode && (
-            <button
-              onClick={() => setAdding(true)}
-              aria-label={t('layout.panel.addTile')}
-              title={t('layout.panel.addTile')}
-              className='flex items-center justify-center rounded-[var(--ds-radius-lg)] border-2 border-dashed border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
-              style={{ gridColumn: `span ${Math.min(2, cols)}`, gridRow: 'span 2' }}
-            >
-              <Plus size={28} />
+        <div className={row}>
+          <span className='text-[15px] font-bold'>{t('layout.panel.order')}</span>
+          <div className='flex items-center gap-2'>
+            <button onClick={() => movePanel(panel.id, -1)} disabled={first} aria-label={t('layout.panel.moveLeft')} className={ROUND}>
+              <ChevronLeft size={18} />
             </button>
-          )}
+            <button onClick={() => movePanel(panel.id, 1)} disabled={last} aria-label={t('layout.panel.moveRight')} className={ROUND}>
+              <ChevronRight size={18} />
+            </button>
+          </div>
         </div>
-      </section>
-      <AnimatePresence>{adding && <AddWidgetModal panelId={panel.id} onClose={() => setAdding(false)} />}</AnimatePresence>
-    </PanelColsCtx.Provider>
+
+        {/* Vide, il part d'un geste ; avec des tuiles, on confirme. */}
+        <button
+          onClick={() => {
+            if (panel.widgets.length && !confirming) return setConfirming(true);
+            onClose();
+            removePanel(panel.id);
+          }}
+          className='flex h-12 items-center justify-center gap-2 rounded-[var(--ds-radius-pill)] bg-[var(--ds-alert)] text-[15px] font-semibold text-white'
+        >
+          <Trash2 size={18} />
+          {confirming ? t('layout.panel.removeConfirm') : t('layout.panel.remove')}
+        </button>
+      </div>
+    </Sheet>
   );
 }
 
@@ -542,11 +644,12 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
   const { isEditMode: ctxEditMode } = useEditMode();
   const { breakpoint, draggingId, dropTarget, startDrag, startResize, motionAllowed } = useGridCtx();
   const panelCols = useContext(PanelColsCtx);
+  const panelEditing = useContext(PanelEditCtx);
   const { openMoreInfo, state: moreInfoState } = useMoreInfo();
   const { getWidgetConfig } = useWidgetConfig();
   const selection = useGridSelection();
   const { t } = useI18n();
-  const isEditMode = ctxEditMode && !readonly;
+  const isEditMode = ctxEditMode && panelEditing && !readonly;
 
   const widget = layoutWidgets(layout).find(w => w.id === id);
   const hasMoreInfo = widget ? MORE_INFO_WIDGET_TYPES.includes(widget.type) : false;

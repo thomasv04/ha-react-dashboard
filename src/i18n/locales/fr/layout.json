@@ -577,6 +577,12 @@
     "addTile": "Ajouter une tuile",
     "addPanel": "Ajouter un panneau",
     "moveTile": "Déplacer la tuile",
-    "resize": "Redimensionner"
+    "resize": "Redimensionner",
+    "settings": "Réglages du panneau",
+    "edit": "Modifier ce panneau",
+    "below": "Sous le panneau précédent",
+    "belowDesc": "Le panneau se range dans la même colonne, en dessous.",
+    "order": "Ordre",
+    "width_label": "Largeur"
   }
 }

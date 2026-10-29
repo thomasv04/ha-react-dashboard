@@ -1120,6 +1120,13 @@
       },
       "hour12": {
         "label": "Format 12 h (AM/PM)"
+      },
+      "display": {
+        "label": "Affichage",
+        "options": {
+          "time": "Heure",
+          "date": "Grande date"
+        }
       }
     }
   },

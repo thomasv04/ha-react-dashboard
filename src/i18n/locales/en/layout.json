@@ -577,6 +577,12 @@
     "addTile": "Add a tile",
     "addPanel": "Add a panel",
     "moveTile": "Move tile",
-    "resize": "Resize"
+    "resize": "Resize",
+    "settings": "Panel settings",
+    "edit": "Edit this panel",
+    "below": "Below the previous panel",
+    "belowDesc": "The panel stacks in the same column, underneath.",
+    "order": "Order",
+    "width_label": "Width"
   }
 }

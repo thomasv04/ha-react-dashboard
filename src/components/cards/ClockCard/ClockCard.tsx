@@ -124,6 +124,30 @@ export function ClockCard() {
   });
   const date = formats.formatDate(now, 'long');
 
+  if (config?.display === 'date') {
+    // « JEU. OCT. » au-dessus, le jour en très grand : la date de l'Echo Show.
+    const head = [now.toLocaleDateString(formats.locale, { weekday: 'short' }), now.toLocaleDateString(formats.locale, { month: 'short' })]
+      .join(' ')
+      .toUpperCase();
+    return (
+      <div
+        ref={cardRef}
+        aria-label={formats.formatDate(now, 'long')}
+        className={cn(
+          'flex h-full select-none items-center justify-center overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] font-[family-name:var(--ds-font-display)] font-extrabold leading-none text-[var(--ds-accent)] [font-stretch:125%]',
+          size.squat ? 'gap-3 px-4' : 'flex-col gap-2 p-[var(--ds-space-4)]'
+        )}
+      >
+        <span className={cn('tracking-wide', size.squat ? 'text-xl' : size.h === 'short' ? 'text-xl' : 'text-[28px]')}>{head}</span>
+        <span
+          className={size.squat ? 'text-3xl' : size.h === 'short' ? 'text-[64px]' : size.h === 'normal' ? 'text-[104px]' : 'text-[140px]'}
+        >
+          {now.getDate()}
+        </span>
+      </div>
+    );
+  }
+
   const digital = (
     <div className={cn('min-w-0', sideBySide ? 'text-left' : 'text-center')}>
       {config?.name && <div className='mb-0.5 truncate text-sm font-semibold text-[var(--ds-ink-muted)]'>{config.name}</div>}

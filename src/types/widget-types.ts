@@ -501,6 +501,8 @@ export interface FanCardConfig {
 export interface ClockCardConfig {
   type: 'clock';
   name?: string;
+  /** `date` : la grande date de l'Echo Show (« JEU. OCT. 29 ») à la place de l'heure */
+  display?: 'time' | 'date';
   /** Cadran analogique quand la card est assez haute */
   showAnalog?: boolean;
   showDate?: boolean;

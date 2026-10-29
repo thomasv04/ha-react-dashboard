@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION_FAST } from '@/lib/motion-tokens';
 import { PencilLine, Check, X, CloudUpload, Plus, Loader2, HelpCircle, Undo2, Redo2, Trash2 } from 'lucide-react';
@@ -14,11 +14,12 @@ import { HelpModal } from '@/components/onboarding/HelpModal';
 import { useI18n } from '@/i18n';
 import { useGridSelection } from '@/components/layout/DashboardGrid';
 import { useTheme } from '@/context/ThemeContext';
+import { EDIT_PANEL_EVENT } from '@/lib/panel-grid';
 
 export function EditButton() {
   const { t } = useI18n();
   const user = useUser();
-  const { isEditMode, setEditMode } = useEditMode();
+  const { isEditMode, setEditMode, setEditPanelId } = useEditMode();
   const { saveLayout, allLayouts, undo, redo, canUndo, canRedo, removeWidgets } = useDashboardLayout();
   const { allWidgetConfigsByPage } = useWidgetConfig();
   const { pages } = usePages();
@@ -35,7 +36,24 @@ export function EditButton() {
   const [pinEntry, setPinEntry] = useState('');
   const [pinWrong, setPinWrong] = useState(false);
 
-  if (!user?.is_admin) return null;
+  const isAdmin = !!user?.is_admin;
+
+  // ✎ ou ⚙ sur un panneau : on n'édite que lui, derrière le même code d'accès.
+  useEffect(() => {
+    const onEditPanel = (e: Event) => {
+      if (!isAdmin) return;
+      setEditPanelId((e as CustomEvent<string>).detail);
+      if (isEditMode) return;
+      if (!behaviourSettings.editPin) return setEditMode(true);
+      setPinEntry('');
+      setPinWrong(false);
+      setPinPrompt(true);
+    };
+    window.addEventListener(EDIT_PANEL_EVENT, onEditPanel);
+    return () => window.removeEventListener(EDIT_PANEL_EVENT, onEditPanel);
+  }, [isAdmin, isEditMode, behaviourSettings.editPin, setEditMode, setEditPanelId]);
+
+  if (!isAdmin) return null;
 
   /**
    * Entrée en édition, éventuellement derrière un code.
@@ -85,7 +103,12 @@ export function EditButton() {
       <div className='fixed top-[30px] left-[96px] sm:left-[116px] right-4 z-50 flex flex-wrap items-center gap-2 pointer-events-none'>
         {/* Bouton toggle édition */}
         <motion.button
-          onClick={() => (isEditMode ? setEditMode(false) : enterEditMode())}
+          onClick={() => {
+            if (isEditMode) return setEditMode(false);
+            // Le crayon de la barre ouvre toute la page.
+            setEditPanelId(null);
+            enterEditMode();
+          }}
           whileTap={{ scale: 0.92 }}
           data-tour='edit'
           title={isEditMode ? t('dashboard.editTooltipExit') : t('dashboard.editTooltipEnter')}
