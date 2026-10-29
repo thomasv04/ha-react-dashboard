@@ -698,9 +698,6 @@
       "icon": {
         "label": "Icon"
       },
-      "iconBg": {
-        "label": "Icon gradient"
-      },
       "tempEntity": {
         "label": "Temperature sensor (defaults to the area's)"
       },

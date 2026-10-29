@@ -698,9 +698,6 @@
       "icon": {
         "label": "Icône"
       },
-      "iconBg": {
-        "label": "Dégradé icône"
-      },
       "tempEntity": {
         "label": "Capteur température (sinon celui de la zone)"
       },
