@@ -28,7 +28,7 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
       <div
         ref={dropRef}
         data-portal-dropdown
-        className='gc-overlay fixed z-[200] rounded-xl overflow-hidden'
+        className='bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-sheet)] fixed z-[200] rounded-[var(--ds-radius-md)] overflow-hidden'
         style={{ ...dropStyle, maxHeight: 320, overflowY: 'auto' }}
       >
         <div className='p-1.5 space-y-0.5'>
@@ -36,8 +36,8 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
           <button
             onClick={() => select('')}
             className={cn(
-              'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-left transition-colors',
-              !value ? 'bg-white/10 text-white/60' : 'text-white/35 hover:bg-white/6 hover:text-white/60'
+              'w-full flex items-center gap-2.5 px-3 py-2 rounded-[var(--ds-radius-sm)] text-sm text-left transition-colors',
+              !value ? 'bg-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]' : 'text-[var(--ds-ink-muted)]'
             )}
           >
             <span className='text-base leading-none'>—</span>
@@ -48,8 +48,10 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
           {panels.length > 0 ? (
             <>
               <div className='flex items-center gap-2 px-3 pt-2 pb-1'>
-                <Layers size={11} className='text-white/25' />
-                <span className='text-[10px] font-semibold text-white/25 uppercase tracking-wider'>{t('layout.panelCustom')}</span>
+                <Layers size={11} className='text-[var(--ds-ink-muted)]' />
+                <span className='text-[10px] font-semibold text-[var(--ds-ink-muted)] uppercase tracking-wider'>
+                  {t('layout.panelCustom')}
+                </span>
               </div>
               {panels.map(p => {
                 const ref = `custom:${p.id}`;
@@ -58,20 +60,20 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
                     key={p.id}
                     onClick={() => select(ref)}
                     className={cn(
-                      'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-left transition-colors',
+                      'w-full flex items-center gap-2.5 px-3 py-2 rounded-[var(--ds-radius-sm)] text-sm text-left transition-colors',
                       value === ref
-                        ? 'bg-violet-500/15 border border-violet-500/30 text-violet-300'
-                        : 'border border-transparent text-white/70 hover:bg-white/6 hover:text-white/90'
+                        ? 'bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
+                        : 'border border-transparent text-[var(--ds-ink)]'
                     )}
                   >
-                    <Layers size={14} className='text-violet-400/60 flex-shrink-0' />
+                    <Layers size={14} className='text-[var(--ds-accent)] flex-shrink-0' />
                     <span className='flex-1'>{p.name}</span>
                   </button>
                 );
               })}
             </>
           ) : (
-            <p className='px-3 py-2 text-xs text-white/30 leading-relaxed'>{t('layout.panelNoneCreated')}</p>
+            <p className='px-3 py-2 text-xs text-[var(--ds-ink-muted)] leading-relaxed'>{t('layout.panelNoneCreated')}</p>
           )}
         </div>
       </div>,
@@ -80,23 +82,23 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
 
   return (
     <div>
-      {label && <label className='text-[11px] text-white/40 mb-1 block'>{label}</label>}
+      {label && <label className='text-[11px] text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>}
       <div
         ref={triggerRef}
         onClick={handleOpen}
         className={cn(
-          'flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border cursor-pointer transition-colors select-none',
-          open ? 'border-blue-500/40 bg-white/8' : 'border-white/10 hover:border-white/20'
+          'flex items-center gap-2 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border cursor-pointer transition-colors select-none',
+          open ? 'border-[var(--ds-accent)] bg-[var(--ds-surface-3)]' : 'border-[var(--ds-surface-3)]'
         )}
       >
-        {value ? <Layers size={14} className='text-violet-400/70 flex-shrink-0' /> : null}
-        <span className={cn('text-sm flex-1 truncate', value ? 'text-white/80' : 'text-white/30')}>
+        {value ? <Layers size={14} className='text-[var(--ds-accent)] flex-shrink-0' /> : null}
+        <span className={cn('text-sm flex-1 truncate', value ? 'text-[var(--ds-ink)]' : 'text-[var(--ds-ink-muted)]')}>
           {displayLabel || t('layout.panelNoneDisplay')}
         </span>
         {open ? (
-          <ChevronUp size={14} className='text-white/30 flex-shrink-0' />
+          <ChevronUp size={14} className='text-[var(--ds-ink-muted)] flex-shrink-0' />
         ) : (
-          <ChevronDown size={14} className='text-white/30 flex-shrink-0' />
+          <ChevronDown size={14} className='text-[var(--ds-ink-muted)] flex-shrink-0' />
         )}
       </div>
       {dropdown}

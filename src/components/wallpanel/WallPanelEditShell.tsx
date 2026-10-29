@@ -81,21 +81,21 @@ function WallPanelEditActions({ onSave }: { onSave?: WallPanelSave }) {
       <div className='fixed top-4 right-4 z-[210] flex items-center gap-2'>
         <button
           onClick={() => setShowAddModal(true)}
-          className='flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 text-blue-300 text-sm font-medium transition-colors backdrop-blur-sm'
+          className='flex items-center gap-2 px-4 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)] text-sm font-medium transition-colors'
         >
           <Plus size={15} />
           {t('common.add')}
         </button>
         <button
           onClick={handleSave}
-          className='flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 text-green-300 text-sm font-medium transition-colors backdrop-blur-sm'
+          className='flex items-center gap-2 px-4 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-good)] border border-[var(--ds-good)] text-[#062614] text-sm font-medium transition-colors'
         >
           <CloudUpload size={15} />
           {t('common.save')}
         </button>
         <button
           onClick={exitWallPanelEditMode}
-          className='p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white/60 hover:text-white transition-colors backdrop-blur-sm'
+          className='p-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)] transition-colors'
           title='Annuler'
         >
           <X size={16} />

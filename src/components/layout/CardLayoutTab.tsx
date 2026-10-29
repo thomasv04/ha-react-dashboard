@@ -51,37 +51,37 @@ export function CardLayoutTab({ widgetId }: CardLayoutTabProps) {
       {/* ── Disposition du contenu ──────────────────────────── */}
       {dispositions.length > 1 && (
         <div>
-          <h4 className='text-white/60 text-sm mb-3'>{t('layout.contentLayout')}</h4>
+          <h4 className='text-[var(--ds-ink-muted)] text-sm mb-3'>{t('layout.contentLayout')}</h4>
           <div className='grid grid-cols-2 gap-3'>
             {dispositions.map(disp => (
               <button
                 key={disp.id}
                 onClick={() => setDisposition(disp.id)}
                 className={cn(
-                  'p-4 rounded-2xl border text-left transition-all cursor-pointer',
+                  'p-4 rounded-[var(--ds-radius-lg)] border text-left transition-all cursor-pointer',
                   widget.disposition === disp.id || (!widget.disposition && disp === dispositions[0])
-                    ? 'border-blue-500 bg-blue-500/10 ring-1 ring-blue-500/30'
-                    : 'border-white/10 bg-white/5 hover:bg-white/8'
+                    ? 'border-[var(--ds-accent)] bg-[var(--ds-tile-on)] ring-1 ring-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
+                    : 'border-[var(--ds-surface-3)] bg-[var(--ds-surface-2)]'
                 )}
               >
                 <div className='flex items-center justify-center mb-3 h-12'>
                   {disp.id === 'horizontal' ? (
-                    <div className='flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10'>
-                      <div className='w-6 h-6 rounded-full bg-white/20' />
+                    <div className='flex items-center gap-2 px-3 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)]'>
+                      <div className='w-6 h-6 rounded-full bg-[var(--ds-surface-3)]' />
                       <div className='flex flex-col gap-1'>
-                        <div className='w-12 h-1.5 rounded bg-white/30' />
-                        <div className='w-8 h-1 rounded bg-white/15' />
+                        <div className='w-12 h-1.5 rounded bg-[var(--ds-surface-3)]' />
+                        <div className='w-8 h-1 rounded bg-[var(--ds-surface-3)]' />
                       </div>
                     </div>
                   ) : (
-                    <div className='flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl bg-white/10'>
-                      <div className='w-6 h-6 rounded-full bg-white/20' />
-                      <div className='w-10 h-1.5 rounded bg-white/30' />
+                    <div className='flex flex-col items-center gap-1.5 px-4 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)]'>
+                      <div className='w-6 h-6 rounded-full bg-[var(--ds-surface-3)]' />
+                      <div className='w-10 h-1.5 rounded bg-[var(--ds-surface-3)]' />
                     </div>
                   )}
                 </div>
-                <div className='text-sm font-medium text-white/80'>{t(disp.label)}</div>
-                {disp.description && <div className='text-[11px] text-white/30 mt-1'>{t(disp.description)}</div>}
+                <div className='text-sm font-medium text-[var(--ds-ink)]'>{t(disp.label)}</div>
+                {disp.description && <div className='text-[11px] text-[var(--ds-ink-muted)] mt-1'>{t(disp.description)}</div>}
               </button>
             ))}
           </div>
@@ -90,12 +90,12 @@ export function CardLayoutTab({ widgetId }: CardLayoutTabProps) {
 
       {/* ── Prévisualisation grille + sliders ────────────────── */}
       <div>
-        <h4 className='text-white/60 text-sm mb-3'>{t('layout.gridSize')}</h4>
+        <h4 className='text-[var(--ds-ink-muted)] text-sm mb-3'>{t('layout.gridSize')}</h4>
 
         <div className='flex gap-3'>
           {/* Slider vertical (hauteur) à gauche */}
           <div className='flex flex-col items-center gap-1'>
-            <span className='text-[10px] text-white/30'>{widget.h}</span>
+            <span className='text-[10px] text-[var(--ds-ink-muted)]'>{widget.h}</span>
             <input
               type='range'
               min={minSize.h}
@@ -105,13 +105,13 @@ export function CardLayoutTab({ widgetId }: CardLayoutTabProps) {
               className='h-32 appearance-none cursor-pointer
                 [writing-mode:vertical-lr] [direction:rtl]
                 [&::-webkit-slider-track]:rounded-full
-                [&::-webkit-slider-track]:bg-white/10
+                [&::-webkit-slider-track]:bg-[var(--ds-surface-3)]
                 [&::-webkit-slider-track]:w-2
                 [&::-webkit-slider-thumb]:appearance-none
                 [&::-webkit-slider-thumb]:w-4
                 [&::-webkit-slider-thumb]:h-4
                 [&::-webkit-slider-thumb]:rounded-full
-                [&::-webkit-slider-thumb]:bg-blue-500'
+                [&::-webkit-slider-thumb]:bg-[var(--ds-accent)]'
             />
           </div>
 
@@ -125,14 +125,14 @@ export function CardLayoutTab({ widgetId }: CardLayoutTabProps) {
                 max={maxW}
                 value={widget.w}
                 onChange={e => setWidth(parseInt(e.target.value))}
-                className='flex-1 h-2 rounded-full appearance-none cursor-pointer bg-white/10
+                className='flex-1 h-2 rounded-full appearance-none cursor-pointer bg-[var(--ds-surface-3)]
                   [&::-webkit-slider-thumb]:appearance-none
                   [&::-webkit-slider-thumb]:w-4
                   [&::-webkit-slider-thumb]:h-4
                   [&::-webkit-slider-thumb]:rounded-full
-                  [&::-webkit-slider-thumb]:bg-blue-500'
+                  [&::-webkit-slider-thumb]:bg-[var(--ds-accent)]'
               />
-              <span className='text-[10px] text-white/30 min-w-[2ch]'>{widget.w}</span>
+              <span className='text-[10px] text-[var(--ds-ink-muted)] min-w-[2ch]'>{widget.w}</span>
             </div>
 
             {/* Grille miniature */}
@@ -142,7 +142,7 @@ export function CardLayoutTab({ widgetId }: CardLayoutTabProps) {
       </div>
 
       {/* ── Info taille min ──────────────────────────────────── */}
-      <div className='text-[11px] text-white/20'>{t('layout.minSize', { w: minSize.w, h: minSize.h })}</div>
+      <div className='text-[11px] text-[var(--ds-ink-muted)]'>{t('layout.minSize', { w: minSize.w, h: minSize.h })}</div>
     </div>
   );
 }
@@ -153,7 +153,7 @@ function GridPreview({ cols, widgetW, widgetH }: { cols: number; widgetW: number
 
   return (
     <div
-      className='grid gap-1 p-2 rounded-xl bg-white/[0.03] border border-white/[0.06]'
+      className='grid gap-1 p-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)]'
       style={{
         gridTemplateColumns: `repeat(${cols}, 1fr)`,
         gridAutoRows: '12px',
@@ -169,7 +169,9 @@ function GridPreview({ cols, widgetW, widgetH }: { cols: number; widgetW: number
             key={i}
             className={cn(
               'rounded-sm transition-colors',
-              isWidget ? 'bg-blue-500/40 border border-blue-500/50' : 'bg-white/[0.04] border border-white/[0.03]'
+              isWidget
+                ? 'bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
+                : 'bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)]'
             )}
           />
         );

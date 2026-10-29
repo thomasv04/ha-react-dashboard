@@ -74,29 +74,32 @@ export function ConfigHistorySection() {
       <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
         <History size={12} /> {t('settings.system_section.historyTitle')}
       </h3>
-      <p className='text-white/40 text-xs mb-4 leading-relaxed'>{t('settings.system_section.historyDesc')}</p>
+      <p className='text-[var(--ds-ink-muted)] text-xs mb-4 leading-relaxed'>{t('settings.system_section.historyDesc')}</p>
 
       {entries === null ? (
-        <p className='text-white/30 text-xs'>{t('common.loading')}</p>
+        <p className='text-[var(--ds-ink-muted)] text-xs'>{t('common.loading')}</p>
       ) : entries.length === 0 ? (
-        <p className='text-white/30 text-xs italic'>{t('settings.system_section.historyEmpty')}</p>
+        <p className='text-[var(--ds-ink-muted)] text-xs italic'>{t('settings.system_section.historyEmpty')}</p>
       ) : (
         <ul className='flex flex-col gap-1.5'>
           {entries.map(entry => (
-            <li key={entry.id} className='flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2'>
+            <li
+              key={entry.id}
+              className='flex items-center gap-2 bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] rounded-[var(--ds-radius-sm)] px-3 py-2'
+            >
               <div className='flex-1 min-w-0'>
-                <span className='text-white/70 text-xs block truncate'>{parseDate(entry.created_at).toLocaleString(language)}</span>
-                <span className='text-white/30 text-[11px]'>
+                <span className='text-[var(--ds-ink)] text-xs block truncate'>{parseDate(entry.created_at).toLocaleString(language)}</span>
+                <span className='text-[var(--ds-ink-muted)] text-[11px]'>
                   {formatSize(entry.size)}
                   {entry.label ? ` · ${entry.label}` : ''}
                 </span>
               </div>
               <button
                 onClick={() => restore(entry.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors text-xs font-semibold flex-shrink-0 ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--ds-radius-sm)] border transition-colors text-xs font-semibold flex-shrink-0 ${
                   confirmId === entry.id
-                    ? 'bg-amber-500/20 border-amber-500/30 text-amber-400 hover:bg-amber-500/30'
-                    : 'bg-white/8 border-white/12 text-white/70 hover:bg-white/12 hover:text-white'
+                    ? 'bg-[var(--ds-surface-3)] border-[var(--ds-warm-light)] text-[var(--ds-warm-light)]'
+                    : 'bg-[var(--ds-surface-3)] border-[var(--ds-surface-3)] text-[var(--ds-ink)]'
                 }`}
               >
                 {confirmId === entry.id ? <AlertTriangle size={12} /> : <RotateCcw size={12} />}

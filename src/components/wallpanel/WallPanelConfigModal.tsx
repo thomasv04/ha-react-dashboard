@@ -44,15 +44,15 @@ function ToggleRow({
   return (
     <label className={cn('flex items-center justify-between gap-4', disabled && 'opacity-40')}>
       <div className='min-w-0'>
-        <p className='text-white/80 text-sm font-medium'>{label}</p>
-        {description && <p className='text-white/28 text-xs mt-0.5'>{description}</p>}
+        <p className='text-[var(--ds-ink)] text-sm font-medium'>{label}</p>
+        {description && <p className='text-[var(--ds-ink-muted)] text-xs mt-0.5'>{description}</p>}
       </div>
       <input
         type='checkbox'
         checked={checked}
         disabled={disabled}
         onChange={e => onChange(e.target.checked)}
-        className='w-4 h-4 accent-purple-500 shrink-0'
+        className='w-4 h-4 accent-[var(--ds-accent)] shrink-0'
       />
     </label>
   );
@@ -151,7 +151,6 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
       <motion.div
         data-overlay
         className='fixed inset-0 z-[110] bg-black/60'
-        style={{ backdropFilter: 'blur(6px)' }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -165,28 +164,23 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
         transition={{ duration: 0.22, ease: EASE_OUT }}
       >
         <div
-          className='pointer-events-auto w-full max-w-lg rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col'
+          className='pointer-events-auto w-full max-w-lg rounded-[var(--ds-radius-xl)] border border-[var(--ds-surface-3)] shadow-[var(--ds-shadow-sheet)] overflow-hidden flex flex-col'
           style={{
-            background: 'rgba(8,12,35,0.97)',
-            backdropFilter: 'blur(24px)',
+            background: 'var(--ds-surface-1)',
             maxHeight: 'min(680px,calc(100vh - 32px))',
           }}
         >
           {/* Header */}
-          <div className='flex items-center justify-between px-5 pt-5 pb-4 border-b border-white/[0.08] shrink-0'>
+          <div className='flex items-center justify-between px-5 pt-5 pb-4 border-b border-[var(--ds-surface-3)] shrink-0'>
             <div>
-              <h2 className='text-white font-semibold text-base'>{t('layout.wallPanel.subtitle')}</h2>
-              <p className='text-white/25 text-[11px] mt-0.5'>{t('layout.wallPanel.demo')}</p>
+              <h2 className='text-[var(--ds-ink)] font-semibold text-base'>{t('layout.wallPanel.subtitle')}</h2>
+              <p className='text-[var(--ds-ink-muted)] text-[11px] mt-0.5'>{t('layout.wallPanel.demo')}</p>
             </div>
             <div className='flex items-center gap-2'>
               <button
                 onClick={handleDemo}
-                className='flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors'
-                style={{
-                  background: 'rgba(168,85,247,0.18)',
-                  border: '1px solid rgba(168,85,247,0.35)',
-                  color: '#d8b4fe',
-                }}
+                className='flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--ds-radius-md)] text-xs font-medium transition-colors'
+                style={{ background: 'var(--ds-accent)', color: '#ffffff' }}
               >
                 <Play size={12} />
                 {t('layout.wallPanel.demo')}
@@ -194,7 +188,7 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
               <button
                 onClick={requestClose}
                 aria-label={t('common.close')}
-                className='p-1.5 rounded-xl text-white/25 hover:text-white/70 hover:bg-white/[0.08] transition-colors'
+                className='p-1.5 rounded-[var(--ds-radius-md)] text-[var(--ds-ink-muted)] transition-colors'
               >
                 <X size={15} />
               </button>
@@ -202,16 +196,16 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
           </div>
 
           {/* Tabs */}
-          <div className='flex items-center gap-1 px-4 py-2.5 border-b border-white/[0.06] shrink-0'>
+          <div className='flex items-center gap-1 px-4 py-2.5 border-b border-[var(--ds-surface-3)] shrink-0'>
             {TABS.map(t => (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
                 className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-medium transition-all',
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--ds-radius-md)] text-[11px] font-medium transition-all',
                   tab === t.id
-                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                    : 'text-white/30 hover:text-white/55 hover:bg-white/5'
+                    ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] border border-[var(--ds-accent)]'
+                    : 'text-[var(--ds-ink-muted)]'
                 )}
               >
                 <t.icon size={12} />
@@ -227,20 +221,20 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
               <>
                 <label className='flex items-center justify-between'>
                   <div>
-                    <p className='text-white/80 text-sm font-medium'>{t('layout.wallPanel.enableScreensaver')}</p>
-                    <p className='text-white/28 text-xs mt-0.5'>{t('layout.wallPanel.enableScreensaverDesc')}</p>
+                    <p className='text-[var(--ds-ink)] text-sm font-medium'>{t('layout.wallPanel.enableScreensaver')}</p>
+                    <p className='text-[var(--ds-ink-muted)] text-xs mt-0.5'>{t('layout.wallPanel.enableScreensaverDesc')}</p>
                   </div>
                   <input
                     type='checkbox'
                     checked={draft.enabled}
                     onChange={e => update({ enabled: e.target.checked })}
-                    className='w-4 h-4 accent-purple-500'
+                    className='w-4 h-4 accent-[var(--ds-accent)]'
                   />
                 </label>
 
                 <div>
-                  <label className='text-white/55 text-xs font-medium block mb-1.5'>
-                    {t('layout.wallPanel.idleDelay')} : <span className='text-white/80'>{draft.idle_time}s</span>
+                  <label className='text-[var(--ds-ink-muted)] text-xs font-medium block mb-1.5'>
+                    {t('layout.wallPanel.idleDelay')} : <span className='text-[var(--ds-ink)]'>{draft.idle_time}s</span>
                   </label>
                   <input
                     type='range'
@@ -249,10 +243,10 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                     step={30}
                     value={draft.idle_time}
                     onChange={e => update({ idle_time: Number(e.target.value) })}
-                    className='w-full accent-purple-500'
+                    className='w-full accent-[var(--ds-accent)]'
                     disabled={!draft.enabled}
                   />
-                  <div className='flex justify-between text-white/18 text-[10px] mt-0.5'>
+                  <div className='flex justify-between text-[var(--ds-ink-muted)] text-[10px] mt-0.5'>
                     <span>30s</span>
                     <span>5min</span>
                     <span>15min</span>
@@ -261,21 +255,23 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                 </div>
 
                 <div>
-                  <label className='text-white/55 text-xs font-medium block mb-1'>{t('layout.wallPanel.haEntity')}</label>
+                  <label className='text-[var(--ds-ink-muted)] text-xs font-medium block mb-1'>{t('layout.wallPanel.haEntity')}</label>
                   <input
                     type='text'
                     value={draft.screensaver_entity ?? ''}
                     onChange={e => update({ screensaver_entity: e.target.value || undefined })}
                     placeholder='input_boolean.wallpanel_screensaver'
-                    className='w-full px-3 py-2 rounded-xl bg-white/5 border border-white/[0.08] text-white/70 text-sm outline-none focus:border-white/20'
+                    className='w-full px-3 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)] text-sm outline-none focus:border-[var(--ds-accent)]'
                   />
-                  <p className='text-white/20 text-[10px] mt-1'>{t('layout.wallPanel.haEntityDesc')}</p>
+                  <p className='text-[var(--ds-ink-muted)] text-[10px] mt-1'>{t('layout.wallPanel.haEntityDesc')}</p>
                 </div>
 
-                <div className='p-3 rounded-xl border border-purple-500/15 bg-purple-500/5'>
-                  <p className='text-white/40 text-xs leading-relaxed'>
-                    <span className='text-purple-300/70 font-medium'>{t('layout.wallPanel.forcedActivation')}</span> — ajoutez
-                    <code className='mx-1 px-1.5 py-0.5 rounded bg-white/[0.08] text-purple-200/70 text-[10px]'>?hrd_screensaver=true</code>
+                <div className='p-3 rounded-[var(--ds-radius-md)] border border-[var(--ds-accent)] bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'>
+                  <p className='text-[var(--ds-ink-muted)] text-xs leading-relaxed'>
+                    <span className='text-[var(--ds-accent)] font-medium'>{t('layout.wallPanel.forcedActivation')}</span> — ajoutez
+                    <code className='mx-1 px-1.5 py-0.5 rounded bg-[var(--ds-surface-3)] text-[var(--ds-accent)] text-[10px]'>
+                      ?hrd_screensaver=true
+                    </code>
                     à l'URL pour activer immédiatement (utile pour tablette murale).
                   </p>
                 </div>
@@ -287,7 +283,7 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
               <>
                 {planPages.length > 0 && (
                   <div>
-                    <p className='text-white/55 text-xs font-medium mb-2'>{t('layout.wallPanel.backgroundSource')}</p>
+                    <p className='text-[var(--ds-ink-muted)] text-xs font-medium mb-2'>{t('layout.wallPanel.backgroundSource')}</p>
                     <div className='flex flex-wrap gap-1.5'>
                       {[
                         { id: '', label: t('layout.wallPanel.backgroundPhotos') },
@@ -298,10 +294,10 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                           onClick={() => update({ floorplan_page: option.id })}
                           aria-pressed={(draft.floorplan_page ?? '') === option.id}
                           className={cn(
-                            'px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors',
+                            'px-3 py-1.5 rounded-[var(--ds-radius-md)] text-xs font-medium border transition-colors',
                             (draft.floorplan_page ?? '') === option.id
-                              ? 'bg-purple-500/20 border-purple-500/40 text-purple-200'
-                              : 'bg-white/5 border-white/[0.08] text-white/60 hover:text-white'
+                              ? 'bg-[var(--ds-tile-on)] border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
+                              : 'bg-[var(--ds-surface-2)] border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
                           )}
                         >
                           {option.label}
@@ -309,28 +305,33 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                       ))}
                     </div>
                     {draft.floorplan_page && (
-                      <p className='text-white/35 text-[11px] mt-1.5 leading-relaxed'>{t('layout.wallPanel.backgroundPlanHint')}</p>
+                      <p className='text-[var(--ds-ink-muted)] text-[11px] mt-1.5 leading-relaxed'>
+                        {t('layout.wallPanel.backgroundPlanHint')}
+                      </p>
                     )}
                   </div>
                 )}
                 {!draft.floorplan_page && (
                   <>
                     <div>
-                      <p className='text-white/55 text-xs font-medium mb-2'>{t('layout.wallPanel.backgroundImages')}</p>
+                      <p className='text-[var(--ds-ink-muted)] text-xs font-medium mb-2'>{t('layout.wallPanel.backgroundImages')}</p>
                       <div className='space-y-1.5 mb-2'>
                         {draft.image_urls.map((url, i) => (
-                          <div key={i} className='flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/[0.07] group'>
-                            <span className='flex-1 truncate text-white/55 text-xs font-mono'>{url}</span>
+                          <div
+                            key={i}
+                            className='flex items-center gap-2 px-3 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] group'
+                          >
+                            <span className='flex-1 truncate text-[var(--ds-ink-muted)] text-xs font-mono'>{url}</span>
                             <button
                               onClick={() => removeImageUrl(i)}
-                              className='text-red-400/40 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100'
+                              className='text-[var(--ds-alert)] transition-colors opacity-0 group-hover:opacity-100'
                             >
                               <Trash2 size={12} />
                             </button>
                           </div>
                         ))}
                         {draft.image_urls.length === 0 && (
-                          <p className='text-white/18 text-xs text-center py-3'>{t('layout.wallPanel.noImages')}</p>
+                          <p className='text-[var(--ds-ink-muted)] text-xs text-center py-3'>{t('layout.wallPanel.noImages')}</p>
                         )}
                       </div>
                       <div className='flex gap-2'>
@@ -340,11 +341,11 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                           onChange={e => setNewUrl(e.target.value)}
                           onKeyDown={e => e.key === 'Enter' && addImageUrl()}
                           placeholder='https://... ou media-source://...'
-                          className='flex-1 px-3 py-2 rounded-xl bg-white/5 border border-white/[0.08] text-white/70 text-xs outline-none focus:border-white/20'
+                          className='flex-1 px-3 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)] text-xs outline-none focus:border-[var(--ds-accent)]'
                         />
                         <button
                           onClick={addImageUrl}
-                          className='px-3 py-2 rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-300 hover:bg-purple-500/30 transition-colors'
+                          className='px-3 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)] transition-colors'
                         >
                           <Plus size={14} />
                         </button>
@@ -353,11 +354,13 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
 
                     <div className='grid grid-cols-2 gap-3'>
                       <div>
-                        <label className='text-white/55 text-xs font-medium block mb-1'>{t('layout.wallPanel.imageFit')}</label>
+                        <label className='text-[var(--ds-ink-muted)] text-xs font-medium block mb-1'>
+                          {t('layout.wallPanel.imageFit')}
+                        </label>
                         <select
                           value={draft.image_fit}
                           onChange={e => update({ image_fit: e.target.value as ImageFit })}
-                          className='w-full px-3 py-2 rounded-xl bg-white/5 border border-white/[0.08] text-white/70 text-xs outline-none'
+                          className='w-full px-3 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)] text-xs outline-none'
                         >
                           <option value='cover'>{t('layout.wallPanel.fitCover')}</option>
                           <option value='contain'>{t('layout.wallPanel.fitContain')}</option>
@@ -373,18 +376,20 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                                   style: { ...draft.style, containBlurBackground: e.target.checked },
                                 })
                               }
-                              className='accent-purple-500 w-3.5 h-3.5'
+                              className='accent-[var(--ds-accent)] w-3.5 h-3.5'
                             />
-                            <span className='text-white/50 text-xs'>{t('layout.wallPanel.blurBackground')}</span>
+                            <span className='text-[var(--ds-ink-muted)] text-xs'>{t('layout.wallPanel.blurBackground')}</span>
                           </label>
                         )}
                       </div>
                       <div>
-                        <label className='text-white/55 text-xs font-medium block mb-1'>{t('layout.wallPanel.imageOrder')}</label>
+                        <label className='text-[var(--ds-ink-muted)] text-xs font-medium block mb-1'>
+                          {t('layout.wallPanel.imageOrder')}
+                        </label>
                         <select
                           value={draft.media_order}
                           onChange={e => update({ media_order: e.target.value as MediaOrder })}
-                          className='w-full px-3 py-2 rounded-xl bg-white/5 border border-white/[0.08] text-white/70 text-xs outline-none'
+                          className='w-full px-3 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)] text-xs outline-none'
                         >
                           <option value='random'>{t('layout.wallPanel.orderRandom')}</option>
                           <option value='sequential'>{t('layout.wallPanel.orderSequential')}</option>
@@ -393,8 +398,8 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                     </div>
 
                     <div>
-                      <label className='text-white/55 text-xs font-medium block mb-1.5'>
-                        {t('layout.wallPanel.imageDuration')} : <span className='text-white/80'>{draft.image_duration}s</span>
+                      <label className='text-[var(--ds-ink-muted)] text-xs font-medium block mb-1.5'>
+                        {t('layout.wallPanel.imageDuration')} : <span className='text-[var(--ds-ink)]'>{draft.image_duration}s</span>
                       </label>
                       <input
                         type='range'
@@ -403,7 +408,7 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                         step={5}
                         value={draft.image_duration}
                         onChange={e => update({ image_duration: Number(e.target.value) })}
-                        className='w-full accent-purple-500'
+                        className='w-full accent-[var(--ds-accent)]'
                       />
                     </div>
                   </>
@@ -414,21 +419,21 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
             {/* ── WIDGETS ── */}
             {tab === 'widgets' && (
               <div className='space-y-3'>
-                <p className='text-white/35 text-xs leading-relaxed'>{t('layout.wallPanel.widgetsInfo')}</p>
+                <p className='text-[var(--ds-ink-muted)] text-xs leading-relaxed'>{t('layout.wallPanel.widgetsInfo')}</p>
 
                 <div>
-                  <p className='text-white/55 text-xs font-medium'>{t('layout.wallPanel.widgetAnchor')}</p>
-                  <p className='text-white/28 text-[10px] mt-0.5 mb-2'>{t('layout.wallPanel.widgetAnchorDesc')}</p>
+                  <p className='text-[var(--ds-ink-muted)] text-xs font-medium'>{t('layout.wallPanel.widgetAnchor')}</p>
+                  <p className='text-[var(--ds-ink-muted)] text-[10px] mt-0.5 mb-2'>{t('layout.wallPanel.widgetAnchorDesc')}</p>
                   <div className='grid grid-cols-4 gap-2'>
                     {ANCHORS.map(a => (
                       <button
                         key={a.id}
                         onClick={() => update({ widgetAnchor: a.id })}
                         className={cn(
-                          'px-2 py-2 rounded-xl text-[11px] font-medium border transition-colors',
+                          'px-2 py-2 rounded-[var(--ds-radius-md)] text-[11px] font-medium border transition-colors',
                           (draft.widgetAnchor ?? 'top') === a.id
-                            ? 'bg-purple-500/20 text-purple-200 border-purple-500/40'
-                            : 'bg-white/5 text-white/45 border-white/[0.08] hover:text-white/70'
+                            ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] border-[var(--ds-accent)]'
+                            : 'bg-[var(--ds-surface-2)] text-[var(--ds-ink-muted)] border-[var(--ds-surface-3)]'
                         )}
                       >
                         {t(a.labelKey)}
@@ -438,18 +443,18 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                 </div>
 
                 <div>
-                  <p className='text-white/55 text-xs font-medium'>{t('layout.wallPanel.widgetSize')}</p>
-                  <p className='text-white/28 text-[10px] mt-0.5 mb-2'>{t('layout.wallPanel.widgetSizeDesc')}</p>
+                  <p className='text-[var(--ds-ink-muted)] text-xs font-medium'>{t('layout.wallPanel.widgetSize')}</p>
+                  <p className='text-[var(--ds-ink-muted)] text-[10px] mt-0.5 mb-2'>{t('layout.wallPanel.widgetSizeDesc')}</p>
                   <div className='grid grid-cols-5 gap-2'>
                     {EXTENTS.map(extent => (
                       <button
                         key={extent}
                         onClick={() => update({ widgetExtent: extent })}
                         className={cn(
-                          'px-2 py-2 rounded-xl text-[11px] font-medium border transition-colors',
+                          'px-2 py-2 rounded-[var(--ds-radius-md)] text-[11px] font-medium border transition-colors',
                           widgetExtentOf(draft) === extent
-                            ? 'bg-purple-500/20 text-purple-200 border-purple-500/40'
-                            : 'bg-white/5 text-white/45 border-white/[0.08] hover:text-white/70'
+                            ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] border-[var(--ds-accent)]'
+                            : 'bg-[var(--ds-surface-2)] text-[var(--ds-ink-muted)] border-[var(--ds-surface-3)]'
                         )}
                       >
                         {extent === 100 ? t('layout.wallPanel.widgetSizeFull') : `${extent} %`}
@@ -459,8 +464,8 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                 </div>
 
                 <div>
-                  <p className='text-white/55 text-xs font-medium'>{t('layout.wallPanel.presenceEntity')}</p>
-                  <p className='text-white/28 text-[10px] mt-0.5 mb-2'>{t('layout.wallPanel.presenceEntityDesc')}</p>
+                  <p className='text-[var(--ds-ink-muted)] text-xs font-medium'>{t('layout.wallPanel.presenceEntity')}</p>
+                  <p className='text-[var(--ds-ink-muted)] text-[10px] mt-0.5 mb-2'>{t('layout.wallPanel.presenceEntityDesc')}</p>
                   <div className='flex items-center gap-2'>
                     <div className='flex-1 min-w-0'>
                       <EntityPicker
@@ -474,7 +479,7 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                       <button
                         onClick={() => update({ presence_entity: undefined })}
                         aria-label={t('common.delete')}
-                        className='p-2 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/[0.08] transition-colors'
+                        className='p-2 rounded-[var(--ds-radius-sm)] text-[var(--ds-ink-muted)] transition-colors'
                       >
                         <X size={14} />
                       </button>
@@ -482,8 +487,8 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                   </div>
                 </div>
 
-                <div className='p-3 rounded-xl border border-white/[0.08] bg-white/[0.03] text-center'>
-                  <p className='text-white/22 text-xs mb-2'>
+                <div className='p-3 rounded-[var(--ds-radius-md)] border border-[var(--ds-surface-3)] bg-[var(--ds-surface-2)] text-center'>
+                  <p className='text-[var(--ds-ink-muted)] text-xs mb-2'>
                     {layoutWidgets(wallPanelLayout).length}{' '}
                     {layoutWidgets(wallPanelLayout).length !== 1
                       ? t('layout.wallPanel.widgetCount_other')
@@ -491,7 +496,7 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                   </p>
                   <button
                     onClick={handleDemo}
-                    className='text-xs px-4 py-2 rounded-xl border border-purple-500/30 text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 transition-colors'
+                    className='text-xs px-4 py-2 rounded-[var(--ds-radius-md)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)] bg-[var(--ds-tile-on)] transition-colors'
                   >
                     {t('layout.wallPanel.openPreview')}
                   </button>
@@ -503,8 +508,9 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
             {tab === 'style' && (
               <>
                 <div>
-                  <label className='text-white/55 text-xs font-medium block mb-1.5'>
-                    {t('layout.wallPanel.backgroundBlur')} : <span className='text-white/80'>{draft.style.backgroundBlur ?? 0}px</span>
+                  <label className='text-[var(--ds-ink-muted)] text-xs font-medium block mb-1.5'>
+                    {t('layout.wallPanel.backgroundBlur')} :{' '}
+                    <span className='text-[var(--ds-ink)]'>{draft.style.backgroundBlur ?? 0}px</span>
                   </label>
                   <input
                     type='range'
@@ -517,11 +523,11 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                         style: { ...draft.style, backgroundBlur: Number(e.target.value) },
                       })
                     }
-                    className='w-full accent-purple-500'
+                    className='w-full accent-[var(--ds-accent)]'
                   />
                 </div>
                 <div>
-                  <p className='text-white/55 text-xs font-medium mb-2'>{t('layout.wallPanel.clockLayout')}</p>
+                  <p className='text-[var(--ds-ink-muted)] text-xs font-medium mb-2'>{t('layout.wallPanel.clockLayout')}</p>
                   <div className='grid grid-cols-2 gap-2'>
                     {(
                       [
@@ -534,10 +540,10 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                         onClick={() => update({ clock_layout: id })}
                         aria-pressed={(draft.clock_layout ?? 'clock') === id}
                         className={cn(
-                          'px-2 py-2 rounded-xl text-[11px] font-medium border transition-colors',
+                          'px-2 py-2 rounded-[var(--ds-radius-md)] text-[11px] font-medium border transition-colors',
                           (draft.clock_layout ?? 'clock') === id
-                            ? 'bg-purple-500/20 text-purple-200 border-purple-500/40'
-                            : 'bg-white/5 text-white/45 border-white/[0.08] hover:text-white/70'
+                            ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] border-[var(--ds-accent)]'
+                            : 'bg-[var(--ds-surface-2)] text-[var(--ds-ink-muted)] border-[var(--ds-surface-3)]'
                         )}
                       >
                         {t(labelKey)}
@@ -573,7 +579,7 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                       value={gestures.quickPanelId}
                       onChange={quickPanelId => setGesture({ quickPanelId })}
                     />
-                    <p className='text-white/20 text-[10px] mt-1'>{t('layout.wallPanel.gestures.quickPanelDesc')}</p>
+                    <p className='text-[var(--ds-ink-muted)] text-[10px] mt-1'>{t('layout.wallPanel.gestures.quickPanelDesc')}</p>
                   </div>
 
                   <ToggleRow
@@ -593,28 +599,28 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
                   />
                 </div>
 
-                <div className='p-3 rounded-xl border border-purple-500/15 bg-purple-500/5'>
-                  <p className='text-white/40 text-xs leading-relaxed'>{t('layout.wallPanel.gestures.help')}</p>
+                <div className='p-3 rounded-[var(--ds-radius-md)] border border-[var(--ds-accent)] bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'>
+                  <p className='text-[var(--ds-ink-muted)] text-xs leading-relaxed'>{t('layout.wallPanel.gestures.help')}</p>
                 </div>
               </>
             )}
           </div>
 
           {/* Pied — l'enregistrement, et lui seul, écrit sur le serveur. */}
-          <div className='shrink-0 border-t border-white/[0.08] px-5 py-3'>
+          <div className='shrink-0 border-t border-[var(--ds-surface-3)] px-5 py-3'>
             {confirmClose ? (
               <div className='flex items-center justify-between gap-3'>
-                <p className='text-amber-200/80 text-xs'>{t('layout.wallPanel.unsavedWarning')}</p>
+                <p className='text-[var(--ds-warm-light)] text-xs'>{t('layout.wallPanel.unsavedWarning')}</p>
                 <div className='flex items-center gap-2 shrink-0'>
                   <button
                     onClick={discard}
-                    className='px-3 py-1.5 rounded-xl text-xs font-medium text-white/40 hover:text-white/70 hover:bg-white/[0.08] transition-colors'
+                    className='px-3 py-1.5 rounded-[var(--ds-radius-md)] text-xs font-medium text-[var(--ds-ink-muted)] transition-colors'
                   >
                     {t('layout.wallPanel.discard')}
                   </button>
                   <button
                     onClick={handleSave}
-                    className='px-3 py-1.5 rounded-xl text-xs font-medium bg-purple-500/20 border border-purple-500/35 text-purple-200 hover:bg-purple-500/30 transition-colors'
+                    className='px-3 py-1.5 rounded-[var(--ds-radius-md)] text-xs font-medium bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)] transition-colors'
                   >
                     {t('common.save')}
                   </button>
@@ -622,13 +628,13 @@ export function WallPanelConfigModal({ onClose }: WallPanelConfigModalProps) {
               </div>
             ) : (
               <div className='flex items-center justify-between gap-3'>
-                <p className={cn('text-[11px]', dirty ? 'text-amber-200/70' : 'text-white/20')}>
+                <p className={cn('text-[11px]', dirty ? 'text-[var(--ds-warm-light)]' : 'text-[var(--ds-ink-muted)]')}>
                   {dirty ? t('layout.wallPanel.unsavedChanges') : t('layout.wallPanel.saved')}
                 </p>
                 <button
                   onClick={handleSave}
                   disabled={!dirty || isSaving}
-                  className='flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium bg-purple-500/20 border border-purple-500/35 text-purple-200 hover:bg-purple-500/30 disabled:opacity-35 disabled:pointer-events-none transition-colors'
+                  className='flex items-center gap-1.5 px-4 py-2 rounded-[var(--ds-radius-md)] text-xs font-medium bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)] disabled:opacity-35 disabled:pointer-events-none transition-colors'
                 >
                   {isSaving ? <Loader2 size={12} className='animate-spin' /> : <CloudUpload size={12} />}
                   {t('common.save')}

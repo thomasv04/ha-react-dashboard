@@ -41,30 +41,33 @@ export function SettingsContent({ onClose }: { onClose: () => void }) {
   return (
     <div className='flex h-full'>
       {/* ── Sidebar ── */}
-      <div className='w-56 flex-shrink-0 flex flex-col rounded-l-2xl border-r border-white/6' style={{ background: 'rgba(0, 0, 0, 0.18)' }}>
+      <div
+        className='w-56 flex-shrink-0 flex flex-col rounded-l-2xl border-r border-[var(--ds-surface-3)]'
+        style={{ background: 'rgba(0, 0, 0, 0.18)' }}
+      >
         {/* Header */}
-        <div className='flex items-center gap-2.5 px-5 pt-5 pb-5 border-b border-white/6'>
-          <div className='p-1.5 rounded-lg bg-blue-500/20'>
-            <Settings size={14} className='text-blue-400' />
+        <div className='flex items-center gap-2.5 px-5 pt-5 pb-5 border-b border-[var(--ds-surface-3)]'>
+          <div className='p-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'>
+            <Settings size={14} className='text-[var(--ds-accent)]' />
           </div>
-          <span className='text-white font-semibold text-sm'>{t('settings.title')}</span>
+          <span className='text-[var(--ds-ink)] font-semibold text-sm'>{t('settings.title')}</span>
         </div>
 
         {/* Nav */}
         {/* Onglets en casse normale : sept intitulés en capitales très espacées
             se lisaient un par un, et « Performances » débordait de la colonne.
             La sélection reprend le bleu translucide du reste de l'application —
-            un aplat `bg-blue-500` plein était le seul de tout le dashboard. */}
+            un aplat `bg-[var(--ds-accent)] text-white` plein était le seul de tout le dashboard. */}
         <nav className='flex flex-col gap-0.5 p-3 flex-1'>
           {NAV_ITEMS.map(({ id, label, Icon }) => (
             <button
               key={id}
               onClick={() => setSection(id)}
               className={cn(
-                'flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-left border transition-colors',
+                'flex items-center gap-2.5 w-full px-3 py-2 rounded-[var(--ds-radius-sm)] text-left border transition-colors',
                 section === id
-                  ? 'bg-blue-500/15 border-blue-500/30 text-blue-200'
-                  : 'border-transparent text-white/45 hover:text-white/75 hover:bg-white/[0.05]'
+                  ? 'bg-[var(--ds-tile-on)] border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
+                  : 'border-transparent text-[var(--ds-ink-muted)]'
               )}
             >
               <Icon size={15} className='shrink-0' />
@@ -76,21 +79,21 @@ export function SettingsContent({ onClose }: { onClose: () => void }) {
         {/* Footer */}
         {/* La version plutôt qu'un simple nom de produit : c'est le premier
             renseignement qu'on cherche quand on ouvre les réglages. */}
-        <div className='px-5 py-4 border-t border-white/5 flex items-baseline gap-1.5'>
-          <span className='text-white/25 text-[11px]'>{t('settings.footer')}</span>
-          <span className='text-white/15 text-[10px] font-mono'>v{__BUILD_VERSION__}</span>
+        <div className='px-5 py-4 border-t border-[var(--ds-surface-3)] flex items-baseline gap-1.5'>
+          <span className='text-[var(--ds-ink-muted)] text-[11px]'>{t('settings.footer')}</span>
+          <span className='text-[var(--ds-ink-muted)] text-[10px] font-mono'>v{__BUILD_VERSION__}</span>
         </div>
       </div>
 
       {/* ── Content ── */}
       <div className='flex-1 min-w-0 flex flex-col rounded-r-2xl'>
         {/* Top bar */}
-        <div className='flex items-center justify-between px-6 pt-5 pb-4 border-b border-white/6 flex-shrink-0'>
-          <h2 className='text-white font-semibold text-base'>{SECTION_TITLES[section]}</h2>
+        <div className='flex items-center justify-between px-6 pt-5 pb-4 border-b border-[var(--ds-surface-3)] flex-shrink-0'>
+          <h2 className='text-[var(--ds-ink)] font-semibold text-base'>{SECTION_TITLES[section]}</h2>
           <button
             onClick={onClose}
             aria-label={t('common.close')}
-            className='p-1.5 rounded-lg text-white/35 hover:text-white/70 hover:bg-white/10 transition-colors'
+            className='p-1.5 rounded-[var(--ds-radius-sm)] text-[var(--ds-ink-muted)] transition-colors'
           >
             <X size={16} />
           </button>

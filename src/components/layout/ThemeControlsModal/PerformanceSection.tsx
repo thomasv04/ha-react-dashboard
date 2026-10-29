@@ -46,7 +46,14 @@ function FPSMeter() {
   const [measuring, setMeasuring] = useState(false);
   const fps = useFPS(measuring);
 
-  const color = fps === null ? 'text-white/30' : fps >= 55 ? 'text-green-400' : fps >= 30 ? 'text-yellow-400' : 'text-red-400';
+  const color =
+    fps === null
+      ? 'text-[var(--ds-ink-muted)]'
+      : fps >= 55
+        ? 'text-[var(--ds-good)]'
+        : fps >= 30
+          ? 'text-[var(--ds-warm-light)]'
+          : 'text-[var(--ds-alert)]';
   const label =
     fps === null
       ? '—'
@@ -57,18 +64,18 @@ function FPSMeter() {
           : t('settings.performance_section.fpsLow');
 
   return (
-    <div className='flex flex-col gap-3 p-4 rounded-xl bg-white/4 border border-white/8'>
+    <div className='flex flex-col gap-3 p-4 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)]'>
       <div className='flex items-center justify-between'>
         <div className='flex items-center gap-2'>
-          <Activity size={14} className='text-white/40' />
-          <span className='text-white/60 text-xs font-medium'>{t('settings.performance_section.fps')}</span>
+          <Activity size={14} className='text-[var(--ds-ink-muted)]' />
+          <span className='text-[var(--ds-ink-muted)] text-xs font-medium'>{t('settings.performance_section.fps')}</span>
         </div>
         <button
           onClick={() => setMeasuring(v => !v)}
-          className={`px-3 py-1 rounded-lg text-xs font-medium transition-all border ${
+          className={`px-3 py-1 rounded-[var(--ds-radius-sm)] text-xs font-medium transition-all border ${
             measuring
-              ? 'bg-red-500/20 border-red-500/40 text-red-300 hover:bg-red-500/30'
-              : 'bg-white/8 border-white/15 text-white/50 hover:bg-white/12 hover:text-white/70'
+              ? 'bg-[var(--ds-surface-3)] border-[var(--ds-alert)] text-[var(--ds-alert)]'
+              : 'bg-[var(--ds-surface-3)] border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
           }`}
         >
           {measuring ? t('settings.performance_section.fpsStop') : t('settings.performance_section.fpsMeasure')}
@@ -78,7 +85,7 @@ function FPSMeter() {
       <div className='flex items-end gap-3'>
         <span className={`text-4xl font-bold tabular-nums leading-none transition-colors ${color}`}>{fps ?? '··'}</span>
         <div className='flex flex-col pb-0.5'>
-          <span className='text-white/30 text-xs leading-tight'>fps</span>
+          <span className='text-[var(--ds-ink-muted)] text-xs leading-tight'>fps</span>
           {measuring && fps !== null && <span className={`text-xs font-medium leading-tight ${color}`}>{label}</span>}
         </div>
         {measuring && fps !== null && (
@@ -87,7 +94,13 @@ function FPSMeter() {
               <div
                 key={i}
                 className={`w-1.5 rounded-sm transition-all ${
-                  fps >= threshold ? (fps >= 55 ? 'bg-green-400' : fps >= 30 ? 'bg-yellow-400' : 'bg-red-400') : 'bg-white/10'
+                  fps >= threshold
+                    ? fps >= 55
+                      ? 'bg-[var(--ds-good)] text-[#062614]'
+                      : fps >= 30
+                        ? 'bg-[var(--ds-warm-light)] text-[#3d2a00]'
+                        : 'bg-[var(--ds-alert)] text-white'
+                    : 'bg-[var(--ds-surface-3)]'
                 }`}
                 style={{ height: `${8 + i * 4}px` }}
               />
@@ -96,7 +109,9 @@ function FPSMeter() {
         )}
       </div>
 
-      {!measuring && <p className='text-white/25 text-[10px] leading-relaxed'>{t('settings.performance_section.fpsDescription')}</p>}
+      {!measuring && (
+        <p className='text-[var(--ds-ink-muted)] text-[10px] leading-relaxed'>{t('settings.performance_section.fpsDescription')}</p>
+      )}
     </div>
   );
 }
@@ -114,7 +129,7 @@ export function PerformanceSection() {
       <FPSMeter />
 
       <div className='flex flex-col'>
-        <p className='text-white/35 text-xs mb-5 leading-relaxed'>{t('settings.performance_section.intro')}</p>
+        <p className='text-[var(--ds-ink-muted)] text-xs mb-5 leading-relaxed'>{t('settings.performance_section.intro')}</p>
         <PerfToggle
           checked={perfSettings.reduceAnimations}
           onChange={() => toggle('reduceAnimations')}

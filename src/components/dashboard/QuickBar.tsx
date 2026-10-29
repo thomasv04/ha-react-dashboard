@@ -101,17 +101,21 @@ function QuickBarPanel({ mode, onClose }: { mode: Mode; onClose: () => void }) {
         exit={{ opacity: 0 }}
         transition={{ duration: DURATION_FAST }}
         onClick={onClose}
-        className='fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm'
+        className='fixed inset-0 z-[100] bg-black/50'
       />
       <motion.div
         initial={{ opacity: 0, y: -12, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -12, scale: 0.98 }}
         transition={{ duration: DURATION_FAST }}
-        className='fixed top-[12vh] left-1/2 -translate-x-1/2 z-[101] w-[min(92vw,560px)] rounded-2xl bg-[#12121f] border border-white/12 shadow-2xl overflow-hidden'
+        className='fixed top-[12vh] left-1/2 -translate-x-1/2 z-[101] w-[min(92vw,560px)] rounded-[var(--ds-radius-xl)] bg-[var(--ds-surface-1)] text-[var(--ds-ink)] shadow-[var(--ds-shadow-sheet)] overflow-hidden'
       >
-        <div className='flex items-center gap-2.5 px-4 py-3 border-b border-white/8'>
-          {mode === 'entity' ? <Zap size={15} className='text-white/35' /> : <LayoutGrid size={15} className='text-white/35' />}
+        <div className='flex items-center gap-2.5 px-4 py-3 border-b border-[var(--ds-surface-3)]'>
+          {mode === 'entity' ? (
+            <Zap size={15} className='text-[var(--ds-ink-muted)]' />
+          ) : (
+            <LayoutGrid size={15} className='text-[var(--ds-ink-muted)]' />
+          )}
           <input
             ref={inputRef}
             value={query}
@@ -137,9 +141,9 @@ function QuickBarPanel({ mode, onClose }: { mode: Mode; onClose: () => void }) {
               }
             }}
             placeholder={t(mode === 'entity' ? 'dashboard.quickBar.searchEntity' : 'dashboard.quickBar.searchCommand')}
-            className='flex-1 bg-transparent text-white/85 text-sm focus:outline-none placeholder:text-white/25'
+            className='flex-1 bg-transparent text-[var(--ds-ink)] text-sm focus:outline-none placeholder:text-[var(--ds-ink-muted)]'
           />
-          <Search size={14} className='text-white/20' />
+          <Search size={14} className='text-[var(--ds-ink-muted)]' />
         </div>
 
         <ul className='max-h-[50vh] overflow-y-auto py-1'>
@@ -151,18 +155,18 @@ function QuickBarPanel({ mode, onClose }: { mode: Mode; onClose: () => void }) {
                 // `block w-full` : la ligne entière doit être cliquable, pas
                 // seulement le texte.
                 className={`block w-full text-left px-4 py-2 transition-colors cursor-pointer ${
-                  i === active ? 'bg-blue-500/20' : 'hover:bg-white/5'
+                  i === active ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : ''
                 }`}
               >
-                <span className='block text-white/80 text-sm truncate'>{item.label}</span>
-                <span className='block text-white/30 text-[11px] truncate'>
+                <span className='block text-[var(--ds-ink)] text-sm truncate'>{item.label}</span>
+                <span className='block text-[var(--ds-ink-muted)] text-[11px] truncate'>
                   {item.id}
                   {item.hint ? ` · ${item.hint}` : ''}
                 </span>
               </button>
             </li>
           ))}
-          {results.length === 0 && <li className='px-4 py-6 text-center text-white/30 text-xs'>{t('common.noResults')}</li>}
+          {results.length === 0 && <li className='px-4 py-6 text-center text-[var(--ds-ink-muted)] text-xs'>{t('common.noResults')}</li>}
         </ul>
       </motion.div>
     </>

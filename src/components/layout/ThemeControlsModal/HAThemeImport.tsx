@@ -55,16 +55,16 @@ export function HAThemeImport() {
       <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
         <Download size={12} /> {t('settings.appearance_section.haThemeTitle')}
       </h3>
-      <p className='text-white/30 text-[11px] mb-3 leading-relaxed'>{t('settings.appearance_section.haThemeDesc')}</p>
+      <p className='text-[var(--ds-ink-muted)] text-[11px] mb-3 leading-relaxed'>{t('settings.appearance_section.haThemeDesc')}</p>
 
       {importedTheme && (
         <div className='flex items-center gap-2 mb-3'>
           <button
             onClick={() => setTheme(HA_THEME_ID)}
-            className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+            className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-[var(--ds-radius-sm)] border text-xs font-medium transition-colors cursor-pointer ${
               themeId === HA_THEME_ID
-                ? 'bg-blue-500/25 border-blue-500/40 text-blue-200'
-                : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'
+                ? 'bg-[var(--ds-tile-on)] border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
+                : 'bg-[var(--ds-surface-2)] border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
             }`}
           >
             {themeId === HA_THEME_ID && <Check size={12} />}
@@ -73,7 +73,7 @@ export function HAThemeImport() {
           <button
             onClick={remove}
             title={t('common.delete')}
-            className='p-2 rounded-lg bg-red-500/15 hover:bg-red-500/30 text-red-400/70 hover:text-red-300 transition-colors cursor-pointer'
+            className='p-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] text-[var(--ds-alert)] transition-colors cursor-pointer'
           >
             <X size={12} />
           </button>
@@ -84,26 +84,26 @@ export function HAThemeImport() {
         <button
           onClick={load}
           disabled={loading}
-          className='flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/8 border border-white/12 text-white/70 hover:bg-white/12 hover:text-white transition-colors text-xs font-semibold cursor-pointer disabled:opacity-40'
+          className='flex items-center gap-1.5 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)] transition-colors text-xs font-semibold cursor-pointer disabled:opacity-40'
         >
           <Download size={12} />
           {loading ? t('common.loading') : t('settings.appearance_section.haThemeLoad')}
         </button>
       ) : themes.length === 0 ? (
-        <p className='text-white/30 text-xs italic'>{t('settings.appearance_section.haThemeEmpty')}</p>
+        <p className='text-[var(--ds-ink-muted)] text-xs italic'>{t('settings.appearance_section.haThemeEmpty')}</p>
       ) : (
         <div className='flex flex-col gap-1 max-h-48 overflow-y-auto'>
           {themes.map(theme => (
             <button
               key={theme.name}
               onClick={() => apply(theme)}
-              className='flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white transition-colors text-xs text-left cursor-pointer'
+              className='flex items-center gap-2.5 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)] transition-colors text-xs text-left cursor-pointer'
             >
               {/* Aperçu : fond, accent, texte — de quoi reconnaître le thème
                   sans l'appliquer. */}
               <span className='flex gap-0.5 flex-shrink-0'>
                 {[theme.tokens.bgPrimary, theme.tokens.accent, theme.tokens.textPrimary].map((c, i) => (
-                  <span key={i} className='w-3 h-5 rounded-sm border border-white/10' style={{ backgroundColor: c }} />
+                  <span key={i} className='w-3 h-5 rounded-sm border border-[var(--ds-surface-3)]' style={{ backgroundColor: c }} />
                 ))}
               </span>
               <span className='truncate'>{theme.name}</span>
@@ -112,7 +112,7 @@ export function HAThemeImport() {
         </div>
       )}
 
-      {error && <p className='text-red-400 text-xs mt-2'>{t('settings.appearance_section.haThemeError')}</p>}
+      {error && <p className='text-[var(--ds-alert)] text-xs mt-2'>{t('settings.appearance_section.haThemeError')}</p>}
     </div>
   );
 }

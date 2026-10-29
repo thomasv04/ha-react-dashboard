@@ -16,8 +16,8 @@ export function ListRow({ meta, selected, onClick }: { meta: WidgetMeta; selecte
     <button
       onClick={onClick}
       className={cn(
-        'group relative w-full flex items-center gap-3 pl-3.5 pr-3 py-2 rounded-lg text-left transition-colors',
-        selected ? 'bg-white/[0.07]' : 'hover:bg-white/[0.04]'
+        'group relative w-full flex items-center gap-3 pl-3.5 pr-3 py-2 rounded-[var(--ds-radius-sm)] text-left transition-colors',
+        selected ? 'bg-[var(--ds-surface-3)]' : ''
       )}
     >
       <span
@@ -26,7 +26,12 @@ export function ListRow({ meta, selected, onClick }: { meta: WidgetMeta; selecte
         style={{ background: meta.color, opacity: selected ? 1 : 0 }}
       />
       <meta.icon size={15} className='shrink-0 transition-opacity' style={{ color: meta.color, opacity: selected ? 1 : 0.65 }} />
-      <span className={cn('text-[13px] flex-1 truncate transition-colors', selected ? 'text-white font-medium' : 'text-white/55')}>
+      <span
+        className={cn(
+          'text-[13px] flex-1 truncate transition-colors',
+          selected ? 'text-[var(--ds-ink)] font-medium' : 'text-[var(--ds-ink-muted)]'
+        )}
+      >
         {t(meta.label)}
       </span>
     </button>

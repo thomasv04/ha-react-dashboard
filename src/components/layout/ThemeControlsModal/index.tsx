@@ -22,7 +22,6 @@ export function ThemeControlsModal({ open, onClose }: { open: boolean; onClose: 
             key='settings-modal-backdrop'
             data-overlay
             className='fixed inset-0 z-[60] bg-black/60'
-            style={{ backdropFilter: 'blur(4px)' }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -38,7 +37,7 @@ export function ThemeControlsModal({ open, onClose }: { open: boolean; onClose: 
             transition={{ duration: DURATION_FAST }}
           >
             <div
-              className='gc-overlay pointer-events-auto w-full max-w-3xl rounded-2xl overflow-hidden'
+              className='bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-sheet)] pointer-events-auto w-full max-w-3xl rounded-[var(--ds-radius-lg)] overflow-hidden'
               style={{ height: 'min(88vh, 640px)' }}
             >
               <SettingsContent onClose={onClose} />

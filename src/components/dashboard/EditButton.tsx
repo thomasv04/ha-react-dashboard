@@ -116,7 +116,7 @@ export function EditButton() {
                 data-testid='help-button'
                 title={t('help.title')}
                 aria-label={t('help.title')}
-                className='p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white/70 hover:text-white transition-colors backdrop-blur-sm'
+                className='p-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)] transition-colors'
               >
                 <HelpCircle size={15} />
               </button>
@@ -124,13 +124,13 @@ export function EditButton() {
               {/* Annuler / rétablir — Ctrl+Z et Ctrl+Maj+Z font la même chose.
                   Les boutons existent parce que le raccourci n'existe pas sur
                   une tablette murale, là où le glisser-déposer rate le plus. */}
-              <div className='flex items-center rounded-xl bg-white/10 border border-white/20 backdrop-blur-sm overflow-hidden'>
+              <div className='flex items-center rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] overflow-hidden'>
                 <button
                   onClick={undo}
                   disabled={!canUndo}
                   title={t('dashboard.undo')}
                   aria-label={t('dashboard.undo')}
-                  className='p-2 text-white/70 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-25 disabled:hover:bg-transparent'
+                  className='p-2 text-[var(--ds-ink)] transition-colors disabled:opacity-25 disabled:hover:bg-transparent'
                 >
                   <Undo2 size={15} />
                 </button>
@@ -139,7 +139,7 @@ export function EditButton() {
                   disabled={!canRedo}
                   title={t('dashboard.redo')}
                   aria-label={t('dashboard.redo')}
-                  className='p-2 text-white/70 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-25 disabled:hover:bg-transparent'
+                  className='p-2 text-[var(--ds-ink)] transition-colors disabled:opacity-25 disabled:hover:bg-transparent'
                 >
                   <Redo2 size={15} />
                 </button>
@@ -147,8 +147,8 @@ export function EditButton() {
 
               {/* Actions groupées — n'apparaissent qu'avec une sélection. */}
               {selection.selected.size > 0 && (
-                <div className='flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-blue-500/20 border border-blue-500/40 backdrop-blur-sm'>
-                  <span className='text-blue-200 text-xs font-semibold tabular-nums'>
+                <div className='flex items-center gap-1.5 px-2.5 py-1.5 rounded-[var(--ds-radius-md)] bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'>
+                  <span className='text-[var(--ds-accent)] text-xs font-semibold tabular-nums'>
                     {t('dashboard.selectionCount', { value: selection.selected.size })}
                   </span>
                   <button
@@ -158,7 +158,7 @@ export function EditButton() {
                     }}
                     title={t('dashboard.selectionDelete')}
                     aria-label={t('dashboard.selectionDelete')}
-                    className='p-1 rounded-lg text-red-300 hover:bg-red-500/25 transition-colors'
+                    className='p-1 rounded-[var(--ds-radius-sm)] text-[var(--ds-alert)] transition-colors'
                   >
                     <Trash2 size={13} />
                   </button>
@@ -166,7 +166,7 @@ export function EditButton() {
                     onClick={selection.clear}
                     title={t('dashboard.selectionClear')}
                     aria-label={t('dashboard.selectionClear')}
-                    className='p-1 rounded-lg text-white/60 hover:bg-white/15 hover:text-white transition-colors'
+                    className='p-1 rounded-[var(--ds-radius-sm)] text-[var(--ds-ink-muted)] transition-colors'
                   >
                     <X size={13} />
                   </button>
@@ -180,7 +180,7 @@ export function EditButton() {
                 onClick={() => setShowAddModal(true)}
                 data-tour='add'
                 title={t('common.add')}
-                className='flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 text-blue-300 hover:text-blue-100 text-sm font-medium transition-colors backdrop-blur-sm'
+                className='flex items-center gap-2 px-3 sm:px-4 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)] text-sm font-medium transition-colors'
               >
                 <Plus size={15} />
                 <span className='hidden sm:inline'>{t('common.add')}</span>
@@ -192,7 +192,7 @@ export function EditButton() {
                 data-tour='save'
                 disabled={isSaving}
                 title={t('common.save')}
-                className='flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 text-green-300 hover:text-green-100 text-sm font-medium transition-colors backdrop-blur-sm disabled:opacity-50'
+                className='flex items-center gap-2 px-3 sm:px-4 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-good)] border border-[var(--ds-good)] text-[#062614] text-sm font-medium transition-colors disabled:opacity-50'
               >
                 {isSaving ? <Loader2 size={15} className='animate-spin' /> : <CloudUpload size={15} />}
                 <span className='hidden sm:inline'>{isSaving ? t('dashboard.saving') : t('common.save')}</span>
@@ -201,7 +201,7 @@ export function EditButton() {
               {/* Bouton Annuler */}
               <button
                 onClick={() => setEditMode(false)}
-                className='p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white/60 hover:text-white transition-colors backdrop-blur-sm'
+                className='p-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)] transition-colors'
                 title={t('dashboard.cancelTooltip')}
               >
                 <X size={16} />
@@ -221,15 +221,15 @@ export function EditButton() {
       {pinPrompt && (
         <div
           data-overlay
-          className='fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm'
+          className='fixed inset-0 z-[120] flex items-center justify-center bg-black/60'
           onClick={() => setPinPrompt(false)}
         >
           <div
             onClick={e => e.stopPropagation()}
-            className='w-[min(90vw,320px)] rounded-2xl bg-[#12121f] border border-white/12 p-5 shadow-2xl'
+            className='w-[min(90vw,320px)] rounded-[var(--ds-radius-xl)] bg-[var(--ds-surface-1)] text-[var(--ds-ink)] p-5 shadow-[var(--ds-shadow-sheet)]'
           >
-            <h3 className='text-white/85 text-sm font-semibold mb-1'>{t('dashboard.pinTitle')}</h3>
-            <p className='text-white/40 text-xs mb-4'>{t('dashboard.pinDesc')}</p>
+            <h3 className='text-[var(--ds-ink)] text-sm font-semibold mb-1'>{t('dashboard.pinTitle')}</h3>
+            <p className='text-[var(--ds-ink-muted)] text-xs mb-4'>{t('dashboard.pinDesc')}</p>
             <input
               autoFocus
               type='password'
@@ -240,19 +240,19 @@ export function EditButton() {
                 setPinWrong(false);
               }}
               onKeyDown={e => e.key === 'Enter' && submitPin()}
-              className='w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white/85 text-center text-lg tracking-[0.5em] font-mono focus:outline-none focus:border-blue-500/40'
+              className='w-full bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] rounded-[var(--ds-radius-sm)] px-3 py-2 text-[var(--ds-ink)] text-center text-lg tracking-[0.5em] font-mono focus:outline-none focus:border-[var(--ds-accent)]'
             />
-            {pinWrong && <p className='text-red-400 text-xs mt-2'>{t('dashboard.pinWrong')}</p>}
+            {pinWrong && <p className='text-[var(--ds-alert)] text-xs mt-2'>{t('dashboard.pinWrong')}</p>}
             <div className='flex gap-2 mt-4'>
               <button
                 onClick={() => setPinPrompt(false)}
-                className='flex-1 px-3 py-2 rounded-lg bg-white/8 border border-white/12 text-white/60 hover:text-white text-xs font-semibold transition-colors'
+                className='flex-1 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)] text-xs font-semibold transition-colors'
               >
                 {t('common.cancel')}
               </button>
               <button
                 onClick={submitPin}
-                className='flex-1 px-3 py-2 rounded-lg bg-blue-500/25 border border-blue-500/40 text-blue-200 hover:bg-blue-500/35 text-xs font-semibold transition-colors'
+                className='flex-1 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)] text-xs font-semibold transition-colors'
               >
                 {t('common.confirm')}
               </button>

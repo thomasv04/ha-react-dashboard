@@ -58,14 +58,20 @@ export function EntityPicker({
     <div>
       {/* Pas d'étiquette vide : dans une rangée de liste, elle réservait sa
           hauteur et décalait le sélecteur du bouton de suppression. */}
-      {label && <label className='text-[11px] text-white/40 mb-1 block'>{label}</label>}
+      {label && <label className='text-[11px] text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>}
       <div
         ref={triggerRef}
-        className='flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:border-white/20 transition-colors'
+        className='flex items-center gap-2 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] cursor-pointer transition-colors'
         onClick={handleToggle}
       >
-        <span className={`text-sm flex-1 truncate ${value ? 'text-white/80' : 'text-white/30'}`}>{value || t('layout.entitySelect')}</span>
-        {open ? <ChevronUp size={14} className='text-white/30' /> : <ChevronDown size={14} className='text-white/30' />}
+        <span className={`text-sm flex-1 truncate ${value ? 'text-[var(--ds-ink)]' : 'text-[var(--ds-ink-muted)]'}`}>
+          {value || t('layout.entitySelect')}
+        </span>
+        {open ? (
+          <ChevronUp size={14} className='text-[var(--ds-ink-muted)]' />
+        ) : (
+          <ChevronDown size={14} className='text-[var(--ds-ink-muted)]' />
+        )}
       </div>
 
       {open &&
@@ -76,23 +82,22 @@ export function EntityPicker({
               position: 'fixed',
               ...dropStyle,
               zIndex: 9999,
-              background: 'rgba(12, 16, 40, 0.98)',
-              backdropFilter: 'blur(20px)',
+              background: 'var(--ds-surface-1)',
               borderRadius: 8,
-              border: '1px solid rgba(255,255,255,0.12)',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+              border: '1px solid var(--ds-surface-3)',
+              boxShadow: 'var(--ds-shadow-sheet)',
               overflow: 'hidden',
               maxHeight: 240,
             }}
           >
-            <div className='sticky top-0 p-2 border-b border-white/8' style={{ background: 'rgba(12, 16, 40, 0.98)' }}>
-              <div className='flex items-center gap-2 px-2 py-1.5 rounded-md bg-white/5'>
-                <Search size={13} className='text-white/30' />
+            <div className='sticky top-0 p-2 border-b border-[var(--ds-surface-3)]' style={{ background: 'var(--ds-surface-1)' }}>
+              <div className='flex items-center gap-2 px-2 py-1.5 rounded-md bg-[var(--ds-surface-2)]'>
+                <Search size={13} className='text-[var(--ds-ink-muted)]' />
                 <input
                   autoFocus
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className='bg-transparent text-sm text-white/80 outline-none flex-1 placeholder:text-white/20'
+                  className='bg-transparent text-sm text-[var(--ds-ink)] outline-none flex-1 placeholder:text-[var(--ds-ink-muted)]'
                   placeholder={t('layout.entitySearch')}
                 />
               </div>
@@ -106,14 +111,14 @@ export function EntityPicker({
                     setOpen(false);
                     setSearch('');
                   }}
-                  className={`w-full text-left px-3 py-1.5 text-sm hover:bg-white/8 transition-colors truncate ${
-                    id === value ? 'text-blue-400 bg-blue-500/10' : 'text-white/60'
+                  className={`w-full text-left px-3 py-1.5 text-sm transition-colors truncate ${
+                    id === value ? 'text-[var(--ds-tile-on-ink)] bg-[var(--ds-tile-on)]' : 'text-[var(--ds-ink-muted)]'
                   }`}
                 >
                   {id}
                 </button>
               ))}
-              {filtered.length === 0 && <p className='px-3 py-2 text-white/25 text-xs'>{t('layout.entityNoResult')}</p>}
+              {filtered.length === 0 && <p className='px-3 py-2 text-[var(--ds-ink-muted)] text-xs'>{t('layout.entityNoResult')}</p>}
             </div>
           </div>,
           document.body

@@ -16,9 +16,9 @@ export function SoundSection() {
 
   return (
     <div className='flex flex-col gap-5'>
-      <div className='flex items-center gap-3 p-4 rounded-xl bg-white/4 border border-white/8'>
-        <Volume2 size={16} className='text-white/40 shrink-0' />
-        <p className='text-white/35 text-xs leading-relaxed'>{t('settings.sound_section.intro')}</p>
+      <div className='flex items-center gap-3 p-4 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)]'>
+        <Volume2 size={16} className='text-[var(--ds-ink-muted)] shrink-0' />
+        <p className='text-[var(--ds-ink-muted)] text-xs leading-relaxed'>{t('settings.sound_section.intro')}</p>
       </div>
 
       <div className='flex flex-col'>

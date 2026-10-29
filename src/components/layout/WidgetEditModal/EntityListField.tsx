@@ -26,7 +26,7 @@ export function EntityListField({
 
   return (
     <div>
-      <label className='text-[11px] text-white/40 mb-1 block'>{label}</label>
+      <label className='text-[11px] text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>
 
       {value.map((entityId, index) => (
         <div key={index} className='flex items-center gap-1 mb-1'>
@@ -44,14 +44,14 @@ export function EntityListField({
           <button
             onClick={() => onChange(value.filter((_, i) => i !== index))}
             title={t('common.delete')}
-            className='p-1 text-red-400/50 hover:text-red-400'
+            className='p-1 text-[var(--ds-alert)]'
           >
             <Trash2 size={11} />
           </button>
         </div>
       ))}
 
-      <button onClick={() => onChange([...value, ''])} className='flex items-center gap-1 text-[11px] text-blue-400/60 hover:text-blue-400'>
+      <button onClick={() => onChange([...value, ''])} className='flex items-center gap-1 text-[11px] text-[var(--ds-accent)]'>
         <Plus size={11} /> {t('layout.addEntityBtn')}
       </button>
     </div>

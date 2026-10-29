@@ -37,11 +37,11 @@ export function WeatherIconsEditor({
   return (
     <div className='space-y-3'>
       <div>
-        <h3 className='text-sm text-white/70 font-medium'>{t('layout.weatherIconsTitle')}</h3>
-        <p className='text-[10px] text-white/30 mt-1'>
+        <h3 className='text-sm text-[var(--ds-ink)] font-medium'>{t('layout.weatherIconsTitle')}</h3>
+        <p className='text-[10px] text-[var(--ds-ink-muted)] mt-1'>
           {t('layout.weatherIconsHint')}
           {customCount > 0 && (
-            <span className='ml-1.5 px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 text-[10px]'>
+            <span className='ml-1.5 px-1.5 py-0.5 rounded-full bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] text-[10px]'>
               {t(customCount > 1 ? 'layout.weatherIconsCountPlural' : 'layout.weatherIconsCount', { count: customCount })}
             </span>
           )}
@@ -69,7 +69,7 @@ export function WeatherIconsEditor({
                   delete next[cond.key];
                   onChange(next);
                 }}
-                className='p-2 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/5 transition-colors mb-[1px]'
+                className='p-2 rounded-[var(--ds-radius-sm)] text-[var(--ds-ink-muted)] transition-colors mb-[1px]'
                 title='Réinitialiser'
               >
                 <RotateCcw size={13} />

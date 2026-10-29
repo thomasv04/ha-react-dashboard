@@ -24,12 +24,14 @@ export function AppearanceSection() {
             <button
               key={id}
               onClick={() => setTheme(id)}
-              className={`p-3 rounded-xl border text-sm font-medium transition-all ${
-                themeId === id ? 'border-blue-500 bg-blue-500/20 text-white' : 'border-white/10 bg-white/5 text-white/60 hover:bg-white/10'
+              className={`p-3 rounded-[var(--ds-radius-md)] border text-sm font-medium transition-all ${
+                themeId === id
+                  ? 'border-[var(--ds-accent)] bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'
+                  : 'border-[var(--ds-surface-3)] bg-[var(--ds-surface-2)] text-[var(--ds-ink-muted)]'
               }`}
             >
               <div
-                className='w-full h-6 rounded-lg mb-2'
+                className='w-full h-6 rounded-[var(--ds-radius-sm)] mb-2'
                 style={{
                   backgroundColor: theme.tokens.bgPrimary,
                   border: `1px solid ${theme.tokens.border}`,
@@ -49,15 +51,15 @@ export function AppearanceSection() {
         <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
           <Sun size={12} /> {t('settings.appearance_section.autoTheme')}
         </h3>
-        <p className='text-white/30 text-[11px] mb-3'>{t('settings.appearance_section.autoThemeDesc')}</p>
+        <p className='text-[var(--ds-ink-muted)] text-[11px] mb-3'>{t('settings.appearance_section.autoThemeDesc')}</p>
         <label className='flex items-center gap-3 cursor-pointer mb-3'>
           <input
             type='checkbox'
             checked={autoTheme.enabled}
             onChange={e => setAutoTheme({ ...autoTheme, enabled: e.target.checked })}
-            className='accent-blue-500 w-4 h-4'
+            className='accent-[var(--ds-accent)] w-4 h-4'
           />
-          <span className='text-white/60 text-sm'>{t('settings.appearance_section.autoTheme')}</span>
+          <span className='text-[var(--ds-ink-muted)] text-sm'>{t('settings.appearance_section.autoTheme')}</span>
         </label>
         {autoTheme.enabled && (
           <div className='grid grid-cols-2 gap-3'>
@@ -66,7 +68,7 @@ export function AppearanceSection() {
               <select
                 value={autoTheme.lightTheme}
                 onChange={e => setAutoTheme({ ...autoTheme, lightTheme: e.target.value as ThemeId })}
-                className='w-full bg-white/8 border border-white/12 rounded-lg px-2 py-1.5 text-white/70 text-xs'
+                className='w-full bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] rounded-[var(--ds-radius-sm)] px-2 py-1.5 text-[var(--ds-ink)] text-xs'
               >
                 {(Object.keys(THEMES) as BuiltInThemeId[]).map(id => (
                   <option key={id} value={id}>
@@ -80,7 +82,7 @@ export function AppearanceSection() {
               <select
                 value={autoTheme.darkTheme}
                 onChange={e => setAutoTheme({ ...autoTheme, darkTheme: e.target.value as ThemeId })}
-                className='w-full bg-white/8 border border-white/12 rounded-lg px-2 py-1.5 text-white/70 text-xs'
+                className='w-full bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] rounded-[var(--ds-radius-sm)] px-2 py-1.5 text-[var(--ds-ink)] text-xs'
               >
                 {(Object.keys(THEMES) as BuiltInThemeId[]).map(id => (
                   <option key={id} value={id}>
@@ -102,19 +104,21 @@ export function AppearanceSection() {
               value={autoTheme.illuminanceEntity ?? ''}
               onChange={v => setAutoTheme({ ...autoTheme, illuminanceEntity: v })}
             />
-            <p className='text-white/25 text-[11px] leading-relaxed'>{t('settings.appearance_section.autoThemeSensorDesc')}</p>
+            <p className='text-[var(--ds-ink-muted)] text-[11px] leading-relaxed'>{t('settings.appearance_section.autoThemeSensorDesc')}</p>
 
             {autoTheme.illuminanceEntity && (
               <div className='flex items-center gap-3'>
-                <label className='text-white/45 text-xs w-24'>{t('settings.appearance_section.autoThemeThreshold')}</label>
+                <label className='text-[var(--ds-ink-muted)] text-xs w-24'>{t('settings.appearance_section.autoThemeThreshold')}</label>
                 <input
                   type='number'
                   min={0}
                   value={autoTheme.illuminanceThreshold ?? DEFAULT_ILLUMINANCE_THRESHOLD}
                   onChange={e => setAutoTheme({ ...autoTheme, illuminanceThreshold: Math.max(0, parseInt(e.target.value, 10) || 0) })}
-                  className='w-24 bg-white/8 border border-white/12 rounded-lg px-2 py-1.5 text-white/70 text-xs'
+                  className='w-24 bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] rounded-[var(--ds-radius-sm)] px-2 py-1.5 text-[var(--ds-ink)] text-xs'
                 />
-                <span className='text-white/25 text-[11px] flex-1'>{t('settings.appearance_section.autoThemeThresholdDesc')}</span>
+                <span className='text-[var(--ds-ink-muted)] text-[11px] flex-1'>
+                  {t('settings.appearance_section.autoThemeThresholdDesc')}
+                </span>
               </div>
             )}
           </div>

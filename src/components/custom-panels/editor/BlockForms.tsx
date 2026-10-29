@@ -79,22 +79,21 @@ export function ServicePicker({
     createPortal(
       <div
         ref={dropRef}
-        className='fixed rounded-xl border border-white/12 shadow-2xl overflow-hidden'
+        className='fixed rounded-[var(--ds-radius-md)] border border-[var(--ds-surface-3)] shadow-[var(--ds-shadow-sheet)] overflow-hidden'
         style={{
           ...dropStyle,
           zIndex: 9999,
-          background: 'rgba(12, 16, 40, 0.98)',
-          backdropFilter: 'blur(20px)',
+          background: 'var(--ds-surface-1)',
         }}
       >
-        <div className='flex items-center gap-2 px-3 py-2 border-b border-white/8'>
-          <Search size={12} className='text-white/30 flex-shrink-0' />
+        <div className='flex items-center gap-2 px-3 py-2 border-b border-[var(--ds-surface-3)]'>
+          <Search size={12} className='text-[var(--ds-ink-muted)] flex-shrink-0' />
           <input
             autoFocus
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder={t('layout.customPanel.searchService')}
-            className='flex-1 bg-transparent text-sm text-white/80 outline-none placeholder:text-white/25'
+            className='flex-1 bg-transparent text-sm text-[var(--ds-ink)] outline-none placeholder:text-[var(--ds-ink-muted)]'
           />
         </div>
         <div className='overflow-y-auto p-1.5 space-y-0.5' style={{ maxHeight: 220 }}>
@@ -109,33 +108,37 @@ export function ServicePicker({
                   setSearch('');
                 }}
                 className={cn(
-                  'w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm text-left transition-colors',
-                  isActive ? 'bg-blue-500/15 border border-blue-500/30' : 'border border-transparent hover:bg-white/6'
+                  'w-full flex items-center justify-between gap-3 px-3 py-2 rounded-[var(--ds-radius-sm)] text-sm text-left transition-colors',
+                  isActive
+                    ? 'bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
+                    : 'border border-transparent'
                 )}
               >
-                <span className={isActive ? 'text-blue-300' : 'text-white/70'}>{t(p.labelKey)}</span>
-                <span className='text-white/25 text-xs font-mono flex-shrink-0'>
+                <span className={isActive ? 'text-[var(--ds-accent)]' : 'text-[var(--ds-ink)]'}>{t(p.labelKey)}</span>
+                <span className='text-[var(--ds-ink-muted)] text-xs font-mono flex-shrink-0'>
                   {p.domain}.{p.service}
                 </span>
               </button>
             );
           })}
-          {filtered.length === 0 && <p className='text-white/25 text-xs text-center py-3'>{t('layout.customPanel.noServiceResult')}</p>}
+          {filtered.length === 0 && (
+            <p className='text-[var(--ds-ink-muted)] text-xs text-center py-3'>{t('layout.customPanel.noServiceResult')}</p>
+          )}
         </div>
-        <div className='border-t border-white/8 px-3 py-2'>
-          <p className='text-[10px] text-white/25 mb-1.5'>{t('layout.customPanel.manualEntry')}</p>
+        <div className='border-t border-[var(--ds-surface-3)] px-3 py-2'>
+          <p className='text-[10px] text-[var(--ds-ink-muted)] mb-1.5'>{t('layout.customPanel.manualEntry')}</p>
           <div className='flex gap-2'>
             <input
               value={domain}
               onChange={e => onChange(e.target.value, service)}
               placeholder='domaine'
-              className='flex-1 px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-white/70 outline-none focus:border-blue-500/40 placeholder:text-white/20 font-mono'
+              className='flex-1 px-2 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-xs text-[var(--ds-ink)] outline-none focus:border-[var(--ds-accent)] placeholder:text-[var(--ds-ink-muted)] font-mono'
             />
             <input
               value={service}
               onChange={e => onChange(domain, e.target.value)}
               placeholder='service'
-              className='flex-1 px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-white/70 outline-none focus:border-blue-500/40 placeholder:text-white/20 font-mono'
+              className='flex-1 px-2 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-xs text-[var(--ds-ink)] outline-none focus:border-[var(--ds-accent)] placeholder:text-[var(--ds-ink-muted)] font-mono'
             />
           </div>
         </div>
@@ -145,31 +148,32 @@ export function ServicePicker({
 
   return (
     <div>
-      <label className='text-[11px] text-white/40 block mb-1'>{t('layout.customPanel.serviceLabel')}</label>
+      <label className='text-[11px] text-[var(--ds-ink-muted)] block mb-1'>{t('layout.customPanel.serviceLabel')}</label>
       <button
         ref={triggerRef}
         type='button'
         onClick={handleOpen}
         className={cn(
-          'w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-sm text-left transition-colors',
-          open ? 'bg-white/8 border-blue-500/40' : 'bg-white/5 border-white/10 hover:border-white/20'
+          'w-full flex items-center gap-2 px-3 py-2 rounded-[var(--ds-radius-sm)] border text-sm text-left transition-colors',
+          open ? 'bg-[var(--ds-surface-3)] border-[var(--ds-accent)]' : 'bg-[var(--ds-surface-2)] border-[var(--ds-surface-3)]'
         )}
       >
         <span className='flex-1 truncate'>
           {currentLabel ? (
             <>
-              <span className='text-white/80'>{currentLabel}</span> <span className='text-white/30 text-xs ml-1'>{current}</span>
+              <span className='text-[var(--ds-ink)]'>{currentLabel}</span>{' '}
+              <span className='text-[var(--ds-ink-muted)] text-xs ml-1'>{current}</span>
             </>
           ) : current ? (
-            <span className='text-white/60 font-mono text-xs'>{current}</span>
+            <span className='text-[var(--ds-ink-muted)] font-mono text-xs'>{current}</span>
           ) : (
-            <span className='text-white/25'>{t('layout.customPanel.chooseService')}</span>
+            <span className='text-[var(--ds-ink-muted)]'>{t('layout.customPanel.chooseService')}</span>
           )}
         </span>
         {open ? (
-          <ChevronUp size={13} className='text-white/30 flex-shrink-0' />
+          <ChevronUp size={13} className='text-[var(--ds-ink-muted)] flex-shrink-0' />
         ) : (
-          <ChevronDown size={13} className='text-white/30 flex-shrink-0' />
+          <ChevronDown size={13} className='text-[var(--ds-ink-muted)] flex-shrink-0' />
         )}
       </button>
       {dropdown}
@@ -194,18 +198,20 @@ export function PanelRefBadge({ panelId }: { panelId: string }) {
   };
 
   return (
-    <div className='flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/8'>
+    <div className='flex items-center gap-2 px-3 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)]'>
       <div className='flex-1 min-w-0'>
-        <p className='text-[10px] text-white/30 font-medium uppercase tracking-wider mb-0.5'>{t('layout.customPanel.refBadgeTitle')}</p>
-        <p className='text-xs text-white/50 font-mono truncate'>{ref}</p>
+        <p className='text-[10px] text-[var(--ds-ink-muted)] font-medium uppercase tracking-wider mb-0.5'>
+          {t('layout.customPanel.refBadgeTitle')}
+        </p>
+        <p className='text-xs text-[var(--ds-ink-muted)] font-mono truncate'>{ref}</p>
       </div>
       <button
         onClick={copy}
         title={t('common.copy')}
         aria-label={t('common.copy')}
-        className='flex-shrink-0 p-1.5 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/8 transition-colors'
+        className='flex-shrink-0 p-1.5 rounded-[var(--ds-radius-sm)] text-[var(--ds-ink-muted)] transition-colors'
       >
-        {copied ? <Check size={13} className='text-green-400' /> : <Copy size={13} />}
+        {copied ? <Check size={13} className='text-[var(--ds-good)]' /> : <Copy size={13} />}
       </button>
     </div>
   );
@@ -244,34 +250,34 @@ export function ButtonFields({
     <div className='space-y-3'>
       <div className='grid grid-cols-2 gap-3'>
         <div>
-          <label className='text-[11px] text-white/40 block mb-1'>{t('layout.customPanel.blockLabel')}</label>
+          <label className='text-[11px] text-[var(--ds-ink-muted)] block mb-1'>{t('layout.customPanel.blockLabel')}</label>
           <input
             value={label}
             onChange={e => onChange({ label: e.target.value })}
             placeholder='ex: Tout ouvrir'
-            className='w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 outline-none focus:border-blue-500/50 placeholder:text-white/20'
+            className='w-full px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)] outline-none focus:border-[var(--ds-accent)] placeholder:text-[var(--ds-ink-muted)]'
           />
         </div>
         <div>
-          <label className='text-[11px] text-white/40 block mb-1'>{t('layout.customPanel.blockIcon')}</label>
+          <label className='text-[11px] text-[var(--ds-ink-muted)] block mb-1'>{t('layout.customPanel.blockIcon')}</label>
           <IconPicker value={icon ?? ''} onChange={v => onChange({ icon: v || undefined })} label='' />
         </div>
       </div>
 
       <div>
-        <label className='text-[11px] text-white/40 block mb-1'>{t('layout.customPanel.blockVariant')}</label>
+        <label className='text-[11px] text-[var(--ds-ink-muted)] block mb-1'>{t('layout.customPanel.blockVariant')}</label>
         <div className='flex gap-2'>
           {(['primary', 'secondary'] as const).map(v => (
             <button
               key={v}
               onClick={() => onChange({ variant: v })}
               className={cn(
-                'flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors',
+                'flex-1 py-1.5 rounded-[var(--ds-radius-sm)] text-xs font-medium border transition-colors',
                 variant === v
                   ? v === 'primary'
-                    ? 'bg-blue-500/25 border-blue-500/50 text-blue-300'
-                    : 'bg-white/10 border-white/20 text-white/80'
-                  : 'bg-transparent border-white/10 text-white/30 hover:border-white/20 hover:text-white/50'
+                    ? 'bg-[var(--ds-tile-on)] border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
+                    : 'bg-[var(--ds-surface-3)] border-[var(--ds-surface-3)] text-[var(--ds-ink)]'
+                  : 'bg-transparent border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
               )}
             >
               {v === 'primary' ? t('layout.customPanel.blockPrimary') : t('layout.customPanel.blockSecondary')}
@@ -283,7 +289,7 @@ export function ButtonFields({
       <ServicePicker domain={domain} service={service} onChange={(d, s) => onChange({ domain: d, service: s })} />
 
       <div>
-        <label className='text-[11px] text-white/40 block mb-1.5'>{t('layout.customPanel.blockTargetEntities')}</label>
+        <label className='text-[11px] text-[var(--ds-ink-muted)] block mb-1.5'>{t('layout.customPanel.blockTargetEntities')}</label>
         <div className='space-y-2'>
           {targetEntityIds.map((eid, i) => (
             <div key={i} className='flex items-center gap-2'>
@@ -301,7 +307,7 @@ export function ButtonFields({
               <button
                 onClick={() => onChange({ targetEntityIds: targetEntityIds.filter((_, j) => j !== i) })}
                 aria-label={t('layout.customPanel.removeEntity')}
-                className='p-1.5 rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0'
+                className='p-1.5 rounded-[var(--ds-radius-sm)] text-[var(--ds-alert)] transition-colors flex-shrink-0'
               >
                 <X size={14} />
               </button>
@@ -309,7 +315,7 @@ export function ButtonFields({
           ))}
           <button
             onClick={() => onChange({ targetEntityIds: [...targetEntityIds, ''] })}
-            className='flex items-center gap-1.5 text-xs text-blue-400/70 hover:text-blue-400 transition-colors py-1'
+            className='flex items-center gap-1.5 text-xs text-[var(--ds-accent)] transition-colors py-1'
           >
             <Plus size={13} />
             {t('layout.customPanel.addEntityToBlock')}
@@ -322,7 +328,7 @@ export function ButtonFields({
 
 export function ButtonBlockForm({ block, onChange }: { block: ButtonBlock; onChange: (b: ButtonBlock) => void }) {
   return (
-    <div className='pt-3 border-t border-white/8'>
+    <div className='pt-3 border-t border-[var(--ds-surface-3)]'>
       <ButtonFields
         label={block.label}
         icon={block.icon}
@@ -358,29 +364,37 @@ export function ButtonRowBlockForm({ block, onChange }: { block: ButtonRowBlock;
   };
 
   return (
-    <div className='pt-3 border-t border-white/8 space-y-2'>
-      {block.buttons.length === 0 && <p className='text-white/25 text-xs text-center py-2'>{t('layout.customPanel.noButtonInRow')}</p>}
+    <div className='pt-3 border-t border-[var(--ds-surface-3)] space-y-2'>
+      {block.buttons.length === 0 && (
+        <p className='text-[var(--ds-ink-muted)] text-xs text-center py-2'>{t('layout.customPanel.noButtonInRow')}</p>
+      )}
       {block.buttons.map((btn, i) => (
-        <div key={btn.id} className='rounded-lg border border-white/10 overflow-hidden'>
+        <div key={btn.id} className='rounded-[var(--ds-radius-sm)] border border-[var(--ds-surface-3)] overflow-hidden'>
           <div
-            className='flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-white/5 transition-colors'
+            className='flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors'
             onClick={() => setExpandedIdx(expandedIdx === i ? null : i)}
             onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && setExpandedIdx(expandedIdx === i ? null : i)}
             role='button'
             tabIndex={0}
           >
-            <span className='flex-1 text-sm text-white/60 truncate'>{btn.label || `${t('layout.customPanel.blockBtnN')} ${i + 1}`}</span>
+            <span className='flex-1 text-sm text-[var(--ds-ink-muted)] truncate'>
+              {btn.label || `${t('layout.customPanel.blockBtnN')} ${i + 1}`}
+            </span>
             <button
               onClick={e => {
                 e.stopPropagation();
                 removeButton(i);
               }}
               aria-label={t('layout.customPanel.removeButton')}
-              className='p-1 rounded hover:bg-red-500/20 text-red-400/50 hover:text-red-400'
+              className='p-1 rounded text-[var(--ds-alert)]'
             >
               <Trash2 size={12} />
             </button>
-            {expandedIdx === i ? <ChevronUp size={13} className='text-white/25' /> : <ChevronDown size={13} className='text-white/25' />}
+            {expandedIdx === i ? (
+              <ChevronUp size={13} className='text-[var(--ds-ink-muted)]' />
+            ) : (
+              <ChevronDown size={13} className='text-[var(--ds-ink-muted)]' />
+            )}
           </div>
           <AnimatePresence initial={false}>
             {expandedIdx === i && (
@@ -391,7 +405,7 @@ export function ButtonRowBlockForm({ block, onChange }: { block: ButtonRowBlock;
                 transition={{ duration: 0.16 }}
                 className='overflow-hidden'
               >
-                <div className='px-3 pb-3 pt-2 border-t border-white/8'>
+                <div className='px-3 pb-3 pt-2 border-t border-[var(--ds-surface-3)]'>
                   <ButtonFields
                     label={btn.label}
                     icon={btn.icon}
@@ -409,7 +423,7 @@ export function ButtonRowBlockForm({ block, onChange }: { block: ButtonRowBlock;
       ))}
       <button
         onClick={addButton}
-        className='w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-white/15 text-xs text-white/35 hover:text-white/60 hover:border-white/25 transition-colors'
+        className='w-full flex items-center justify-center gap-1.5 py-2 rounded-[var(--ds-radius-sm)] border border-dashed border-[var(--ds-surface-3)] text-xs text-[var(--ds-ink-muted)] transition-colors'
       >
         <Plus size={12} />
         {t('layout.customPanel.addButtonToRow')}
@@ -421,7 +435,7 @@ export function ButtonRowBlockForm({ block, onChange }: { block: ButtonRowBlock;
 export function CoverRowBlockForm({ block, onChange }: { block: CoverRowBlock; onChange: (b: CoverRowBlock) => void }) {
   const { t } = useI18n();
   return (
-    <div className='space-y-3 pt-3 border-t border-white/8'>
+    <div className='space-y-3 pt-3 border-t border-[var(--ds-surface-3)]'>
       <EntityPicker
         value={block.entityId}
         onChange={v => onChange({ ...block, entityId: v })}
@@ -429,12 +443,12 @@ export function CoverRowBlockForm({ block, onChange }: { block: CoverRowBlock; o
         label={t('layout.customPanel.coverEntity')}
       />
       <div>
-        <label className='text-[11px] text-white/40 block mb-1'>{t('layout.customPanel.coverLabelOptional')}</label>
+        <label className='text-[11px] text-[var(--ds-ink-muted)] block mb-1'>{t('layout.customPanel.coverLabelOptional')}</label>
         <input
           value={block.label ?? ''}
           onChange={e => onChange({ ...block, label: e.target.value || undefined })}
           placeholder={t('layout.customPanel.coverLabelPlaceholder')}
-          className='w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 outline-none focus:border-blue-500/50 placeholder:text-white/20'
+          className='w-full px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)] outline-none focus:border-[var(--ds-accent)] placeholder:text-[var(--ds-ink-muted)]'
         />
       </div>
     </div>
@@ -444,13 +458,13 @@ export function CoverRowBlockForm({ block, onChange }: { block: CoverRowBlock; o
 export function SectionHeaderBlockForm({ block, onChange }: { block: SectionHeaderBlock; onChange: (b: SectionHeaderBlock) => void }) {
   const { t } = useI18n();
   return (
-    <div className='pt-3 border-t border-white/8'>
-      <label className='text-[11px] text-white/40 block mb-1'>{t('layout.customPanel.sectionTitle')}</label>
+    <div className='pt-3 border-t border-[var(--ds-surface-3)]'>
+      <label className='text-[11px] text-[var(--ds-ink-muted)] block mb-1'>{t('layout.customPanel.sectionTitle')}</label>
       <input
         value={block.title}
         onChange={e => onChange({ ...block, title: e.target.value })}
         placeholder={t('layout.customPanel.sectionTitlePlaceholder')}
-        className='w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 outline-none focus:border-blue-500/50 placeholder:text-white/20'
+        className='w-full px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)] outline-none focus:border-[var(--ds-accent)] placeholder:text-[var(--ds-ink-muted)]'
       />
     </div>
   );
@@ -485,22 +499,22 @@ function WidgetTypeField({ value, onChange }: { value: string; onChange: (v: str
 
   return (
     <div>
-      <label className='text-[11px] text-white/40 block mb-1'>{t('layout.customPanel.widgetType')}</label>
+      <label className='text-[11px] text-[var(--ds-ink-muted)] block mb-1'>{t('layout.customPanel.widgetType')}</label>
       {/* Fermé, c'est un vrai bouton — donc atteignable au clavier, ce qu'un
           `<div>` cliquable n'est pas. Ouvert, il devient un conteneur : un
           `<input>` ne peut pas vivre dans un `<button>`, et c'est l'input qui
           prend alors le focus. */}
       {open ? (
-        <div className='w-full flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/5 border border-blue-500/40'>
+        <div className='w-full flex items-center gap-2.5 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-accent)]'>
           <input
             autoFocus
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={e => e.key === 'Escape' && close()}
             placeholder={t('layout.searchWidget')}
-            className='flex-1 min-w-0 bg-transparent text-sm text-white/80 outline-none placeholder:text-white/30'
+            className='flex-1 min-w-0 bg-transparent text-sm text-[var(--ds-ink)] outline-none placeholder:text-[var(--ds-ink-muted)]'
           />
-          <button onClick={close} aria-label={t('common.close')} className='shrink-0 text-white/30 hover:text-white/60 transition-colors'>
+          <button onClick={close} aria-label={t('common.close')} className='shrink-0 text-[var(--ds-ink-muted)] transition-colors'>
             <ChevronDown size={14} className='rotate-180' />
           </button>
         </div>
@@ -508,20 +522,20 @@ function WidgetTypeField({ value, onChange }: { value: string; onChange: (v: str
         <button
           onClick={() => setOpen(true)}
           aria-expanded={false}
-          className='w-full flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-white/20 transition-colors text-left'
+          className='w-full flex items-center gap-2.5 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] transition-colors text-left'
         >
           {selected ? (
             <span
-              className='w-6 h-6 rounded-lg flex items-center justify-center shrink-0'
+              className='w-6 h-6 rounded-[var(--ds-radius-sm)] flex items-center justify-center shrink-0'
               style={{ background: `${selected.color}20`, border: `1px solid ${selected.color}35` }}
             >
               <selected.icon size={13} style={{ color: selected.color }} />
             </span>
           ) : null}
-          <span className={cn('flex-1 text-sm truncate', selected ? 'text-white/80' : 'text-white/30')}>
+          <span className={cn('flex-1 text-sm truncate', selected ? 'text-[var(--ds-ink)]' : 'text-[var(--ds-ink-muted)]')}>
             {selected ? t(selected.label) : t('layout.customPanel.widgetTypeNone')}
           </span>
-          <ChevronDown size={14} className='text-white/30 shrink-0' />
+          <ChevronDown size={14} className='text-[var(--ds-ink-muted)] shrink-0' />
         </button>
       )}
 
@@ -543,22 +557,24 @@ function WidgetTypeField({ value, onChange }: { value: string; onChange: (v: str
                     close();
                   }}
                   className={cn(
-                    'flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left',
+                    'flex items-center gap-2.5 px-3 py-2.5 rounded-[var(--ds-radius-md)] border transition-all text-left',
                     meta.type === value
-                      ? 'border-blue-500/40 bg-blue-500/10'
-                      : 'border-white/8 bg-white/3 hover:bg-white/6 hover:border-white/14'
+                      ? 'border-[var(--ds-accent)] bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'
+                      : 'border-[var(--ds-surface-3)] bg-[var(--ds-surface-2)]'
                   )}
                 >
                   <span
-                    className='w-7 h-7 rounded-xl flex items-center justify-center shrink-0'
+                    className='w-7 h-7 rounded-[var(--ds-radius-md)] flex items-center justify-center shrink-0'
                     style={{ background: `${meta.color}20`, border: `1px solid ${meta.color}35` }}
                   >
                     <meta.icon size={14} style={{ color: meta.color }} />
                   </span>
-                  <span className='text-white/65 text-xs font-medium leading-tight'>{t(meta.label)}</span>
+                  <span className='text-[var(--ds-ink-muted)] text-xs font-medium leading-tight'>{t(meta.label)}</span>
                 </button>
               ))}
-              {matching.length === 0 && <p className='col-span-2 py-4 text-center text-xs text-white/30'>{t('common.noResults')}</p>}
+              {matching.length === 0 && (
+                <p className='col-span-2 py-4 text-center text-xs text-[var(--ds-ink-muted)]'>{t('common.noResults')}</p>
+              )}
             </div>
           </motion.div>
         )}
@@ -588,19 +604,19 @@ export function WidgetBlockForm({ block, onChange }: { block: WidgetBlock; onCha
     });
 
   return (
-    <div className='pt-3 border-t border-white/8 flex flex-col gap-3'>
+    <div className='pt-3 border-t border-[var(--ds-surface-3)] flex flex-col gap-3'>
       <WidgetTypeField value={block.widgetType} onChange={changeType} />
       <div>
-        <label className='text-[11px] text-white/40 block mb-1'>{t('layout.customPanel.widgetRows')}</label>
+        <label className='text-[11px] text-[var(--ds-ink-muted)] block mb-1'>{t('layout.customPanel.widgetRows')}</label>
         <input
           type='number'
           min={1}
           max={12}
           value={block.rows ?? 4}
           onChange={e => onChange({ ...block, rows: clamp(Number(e.target.value) || 4, 1, 12) })}
-          className='w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 outline-none focus:border-blue-500/50'
+          className='w-full px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)] outline-none focus:border-[var(--ds-accent)]'
         />
-        <p className='text-[10px] text-white/25 mt-1'>{t('layout.customPanel.widgetRowsHint')}</p>
+        <p className='text-[10px] text-[var(--ds-ink-muted)] mt-1'>{t('layout.customPanel.widgetRowsHint')}</p>
       </div>
 
       {/* Les réglages propres à la card. Mêmes champs que dans la modale
@@ -608,7 +624,7 @@ export function WidgetBlockForm({ block, onChange }: { block: WidgetBlock; onCha
           le bloc affichait une card qu'on ne pouvait pas configurer : pas
           d'entité, pas de nom, rien. */}
       {fields.length > 0 && (
-        <div className='pt-3 border-t border-white/8 grid grid-cols-2 gap-x-3 gap-y-3'>
+        <div className='pt-3 border-t border-[var(--ds-surface-3)] grid grid-cols-2 gap-x-3 gap-y-3'>
           {fields.map(field => (
             <div key={field.key} className={WIDE_FIELD_TYPES.includes(field.fieldType) ? 'col-span-2' : 'col-span-1'}>
               <ChildFieldRenderer field={field} draft={block.config} onPatch={patch} />

@@ -7,7 +7,7 @@ import { SECTION_HEADING } from './typography';
 import { cn } from '@/lib/utils';
 
 const inputClass =
-  'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white/80 text-sm focus:outline-none focus:border-blue-500/40 placeholder:text-white/20';
+  'w-full bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] rounded-[var(--ds-radius-sm)] px-3 py-2 text-[var(--ds-ink)] text-sm focus:outline-none focus:border-[var(--ds-accent)] placeholder:text-[var(--ds-ink-muted)]';
 
 /** Rangée de boutons exclusifs — le patron déjà utilisé pour les palettes. */
 function Choice<T extends string | number>({
@@ -25,10 +25,10 @@ function Choice<T extends string | number>({
         <button
           key={String(o.value)}
           onClick={() => onChange(o.value)}
-          className={`flex-1 px-2 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+          className={`flex-1 px-2 py-1.5 rounded-[var(--ds-radius-sm)] border text-xs font-medium transition-colors cursor-pointer ${
             value === o.value
-              ? 'bg-blue-500/25 border-blue-500/40 text-blue-200'
-              : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white/80'
+              ? 'bg-[var(--ds-tile-on)] border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
+              : 'bg-[var(--ds-surface-2)] border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
           }`}
         >
           {o.label}
@@ -41,7 +41,7 @@ function Choice<T extends string | number>({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className='flex flex-col gap-1.5'>
-      <span className='text-white/45 text-xs'>{label}</span>
+      <span className='text-[var(--ds-ink-muted)] text-xs'>{label}</span>
       {children}
     </div>
   );
@@ -70,7 +70,7 @@ export function RegionalSection() {
         <h3 className={cn(SECTION_HEADING, 'flex items-center gap-2')}>
           <Clock size={12} /> {t('settings.regional_section.formats')}
         </h3>
-        <p className='text-white/40 text-xs leading-relaxed'>{t('settings.regional_section.intro')}</p>
+        <p className='text-[var(--ds-ink-muted)] text-xs leading-relaxed'>{t('settings.regional_section.intro')}</p>
 
         <Field label={t('settings.regional_section.hourFormat')}>
           <Choice
@@ -126,7 +126,7 @@ export function RegionalSection() {
         <h3 className={cn(SECTION_HEADING, 'flex items-center gap-2')}>
           <Home size={12} /> {t('settings.regional_section.returnHome')}
         </h3>
-        <p className='text-white/40 text-xs leading-relaxed'>{t('settings.regional_section.returnHomeDesc')}</p>
+        <p className='text-[var(--ds-ink-muted)] text-xs leading-relaxed'>{t('settings.regional_section.returnHomeDesc')}</p>
         <div className='flex items-center gap-3'>
           <input
             type='range'
@@ -135,9 +135,9 @@ export function RegionalSection() {
             step={1}
             value={behaviourSettings.returnHomeAfter}
             onChange={e => b({ returnHomeAfter: parseInt(e.target.value, 10) })}
-            className='flex-1 accent-blue-500'
+            className='flex-1 accent-[var(--ds-accent)]'
           />
-          <span className='text-white/40 text-xs w-16 tabular-nums text-right'>
+          <span className='text-[var(--ds-ink-muted)] text-xs w-16 tabular-nums text-right'>
             {behaviourSettings.returnHomeAfter === 0
               ? t('settings.regional_section.never')
               : t('settings.regional_section.minutes', { value: behaviourSettings.returnHomeAfter })}
@@ -155,9 +155,9 @@ export function RegionalSection() {
             type='checkbox'
             checked={behaviourSettings.doNotDisturb}
             onChange={e => b({ doNotDisturb: e.target.checked })}
-            className='mt-0.5 accent-blue-500'
+            className='mt-0.5 accent-[var(--ds-accent)]'
           />
-          <span className='text-white/40 text-xs leading-relaxed'>{t('settings.regional_section.dndDesc')}</span>
+          <span className='text-[var(--ds-ink-muted)] text-xs leading-relaxed'>{t('settings.regional_section.dndDesc')}</span>
         </label>
       </div>
 
@@ -166,7 +166,7 @@ export function RegionalSection() {
         <h3 className={cn(SECTION_HEADING, 'flex items-center gap-2')}>
           <Lock size={12} /> {t('settings.regional_section.pin')}
         </h3>
-        <p className='text-white/40 text-xs leading-relaxed'>{t('settings.regional_section.pinDesc')}</p>
+        <p className='text-[var(--ds-ink-muted)] text-xs leading-relaxed'>{t('settings.regional_section.pinDesc')}</p>
         <input
           type='text'
           inputMode='numeric'
@@ -178,7 +178,7 @@ export function RegionalSection() {
           placeholder={t('settings.regional_section.pinPlaceholder')}
           className={`${inputClass} w-32 text-center tracking-[0.4em] font-mono`}
         />
-        <p className='text-amber-400/60 text-[11px] leading-relaxed'>{t('settings.regional_section.pinWarning')}</p>
+        <p className='text-[var(--ds-warm-light)] text-[11px] leading-relaxed'>{t('settings.regional_section.pinWarning')}</p>
       </div>
 
       <BroadcastButton />
@@ -230,23 +230,25 @@ function BroadcastButton() {
       <h3 className={cn(SECTION_HEADING, 'flex items-center gap-2')}>
         <MonitorSmartphone size={12} /> {t('settings.regional_section.broadcast')}
       </h3>
-      <p className='text-white/40 text-xs leading-relaxed'>{t('settings.regional_section.broadcastDesc')}</p>
+      <p className='text-[var(--ds-ink-muted)] text-xs leading-relaxed'>{t('settings.regional_section.broadcastDesc')}</p>
 
       {state === 'confirm' && (
-        <p className='text-amber-400 text-xs flex items-center gap-2'>
+        <p className='text-[var(--ds-warm-light)] text-xs flex items-center gap-2'>
           <AlertTriangle size={12} /> {t('settings.regional_section.broadcastConfirm')}
         </p>
       )}
-      {state === 'done' && <p className='text-emerald-400 text-xs'>{t('settings.regional_section.broadcastDone', { value: count })}</p>}
-      {state === 'error' && <p className='text-red-400 text-xs'>{t('settings.regional_section.broadcastError')}</p>}
+      {state === 'done' && (
+        <p className='text-[var(--ds-good)] text-xs'>{t('settings.regional_section.broadcastDone', { value: count })}</p>
+      )}
+      {state === 'error' && <p className='text-[var(--ds-alert)] text-xs'>{t('settings.regional_section.broadcastError')}</p>}
 
       <button
         onClick={broadcast}
         disabled={state === 'done'}
-        className={`self-start flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-semibold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+        className={`self-start flex items-center gap-1.5 px-3 py-2 rounded-[var(--ds-radius-sm)] border text-xs font-semibold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
           state === 'confirm'
-            ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 hover:bg-amber-500/30'
-            : 'bg-white/8 border-white/12 text-white/70 hover:bg-white/12 hover:text-white'
+            ? 'bg-[var(--ds-surface-3)] border-[var(--ds-warm-light)] text-[var(--ds-warm-light)]'
+            : 'bg-[var(--ds-surface-3)] border-[var(--ds-surface-3)] text-[var(--ds-ink)]'
         }`}
       >
         <MonitorSmartphone size={12} />
