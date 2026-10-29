@@ -50,7 +50,8 @@
       "customIcons": {
         "label": "Icônes personnalisées"
       }
-    }
+    },
+    "range": "max {high}° min {low}°"
   },
   "thermostat": {
     "label": "Thermostat",

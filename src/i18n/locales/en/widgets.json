@@ -50,7 +50,8 @@
       "customIcons": {
         "label": "Custom icons"
       }
-    }
+    },
+    "range": "high {high}° low {low}°"
   },
   "thermostat": {
     "label": "Thermostat",
