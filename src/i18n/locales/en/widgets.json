@@ -428,7 +428,6 @@
     "description": "EDF Tempo day color and off-peak/peak hours.",
     "offPeak": "Off-peak hours",
     "peak": "Peak hours",
-    "rate": "Rate ",
     "tomorrow": "Tomorrow",
     "blue": "Blue",
     "white": "White",
@@ -457,7 +456,9 @@
       "remainingRedEntity": {
         "label": "Red days remaining"
       }
-    }
+    },
+    "today": "Today",
+    "days": "{value} d"
   },
   "shortcuts": {
     "label": "Shortcuts",

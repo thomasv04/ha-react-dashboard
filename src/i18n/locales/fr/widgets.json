@@ -428,7 +428,6 @@
     "description": "Couleur du jour Tempo RTE et heures pleines/creuses.",
     "offPeak": "Heures creuses",
     "peak": "Heures pleines",
-    "rate": "Tarif ",
     "tomorrow": "Demain",
     "blue": "Bleu",
     "white": "Blanc",
@@ -457,7 +456,9 @@
       "remainingRedEntity": {
         "label": "Jours rouge restants"
       }
-    }
+    },
+    "today": "Aujourd’hui",
+    "days": "{value} j"
   },
   "shortcuts": {
     "label": "Raccourcis",
