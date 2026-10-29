@@ -28,6 +28,7 @@
   --ds-app-calendar: #ee8a2c;
   --ds-app-home: #3b8de8;
   --ds-sheet: #1d3a6e;
+  --ds-sheet-section: #28497f;
 }
 
 [data-theme='light'] {
@@ -58,6 +59,7 @@
   --ds-app-calendar: #ee8a2c;
   --ds-app-home: #3b8de8;
   --ds-sheet: #e4e8f0;
+  --ds-sheet-section: #ffffff;
 }
 
 :root {

@@ -138,7 +138,12 @@
       "showInfoPanel": {
         "label": "Info panel (More Info)"
       }
-    }
+    },
+    "brightnessValue": "Brightness · {value}%",
+    "colorTempValue": "Temperature · {value} K",
+    "hue": "Hue",
+    "state": "State",
+    "swatch": "Hue {value}°"
   },
   "sensor": {
     "label": "Sensor",

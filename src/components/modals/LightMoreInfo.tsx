@@ -1,15 +1,61 @@
 import { useState, useCallback } from 'react';
-import { Lightbulb, Sun, Thermometer, Palette } from 'lucide-react';
+import { Lightbulb, Sun } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { PillSlider } from '@/components/ds/PillSlider';
 import { MoreInfoHeader } from './MoreInfoHeader';
-import { InfoSidebar, type SidebarModule } from './sidebar';
+import { InfoSidebar, SheetSection, type SidebarModule } from './sidebar';
 import type { LightCardConfig } from '@/types/widget-types';
 import { useI18n } from '@/i18n';
 import { friendlyName } from '@/lib/ha-service';
+import { cn } from '@/lib/utils';
 
-type LightTab = 'brightness' | 'color_temp' | 'color';
+type ColorTab = 'color' | 'color_temp';
+
+/** Les teintes proposées d'un toucher, avant le curseur. */
+const SWATCHES = [300, 350, 15, 35, 325, 95, 45, 130];
+
+/** Curseur sur un dégradé (teinte, chaleur) : une pastille blanche marque la valeur. */
+function GradientSlider({
+  value,
+  min,
+  max,
+  background,
+  label,
+  valueText,
+  onChange,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  background: string;
+  label: string;
+  valueText: string;
+  onChange: (value: number) => void;
+}) {
+  const ratio = max > min ? Math.min(1, Math.max(0, (value - min) / (max - min))) : 0;
+  return (
+    <div className='relative h-[52px] rounded-[var(--ds-radius-pill)]' style={{ background }}>
+      <span
+        aria-hidden='true'
+        className='pointer-events-none absolute top-1/2 size-11 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white shadow-[var(--ds-shadow-pin)]'
+        // Bornée pour que la pastille ne déborde pas des bouts arrondis.
+        style={{ left: `calc(26px + ${ratio} * (100% - 52px))` }}
+      />
+      <input
+        type='range'
+        min={min}
+        max={max}
+        value={value}
+        onChange={e => onChange(Number(e.target.value))}
+        aria-label={label}
+        aria-valuetext={valueText}
+        className='absolute inset-0 h-full w-full cursor-pointer opacity-0'
+      />
+    </div>
+  );
+}
 
 export default function LightMoreInfo({ entityId, widgetId }: { entityId: string; widgetId: string }) {
   const { t } = useI18n();
@@ -17,7 +63,7 @@ export default function LightMoreInfo({ entityId, widgetId }: { entityId: string
   const config = getWidgetConfig<LightCardConfig>(widgetId);
   const showInfoPanel = config?.showInfoPanel !== false;
   const [historyHours, setHistoryHours] = useState(24);
-  const [activeTab, setActiveTab] = useState<LightTab>('brightness');
+  const [colorTab, setColorTab] = useState<ColorTab>('color');
   const entity = useSafeEntity(entityId);
   const helpers = useHass(s => s.helpers);
 
@@ -65,7 +111,7 @@ export default function LightMoreInfo({ entityId, widgetId }: { entityId: string
     [helpers, entityId]
   );
 
-  if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
+  if (!entity) return <div className='p-12 text-center text-[var(--ds-ink-muted)]'>{t('common.entityNotFound')}</div>;
 
   const isOn = entity.state === 'on';
   const name = config?.name ?? friendlyName(entity) ?? entityId;
@@ -73,6 +119,8 @@ export default function LightMoreInfo({ entityId, widgetId }: { entityId: string
   const isDimmable = colorModes.some(m => m !== 'onoff');
   const supportsColorTemp = colorModes.includes('color_temp');
   const supportsColor = colorModes.some(m => ['hs', 'rgb', 'xy'].includes(m));
+  // Un seul des deux : pas d'onglets, la section montre celui qui existe.
+  const tab: ColorTab = supportsColor && supportsColorTemp ? colorTab : supportsColor ? 'color' : 'color_temp';
 
   const brightness = entity.attributes.brightness as number | undefined;
   const brightnessPct = brightness != null ? Math.round((brightness / 255) * 100) : 0;
@@ -80,160 +128,149 @@ export default function LightMoreInfo({ entityId, widgetId }: { entityId: string
   const minKelvin = (entity.attributes.min_color_temp_kelvin as number) ?? 2700;
   const maxKelvin = (entity.attributes.max_color_temp_kelvin as number) ?? 6500;
   const hsColor = entity.attributes.hs_color as [number, number] | undefined;
-
-  const tabs: { id: LightTab; icon: React.ReactNode; label: string; show: boolean }[] = [
-    { id: 'brightness', icon: <Sun size={14} />, label: 'BRIGHTNESS', show: isDimmable },
-    { id: 'color_temp', icon: <Thermometer size={14} />, label: 'WARMTH', show: supportsColorTemp },
-    { id: 'color', icon: <Palette size={14} />, label: 'COLOR', show: supportsColor },
-  ];
+  const hue = Math.round(hsColor?.[0] ?? 0);
 
   return (
-    <div className='p-8 md:p-12 lg:grid lg:grid-cols-5 lg:gap-8'>
-      {/* Left panel: toggle + tabs */}
-      <div className='lg:col-span-3 flex flex-col'>
-        <MoreInfoHeader icon={Lightbulb} name={name} state={isOn ? 'ON' : 'OFF'} stateColor={isOn ? '#facc15' : '#6b7280'} />
+    <div className='flex flex-col gap-3 p-6'>
+      <MoreInfoHeader
+        icon={Lightbulb}
+        name={name}
+        state={isOn ? t('widgets.light.on') : t('widgets.light.off')}
+        stateColor={isOn ? 'var(--ds-warm-light)' : undefined}
+      />
 
-        {/* Big toggle circle */}
-        <div className='flex-1 flex items-center justify-center'>
-          <button
-            onClick={handleToggle}
-            className={`w-40 h-40 rounded-full flex items-center justify-center transition-all ${
-              isOn
-                ? 'bg-white/10 text-white shadow-[0_0_60px_rgba(255,255,255,0.08)]'
-                : 'bg-white/[0.04] text-white/20 hover:bg-white/[0.06]'
-            }`}
-            style={{
-              border: `2px solid ${isOn ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)'}`,
-            }}
-          >
-            <Lightbulb size={52} strokeWidth={1.2} />
-          </button>
-        </div>
+      {/* L'interrupteur en grand, l'ampoule dans la pastille. */}
+      <SheetSection className='flex justify-center'>
+        <button
+          role='switch'
+          aria-checked={isOn}
+          aria-label={name}
+          onClick={handleToggle}
+          className={cn(
+            'flex h-[76px] w-[170px] items-center rounded-[var(--ds-radius-pill)] p-1.5 transition-colors',
+            isOn ? 'justify-end bg-[var(--ds-tile-on)]' : 'justify-start bg-[var(--ds-surface-3)]'
+          )}
+        >
+          <span className='flex size-16 items-center justify-center rounded-full bg-white'>
+            <Lightbulb
+              size={28}
+              aria-hidden='true'
+              className={isOn ? 'text-[var(--ds-tile-on)]' : 'text-[#7a8597]'}
+              fill={isOn ? 'currentColor' : 'none'}
+            />
+          </span>
+        </button>
+      </SheetSection>
 
-        {/* Tabs at bottom */}
-        {isDimmable && (
-          <div className='flex gap-1 justify-center mt-auto bg-white/5 rounded-xl p-1 mx-auto w-fit'>
-            {tabs
-              .filter(t => t.show)
-              .map(tab => (
+      {isDimmable && (
+        <SheetSection title={t('widgets.light.brightnessValue', { value: brightnessPct })}>
+          <PillSlider
+            value={brightnessPct}
+            onChange={handleBrightness}
+            label={t('widgets.light.brightness')}
+            valueText={`${brightnessPct} %`}
+            icon={Sun}
+          />
+        </SheetSection>
+      )}
+
+      {(supportsColor || supportsColorTemp) && (
+        <SheetSection
+          title={
+            tab === 'color_temp' && colorTempKelvin != null
+              ? t('widgets.light.colorTempValue', { value: colorTempKelvin })
+              : tab === 'color_temp'
+                ? t('widgets.light.colorTemp')
+                : t('widgets.light.color')
+          }
+        >
+          {supportsColor && supportsColorTemp && (
+            <div role='tablist' className='mb-4 flex rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] p-1'>
+              {(
+                [
+                  ['color', t('widgets.light.color')],
+                  ['color_temp', t('widgets.light.colorTemp')],
+                ] as const
+              ).map(([id, label]) => (
                 <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold tracking-wider transition-colors ${
-                    activeTab === tab.id ? 'bg-white/15 text-white' : 'text-white/30 hover:text-white/50'
-                  }`}
+                  key={id}
+                  role='tab'
+                  aria-selected={tab === id}
+                  onClick={() => setColorTab(id)}
+                  className={cn(
+                    'h-11 flex-1 rounded-[var(--ds-radius-sm)] text-[15px] font-bold',
+                    tab === id && 'bg-[var(--ds-sheet-section)] shadow-[var(--ds-shadow-pin)]'
+                  )}
                 >
-                  {tab.icon} {tab.label}
+                  {label}
                 </button>
               ))}
-          </div>
-        )}
-      </div>
+            </div>
+          )}
 
-      {/* Right panel: slider for active tab + info panel */}
-      <div className='lg:col-span-2 mt-8 lg:mt-0 space-y-6'>
-        {/* Active slider */}
-        {isDimmable && (
-          <div>
-            {activeTab === 'brightness' && (
-              <div>
-                <div className='flex justify-between text-xs text-white/50 mb-3'>
-                  <span className='text-[10px] font-bold uppercase tracking-widest text-white/40'>Brightness</span>
-                  <span className='text-white font-semibold'>{brightnessPct}%</span>
-                </div>
-                <input
-                  type='range'
-                  min={0}
-                  max={100}
-                  value={brightnessPct}
-                  onChange={e => handleBrightness(Number(e.target.value))}
-                  className='w-full accent-yellow-400 h-3'
-                />
+          {tab === 'color' ? (
+            <div className='flex flex-col gap-4'>
+              <div className='flex flex-wrap justify-center gap-3.5'>
+                {SWATCHES.map(h => (
+                  <button
+                    key={h}
+                    onClick={() => handleHue(h)}
+                    aria-label={t('widgets.light.swatch', { value: h })}
+                    aria-pressed={isOn && Math.abs(hue - h) < 3}
+                    className={cn(
+                      'size-11 rounded-full',
+                      isOn && Math.abs(hue - h) < 3 && 'shadow-[0_0_0_3px_var(--ds-sheet-section),0_0_0_6px_var(--ds-ink)]'
+                    )}
+                    style={{ background: `hsl(${h} 85% 55%)` }}
+                  />
+                ))}
               </div>
-            )}
-            {activeTab === 'color_temp' && supportsColorTemp && (
-              <div>
-                <div className='flex justify-between text-xs text-white/50 mb-3'>
-                  <span className='text-[10px] font-bold uppercase tracking-widest text-white/40'>Temperature</span>
-                  <span className='text-white font-semibold'>{colorTempKelvin ?? '—'}K</span>
-                </div>
-                <div className='relative h-8 rounded-lg overflow-hidden'>
-                  <div
-                    className='absolute inset-0'
-                    style={{ background: 'linear-gradient(to right, #ff9500, #ffd4a0, #fff5e6, #e8eeff, #b4c8ff)' }}
-                  />
-                  <input
-                    type='range'
-                    min={minKelvin}
-                    max={maxKelvin}
-                    value={colorTempKelvin ?? minKelvin}
-                    onChange={e => handleColorTemp(Number(e.target.value))}
-                    className='absolute inset-0 w-full h-full opacity-0 cursor-pointer'
-                  />
-                  {/* Thumb indicator */}
-                  <div
-                    className='absolute top-0 h-full w-1 bg-white shadow-md pointer-events-none'
-                    style={{ left: `${(((colorTempKelvin ?? minKelvin) - minKelvin) / (maxKelvin - minKelvin)) * 100}%` }}
-                  />
-                </div>
-              </div>
-            )}
-            {activeTab === 'color' && supportsColor && (
-              <div>
-                <div className='flex justify-between items-center text-xs text-white/50 mb-3'>
-                  <span className='text-[10px] font-bold uppercase tracking-widest text-white/40'>Hue</span>
-                  <div
-                    className='w-5 h-5 rounded-full border border-white/20'
-                    style={{ backgroundColor: `hsl(${hsColor?.[0] ?? 0}, 100%, 50%)` }}
-                  />
-                </div>
-                <div className='relative h-8 rounded-lg overflow-hidden'>
-                  <div
-                    className='absolute inset-0'
-                    style={{ background: 'linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)' }}
-                  />
-                  <input
-                    type='range'
-                    min={0}
-                    max={360}
-                    value={hsColor?.[0] ?? 0}
-                    onChange={e => handleHue(Number(e.target.value))}
-                    className='absolute inset-0 w-full h-full opacity-0 cursor-pointer'
-                  />
-                  <div
-                    className='absolute top-0 h-full w-1 bg-white shadow-md pointer-events-none'
-                    style={{ left: `${((hsColor?.[0] ?? 0) / 360) * 100}%` }}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+              <GradientSlider
+                value={hue}
+                min={0}
+                max={360}
+                background='linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)'
+                label={t('widgets.light.hue')}
+                valueText={`${hue}°`}
+                onChange={handleHue}
+              />
+            </div>
+          ) : (
+            <GradientSlider
+              value={colorTempKelvin ?? minKelvin}
+              min={minKelvin}
+              max={maxKelvin}
+              background='linear-gradient(to right, #ff9500, #ffd4a0, #fff5e6, #e8eeff, #b4c8ff)'
+              label={t('widgets.light.colorTemp')}
+              valueText={`${colorTempKelvin ?? minKelvin} K`}
+              onChange={handleColorTemp}
+            />
+          )}
+        </SheetSection>
+      )}
 
-        {/* Sidebar */}
-        {showInfoPanel && (
-          <InfoSidebar
-            modules={
-              [
-                {
-                  type: 'details',
-                  title: 'Lumière',
-                  entries: [
-                    { label: 'État', value: isOn ? 'Allumée' : 'Éteinte', color: isOn ? 'text-yellow-400' : 'text-zinc-400' },
-                    ...(brightness != null ? [{ label: 'Luminosité', value: `${brightnessPct}%` }] : []),
-                    ...(colorTempKelvin != null ? [{ label: 'Température', value: `${colorTempKelvin}K` }] : []),
-                    ...(hsColor ? [{ label: 'Teinte', value: `${Math.round(hsColor[0])}°` }] : []),
-                  ],
-                },
-                { type: 'timeline', entityId },
-                { type: 'history', historyHours, onHistoryHoursChange: setHistoryHours },
-                { type: 'attributes', entityId },
-                { type: 'entityId', entityIds: [entityId] },
-              ] as SidebarModule[]
-            }
-          />
-        )}
-      </div>
+      {showInfoPanel && (
+        <InfoSidebar
+          modules={
+            [
+              {
+                type: 'details',
+                title: t('widgets.light.label'),
+                entries: [
+                  { label: t('widgets.light.state'), value: isOn ? t('widgets.light.on') : t('widgets.light.off') },
+                  ...(brightness != null ? [{ label: t('widgets.light.brightness'), value: `${brightnessPct} %` }] : []),
+                  ...(colorTempKelvin != null ? [{ label: t('widgets.light.colorTemp'), value: `${colorTempKelvin} K` }] : []),
+                  ...(hsColor ? [{ label: t('widgets.light.hue'), value: `${hue}°` }] : []),
+                ],
+              },
+              { type: 'timeline', entityId },
+              { type: 'history', historyHours, onHistoryHoursChange: setHistoryHours },
+              { type: 'attributes', entityId },
+              { type: 'entityId', entityIds: [entityId] },
+            ] as SidebarModule[]
+          }
+        />
+      )}
     </div>
   );
 }

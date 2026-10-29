@@ -4,21 +4,23 @@
  * Each module is a self-contained component that renders a card-like section.
  * They receive data via props (no implicit context coupling).
  */
+import type { ReactNode } from 'react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { ArrowUp, ArrowDown, Minus } from 'lucide-react';
+import { useI18n } from '@/i18n';
+import { cn } from '@/lib/utils';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const HISTORY_OPTIONS = [6, 12, 24, 48, 72];
 const EXCLUDED_ATTRIBUTES = ['friendly_name', 'unit_of_measurement', 'entity_picture', 'icon'];
 
-function formatDate(dateStr: string | number | undefined): string {
+function formatDate(dateStr: string | number | undefined, language: string): string {
   if (!dateStr) return '—';
   const d = new Date(typeof dateStr === 'number' ? dateStr * 1000 : dateStr);
   if (isNaN(d.getTime())) return '—';
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  return d.toLocaleString(language, { dateStyle: 'short', timeStyle: 'medium' });
 }
 
 function formatAttrValue(val: unknown): string {
@@ -28,57 +30,68 @@ function formatAttrValue(val: unknown): string {
   return String(val);
 }
 
+/** Un bloc du panneau d'appareil : fond blanc en clair, bleu plus clair que la feuille en sombre. */
+export function SheetSection({ title, children, className }: { title?: string; children: ReactNode; className?: string }) {
+  return (
+    <section className={cn('rounded-[var(--ds-radius-xl)] bg-[var(--ds-sheet-section)] p-5', className)}>
+      {title && <h3 className='mb-3 text-center text-[17px] font-bold'>{title}</h3>}
+      {children}
+    </section>
+  );
+}
+
+/** Choix parmi quelques valeurs : la pastille choisie est pleine. */
+function choice(active: boolean | undefined) {
+  return cn(
+    'h-10 rounded-[var(--ds-radius-pill)] px-4 text-sm font-semibold transition-colors',
+    active ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'bg-[var(--ds-surface-3)]'
+  );
+}
+
 // ─── Module: Timeline ─────────────────────────────────────────────────────────
 
 export function TimelineModule({ entityId }: { entityId: string }) {
+  const { t, language } = useI18n();
   const rawEntity = useHass(s => s.entities?.[entityId] ?? null) as { last_changed?: string; last_updated?: string } | null;
   if (!rawEntity) return null;
 
   return (
-    <div className='rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4'>
-      <h3 className='text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3'>Timeline</h3>
-      <div className='relative pl-4 space-y-3 border-l border-white/10'>
-        <div className='relative'>
-          <div className='absolute -left-[calc(1rem+3px)] top-1.5 w-1.5 h-1.5 rounded-full bg-blue-400' />
-          <p className='text-xs text-white/60'>Dernier changement</p>
-          <p className='text-xs text-white/90 font-medium'>{formatDate(rawEntity.last_changed)}</p>
+    <SheetSection title={t('common.moreInfo.timeline')}>
+      <dl className='flex flex-col gap-2 text-[15px]'>
+        <div className='flex justify-between gap-3'>
+          <dt className='text-[var(--ds-ink-muted)]'>{t('common.moreInfo.lastChanged')}</dt>
+          <dd className='font-semibold'>{formatDate(rawEntity.last_changed, language)}</dd>
         </div>
-        <div className='relative'>
-          <div className='absolute -left-[calc(1rem+3px)] top-1.5 w-1.5 h-1.5 rounded-full bg-white/30' />
-          <p className='text-xs text-white/60'>Dernière mise à jour</p>
-          <p className='text-xs text-white/90 font-medium'>{formatDate(rawEntity.last_updated)}</p>
+        <div className='flex justify-between gap-3'>
+          <dt className='text-[var(--ds-ink-muted)]'>{t('common.moreInfo.lastUpdated')}</dt>
+          <dd className='font-semibold'>{formatDate(rawEntity.last_updated, language)}</dd>
         </div>
-      </div>
-    </div>
+      </dl>
+    </SheetSection>
   );
 }
 
 // ─── Module: History hours selector ───────────────────────────────────────────
 
 export function HistoryModule({ historyHours, onHistoryHoursChange }: { historyHours: number; onHistoryHoursChange: (h: number) => void }) {
+  const { t } = useI18n();
   return (
-    <div className='rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4'>
-      <h3 className='text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3'>Période</h3>
-      <div className='flex gap-1.5'>
+    <SheetSection title={t('common.moreInfo.period')}>
+      <div className='flex flex-wrap justify-center gap-2'>
         {HISTORY_OPTIONS.map(h => (
-          <button
-            key={h}
-            onClick={() => onHistoryHoursChange(h)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-              historyHours === h ? 'bg-white/20 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/70'
-            }`}
-          >
-            {h}H
+          <button key={h} onClick={() => onHistoryHoursChange(h)} aria-pressed={historyHours === h} className={choice(historyHours === h)}>
+            {t('common.moreInfo.hours', { value: h })}
           </button>
         ))}
       </div>
-    </div>
+    </SheetSection>
   );
 }
 
 // ─── Module: Attributes ───────────────────────────────────────────────────────
 
 export function AttributesModule({ entityId, exclude = [] }: { entityId: string; exclude?: string[] }) {
+  const { t } = useI18n();
   const entity = useSafeEntity(entityId);
   if (!entity) return null;
 
@@ -87,19 +100,16 @@ export function AttributesModule({ entityId, exclude = [] }: { entityId: string;
   if (attrs.length === 0) return null;
 
   return (
-    <div className='rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4'>
-      <h3 className='text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3'>Attributs</h3>
-      <div className='space-y-2'>
+    <SheetSection title={t('common.moreInfo.attributes')}>
+      <dl className='flex flex-col gap-2 text-sm'>
         {attrs.map(([key, val]) => (
-          <div key={key} className='flex items-start justify-between gap-2 text-xs'>
-            <span className='text-white/50 uppercase shrink-0' style={{ wordSpacing: '0.1em' }}>
-              {key.replace(/_/g, ' ')}
-            </span>
-            <span className='text-white font-semibold text-right break-all'>{formatAttrValue(val)}</span>
+          <div key={key} className='flex items-start justify-between gap-3'>
+            <dt className='shrink-0 text-[var(--ds-ink-muted)]'>{key.replace(/_/g, ' ')}</dt>
+            <dd className='break-all text-right font-semibold'>{formatAttrValue(val)}</dd>
           </div>
         ))}
-      </div>
-    </div>
+      </dl>
+    </SheetSection>
   );
 }
 
@@ -114,46 +124,45 @@ export interface DetailEntry {
 export function DetailsModule({ title, entries }: { title: string; entries: DetailEntry[] }) {
   if (entries.length === 0) return null;
   return (
-    <div className='rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4'>
-      <h3 className='text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3'>{title}</h3>
-      <div className='space-y-2'>
+    <SheetSection title={title}>
+      <dl className='flex flex-col gap-2 text-[15px]'>
         {entries.map(e => (
-          <div key={e.label} className='flex justify-between text-xs'>
-            <span className='text-white/50'>{e.label}</span>
-            <span className={`font-semibold ${e.color ?? 'text-white'}`}>{e.value}</span>
+          <div key={e.label} className='flex justify-between gap-3'>
+            <dt className='text-[var(--ds-ink-muted)]'>{e.label}</dt>
+            <dd className={cn('font-semibold', e.color)}>{e.value}</dd>
           </div>
         ))}
-      </div>
-    </div>
+      </dl>
+    </SheetSection>
   );
 }
 
 // ─── Module: Power balance (energy-specific) ─────────────────────────────────
 
 export function PowerBalanceModule({ production, consumption }: { production: number; consumption: number }) {
+  const { t } = useI18n();
   const balance = production - consumption;
-  const isPositive = balance > 0;
   const Icon = balance > 0 ? ArrowUp : balance < 0 ? ArrowDown : Minus;
+  const tone = balance > 0 ? 'text-[var(--ds-good)]' : balance < 0 ? 'text-[var(--ds-heat-ink)]' : '';
   return (
-    <div className='rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4'>
-      <h3 className='text-[10px] font-bold uppercase tracking-widest text-white/40 mb-4'>Bilan énergétique</h3>
+    <SheetSection title={t('common.moreInfo.energyBalance')}>
       <div className='flex items-center justify-center gap-3'>
-        <div
-          className={`w-10 h-10 rounded-full flex items-center justify-center ${isPositive ? 'bg-green-500/15' : balance < 0 ? 'bg-orange-500/15' : 'bg-white/5'}`}
-        >
-          <Icon size={20} className={isPositive ? 'text-green-400' : balance < 0 ? 'text-orange-400' : 'text-zinc-400'} />
-        </div>
+        <Icon size={28} aria-hidden='true' className={tone} />
         <div>
-          <p className={`text-2xl font-bold ${isPositive ? 'text-green-400' : balance < 0 ? 'text-orange-400' : 'text-white'}`}>
-            {isPositive ? '+' : ''}
+          <p className={cn('text-[28px] font-semibold leading-none', tone)}>
+            {balance > 0 ? '+' : ''}
             {balance.toFixed(0)} W
           </p>
-          <p className='text-[10px] text-white/40 uppercase tracking-wider'>
-            {isPositive ? 'Surplus solaire' : balance < 0 ? 'Consommation nette' : 'Équilibré'}
+          <p className='mt-1 text-sm text-[var(--ds-ink-muted)]'>
+            {balance > 0
+              ? t('common.moreInfo.solarSurplus')
+              : balance < 0
+                ? t('common.moreInfo.netConsumption')
+                : t('common.moreInfo.balanced')}
           </p>
         </div>
       </div>
-    </div>
+    </SheetSection>
   );
 }
 
@@ -167,33 +176,29 @@ export interface PowerBarEntry {
 }
 
 export function PowerBarsModule({ entries }: { entries: PowerBarEntry[] }) {
+  const { t } = useI18n();
   const maxVal = Math.max(...entries.map(e => e.value), 1);
   return (
-    <div className='rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4'>
-      <h3 className='text-[10px] font-bold uppercase tracking-widest text-white/40 mb-4'>Répartition</h3>
-      <div className='space-y-3'>
+    <SheetSection title={t('common.moreInfo.breakdown')}>
+      <div className='flex flex-col gap-3'>
         {entries.map(e => (
           <div key={e.label}>
-            <div className='flex justify-between text-xs mb-1'>
-              <span className='text-white/60'>{e.label}</span>
-              <span className='text-white font-semibold'>
-                {e.value} <span className='text-white/40'>{e.unit}</span>
+            <div className='mb-1.5 flex justify-between text-[15px]'>
+              <span className='text-[var(--ds-ink-muted)]'>{e.label}</span>
+              <span className='font-semibold'>
+                {e.value} <span className='text-[var(--ds-ink-muted)]'>{e.unit}</span>
               </span>
             </div>
-            <div className='h-2 rounded-full bg-white/[0.04] overflow-hidden'>
+            <div className='h-2.5 overflow-hidden rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)]'>
               <div
-                className='h-full rounded-full transition-all duration-700'
-                style={{
-                  width: `${(e.value / maxVal) * 100}%`,
-                  backgroundColor: e.color,
-                  boxShadow: `0 0 8px ${e.color}40`,
-                }}
+                className='h-full rounded-[var(--ds-radius-pill)] transition-[width] duration-700'
+                style={{ width: `${(e.value / maxVal) * 100}%`, backgroundColor: e.color }}
               />
             </div>
           </div>
         ))}
       </div>
-    </div>
+    </SheetSection>
   );
 }
 
@@ -215,22 +220,15 @@ export function PresetsModule({
   onSelect: (value: number | string) => void;
 }) {
   return (
-    <div className='rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4'>
-      <h3 className='text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3'>{title}</h3>
-      <div className='flex flex-wrap gap-1.5'>
+    <SheetSection title={title}>
+      <div className='flex flex-wrap justify-center gap-2'>
         {presets.map(p => (
-          <button
-            key={String(p.value)}
-            onClick={() => onSelect(p.value)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-              p.active ? 'bg-white/20 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10'
-            }`}
-          >
+          <button key={String(p.value)} onClick={() => onSelect(p.value)} aria-pressed={p.active} className={choice(p.active)}>
             {p.label}
           </button>
         ))}
       </div>
-    </div>
+    </SheetSection>
   );
 }
 
@@ -248,21 +246,17 @@ export function SelectModule({
   onChange: (v: string) => void;
 }) {
   if (options.length === 0) return null;
+  // Peu d'options : des pastilles, comme sur l'Echo Show, plutôt qu'une liste déroulante.
   return (
-    <div className='rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4'>
-      <h3 className='text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2'>{title}</h3>
-      <select
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        className='w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white appearance-none'
-      >
+    <SheetSection title={title}>
+      <div className='flex flex-wrap justify-center gap-2'>
         {options.map(m => (
-          <option key={m} value={m} className='bg-slate-900'>
+          <button key={m} onClick={() => onChange(m)} aria-pressed={m === value} className={choice(m === value)}>
             {m}
-          </option>
+          </button>
         ))}
-      </select>
-    </div>
+      </div>
+    </SheetSection>
   );
 }
 
@@ -272,9 +266,9 @@ export function EntityIdModule({ entityIds }: { entityIds: string[] }) {
   const ids = entityIds.filter(Boolean);
   if (ids.length === 0) return null;
   return (
-    <div className='space-y-0.5'>
+    <div className='flex flex-col gap-0.5 px-2'>
       {ids.map(eid => (
-        <p key={eid} className='text-[10px] text-white/20 font-mono select-all truncate'>
+        <p key={eid} className='select-all truncate font-mono text-xs text-[var(--ds-ink-muted)]'>
           {eid}
         </p>
       ))}

@@ -28,5 +28,18 @@
   "widgetUnavailable": "Widget unavailable",
   "panelUnavailable": "Panel unavailable",
   "retry": "Retry",
-  "serviceRejected": "Home Assistant rejected the command"
+  "serviceRejected": "Home Assistant rejected the command",
+  "moreInfo": {
+    "timeline": "History",
+    "lastChanged": "Last changed",
+    "lastUpdated": "Last updated",
+    "period": "Period",
+    "attributes": "Attributes",
+    "energyBalance": "Energy balance",
+    "solarSurplus": "Solar surplus",
+    "netConsumption": "Net consumption",
+    "balanced": "Balanced",
+    "breakdown": "Breakdown",
+    "hours": "{value} h"
+  }
 }
