@@ -45,12 +45,6 @@ export function haThemeToTokens(vars: Record<string, string>): ThemeTokens {
     if (value) (tokens as unknown as Record<string, string>)[token] = value;
   }
 
-  // `cardTint` recompose la surface des cards à partir du curseur d'opacité.
-  // Un thème HA donne une couleur de card **opaque** : garder la teinte du
-  // thème sombre rendrait le curseur incohérent avec la couleur importée. On la
-  // retire, `bgCard` est alors utilisé tel quel.
-  delete tokens.cardTint;
-
   return tokens;
 }
 

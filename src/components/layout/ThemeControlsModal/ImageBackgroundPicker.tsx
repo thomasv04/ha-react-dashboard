@@ -1,26 +1,19 @@
 import { useState, useRef } from 'react';
 import { Image, Upload, Trash2, Link } from 'lucide-react';
-import type { BackgroundConfig } from '@/config/themes';
 import { useI18n } from '@/i18n';
 import { apiFetch } from '@/lib/api-base';
 
 type ImageInputMode = 'url' | 'file';
 
-export function ImageBackgroundPicker({
-  background,
-  setBackground,
-}: {
-  background: BackgroundConfig;
-  setBackground: (bg: BackgroundConfig) => void;
-}) {
+export function ImageBackgroundPicker({ imageUrl, onChange }: { imageUrl: string; onChange: (url: string) => void }) {
   const { t } = useI18n();
-  const [mode, setMode] = useState<ImageInputMode>(() => (background.imageUrl?.startsWith('/uploads/') ? 'file' : 'url'));
+  const [mode, setMode] = useState<ImageInputMode>(() => (imageUrl.startsWith('/uploads/') ? 'file' : 'url'));
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Nom du fichier actuellement utilisé (pour l'affichage)
-  const currentFilename = background.imageUrl?.startsWith('/uploads/') ? background.imageUrl.split('/').pop() : null;
+  const currentFilename = imageUrl.startsWith('/uploads/') ? imageUrl.split('/').pop() : null;
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -33,7 +26,7 @@ export function ImageBackgroundPicker({
       const res = await apiFetch('/api/uploads/background', { method: 'POST', body: formData });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Erreur upload');
-      setBackground({ ...background, imageUrl: json.url });
+      onChange(json.url);
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Erreur inconnue');
     } finally {
@@ -50,7 +43,7 @@ export function ImageBackgroundPicker({
     } catch {
       // Ignore — on nettoie l'URL quand même
     }
-    setBackground({ ...background, imageUrl: '' });
+    onChange('');
   }
 
   return (
@@ -79,8 +72,8 @@ export function ImageBackgroundPicker({
         <input
           type='text'
           placeholder={t('settings.appearance_section.imageUrlPlaceholder')}
-          value={background.imageUrl?.startsWith('/uploads/') ? '' : (background.imageUrl ?? '')}
-          onChange={e => setBackground({ ...background, imageUrl: e.target.value })}
+          value={imageUrl.startsWith('/uploads/') ? '' : imageUrl}
+          onChange={e => onChange(e.target.value)}
           className='w-full px-3 py-2 rounded-lg text-xs bg-white/8 border border-white/15 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/60'
         />
       )}

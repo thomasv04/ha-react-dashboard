@@ -116,12 +116,6 @@ export function PerformanceSection() {
       <div className='flex flex-col'>
         <p className='text-white/35 text-xs mb-5 leading-relaxed'>{t('settings.performance_section.intro')}</p>
         <PerfToggle
-          checked={perfSettings.reduceBlur}
-          onChange={() => toggle('reduceBlur')}
-          label={t('settings.performance_section.reduceBlur')}
-          description={t('settings.performance_section.reduceBlurDesc')}
-        />
-        <PerfToggle
           checked={perfSettings.reduceAnimations}
           onChange={() => toggle('reduceAnimations')}
           label={t('settings.performance_section.reduceAnimations')}

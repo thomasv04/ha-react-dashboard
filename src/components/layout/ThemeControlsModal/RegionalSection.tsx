@@ -209,8 +209,6 @@ function BroadcastButton() {
         body: JSON.stringify({
           data: {
             themeId: theme.themeId,
-            background: theme.background,
-            cardOpacity: theme.cardOpacity,
             perfSettings: theme.perfSettings,
             autoTheme: theme.autoTheme,
             layoutSettings: theme.layoutSettings,

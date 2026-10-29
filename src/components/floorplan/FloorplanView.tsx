@@ -32,7 +32,6 @@ import { AlarmModeModal } from '@/components/cards/AlarmCard/AlarmCard';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { PanelSelectField } from '@/components/layout/WidgetEditModal/PanelSelectField';
 import { ImageBackgroundPicker } from '@/components/layout/ThemeControlsModal/ImageBackgroundPicker';
-import type { BackgroundConfig } from '@/config/themes';
 import { DEFAULT_WIDGET_CONFIGS } from '@/widgets';
 import { useEntities } from '@/hooks/useEntities';
 import { useElementBox } from '@/hooks/useWidgetSize';
@@ -983,12 +982,7 @@ export function FloorplanView() {
     else if (!w.pos?.anchor) updateWidget(w.id, { pos: { ...w.pos, ...next } }, 'lg');
   };
 
-  const picker = (
-    <ImageBackgroundPicker
-      background={{ mode: 'image', imageUrl: image ?? '' } as BackgroundConfig}
-      setBackground={bg => setFloorplan({ image: bg.imageUrl ?? '' })}
-    />
-  );
+  const picker = <ImageBackgroundPicker imageUrl={image ?? ''} onChange={url => setFloorplan({ image: url })} />;
 
   const modelField = <ModelPicker model={model} onChange={next => setFloorplan({ model: next })} />;
 

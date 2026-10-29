@@ -34,24 +34,6 @@
 
 /* ── Performance modes ──────────────────────────────────────────────────────── */
 
-/* Reduce blur: no backdrop-filter anywhere (cards, pills, nav bar, Tailwind
-   `backdrop-blur-*`), and no decorative `blur-*` blobs. Each one is a GPU layer
-   re-rendered on every frame behind it. */
-.perf-reduce-blur,
-.perf-reduce-blur * {
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-}
-
-.perf-reduce-blur [class*='blur-'] {
-  filter: none !important;
-}
-
-/* Sans flou, un panneau à 55 % ne serait plus lisible : le rendre opaque. */
-.perf-reduce-blur .gc-overlay {
-  background: rgba(10, 12, 30, 0.96) !important;
-}
-
 /* Disable shadows: remove box-shadow GPU compositing */
 .perf-no-shadows .gc,
 .perf-no-shadows .gc-light,
@@ -341,221 +323,83 @@ select {
   }
 }
 
-/* ── Elevation scale ──────────────────────────────────────────
-   Glass on a dark background reads as "flat" unless three things stack:
-   a luminance lift (card brighter than backdrop), a hairline edge, and a
-   real drop shadow. These tokens keep all three in one place so themes can
-   retune depth without touching every component.                        */
+/* ── Surfaces v2 ──────────────────────────────────────────────────────────────
+   Les cards sont des aplats opaques aux couleurs du design system : ni flou, ni
+   reflet, ni ombre portée. Les classes `.gc*` restent le temps que chaque
+   widget passe directement aux jetons `--ds-*`. */
 
 :root {
-  /* Ambient (contact) + key (cast) shadow, layered = perceived height */
-  --dash-shadow-ambient: rgba(0, 0, 0, 0.34);
-  --dash-shadow-key: rgba(0, 0, 0, 0.55);
-  /* Top light edge — simulates the lit lip of a glass slab */
-  --dash-edge: rgba(255, 255, 255, 0.14);
-  /* Inner containment ring, keeps the card crisp against busy wallpapers */
-  --dash-ring: rgba(255, 255, 255, 0.07);
-
-  --dash-elev-card:
-    0 1px 2px var(--dash-shadow-ambient),
-    0 10px 24px -10px var(--dash-shadow-key),
-    0 28px 56px -28px var(--dash-shadow-key),
-    inset 0 1px 0 var(--dash-edge),
-    inset 0 0 0 1px var(--dash-ring);
-
-  --dash-elev-card-hover:
-    0 2px 4px var(--dash-shadow-ambient),
-    0 16px 34px -12px var(--dash-shadow-key),
-    0 38px 70px -30px var(--dash-shadow-key),
-    inset 0 1px 0 var(--dash-edge),
-    inset 0 0 0 1px var(--dash-ring);
-
-  --dash-elev-inner:
-    0 1px 2px rgba(0, 0, 0, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.09);
-
-  --dash-elev-overlay:
-    0 2px 6px var(--dash-shadow-ambient),
-    0 24px 48px -12px rgba(0, 0, 0, 0.7),
-    inset 0 1px 0 var(--dash-edge),
-    inset 0 0 0 1px var(--dash-ring);
+  --dash-elev-card: none;
+  --dash-elev-card-hover: none;
+  --dash-elev-inner: none;
+  --dash-elev-overlay: var(--ds-shadow-sheet);
 }
 
-/* Light surfaces need soft, tinted shadows — pure black reads as dirt */
-[data-theme='light'] {
-  --dash-shadow-ambient: rgba(15, 23, 42, 0.08);
-  --dash-shadow-key: rgba(15, 23, 42, 0.16);
-  --dash-edge: rgba(255, 255, 255, 0.9);
-  --dash-ring: rgba(15, 23, 42, 0.06);
-}
-
-/* ── Glass morphism utilities ─────────────────────────────── */
-
-/*
-  Dark glass card — backdrop-filter lives on the element itself.
-  ::before → shiny diagonal border shimmer (mask technique, no blur)
-  ::after  → subtle top-edge inner glow
-*/
 .gc {
   position: relative;
-  /* Use theme CSS variables when set, fall back to original glass effect */
-  background: var(--dash-bg-card, rgba(6, 6, 24, 0.72));
-  border-radius: var(--dash-card-radius, 24px);
-  -webkit-backdrop-filter: blur(var(--dash-glass-blur, 30px)) saturate(var(--dash-glass-saturate, 180%))
-    brightness(var(--dash-glass-brightness, 105%));
-  backdrop-filter: blur(var(--dash-glass-blur, 30px)) saturate(var(--dash-glass-saturate, 180%))
-    brightness(var(--dash-glass-brightness, 105%));
-  border-color: var(--dash-border, transparent);
-  color: var(--dash-text-primary, #ffffff);
-  box-shadow: var(--dash-elev-card);
-  /* Contexte d'empilement propre par card : le `backdrop-filter` échantillonne
-     alors une zone stable, au lieu de dépendre de l'ordre de composition des
-     voisines — seconde source de liserés au repeint. */
-  isolation: isolate;
+  background: var(--dash-bg-card);
+  border-radius: var(--ds-radius-lg);
+  color: var(--dash-text-primary);
   transition:
-    box-shadow 0.24s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
-    background 0.2s ease;
+    background 0.2s ease,
+    transform 0.15s ease;
 }
 
 @media (hover: hover) {
   .gc:hover {
-    background: var(--dash-bg-card-hover, rgba(6, 6, 24, 0.80));
-    box-shadow: var(--dash-elev-card-hover);
-    transform: translateY(-2px);
+    background: var(--dash-bg-card-hover);
   }
 }
 
-/* Press feedback — the card sinks back to the surface */
+/* Retour d'appui : la card s'enfonce légèrement sous le doigt. */
 .gc:active {
-  transform: translateY(0);
-  box-shadow: var(--dash-elev-card);
-  transition-duration: 0.08s;
+  transform: scale(0.98);
 }
 
-/* Shiny gradient border via mask technique */
-.gc::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(
-    60deg,
-    rgba(255, 255, 255, 0.00)  0%,
-    rgba(255, 255, 255, 0.30) 46%,
-    rgba(255, 255, 255, 0.34) 54%,
-    rgba(255, 255, 255, 0.00) 100%
-  );
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-  z-index: 1;
-  filter: saturate(140%);
-}
-
-/* Top-edge inner highlight */
-.gc::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.10) 0%,
-    rgba(255, 255, 255, 0.02) 38%,
-    rgba(0, 0, 0, 0.06) 100%
-  );
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* Contenu au-dessus des pseudo-éléments.
-
-   Dans `@layer base`, que la couche `utilities` surclasse : hors couche, cette
+/* Dans `@layer base`, que la couche `utilities` surclasse : hors couche, cette
    règle gagnait à égalité de spécificité contre `.absolute` et remettait en flux
-   *tout* enfant direct d'une card censé être positionné. C'est ce qui poussait
-   la pluie du widget météo dans le flux, où elle décalait le contenu vers le bas
-   et faisait rogner les prévisions. */
+   tout enfant direct d'une card censé être positionné. */
 @layer base {
-  .gc > * {
-    position: relative;
-    z-index: 2;
-  }
-
+  .gc > *,
   .gc-light > * {
     position: relative;
-    z-index: 1;
   }
 }
 
-/* Card réutilisée hors grille (modal « plus d'infos ») : pas de chrome de card */
-.gc-bare .gc {
-  background: none;
-  box-shadow: none;
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
+/* Card réutilisée hors grille (modale « plus d'infos ») : pas de fond de card */
+.gc-bare .gc,
 .gc-bare .gc:hover {
   background: none;
-  box-shadow: none;
   transform: none;
 }
-.gc-bare .gc::before,
-.gc-bare .gc::after {
-  display: none;
-}
 
-/* Lighter variant (used in nested contexts) */
+/* Surface imbriquée dans une card */
 .gc-light {
   position: relative;
-  background: rgba(255, 255, 255, 0.06);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  backdrop-filter: blur(20px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: var(--dash-elev-inner);
+  background: var(--ds-surface-3);
 }
 
-/* Bottom nav bar */
-.gc-pill {
-  background: rgba(4, 4, 16, 0.92);
-  -webkit-backdrop-filter: blur(40px) saturate(150%);
-  backdrop-filter: blur(40px) saturate(150%);
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: var(--dash-elev-overlay);
-}
-
-/* Overlay surfaces (modales, popovers, dropdowns) — même recette de verre que
-   le dock. Teinte fixe et non `--dash-bg-card` : le contenu de ces panneaux est
-   écrit en texte clair, un thème clair les rendrait illisibles. */
+/* Modales, popovers, menus déroulants */
 .gc-overlay {
-  background: rgba(10, 12, 30, 0.55);
-  -webkit-backdrop-filter: blur(48px) saturate(180%);
-  backdrop-filter: blur(48px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: var(--dash-elev-overlay);
+  background: var(--ds-surface-1);
+  box-shadow: var(--ds-shadow-sheet);
 }
 
-/* Small chips / badges */
+/* Petites pastilles */
 .gc-inner {
-  background: rgba(255, 255, 255, 0.10);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: var(--dash-elev-inner);
+  background: var(--ds-surface-3);
 }
 
-/* Button style */
+/* Boutons */
 .gc-btn {
-  background: rgba(255, 255, 255, 0.10);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: var(--dash-elev-inner);
-  transition: background 0.15s, box-shadow 0.15s, transform 0.15s;
+  background: var(--ds-surface-3);
+  transition:
+    background 0.15s,
+    transform 0.15s;
 }
 
 .gc-btn:hover {
-  background: rgba(255, 255, 255, 0.17);
+  background: var(--dash-bg-card-hover);
 }
 
 .gc-btn:active {
@@ -602,32 +446,6 @@ select {
 /* Compact layout (640–768px) — slightly tighter */
 .compact-layout .gc {
   padding: 0.875rem;
-}
-
-/* ── Tramage du fond ─────────────────────────────────────────────────────────
-   Les nappes ambiantes s'étalent sur ~35 niveaux de gris à peine, répartis sur
-   toute la hauteur de l'écran : en 8 bits par canal, chaque niveau occupe des
-   dizaines de pixels et l'œil voit des bandes franches (effet de Mach). Le
-   `backdrop-filter` des cards échantillonne ce fond et amplifie encore le
-   phénomène.
-
-   Un bruit très faible superposé casse la quantification : les transitions
-   redeviennent continues. C'est le remède classique, et il est gratuit — une
-   seule image de 64 px carrés, répétée et composée une fois.
-
-   L'opacité doit rester sous ~4 % : au-delà le grain devient perceptible. */
-
-.dash-dither::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.035;
-  background-repeat: repeat;
-  background-size: 64px 64px;
-  /* Bruit fractal SVG : plus léger qu'un PNG et net à tout ratio de pixels */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='64' height='64' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* ── Flux d'énergie ──────────────────────────────────────────────────────────

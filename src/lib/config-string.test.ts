@@ -7,10 +7,7 @@ const MINIMAL_SNAPSHOT: ConfigSnapshot = {
   v: 1,
   theme: {
     themeId: 'dark',
-    background: { mode: 'solid' },
-    cardOpacity: 0.12,
     perfSettings: {
-      reduceBlur: false,
       reduceAnimations: false,
       disableShadows: false,
       disableModalAnimation: false,
@@ -36,15 +33,7 @@ const LARGE_SNAPSHOT: ConfigSnapshot = {
   v: 1,
   theme: {
     themeId: 'light',
-    background: {
-      mode: 'gradient',
-      color1: '#1a1a2e',
-      color2: '#16213e',
-      angle: 135,
-    } as ConfigSnapshot['theme']['background'],
-    cardOpacity: 0.25,
     perfSettings: {
-      reduceBlur: true,
       reduceAnimations: false,
       disableShadows: true,
       disableModalAnimation: false,
