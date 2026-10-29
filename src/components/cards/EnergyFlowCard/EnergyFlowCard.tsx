@@ -1,7 +1,5 @@
 import { useRef } from 'react';
-import { motion } from 'framer-motion';
 import { Sun, House, Zap, BatteryCharging } from 'lucide-react';
-import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
@@ -55,23 +53,22 @@ interface FlowNodeProps {
   value: string;
   unit: string;
   color: string;
+  /** Couleur du texte lisible sur `color` */
+  ink: string;
   Icon: typeof Sun;
 }
 
-function FlowNode({ nodeKey, label, value, unit, color, Icon }: FlowNodeProps) {
+function FlowNode({ nodeKey, label, value, unit, color, ink, Icon }: FlowNodeProps) {
   const n = NODES[nodeKey];
   return (
     <foreignObject x={n.x} y={n.y} width={NODE.w} height={NODE.h}>
-      <div
-        className='w-full h-full rounded-xl border flex items-center gap-1.5 px-2'
-        style={{ background: `${color}1a`, borderColor: `${color}40` }}
-      >
-        <Icon size={14} style={{ color }} className='shrink-0' />
+      <div className='flex h-full w-full items-center gap-1.5 rounded-full px-3' style={{ background: color, color: ink }}>
+        <Icon size={14} className='shrink-0' />
         <div className='min-w-0 leading-none'>
-          <div className='text-[9px] text-white/50 truncate'>{label}</div>
-          <div className='text-[13px] font-semibold text-white tabular-nums truncate'>
+          <div className='truncate text-[9px] opacity-75'>{label}</div>
+          <div className='truncate text-[13px] font-semibold tabular-nums'>
             {value}
-            <span className='text-[9px] font-normal text-white/45 ml-0.5'>{unit}</span>
+            <span className='ml-0.5 text-[9px] font-normal opacity-75'>{unit}</span>
           </div>
         </div>
       </div>
@@ -88,16 +85,16 @@ function FlowLink({ nodeKey, color, active, reverse }: { nodeKey: NodeKey; color
 
   return (
     <>
-      <path d={d} fill='none' stroke='rgba(255,255,255,0.10)' strokeWidth={1.5} strokeLinecap='round' />
+      <path d={d} fill='none' style={{ stroke: 'var(--ds-surface-3)' }} strokeWidth={3} strokeLinecap='round' />
       {active &&
         [0, 1, 2].map(i => (
           <circle
             key={i}
-            r={2.6}
-            fill={color}
+            r={3}
             className='flow-dot'
             style={
               {
+                fill: color,
                 offsetPath: `path('${path}')`,
                 offsetRotate: '0deg',
                 '--flow-delay': `${i * 0.73}s`,
@@ -161,7 +158,9 @@ export function EnergyFlowCard() {
   const selfUse = home > 0 ? Math.round(clamp((home - gridImport) / home, 0, 1) * 100) : null;
   const selfUseLabel = selfUse === null ? '—' : `${selfUse}%`;
 
-  const COLORS = { solar: '#fbbf24', home: '#38bdf8', battery: '#34d399', grid: '#f87171' };
+  // Couleurs des nœuds et texte lisible dessus — les points du flux prennent celle du nœud.
+  const COLORS = { solar: 'var(--ds-warm-light)', home: 'var(--ds-cool)', battery: 'var(--ds-good)', grid: 'var(--ds-tile-on)' };
+  const INK = { solar: '#3d2a05', home: '#0d1a33', battery: '#062614', grid: '#ffffff' };
 
   const solarF = fmt(solar);
   const homeF = fmt(home);
@@ -170,7 +169,10 @@ export function EnergyFlowCard() {
   // Une seule rangée : le schéma n'a pas la place, on garde les chiffres.
   if (size.squat) {
     return (
-      <motion.div ref={cardRef} {...CARD_ENTRANCE} className='gc rounded-3xl px-3.5 py-2 h-full flex items-center gap-3 overflow-hidden'>
+      <div
+        ref={cardRef}
+        className='flex h-full items-center gap-4 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] px-4 text-[var(--ds-ink)]'
+      >
         {(
           [
             [Sun, COLORS.solar, solarF],
@@ -179,27 +181,29 @@ export function EnergyFlowCard() {
           ] as const
         ).map(([Icon, color, v], i) => (
           <div key={i} className='flex items-center gap-1.5 min-w-0'>
-            <Icon size={15} style={{ color }} className='shrink-0' />
-            <span className='text-sm font-semibold text-white tabular-nums'>
+            <Icon size={16} style={{ color }} className='shrink-0' />
+            <span className='text-[15px] font-semibold tabular-nums'>
               {v.value}
-              <span className='text-[10px] text-white/45 ml-0.5'>{v.unit}</span>
+              <span className='ml-0.5 text-xs text-[var(--ds-ink-muted)]'>{v.unit}</span>
             </span>
           </div>
         ))}
-        <div className='ml-auto text-xs font-bold tabular-nums shrink-0' style={{ color: COLORS.battery }}>
+        <div className='ml-auto shrink-0 text-sm font-bold tabular-nums' style={{ color: COLORS.battery }}>
           {selfUseLabel}
         </div>
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.div
+    <div
       ref={cardRef}
-      {...CARD_ENTRANCE}
-      className={cn('gc rounded-3xl h-full flex flex-col overflow-hidden', size.h === 'short' ? 'p-2.5' : 'p-3.5')}
+      className={cn(
+        'flex h-full flex-col overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] text-[var(--ds-ink)]',
+        size.h === 'short' ? 'p-3' : 'p-[var(--ds-space-4)]'
+      )}
     >
-      {config?.name && <div className='text-white/40 text-xs font-medium truncate mb-1 shrink-0'>{config.name}</div>}
+      {config?.name && <div className='mb-1 shrink-0 truncate text-[17px] font-semibold'>{config.name}</div>}
 
       <svg viewBox={`0 0 ${VB.w} ${VB.h}`} className='w-full flex-1 min-h-0' preserveAspectRatio='xMidYMid meet'>
         {/* Liens — le sens de circulation traduit l'état réel de l'installation */}
@@ -209,27 +213,28 @@ export function EnergyFlowCard() {
         <FlowLink nodeKey='grid' color={COLORS.grid} active={Math.abs(grid) > 5} reverse={grid < 0} />
 
         {/* Pastille centrale : autoconsommation */}
-        <circle cx={CENTER.x} cy={CENTER.y} r={26} fill='rgba(8,8,15,0.85)' stroke='rgba(255,255,255,0.12)' />
-        <text x={CENTER.x} y={CENTER.y - 1} textAnchor='middle' fill='#fff' fontSize={15} fontWeight={600}>
+        <circle cx={CENTER.x} cy={CENTER.y} r={26} style={{ fill: 'var(--ds-surface-3)' }} />
+        <text x={CENTER.x} y={CENTER.y - 1} textAnchor='middle' style={{ fill: 'var(--ds-ink)' }} fontSize={15} fontWeight={600}>
           {selfUseLabel}
         </text>
-        <text x={CENTER.x} y={CENTER.y + 11} textAnchor='middle' fill='rgba(255,255,255,0.45)' fontSize={7} letterSpacing={0.5}>
+        <text x={CENTER.x} y={CENTER.y + 11} textAnchor='middle' style={{ fill: 'var(--ds-ink-muted)' }} fontSize={7} letterSpacing={0.5}>
           {t('widgets.energy_flow.selfUse')}
         </text>
 
         {/* Nœuds */}
-        <FlowNode nodeKey='solar' label={t('widgets.energy_flow.solar')} {...solarF} color={COLORS.solar} Icon={Sun} />
-        <FlowNode nodeKey='home' label={t('widgets.energy_flow.home')} {...homeF} color={COLORS.home} Icon={House} />
+        <FlowNode nodeKey='solar' label={t('widgets.energy_flow.solar')} {...solarF} color={COLORS.solar} ink={INK.solar} Icon={Sun} />
+        <FlowNode nodeKey='home' label={t('widgets.energy_flow.home')} {...homeF} color={COLORS.home} ink={INK.home} Icon={House} />
         <FlowNode
           nodeKey='battery'
           label={t('widgets.energy_flow.battery')}
           value={String(Math.round(battLevel))}
           unit='%'
           color={COLORS.battery}
+          ink={INK.battery}
           Icon={BatteryCharging}
         />
-        <FlowNode nodeKey='grid' label={t('widgets.energy_flow.grid')} {...gridF} color={COLORS.grid} Icon={Zap} />
+        <FlowNode nodeKey='grid' label={t('widgets.energy_flow.grid')} {...gridF} color={COLORS.grid} ink={INK.grid} Icon={Zap} />
       </svg>
-    </motion.div>
+    </div>
   );
 }
