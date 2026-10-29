@@ -7,7 +7,8 @@ import { I18nProvider } from '@/i18n';
 import '../src/index.css';
 import React, { useEffect } from 'react';
 
-const BG = 'linear-gradient(135deg, #0b0c1e 0%, #111827 50%, #0d1117 100%)';
+// Le fond `ground` du thème sombre de la v2.
+const BG = 'var(--ds-ground)';
 
 const withDarkTheme: Decorator = Story => {
   useEffect(() => {

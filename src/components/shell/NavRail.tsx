@@ -14,7 +14,9 @@ const DEFAULT_ICONS: Record<PageType, LucideIcon> = {
   floorplan: MapIcon,
 };
 
-const RAIL_BUTTON = 'flex size-14 shrink-0 items-center justify-center rounded-[var(--ds-radius-md)] transition-colors';
+// 48 px + 6 px de marge de chaque côté : la pilule fait 60 px, la largeur du
+// bouton des apps, et le rail tombe pile sous lui.
+const RAIL_BUTTON = 'flex size-12 shrink-0 items-center justify-center rounded-[var(--ds-radius-md)] transition-colors';
 
 /**
  * Rail de navigation à gauche : la première page (l'accueil) en tête, les
@@ -70,7 +72,7 @@ export function NavRail() {
 
       <div
         data-tour='pages'
-        className='flex max-h-[calc(100dvh-220px)] gap-2.5 overflow-auto scrollbar-none rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-1)] p-2.5 sm:flex-col max-sm:max-w-[calc(100vw-110px)]'
+        className='flex max-h-[calc(100dvh-220px)] gap-2 overflow-auto scrollbar-none rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-1)] p-1.5 sm:flex-col max-sm:max-w-[calc(100vw-110px)]'
       >
         {others.map((page, index) => {
           const isActive = page.id === currentPageId;
@@ -87,7 +89,7 @@ export function NavRail() {
                   isActive ? 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)]' : 'text-[var(--ds-ink-muted)] hover:text-[var(--ds-ink)]'
                 )}
               >
-                <Icon size={24} />
+                <Icon size={22} />
               </button>
 
               {/* Actions de la page active : sur toutes, elles hérisseraient le rail. */}
@@ -127,7 +129,7 @@ export function NavRail() {
                 isActive ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'text-[var(--ds-ink-muted)] hover:text-[var(--ds-ink)]'
               )}
             >
-              <Icon size={24} />
+              <Icon size={22} />
             </button>
           );
         })}
