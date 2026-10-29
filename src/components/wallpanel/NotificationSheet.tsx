@@ -16,17 +16,17 @@ const DAY = 24 * HOUR;
 
 type Level = NonNullable<DashboardNotification['level']>;
 
-const LEVELS: Record<Level, { tint: string; edge: string }> = {
-  info: { tint: 'text-sky-300/80', edge: 'border-sky-400/25' },
-  success: { tint: 'text-emerald-300/80', edge: 'border-emerald-400/25' },
-  warning: { tint: 'text-amber-300/80', edge: 'border-amber-400/25' },
-  error: { tint: 'text-red-300/80', edge: 'border-red-400/25' },
+const LEVELS: Record<Level, { tint: string }> = {
+  info: { tint: 'text-[var(--ds-accent)]' },
+  success: { tint: 'text-[var(--ds-good)]' },
+  warning: { tint: 'text-[var(--ds-warm-light)]' },
+  error: { tint: 'text-[var(--ds-alert)]' },
 };
 
 /** Icône par défaut du niveau — écrite en dur, et non piochée dans une table :
  *  un composant choisi au rendu n'est pas une constante pour React. */
 function LevelIcon({ level, className }: { level: Level; className?: string }) {
-  const size = 16;
+  const size = 20;
   if (level === 'success') return <CheckCircle2 size={size} className={className} />;
   if (level === 'warning') return <AlertTriangle size={size} className={className} />;
   if (level === 'error') return <XCircle size={size} className={className} />;
@@ -34,9 +34,9 @@ function LevelIcon({ level, className }: { level: Level; className?: string }) {
 }
 
 const ACTION_VARIANTS = {
-  default: 'bg-white/10 hover:bg-white/20 text-white/80 hover:text-white',
-  primary: 'bg-blue-500/80 hover:bg-blue-500 text-white',
-  danger: 'bg-red-500/80 hover:bg-red-500 text-white',
+  default: 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)]',
+  primary: 'bg-[var(--ds-accent)] text-white',
+  danger: 'bg-[var(--ds-alert)] text-white',
 } as const;
 
 /** « il y a 5 min » — `Intl` fait le travail, y compris l'accord et la langue. */
@@ -61,7 +61,7 @@ function NotificationCard({ item, onDismiss }: { item: DashboardNotification; on
   const Custom = item.icon ? resolveIcon(item.icon) : null;
   const iconClass = cn('shrink-0 mt-0.5', level.tint);
   // eslint-disable-next-line react-hooks/static-components
-  const icon = Custom ? <Custom size={16} className={iconClass} /> : <LevelIcon level={levelName} className={iconClass} />;
+  const icon = Custom ? <Custom size={20} className={iconClass} /> : <LevelIcon level={levelName} className={iconClass} />;
 
   const run = (action: NotificationAction) => {
     const [domain, service] = action.service?.split('.') ?? [];
@@ -72,34 +72,37 @@ function NotificationCard({ item, onDismiss }: { item: DashboardNotification; on
   };
 
   return (
-    <motion.div variants={staggerGridItem} className={cn('rounded-2xl border bg-white/[0.04] px-4 py-3', level.edge)}>
+    <motion.div variants={staggerGridItem} className='rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] px-4 py-3'>
       <div className='flex items-start gap-3'>
         {icon}
         <div className='flex-1 min-w-0'>
-          {item.title && <p className='text-white/85 text-sm font-medium'>{item.title}</p>}
+          {item.title && <p className='text-[17px] font-semibold'>{item.title}</p>}
           <RichText
             type={item.content_type}
             value={item.message}
-            className='text-white/55 text-xs mt-0.5 whitespace-pre-line break-words'
+            className='mt-0.5 whitespace-pre-line break-words text-sm text-[var(--ds-ink-muted)]'
           />
-          {when && <p className='text-white/25 text-[10px] mt-1.5'>{when}</p>}
+          {when && <p className='mt-1.5 text-xs text-[var(--ds-ink-muted)]'>{when}</p>}
         </div>
         <button
           onClick={onDismiss}
           aria-label={t('common.close')}
-          className='touch-target shrink-0 p-1.5 rounded-lg text-white/25 hover:text-white/70 hover:bg-white/10 transition-colors'
+          className='touch-target flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'
         >
-          <X size={14} />
+          <X size={18} />
         </button>
       </div>
 
       {item.actions && item.actions.length > 0 && (
-        <div className='flex flex-wrap gap-2 mt-3 pl-7'>
+        <div className='mt-3 flex flex-wrap gap-2 pl-8'>
           {item.actions.map((action, i) => (
             <button
               key={i}
               onClick={() => run(action)}
-              className={cn('px-3 py-1.5 rounded-xl text-xs font-medium transition-colors', ACTION_VARIANTS[action.variant ?? 'default'])}
+              className={cn(
+                'h-10 rounded-[var(--ds-radius-pill)] px-4 text-sm font-semibold',
+                ACTION_VARIANTS[action.variant ?? 'default']
+              )}
             >
               {action.label}
             </button>
@@ -125,13 +128,13 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
     <WallPanelSheet
       side='top'
       title={t('layout.wallPanel.gestures.notifications')}
-      icon={<Bell size={16} />}
+      icon={<Bell size={20} />}
       onClose={onClose}
       action={
         notifications.length > 0 ? (
           <button
             onClick={dismissAll}
-            className='shrink-0 px-3 py-1.5 rounded-xl text-[11px] font-medium text-white/45 hover:text-white/80 hover:bg-white/[0.08] transition-colors'
+            className='h-10 shrink-0 rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)] px-4 text-sm font-semibold'
           >
             {t('layout.wallPanel.gestures.dismissAll')}
           </button>
@@ -142,8 +145,8 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
         <NotificationCard key={item.id} item={item} onDismiss={() => dismiss(item.id)} />
       ))}
       {notifications.length === 0 && (
-        <div className='flex flex-col items-center gap-2 py-10 text-white/25'>
-          <BellOff size={22} />
+        <div className='flex flex-col items-center gap-2 py-10 text-[var(--ds-ink-muted)]'>
+          <BellOff size={28} />
           <p className='text-sm'>{t('layout.wallPanel.gestures.noNotifications')}</p>
         </div>
       )}

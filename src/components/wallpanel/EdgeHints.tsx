@@ -22,8 +22,8 @@ function Hint({ edge, delay }: { edge: Edge; delay: number }) {
   return (
     <motion.div
       className={cn(
-        'absolute flex items-center justify-center w-9 h-9 rounded-full',
-        'bg-white/10 border border-white/15 text-white/70 backdrop-blur-sm',
+        'absolute flex size-11 items-center justify-center rounded-full',
+        'bg-[var(--ds-control)] text-[var(--ds-control-ink)]',
         position
       )}
       initial={{ opacity: 0, scale: 0.9 }}
@@ -33,7 +33,7 @@ function Hint({ edge, delay }: { edge: Edge; delay: number }) {
       transition={{ duration: VISIBLE_FOR, times: [0, 0.12, 0.75, 1], delay, ease: EASE_OUT }}
     >
       <motion.span animate={{ [nudge]: [0, toward, 0] }} transition={{ duration: 1.1, repeat: 2, delay: delay + 0.4, ease: EASE_OUT }}>
-        <Chevron size={16} />
+        <Chevron size={20} />
       </motion.span>
     </motion.div>
   );
