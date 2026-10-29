@@ -210,19 +210,7 @@ function Projected({ projector, children }: { projector: Projector; children: (t
 }
 
 /** Bouton du menu, en haut à droite de la maquette ; enfoncé, il prend la couleur `on`. */
-function RoundButton({
-  icon: Icon,
-  label,
-  onClick,
-  pressed,
-  on = 'text-sky-300',
-}: {
-  icon: LucideIcon;
-  label: string;
-  onClick: () => void;
-  pressed?: boolean;
-  on?: string;
-}) {
+function RoundButton({ icon: Icon, label, onClick, pressed }: { icon: LucideIcon; label: string; onClick: () => void; pressed?: boolean }) {
   return (
     <button
       onClick={onClick}
@@ -230,11 +218,11 @@ function RoundButton({
       title={label}
       aria-label={label}
       className={cn(
-        'p-2.5 rounded-xl transition-colors',
-        pressed ? cn(on, 'bg-white/10') : 'text-white/60 hover:text-white hover:bg-white/8'
+        'flex size-12 items-center justify-center rounded-full transition-colors',
+        pressed ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'text-[var(--ds-ink)]'
       )}
     >
-      <Icon size={16} />
+      <Icon size={20} />
     </button>
   );
 }
@@ -1436,7 +1424,10 @@ export function FloorplanView() {
             {!backdrop && (
               <div className='absolute right-3 top-3 z-20 flex flex-col items-end gap-4 pointer-events-none'>
                 {loaded && !isEditMode && (
-                  <div data-tour='floorplan-buttons' className='flex gap-0.5 p-1 rounded-2xl gc-overlay pointer-events-auto'>
+                  <div
+                    data-tour='floorplan-buttons'
+                    className='pointer-events-auto flex gap-1 rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-2)] p-1.5 shadow-[var(--ds-shadow-pin)]'
+                  >
                     {compassReady && isPhone && (
                       <RoundButton
                         icon={Compass}
@@ -1455,7 +1446,6 @@ export function FloorplanView() {
                           setSecurity(on => !on);
                         }}
                         pressed={security}
-                        on='text-red-300'
                       />
                     )}
                     {roomTemperatures.some(Boolean) && !replaying && (
@@ -1464,7 +1454,6 @@ export function FloorplanView() {
                         label={t('layout.floorplan.thermal')}
                         onClick={() => setThermal(on => !on)}
                         pressed={thermal}
-                        on='text-orange-300'
                       />
                     )}
                     <RoundButton
@@ -1482,7 +1471,7 @@ export function FloorplanView() {
                         three.current?.resetView();
                       }}
                     />
-                    {menuPanels.length > 0 && <span aria-hidden className='w-px my-1.5 mx-1 bg-white/15' />}
+                    {menuPanels.length > 0 && <span aria-hidden className='mx-1 my-2 w-px bg-[var(--ds-surface-3)]' />}
                     {menuPanels.map(panel => (
                       <RoundButton
                         key={panel.id}
@@ -1690,7 +1679,7 @@ export function FloorplanView() {
               <div
                 role='group'
                 aria-label={t('layout.floorplan.levels')}
-                className='absolute right-3 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-1 p-1 rounded-xl gc-overlay'
+                className='absolute right-3 top-1/2 z-30 flex -translate-y-1/2 flex-col gap-1.5 rounded-[28px] bg-[var(--ds-surface-2)] p-1.5 text-[var(--ds-ink)] shadow-[var(--ds-shadow-pin)]'
               >
                 {/* Comme un ascenseur : le plus haut en haut. */}
                 {levels
@@ -1708,8 +1697,8 @@ export function FloorplanView() {
                       aria-label={l.name}
                       title={l.name}
                       className={cn(
-                        'min-w-9 px-2 py-1.5 rounded-lg text-xs font-semibold tabular-nums transition-colors',
-                        level === l.id ? 'bg-sky-500/25 text-sky-200' : 'text-white/55 hover:text-white'
+                        'flex size-12 items-center justify-center rounded-full text-[15px] font-semibold tabular-nums transition-colors',
+                        level === l.id && 'bg-[var(--ds-ink)] text-[var(--ds-surface-1)]'
                       )}
                     >
                       {l.short}
@@ -1721,11 +1710,11 @@ export function FloorplanView() {
                   aria-label={t('layout.floorplan.levelAll')}
                   title={t('layout.floorplan.levelAll')}
                   className={cn(
-                    'flex justify-center px-2 py-1.5 rounded-lg transition-colors',
-                    level === null ? 'bg-sky-500/25 text-sky-200' : 'text-white/55 hover:text-white'
+                    'flex size-12 items-center justify-center rounded-full transition-colors',
+                    level === null && 'bg-[var(--ds-ink)] text-[var(--ds-surface-1)]'
                   )}
                 >
-                  <Layers size={14} />
+                  <Layers size={20} />
                 </button>
               </div>
             )}
@@ -1759,9 +1748,10 @@ export function FloorplanView() {
                     animate={{ opacity: 1, x: 0 }}
                     onClick={() => setFocusId(null)}
                     title={t('layout.floorplan.focusBack')}
-                    className='flex items-center gap-1 pl-2 pr-3.5 py-2 rounded-xl gc-overlay text-sm font-medium text-white/85 hover:text-white transition-colors'
+                    // La puce « maison » de l'Echo Show : le retour à toute la maison.
+                    className='flex h-[52px] items-center gap-2 rounded-[var(--ds-radius-pill)] bg-[var(--ds-home)] pl-3 pr-5 text-[17px] font-semibold text-[var(--ds-home-ink)] shadow-[var(--ds-shadow-pin)]'
                   >
-                    <ChevronLeft size={16} />
+                    <ChevronLeft size={20} />
                     {focusRoom.name}
                   </motion.button>
                 )}
@@ -1781,14 +1771,13 @@ export function FloorplanView() {
                   <div
                     role='status'
                     className={cn(
-                      'max-w-full flex items-center gap-2 px-3.5 py-2 rounded-xl gc-overlay text-sm font-medium',
-                      openedNames.length ? 'text-red-200' : 'text-green-200'
+                      'flex h-11 max-w-full items-center gap-2 rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-2)] px-4 text-[15px] font-semibold text-[var(--ds-ink)] shadow-[var(--ds-shadow-pin)]'
                     )}
                   >
                     {openedNames.length ? (
-                      <ShieldAlert size={16} className='shrink-0 text-red-400' />
+                      <ShieldAlert size={18} className='shrink-0 text-[var(--ds-alert)]' />
                     ) : (
-                      <ShieldCheck size={16} className='shrink-0 text-green-400' />
+                      <ShieldCheck size={18} className='shrink-0 text-[var(--ds-good)]' />
                     )}
                     <span className='truncate'>{securityText}</span>
                   </div>
