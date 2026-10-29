@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { ShieldCheck, ShieldAlert, ShieldOff, ShieldQuestion, Delete, X, Home, Plane, Moon, LogOut } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { callHAService, friendlyName } from '@/lib/ha-service';
@@ -26,99 +25,35 @@ type AlarmState =
   | 'triggered'
   | string;
 
+/**
+ * Quatre tons, pas une couleur par mode : désarmée (neutre), armée (la tuile
+ * passe en `tile-on`), en cours d'armement, déclenchée (`alert`). Le mode
+ * précis se lit dans le libellé.
+ */
+type AlarmTone = 'idle' | 'armed' | 'pending' | 'alert';
+
 interface AlarmVisual {
   label: string;
   Icon: typeof ShieldCheck;
-  ringColor: string;
-  bgClass: string;
-  textClass: string;
-  borderClass: string;
-  pulse: boolean;
+  tone: AlarmTone;
 }
 
 function getVisual(state: AlarmState, t: (k: string) => string): AlarmVisual {
   switch (state) {
     case 'disarmed':
-      return {
-        label: t('widgets.alarm.disarmed'),
-        Icon: ShieldOff,
-        ringColor: '#4ade80',
-        bgClass: 'bg-green-400/10',
-        textClass: 'text-green-400',
-        borderClass: 'border-green-400/20',
-        pulse: false,
-      };
+      return { label: t('widgets.alarm.disarmed'), Icon: ShieldOff, tone: 'idle' };
     case 'armed_home':
-      return {
-        label: t('widgets.alarm.armed_home'),
-        Icon: ShieldCheck,
-        ringColor: '#facc15',
-        bgClass: 'bg-yellow-400/10',
-        textClass: 'text-yellow-400',
-        borderClass: 'border-yellow-400/20',
-        pulse: false,
-      };
     case 'armed_away':
-      return {
-        label: t('widgets.alarm.armed_away'),
-        Icon: ShieldAlert,
-        ringColor: '#f87171',
-        bgClass: 'bg-red-400/10',
-        textClass: 'text-red-400',
-        borderClass: 'border-red-400/20',
-        pulse: false,
-      };
     case 'armed_night':
-      return {
-        label: t('widgets.alarm.armed_night'),
-        Icon: ShieldCheck,
-        ringColor: '#c084fc',
-        bgClass: 'bg-purple-400/10',
-        textClass: 'text-purple-400',
-        borderClass: 'border-purple-400/20',
-        pulse: false,
-      };
     case 'armed_vacation':
-      return {
-        label: t('widgets.alarm.armed_vacation'),
-        Icon: ShieldCheck,
-        ringColor: '#60a5fa',
-        bgClass: 'bg-blue-400/10',
-        textClass: 'text-blue-400',
-        borderClass: 'border-blue-400/20',
-        pulse: false,
-      };
+      return { label: t(`widgets.alarm.${state}`), Icon: ShieldCheck, tone: 'armed' };
     case 'triggered':
-      return {
-        label: t('widgets.alarm.triggered'),
-        Icon: ShieldAlert,
-        ringColor: '#ef4444',
-        bgClass: 'bg-red-500/20',
-        textClass: 'text-red-400',
-        borderClass: 'border-red-500/30',
-        pulse: true,
-      };
+      return { label: t('widgets.alarm.triggered'), Icon: ShieldAlert, tone: 'alert' };
     case 'arming':
     case 'pending':
-      return {
-        label: t('widgets.alarm.arming'),
-        Icon: ShieldQuestion,
-        ringColor: '#fb923c',
-        bgClass: 'bg-orange-400/10',
-        textClass: 'text-orange-400',
-        borderClass: 'border-orange-400/20',
-        pulse: true,
-      };
+      return { label: t('widgets.alarm.arming'), Icon: ShieldQuestion, tone: 'pending' };
     default:
-      return {
-        label: state,
-        Icon: ShieldCheck,
-        ringColor: 'rgba(255,255,255,0.2)',
-        bgClass: 'bg-white/5',
-        textClass: 'text-white/50',
-        borderClass: 'border-white/10',
-        pulse: false,
-      };
+      return { label: state, Icon: ShieldCheck, tone: 'idle' };
   }
 }
 
@@ -130,68 +65,14 @@ interface ModeConfig {
   service: string;
   labelKey: string;
   Icon: typeof Home;
-  textClass: string;
-  bgClass: string;
-  hoverClass: string;
-  borderClass: string;
 }
 
 const MODE_CONFIGS: ModeConfig[] = [
-  {
-    mode: 'disarm',
-    state: 'disarmed',
-    service: 'alarm_disarm',
-    labelKey: 'widgets.alarm.disarm',
-    Icon: ShieldOff,
-    textClass: 'text-green-300',
-    bgClass: 'bg-green-500/12',
-    hoverClass: 'hover:bg-green-500/22',
-    borderClass: 'border-green-500/20',
-  },
-  {
-    mode: 'home',
-    state: 'armed_home',
-    service: 'alarm_arm_home',
-    labelKey: 'widgets.alarm.modeHome',
-    Icon: Home,
-    textClass: 'text-yellow-300',
-    bgClass: 'bg-yellow-500/12',
-    hoverClass: 'hover:bg-yellow-500/22',
-    borderClass: 'border-yellow-500/20',
-  },
-  {
-    mode: 'away',
-    state: 'armed_away',
-    service: 'alarm_arm_away',
-    labelKey: 'widgets.alarm.modeAway',
-    Icon: LogOut,
-    textClass: 'text-red-300',
-    bgClass: 'bg-red-500/12',
-    hoverClass: 'hover:bg-red-500/22',
-    borderClass: 'border-red-500/20',
-  },
-  {
-    mode: 'night',
-    state: 'armed_night',
-    service: 'alarm_arm_night',
-    labelKey: 'widgets.alarm.modeNight',
-    Icon: Moon,
-    textClass: 'text-purple-300',
-    bgClass: 'bg-purple-500/12',
-    hoverClass: 'hover:bg-purple-500/22',
-    borderClass: 'border-purple-500/20',
-  },
-  {
-    mode: 'vacation',
-    state: 'armed_vacation',
-    service: 'alarm_arm_vacation',
-    labelKey: 'widgets.alarm.modeVacation',
-    Icon: Plane,
-    textClass: 'text-blue-300',
-    bgClass: 'bg-blue-500/12',
-    hoverClass: 'hover:bg-blue-500/22',
-    borderClass: 'border-blue-500/20',
-  },
+  { mode: 'disarm', state: 'disarmed', service: 'alarm_disarm', labelKey: 'widgets.alarm.disarm', Icon: ShieldOff },
+  { mode: 'home', state: 'armed_home', service: 'alarm_arm_home', labelKey: 'widgets.alarm.modeHome', Icon: Home },
+  { mode: 'away', state: 'armed_away', service: 'alarm_arm_away', labelKey: 'widgets.alarm.modeAway', Icon: LogOut },
+  { mode: 'night', state: 'armed_night', service: 'alarm_arm_night', labelKey: 'widgets.alarm.modeNight', Icon: Moon },
+  { mode: 'vacation', state: 'armed_vacation', service: 'alarm_arm_vacation', labelKey: 'widgets.alarm.modeVacation', Icon: Plane },
 ];
 
 const DEFAULT_MODES: ArmMode[] = ['disarm', 'home', 'away', 'night'];
@@ -208,35 +89,13 @@ const ARM_FEATURES: [ArmMode, number][] = [
 const alarmModes = (features: unknown): ArmMode[] =>
   typeof features === 'number' ? ['disarm', ...ARM_FEATURES.flatMap(([mode, bit]) => (features & bit ? [mode] : []))] : DEFAULT_MODES;
 
-// ── SVG ring — scales with size prop ─────────────────────────────────────────
-function AlarmRing({ size, fill, color, pulse }: { size: number; fill: number; color: string; pulse: boolean }) {
-  const cx = size / 2;
-  const strokeW = Math.max(3, size * 0.055);
-  const R = cx - strokeW / 2 - 2;
-  const C = 2 * Math.PI * R;
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className='absolute inset-0'>
-      <circle cx={cx} cy={cx} r={R} fill='none' stroke='rgba(255,255,255,0.06)' strokeWidth={strokeW} />
-      <motion.circle
-        cx={cx}
-        cy={cx}
-        r={R}
-        fill='none'
-        stroke={color}
-        strokeWidth={strokeW}
-        strokeLinecap='round'
-        strokeDasharray={C}
-        initial={{ strokeDashoffset: C }}
-        animate={{ strokeDashoffset: C * (1 - fill), opacity: pulse ? [1, 0.35, 1] : 1 }}
-        transition={{
-          strokeDashoffset: { duration: 0.8, ease: 'easeOut' },
-          opacity: pulse ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' } : {},
-        }}
-        style={{ transformOrigin: `${cx}px ${cx}px`, rotate: '-90deg' }}
-      />
-    </svg>
-  );
-}
+/** Pastille du bouclier, selon le ton : sur une tuile armée elle passe en blanc. */
+const PEBBLE: Record<AlarmTone, string> = {
+  idle: 'bg-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]',
+  armed: 'bg-white text-[var(--ds-tile-on)]',
+  pending: 'bg-[var(--ds-surface-3)] text-[var(--ds-heat-ink)]',
+  alert: 'bg-[var(--ds-alert)] text-white',
+};
 
 // ── Keypad Modal ──────────────────────────────────────────────────────────────
 interface AlarmKeypadModalProps {
@@ -295,7 +154,7 @@ function AlarmKeypadModal({
             exit={{ opacity: 0 }}
             onClick={onClose}
             data-overlay
-            className='fixed inset-0 z-[100] bg-black/60 backdrop-blur-md'
+            className='fixed inset-0 z-[100] bg-black/50'
           />
           <motion.div
             initial={{ opacity: 0, y: 40, scale: 0.96 }}
@@ -308,124 +167,105 @@ function AlarmKeypadModal({
               role='dialog'
               aria-modal='true'
               aria-label={name}
-              className='gc rounded-3xl w-full max-w-sm pointer-events-auto shadow-2xl overflow-hidden'
+              className='pointer-events-auto flex w-full max-w-sm flex-col gap-4 rounded-[var(--ds-radius-2xl)] bg-[var(--ds-sheet)] p-6 text-[var(--ds-ink)] shadow-[var(--ds-shadow-sheet)]'
             >
-              {/* ── Coloured header ── */}
-              <div className={cn('px-5 pt-5 pb-4 border-b border-white/6', visual.bgClass)}>
-                <div className='flex items-center justify-between'>
-                  <div className='flex items-center gap-3'>
-                    <div className='relative w-10 h-10 flex items-center justify-center'>
-                      <AlarmRing size={40} fill={1} color={visual.ringColor} pulse={visual.pulse} />
-                      <visual.Icon size={16} className={visual.textClass} />
-                    </div>
-                    <div>
-                      <div className='text-white/40 text-[10px] font-medium uppercase tracking-wider'>{name}</div>
-                      <div className={cn('font-bold text-base leading-tight', visual.textClass)}>{visual.label}</div>
-                    </div>
-                  </div>
-                  <motion.button
-                    whileTap={{ scale: 0.88 }}
-                    onClick={onClose}
-                    className='w-8 h-8 rounded-2xl gc-inner flex items-center justify-center text-white/30 hover:text-white/70 transition-colors'
-                  >
-                    <X size={15} />
-                  </motion.button>
+              <header className='flex items-center gap-3'>
+                <span className={cn('flex size-12 shrink-0 items-center justify-center rounded-full', PEBBLE[visual.tone])}>
+                  <visual.Icon size={22} />
+                </span>
+                <div className='min-w-0 flex-1'>
+                  <div className='truncate text-lg font-semibold'>{name}</div>
+                  <div className='text-sm text-[var(--ds-ink-muted)]'>{visual.label}</div>
                 </div>
-              </div>
-
-              <div className='p-4 space-y-3'>
-                {notice}
-                {/* ── Mode selector ── */}
-                <div>
-                  <div className='text-[10px] text-white/30 uppercase tracking-wider mb-2'>{t('widgets.alarm.selectMode')}</div>
-                  <div className='grid gap-1.5' style={{ gridTemplateColumns: `repeat(${Math.min(visibleModes.length, 3)}, 1fr)` }}>
-                    {visibleModes.map(m => (
-                      <motion.button
-                        key={m.mode}
-                        whileTap={{ scale: 0.93 }}
-                        onClick={() => setSelected(m.mode)}
-                        className={cn(
-                          'flex flex-col items-center gap-1 py-2.5 px-2 rounded-2xl text-[11px] font-semibold border transition-all',
-                          selected === m.mode
-                            ? cn(m.bgClass, m.borderClass, m.textClass, 'ring-1 ring-inset', m.borderClass)
-                            : 'bg-white/4 border-white/8 text-white/35 hover:bg-white/8 hover:text-white/55'
-                        )}
-                      >
-                        <m.Icon size={16} className={selected === m.mode ? m.textClass : 'text-white/30'} />
-                        {t(m.labelKey)}
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* ── Code display ── */}
-                {requireCode && (
-                  <div className='gc-inner rounded-2xl px-4 py-3 flex items-center justify-between'>
-                    <span className='text-white font-mono tracking-[0.45em] text-xl min-h-[28px] flex items-center'>
-                      {code ? (
-                        '•'.repeat(code.length)
-                      ) : (
-                        <span className='text-white/20 text-sm tracking-normal font-sans'>{t('widgets.alarm.pinPlaceholder')}</span>
-                      )}
-                    </span>
-                    <AnimatePresence>
-                      {code && (
-                        <motion.button
-                          initial={{ opacity: 0, scale: 0.7 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.7 }}
-                          whileTap={{ scale: 0.85 }}
-                          onClick={() => setCode(c => c.slice(0, -1))}
-                          aria-label={t('widgets.alarm.backspace')}
-                          className='touch-target w-8 h-8 rounded-xl gc-btn flex items-center justify-center'
-                        >
-                          <Delete size={14} className='text-white/50' />
-                        </motion.button>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                )}
-
-                {/* ── Numpad ── */}
-                {requireCode && (
-                  <div className='grid grid-cols-3 gap-2'>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, null, 0, 'del'].map((k, i) => {
-                      if (k === null) return <div key={i} />;
-                      const isDel = k === 'del';
-                      return (
-                        <motion.button
-                          key={i}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => {
-                            if (isDel) setCode(c => c.slice(0, -1));
-                            else setCode(c => (c.length < 8 ? c + String(k) : c));
-                          }}
-                          aria-label={isDel ? t('widgets.alarm.backspace') : String(k)}
-                          className='py-3.5 rounded-2xl gc-btn font-semibold text-white text-lg hover:bg-white/10 transition-colors flex items-center justify-center'
-                        >
-                          {isDel ? <Delete size={18} className='text-white/50' /> : k}
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* ── Confirm button ── */}
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  onClick={callAlarm}
-                  className={cn(
-                    'w-full py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 border transition-all',
-                    selectedCfg.bgClass,
-                    selectedCfg.hoverClass,
-                    selectedCfg.borderClass,
-                    selectedCfg.textClass
-                  )}
+                <button
+                  onClick={onClose}
+                  aria-label={t('common.close')}
+                  className='flex size-11 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'
                 >
-                  <selectedCfg.Icon size={15} />
-                  {t(selectedCfg.labelKey)}
-                </motion.button>
+                  <X size={18} />
+                </button>
+              </header>
+
+              {notice}
+
+              {/* ── Mode selector ── */}
+              <div>
+                <div className='mb-2 text-sm text-[var(--ds-ink-muted)]'>{t('widgets.alarm.selectMode')}</div>
+                <div className='grid gap-2' style={{ gridTemplateColumns: `repeat(${Math.min(visibleModes.length, 3)}, 1fr)` }}>
+                  {visibleModes.map(m => (
+                    <button
+                      key={m.mode}
+                      onClick={() => setSelected(m.mode)}
+                      aria-pressed={selected === m.mode}
+                      className={cn(
+                        'flex min-h-[64px] flex-col items-center justify-center gap-1 rounded-[var(--ds-radius-lg)] text-sm font-semibold transition-colors',
+                        selected === m.mode
+                          ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'
+                          : 'bg-[var(--ds-surface-2)] text-[var(--ds-ink)]'
+                      )}
+                    >
+                      <m.Icon size={18} />
+                      {t(m.labelKey)}
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              {/* ── Code display ── */}
+              {requireCode && (
+                <div className='flex h-14 items-center justify-between rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-2)] px-5'>
+                  <span className='flex min-h-[28px] items-center font-mono text-xl tracking-[0.45em]'>
+                    {code ? (
+                      '•'.repeat(code.length)
+                    ) : (
+                      <span className='font-sans text-sm tracking-normal text-[var(--ds-ink-muted)]'>
+                        {t('widgets.alarm.pinPlaceholder')}
+                      </span>
+                    )}
+                  </span>
+                  {code && (
+                    <button
+                      onClick={() => setCode(c => c.slice(0, -1))}
+                      aria-label={t('widgets.alarm.backspace')}
+                      className='flex size-10 items-center justify-center rounded-full'
+                    >
+                      <Delete size={18} />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* ── Numpad ── */}
+              {requireCode && (
+                <div className='grid grid-cols-3 gap-2'>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, null, 0, 'del'].map((k, i) => {
+                    if (k === null) return <div key={i} />;
+                    const isDel = k === 'del';
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          if (isDel) setCode(c => c.slice(0, -1));
+                          else setCode(c => (c.length < 8 ? c + String(k) : c));
+                        }}
+                        aria-label={isDel ? t('widgets.alarm.backspace') : String(k)}
+                        className='flex h-14 items-center justify-center rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] text-xl font-semibold active:scale-95 transition-transform'
+                      >
+                        {isDel ? <Delete size={20} /> : k}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* ── Confirm button ── */}
+              <button
+                onClick={callAlarm}
+                className='flex h-14 items-center justify-center gap-2 rounded-[var(--ds-radius-pill)] bg-[var(--ds-tile-on)] text-base font-bold text-[var(--ds-tile-on-ink)]'
+              >
+                <selectedCfg.Icon size={18} />
+                {t(selectedCfg.labelKey)}
+              </button>
             </div>
           </motion.div>
         </>
@@ -497,20 +337,19 @@ export function AlarmCard() {
   const name = config?.name ?? friendlyName(alarm) ?? t('widgets.alarm.label');
   const requireCode = config?.requireCode !== false;
   const activeModes = config?.armModes ?? DEFAULT_MODES;
+  const armed = visual.tone === 'armed';
 
-  // Une rangée de grille (80 px) ne peut pas contenir en-tête + anneau + label
+  // Une rangée de grille (80 px) ne peut pas contenir en-tête + bouclier + modes
   // empilés : sous ~120 px on bascule sur une disposition en ligne.
   const isRow = cardH < 120;
-  const isTiny = cardW < 180 || cardH < 180;
   const isSmall = cardW < 240 || cardH < 240;
-  const showButtons = cardH >= 200 && !isTiny;
-  const pebbleSize = isTiny ? 'w-12 h-12' : isSmall ? 'w-16 h-16' : 'w-20 h-20';
-  const iconSize = isTiny ? 20 : isSmall ? 26 : 32;
+  const showModes = cardH >= 200 && cardW >= 180;
+  const pebble = Math.round(Math.max(56, Math.min(150, Math.min(cardW, cardH) * 0.38)));
 
   const visibleModes = MODE_CONFIGS.filter(m => activeModes.includes(m.mode));
-  // Libellé sous l'icône seulement si chaque segment garde ~58 px : en deçà,
-  // « Désarmer » déborde. La barre retire le padding de la card (28) et le sien (8).
-  const showModeLabels = (cardW - 36) / Math.max(visibleModes.length, 1) >= 58;
+  // Libellés des modes seulement si chaque segment garde ~92 px (icône +
+  // « Désarmer ») : en deçà ils se tronquaient ; les icônes restent.
+  const showModeLabels = (cardW - 50) / Math.max(visibleModes.length, 1) >= 92;
 
   function openModal(mode: ArmMode) {
     setPendingMode(mode);
@@ -519,123 +358,90 @@ export function AlarmCard() {
 
   return (
     <>
-      <motion.div
+      <div
         ref={containerRef}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: DURATION_ENTRANCE, delay: 0.1 }}
         onClick={() => openModal(activeModes[0] ?? 'disarm')}
         className={cn(
-          'gc rounded-3xl h-full cursor-pointer hover:ring-1 hover:ring-white/10 transition-all select-none overflow-hidden',
-          isRow ? 'px-3.5 py-2 flex items-center gap-3' : 'p-3.5 flex flex-col'
+          'flex h-full cursor-pointer select-none overflow-hidden rounded-[var(--ds-radius-lg)] transition-colors',
+          armed ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'bg-[var(--ds-surface-2)] text-[var(--ds-ink)]',
+          visual.tone === 'alert' && 'shadow-[inset_0_0_0_3px_var(--ds-alert)]',
+          isRow ? 'items-center gap-3 px-4' : 'flex-col gap-3 p-[var(--ds-space-4)]'
         )}
       >
-        {isRow ? (
-          <>
-            {/* Pastille d'état */}
-            <div
-              className={cn('w-10 h-10 rounded-2xl flex items-center justify-center border shrink-0', visual.bgClass, visual.borderClass)}
-            >
-              <visual.Icon size={19} className={visual.textClass} />
-            </div>
+        {/* Bouclier : un toucher ouvre le pavé, comme la card. Premier bouton
+            de la card : c'est l'action principale. */}
+        <motion.button
+          animate={visual.tone === 'alert' || visual.tone === 'pending' ? { scale: [1, 1.06, 1] } : {}}
+          transition={visual.tone === 'alert' || visual.tone === 'pending' ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' } : {}}
+          onClick={e => {
+            e.stopPropagation();
+            openModal(activeModes[0] ?? 'disarm');
+          }}
+          aria-label={visual.label}
+          className={cn(
+            'flex shrink-0 items-center justify-center rounded-full',
+            PEBBLE[visual.tone],
+            isRow ? 'order-first size-11' : 'order-2 mx-auto my-auto'
+          )}
+          style={isRow ? undefined : { width: pebble, height: pebble }}
+        >
+          <visual.Icon size={isRow ? 20 : Math.round(pebble * 0.42)} />
+        </motion.button>
 
-            {/* Nom + état */}
-            <div className='flex-1 min-w-0'>
-              <div className='text-white/40 text-[11px] font-medium truncate leading-tight'>{name}</div>
-              <div className={cn('text-sm font-semibold truncate leading-tight', visual.textClass)}>{visual.label}</div>
-            </div>
-
-            {/* Modes en pastilles — icône seule, ce qui tient dans la largeur.
-                40 px : le maximum qu'autorise une rangée de 80 px une fois le
-                padding retiré, et une cible confortable au doigt. */}
-            {visibleModes.length > 0 && (
-              <div className='flex items-center gap-1.5 shrink-0'>
-                {visibleModes.slice(0, cardW < 300 ? 2 : 4).map(m => (
-                  <motion.button
-                    key={m.mode}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={e => {
-                      e.stopPropagation();
-                      openModal(m.mode);
-                    }}
-                    title={t(m.labelKey)}
-                    aria-label={t(m.labelKey)}
-                    className={cn(
-                      'w-10 h-10 rounded-xl border flex items-center justify-center transition-colors active:scale-90',
-                      m.bgClass,
-                      m.hoverClass,
-                      m.borderClass,
-                      m.textClass
-                    )}
-                  >
-                    <m.Icon size={16} />
-                  </motion.button>
-                ))}
-              </div>
+        <div className={cn('min-w-0', isRow ? 'flex-1' : 'order-1')}>
+          <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>
+          <div
+            className={cn(
+              'truncate text-sm',
+              armed ? 'text-[var(--ds-tile-on-muted)]' : visual.tone === 'alert' ? 'text-[var(--ds-alert)]' : 'text-[var(--ds-ink-muted)]'
             )}
-          </>
-        ) : (
-          <>
-            {/* Header */}
-            <span className={cn('text-white/40 font-medium truncate', isTiny ? 'text-[10px]' : 'text-xs')}>{name}</span>
+          >
+            {visual.label}
+          </div>
+        </div>
 
-            {/* Galet d'état : un toucher ouvre le clavier, comme la card. */}
-            <div className='flex-1 flex flex-col items-center justify-center gap-2 min-h-0'>
-              <motion.button
-                animate={visual.pulse ? { scale: [1, 1.06, 1] } : {}}
-                transition={visual.pulse ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' } : {}}
-                whileTap={{ scale: 0.94 }}
-                onClick={e => {
-                  e.stopPropagation();
-                  openModal(activeModes[0] ?? 'disarm');
-                }}
-                aria-label={visual.label}
-                className={cn(
-                  'shrink-0 rounded-full border flex items-center justify-center',
-                  pebbleSize,
-                  visual.bgClass,
-                  visual.borderClass,
-                  visual.textClass
-                )}
-              >
-                <visual.Icon size={iconSize} />
-              </motion.button>
-              <span className={cn('font-semibold', visual.textClass, isTiny ? 'text-[10px]' : isSmall ? 'text-xs' : 'text-sm')}>
-                {visual.label}
-              </span>
-            </div>
-
-            {/* Modes en barre segmentée : le mode en vigueur ressort en galet. */}
-            {showButtons && visibleModes.length > 0 && (
-              <div className='mt-2.5 flex gap-1 p-1 rounded-[20px] bg-white/5 border border-white/8'>
-                {visibleModes.map(m => {
-                  const current = m.state === alarm.state;
-                  return (
-                    <motion.button
-                      key={m.mode}
-                      whileTap={{ scale: 0.94 }}
-                      onClick={e => {
-                        e.stopPropagation();
-                        openModal(m.mode);
-                      }}
-                      title={t(m.labelKey)}
-                      aria-pressed={current}
-                      className={cn(
-                        'flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 rounded-2xl border transition-colors',
-                        isSmall ? 'py-1.5 text-[9px]' : 'py-2 text-[10px]',
-                        current ? cn(m.bgClass, m.borderClass, m.textClass) : 'border-transparent text-white/45 hover:text-white/75'
-                      )}
-                    >
-                      <m.Icon size={isSmall ? 12 : 14} />
-                      {showModeLabels && <span className='font-semibold leading-tight truncate max-w-full'>{t(m.labelKey)}</span>}
-                    </motion.button>
-                  );
-                })}
-              </div>
+        {/* Modes : une pilule segmentée, le mode en vigueur ressort. Sur une
+            rangée, icônes seules, ce qui tient dans la largeur. */}
+        {(isRow || showModes) && visibleModes.length > 0 && (
+          <div
+            className={cn(
+              'flex shrink-0 gap-1 rounded-[var(--ds-radius-pill)] p-1',
+              isRow ? 'order-last' : 'order-3',
+              armed ? 'bg-black/20' : 'bg-[var(--ds-surface-1)]'
             )}
-          </>
+          >
+            {visibleModes.slice(0, isRow ? (cardW < 300 ? 2 : 4) : undefined).map(m => {
+              const current = m.state === alarm.state;
+              return (
+                <button
+                  key={m.mode}
+                  onClick={e => {
+                    e.stopPropagation();
+                    openModal(m.mode);
+                  }}
+                  title={t(m.labelKey)}
+                  aria-label={isRow || !showModeLabels ? t(m.labelKey) : undefined}
+                  aria-pressed={current}
+                  className={cn(
+                    'flex min-w-0 items-center justify-center gap-1.5 rounded-[var(--ds-radius-pill)] font-semibold transition-colors',
+                    isRow ? 'size-10' : cn('h-11 flex-1', isSmall ? 'text-xs' : 'text-sm'),
+                    current
+                      ? armed
+                        ? 'bg-white text-[var(--ds-tile-on)]'
+                        : 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)]'
+                      : armed
+                        ? 'text-[var(--ds-tile-on-muted)]'
+                        : 'text-[var(--ds-ink-muted)]'
+                  )}
+                >
+                  <m.Icon size={16} className='shrink-0' />
+                  {!isRow && showModeLabels && <span className='truncate'>{t(m.labelKey)}</span>}
+                </button>
+              );
+            })}
+          </div>
         )}
-      </motion.div>
+      </div>
 
       <AlarmKeypadModal
         open={modalOpen}

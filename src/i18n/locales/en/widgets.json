@@ -417,7 +417,11 @@
       "showInfoPanel": {
         "label": "Info panel (More Info)"
       }
-    }
+    },
+    "home": "Home",
+    "battery": "Battery",
+    "grid": "Grid",
+    "producing": "produced right now"
   },
   "tempo": {
     "label": "Tempo EDF",

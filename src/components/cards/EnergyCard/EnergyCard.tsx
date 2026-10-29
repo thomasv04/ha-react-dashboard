@@ -1,40 +1,31 @@
 import { useRef, useState } from 'react';
 import { useElementBox } from '@/hooks/useWidgetSize';
-import { normalizePackState, type PackState } from '@/lib/battery-state';
-import { motion } from 'framer-motion';
-import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
-import { Zap, Sun, BatteryCharging } from 'lucide-react';
+import { normalizePackState } from '@/lib/battery-state';
+import { BatteryCharging, House, Sun, Zap } from 'lucide-react';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { EnergyCardConfig } from '@/types/widget-configs';
-import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 
-const STATE_STYLES: Record<PackState, { bg: string; border: string; text: string; dot: string }> = {
-  charging: {
-    bg: 'rgba(74,222,128,0.10)',
-    border: 'rgba(74,222,128,0.22)',
-    text: 'text-green-400',
-    dot: '#4ade80',
-  },
-  discharging: {
-    bg: 'rgba(251,146,60,0.10)',
-    border: 'rgba(251,146,60,0.22)',
-    text: 'text-orange-400',
-    dot: '#fb923c',
-  },
-  idle: {
-    bg: 'rgba(255,255,255,0.05)',
-    border: 'rgba(255,255,255,0.08)',
-    text: 'text-white/40',
-    dot: '#ffffff44',
-  },
-};
+/** Puissance lisible : « 320 W », « 2,4 kW ». `null` si le capteur n'a pas de valeur. */
+function formatPower(raw: string | undefined, locale: string): { value: string; unit: string } | null {
+  const watts = Number(raw);
+  if (raw == null || raw === '' || !Number.isFinite(watts)) return null;
+  return Math.abs(watts) >= 1000
+    ? { value: (watts / 1000).toLocaleString(locale, { maximumFractionDigits: 1 }), unit: 'kW' }
+    : { value: Math.round(watts).toLocaleString(locale), unit: 'W' };
+}
 
+const asText = (p: { value: string; unit: string } | null) => (p ? `${p.value} ${p.unit}` : '—');
+
+/**
+ * Énergie solaire : la production en grand, puis trois pilules — la maison, la
+ * batterie (remplie à son niveau) et le réseau.
+ */
 export function EnergyCard() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<EnergyCardConfig>(widgetId || 'energy');
@@ -47,25 +38,17 @@ export function EnergyCard() {
 
   const cardRef = useRef<HTMLDivElement>(null);
   const [cardH, setCardH] = useState(999);
-
-  // Mesure synchrone en boîte de bordure : les seuils ci-dessous sont exprimés
-  // en rangées de grille (80 / 176 / 272 px), ce que `contentRect` faussait en
-  // retranchant le padding — et qui ne partait pas du tout quand la page ne
-  // composait pas, laissant la card sur `999` (disposition la plus haute).
+  // Mesure en boîte de bordure : les seuils sont exprimés en rangées de grille
+  // (80 / 176 / 272 px).
   useElementBox(cardRef, (_w, height) => setCardH(height));
 
   if (!batteryLevel) return null;
 
   const state = normalizePackState(packState?.state ?? 'idle');
-  const styles = STATE_STYLES[state];
-  const level = Number(batteryLevel.state);
-  const battColor = level > 60 ? '#4ade80' : level > 25 ? '#fbbf24' : '#f87171';
-  const battColorDark = level > 60 ? '#22c55e' : level > 25 ? '#eab308' : '#ef4444';
-
-  const flowWatts = state === 'charging' ? `${gridInput?.state ?? '0'} W` : state === 'discharging' ? `${homeOutput?.state ?? '0'} W` : '—';
-
-  const flowLabel =
-    state === 'charging' ? t('widgets.energy.flowIn') : state === 'discharging' ? t('widgets.energy.flowOut') : t('widgets.energy.standby');
+  const level = Math.min(100, Math.max(0, Number(batteryLevel.state) || 0));
+  const solar = formatPower(solarProd?.state, language);
+  const home = formatPower(homeOutput?.state, language);
+  const grid = formatPower(gridInput?.state, language);
 
   const stateLabel =
     state === 'charging'
@@ -73,147 +56,90 @@ export function EnergyCard() {
       : state === 'discharging'
         ? t('widgets.energy.discharging')
         : t('widgets.energy.standby');
-
   const name = config?.name ?? t('widgets.energy.defaultName');
 
-  // Layout modes based on available height
-  // Seuils en boîte de bordure, calés sur la trame : 1 rangée = 80 px,
-  // 2 rangées = 176 px, 3 rangées = 272 px.
-  const isCompact = cardH < 120; // 1 rangée — tout sur une ligne
-  const isTight = cardH < 220; // 2 rangées — pastilles côte à côte
+  const isRow = cardH < 120; // 1 rangée : tout sur une ligne
+  const isTight = cardH < 220; // 2 rangées : pas de grand chiffre
+
+  // La batterie se lit à sa couleur : verte chargée, orange à mi-course, rouge presque vide.
+  const batteryFill = level > 60 ? 'var(--ds-good)' : level > 25 ? 'var(--ds-heat)' : 'var(--ds-alert)';
+
+  const pills = (
+    <div className={cn('grid shrink-0 gap-2.5', isRow ? 'flex-1 grid-cols-3' : 'grid-cols-3')}>
+      <Pill icon={House} label={t('widgets.energy.home')} value={asText(home)} fill='var(--ds-tile-on)' ratio={1} />
+      <Pill
+        icon={BatteryCharging}
+        label={t('widgets.energy.battery')}
+        value={`${Math.round(level)} %`}
+        fill={batteryFill}
+        ratio={level / 100}
+      />
+      <Pill icon={Zap} label={t('widgets.energy.grid')} value={asText(grid)} fill='var(--ds-surface-3)' ratio={1} />
+    </div>
+  );
 
   return (
-    <motion.div
+    <div
       ref={cardRef}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: DURATION_ENTRANCE, delay: 0.15 }}
-      className='gc rounded-3xl p-3.5 h-full flex flex-col overflow-hidden'
+      className={cn(
+        'flex h-full select-none overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] text-[var(--ds-ink)]',
+        isRow ? 'items-center gap-4 px-4' : 'flex-col gap-3 p-[var(--ds-space-4)]'
+      )}
     >
-      {/* Header */}
-      <div className='flex items-center justify-between mb-2 shrink-0'>
-        <span className='text-white/40 text-xs font-medium truncate'>{name}</span>
-        <motion.span
-          key={state}
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 22 }}
-          className={`text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full border shrink-0 ml-2 ${styles.text}`}
-          style={{ background: styles.bg, borderColor: styles.border }}
-        >
-          {stateLabel}
-        </motion.span>
-      </div>
-
-      {/* COMPACT mode (h=1): everything on one line */}
-      {isCompact ? (
-        <div className='flex items-center gap-2 flex-1 min-w-0'>
-          <div
-            className='w-8 h-8 rounded-xl flex items-center justify-center border shrink-0'
-            style={{ background: styles.bg, borderColor: styles.border }}
-          >
-            <BatteryCharging size={16} className={styles.text} />
-          </div>
-          <span className='text-xl font-light text-white shrink-0'>
-            <AnimatedNumber value={level} suffix='%' />
-          </span>
-          <div className='flex-1 h-1 rounded-full overflow-hidden mx-1' style={{ background: 'rgba(255,255,255,0.06)' }}>
-            <motion.div
-              className='h-full rounded-full'
-              initial={{ width: 0 }}
-              animate={{ width: `${level}%` }}
-              transition={{ duration: 1.2, ease: 'easeOut' }}
-              style={{ background: `linear-gradient(to right, ${battColorDark}, ${battColor})` }}
-            />
-          </div>
-          <div className='flex items-center gap-1 shrink-0'>
-            <Zap size={12} className={styles.text} />
-            <span className={`text-xs font-semibold ${styles.text}`}>{flowWatts}</span>
-          </div>
-          <div className='flex items-center gap-1 shrink-0'>
-            <Sun size={12} className='text-green-400' />
-            <span className='text-xs font-semibold text-green-400'>{solarProd?.state ?? '—'} W</span>
+      <div className={cn('flex min-w-0 items-start justify-between gap-3', isRow && 'shrink-0')}>
+        <div className='min-w-0'>
+          <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>
+          <div className='truncate text-sm text-[var(--ds-ink-muted)]'>
+            {isRow ? `${t('widgets.energy.solar')} ${asText(solar)}` : stateLabel}
           </div>
         </div>
-      ) : (
-        <>
-          {/* Battery + level */}
-          <div className='flex items-center gap-3 mb-2 shrink-0'>
-            <div
-              className='w-9 h-9 rounded-xl flex items-center justify-center border shrink-0'
-              style={{ background: styles.bg, borderColor: styles.border }}
-            >
-              <BatteryCharging size={18} className={styles.text} />
+        {!isRow && (
+          <span
+            className={cn(
+              'shrink-0 rounded-[var(--ds-radius-pill)] px-3 py-1 text-sm font-bold',
+              state === 'charging' ? 'bg-[var(--ds-good)] text-[#062614]' : 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)]'
+            )}
+          >
+            {stateLabel}
+          </span>
+        )}
+      </div>
+
+      {!isRow && !isTight && (
+        <div className='flex min-h-0 flex-1 items-center gap-3'>
+          <Sun size={34} aria-hidden='true' className='shrink-0 text-[var(--ds-warm-light)]' />
+          <div className='min-w-0'>
+            <div className='flex items-baseline gap-2'>
+              <span className='text-[64px] font-light leading-none tracking-[-2px]'>{solar?.value ?? '—'}</span>
+              {solar && <span className='text-2xl text-[var(--ds-ink-muted)]'>{solar.unit}</span>}
             </div>
-            <div className='flex-1 min-w-0'>
-              <span className='text-3xl font-light tracking-tight text-white leading-none block mb-1'>
-                <AnimatedNumber value={level} suffix='%' />
-              </span>
-              <div className='h-1.5 rounded-full overflow-hidden' style={{ background: 'rgba(255,255,255,0.06)' }}>
-                <motion.div
-                  className='h-full rounded-full'
-                  initial={{ width: 0 }}
-                  animate={{ width: `${level}%` }}
-                  transition={{ duration: 1.2, ease: 'easeOut' }}
-                  style={{ background: `linear-gradient(to right, ${battColorDark}, ${battColor})` }}
-                />
-              </div>
-            </div>
+            <div className='truncate text-sm text-[var(--ds-ink-muted)]'>{t('widgets.energy.producing')}</div>
           </div>
-
-          {/* Separator — hidden when tight */}
-          {!isTight && <div className='h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-2 shrink-0' />}
-
-          {/* Flow chips — row when tight, column otherwise */}
-          <div className={cn('flex gap-1.5', isTight ? 'flex-row' : 'flex-col flex-1 justify-center')}>
-            {/* Power flow */}
-            <motion.div
-              animate={state !== 'idle' ? { scale: [1, 1.02, 1] } : undefined}
-              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-              className={cn('flex items-center gap-2 rounded-2xl border', isTight ? 'flex-1 px-2 py-1.5' : 'px-2.5 py-2')}
-              style={{ background: styles.bg, borderColor: styles.border }}
-            >
-              <div
-                className='w-6 h-6 rounded-lg flex items-center justify-center border shrink-0'
-                style={{ background: styles.bg, borderColor: styles.border }}
-              >
-                <Zap size={13} className={styles.text} />
-              </div>
-              <div className='flex flex-col min-w-0'>
-                <span className={`text-sm font-semibold ${styles.text}`}>{flowWatts}</span>
-                {!isTight && <span className='text-[10px] text-white/30 leading-none'>{flowLabel}</span>}
-              </div>
-              {state !== 'idle' && !isTight && (
-                <motion.div
-                  className='ml-auto w-1.5 h-1.5 rounded-full shrink-0'
-                  animate={{ opacity: [1, 0.3, 1] }}
-                  transition={{ duration: 1.2, repeat: Infinity }}
-                  style={{ background: styles.dot }}
-                />
-              )}
-            </motion.div>
-
-            {/* Solar production */}
-            <div
-              className={cn('flex items-center gap-2 rounded-2xl border', isTight ? 'flex-1 px-2 py-1.5' : 'px-2.5 py-2')}
-              style={{ background: 'rgba(74,222,128,0.08)', borderColor: 'rgba(74,222,128,0.18)' }}
-            >
-              <div
-                className='w-6 h-6 rounded-lg flex items-center justify-center border shrink-0'
-                style={{ background: 'rgba(74,222,128,0.12)', borderColor: 'rgba(74,222,128,0.22)' }}
-              >
-                <motion.div animate={{ rotate: 360 }} transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}>
-                  <Sun size={13} className='text-green-400' />
-                </motion.div>
-              </div>
-              <div className='flex flex-col min-w-0'>
-                <span className='text-sm font-semibold text-green-400'>{solarProd?.state ?? '—'} W</span>
-                {!isTight && <span className='text-[10px] text-white/30 leading-none'>{t('widgets.energy.solar')}</span>}
-              </div>
-            </div>
-          </div>
-        </>
+        </div>
       )}
-    </motion.div>
+
+      {pills}
+    </div>
+  );
+}
+
+/** Pilule d'énergie : icône et valeur, remplie à `ratio` (la batterie à son niveau). */
+function Pill({ icon: Icon, label, value, fill, ratio }: { icon: typeof Sun; label: string; value: string; fill: string; ratio: number }) {
+  return (
+    <div
+      role='img'
+      aria-label={`${label} ${value}`}
+      className='relative flex h-14 min-w-0 items-center overflow-hidden rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)]'
+    >
+      <div
+        aria-hidden='true'
+        className='absolute inset-y-0 left-0 rounded-[var(--ds-radius-pill)]'
+        style={{ width: `${Math.round(ratio * 100)}%`, background: fill }}
+      />
+      <span className='relative flex min-w-0 items-center gap-1.5 px-3 text-sm font-semibold'>
+        <Icon size={16} aria-hidden='true' className='shrink-0' />
+        <span className='truncate'>{value}</span>
+      </span>
+    </div>
   );
 }
