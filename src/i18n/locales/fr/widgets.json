@@ -886,7 +886,8 @@
           }
         }
       }
-    }
+    },
+    "back": "Retour"
   },
   "automation_list": {
     "label": "Liste d'automatisations",

@@ -886,7 +886,8 @@
           }
         }
       }
-    }
+    },
+    "back": "Back"
   },
   "automation_list": {
     "label": "Automation list",
