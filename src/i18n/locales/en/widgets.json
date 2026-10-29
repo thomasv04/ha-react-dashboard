@@ -273,8 +273,8 @@
     "label": "People",
     "notFound": "Entity not found",
     "description": "Shows the presence and location of household members.",
-    "home": "HOME",
-    "away": "AWAY",
+    "home": "At home",
+    "away": "Away",
     "noPeople": "No people configured",
     "dispositions": {
       "default": {

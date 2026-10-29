@@ -273,8 +273,8 @@
     "label": "Personnes",
     "notFound": "Entité introuvable",
     "description": "Affiche la présence et localisation des personnes du foyer.",
-    "home": "MAISON",
-    "away": "ABSENT",
+    "home": "À la maison",
+    "away": "Absent",
     "noPeople": "Aucune personne configurée",
     "dispositions": {
       "default": {

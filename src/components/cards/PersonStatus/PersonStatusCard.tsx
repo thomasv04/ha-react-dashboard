@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { User } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
@@ -23,7 +22,7 @@ function getZoneLabel(zone: string, t: (key: string) => string): string {
   if (normalized === 'home') return t('widgets.person.home');
   if (normalized === 'away') return t('widgets.person.away');
   if (normalized === 'unknown') return '—';
-  return zone.toUpperCase();
+  return zone;
 }
 
 // ── Single person pill ────────────────────────────────────────────────────────
@@ -49,47 +48,36 @@ function PersonPill({ entry, haBaseUrl }: { entry: PersonEntry; haBaseUrl: strin
     : undefined;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className={cn('flex items-center gap-3 px-3 py-2 rounded-2xl transition-all', isHome ? 'bg-white/5' : 'bg-white/[0.02]')}
+    <div
+      className={cn(
+        'flex shrink-0 items-center gap-3 rounded-[var(--ds-radius-pill)] py-2 pl-2 pr-5',
+        isHome ? 'bg-[var(--ds-surface-2)]' : 'bg-[var(--ds-surface-2)] opacity-60'
+      )}
     >
-      {/* Avatar */}
-      <div className='relative'>
-        {picture ? (
-          <img
-            src={picture}
-            alt={name}
-            className={cn('w-9 h-9 rounded-full object-cover border-2', isHome ? 'border-green-400' : 'border-white/10 grayscale')}
-          />
-        ) : (
-          <div
-            className={cn(
-              'w-9 h-9 rounded-full flex items-center justify-center',
-              isHome ? 'bg-green-500/20 border-2 border-green-400' : 'bg-white/5 border-2 border-white/10'
-            )}
-          >
-            <User size={16} className={isHome ? 'text-green-400' : 'text-white/30'} />
-          </div>
-        )}
-
-        {/* Dot indicateur */}
-        <div
-          className={cn(
-            'absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0a0a14]',
-            isHome ? 'bg-green-400' : 'bg-white/20'
-          )}
+      {/* Avatar, cerclé de vert quand la personne est à la maison */}
+      {picture ? (
+        <img
+          src={picture}
+          alt=''
+          className={cn('size-12 shrink-0 rounded-full object-cover', isHome ? 'ring-[3px] ring-[var(--ds-good)]' : 'grayscale')}
         />
-      </div>
-
-      {/* Texte */}
-      <div className='flex flex-col min-w-0'>
-        <span className={cn('text-sm font-medium truncate', isHome ? 'text-white' : 'text-white/40')}>{name}</span>
-        <span className={cn('text-[10px] font-bold uppercase tracking-wider', isHome ? 'text-green-400' : 'text-white/20')}>
-          {zoneLabel}
+      ) : (
+        <span
+          aria-hidden='true'
+          className={cn(
+            'flex size-12 shrink-0 items-center justify-center rounded-full bg-[var(--ds-surface-3)]',
+            isHome && 'ring-[3px] ring-[var(--ds-good)]'
+          )}
+        >
+          <User size={20} className='text-[var(--ds-ink-muted)]' />
         </span>
+      )}
+
+      <div className='flex min-w-0 flex-col'>
+        <span className='truncate text-[17px] font-semibold leading-tight text-[var(--ds-ink)]'>{name}</span>
+        <span className={cn('truncate text-sm', isHome ? 'text-[var(--ds-good)]' : 'text-[var(--ds-ink-muted)]')}>{zoneLabel}</span>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -107,11 +95,11 @@ export function PersonStatusCard() {
     : undefined;
 
   if (persons.length === 0) {
-    return <div className='flex items-center justify-center h-full text-white/30 text-sm'>{t('widgets.person.noPeople')}</div>;
+    return <div className='flex h-full items-center justify-center text-sm text-[var(--ds-ink-muted)]'>{t('widgets.person.noPeople')}</div>;
   }
 
   return (
-    <div className='flex items-center gap-2 h-full overflow-x-auto scrollbar-none px-1'>
+    <div className='flex h-full items-center gap-3 overflow-x-auto px-1 scrollbar-none'>
       {persons.map(entry => (
         <PersonPill key={entry.entityId} entry={entry} haBaseUrl={haBaseUrl} />
       ))}
