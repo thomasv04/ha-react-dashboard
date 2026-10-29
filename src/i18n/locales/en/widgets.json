@@ -911,7 +911,8 @@
           }
         }
       }
-    }
+    },
+    "activeCount": "{count} of {total} active"
   },
   "energy_flow": {
     "label": "Energy flow",
