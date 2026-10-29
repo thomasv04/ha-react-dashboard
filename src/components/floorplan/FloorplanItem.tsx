@@ -168,7 +168,7 @@ export function FloorplanItem({
             onPointerDown={e => startGesture(e, movePos)}
             className={cn(
               'absolute -inset-1 cursor-grab active:cursor-grabbing touch-none outline-2 outline-offset-2',
-              sized ? 'rounded-[calc(var(--dash-card-radius,24px)+4px)]' : 'rounded-full',
+              sized ? 'rounded-[calc(var(--ds-radius-lg)+4px)]' : 'rounded-full',
               selected ? 'outline-blue-400' : 'outline-dashed outline-white/35'
             )}
           />

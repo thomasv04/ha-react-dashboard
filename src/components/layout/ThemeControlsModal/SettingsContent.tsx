@@ -9,6 +9,7 @@ import { SoundSection } from './SoundSection';
 import { RegionalSection } from './RegionalSection';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
+import { isPanelMode } from '@/lib/api-base';
 
 type SettingsSection = 'appearance' | 'layout' | 'performance' | 'sound' | 'regional' | 'language' | 'system';
 
@@ -18,7 +19,8 @@ export function SettingsContent({ onClose }: { onClose: () => void }) {
 
   const NAV_ITEMS: { id: SettingsSection; label: string; Icon: React.ElementType }[] = [
     { id: 'appearance', label: t('settings.appearance'), Icon: Palette },
-    { id: 'layout', label: t('settings.layout'), Icon: LayoutGrid },
+    // Il n'y reste que le plein écran, qui n'a de sens qu'en carte Lovelace.
+    ...(isPanelMode() ? [{ id: 'layout' as const, label: t('settings.layout'), Icon: LayoutGrid }] : []),
     { id: 'performance', label: t('settings.performance'), Icon: Zap },
     { id: 'sound', label: t('settings.sound'), Icon: Volume2 },
     { id: 'regional', label: t('settings.regional'), Icon: Globe },

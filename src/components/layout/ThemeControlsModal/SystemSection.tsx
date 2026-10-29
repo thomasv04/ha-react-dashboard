@@ -17,7 +17,7 @@ export function SystemSection() {
   const [copied, setCopied] = useState(false);
 
   // ── Config string state ──
-  const { themeId, perfSettings, autoTheme, layoutSettings, setTheme, setPerfSettings, setAutoTheme, setLayoutSettings } = useTheme();
+  const { themeId, perfSettings, autoTheme, setTheme, setPerfSettings, setAutoTheme } = useTheme();
   const { pages, allLayouts, allWidgetConfigs, wallPanelConfig, wallPanelLayout, wallPanelWidgetConfigs, customPanels, dock, saveConfig } =
     useDashboardConfig();
   const [exportString, setExportString] = useState('');
@@ -56,7 +56,7 @@ export function SystemSection() {
   const handleExport = async () => {
     const snapshot: ConfigSnapshot = {
       v: 1,
-      theme: { themeId, perfSettings, autoTheme, layoutSettings },
+      theme: { themeId, perfSettings, autoTheme },
       dashboard: {
         version: 2,
         pages,
@@ -135,7 +135,6 @@ export function SystemSection() {
     setTheme(snapshot.theme.themeId);
     setPerfSettings(snapshot.theme.perfSettings);
     setAutoTheme(snapshot.theme.autoTheme);
-    setLayoutSettings(snapshot.theme.layoutSettings);
 
     // Apply dashboard config
     if (!(await saveConfig(snapshot.dashboard))) {

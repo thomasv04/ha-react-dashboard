@@ -14,7 +14,6 @@ const MINIMAL_SNAPSHOT: ConfigSnapshot = {
       lowQualityCamera: false,
     },
     autoTheme: { enabled: false, lightTheme: 'light', darkTheme: 'dark' },
-    layoutSettings: { gridGap: 16, cardRadius: 24, rowHeight: 80 },
   },
   dashboard: {
     version: 2,
@@ -40,7 +39,6 @@ const LARGE_SNAPSHOT: ConfigSnapshot = {
       lowQualityCamera: false,
     },
     autoTheme: { enabled: true, lightTheme: 'light', darkTheme: 'dark' },
-    layoutSettings: { gridGap: 20, cardRadius: 16, rowHeight: 100 },
   },
   dashboard: {
     version: 2,

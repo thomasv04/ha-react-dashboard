@@ -19,7 +19,7 @@ import type { CardActionsConfig } from '@/types/card-actions';
 import { isVisible, visibilityEntityIds, type CardVisibilityConfig } from '@/types/card-visibility';
 import { matchStateStyle, stateStyleEntityIds, type CardStateStylesConfig } from '@/types/card-state-styles';
 import { useEntities } from '@/hooks/useEntities';
-import { useTheme } from '@/context/ThemeContext';
+import { GRID_GAP, GRID_ROW } from '@/lib/panel-grid';
 
 export type Breakpoint = 'lg' | 'md' | 'sm';
 
@@ -137,9 +137,8 @@ export function WidgetIdProvider({ id, children }: { id: string; children: React
 // ZERO per-pixel JS during drag. Browser handles ghost image natively.
 
 export function DashboardGrid({ children, readonly, className }: { children: ReactNode; readonly?: boolean; className?: string }) {
-  const { layoutSettings } = useTheme();
-  const GAP = layoutSettings.gridGap;
-  const ROW_HEIGHT_VAL = layoutSettings.rowHeight;
+  const GAP = GRID_GAP;
+  const ROW_HEIGHT_VAL = GRID_ROW;
   const { layout, setLayout } = useDashboardLayout();
   const { isEditMode: ctxEditMode } = useEditMode();
   const isEditMode = ctxEditMode && !readonly;
@@ -448,7 +447,7 @@ const MemoChildren = memo(function MemoChildren({
       }}
       {...(onLongPress && !isEditMode ? longPressHandlers : {})}
       style={{
-        borderRadius: 'var(--dash-card-radius, 24px)',
+        borderRadius: 'var(--ds-radius-lg)',
         opacity: dimmed ? 0 : 1,
         transition: 'opacity 0.25s ease',
         // Isole chaque widget : un re-rendu dans une card (une valeur de

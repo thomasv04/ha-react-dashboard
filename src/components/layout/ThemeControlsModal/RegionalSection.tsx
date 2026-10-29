@@ -211,7 +211,6 @@ function BroadcastButton() {
             themeId: theme.themeId,
             perfSettings: theme.perfSettings,
             autoTheme: theme.autoTheme,
-            layoutSettings: theme.layoutSettings,
             soundSettings: theme.soundSettings,
             regionalSettings: theme.regionalSettings,
             behaviourSettings: theme.behaviourSettings,

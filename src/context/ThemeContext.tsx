@@ -37,21 +37,6 @@ const DEFAULT_PERF_SETTINGS: PerfSettings = {
   lowQualityCamera: false,
 };
 
-export interface LayoutSettings {
-  /** Grid gap between cards in px (4–40) */
-  gridGap: number;
-  /** Card border radius in px (0–32) */
-  cardRadius: number;
-  /** Row height in px (60–160) */
-  rowHeight: number;
-}
-
-const DEFAULT_LAYOUT_SETTINGS: LayoutSettings = {
-  gridGap: 16,
-  cardRadius: 24,
-  rowHeight: 80,
-};
-
 /** Thème repris de Home Assistant, résolu à l'exécution (cf. `ha-themes.ts`). */
 export interface ImportedTheme {
   name: string;
@@ -124,9 +109,6 @@ interface ThemeContextValue {
   /** Auto day/night theme */
   autoTheme: AutoThemeConfig;
   setAutoTheme: (cfg: AutoThemeConfig) => void;
-  /** Layout settings (gap, radius, row height) */
-  layoutSettings: LayoutSettings;
-  setLayoutSettings: (s: LayoutSettings) => void;
   /** Sound feedback settings */
   soundSettings: SoundSettings;
   setSoundSettings: (s: SoundSettings) => void;
@@ -197,7 +179,6 @@ function loadSettings(): {
   themeId: ThemeId;
   perfSettings: PerfSettings;
   autoTheme: AutoThemeConfig;
-  layoutSettings: LayoutSettings;
   soundSettings: SoundSettings;
   regionalSettings: RegionalSettings;
   behaviourSettings: BehaviourSettings;
@@ -211,7 +192,6 @@ function loadSettings(): {
         themeId?: ThemeId;
         perfSettings?: Partial<PerfSettings>;
         autoTheme?: Partial<AutoThemeConfig>;
-        layoutSettings?: Partial<LayoutSettings>;
         soundSettings?: Partial<SoundSettings>;
         regionalSettings?: Partial<RegionalSettings>;
         behaviourSettings?: Partial<BehaviourSettings>;
@@ -222,7 +202,6 @@ function loadSettings(): {
         themeId,
         perfSettings: { ...DEFAULT_PERF_SETTINGS, ...(parsed.perfSettings ?? {}) },
         autoTheme: withKnownThemes({ ...DEFAULT_AUTO_THEME, ...(parsed.autoTheme ?? {}) }),
-        layoutSettings: { ...DEFAULT_LAYOUT_SETTINGS, ...(parsed.layoutSettings ?? {}) },
         soundSettings: { ...DEFAULT_SOUND_SETTINGS, ...(parsed.soundSettings ?? {}) },
         regionalSettings: { ...DEFAULT_REGIONAL_SETTINGS, ...(parsed.regionalSettings ?? {}) },
         behaviourSettings: { ...DEFAULT_BEHAVIOUR_SETTINGS, ...(parsed.behaviourSettings ?? {}) },
@@ -236,7 +215,6 @@ function loadSettings(): {
     themeId: 'dark',
     perfSettings: DEFAULT_PERF_SETTINGS,
     autoTheme: DEFAULT_AUTO_THEME,
-    layoutSettings: DEFAULT_LAYOUT_SETTINGS,
     soundSettings: DEFAULT_SOUND_SETTINGS,
     regionalSettings: DEFAULT_REGIONAL_SETTINGS,
     behaviourSettings: DEFAULT_BEHAVIOUR_SETTINGS,
@@ -249,7 +227,6 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
   const [themeId, setThemeId] = useState<ThemeId>(saved.themeId);
   const [perfSettings, setPerfSettingsState] = useState<PerfSettings>(saved.perfSettings);
   const [autoTheme, setAutoThemeState] = useState<AutoThemeConfig>(saved.autoTheme);
-  const [layoutSettings, setLayoutSettingsState] = useState<LayoutSettings>(saved.layoutSettings);
   const [soundSettings, setSoundSettingsState] = useState<SoundSettings>(saved.soundSettings);
   const [regionalSettings, setRegionalSettingsState] = useState<RegionalSettings>(saved.regionalSettings);
   const [behaviourSettings, setBehaviourSettingsState] = useState<BehaviourSettings>(saved.behaviourSettings);
@@ -267,13 +244,12 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
       themeId,
       perfSettings,
       autoTheme,
-      layoutSettings,
       soundSettings,
       regionalSettings,
       behaviourSettings,
       importedTheme,
     }),
-    [themeId, perfSettings, autoTheme, layoutSettings, soundSettings, regionalSettings, behaviourSettings, importedTheme]
+    [themeId, perfSettings, autoTheme, soundSettings, regionalSettings, behaviourSettings, importedTheme]
   );
   const handleRemoteUpdate = useCallback((remote: typeof syncedSettings) => {
     if (remote.themeId) {
@@ -282,7 +258,6 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     }
     if (remote.perfSettings) setPerfSettingsState({ ...DEFAULT_PERF_SETTINGS, ...remote.perfSettings });
     if (remote.autoTheme) setAutoThemeState(withKnownThemes({ ...DEFAULT_AUTO_THEME, ...remote.autoTheme }));
-    if (remote.layoutSettings) setLayoutSettingsState({ ...DEFAULT_LAYOUT_SETTINGS, ...remote.layoutSettings });
     if (remote.soundSettings) setSoundSettingsState({ ...DEFAULT_SOUND_SETTINGS, ...remote.soundSettings });
     if (remote.regionalSettings) setRegionalSettingsState({ ...DEFAULT_REGIONAL_SETTINGS, ...remote.regionalSettings });
     if (remote.behaviourSettings) setBehaviourSettingsState({ ...DEFAULT_BEHAVIOUR_SETTINGS, ...remote.behaviourSettings });
@@ -313,14 +288,6 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     root.dataset.theme = tokens.light ? 'light' : 'dark';
   }, [tokens]);
 
-  // Layout CSS variables
-  useEffect(() => {
-    const root = document.documentElement;
-    root.style.setProperty('--dash-grid-gap', `${layoutSettings.gridGap}px`);
-    root.style.setProperty('--dash-card-radius', `${layoutSettings.cardRadius}px`);
-    root.style.setProperty('--dash-row-height', `${layoutSettings.rowHeight}px`);
-  }, [layoutSettings]);
-
   // Performance CSS classes on <html>
   useEffect(() => {
     const root = document.documentElement;
@@ -337,14 +304,13 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
         themeId,
         perfSettings,
         autoTheme,
-        layoutSettings,
         soundSettings,
         regionalSettings,
         behaviourSettings,
         importedTheme,
       })
     );
-  }, [themeId, perfSettings, autoTheme, layoutSettings, soundSettings, regionalSettings, behaviourSettings, importedTheme]);
+  }, [themeId, perfSettings, autoTheme, soundSettings, regionalSettings, behaviourSettings, importedTheme]);
 
   const setTheme = useCallback((requested: ThemeId) => {
     // Un import de configuration peut encore porter un thème retiré en 4.0.
@@ -354,7 +320,6 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
 
   const setPerfSettings = useCallback((s: PerfSettings) => setPerfSettingsState(s), []);
   const setAutoTheme = useCallback((cfg: AutoThemeConfig) => setAutoThemeState(cfg), []);
-  const setLayoutSettings = useCallback((s: LayoutSettings) => setLayoutSettingsState(s), []);
   const setSoundSettings = useCallback((s: SoundSettings) => setSoundSettingsState(s), []);
   const setRegionalSettings = useCallback((s: RegionalSettings) => setRegionalSettingsState(s), []);
   const setBehaviourSettings = useCallback((s: BehaviourSettings) => setBehaviourSettingsState(s), []);
@@ -369,8 +334,6 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
       setPerfSettings,
       autoTheme,
       setAutoTheme,
-      layoutSettings,
-      setLayoutSettings,
       soundSettings,
       setSoundSettings,
       regionalSettings,
@@ -385,7 +348,6 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
       tokens,
       perfSettings,
       autoTheme,
-      layoutSettings,
       soundSettings,
       regionalSettings,
       behaviourSettings,
@@ -393,7 +355,6 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
       setTheme,
       setPerfSettings,
       setAutoTheme,
-      setLayoutSettings,
       setSoundSettings,
       setRegionalSettings,
       setBehaviourSettings,

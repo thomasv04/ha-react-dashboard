@@ -5,7 +5,7 @@ import { FreeGridScope } from '@/components/layout/DashboardGrid';
 import { AddWidgetModal } from '@/components/layout/AddWidgetModal';
 import { useDashboardLayout, type GridWidget } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
-import { useTheme } from '@/context/ThemeContext';
+import { GRID_GAP, GRID_ROW } from '@/lib/panel-grid';
 import { getMinSize } from '@/widgets';
 import { useI18n } from '@/i18n';
 import { ItemContent } from './FloorplanItem';
@@ -36,7 +36,6 @@ export function FloorplanColumn({ ids, width, onChange }: { ids: string[]; width
   const { t } = useI18n();
   const { layout, isEditMode, updateWidget, removeWidget } = useDashboardLayout();
   const { setEditingWidgetId } = useWidgetConfig();
-  const { layoutSettings } = useTheme();
   const [adding, setAdding] = useState(false);
   const widgets = ids.flatMap(id => layout.widgets.lg.find(w => w.id === id) ?? []);
 
@@ -51,14 +50,9 @@ export function FloorplanColumn({ ids, width, onChange }: { ids: string[]; width
   return (
     <div data-floorplan-column className='absolute left-3 top-3 bottom-3 z-30 overflow-y-auto overscroll-contain' style={{ width }}>
       <FreeGridScope>
-        <div className='flex flex-col' style={{ gap: layoutSettings.gridGap }}>
+        <div className='flex flex-col' style={{ gap: GRID_GAP }}>
           {widgets.map((w, i) => (
-            <div
-              key={w.id}
-              data-column-item={w.id}
-              className='relative shrink-0'
-              style={{ height: w.h * layoutSettings.rowHeight + (w.h - 1) * layoutSettings.gridGap }}
-            >
+            <div key={w.id} data-column-item={w.id} className='relative shrink-0' style={{ height: w.h * GRID_ROW + (w.h - 1) * GRID_GAP }}>
               <ItemContent id={w.id} type={w.type} isEditMode={isEditMode} />
               {isEditMode && (
                 <div className='absolute right-2 top-2 flex items-center gap-0.5 p-1 rounded-xl gc-overlay'>

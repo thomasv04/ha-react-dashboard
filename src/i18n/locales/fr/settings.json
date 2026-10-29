@@ -104,15 +104,6 @@
   },
   "layout": "Disposition",
   "layout_section": {
-    "grid": "Grille",
-    "gridGap": "Espacement",
-    "gridGapDesc": "Espace entre les cartes (en px).",
-    "rowHeight": "Hauteur de rangée",
-    "rowHeightDesc": "Hauteur de chaque ligne de la grille (en px).",
-    "cards": "Cartes",
-    "cardRadius": "Rayon des coins",
-    "cardRadiusDesc": "Rayon de bordure des cartes (en px).",
-    "reset": "Réinitialiser",
     "display": "Affichage",
     "kiosk": "Plein écran",
     "kioskDesc": "Masque l'en-tête et la barre latérale de Home Assistant. Réglage propre à cet appareil."
