@@ -1,18 +1,19 @@
-import { motion } from 'framer-motion';
-import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
-import { Flame, Minus, Plus } from 'lucide-react';
+import { Flame, Minus, Plus, Power } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { climateRange, snapTemp } from '@/lib/climate';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { PelletCardConfig } from '@/types/widget-configs';
+import { friendlyName } from '@/lib/ha-service';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 
+const ROUND = 'flex size-12 shrink-0 items-center justify-center rounded-full transition-transform active:scale-95';
+
 export function PelletCard() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const widgetId = useWidgetId();
   // `useWidgetConfig` renvoie le contexte, pas la config : c'est
   // `getWidgetConfig(id)` qui donne celle du widget.
@@ -29,8 +30,9 @@ export function PelletCard() {
   // Lue ici et non dans `setTemp` : une déclaration de fonction est hoistée,
   // TypeScript y abandonne donc le rétrécissement de `pellet`.
   const range = climateRange(pellet.attributes);
-  const hvacMode = pellet.state; // 'heat' | 'off' | etc.
-  const isOn = hvacMode !== 'off';
+  const isOn = pellet.state !== 'off';
+  const name = config?.name ?? friendlyName(pellet) ?? t('widgets.pellet.title');
+  const temp = (v: number | undefined) => (v !== undefined ? `${v.toLocaleString(language, { maximumFractionDigits: 1 })}°` : '—');
 
   function setTemp(delta: number) {
     if (targetTemp === undefined) return;
@@ -61,65 +63,55 @@ export function PelletCard() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: DURATION_ENTRANCE, delay: 0.25 }}
-      className='gc rounded-3xl p-5 h-full'
-    >
-      {/* Header */}
-      <div className='flex items-center justify-between mb-4'>
-        <div className='flex items-center gap-2'>
-          <Flame size={18} className={isOn ? 'text-orange-400' : 'text-zinc-600'} />
-          <span className='text-white font-semibold text-sm'>{t('widgets.pellet.title')}</span>
+    <div className='flex h-full select-none flex-col gap-2 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] p-[var(--ds-space-4)] text-[var(--ds-ink)]'>
+      <div className='flex items-start gap-3'>
+        <Flame
+          size={22}
+          aria-hidden='true'
+          className={cn('mt-0.5 shrink-0', isOn ? 'text-[var(--ds-heat)]' : 'text-[var(--ds-ink-muted)]')}
+        />
+        <div className='min-w-0 flex-1'>
+          <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>
+          <div className={cn('truncate text-sm', isOn ? 'text-[var(--ds-heat-ink)]' : 'text-[var(--ds-ink-muted)]')}>
+            {isOn ? t('widgets.pellet.on') : t('widgets.pellet.off')}
+          </div>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+        <button
           onClick={toggle}
-          className={cn(
-            'px-3 py-1 rounded-full text-xs font-semibold transition-colors',
-            isOn ? 'bg-orange-500/20 text-orange-400' : 'gc-btn text-white/40'
-          )}
+          aria-pressed={isOn}
+          aria-label={isOn ? t('widgets.pellet.turnOff') : t('widgets.pellet.turnOn')}
+          title={isOn ? t('widgets.pellet.turnOff') : t('widgets.pellet.turnOn')}
+          className={cn(ROUND, isOn ? 'bg-[var(--ds-heat)] text-[#3d1a05]' : 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)]')}
         >
-          {isOn ? 'ON' : 'OFF'}
-        </motion.button>
+          <Power size={20} />
+        </button>
       </div>
 
-      {/* Temperature display */}
-      <div className='text-center mb-4'>
-        <div className='text-5xl font-bold text-white'>{targetTemp !== undefined ? `${targetTemp}°` : '—'}</div>
-        <div className='text-white/40 text-sm mt-1'>
-          Actuel : <span className='text-white/70'>{currentTemp !== undefined ? `${currentTemp}°C` : '—'}</span>
-        </div>
+      <div className={cn('flex min-h-0 flex-1 flex-col items-center justify-center', !isOn && 'opacity-50')}>
+        <span className='text-[56px] font-light leading-none tracking-[-2px]'>{temp(targetTemp)}</span>
+        <span className='text-sm text-[var(--ds-ink-muted)]'>{t('widgets.pellet.currently', { value: temp(currentTemp) })}</span>
       </div>
 
-      {/* +/- Controls */}
       {isOn && (
-        <div className='flex items-center justify-center gap-4'>
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+        <div className='flex shrink-0 justify-center gap-4'>
+          <button
             onClick={() => setTemp(-0.5)}
-            className='w-10 h-10 rounded-full gc-btn text-white flex items-center justify-center'
+            aria-label={t('widgets.pellet.decrease')}
+            title={t('widgets.pellet.decrease')}
+            className={cn(ROUND, 'bg-[var(--ds-surface-3)]')}
           >
-            <Minus size={16} />
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            <Minus size={20} />
+          </button>
+          <button
             onClick={() => setTemp(0.5)}
-            className='w-10 h-10 rounded-full bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 flex items-center justify-center'
+            aria-label={t('widgets.pellet.increase')}
+            title={t('widgets.pellet.increase')}
+            className={cn(ROUND, 'bg-[var(--ds-surface-3)]')}
           >
-            <Plus size={16} />
-          </motion.button>
+            <Plus size={20} />
+          </button>
         </div>
       )}
-
-      {/* Mode badge */}
-      <div className='mt-3 text-center'>
-        <span className='text-xs text-white/30 capitalize'>{hvacMode}</span>
-      </div>
-    </motion.div>
+    </div>
   );
 }

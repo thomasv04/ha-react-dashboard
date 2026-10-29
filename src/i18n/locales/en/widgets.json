@@ -503,7 +503,6 @@
     "label": "Pellet stove",
     "title": "Pellet stove",
     "description": "Controls a pellet stove (climate): target temperature, on/off.",
-    "current": "Current: ",
     "dispositions": {
       "default": {
         "label": "Standard"
@@ -516,7 +515,14 @@
       "name": {
         "label": "Display name"
       }
-    }
+    },
+    "on": "On",
+    "off": "Off",
+    "turnOn": "Turn the stove on",
+    "turnOff": "Turn the stove off",
+    "currently": "Currently {value}",
+    "decrease": "Lower the setpoint",
+    "increase": "Raise the setpoint"
   },
   "greeting": {
     "label": "Clock",

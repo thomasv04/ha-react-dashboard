@@ -503,7 +503,6 @@
     "label": "Feu à pellet",
     "title": "Feu à pellet",
     "description": "Contrôle un poêle à pellets (climate) : température cible, allumage/extinction.",
-    "current": "Actuel : ",
     "dispositions": {
       "default": {
         "label": "Standard"
@@ -516,7 +515,14 @@
       "name": {
         "label": "Nom affiché"
       }
-    }
+    },
+    "on": "Allumé",
+    "off": "Éteint",
+    "turnOn": "Allumer le poêle",
+    "turnOff": "Éteindre le poêle",
+    "currently": "Actuellement {value}",
+    "decrease": "Baisser la consigne",
+    "increase": "Monter la consigne"
   },
   "greeting": {
     "label": "Horloge",
