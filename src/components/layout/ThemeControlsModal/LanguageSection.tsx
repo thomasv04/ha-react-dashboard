@@ -63,7 +63,7 @@ export function LanguageSection() {
       <div className='flex flex-col gap-3'>
         <div>
           <p className={cn(SECTION_HEADING, 'mb-1')}>{t('settings.language_section.overridesTitle')}</p>
-          <p className='text-[var(--ds-ink-muted)] text-[11px] leading-relaxed'>{t('settings.language_section.overridesDescription')}</p>
+          <p className='text-[var(--ds-ink-muted)] text-sm leading-relaxed'>{t('settings.language_section.overridesDescription')}</p>
         </div>
 
         {/* Search + filter */}
@@ -93,13 +93,13 @@ export function LanguageSection() {
         <div className='rounded-[var(--ds-radius-md)] border border-[var(--ds-surface-3)] overflow-hidden'>
           {/* Header */}
           <div className='grid grid-cols-[2fr_2fr_2fr_auto] gap-2 px-3 py-2 bg-[var(--ds-surface-2)] border-b border-[var(--ds-surface-3)]'>
-            <span className='text-[var(--ds-ink-muted)] text-[10px] font-semibold uppercase tracking-wider'>
+            <span className='text-[var(--ds-ink-muted)] text-xs font-semibold uppercase tracking-wider'>
               {t('settings.language_section.keyColumn')}
             </span>
-            <span className='text-[var(--ds-ink-muted)] text-[10px] font-semibold uppercase tracking-wider'>
+            <span className='text-[var(--ds-ink-muted)] text-xs font-semibold uppercase tracking-wider'>
               {t('settings.language_section.defaultColumn')}
             </span>
-            <span className='text-[var(--ds-ink-muted)] text-[10px] font-semibold uppercase tracking-wider'>
+            <span className='text-[var(--ds-ink-muted)] text-xs font-semibold uppercase tracking-wider'>
               {t('settings.language_section.customColumn')}
             </span>
             <span className='w-5' />
@@ -115,10 +115,10 @@ export function LanguageSection() {
                 const isEditing = editingKey === key;
                 return (
                   <div key={key} className='grid grid-cols-[2fr_2fr_2fr_auto] gap-2 px-3 py-2 items-center transition-colors'>
-                    <span className='text-[var(--ds-ink-muted)] text-[10px] font-mono truncate' title={key}>
+                    <span className='text-[var(--ds-ink-muted)] text-xs font-mono truncate' title={key}>
                       {key}
                     </span>
-                    <span className='text-[var(--ds-ink-muted)] text-[11px] truncate' title={value}>
+                    <span className='text-[var(--ds-ink-muted)] text-sm truncate' title={value}>
                       {value}
                     </span>
                     <div className='min-w-0'>
@@ -132,13 +132,13 @@ export function LanguageSection() {
                             if (e.key === 'Enter') commitEdit(key);
                             if (e.key === 'Escape') setEditingKey(null);
                           }}
-                          className='w-full px-2 py-1 rounded bg-[var(--ds-surface-3)] border border-[var(--ds-accent)] text-[var(--ds-ink)] text-[11px] outline-none'
+                          className='w-full px-2 py-1 rounded bg-[var(--ds-surface-3)] border border-[var(--ds-accent)] text-[var(--ds-ink)] text-sm outline-none'
                           placeholder={value}
                         />
                       ) : (
                         <button
                           onClick={() => startEdit(key)}
-                          className='w-full text-left px-2 py-1 rounded transition-colors text-[11px] truncate'
+                          className='w-full text-left px-2 py-1 rounded transition-colors text-sm truncate'
                           title={override ?? ''}
                         >
                           {override ? (
@@ -173,7 +173,7 @@ export function LanguageSection() {
           </div>
         </div>
 
-        <p className='text-[var(--ds-ink-muted)] text-[10px]'>
+        <p className='text-[var(--ds-ink-muted)] text-xs'>
           {Object.keys(overrides).length} override{Object.keys(overrides).length !== 1 ? 's' : ''} active
         </p>
       </div>

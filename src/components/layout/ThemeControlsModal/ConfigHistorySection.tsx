@@ -89,7 +89,7 @@ export function ConfigHistorySection() {
             >
               <div className='flex-1 min-w-0'>
                 <span className='text-[var(--ds-ink)] text-xs block truncate'>{parseDate(entry.created_at).toLocaleString(language)}</span>
-                <span className='text-[var(--ds-ink-muted)] text-[11px]'>
+                <span className='text-[var(--ds-ink-muted)] text-sm'>
                   {formatSize(entry.size)}
                   {entry.label ? ` · ${entry.label}` : ''}
                 </span>

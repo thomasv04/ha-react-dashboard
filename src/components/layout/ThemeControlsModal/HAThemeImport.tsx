@@ -5,7 +5,7 @@ import { useI18n } from '@/i18n';
 import { useTheme } from '@/context/ThemeContext';
 import { HA_THEME_ID } from '@/config/themes';
 import { fetchHAThemes, type HAThemeSummary } from '@/lib/ha-themes';
-import { SECTION_HEADING } from './typography';
+import { SECTION_HEADING, SETTINGS_CARD } from './typography';
 import { cn } from '@/lib/utils';
 
 /**
@@ -51,31 +51,27 @@ export function HAThemeImport() {
   };
 
   return (
-    <div>
-      <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
-        <Download size={12} /> {t('settings.appearance_section.haThemeTitle')}
-      </h3>
-      <p className='text-[var(--ds-ink-muted)] text-[11px] mb-3 leading-relaxed'>{t('settings.appearance_section.haThemeDesc')}</p>
+    <section className={SETTINGS_CARD}>
+      <h3 className={cn(SECTION_HEADING, 'mb-1')}>{t('settings.appearance_section.haThemeTitle')}</h3>
+      <p className='mb-4 text-[15px] leading-relaxed text-[var(--ds-ink-muted)]'>{t('settings.appearance_section.haThemeDesc')}</p>
 
       {importedTheme && (
         <div className='flex items-center gap-2 mb-3'>
           <button
             onClick={() => setTheme(HA_THEME_ID)}
-            className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-[var(--ds-radius-sm)] border text-xs font-medium transition-colors cursor-pointer ${
-              themeId === HA_THEME_ID
-                ? 'bg-[var(--ds-tile-on)] border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
-                : 'bg-[var(--ds-surface-2)] border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
+            className={`flex h-12 flex-1 cursor-pointer items-center gap-2 rounded-full px-5 text-base font-semibold ${
+              themeId === HA_THEME_ID ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'bg-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
             }`}
           >
-            {themeId === HA_THEME_ID && <Check size={12} />}
+            {themeId === HA_THEME_ID && <Check size={16} />}
             {importedTheme.name}
           </button>
           <button
             onClick={remove}
             title={t('common.delete')}
-            className='p-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] text-[var(--ds-alert)] transition-colors cursor-pointer'
+            className='flex size-12 cursor-pointer items-center justify-center rounded-full bg-[var(--ds-surface-3)] text-[var(--ds-alert)]'
           >
-            <X size={12} />
+            <X size={16} />
           </button>
         </div>
       )}
@@ -84,20 +80,20 @@ export function HAThemeImport() {
         <button
           onClick={load}
           disabled={loading}
-          className='flex items-center gap-1.5 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)] transition-colors text-xs font-semibold cursor-pointer disabled:opacity-40'
+          className='flex h-12 cursor-pointer items-center gap-2 rounded-full bg-[var(--ds-surface-3)] px-5 text-base font-semibold text-[var(--ds-ink)] disabled:opacity-40'
         >
-          <Download size={12} />
+          <Download size={16} />
           {loading ? t('common.loading') : t('settings.appearance_section.haThemeLoad')}
         </button>
       ) : themes.length === 0 ? (
-        <p className='text-[var(--ds-ink-muted)] text-xs italic'>{t('settings.appearance_section.haThemeEmpty')}</p>
+        <p className='text-sm italic text-[var(--ds-ink-muted)]'>{t('settings.appearance_section.haThemeEmpty')}</p>
       ) : (
         <div className='flex flex-col gap-1 max-h-48 overflow-y-auto'>
           {themes.map(theme => (
             <button
               key={theme.name}
               onClick={() => apply(theme)}
-              className='flex items-center gap-2.5 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)] transition-colors text-xs text-left cursor-pointer'
+              className='flex h-12 cursor-pointer items-center gap-3 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-4 text-left text-base text-[var(--ds-ink)]'
             >
               {/* Aperçu : fond, accent, texte — de quoi reconnaître le thème
                   sans l'appliquer. */}
@@ -112,7 +108,7 @@ export function HAThemeImport() {
         </div>
       )}
 
-      {error && <p className='text-[var(--ds-alert)] text-xs mt-2'>{t('settings.appearance_section.haThemeError')}</p>}
-    </div>
+      {error && <p className='mt-2 text-sm text-[var(--ds-alert)]'>{t('settings.appearance_section.haThemeError')}</p>}
+    </section>
   );
 }

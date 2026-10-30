@@ -37,8 +37,10 @@ export function ThemeControlsModal({ open, onClose }: { open: boolean; onClose: 
             transition={{ duration: DURATION_FAST }}
           >
             <div
-              className='bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-sheet)] pointer-events-auto w-full max-w-3xl rounded-[var(--ds-radius-lg)] overflow-hidden'
-              style={{ height: 'min(88vh, 640px)' }}
+              role='dialog'
+              aria-modal='true'
+              className='bg-[var(--ds-sheet)] text-[var(--ds-ink)] shadow-[var(--ds-shadow-sheet)] pointer-events-auto w-full max-w-5xl rounded-[var(--ds-radius-2xl)] overflow-hidden'
+              style={{ height: 'min(92dvh, 780px)' }}
             >
               <SettingsContent onClose={onClose} />
             </div>

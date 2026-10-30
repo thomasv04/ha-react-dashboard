@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Settings, Palette, Zap, Languages, Server, LayoutGrid, Volume2, Globe, X } from 'lucide-react';
+import { Palette, Zap, Languages, Server, LayoutGrid, Volume2, Globe, X, type LucideIcon } from 'lucide-react';
 import { AppearanceSection } from './AppearanceSection';
 import { PerformanceSection } from './PerformanceSection';
 import { LanguageSection } from './LanguageSection';
@@ -13,11 +13,22 @@ import { isPanelMode } from '@/lib/api-base';
 
 type SettingsSection = 'appearance' | 'layout' | 'performance' | 'sound' | 'regional' | 'language' | 'system';
 
+/** Couleur de la pastille de chaque section, comme celles du lanceur. */
+const SECTION_COLORS: Record<SettingsSection, string> = {
+  appearance: '#2f80ed',
+  layout: '#2b9fb0',
+  performance: '#ee8a2c',
+  sound: '#e8466b',
+  regional: '#2fb38a',
+  language: '#8e5cf0',
+  system: '#4a5a78',
+};
+
 export function SettingsContent({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
   const [section, setSection] = useState<SettingsSection>('appearance');
 
-  const NAV_ITEMS: { id: SettingsSection; label: string; Icon: React.ElementType }[] = [
+  const NAV_ITEMS: { id: SettingsSection; label: string; Icon: LucideIcon }[] = [
     { id: 'appearance', label: t('settings.appearance'), Icon: Palette },
     // Il n'y reste que le plein écran, qui n'a de sens qu'en carte Lovelace.
     ...(isPanelMode() ? [{ id: 'layout' as const, label: t('settings.layout'), Icon: LayoutGrid }] : []),
@@ -28,79 +39,54 @@ export function SettingsContent({ onClose }: { onClose: () => void }) {
     { id: 'system', label: t('settings.system'), Icon: Server },
   ];
 
-  const SECTION_TITLES: Record<SettingsSection, string> = {
-    appearance: t('settings.appearance'),
-    layout: t('settings.layout'),
-    performance: t('settings.performance'),
-    sound: t('settings.sound'),
-    regional: t('settings.regional'),
-    language: t('settings.language'),
-    system: t('settings.system'),
-  };
+  const current = NAV_ITEMS.find(item => item.id === section) ?? NAV_ITEMS[0];
 
   return (
-    <div className='flex h-full'>
-      {/* ── Sidebar ── */}
-      <div
-        className='w-56 flex-shrink-0 flex flex-col rounded-l-2xl border-r border-[var(--ds-surface-3)]'
-        style={{ background: 'rgba(0, 0, 0, 0.18)' }}
+    <div className='flex h-full gap-3 p-3'>
+      {/* ── Liste des réglages ── */}
+      <nav
+        aria-label={t('settings.title')}
+        className='flex w-[260px] shrink-0 flex-col gap-1 overflow-y-auto rounded-[var(--ds-radius-xl)] bg-[var(--ds-surface-1)] p-3'
       >
-        {/* Header */}
-        <div className='flex items-center gap-2.5 px-5 pt-5 pb-5 border-b border-[var(--ds-surface-3)]'>
-          <div className='p-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'>
-            <Settings size={14} className='text-[var(--ds-accent)]' />
-          </div>
-          <span className='text-[var(--ds-ink)] font-semibold text-sm'>{t('settings.title')}</span>
-        </div>
+        <h2 className='px-3 pb-2 pt-2 text-lg font-semibold text-[var(--ds-ink-muted)]'>{t('settings.title')}</h2>
+        {NAV_ITEMS.map(({ id, label, Icon }) => (
+          <button
+            key={id}
+            onClick={() => setSection(id)}
+            aria-current={section === id ? 'page' : undefined}
+            className={cn(
+              'flex h-14 w-full items-center gap-3 rounded-[var(--ds-radius-lg)] px-3 text-left text-[17px]',
+              section === id ? 'bg-[var(--ds-surface-3)] font-semibold' : 'font-medium text-[var(--ds-ink-muted)]'
+            )}
+          >
+            <span className='flex size-10 shrink-0 items-center justify-center rounded-[13px]' style={{ background: SECTION_COLORS[id] }}>
+              <Icon size={20} className='text-white' />
+            </span>
+            <span className='truncate'>{label}</span>
+          </button>
+        ))}
 
-        {/* Nav */}
-        {/* Onglets en casse normale : sept intitulés en capitales très espacées
-            se lisaient un par un, et « Performances » débordait de la colonne.
-            La sélection reprend le bleu translucide du reste de l'application —
-            un aplat `bg-[var(--ds-accent)] text-white` plein était le seul de tout le dashboard. */}
-        <nav className='flex flex-col gap-0.5 p-3 flex-1'>
-          {NAV_ITEMS.map(({ id, label, Icon }) => (
-            <button
-              key={id}
-              onClick={() => setSection(id)}
-              className={cn(
-                'flex items-center gap-2.5 w-full px-3 py-2 rounded-[var(--ds-radius-sm)] text-left border transition-colors',
-                section === id
-                  ? 'bg-[var(--ds-tile-on)] border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
-                  : 'border-transparent text-[var(--ds-ink-muted)]'
-              )}
-            >
-              <Icon size={15} className='shrink-0' />
-              <span className='text-[13px] font-medium truncate'>{label}</span>
-            </button>
-          ))}
-        </nav>
+        {/* La version : c'est le premier renseignement qu'on cherche ici. */}
+        <p className='mt-auto px-3 pt-3 text-sm text-[var(--ds-ink-muted)]'>
+          {t('settings.footer')} <span className='font-mono'>v{__BUILD_VERSION__}</span>
+        </p>
+      </nav>
 
-        {/* Footer */}
-        {/* La version plutôt qu'un simple nom de produit : c'est le premier
-            renseignement qu'on cherche quand on ouvre les réglages. */}
-        <div className='px-5 py-4 border-t border-[var(--ds-surface-3)] flex items-baseline gap-1.5'>
-          <span className='text-[var(--ds-ink-muted)] text-[11px]'>{t('settings.footer')}</span>
-          <span className='text-[var(--ds-ink-muted)] text-[10px] font-mono'>v{__BUILD_VERSION__}</span>
-        </div>
-      </div>
-
-      {/* ── Content ── */}
-      <div className='flex-1 min-w-0 flex flex-col rounded-r-2xl'>
-        {/* Top bar */}
-        <div className='flex items-center justify-between px-6 pt-5 pb-4 border-b border-[var(--ds-surface-3)] flex-shrink-0'>
-          <h2 className='text-[var(--ds-ink)] font-semibold text-base'>{SECTION_TITLES[section]}</h2>
+      {/* ── Contenu ── */}
+      <div className='flex min-w-0 flex-1 flex-col'>
+        <div className='flex shrink-0 items-center justify-between px-3 pb-3 pt-2'>
+          <h2 className='text-[32px] font-semibold'>{current.label}</h2>
           <button
             onClick={onClose}
             aria-label={t('common.close')}
-            className='p-1.5 rounded-[var(--ds-radius-sm)] text-[var(--ds-ink-muted)] transition-colors'
+            title={t('common.close')}
+            className='flex size-12 items-center justify-center rounded-full bg-[var(--ds-surface-1)]'
           >
-            <X size={16} />
+            <X size={20} />
           </button>
         </div>
 
-        {/* Scrollable body */}
-        <div className='flex-1 overflow-y-auto p-6'>
+        <div className='min-h-0 flex-1 overflow-y-auto pr-1'>
           {section === 'appearance' && <AppearanceSection />}
           {section === 'layout' && <LayoutSection />}
           {section === 'performance' && <PerformanceSection />}

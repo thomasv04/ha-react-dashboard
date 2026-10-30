@@ -178,7 +178,7 @@ export function RegionalSection() {
           placeholder={t('settings.regional_section.pinPlaceholder')}
           className={`${inputClass} w-32 text-center tracking-[0.4em] font-mono`}
         />
-        <p className='text-[var(--ds-warm-light)] text-[11px] leading-relaxed'>{t('settings.regional_section.pinWarning')}</p>
+        <p className='text-[var(--ds-warm-light)] text-sm leading-relaxed'>{t('settings.regional_section.pinWarning')}</p>
       </div>
 
       <BroadcastButton />

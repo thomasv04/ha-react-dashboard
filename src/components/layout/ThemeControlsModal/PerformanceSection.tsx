@@ -110,7 +110,7 @@ function FPSMeter() {
       </div>
 
       {!measuring && (
-        <p className='text-[var(--ds-ink-muted)] text-[10px] leading-relaxed'>{t('settings.performance_section.fpsDescription')}</p>
+        <p className='text-[var(--ds-ink-muted)] text-xs leading-relaxed'>{t('settings.performance_section.fpsDescription')}</p>
       )}
     </div>
   );
