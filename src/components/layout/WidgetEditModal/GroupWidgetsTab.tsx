@@ -105,11 +105,11 @@ export function ChildFieldRenderer({
   if (field.fieldType === 'select' && field.options) {
     return (
       <div key={field.key}>
-        <label className='text-[11px] text-[var(--ds-ink-muted)] mb-1 block'>{t(field.label)}</label>
+        <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{t(field.label)}</label>
         <select
           value={(draft[field.key] as string) ?? field.options[0].value}
           onChange={e => onPatch({ [field.key]: e.target.value })}
-          className='w-full px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)] outline-none focus:border-[var(--ds-accent)] cursor-pointer'
+          className='w-full px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)] outline-none focus:outline-2 focus:outline-[var(--ds-accent)] cursor-pointer'
           style={{ colorScheme: 'dark' }}
         >
           {field.options.map(opt => (
@@ -159,7 +159,7 @@ export function ChildFieldRenderer({
   if (field.fieldType === 'template') {
     return (
       <div key={field.key} className='space-y-1'>
-        <label className='block text-[11px] text-[var(--ds-ink-muted)]'>{t(field.label)}</label>
+        <label className='block text-sm text-[var(--ds-ink-muted)]'>{t(field.label)}</label>
         <TemplateEditor
           value={(draft[field.key] as string) ?? ''}
           onChange={v => onPatch({ [field.key]: v })}
@@ -237,14 +237,14 @@ function ChildRow({ child, onRemove }: { child: GroupChild; onRemove: () => void
             <meta.icon size={14} style={{ color: meta.color }} />
           </div>
         ) : (
-          <div className='w-7 h-7 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] shrink-0' />
+          <div className='w-7 h-7 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] shrink-0' />
         )}
 
         {/* Name */}
         <div className='flex flex-col min-w-0 flex-1'>
           <span className='text-[var(--ds-ink)] text-sm font-medium leading-tight'>{meta ? t(meta.label) : child.type}</span>
           {(draft.name as string) || (draft.label as string) ? (
-            <span className='text-[var(--ds-ink-muted)] text-[10px] truncate'>{(draft.name as string) || (draft.label as string)}</span>
+            <span className='text-[var(--ds-ink-muted)] text-xs truncate'>{(draft.name as string) || (draft.label as string)}</span>
           ) : null}
         </div>
 
@@ -358,7 +358,7 @@ export function GroupWidgetsTab({ groupId: _groupId, draft, updateField }: Group
         </Reorder.Group>
       )}
 
-      {children.length > 0 && <p className='text-[var(--ds-ink-muted)] text-[11px] text-center'>{t('widgets.group.dragToReorder')}</p>}
+      {children.length > 0 && <p className='text-[var(--ds-ink-muted)] text-sm text-center'>{t('widgets.group.dragToReorder')}</p>}
 
       {/* Add toggle */}
       <button

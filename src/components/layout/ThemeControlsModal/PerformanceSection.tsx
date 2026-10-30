@@ -3,6 +3,9 @@ import { Activity } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import type { PerfSettings } from '@/context/ThemeContext';
 import { PerfToggle } from './PerfToggle';
+import { BUTTON_SECONDARY } from './controls';
+import { SETTINGS_CARD } from './typography';
+import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 
 // ── FPS meter hook ────────────────────────────────────────────────────────────
@@ -64,28 +67,21 @@ function FPSMeter() {
           : t('settings.performance_section.fpsLow');
 
   return (
-    <div className='flex flex-col gap-3 p-4 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)]'>
+    <div className={cn(SETTINGS_CARD, 'flex flex-col gap-3')}>
       <div className='flex items-center justify-between'>
         <div className='flex items-center gap-2'>
-          <Activity size={14} className='text-[var(--ds-ink-muted)]' />
-          <span className='text-[var(--ds-ink-muted)] text-xs font-medium'>{t('settings.performance_section.fps')}</span>
+          <Activity size={20} className='text-[var(--ds-ink-muted)]' />
+          <span className='text-lg font-semibold'>{t('settings.performance_section.fps')}</span>
         </div>
-        <button
-          onClick={() => setMeasuring(v => !v)}
-          className={`px-3 py-1 rounded-[var(--ds-radius-sm)] text-xs font-medium transition-all border ${
-            measuring
-              ? 'bg-[var(--ds-surface-3)] border-[var(--ds-alert)] text-[var(--ds-alert)]'
-              : 'bg-[var(--ds-surface-3)] border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
-          }`}
-        >
+        <button onClick={() => setMeasuring(v => !v)} className={cn(BUTTON_SECONDARY, 'h-11', measuring && 'text-[var(--ds-alert)]')}>
           {measuring ? t('settings.performance_section.fpsStop') : t('settings.performance_section.fpsMeasure')}
         </button>
       </div>
 
       <div className='flex items-end gap-3'>
-        <span className={`text-4xl font-bold tabular-nums leading-none transition-colors ${color}`}>{fps ?? '··'}</span>
+        <span className={`text-5xl font-bold tabular-nums leading-none transition-colors ${color}`}>{fps ?? '··'}</span>
         <div className='flex flex-col pb-0.5'>
-          <span className='text-[var(--ds-ink-muted)] text-xs leading-tight'>fps</span>
+          <span className='text-[var(--ds-ink-muted)] text-sm leading-tight'>fps</span>
           {measuring && fps !== null && <span className={`text-xs font-medium leading-tight ${color}`}>{label}</span>}
         </div>
         {measuring && fps !== null && (
@@ -110,7 +106,7 @@ function FPSMeter() {
       </div>
 
       {!measuring && (
-        <p className='text-[var(--ds-ink-muted)] text-xs leading-relaxed'>{t('settings.performance_section.fpsDescription')}</p>
+        <p className='text-[15px] leading-relaxed text-[var(--ds-ink-muted)]'>{t('settings.performance_section.fpsDescription')}</p>
       )}
     </div>
   );
@@ -125,11 +121,11 @@ export function PerformanceSection() {
   }
 
   return (
-    <div className='flex flex-col gap-5'>
+    <div className='flex flex-col gap-3'>
       <FPSMeter />
 
-      <div className='flex flex-col'>
-        <p className='text-[var(--ds-ink-muted)] text-xs mb-5 leading-relaxed'>{t('settings.performance_section.intro')}</p>
+      <div className='flex flex-col gap-3'>
+        <p className='px-1 text-[15px] leading-relaxed text-[var(--ds-ink-muted)]'>{t('settings.performance_section.intro')}</p>
         <PerfToggle
           checked={perfSettings.reduceAnimations}
           onChange={() => toggle('reduceAnimations')}

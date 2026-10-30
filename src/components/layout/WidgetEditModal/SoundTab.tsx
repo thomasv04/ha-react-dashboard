@@ -109,14 +109,14 @@ function SoundActionRow({
       {/* Action label */}
       <div className='flex-1 min-w-0'>
         <span className='text-xs text-[var(--ds-ink)] font-medium'>{t(`layout.soundTab.actions.${action.action}`)}</span>
-        {isDefault && <span className='ml-1.5 text-[10px] text-[var(--ds-ink-muted)]'>({t('layout.soundTab.default')})</span>}
+        {isDefault && <span className='ml-1.5 text-xs text-[var(--ds-ink-muted)]'>({t('layout.soundTab.default')})</span>}
       </div>
 
       {/* Sound selector */}
       <select
         value={resolved}
         onChange={e => onChange(e.target.value as SoundPreset)}
-        className='px-2 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-[11px] text-[var(--ds-ink)] outline-none focus:border-[var(--ds-accent)] cursor-pointer max-w-[140px]'
+        className='px-2 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)] outline-none focus:outline-2 focus:outline-[var(--ds-accent)] cursor-pointer max-w-[140px]'
         style={{ colorScheme: 'dark' }}
       >
         {ALL_PRESETS.map(p => (

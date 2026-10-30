@@ -12,7 +12,11 @@ import { cn } from '@/lib/utils';
 /** Une vignette de dashboard aux couleurs du thème : fond, trois cartes, accent. */
 function ThemePreview({ tokens }: { tokens: ThemeTokens }) {
   return (
-    <span aria-hidden className='relative block h-[120px] w-full overflow-hidden rounded-[var(--ds-radius-lg)]' style={{ background: tokens.bgPrimary }}>
+    <span
+      aria-hidden
+      className='relative block h-[120px] w-full overflow-hidden rounded-[var(--ds-radius-lg)]'
+      style={{ background: tokens.bgPrimary }}
+    >
       <span className='absolute left-3 top-3 size-4 rounded-[5px]' style={{ background: tokens.accent }} />
       <span className='absolute right-3 top-2.5 h-3 w-10 rounded' style={{ background: tokens.textPrimary }} />
       <span className='absolute bottom-3 left-3 top-10 w-[42%] rounded-xl' style={{ background: tokens.bgCard }} />
@@ -47,7 +51,9 @@ export function AppearanceSection() {
                 <span className={cn('rounded-[var(--ds-radius-xl)] p-1', on && 'outline-[3px] outline-[var(--ds-accent)]')}>
                   <ThemePreview tokens={theme.tokens} />
                 </span>
-                <span className={cn('flex items-center gap-2.5 px-1 text-lg', on ? 'font-semibold' : 'font-medium text-[var(--ds-ink-muted)]')}>
+                <span
+                  className={cn('flex items-center gap-2.5 px-1 text-lg', on ? 'font-semibold' : 'font-medium text-[var(--ds-ink-muted)]')}
+                >
                   <span
                     className={cn(
                       'flex size-7 items-center justify-center rounded-full',
@@ -122,7 +128,9 @@ export function AppearanceSection() {
 
             {autoTheme.illuminanceEntity && (
               <div className='flex items-center gap-3'>
-                <label className='w-28 text-sm font-semibold text-[var(--ds-ink-muted)]'>{t('settings.appearance_section.autoThemeThreshold')}</label>
+                <label className='w-28 text-sm font-semibold text-[var(--ds-ink-muted)]'>
+                  {t('settings.appearance_section.autoThemeThreshold')}
+                </label>
                 <input
                   type='number'
                   min={0}

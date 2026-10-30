@@ -49,7 +49,7 @@ export function ImageBackgroundPicker({ imageUrl, onChange }: { imageUrl: string
   return (
     <div className='flex flex-col gap-3'>
       {/* Mode toggle : URL vs Fichier */}
-      <div className='flex gap-1.5 p-0.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] w-fit'>
+      <div className='flex gap-1.5 p-0.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] w-fit'>
         <button
           onClick={() => setMode('url')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
@@ -78,7 +78,7 @@ export function ImageBackgroundPicker({ imageUrl, onChange }: { imageUrl: string
           placeholder={t('settings.appearance_section.imageUrlPlaceholder')}
           value={imageUrl.startsWith('/uploads/') ? '' : imageUrl}
           onChange={e => onChange(e.target.value)}
-          className='w-full px-3 py-2 rounded-[var(--ds-radius-sm)] text-xs bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)] placeholder:text-[var(--ds-ink-muted)] focus:outline-none focus:border-[var(--ds-accent)]'
+          className='w-full px-3 py-2 rounded-[var(--ds-radius-sm)] text-xs bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)] placeholder:text-[var(--ds-ink-muted)] focus:outline-none focus:outline-2 focus:outline-[var(--ds-accent)]'
         />
       )}
 
@@ -114,7 +114,7 @@ export function ImageBackgroundPicker({ imageUrl, onChange }: { imageUrl: string
             className='hidden'
           />
           {uploadError && <p className='text-[var(--ds-alert)] text-xs px-1'>{uploadError}</p>}
-          <p className='text-[var(--ds-ink-muted)] text-[10px]'>{t('settings.appearance_section.imageFormats')}</p>
+          <p className='text-[var(--ds-ink-muted)] text-xs'>{t('settings.appearance_section.imageFormats')}</p>
         </div>
       )}
     </div>

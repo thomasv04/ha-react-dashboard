@@ -120,9 +120,9 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
 
   return (
     <div ref={triggerRef}>
-      <label className='text-[11px] text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>
+      <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>
       <div
-        className='flex items-center gap-2 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] cursor-pointer transition-colors'
+        className='flex items-center gap-2 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] cursor-pointer transition-colors'
         onClick={handleToggle}
       >
         {SelectedIcon ? (
@@ -192,7 +192,7 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
                       placeholder={t('layout.iconSearch')}
                     />
                   </div>
-                  <div className='text-[10px] text-[var(--ds-ink-muted)] mt-1 px-1'>
+                  <div className='text-xs text-[var(--ds-ink-muted)] mt-1 px-1'>
                     {t('layout.iconCount', { count: filtered.length })}
                   </div>
                 </div>
@@ -262,8 +262,8 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
                   onChange={handleFileUpload}
                   className='hidden'
                 />
-                {uploadError && <p className='text-[var(--ds-alert)] text-[10px] px-1'>{uploadError}</p>}
-                <p className='text-[var(--ds-ink-muted)] text-[10px] px-1'>PNG · WebP · SVG — max 2 Mo (redimensionné à 128×128)</p>
+                {uploadError && <p className='text-[var(--ds-alert)] text-xs px-1'>{uploadError}</p>}
+                <p className='text-[var(--ds-ink-muted)] text-xs px-1'>PNG · WebP · SVG — max 2 Mo (redimensionné à 128×128)</p>
 
                 {/* Custom icons grid */}
                 <div className='overflow-y-auto' style={{ maxHeight: 200 }}>
@@ -343,9 +343,9 @@ export function GradientPicker({ value, onChange, label }: { value: string; onCh
 
   return (
     <div className='relative' ref={containerRef}>
-      <label className='text-[11px] text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>
+      <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>
       <div
-        className='flex items-center gap-2 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] cursor-pointer transition-colors'
+        className='flex items-center gap-2 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] cursor-pointer transition-colors'
         onClick={() => setOpen(!open)}
       >
         {/* Preview swatch */}
@@ -399,7 +399,7 @@ export function GradientPicker({ value, onChange, label }: { value: string; onCh
               classes Tailwind : ces classes-là n'étaient jamais générées, et le
               dégradé saisi ne peignait rien. */}
           <div className='border-t border-[var(--ds-surface-3)] p-2'>
-            <label className='text-[10px] text-[var(--ds-ink-muted)] mb-1.5 block'>Sur mesure</label>
+            <label className='text-xs text-[var(--ds-ink-muted)] mb-1.5 block'>Sur mesure</label>
             <div className='flex items-center gap-2'>
               <input
                 type='color'

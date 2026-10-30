@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Monitor } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import { isPanelMode } from '@/lib/api-base';
 import { isKioskEnabled, setKiosk } from '@/lib/kiosk';
@@ -20,10 +19,8 @@ function KioskToggle() {
   if (!isPanelMode()) return null;
 
   return (
-    <div>
-      <h3 className={cn(SECTION_HEADING, 'mb-4 flex items-center gap-2')}>
-        <Monitor size={12} /> {t('settings.layout_section.display')}
-      </h3>
+    <div className='flex flex-col gap-3'>
+      <h3 className={cn(SECTION_HEADING, 'px-1')}>{t('settings.layout_section.display')}</h3>
       <PerfToggle
         checked={enabled}
         onChange={value => {
@@ -39,7 +36,7 @@ function KioskToggle() {
 
 export function LayoutSection() {
   return (
-    <div className='flex flex-col gap-7'>
+    <div className='flex flex-col gap-3'>
       <KioskToggle />
     </div>
   );

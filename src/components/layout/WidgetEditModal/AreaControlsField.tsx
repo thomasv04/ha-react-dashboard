@@ -70,7 +70,7 @@ export function AreaControlsField({
       <select
         value={area}
         onChange={e => onChange({ area: e.target.value, controls: [] })}
-        className='w-full px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)] outline-none focus:border-[var(--ds-accent)] cursor-pointer'
+        className='w-full px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)] outline-none focus:outline-2 focus:outline-[var(--ds-accent)] cursor-pointer'
         style={{ colorScheme: 'dark' }}
       >
         <option value='' className='bg-[#0c1028]'>
@@ -89,7 +89,7 @@ export function AreaControlsField({
             {controls.map(token => (
               <span
                 key={token}
-                className='flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)]'
+                className='flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full bg-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)]'
               >
                 {isEntityToken(token) ? entityLabel(token) : domainLabel(token)}
                 <button

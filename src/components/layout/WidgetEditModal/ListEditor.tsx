@@ -158,7 +158,7 @@ export function ListEditor({
                           <select
                             value={(item[field.key] as string) || field.options[0].value}
                             onChange={e => updateItem(idx, field.key, e.target.value)}
-                            className='w-full px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)] outline-none focus:border-[var(--ds-accent)] cursor-pointer'
+                            className='w-full px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)] outline-none focus:outline-2 focus:outline-[var(--ds-accent)] cursor-pointer'
                             style={{ colorScheme: 'dark' }}
                           >
                             {field.options.map(opt => (

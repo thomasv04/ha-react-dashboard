@@ -26,10 +26,10 @@ export function EntityListField({
 
   return (
     <div>
-      <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>
+      <label className='mb-2 block text-sm font-semibold text-[var(--ds-ink-muted)]'>{label}</label>
 
       {value.map((entityId, index) => (
-        <div key={index} className='flex items-center gap-1 mb-1'>
+        <div key={index} className='mb-2 flex items-center gap-2'>
           {/* `flex-1 min-w-0` : sans lui le sélecteur se réduit à son contenu,
               et sa liste déroulante — calée sur la largeur du déclencheur —
               rognait les identifiants d'entité. */}
@@ -44,15 +44,18 @@ export function EntityListField({
           <button
             onClick={() => onChange(value.filter((_, i) => i !== index))}
             title={t('common.delete')}
-            className='p-1 text-[var(--ds-alert)]'
+            className='flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--ds-surface-3)] text-[var(--ds-alert)]'
           >
-            <Trash2 size={11} />
+            <Trash2 size={16} />
           </button>
         </div>
       ))}
 
-      <button onClick={() => onChange([...value, ''])} className='flex items-center gap-1 text-sm text-[var(--ds-accent)]'>
-        <Plus size={11} /> {t('layout.addEntityBtn')}
+      <button
+        onClick={() => onChange([...value, ''])}
+        className='flex h-11 items-center gap-2 rounded-full bg-[var(--ds-surface-3)] px-4 text-[15px] font-semibold text-[var(--ds-ink)]'
+      >
+        <Plus size={16} /> {t('layout.addEntityBtn')}
       </button>
     </div>
   );

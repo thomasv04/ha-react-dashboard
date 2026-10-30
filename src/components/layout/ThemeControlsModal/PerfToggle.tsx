@@ -1,4 +1,8 @@
-// ── Toggle switch ──────────────────────────────────────────────────────────────
+import { SwitchTrack } from '@/components/ds/Switch';
+import { SETTINGS_CARD } from './typography';
+import { cn } from '@/lib/utils';
+
+/** Une ligne à interrupteur : un bloc, son intitulé, ce qu'il fait, et l'interrupteur. */
 export function PerfToggle({
   checked,
   onChange,
@@ -12,24 +16,16 @@ export function PerfToggle({
 }) {
   return (
     <button
+      role='switch'
+      aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className='flex items-center justify-between w-full py-3.5 border-b border-[var(--ds-surface-3)] last:border-0 text-left'
+      className={cn(SETTINGS_CARD, 'flex w-full items-center justify-between gap-4 text-left')}
     >
-      <div className='flex flex-col gap-0.5 pr-4'>
-        <span className={`text-sm font-medium transition-colors ${checked ? 'text-[var(--ds-ink)]' : 'text-[var(--ds-ink-muted)]'}`}>
-          {label}
-        </span>
-        {description && <span className='text-[var(--ds-ink-muted)] text-xs leading-relaxed'>{description}</span>}
-      </div>
-      <div
-        className={`relative flex-shrink-0 w-9 h-5 rounded-full transition-colors duration-200 ${checked ? 'bg-[var(--ds-accent)]' : 'bg-[var(--ds-surface-3)]'}`}
-      >
-        <div
-          className={`absolute top-0.5 w-4 h-4 rounded-full bg-[var(--ds-surface-3)] shadow-sm transition-transform duration-200 ${
-            checked ? 'translate-x-4' : 'translate-x-0.5'
-          }`}
-        />
-      </div>
+      <span className='min-w-0'>
+        <span className='block text-lg font-semibold text-[var(--ds-ink)]'>{label}</span>
+        {description && <span className='mt-0.5 block text-[15px] leading-relaxed text-[var(--ds-ink-muted)]'>{description}</span>}
+      </span>
+      <SwitchTrack on={checked} />
     </button>
   );
 }

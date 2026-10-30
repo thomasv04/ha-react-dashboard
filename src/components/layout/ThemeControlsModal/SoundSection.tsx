@@ -3,6 +3,8 @@ import { useTheme } from '@/context/ThemeContext';
 import { PerfToggle } from './PerfToggle';
 import { useI18n } from '@/i18n';
 import { playSound } from '@/lib/sounds';
+import { SETTINGS_CARD } from './typography';
+import { cn } from '@/lib/utils';
 
 export function SoundSection() {
   const { t } = useI18n();
@@ -15,10 +17,10 @@ export function SoundSection() {
   }
 
   return (
-    <div className='flex flex-col gap-5'>
-      <div className='flex items-center gap-3 p-4 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)]'>
-        <Volume2 size={16} className='text-[var(--ds-ink-muted)] shrink-0' />
-        <p className='text-[var(--ds-ink-muted)] text-xs leading-relaxed'>{t('settings.sound_section.intro')}</p>
+    <div className='flex flex-col gap-3'>
+      <div className={cn(SETTINGS_CARD, 'flex items-center gap-4')}>
+        <Volume2 size={24} className='shrink-0 text-[var(--ds-ink-muted)]' />
+        <p className='text-[15px] leading-relaxed text-[var(--ds-ink-muted)]'>{t('settings.sound_section.intro')}</p>
       </div>
 
       <div className='flex flex-col'>

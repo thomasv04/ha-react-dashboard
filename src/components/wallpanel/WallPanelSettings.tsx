@@ -1,6 +1,7 @@
 import { useEffect, useState, type MutableRefObject } from 'react';
 import { Play, Plus, Trash2, Clock, Image, Layers, Settings2, Hand, CloudUpload, Loader2 } from 'lucide-react';
 import { SwitchTrack } from '@/components/ds/Switch';
+import { BUTTON_PRIMARY, INPUT, Segmented } from '@/components/layout/ThemeControlsModal/controls';
 import { useWallPanel } from '@/context/WallPanelContext';
 import { usePages } from '@/context/PageContext';
 import { useDashboardLayout } from '@/context/DashboardLayoutContext';
@@ -257,18 +258,16 @@ export function WallPanelSettings({ onClose, guard }: WallPanelSettingsProps) {
                 value={draft.screensaver_entity ?? ''}
                 onChange={e => update({ screensaver_entity: e.target.value || undefined })}
                 placeholder='input_boolean.wallpanel_screensaver'
-                className='h-12 w-full rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-4 text-base text-[var(--ds-ink)] outline-none focus:outline-2 focus:outline-[var(--ds-accent)]'
+                className={INPUT}
               />
-              <p className='text-[var(--ds-ink-muted)] text-sm mt-2'>{t('layout.wallPanel.haEntityDesc')}</p>
+              <p className='mt-2 text-[15px] text-[var(--ds-ink-muted)]'>{t('layout.wallPanel.haEntityDesc')}</p>
             </div>
 
             <div className='rounded-[var(--ds-radius-xl)] bg-[var(--ds-tile-on)] p-5 text-[var(--ds-tile-on-ink)]'>
               <p className='text-[15px] leading-relaxed'>
                 <span className='font-semibold'>{t('layout.wallPanel.forcedActivation')}</span> — ajoutez
-                <code className='mx-1 px-1.5 py-0.5 rounded bg-[var(--ds-surface-3)] text-[var(--ds-accent)] text-[10px]'>
-                  ?hrd_screensaver=true
-                </code>
-                à l'URL pour activer immédiatement (utile pour tablette murale).
+                <code className='mx-1 rounded bg-black/25 px-2 py-0.5 font-mono text-sm'>?hrd_screensaver=true</code>à l'URL pour activer
+                immédiatement (utile pour tablette murale).
               </p>
             </div>
           </>
@@ -278,53 +277,41 @@ export function WallPanelSettings({ onClose, guard }: WallPanelSettingsProps) {
         {tab === 'background' && (
           <>
             {planPages.length > 0 && (
-              <div>
-                <p className='text-[var(--ds-ink)] text-base font-semibold mb-2'>{t('layout.wallPanel.backgroundSource')}</p>
-                <div className='flex flex-wrap gap-1.5'>
-                  {[{ id: '', label: t('layout.wallPanel.backgroundPhotos') }, ...planPages.map(p => ({ id: p.id, label: p.label }))].map(
-                    option => (
-                      <button
-                        key={option.id || 'photos'}
-                        onClick={() => update({ floorplan_page: option.id })}
-                        aria-pressed={(draft.floorplan_page ?? '') === option.id}
-                        className={cn(
-                          'px-3 py-1.5 rounded-[var(--ds-radius-md)] text-xs font-medium border transition-colors',
-                          (draft.floorplan_page ?? '') === option.id
-                            ? 'bg-[var(--ds-tile-on)] border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
-                            : 'bg-[var(--ds-surface-2)] border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
-                        )}
-                      >
-                        {option.label}
-                      </button>
-                    )
-                  )}
-                </div>
+              <div className={cn(CARD, 'flex flex-col gap-3')}>
+                <p className='text-lg font-semibold'>{t('layout.wallPanel.backgroundSource')}</p>
+                <Segmented
+                  value={draft.floorplan_page ?? ''}
+                  onChange={floorplan_page => update({ floorplan_page })}
+                  label={t('layout.wallPanel.backgroundSource')}
+                  options={[
+                    { value: '', label: t('layout.wallPanel.backgroundPhotos') },
+                    ...planPages.map(p => ({ value: p.id, label: p.label })),
+                  ]}
+                />
                 {draft.floorplan_page && (
-                  <p className='text-[var(--ds-ink-muted)] text-sm mt-1.5 leading-relaxed'>{t('layout.wallPanel.backgroundPlanHint')}</p>
+                  <p className='text-[15px] leading-relaxed text-[var(--ds-ink-muted)]'>{t('layout.wallPanel.backgroundPlanHint')}</p>
                 )}
               </div>
             )}
             {!draft.floorplan_page && (
               <>
-                <div>
-                  <p className='text-[var(--ds-ink)] text-base font-semibold mb-2'>{t('layout.wallPanel.backgroundImages')}</p>
-                  <div className='space-y-1.5 mb-2'>
+                <div className={cn(CARD, 'flex flex-col gap-3')}>
+                  <p className='text-lg font-semibold'>{t('layout.wallPanel.backgroundImages')}</p>
+                  <div className='flex flex-col gap-2'>
                     {draft.image_urls.map((url, i) => (
-                      <div
-                        key={i}
-                        className='flex items-center gap-2 px-3 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] group'
-                      >
-                        <span className='flex-1 truncate text-[var(--ds-ink-muted)] text-xs font-mono'>{url}</span>
+                      <div key={i} className='flex items-center gap-3 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-4 py-3'>
+                        <span className='flex-1 truncate font-mono text-sm text-[var(--ds-ink-muted)]'>{url}</span>
                         <button
                           onClick={() => removeImageUrl(i)}
-                          className='text-[var(--ds-alert)] transition-colors opacity-0 group-hover:opacity-100'
+                          aria-label={t('common.delete')}
+                          className='flex size-9 items-center justify-center rounded-full text-[var(--ds-alert)]'
                         >
-                          <Trash2 size={12} />
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     ))}
                     {draft.image_urls.length === 0 && (
-                      <p className='text-[var(--ds-ink-muted)] text-xs text-center py-3'>{t('layout.wallPanel.noImages')}</p>
+                      <p className='py-3 text-center text-[15px] text-[var(--ds-ink-muted)]'>{t('layout.wallPanel.noImages')}</p>
                     )}
                   </div>
                   <div className='flex gap-2'>
@@ -334,51 +321,51 @@ export function WallPanelSettings({ onClose, guard }: WallPanelSettingsProps) {
                       onChange={e => setNewUrl(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && addImageUrl()}
                       placeholder='https://... ou media-source://...'
-                      className='flex-1 px-3 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)] text-xs outline-none focus:border-[var(--ds-accent)]'
+                      aria-label={t('layout.wallPanel.backgroundImages')}
+                      className={INPUT}
                     />
-                    <button
-                      onClick={addImageUrl}
-                      className='px-3 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)] transition-colors'
-                    >
-                      <Plus size={14} />
+                    <button onClick={addImageUrl} aria-label={t('common.add')} className={cn(BUTTON_PRIMARY, 'size-12 shrink-0 px-0')}>
+                      <Plus size={20} />
                     </button>
                   </div>
                 </div>
 
                 <div className='grid grid-cols-2 gap-3'>
-                  <div>
-                    <label className='text-[var(--ds-ink)] text-base font-semibold block mb-1'>{t('layout.wallPanel.imageFit')}</label>
+                  <div className={cn(CARD, 'flex flex-col gap-3')}>
+                    <label htmlFor='wp-fit' className='text-lg font-semibold'>
+                      {t('layout.wallPanel.imageFit')}
+                    </label>
                     <select
+                      id='wp-fit'
                       value={draft.image_fit}
                       onChange={e => update({ image_fit: e.target.value as ImageFit })}
-                      className='w-full px-3 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)] text-xs outline-none'
+                      className={INPUT}
                     >
                       <option value='cover'>{t('layout.wallPanel.fitCover')}</option>
                       <option value='contain'>{t('layout.wallPanel.fitContain')}</option>
                       <option value='fill'>{t('layout.wallPanel.fitFill')}</option>
                     </select>
                     {draft.image_fit === 'contain' && (
-                      <label className='flex items-center gap-2 mt-2 cursor-pointer select-none'>
-                        <input
-                          type='checkbox'
-                          checked={draft.style.containBlurBackground ?? false}
-                          onChange={e =>
-                            update({
-                              style: { ...draft.style, containBlurBackground: e.target.checked },
-                            })
-                          }
-                          className='accent-[var(--ds-accent)] w-3.5 h-3.5'
-                        />
-                        <span className='text-[var(--ds-ink-muted)] text-xs'>{t('layout.wallPanel.blurBackground')}</span>
-                      </label>
+                      <button
+                        role='switch'
+                        aria-checked={draft.style.containBlurBackground ?? false}
+                        onClick={() => update({ style: { ...draft.style, containBlurBackground: !draft.style.containBlurBackground } })}
+                        className='flex items-center justify-between gap-3 text-left'
+                      >
+                        <span className='text-[15px] text-[var(--ds-ink-muted)]'>{t('layout.wallPanel.blurBackground')}</span>
+                        <SwitchTrack on={draft.style.containBlurBackground ?? false} />
+                      </button>
                     )}
                   </div>
-                  <div>
-                    <label className='text-[var(--ds-ink)] text-base font-semibold block mb-1'>{t('layout.wallPanel.imageOrder')}</label>
+                  <div className={cn(CARD, 'flex flex-col gap-3')}>
+                    <label htmlFor='wp-order' className='text-lg font-semibold'>
+                      {t('layout.wallPanel.imageOrder')}
+                    </label>
                     <select
+                      id='wp-order'
                       value={draft.media_order}
                       onChange={e => update({ media_order: e.target.value as MediaOrder })}
-                      className='w-full px-3 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)] text-xs outline-none'
+                      className={INPUT}
                     >
                       <option value='random'>{t('layout.wallPanel.orderRandom')}</option>
                       <option value='sequential'>{t('layout.wallPanel.orderSequential')}</option>
@@ -386,19 +373,22 @@ export function WallPanelSettings({ onClose, guard }: WallPanelSettingsProps) {
                   </div>
                 </div>
 
-                <div>
-                  <label className='mb-1.5 flex items-baseline justify-between text-lg font-semibold'>
-                    {t('layout.wallPanel.imageDuration')}
+                <div className={cn(CARD, 'flex flex-col gap-3')}>
+                  <div className='flex items-baseline justify-between'>
+                    <label htmlFor='wp-duration' className='text-lg font-semibold'>
+                      {t('layout.wallPanel.imageDuration')}
+                    </label>
                     <span className='text-[28px] font-bold text-[var(--ds-accent)]'>{duration(draft.image_duration)}</span>
-                  </label>
+                  </div>
                   <input
+                    id='wp-duration'
                     type='range'
                     min={5}
                     max={300}
                     step={5}
                     value={draft.image_duration}
                     onChange={e => update({ image_duration: Number(e.target.value) })}
-                    className='w-full accent-[var(--ds-accent)]'
+                    className='h-8 w-full accent-[var(--ds-accent)]'
                   />
                 </div>
               </>
@@ -408,56 +398,45 @@ export function WallPanelSettings({ onClose, guard }: WallPanelSettingsProps) {
 
         {/* ── WIDGETS ── */}
         {tab === 'widgets' && (
-          <div className='space-y-3'>
-            <p className='text-[var(--ds-ink-muted)] text-xs leading-relaxed'>{t('layout.wallPanel.widgetsInfo')}</p>
+          <>
+            <p className='px-1 text-[15px] leading-relaxed text-[var(--ds-ink-muted)]'>{t('layout.wallPanel.widgetsInfo')}</p>
 
-            <div>
-              <p className='text-[var(--ds-ink)] text-base font-semibold'>{t('layout.wallPanel.widgetAnchor')}</p>
-              <p className='text-[var(--ds-ink-muted)] text-sm mt-0.5 mb-2'>{t('layout.wallPanel.widgetAnchorDesc')}</p>
-              <div className='grid grid-cols-4 gap-2'>
-                {ANCHORS.map(a => (
-                  <button
-                    key={a.id}
-                    onClick={() => update({ widgetAnchor: a.id })}
-                    className={cn(
-                      'px-2 py-2 rounded-[var(--ds-radius-md)] text-[11px] font-medium border transition-colors',
-                      (draft.widgetAnchor ?? 'top') === a.id
-                        ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] border-[var(--ds-accent)]'
-                        : 'bg-[var(--ds-surface-2)] text-[var(--ds-ink-muted)] border-[var(--ds-surface-3)]'
-                    )}
-                  >
-                    {t(a.labelKey)}
-                  </button>
-                ))}
+            <div className={cn(CARD, 'flex flex-col gap-3')}>
+              <div>
+                <p className='text-lg font-semibold'>{t('layout.wallPanel.widgetAnchor')}</p>
+                <p className='mt-0.5 text-[15px] text-[var(--ds-ink-muted)]'>{t('layout.wallPanel.widgetAnchorDesc')}</p>
               </div>
+              <Segmented
+                value={draft.widgetAnchor ?? 'top'}
+                onChange={widgetAnchor => update({ widgetAnchor })}
+                label={t('layout.wallPanel.widgetAnchor')}
+                options={ANCHORS.map(a => ({ value: a.id, label: t(a.labelKey) }))}
+              />
             </div>
 
-            <div>
-              <p className='text-[var(--ds-ink)] text-base font-semibold'>{t('layout.wallPanel.widgetSize')}</p>
-              <p className='text-[var(--ds-ink-muted)] text-sm mt-0.5 mb-2'>{t('layout.wallPanel.widgetSizeDesc')}</p>
-              <div className='grid grid-cols-5 gap-2'>
-                {EXTENTS.map(extent => (
-                  <button
-                    key={extent}
-                    onClick={() => update({ widgetExtent: extent })}
-                    className={cn(
-                      'px-2 py-2 rounded-[var(--ds-radius-md)] text-[11px] font-medium border transition-colors',
-                      widgetExtentOf(draft) === extent
-                        ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] border-[var(--ds-accent)]'
-                        : 'bg-[var(--ds-surface-2)] text-[var(--ds-ink-muted)] border-[var(--ds-surface-3)]'
-                    )}
-                  >
-                    {extent === 100 ? t('layout.wallPanel.widgetSizeFull') : `${extent} %`}
-                  </button>
-                ))}
+            <div className={cn(CARD, 'flex flex-col gap-3')}>
+              <div>
+                <p className='text-lg font-semibold'>{t('layout.wallPanel.widgetSize')}</p>
+                <p className='mt-0.5 text-[15px] text-[var(--ds-ink-muted)]'>{t('layout.wallPanel.widgetSizeDesc')}</p>
               </div>
+              <Segmented
+                value={widgetExtentOf(draft)}
+                onChange={widgetExtent => update({ widgetExtent })}
+                label={t('layout.wallPanel.widgetSize')}
+                options={EXTENTS.map(extent => ({
+                  value: extent,
+                  label: extent === 100 ? t('layout.wallPanel.widgetSizeFull') : `${extent} %`,
+                }))}
+              />
             </div>
 
-            <div>
-              <p className='text-[var(--ds-ink)] text-base font-semibold'>{t('layout.wallPanel.presenceEntity')}</p>
-              <p className='text-[var(--ds-ink-muted)] text-sm mt-0.5 mb-2'>{t('layout.wallPanel.presenceEntityDesc')}</p>
+            <div className={cn(CARD, 'flex flex-col gap-3')}>
+              <div>
+                <p className='text-lg font-semibold'>{t('layout.wallPanel.presenceEntity')}</p>
+                <p className='mt-0.5 text-[15px] text-[var(--ds-ink-muted)]'>{t('layout.wallPanel.presenceEntityDesc')}</p>
+              </div>
               <div className='flex items-center gap-2'>
-                <div className='flex-1 min-w-0'>
+                <div className='min-w-0 flex-1'>
                   <EntityPicker
                     label=''
                     value={draft.presence_entity ?? ''}
@@ -469,9 +448,9 @@ export function WallPanelSettings({ onClose, guard }: WallPanelSettingsProps) {
                   <button
                     onClick={() => update({ presence_entity: undefined })}
                     aria-label={t('common.delete')}
-                    className='p-2 rounded-[var(--ds-radius-sm)] text-[var(--ds-ink-muted)] transition-colors'
+                    className='flex size-12 shrink-0 items-center justify-center rounded-full bg-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
                   >
-                    <X size={14} />
+                    <X size={18} />
                   </button>
                 )}
               </div>
@@ -485,62 +464,46 @@ export function WallPanelSettings({ onClose, guard }: WallPanelSettingsProps) {
                   {t(widgetTotal === 1 ? 'layout.wallPanel.widgetCount_one' : 'layout.wallPanel.widgetCount_other', { count: widgetTotal })}
                 </p>
               </div>
-              <button
-                onClick={handleEditWidgets}
-                className='flex h-12 shrink-0 items-center gap-2 rounded-full bg-[var(--ds-tile-on)] px-6 text-base font-bold text-[var(--ds-tile-on-ink)]'
-              >
+              <button onClick={handleEditWidgets} className={cn(BUTTON_PRIMARY, 'shrink-0 font-bold')}>
                 <Layers size={18} />
                 {t('layout.wallPanel.editWidgetsAction')}
               </button>
             </div>
-          </div>
+          </>
         )}
 
         {/* ── STYLE ── */}
         {tab === 'style' && (
           <>
-            <div>
-              <label className='text-[var(--ds-ink)] text-base font-semibold block mb-1.5'>
-                {t('layout.wallPanel.backgroundBlur')} : <span className='text-[var(--ds-ink)]'>{draft.style.backgroundBlur ?? 0}px</span>
-              </label>
+            <div className={cn(CARD, 'flex flex-col gap-3')}>
+              <div className='flex items-baseline justify-between'>
+                <label htmlFor='wp-blur' className='text-lg font-semibold'>
+                  {t('layout.wallPanel.backgroundBlur')}
+                </label>
+                <span className='text-[28px] font-bold text-[var(--ds-accent)]'>{draft.style.backgroundBlur ?? 0} px</span>
+              </div>
               <input
+                id='wp-blur'
                 type='range'
                 min={0}
                 max={40}
                 step={2}
                 value={draft.style.backgroundBlur ?? 0}
-                onChange={e =>
-                  update({
-                    style: { ...draft.style, backgroundBlur: Number(e.target.value) },
-                  })
-                }
-                className='w-full accent-[var(--ds-accent)]'
+                onChange={e => update({ style: { ...draft.style, backgroundBlur: Number(e.target.value) } })}
+                className='h-8 w-full accent-[var(--ds-accent)]'
               />
             </div>
-            <div>
-              <p className='text-[var(--ds-ink)] text-base font-semibold mb-2'>{t('layout.wallPanel.clockLayout')}</p>
-              <div className='grid grid-cols-2 gap-2'>
-                {(
-                  [
-                    ['clock', 'layout.wallPanel.clockLarge'],
-                    ['photo', 'layout.wallPanel.clockPhoto'],
-                  ] as const
-                ).map(([id, labelKey]) => (
-                  <button
-                    key={id}
-                    onClick={() => update({ clock_layout: id })}
-                    aria-pressed={(draft.clock_layout ?? 'clock') === id}
-                    className={cn(
-                      'px-2 py-2 rounded-[var(--ds-radius-md)] text-[11px] font-medium border transition-colors',
-                      (draft.clock_layout ?? 'clock') === id
-                        ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] border-[var(--ds-accent)]'
-                        : 'bg-[var(--ds-surface-2)] text-[var(--ds-ink-muted)] border-[var(--ds-surface-3)]'
-                    )}
-                  >
-                    {t(labelKey)}
-                  </button>
-                ))}
-              </div>
+            <div className={cn(CARD, 'flex flex-col gap-3')}>
+              <p className='text-lg font-semibold'>{t('layout.wallPanel.clockLayout')}</p>
+              <Segmented
+                value={draft.clock_layout ?? 'clock'}
+                onChange={clock_layout => update({ clock_layout })}
+                label={t('layout.wallPanel.clockLayout')}
+                options={[
+                  { value: 'clock' as const, label: t('layout.wallPanel.clockLarge') },
+                  { value: 'photo' as const, label: t('layout.wallPanel.clockPhoto') },
+                ]}
+              />
             </div>
           </>
         )}
@@ -555,7 +518,7 @@ export function WallPanelSettings({ onClose, guard }: WallPanelSettingsProps) {
               onChange={enabled => setGesture({ enabled })}
             />
 
-            <div className={cn('space-y-5', !gestures.enabled && 'pointer-events-none')}>
+            <div className={cn('space-y-3', !gestures.enabled && 'pointer-events-none')}>
               <ToggleRow
                 label={t('layout.wallPanel.gestures.photos')}
                 description={t('layout.wallPanel.gestures.photosDesc')}
@@ -564,13 +527,13 @@ export function WallPanelSettings({ onClose, guard }: WallPanelSettingsProps) {
                 onChange={photos => setGesture({ photos })}
               />
 
-              <div className={cn(!gestures.enabled && 'opacity-40')}>
+              <div className={cn(CARD, !gestures.enabled && 'opacity-40')}>
                 <PanelSelectField
                   label={t('layout.wallPanel.gestures.quickPanel')}
                   value={gestures.quickPanelId}
                   onChange={quickPanelId => setGesture({ quickPanelId })}
                 />
-                <p className='text-[var(--ds-ink-muted)] text-sm mt-1'>{t('layout.wallPanel.gestures.quickPanelDesc')}</p>
+                <p className='mt-2 text-[15px] text-[var(--ds-ink-muted)]'>{t('layout.wallPanel.gestures.quickPanelDesc')}</p>
               </div>
 
               <ToggleRow
@@ -590,8 +553,8 @@ export function WallPanelSettings({ onClose, guard }: WallPanelSettingsProps) {
               />
             </div>
 
-            <div className='p-3 rounded-[var(--ds-radius-md)] border border-[var(--ds-accent)] bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'>
-              <p className='text-[var(--ds-ink-muted)] text-xs leading-relaxed'>{t('layout.wallPanel.gestures.help')}</p>
+            <div className='rounded-[var(--ds-radius-xl)] bg-[var(--ds-tile-on)] p-5 text-[var(--ds-tile-on-ink)]'>
+              <p className='text-[15px] leading-relaxed'>{t('layout.wallPanel.gestures.help')}</p>
             </div>
           </>
         )}

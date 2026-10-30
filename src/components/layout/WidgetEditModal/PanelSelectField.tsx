@@ -28,7 +28,7 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
       <div
         ref={dropRef}
         data-portal-dropdown
-        className='bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-sheet)] fixed z-[200] rounded-[var(--ds-radius-md)] overflow-hidden'
+        className='fixed z-[200] overflow-hidden rounded-[20px] bg-[var(--ds-sheet)] shadow-[var(--ds-shadow-sheet)]'
         style={{ ...dropStyle, maxHeight: 320, overflowY: 'auto' }}
       >
         <div className='p-1.5 space-y-0.5'>
@@ -36,7 +36,7 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
           <button
             onClick={() => select('')}
             className={cn(
-              'w-full flex items-center gap-2.5 px-3 py-2 rounded-[var(--ds-radius-sm)] text-sm text-left transition-colors',
+              'flex h-11 w-full items-center gap-2.5 rounded-[var(--ds-radius-md)] px-3 text-left text-base',
               !value ? 'bg-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]' : 'text-[var(--ds-ink-muted)]'
             )}
           >
@@ -49,9 +49,7 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
             <>
               <div className='flex items-center gap-2 px-3 pt-2 pb-1'>
                 <Layers size={11} className='text-[var(--ds-ink-muted)]' />
-                <span className='text-xs font-semibold text-[var(--ds-ink-muted)] uppercase tracking-wider'>
-                  {t('layout.panelCustom')}
-                </span>
+                <span className='text-xs font-semibold text-[var(--ds-ink-muted)] uppercase tracking-wider'>{t('layout.panelCustom')}</span>
               </div>
               {panels.map(p => {
                 const ref = `custom:${p.id}`;
@@ -60,7 +58,7 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
                     key={p.id}
                     onClick={() => select(ref)}
                     className={cn(
-                      'w-full flex items-center gap-2.5 px-3 py-2 rounded-[var(--ds-radius-sm)] text-sm text-left transition-colors',
+                      'flex h-11 w-full items-center gap-2.5 rounded-[var(--ds-radius-md)] px-3 text-left text-base',
                       value === ref
                         ? 'bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
                         : 'border border-transparent text-[var(--ds-ink)]'
@@ -82,23 +80,23 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
 
   return (
     <div>
-      {label && <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>}
+      {label && <label className='mb-2 block text-sm font-semibold text-[var(--ds-ink-muted)]'>{label}</label>}
       <div
         ref={triggerRef}
         onClick={handleOpen}
         className={cn(
-          'flex items-center gap-2 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border cursor-pointer transition-colors select-none',
-          open ? 'border-[var(--ds-accent)] bg-[var(--ds-surface-3)]' : 'border-[var(--ds-surface-3)]'
+          'flex h-12 cursor-pointer select-none items-center gap-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-4',
+          open && 'outline-2 outline-[var(--ds-accent)]'
         )}
       >
         {value ? <Layers size={14} className='text-[var(--ds-accent)] flex-shrink-0' /> : null}
-        <span className={cn('text-sm flex-1 truncate', value ? 'text-[var(--ds-ink)]' : 'text-[var(--ds-ink-muted)]')}>
+        <span className={cn('flex-1 truncate text-base', value ? 'text-[var(--ds-ink)]' : 'text-[var(--ds-ink-muted)]')}>
           {displayLabel || t('layout.panelNoneDisplay')}
         </span>
         {open ? (
-          <ChevronUp size={14} className='text-[var(--ds-ink-muted)] flex-shrink-0' />
+          <ChevronUp size={18} className='shrink-0 text-[var(--ds-ink-muted)]' />
         ) : (
-          <ChevronDown size={14} className='text-[var(--ds-ink-muted)] flex-shrink-0' />
+          <ChevronDown size={18} className='shrink-0 text-[var(--ds-ink-muted)]' />
         )}
       </div>
       {dropdown}

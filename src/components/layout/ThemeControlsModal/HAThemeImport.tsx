@@ -60,7 +60,9 @@ export function HAThemeImport() {
           <button
             onClick={() => setTheme(HA_THEME_ID)}
             className={`flex h-12 flex-1 cursor-pointer items-center gap-2 rounded-full px-5 text-base font-semibold ${
-              themeId === HA_THEME_ID ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'bg-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
+              themeId === HA_THEME_ID
+                ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'
+                : 'bg-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
             }`}
           >
             {themeId === HA_THEME_ID && <Check size={16} />}

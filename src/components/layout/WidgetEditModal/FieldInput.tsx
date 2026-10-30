@@ -11,12 +11,12 @@ export function FieldInput({
 }) {
   return (
     <div>
-      <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>
+      <label className='mb-2 block text-sm font-semibold text-[var(--ds-ink-muted)]'>{label}</label>
       <input
         type={type}
         value={value ?? ''}
         onChange={e => onChange(type === 'number' ? Number(e.target.value) : e.target.value)}
-        className='w-full px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)] outline-none focus:border-[var(--ds-accent)]'
+        className='h-12 w-full rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-4 text-base text-[var(--ds-ink)] outline-none focus:outline-2 focus:outline-[var(--ds-accent)]'
       />
     </div>
   );

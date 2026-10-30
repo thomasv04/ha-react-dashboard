@@ -81,7 +81,7 @@ export function CardLayoutTab({ widgetId }: CardLayoutTabProps) {
                   )}
                 </div>
                 <div className='text-sm font-medium text-[var(--ds-ink)]'>{t(disp.label)}</div>
-                {disp.description && <div className='text-[11px] text-[var(--ds-ink-muted)] mt-1'>{t(disp.description)}</div>}
+                {disp.description && <div className='text-sm text-[var(--ds-ink-muted)] mt-1'>{t(disp.description)}</div>}
               </button>
             ))}
           </div>
@@ -95,7 +95,7 @@ export function CardLayoutTab({ widgetId }: CardLayoutTabProps) {
         <div className='flex gap-3'>
           {/* Slider vertical (hauteur) à gauche */}
           <div className='flex flex-col items-center gap-1'>
-            <span className='text-[10px] text-[var(--ds-ink-muted)]'>{widget.h}</span>
+            <span className='text-xs text-[var(--ds-ink-muted)]'>{widget.h}</span>
             <input
               type='range'
               min={minSize.h}
@@ -132,7 +132,7 @@ export function CardLayoutTab({ widgetId }: CardLayoutTabProps) {
                   [&::-webkit-slider-thumb]:rounded-full
                   [&::-webkit-slider-thumb]:bg-[var(--ds-accent)]'
               />
-              <span className='text-[10px] text-[var(--ds-ink-muted)] min-w-[2ch]'>{widget.w}</span>
+              <span className='text-xs text-[var(--ds-ink-muted)] min-w-[2ch]'>{widget.w}</span>
             </div>
 
             {/* Grille miniature */}
@@ -142,7 +142,7 @@ export function CardLayoutTab({ widgetId }: CardLayoutTabProps) {
       </div>
 
       {/* ── Info taille min ──────────────────────────────────── */}
-      <div className='text-[11px] text-[var(--ds-ink-muted)]'>{t('layout.minSize', { w: minSize.w, h: minSize.h })}</div>
+      <div className='text-sm text-[var(--ds-ink-muted)]'>{t('layout.minSize', { w: minSize.w, h: minSize.h })}</div>
     </div>
   );
 }
@@ -153,7 +153,7 @@ function GridPreview({ cols, widgetW, widgetH }: { cols: number; widgetW: number
 
   return (
     <div
-      className='grid gap-1 p-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)]'
+      className='grid gap-1 p-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)]'
       style={{
         gridTemplateColumns: `repeat(${cols}, 1fr)`,
         gridAutoRows: '12px',
@@ -171,7 +171,7 @@ function GridPreview({ cols, widgetW, widgetH }: { cols: number; widgetW: number
               'rounded-sm transition-colors',
               isWidget
                 ? 'bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
-                : 'bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)]'
+                : 'bg-[var(--ds-surface-3)]'
             )}
           />
         );
