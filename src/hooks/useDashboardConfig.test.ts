@@ -1,6 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { useDashboardConfig, wallPanelWidgetConfigsOf } from './useDashboardConfig';
+import { resetConfigLoadState, useDashboardConfig, wallPanelWidgetConfigsOf } from './useDashboardConfig';
 import type { DashboardConfigV2 } from '@/context/DashboardLayoutContext';
 
 // ── Mocks ───────────────────────────────────────────────────────────────────────
@@ -21,6 +21,7 @@ vi.mock('@/lib/api-base', () => ({
 beforeEach(() => {
   vi.restoreAllMocks();
   mockAddToast.mockClear();
+  resetConfigLoadState();
   // Le hook démarre désormais depuis un cache local : sans nettoyage, un test
   // hériterait de la config écrite par le précédent.
   localStorage.clear();
@@ -264,6 +265,18 @@ describe('useDashboardConfig', () => {
     expect(result.current.error).toBeInstanceOf(Error);
     expect(result.current.error?.message).toBe('Network error');
     expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'dashboard.offlineTitle' }));
+  });
+
+  it('plusieurs instances partagent une seule requête et une seule alerte', async () => {
+    mockFetchReject(new Error('Network error'));
+
+    const { result } = renderHook(() => [useDashboardConfig(), useDashboardConfig(), useDashboardConfig()]);
+    await waitFor(() => expect(result.current.every(c => !c.isLoading)).toBe(true));
+
+    // Le dashboard, la barre d'édition et la veille montent tous le hook : sans
+    // partage, chacun faisait son GET et affichait son propre « Hors ligne ».
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(mockAddToast.mock.calls.filter(([toast]) => toast.title === 'dashboard.offlineTitle')).toHaveLength(1);
   });
 
   // ── Non-régression : « des fois ça reste bloqué » ─────────────────────────

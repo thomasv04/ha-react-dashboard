@@ -27,6 +27,44 @@ const CACHE_KEY = 'ha-dashboard-config-cache';
  */
 let serverRevision = 0;
 
+/**
+ * Chargement en cours, partagé par tous les appelants du hook.
+ *
+ * Le hook est monté par le dashboard, la barre d'édition, la veille, les
+ * réglages… : chacun refaisait sa propre requête — six GET identiques au
+ * démarrage — et, serveur injoignable, sa propre alerte. Les appels qui se
+ * chevauchent rejoignent la même requête.
+ */
+let inflight: Promise<{ data: unknown; revision: number }> | null = null;
+
+function fetchConfig(): Promise<{ data: unknown; revision: number }> {
+  inflight ??= (async () => {
+    // `AbortController` plutôt qu'un `fetch` nu : sans délai maximal, une
+    // connexion qui pend (wifi faible, serveur qui ne répond plus) laissait la
+    // promesse en suspens — l'écran de chargement ne partait jamais.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    try {
+      const res = await apiFetch('/api/config', { signal: controller.signal });
+      const data: unknown = await res.json();
+      return { data, revision: Number(res.headers.get('X-Config-Revision') ?? 0) };
+    } finally {
+      clearTimeout(timer);
+      inflight = null;
+    }
+  })();
+  return inflight;
+}
+
+/** Une alerte par page et par sorte : les instances du hook ne se la répètent pas. */
+const toastsShown = new Set<'offline' | 'repaired'>();
+
+/** Remet à zéro ce que les instances se partagent — pour les tests, qui n'ont pas de nouvelle page à chaque cas. */
+export function resetConfigLoadState() {
+  inflight = null;
+  toastsShown.clear();
+}
+
 /** Étape de chargement, consommée par l'écran de démarrage. */
 export type ConfigStatus =
   | 'loading' // premier chargement, rien à afficher
@@ -245,17 +283,12 @@ export function useDashboardConfig() {
     };
 
     const load = async () => {
-      // `AbortSignal.timeout` plutôt qu'un `fetch` nu : sans délai maximal, une
-      // connexion qui pend (wifi faible, serveur qui ne répond plus) laissait la
-      // promesse en suspens — l'écran de chargement ne partait jamais.
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
       try {
-        const res = await apiFetch('/api/config', { signal: controller.signal });
-        const data: unknown = await res.json();
+        const { data, revision } = await fetchConfig();
         if (cancelled) return;
 
-        serverRevision = Number(res.headers.get('X-Config-Revision') ?? 0);
+        serverRevision = revision;
+        toastsShown.delete('offline');
 
         if (data && typeof data === 'object' && 'message' in data) {
           // Pas encore de config côté serveur : dashboard vierge, pas une erreur.
@@ -264,7 +297,8 @@ export function useDashboardConfig() {
           const { config, dropped } = sanitizeConfig(migrateConfig(data));
           apply(config);
           setStatus('ready');
-          if (dropped > 0) {
+          if (dropped > 0 && !toastsShown.has('repaired')) {
+            toastsShown.add('repaired');
             console.warn(`[config] ${dropped} élément(s) invalide(s) écarté(s)`);
             addToast({ title: t('dashboard.repairedTitle'), description: t('dashboard.repairedDescription'), sound: false });
           }
@@ -281,15 +315,14 @@ export function useDashboardConfig() {
 
         // Un seul toast, au premier échec, et seulement sans cache — sinon le
         // dashboard est utilisable et l'alerte serait du bruit.
-        if (attempt === 0 && !hadCache) {
+        if (attempt === 0 && !hadCache && !toastsShown.has('offline')) {
+          toastsShown.add('offline');
           addToast({ title: t('dashboard.offlineTitle'), description: t('dashboard.offlineDescription'), sound: false });
         }
 
         const delay = RETRY_DELAYS_MS[Math.min(attempt, RETRY_DELAYS_MS.length - 1)];
         attempt += 1;
         retryTimer = setTimeout(load, delay);
-      } finally {
-        clearTimeout(timer);
       }
     };
 
