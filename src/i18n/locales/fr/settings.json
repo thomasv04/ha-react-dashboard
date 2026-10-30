@@ -139,5 +139,6 @@
     "broadcastConfirmBtn": "Confirmer",
     "broadcastDone": "Appliqué à {value} appareil(s).",
     "broadcastError": "Échec — réservé aux administrateurs."
-  }
+  },
+  "wallpanel": "Écran de veille"
 }

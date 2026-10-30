@@ -139,5 +139,6 @@
     "broadcastConfirmBtn": "Confirm",
     "broadcastDone": "Applied to {value} device(s).",
     "broadcastError": "Failed — administrators only."
-  }
+  },
+  "wallpanel": "Screensaver"
 }

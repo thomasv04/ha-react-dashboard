@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@hakit/core';
-import { Compass, Layers, LayoutGrid, Monitor, Pin, PinOff, Settings, Sparkles, X, type LucideIcon } from 'lucide-react';
+import { Compass, Layers, LayoutGrid, Pin, PinOff, Settings, Sparkles, X, type LucideIcon } from 'lucide-react';
 import { usePages } from '@/context/PageContext';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { usePanel } from '@/context/PanelContext';
@@ -10,14 +10,13 @@ import { resolveIcon, useIconCatalog } from '@/lib/lucide-icon-map';
 import { DURATION_FAST } from '@/lib/motion-tokens';
 import { START_TOUR_EVENT } from '@/components/onboarding/TourOverlay';
 import { SHOW_RELEASE_NOTES_EVENT } from '@/components/onboarding/ReleaseNotesModal';
-import { WallPanelConfigModal } from '@/components/wallpanel/WallPanelConfigModal';
 import { CustomPanelEditorModal } from '@/components/custom-panels';
 import { ThemeControlsModal } from '@/components/layout/ThemeControlsModal';
 import { cn } from '@/lib/utils';
 import { pageIcon, sortPages } from './page-icon';
 import { useI18n } from '@/i18n';
 
-type Dialog = 'settings' | 'screensaver' | 'panels' | null;
+type Dialog = 'settings' | 'panels' | null;
 
 /**
  * Lanceur d'apps : une feuille qui recouvre l'écran, les pages en favoris à
@@ -123,11 +122,6 @@ export function Launcher({ open, onClose }: { open: boolean; onClose: () => void
                     {t('layout.shell.settings')}
                   </LauncherItem>
                   {isAdmin && (
-                    <LauncherItem Icon={Monitor} color='var(--ds-app-photo)' onClick={run(() => setDialog('screensaver'))} tour='wallpanel'>
-                      {t('layout.shell.screensaver')}
-                    </LauncherItem>
-                  )}
-                  {isAdmin && (
                     <LauncherItem Icon={Layers} color='var(--ds-app-music)' onClick={run(() => setDialog('panels'))} tour='panels-button'>
                       {t('layout.shell.customPanels')}
                     </LauncherItem>
@@ -163,7 +157,6 @@ export function Launcher({ open, onClose }: { open: boolean; onClose: () => void
       </AnimatePresence>
 
       <ThemeControlsModal open={dialog === 'settings'} onClose={() => setDialog(null)} />
-      <AnimatePresence>{dialog === 'screensaver' && <WallPanelConfigModal onClose={() => setDialog(null)} />}</AnimatePresence>
       <AnimatePresence>{dialog === 'panels' && <CustomPanelEditorModal onClose={() => setDialog(null)} />}</AnimatePresence>
     </>
   );

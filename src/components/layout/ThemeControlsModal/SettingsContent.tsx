@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { Palette, Zap, Languages, Server, LayoutGrid, Volume2, Globe, X, type LucideIcon } from 'lucide-react';
+import { useState, type MutableRefObject } from 'react';
+import { Palette, Zap, Languages, Server, LayoutGrid, Volume2, Globe, Monitor, X, type LucideIcon } from 'lucide-react';
+import { useUser } from '@hakit/core';
+import { WallPanelSettings } from '@/components/wallpanel/WallPanelSettings';
 import { AppearanceSection } from './AppearanceSection';
 import { PerformanceSection } from './PerformanceSection';
 import { LanguageSection } from './LanguageSection';
@@ -11,11 +13,12 @@ import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { isPanelMode } from '@/lib/api-base';
 
-type SettingsSection = 'appearance' | 'layout' | 'performance' | 'sound' | 'regional' | 'language' | 'system';
+type SettingsSection = 'appearance' | 'wallpanel' | 'layout' | 'performance' | 'sound' | 'regional' | 'language' | 'system';
 
 /** Couleur de la pastille de chaque section, comme celles du lanceur. */
 const SECTION_COLORS: Record<SettingsSection, string> = {
   appearance: '#2f80ed',
+  wallpanel: '#c04fd6',
   layout: '#2b9fb0',
   performance: '#ee8a2c',
   sound: '#e8466b',
@@ -24,12 +27,20 @@ const SECTION_COLORS: Record<SettingsSection, string> = {
   system: '#4a5a78',
 };
 
-export function SettingsContent({ onClose }: { onClose: () => void }) {
+export function SettingsContent({ onClose, guard }: { onClose: () => void; guard: MutableRefObject<(() => boolean) | null> }) {
   const { t } = useI18n();
+  const isAdmin = !!useUser()?.is_admin;
   const [section, setSection] = useState<SettingsSection>('appearance');
+  // L'écran de veille garde son brouillon quand on change de section : il reste monté une fois ouvert.
+  const [wallpanelSeen, setWallpanelSeen] = useState(false);
+  const pick = (id: SettingsSection) => {
+    setSection(id);
+    if (id === 'wallpanel') setWallpanelSeen(true);
+  };
 
   const NAV_ITEMS: { id: SettingsSection; label: string; Icon: LucideIcon }[] = [
     { id: 'appearance', label: t('settings.appearance'), Icon: Palette },
+    ...(isAdmin ? [{ id: 'wallpanel' as const, label: t('settings.wallpanel'), Icon: Monitor }] : []),
     // Il n'y reste que le plein écran, qui n'a de sens qu'en carte Lovelace.
     ...(isPanelMode() ? [{ id: 'layout' as const, label: t('settings.layout'), Icon: LayoutGrid }] : []),
     { id: 'performance', label: t('settings.performance'), Icon: Zap },
@@ -42,17 +53,17 @@ export function SettingsContent({ onClose }: { onClose: () => void }) {
   const current = NAV_ITEMS.find(item => item.id === section) ?? NAV_ITEMS[0];
 
   return (
-    <div className='flex h-full gap-3 p-3'>
+    <div className='flex h-full gap-4 p-4'>
       {/* ── Liste des réglages ── */}
       <nav
         aria-label={t('settings.title')}
-        className='flex w-[260px] shrink-0 flex-col gap-1 overflow-y-auto rounded-[var(--ds-radius-xl)] bg-[var(--ds-surface-1)] p-3'
+        className='flex w-[300px] shrink-0 flex-col gap-1 overflow-y-auto rounded-[var(--ds-radius-xl)] bg-[var(--ds-surface-1)] p-3'
       >
         <h2 className='px-3 pb-2 pt-2 text-lg font-semibold text-[var(--ds-ink-muted)]'>{t('settings.title')}</h2>
         {NAV_ITEMS.map(({ id, label, Icon }) => (
           <button
             key={id}
-            onClick={() => setSection(id)}
+            onClick={() => pick(id)}
             aria-current={section === id ? 'page' : undefined}
             className={cn(
               'flex h-14 w-full items-center gap-3 rounded-[var(--ds-radius-lg)] px-3 text-left text-[17px]',
@@ -73,7 +84,7 @@ export function SettingsContent({ onClose }: { onClose: () => void }) {
       </nav>
 
       {/* ── Contenu ── */}
-      <div className='flex min-w-0 flex-1 flex-col'>
+      <div className='mx-auto flex min-w-0 w-full max-w-4xl flex-1 flex-col'>
         <div className='flex shrink-0 items-center justify-between px-3 pb-3 pt-2'>
           <h2 className='text-[32px] font-semibold'>{current.label}</h2>
           <button
@@ -88,6 +99,11 @@ export function SettingsContent({ onClose }: { onClose: () => void }) {
 
         <div className='min-h-0 flex-1 overflow-y-auto pr-1'>
           {section === 'appearance' && <AppearanceSection />}
+          {wallpanelSeen && isAdmin && (
+            <div className={cn('h-full', section !== 'wallpanel' && 'hidden')}>
+              <WallPanelSettings onClose={onClose} guard={guard} />
+            </div>
+          )}
           {section === 'layout' && <LayoutSection />}
           {section === 'performance' && <PerformanceSection />}
           {section === 'sound' && <SoundSection />}
