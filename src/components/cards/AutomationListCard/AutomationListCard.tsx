@@ -89,7 +89,7 @@ export function AutomationListCard() {
 
   if (items.length === 0) {
     return (
-      <div className='gc h-full p-4'>
+      <div className='rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] text-[var(--ds-ink)] h-full p-4'>
         <CardPlaceholder icon={Workflow} text={t('widgets.automation_list.empty')} hint={t('widgets.automation_list.emptyHint')} />
       </div>
     );

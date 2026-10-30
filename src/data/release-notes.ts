@@ -27,6 +27,38 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '4.0.0',
+    date: '2026-10-30',
+    title: 'Un nouveau visage, façon Echo Show',
+    items: [
+      {
+        text: 'Tout le dashboard est redessiné : aplats sombres ou clairs, grandes tuiles arrondies, rail de pages à gauche, et un lanceur — le bouton bleu en haut — qui rassemble pages favorites, panneaux, réglages et écran de veille. Seuls les thèmes Sombre et Clair restent ; les autres et les fonds animés disparaissent.',
+        tour: 'basics',
+      },
+      {
+        text: "Les pages se composent de panneaux, côte à côte : chacun a son titre, sa largeur et ses tuiles, qui se rangent seules sans laisser de trou. ⚙ règle un panneau — il peut se placer sous le précédent, pour une colonne date, météo et musique —, ✎ ne modifie que lui. Une seule disposition pour tous les écrans : sur un téléphone, les panneaux s'empilent. Votre disposition actuelle devient un premier panneau, à découper comme vous voulez.",
+        tour: 'widgets',
+      },
+      {
+        text: "En édition, une tuile se glisse d'un panneau à l'autre au doigt comme à la souris, et se redimensionne par son coin. L'écart, le rayon et la hauteur des rangées ne se règlent plus : la trame est fixe.",
+      },
+      {
+        text: "Les widgets suivent le même dessin : thermostat à grand arc, tuiles de lumière, lecteur, caméra, alarme, énergie solaire… L'horloge gagne un affichage « Grande date ».",
+      },
+      {
+        text: "Un appui long ouvre le panneau d'appareil, une feuille sur la droite : grand interrupteur, luminosité, couleur, historique. Les panneaux personnalisés s'ouvrent dans la même feuille.",
+      },
+      {
+        text: "L'écran de veille affiche l'heure comme l'Echo Show : grande horloge avec météo et date, ou cadre photo, au choix dans ses réglages. Les flèches font défiler les photos.",
+        tour: 'appearance',
+      },
+      {
+        text: "Le plan prend le même habillage : boutons ronds, sélecteur d'étages, et la puce verte pour revenir à toute la maison.",
+        tour: 'floorplan',
+      },
+    ],
+  },
+  {
     version: '2.4.0',
     date: '2026-09-25',
     title: 'La maison, en plan et en 3D',

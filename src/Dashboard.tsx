@@ -22,7 +22,6 @@ import { WallPanelProvider, useScreensaverPlan, useWallPanel } from '@/context/W
 import { WallPanelOverlay } from '@/components/wallpanel/WallPanelOverlay';
 import { useIdleDetector } from '@/hooks/useIdleDetector';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
-import { useIsMobile } from '@/hooks/useIsMobile';
 
 import { EditButton } from '@/components/dashboard/EditButton';
 import { ActivePanel } from '@/components/dashboard/ActivePanel';
@@ -123,9 +122,6 @@ function DashboardContent() {
   const { layout } = useDashboardLayout();
   const { currentPage } = usePages();
   usePageRouting();
-  const isMobile = useIsMobile(640);
-  const isCompact = useIsMobile(768) && !isMobile;
-  // Use lg layout as canonical list of widget ids (all breakpoints share same ids)
   const widgets = layoutWidgets(layout);
   const isFloorplan = currentPage?.type === 'floorplan';
   const [launcherOpen, setLauncherOpen] = useState(false);
@@ -133,7 +129,7 @@ function DashboardContent() {
 
   return (
     <LayoutGroup>
-      <div className='min-h-screen w-full text-white overflow-x-hidden'>
+      <div className='min-h-screen w-full overflow-x-hidden text-[var(--ds-ink)]'>
         <TopBar onOpenLauncher={() => setLauncherOpen(true)} />
         <NavRail />
         <Launcher open={launcherOpen} onClose={closeLauncher} />
@@ -160,7 +156,7 @@ function DashboardContent() {
             </WidgetErrorBoundary>
           ) : (
             <>
-              <DashboardGrid className={isMobile ? 'mobile-layout' : isCompact ? 'compact-layout' : undefined} />
+              <DashboardGrid />
 
               {widgets.length === 0 && <DashboardEmptyState />}
             </>

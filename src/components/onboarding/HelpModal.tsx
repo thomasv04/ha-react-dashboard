@@ -28,21 +28,24 @@ function DocSection({ id, Icon, tint, children }: { id: string; Icon: typeof Rad
   const [open, setOpen] = useState(false);
 
   return (
-    <div className='rounded-xl bg-white/[0.04] border border-white/8 p-4'>
+    <div className='rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] p-4'>
       <button
         onClick={() => setOpen(v => !v)}
         data-testid={`help-${id}-toggle`}
         aria-expanded={open}
         className='flex items-start gap-3 w-full text-left'
       >
-        <div className={`p-2 rounded-lg flex-shrink-0 ${tint}`}>
+        <div className={`p-2 rounded-[var(--ds-radius-sm)] flex-shrink-0 ${tint}`}>
           <Icon size={15} />
         </div>
         <div className='min-w-0 flex-1'>
-          <h3 className='text-white text-sm font-semibold'>{t(`help.sections.${id}.title`)}</h3>
-          <p className='text-white/45 text-xs mt-1 leading-relaxed'>{t(`help.sections.${id}.body`)}</p>
+          <h3 className='text-[var(--ds-ink)] text-sm font-semibold'>{t(`help.sections.${id}.title`)}</h3>
+          <p className='text-[var(--ds-ink-muted)] text-xs mt-1 leading-relaxed'>{t(`help.sections.${id}.body`)}</p>
         </div>
-        <ChevronRight size={15} className={`text-white/30 flex-shrink-0 mt-2 transition-transform ${open ? 'rotate-90' : ''}`} />
+        <ChevronRight
+          size={15}
+          className={`text-[var(--ds-ink-muted)] flex-shrink-0 mt-2 transition-transform ${open ? 'rotate-90' : ''}`}
+        />
       </button>
       {open && <div className='mt-4'>{children}</div>}
     </div>
@@ -79,18 +82,18 @@ export function HelpModal({ onClose }: { onClose: () => void }) {
       >
         <div
           data-testid='help-modal'
-          className='gc-overlay pointer-events-auto w-full max-w-lg rounded-2xl overflow-hidden flex flex-col'
+          className='bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-sheet)] pointer-events-auto w-full max-w-lg rounded-[var(--ds-radius-lg)] overflow-hidden flex flex-col'
           style={{ maxHeight: 'min(85vh, 660px)' }}
         >
-          <div className='flex items-center justify-between px-6 pt-5 pb-4 border-b border-white/8 flex-shrink-0'>
+          <div className='flex items-center justify-between px-6 pt-5 pb-4 border-b border-[var(--ds-surface-3)] flex-shrink-0'>
             <div>
-              <h2 className='text-white font-semibold text-base'>{t('help.title')}</h2>
-              <p className='text-white/40 text-xs mt-0.5'>{t('help.subtitle')}</p>
+              <h2 className='text-[var(--ds-ink)] font-semibold text-base'>{t('help.title')}</h2>
+              <p className='text-[var(--ds-ink-muted)] text-xs mt-0.5'>{t('help.subtitle')}</p>
             </div>
             <button
               onClick={onClose}
               aria-label={t('common.close')}
-              className='p-1.5 rounded-lg text-white/35 hover:text-white/70 hover:bg-white/10 transition-colors'
+              className='p-1.5 rounded-[var(--ds-radius-sm)] text-[var(--ds-ink-muted)] transition-colors'
             >
               <X size={16} />
             </button>
@@ -98,18 +101,18 @@ export function HelpModal({ onClose }: { onClose: () => void }) {
 
           <div className='flex-1 overflow-y-auto p-4 flex flex-col gap-2'>
             {TOUR_SECTIONS.map(({ id, Icon }) => (
-              <div key={id} className='rounded-xl bg-white/[0.04] border border-white/8 p-4'>
+              <div key={id} className='rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] p-4'>
                 <div className='flex items-start gap-3'>
-                  <div className='p-2 rounded-lg bg-blue-500/15 text-blue-300 flex-shrink-0'>
+                  <div className='p-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] flex-shrink-0'>
                     <Icon size={15} />
                   </div>
                   <div className='min-w-0 flex-1'>
-                    <h3 className='text-white text-sm font-semibold'>{t(`help.sections.${id}.title`)}</h3>
-                    <p className='text-white/45 text-xs mt-1 leading-relaxed'>{t(`help.sections.${id}.body`)}</p>
+                    <h3 className='text-[var(--ds-ink)] text-sm font-semibold'>{t(`help.sections.${id}.title`)}</h3>
+                    <p className='text-[var(--ds-ink-muted)] text-xs mt-1 leading-relaxed'>{t(`help.sections.${id}.body`)}</p>
                     <button
                       onClick={() => launch(id)}
                       data-testid={`help-launch-${id}`}
-                      className='mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-300 hover:bg-blue-500/30 transition-colors text-xs font-semibold'
+                      className='mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)] transition-colors text-xs font-semibold'
                     >
                       <Play size={11} /> {t('help.launch')}
                     </button>
@@ -124,7 +127,7 @@ export function HelpModal({ onClose }: { onClose: () => void }) {
             </DocSection>
 
             {/* ── Événements Home Assistant ── */}
-            <DocSection id='events' Icon={Radio} tint='bg-violet-500/15 text-violet-300'>
+            <DocSection id='events' Icon={Radio} tint='bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'>
               <EventsDoc />
             </DocSection>
 
@@ -135,16 +138,16 @@ export function HelpModal({ onClose }: { onClose: () => void }) {
                 showReleaseNotes();
               }}
               data-testid='help-release-notes'
-              className='rounded-xl bg-white/[0.04] border border-white/8 p-4 flex items-start gap-3 text-left hover:bg-white/[0.07] transition-colors'
+              className='rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] p-4 flex items-start gap-3 text-left transition-colors'
             >
-              <div className='p-2 rounded-lg bg-amber-500/15 text-amber-300 flex-shrink-0'>
+              <div className='p-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] text-[var(--ds-warm-light)] flex-shrink-0'>
                 <Sparkles size={15} />
               </div>
               <div className='min-w-0 flex-1'>
-                <h3 className='text-white text-sm font-semibold'>{t('help.sections.releaseNotes.title')}</h3>
-                <p className='text-white/45 text-xs mt-1 leading-relaxed'>{t('help.sections.releaseNotes.body')}</p>
+                <h3 className='text-[var(--ds-ink)] text-sm font-semibold'>{t('help.sections.releaseNotes.title')}</h3>
+                <p className='text-[var(--ds-ink-muted)] text-xs mt-1 leading-relaxed'>{t('help.sections.releaseNotes.body')}</p>
               </div>
-              <ChevronRight size={15} className='text-white/30 flex-shrink-0 mt-2' />
+              <ChevronRight size={15} className='text-[var(--ds-ink-muted)] flex-shrink-0 mt-2' />
             </button>
           </div>
         </div>

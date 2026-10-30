@@ -27,13 +27,13 @@ interface State {
 function ErrorFallback({ label, messageKey, onRetry }: { label?: string; messageKey: string; onRetry: () => void }) {
   const { t } = useI18n();
   return (
-    <div className='h-full flex flex-col items-center justify-center gap-2 rounded-2xl bg-white/5 border border-white/10 p-4 text-center'>
-      <AlertTriangle size={24} className='text-red-400/60' />
-      <p className='text-white/40 text-xs font-medium'>{t(messageKey)}</p>
-      {label && <p className='text-white/20 text-[10px]'>{label}</p>}
+    <div className='h-full flex flex-col items-center justify-center gap-2 rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] p-4 text-center'>
+      <AlertTriangle size={24} className='text-[var(--ds-alert)]' />
+      <p className='text-[var(--ds-ink-muted)] text-xs font-medium'>{t(messageKey)}</p>
+      {label && <p className='text-[var(--ds-ink-muted)] text-[10px]'>{label}</p>}
       <button
         onClick={onRetry}
-        className='mt-1 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/8 border border-white/12 text-white/60 hover:bg-white/12 hover:text-white transition-colors text-[11px] font-semibold'
+        className='mt-1 flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)] transition-colors text-[11px] font-semibold'
       >
         <RotateCcw size={11} /> {t('common.retry')}
       </button>

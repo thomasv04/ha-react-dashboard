@@ -281,9 +281,7 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--dash-status-error', tokens.statusError);
     root.style.setProperty('--dash-status-info', tokens.statusInfo);
 
-    // A light-surface theme needs the hardcoded `text-white/*` utilities
-    // remapped to dark text, otherwise the cards turn white and the text stays
-    // invisible.
+    // `theme-light-surface` : les barres de défilement claires (index.css).
     root.classList.toggle('theme-light-surface', !!tokens.light);
     root.dataset.theme = tokens.light ? 'light' : 'dark';
   }, [tokens]);

@@ -142,7 +142,7 @@ export function CablePopover({
     >
       {sources.length > 0 && (
         <div className='flex flex-col gap-1'>
-          <span className='px-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/45'>
+          <span className='px-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--ds-ink-muted)]'>
             {t('layout.floorplan.cableEnergySources')}
           </span>
           <div className='flex flex-wrap gap-1'>
@@ -154,10 +154,10 @@ export function CablePopover({
                   onClick={() => onChange({ ...cable, entityId: source.entityId, kind: source.kind })}
                   aria-pressed={cable.entityId === source.entityId}
                   className={cn(
-                    'flex items-center gap-1 max-w-full px-2 py-1 rounded-lg text-[11px] border transition-colors',
+                    'flex items-center gap-1 max-w-full px-2 py-1 rounded-[var(--ds-radius-sm)] text-[11px] border transition-colors',
                     cable.entityId === source.entityId
-                      ? 'bg-white/12 border-white/30 text-white'
-                      : 'bg-white/5 border-white/10 text-white/70 hover:text-white'
+                      ? 'bg-[var(--ds-surface-3)] border-[var(--ds-surface-3)] text-[var(--ds-ink)]'
+                      : 'bg-[var(--ds-surface-2)] border-[var(--ds-surface-3)] text-[var(--ds-ink)]'
                   )}
                 >
                   <Icon size={11} className='shrink-0' style={{ color: CABLE_COLORS[source.kind] }} />
@@ -189,8 +189,10 @@ export function CablePopover({
           onClick={() => onChange({ ...cable, invert: !cable.invert })}
           aria-pressed={!!cable.invert}
           className={cn(
-            'flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs border transition-colors',
-            cable.invert ? 'bg-white/12 border-white/30 text-white' : 'bg-white/5 border-white/10 text-white/70 hover:text-white'
+            'flex items-center gap-1.5 px-2 py-1.5 rounded-[var(--ds-radius-sm)] text-xs border transition-colors',
+            cable.invert
+              ? 'bg-[var(--ds-surface-3)] border-[var(--ds-surface-3)] text-[var(--ds-ink)]'
+              : 'bg-[var(--ds-surface-2)] border-[var(--ds-surface-3)] text-[var(--ds-ink)]'
           )}
         >
           <ArrowLeftRight size={12} /> {t('layout.floorplan.cableInvert')}
@@ -198,7 +200,7 @@ export function CablePopover({
         <button
           onClick={onAdd}
           disabled={!cable.entityId}
-          className='ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-500/80 text-white hover:bg-blue-500 disabled:opacity-40'
+          className='ml-auto px-3 py-1.5 rounded-[var(--ds-radius-sm)] text-xs font-medium bg-[var(--ds-accent)] text-white disabled:opacity-40'
         >
           {t('common.add')}
         </button>
@@ -272,7 +274,7 @@ export function SolarPopover({
       <button
         onClick={onAdd}
         disabled={!field.entityId}
-        className='ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-500/80 text-white hover:bg-blue-500 disabled:opacity-40'
+        className='ml-auto px-3 py-1.5 rounded-[var(--ds-radius-sm)] text-xs font-medium bg-[var(--ds-accent)] text-white disabled:opacity-40'
       >
         {t('common.add')}
       </button>

@@ -169,17 +169,17 @@ export function FloorplanItem({
             className={cn(
               'absolute -inset-1 cursor-grab active:cursor-grabbing touch-none outline-2 outline-offset-2',
               sized ? 'rounded-[calc(var(--ds-radius-lg)+4px)]' : 'rounded-full',
-              selected ? 'outline-blue-400' : 'outline-dashed outline-white/35'
+              selected ? 'outline-[var(--ds-accent)]' : 'outline-dashed outline-white/35'
             )}
           />
 
           {selected && (
-            <div className='absolute left-1/2 -translate-x-1/2 bottom-full mb-2.5 flex items-center gap-1 p-1 rounded-xl gc-overlay'>
+            <div className='absolute left-1/2 -translate-x-1/2 bottom-full mb-2.5 flex items-center gap-1 p-1 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-sheet)]'>
               <button
                 onClick={() => setEditingWidgetId(widget.id)}
                 title={t('layout.configureWidget')}
                 aria-label={t('layout.configureWidget')}
-                className='p-1.5 rounded-lg text-blue-300 hover:bg-blue-500/25 transition-colors'
+                className='p-1.5 rounded-[var(--ds-radius-sm)] text-[var(--ds-accent)] transition-colors'
               >
                 <Settings size={13} />
               </button>
@@ -188,7 +188,7 @@ export function FloorplanItem({
                   onClick={onDock}
                   title={t('layout.floorplan.columnDock')}
                   aria-label={t('layout.floorplan.columnDock')}
-                  className='p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors'
+                  className='p-1.5 rounded-[var(--ds-radius-sm)] text-[var(--ds-ink)] transition-colors'
                 >
                   <PanelLeft size={13} />
                 </button>
@@ -197,7 +197,7 @@ export function FloorplanItem({
                 onClick={() => removeWidget(widget.id)}
                 title={t('layout.removeWidget')}
                 aria-label={t('layout.removeWidget')}
-                className='p-1.5 rounded-lg text-red-300 hover:bg-red-500/25 transition-colors'
+                className='p-1.5 rounded-[var(--ds-radius-sm)] text-[var(--ds-alert)] transition-colors'
               >
                 <Trash2 size={13} />
               </button>
@@ -208,7 +208,7 @@ export function FloorplanItem({
             <div
               onPointerDown={e => startGesture(e, resizePos)}
               title={t('layout.floorplan.resize')}
-              className='absolute -right-2 -bottom-2 w-4 h-4 rounded-full bg-blue-400 border-2 border-white/80 cursor-se-resize touch-none shadow'
+              className='absolute -right-2 -bottom-2 w-4 h-4 rounded-full bg-[var(--ds-accent)] border-2 border-[var(--ds-surface-3)] cursor-se-resize touch-none shadow text-white'
             />
           )}
         </>

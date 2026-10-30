@@ -83,7 +83,7 @@ export function TodoCard() {
 
   if (!entityId) {
     return (
-      <div ref={cardRef} className='gc h-full p-4'>
+      <div ref={cardRef} className='rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] text-[var(--ds-ink)] h-full p-4'>
         <CardPlaceholder icon={ListChecks} text={t('widgets.todo.notFound')} hint={t('widgets.todo.notFoundHint')} compact={size.compact} />
       </div>
     );

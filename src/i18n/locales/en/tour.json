@@ -8,64 +8,56 @@
   "done": "Got it",
   "steps": {
     "pages": {
-      "title": "Your pages",
-      "body": "Each tab is a separate page. Add as many as you need — one per room, one per floor, whatever fits."
+      "title": "The rail",
+      "body": "On the left: home in green, then your pages and pinned panels. One page per room or per floor, whatever fits."
     },
     "edit": {
       "title": "Edit mode",
-      "body": "The pencil unlocks the grid: drag, resize, configure or delete your widgets. Nothing moves until you turn it on."
+      "body": "The pencil opens the whole page for editing. Nothing moves while it is off."
     },
     "add": {
       "title": "Add a widget",
-      "body": "Open the catalogue and pick a card: light, camera, sensor, thermostat… then choose the entity it controls."
+      "body": "Open the catalog and pick a card — light, camera, sensor, thermostat… — then the entity it controls."
     },
     "addPage": {
       "title": "A new page",
-      "body": "Add a page to split your dashboard by room or by floor. Each page keeps its own grid."
+      "body": "Add a page to split your dashboard by room or floor. Each page has its own panels."
     },
     "save": {
       "title": "Save",
-      "body": "Nothing is persisted until you save. Cancel with the cross to drop every change made since entering edit mode."
-    },
-    "dock": {
-      "title": "The dock",
-      "body": "The bottom bar opens your panels. Its gear icon lets you reorder them or add new ones."
+      "body": "Nothing is kept until you save. The cross leaves edit mode; Ctrl+Z undoes one step at a time."
     },
     "settings": {
-      "title": "Settings",
-      "body": "Theme, layout, language, backup. Everything that changes the look of the dashboard lives here."
+      "title": "The launcher",
+      "body": "The blue button opens the launcher: favourite pages, panels, settings, screensaver, guided tour."
     },
     "widgetsAdd": {
-      "title": "The catalogue",
-      "body": "Widgets are grouped by category. Pick one, then select the Home Assistant entity it should control."
+      "title": "The catalog",
+      "body": "Widgets are grouped by category. Pick one, then the Home Assistant entity it should control. A panel's “+” drops it right there."
     },
     "widgetsResize": {
-      "title": "Arrange the grid",
-      "body": "In edit mode each card can be dragged, and resized from its bottom-right corner. Each screen size keeps its own layout."
+      "title": "Arranging tiles",
+      "body": "In edit mode, drag a tile from one panel to another — finger or mouse — and resize it from its corner. One layout for every screen: on a phone, panels stack."
     },
     "widgetsSave": {
       "title": "Keep your work",
-      "body": "Save once the layout suits you. Your dashboard is stored on the server, so every device sees it."
+      "body": "Save once the layout suits you. The dashboard is stored on the server, so every device sees it."
     },
     "panelsCreate": {
       "title": "Custom panels",
-      "body": "A panel is a full-screen sheet you build from blocks: cover rows, action buttons, section titles."
+      "body": "In the launcher, “Custom panels” builds a sheet from blocks: rows of covers, action buttons, section titles."
     },
     "panelsDock": {
-      "title": "Put it in the dock",
-      "body": "Once a panel exists, add it to the bottom bar from the gear icon — it becomes one tap away."
-    },
-    "panelsSave": {
-      "title": "Save",
-      "body": "Panels are saved along with the rest of the dashboard."
+      "title": "Pin them to the rail",
+      "body": "In edit mode, a panel's pin in the launcher adds it to the rail: it opens in one tap."
     },
     "appearanceOpen": {
-      "title": "Themes",
-      "body": "Seven themes, card opacity, wallpaper, automatic day/night switching — all in the appearance section."
+      "title": "Settings",
+      "body": "In the launcher: dark or light theme, automatic day/night switch, sounds, regional formats, language."
     },
     "appearanceWallpanel": {
-      "title": "Wall panel mode",
-      "body": "Set up a screensaver layout for a tablet mounted on the wall: it takes over after a while idle."
+      "title": "Screensaver",
+      "body": "Also in the launcher: the wall-tablet screensaver — large clock or photo frame, with your widgets on top."
     },
     "planModel": {
       "title": "The house",
@@ -90,6 +82,10 @@
     "planSave": {
       "title": "Save",
       "body": "Nothing is kept without “Save”, and every gesture undoes with Ctrl+Z."
+    },
+    "panelButtons": {
+      "title": "Panels",
+      "body": "Each page arranges its tiles in panels. ⚙ sets up a panel — title, width, place below the previous one — and ✎ edits only that panel."
     }
   }
 }

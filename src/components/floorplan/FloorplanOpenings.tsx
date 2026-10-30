@@ -59,8 +59,8 @@ type Kinds = Record<string, OpeningKind | 'none'>;
 function SectionTitle({ title, aside }: { title: string; aside?: string }) {
   return (
     <div className='flex items-baseline justify-between gap-2 px-0.5'>
-      <span className='text-[10px] font-semibold uppercase tracking-wide text-white/45'>{title}</span>
-      {aside && <span className='text-[10px] text-white/35'>{aside}</span>}
+      <span className='text-[10px] font-semibold uppercase tracking-wide text-[var(--ds-ink-muted)]'>{title}</span>
+      {aside && <span className='text-[10px] text-[var(--ds-ink-muted)]'>{aside}</span>}
     </div>
   );
 }
@@ -107,7 +107,7 @@ export function OpeningsTab({
           {suggested.length > 0 && (
             <button
               onClick={() => onLink(suggested)}
-              className='flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-sky-500/15 border border-sky-400/30 text-sky-200 hover:bg-sky-500/25'
+              className='flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-[var(--ds-radius-sm)] text-xs font-medium bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
             >
               <Link2 size={12} />
               {t(suggested.length > 1 ? 'layout.floorplan.openingLinkSuggestedPlural' : 'layout.floorplan.openingLinkSuggested', {
@@ -128,14 +128,18 @@ export function OpeningsTab({
                 aria-pressed={selected === opening.id}
                 className={cn(
                   'grid grid-cols-[0.875rem_minmax(0,1fr)_auto] gap-x-2 items-center px-2 py-1.5 rounded-lg text-left transition-colors',
-                  selected === opening.id ? 'bg-amber-400/15 ring-1 ring-amber-400/45' : 'bg-white/5 hover:bg-white/10'
+                  selected === opening.id ? 'bg-[var(--ds-surface-3)] ring-1 ring-amber-400/45' : 'bg-[var(--ds-surface-2)]'
                 )}
               >
-                <Icon size={13} className='row-span-2 self-start mt-0.5 text-white/40' />
-                <span className='truncate text-xs text-white/85'>{openingLabel(opening, model.families)}</span>
+                <Icon size={13} className='row-span-2 self-start mt-0.5 text-[var(--ds-ink-muted)]' />
+                <span className='truncate text-xs text-[var(--ds-ink)]'>{openingLabel(opening, model.families)}</span>
                 {entity ? (
-                  <span className={cn('flex items-center gap-1 text-[10px]', open ? 'text-green-300' : 'text-white/40')}>
-                    <span className={cn('w-1.5 h-1.5 rounded-full', open ? 'bg-green-400' : 'bg-white/30')} />
+                  <span
+                    className={cn('flex items-center gap-1 text-[10px]', open ? 'text-[var(--ds-good)]' : 'text-[var(--ds-ink-muted)]')}
+                  >
+                    <span
+                      className={cn('w-1.5 h-1.5 rounded-full', open ? 'bg-[var(--ds-good)] text-[#062614]' : 'bg-[var(--ds-surface-3)]')}
+                    />
                     {t(open ? 'layout.floorplan.openingStateOpen' : 'layout.floorplan.openingStateClosed')}
                   </span>
                 ) : (
@@ -144,7 +148,7 @@ export function OpeningsTab({
                 <span
                   className={cn(
                     'col-span-2 truncate text-[11px]',
-                    entity ? 'text-white/45' : proposal ? 'text-sky-300/90' : 'text-amber-300/90'
+                    entity ? 'text-[var(--ds-ink-muted)]' : proposal ? 'text-[var(--ds-accent)]' : 'text-[var(--ds-warm-light)]'
                   )}
                 >
                   {entity
@@ -162,7 +166,7 @@ export function OpeningsTab({
       )}
       <Types families={model.families} kinds={kinds} onKinds={onKinds} initiallyOpen={!typed.length} />
       {model.unnamed > 0 && (
-        <p className='flex items-start gap-1.5 px-2 py-1.5 rounded-lg bg-amber-400/10 border border-amber-400/25 text-[11px] leading-snug text-amber-100/90'>
+        <p className='flex items-start gap-1.5 px-2 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] border border-[var(--ds-warm-light)] text-[11px] leading-snug text-[var(--ds-warm-light)]'>
           <TriangleAlert size={12} className='shrink-0 mt-0.5' />
           {t(model.unnamed > 1 ? 'layout.floorplan.openingUnnamedPlural' : 'layout.floorplan.openingUnnamed', { count: model.unnamed })}
         </p>
@@ -198,11 +202,11 @@ function Types({
       <button
         onClick={() => setOpen(o => !o)}
         aria-expanded={open}
-        className='flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-left'
+        className='flex items-center gap-1.5 px-2 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] text-left'
       >
-        <Chevron size={13} className='shrink-0 text-white/40' />
-        <span className='text-xs font-medium text-white/85 whitespace-nowrap'>{t('layout.floorplan.openingTypes')}</span>
-        <span className='ml-auto min-w-0 truncate text-[10px] text-white/40'>
+        <Chevron size={13} className='shrink-0 text-[var(--ds-ink-muted)]' />
+        <span className='text-xs font-medium text-[var(--ds-ink)] whitespace-nowrap'>{t('layout.floorplan.openingTypes')}</span>
+        <span className='ml-auto min-w-0 truncate text-[10px] text-[var(--ds-ink-muted)]'>
           {t(families.length > 1 ? 'layout.floorplan.openingFamiliesPlural' : 'layout.floorplan.openingFamilies', {
             count: families.length,
           })}
@@ -213,22 +217,25 @@ function Types({
           const Icon = OPENING_ICONS[kind];
           const members = families.filter(f => familyKind(f.name, kinds) === kind);
           return (
-            <div key={kind} className='grid grid-cols-[5.25rem_minmax(0,1fr)] gap-1.5 p-1.5 rounded-lg bg-white/5'>
-              <span className='flex items-start gap-1 pt-0.5 text-[11px] leading-tight text-white/60'>
+            <div
+              key={kind}
+              className='grid grid-cols-[5.25rem_minmax(0,1fr)] gap-1.5 p-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)]'
+            >
+              <span className='flex items-start gap-1 pt-0.5 text-[11px] leading-tight text-[var(--ds-ink-muted)]'>
                 <Icon size={12} className='shrink-0' /> {t(`layout.floorplan.openingKinds.${kind}`)}
               </span>
               <div className='flex flex-wrap items-start gap-1 min-w-0'>
                 {members.map(f => (
                   <span
                     key={f.name}
-                    className='inline-flex items-center gap-1 max-w-full pl-2 pr-1 py-0.5 rounded-full bg-white/10 border border-white/15 text-[11px] text-white/85'
+                    className='inline-flex items-center gap-1 max-w-full pl-2 pr-1 py-0.5 rounded-full bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] text-[11px] text-[var(--ds-ink)]'
                   >
                     <span className='truncate'>{f.name}</span>
-                    {f.count > 1 && <span className='text-[10px] text-white/45'>×{f.count}</span>}
+                    {f.count > 1 && <span className='text-[10px] text-[var(--ds-ink-muted)]'>×{f.count}</span>}
                     {!(f.name in kinds) && (
                       <span
                         title={t('layout.floorplan.openingAutoHint')}
-                        className='px-1 rounded border border-sky-300/35 text-[9px] leading-3 text-sky-300'
+                        className='px-1 rounded border border-[var(--ds-accent)] text-[9px] leading-3 text-[var(--ds-accent)]'
                       >
                         {t('layout.floorplan.openingAuto')}
                       </span>
@@ -237,7 +244,7 @@ function Types({
                       onClick={() => onKinds({ ...kinds, [f.name]: 'none' })}
                       aria-label={t('layout.floorplan.openingRemoveFamily', { name: f.name })}
                       title={t('layout.floorplan.openingRemoveFamily', { name: f.name })}
-                      className='text-white/40 hover:text-white'
+                      className='text-[var(--ds-ink-muted)]'
                     >
                       <X size={10} />
                     </button>
@@ -250,7 +257,9 @@ function Types({
                   title={t('layout.floorplan.openingAddFamily')}
                   className={cn(
                     'px-1.5 py-0.5 rounded-full border border-dashed text-[11px]',
-                    adding === kind ? 'border-blue-400/50 bg-blue-500/20 text-blue-200' : 'border-white/20 text-white/45 hover:text-white'
+                    adding === kind
+                      ? 'border-[var(--ds-accent)] bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'
+                      : 'border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
                   )}
                 >
                   <Plus size={11} />
@@ -295,30 +304,32 @@ function FamilyPicker({
     { title: t('layout.floorplan.openingOthers'), items: candidates.filter(f => !f.inWall && !familyKind(f.name, kinds)) },
   ].filter(g => g.items.length);
   return (
-    <div className='col-span-2 flex flex-col gap-0.5 p-1 rounded-lg bg-black/25 border border-white/10'>
-      <label className='flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 text-white/40'>
+    <div className='col-span-2 flex flex-col gap-0.5 p-1 rounded-[var(--ds-radius-sm)] bg-black/25 border border-[var(--ds-surface-3)]'>
+      <label className='flex items-center gap-1.5 px-2 py-1 rounded-md bg-[var(--ds-surface-2)] text-[var(--ds-ink-muted)]'>
         <Search size={12} className='shrink-0' />
         <input
           autoFocus
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder={t('layout.floorplan.openingSearch')}
-          className='w-full min-w-0 bg-transparent text-[11px] text-white placeholder-white/30 focus:outline-none'
+          className='w-full min-w-0 bg-transparent text-[11px] text-[var(--ds-ink)] placeholder:text-[var(--ds-ink-muted)] focus:outline-none'
         />
       </label>
       {groups.map(group => (
         <div key={group.title} className='flex flex-col'>
-          <span className='px-2 pt-1.5 pb-0.5 text-[9px] font-semibold uppercase tracking-wide text-white/35'>{group.title}</span>
+          <span className='px-2 pt-1.5 pb-0.5 text-[9px] font-semibold uppercase tracking-wide text-[var(--ds-ink-muted)]'>
+            {group.title}
+          </span>
           {group.items.map(f => {
             const current = familyKind(f.name, kinds);
             return (
               <button
                 key={f.name}
                 onClick={() => onPick(f.name)}
-                className='flex items-baseline justify-between gap-2 px-2 py-1 rounded-md text-left hover:bg-white/10'
+                className='flex items-baseline justify-between gap-2 px-2 py-1 rounded-md text-left'
               >
-                <span className='truncate text-[11px] text-white/85'>{f.name}</span>
-                <span className='shrink-0 text-[10px] text-white/40'>
+                <span className='truncate text-[11px] text-[var(--ds-ink)]'>{f.name}</span>
+                <span className='shrink-0 text-[10px] text-[var(--ds-ink-muted)]'>
                   {current && `${t(`layout.floorplan.openingKindsShort.${current}`)} · `}×{f.count} ·{' '}
                   {t('layout.floorplan.openingSize', { w: f.size[0], h: f.size[1] })}
                 </span>
@@ -327,7 +338,7 @@ function FamilyPicker({
           })}
         </div>
       ))}
-      {!groups.length && <span className='px-2 py-1.5 text-[11px] text-white/40'>{t('layout.floorplan.openingNone')}</span>}
+      {!groups.length && <span className='px-2 py-1.5 text-[11px] text-[var(--ds-ink-muted)]'>{t('layout.floorplan.openingNone')}</span>}
     </div>
   );
 }
@@ -384,8 +395,10 @@ export function OpeningPopover({
       aria-pressed={!!link[key]}
       title={hint}
       className={cn(
-        'flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs border transition-colors',
-        link[key] ? 'bg-white/12 border-white/30 text-white' : 'bg-white/5 border-white/10 text-white/70 hover:text-white'
+        'flex items-center gap-1.5 px-2 py-1.5 rounded-[var(--ds-radius-sm)] text-xs border transition-colors',
+        link[key]
+          ? 'bg-[var(--ds-surface-3)] border-[var(--ds-surface-3)] text-[var(--ds-ink)]'
+          : 'bg-[var(--ds-surface-2)] border-[var(--ds-surface-3)] text-[var(--ds-ink)]'
       )}
     >
       <Icon size={12} /> {text}
@@ -402,7 +415,7 @@ export function OpeningPopover({
           onClick={() => onChange({ ...link, [key]: undefined })}
           title={t('layout.floorplan.openingExtraClear')}
           aria-label={t('layout.floorplan.openingExtraClear')}
-          className='p-2 rounded-lg text-white/50 hover:text-white'
+          className='p-2 rounded-[var(--ds-radius-sm)] text-[var(--ds-ink-muted)]'
         >
           <X size={13} />
         </button>
@@ -423,10 +436,12 @@ export function OpeningPopover({
       {kind && kind !== 'shutter' && kind !== 'garage' && extra('shutter', 'cover', t('layout.floorplan.openingShutter'))}
       {kind && kind !== 'shutter' && kind !== 'window' && extra('lock', 'lock', t('layout.floorplan.openingLock'))}
       {count > 1 && (
-        <p className='px-1 text-[10px] leading-snug text-white/40'>{t('layout.floorplan.openingFamilyWide', { name: family, count })}</p>
+        <p className='px-1 text-[10px] leading-snug text-[var(--ds-ink-muted)]'>
+          {t('layout.floorplan.openingFamilyWide', { name: family, count })}
+        </p>
       )}
       {single && (
-        <p className='flex items-start gap-1.5 px-1 text-[10px] leading-snug text-amber-200/90'>
+        <p className='flex items-start gap-1.5 px-1 text-[10px] leading-snug text-[var(--ds-warm-light)]'>
           <TriangleAlert size={11} className='shrink-0 mt-px' />
           {t('layout.floorplan.openingSingle')}
         </p>
@@ -442,7 +457,7 @@ export function OpeningPopover({
             onClick={onUnlink}
             title={t('layout.floorplan.openingUnlink')}
             aria-label={t('layout.floorplan.openingUnlink')}
-            className='p-1.5 rounded-lg text-red-400/70 hover:text-red-400'
+            className='p-1.5 rounded-[var(--ds-radius-sm)] text-[var(--ds-alert)]'
           >
             <Unlink size={13} />
           </button>
@@ -450,7 +465,7 @@ export function OpeningPopover({
         <button
           onClick={onSave}
           disabled={!link.entityId || !kind}
-          className='ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-500/80 text-white hover:bg-blue-500 disabled:opacity-40'
+          className='ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--ds-radius-sm)] text-xs font-medium bg-[var(--ds-accent)] text-white disabled:opacity-40'
         >
           <Link2 size={12} /> {t('layout.floorplan.openingLink')}
         </button>

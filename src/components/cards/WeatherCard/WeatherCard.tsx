@@ -55,7 +55,7 @@ export function WeatherCard() {
   const exists = useHass(s => !!s.entities?.[entityId]);
   if (!exists) {
     return (
-      <div className='gc flex h-full items-center justify-center p-4'>
+      <div className='rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] text-[var(--ds-ink)] flex h-full items-center justify-center p-4'>
         <Sun size={36} aria-hidden='true' className='text-[var(--ds-ink-muted)]' />
       </div>
     );

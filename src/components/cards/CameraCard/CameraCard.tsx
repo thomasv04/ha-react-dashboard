@@ -91,7 +91,10 @@ export function CameraCard() {
 
   if (!hasCamera) {
     return (
-      <div ref={cardRef} className='gc flex h-full items-center justify-center p-5 text-center'>
+      <div
+        ref={cardRef}
+        className='rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] text-[var(--ds-ink)] flex h-full items-center justify-center p-5 text-center'
+      >
         <p className='text-sm text-[var(--ds-ink-muted)]'>{t('widgets.camera.empty')}</p>
       </div>
     );

@@ -30,8 +30,6 @@
   "saveFailed": "Could not save the configuration",
   "conflictTitle": "Changed elsewhere",
   "conflictDescription": "Another device saved in the meantime. Reload the page before redoing your changes.",
-  "pack": "Reflow",
-  "packTooltip": "Close gaps in the layout (current breakpoint only)",
   "repairedTitle": "Configuration repaired",
   "repairedDescription": "Unreadable items were dropped. The rest of the dashboard is intact.",
   "undo": "Undo (Ctrl+Z)",

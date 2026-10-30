@@ -55,14 +55,14 @@ export function SettingsPanel({
   const open = tabs.find(spec => spec.id === tab);
   return (
     <div
-      className='absolute left-2 top-2 z-30 w-76 max-w-[calc(100%-1rem)] max-h-[calc(100%-1rem)] flex flex-col gap-2 p-2.5 rounded-2xl gc-overlay'
+      className='absolute left-2 top-2 z-30 w-76 max-w-[calc(100%-1rem)] max-h-[calc(100%-1rem)] flex flex-col gap-2 p-2.5 rounded-2xl bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-sheet)]'
       style={left ? { left } : undefined}
     >
       <div
         role='tablist'
         data-tour='floorplan-settings'
         aria-label={t('layout.floorplan.settings')}
-        className='shrink-0 grid grid-cols-4 gap-0.5 p-0.5 rounded-xl bg-white/5 border border-white/10'
+        className='shrink-0 grid grid-cols-4 gap-0.5 p-0.5 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)]'
       >
         {tabs.map(({ id, icon: Icon, label, badge }) => (
           <button
@@ -74,8 +74,8 @@ export function SettingsPanel({
             // Un onglet ouvert se referme d'un second clic : la maquette retrouve sa place.
             onClick={() => onTab(tab === id ? null : id)}
             className={cn(
-              'relative flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-[10px] font-medium transition-colors',
-              tab === id ? 'bg-blue-500/20 text-blue-200' : 'text-white/45 hover:text-white/75'
+              'relative flex flex-col items-center gap-0.5 py-1.5 rounded-[var(--ds-radius-sm)] text-[10px] font-medium transition-colors',
+              tab === id ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'text-[var(--ds-ink-muted)]'
             )}
           >
             <Icon size={14} />
@@ -85,7 +85,7 @@ export function SettingsPanel({
                 aria-hidden
                 className={cn(
                   'absolute top-0.5 right-1 min-w-4 px-1 rounded-full text-[9px] leading-[14px] font-semibold tabular-nums',
-                  tab === id ? 'bg-blue-500 text-white' : 'bg-white/15 text-white/80'
+                  tab === id ? 'bg-[var(--ds-accent)] text-white' : 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)]'
                 )}
               >
                 {badge}
@@ -108,7 +108,7 @@ export function SettingsPanel({
         role='group'
         data-tour='floorplan-tools'
         aria-label={t('layout.floorplan.tool')}
-        className='shrink-0 flex gap-0.5 p-0.5 rounded-lg bg-white/5 border border-white/10'
+        className='shrink-0 flex gap-0.5 p-0.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)]'
       >
         {TOOLS.map(({ id, icon: Icon, label }) => (
           <button
@@ -117,14 +117,14 @@ export function SettingsPanel({
             aria-pressed={tool === id}
             className={cn(
               'flex-1 flex items-center justify-center gap-1 px-1.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition-colors',
-              tool === id ? 'bg-blue-500/20 text-blue-300' : 'text-white/45 hover:text-white/70'
+              tool === id ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'text-[var(--ds-ink-muted)]'
             )}
           >
             <Icon size={12} className='shrink-0' /> {t(label)}
           </button>
         ))}
       </div>
-      <p className='shrink-0 text-[11px] text-white/40 px-0.5'>{hint}</p>
+      <p className='shrink-0 text-[11px] text-[var(--ds-ink-muted)] px-0.5'>{hint}</p>
     </div>
   );
 }
@@ -132,16 +132,16 @@ export function SettingsPanel({
 /** Un réglage qu'on coche, sur sa ligne. */
 export function ToggleRow({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
   return (
-    <label className='flex items-center justify-between gap-3 px-2 py-1.5 rounded-lg bg-white/5 text-xs text-white/70 cursor-pointer select-none'>
+    <label className='flex items-center justify-between gap-3 px-2 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] text-xs text-[var(--ds-ink)] cursor-pointer select-none'>
       {label}
-      <input type='checkbox' checked={checked} onChange={e => onChange(e.target.checked)} className='accent-blue-500 shrink-0' />
+      <input type='checkbox' checked={checked} onChange={e => onChange(e.target.checked)} className='accent-[var(--ds-accent)] shrink-0' />
     </label>
   );
 }
 
 /** Onglet sans rien encore : ce qu'on peut y faire. */
 export function EmptyTab({ children }: { children: ReactNode }) {
-  return <p className='px-1 py-2 text-[11px] leading-snug text-white/40'>{children}</p>;
+  return <p className='px-1 py-2 text-[11px] leading-snug text-[var(--ds-ink-muted)]'>{children}</p>;
 }
 
 /** Deux ou trois choix exclusifs, en boutons accolés. */
@@ -157,7 +157,11 @@ export function Segmented<T extends string>({
   label: string;
 }) {
   return (
-    <div role='group' aria-label={label} className='flex gap-0.5 p-0.5 rounded-lg bg-white/5 border border-white/10 w-fit'>
+    <div
+      role='group'
+      aria-label={label}
+      className='flex gap-0.5 p-0.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] w-fit'
+    >
       {options.map(({ id, icon: Icon, label: text }) => (
         <button
           key={id}
@@ -165,7 +169,7 @@ export function Segmented<T extends string>({
           aria-pressed={value === id}
           className={cn(
             'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors',
-            value === id ? 'bg-blue-500/20 text-blue-300' : 'text-white/45 hover:text-white/70'
+            value === id ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'text-[var(--ds-ink-muted)]'
           )}
         >
           {Icon && <Icon size={12} />} {text}

@@ -7,36 +7,9 @@
 
 /* shadcn/ui will append its CSS variables below this line after `npx shadcn init` */
 
-/* ── CSS Grid dashboard styles ──────────────────────────────────────────────── */
-
-/* Drop target placeholder - valid position */
-.grid-placeholder {
-  background: rgba(139, 92, 246, 0.15);
-  border: 2px dashed rgba(139, 92, 246, 0.5);
-  border-radius: 1rem;
-  z-index: 5;
-}
-
-/* Drop target placeholder - invalid position (overlap) */
-.grid-placeholder-invalid {
-  background: rgba(239, 68, 68, 0.10);
-  border: 2px dashed rgba(239, 68, 68, 0.4);
-  border-radius: 1rem;
-  z-index: 5;
-}
-
-/* Kill backdrop-filter on glass cards during edit mode for GPU perf */
-.dashboard-editing .gc,
-.dashboard-editing .gc-light {
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-}
-
 /* ── Performance modes ──────────────────────────────────────────────────────── */
 
 /* Disable shadows: remove box-shadow GPU compositing */
-.perf-no-shadows .gc,
-.perf-no-shadows .gc-light,
 .perf-no-shadows [class*='shadow-'] {
   box-shadow: none !important;
 }
@@ -314,135 +287,9 @@ select {
 /* Sur un écran tactile, `:hover` n'existe pas : c'est `:active` qui doit
    porter le retour visuel, et il doit être immédiat. */
 @media (hover: none) {
-  .gc-btn:active,
   button:active {
     transition-duration: 0.06s;
   }
-}
-
-/* ── Surfaces v2 ──────────────────────────────────────────────────────────────
-   Les cards sont des aplats opaques aux couleurs du design system : ni flou, ni
-   reflet, ni ombre portée. Les classes `.gc*` restent le temps que chaque
-   widget passe directement aux jetons `--ds-*`. */
-
-:root {
-  --dash-elev-card: none;
-  --dash-elev-card-hover: none;
-  --dash-elev-inner: none;
-  --dash-elev-overlay: var(--ds-shadow-sheet);
-}
-
-.gc {
-  position: relative;
-  background: var(--dash-bg-card);
-  border-radius: var(--ds-radius-lg);
-  color: var(--dash-text-primary);
-  transition:
-    background 0.2s ease,
-    transform 0.15s ease;
-}
-
-@media (hover: hover) {
-  .gc:hover {
-    background: var(--dash-bg-card-hover);
-  }
-}
-
-/* Retour d'appui : la card s'enfonce légèrement sous le doigt. */
-.gc:active {
-  transform: scale(0.98);
-}
-
-/* Dans `@layer base`, que la couche `utilities` surclasse : hors couche, cette
-   règle gagnait à égalité de spécificité contre `.absolute` et remettait en flux
-   tout enfant direct d'une card censé être positionné. */
-@layer base {
-  .gc > *,
-  .gc-light > * {
-    position: relative;
-  }
-}
-
-/* Card réutilisée hors grille (modale « plus d'infos ») : pas de fond de card */
-.gc-bare .gc,
-.gc-bare .gc:hover {
-  background: none;
-  transform: none;
-}
-
-/* Surface imbriquée dans une card */
-.gc-light {
-  position: relative;
-  background: var(--ds-surface-3);
-}
-
-/* Modales, popovers, menus déroulants */
-.gc-overlay {
-  background: var(--ds-surface-1);
-  box-shadow: var(--ds-shadow-sheet);
-}
-
-/* Petites pastilles */
-.gc-inner {
-  background: var(--ds-surface-3);
-}
-
-/* Boutons */
-.gc-btn {
-  background: var(--ds-surface-3);
-  transition:
-    background 0.15s,
-    transform 0.15s;
-}
-
-.gc-btn:hover {
-  background: var(--dash-bg-card-hover);
-}
-
-.gc-btn:active {
-  transform: scale(0.97);
-}
-
-/* ── Light surfaces: remap hardcoded white text to dark ───────────────────── */
-/* Applies to every light theme (clay light AND the plain `light` theme, which
-   was previously unreadable — cards turned white but text stayed white). */
-
-/* Full white → primary dark text */
-.theme-light-surface [class*="text-white"] {
-  color: var(--dash-text-primary) !important;
-}
-
-/* White with opacity → secondary text */
-.theme-light-surface [class*="text-white\/"] {
-  color: var(--dash-text-secondary) !important;
-}
-
-/* Very faint white (20-39% opacity) → muted text */
-.theme-light-surface [class*="text-white\/2"],
-.theme-light-surface [class*="text-white\/3"] {
-  color: var(--dash-text-muted) !important;
-}
-
-/* Remap white backgrounds to light surface colors */
-.theme-light-surface [class*="bg-white\/"] {
-  background-color: rgba(0, 0, 0, 0.06) !important;
-}
-
-/* Remap white borders */
-.theme-light-surface [class*="border-white"] {
-  border-color: var(--dash-border) !important;
-}
-
-/* ── Mobile & compact layout modes ───────────────────────────────────────── */
-
-/* Mobile layout (< 640px) — tighter padding */
-.mobile-layout .gc {
-  padding: 0.75rem;
-}
-
-/* Compact layout (640–768px) — slightly tighter */
-.compact-layout .gc {
-  padding: 0.875rem;
 }
 
 /* ── Flux d'énergie ──────────────────────────────────────────────────────────
@@ -476,17 +323,6 @@ select {
 .perf-no-animations .flow-dot {
   animation: none;
   opacity: 0.7;
-}
-
-/* ── Verre sur la maquette ────────────────────────────────────────────────────
-   La maquette 3D se redessine à chaque image tant qu'elle bouge : chaque verre
-   posé dessus referait son flou à chaque image. Les cards y sont presque
-   opaques (fond à 80 %) : ce flou ne se voyait guère. */
-
-[data-floorplan-plan='3d'] .gc,
-[data-floorplan-plan='3d'] .gc-light {
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
 }
 
 /* ── Météo sur la maquette ───────────────────────────────────────────────────
@@ -567,63 +403,6 @@ select {
   }
 }
 
-/* ── Legibility ramp ─────────────────────────────────────────────────────────
-   A wall tablet is read from 1–2 m away, often with daylight on the screen.
-   The raw alpha ramp used across the cards (text-white/40 for titles,
-   text-white/20-25 for "off" states) falls far below WCAG AA at that distance.
-
-   These rules lift the low end of the ramp while preserving the hierarchy —
-   /20 is still quieter than /40, it is simply readable. Living in the
-   `utilities` layer means any `hover:` / `group-hover:` variant still wins
-   (same layer, higher specificity), and `.theme-light-surface` still wins via
-   !important, so light themes are unaffected.
-
-   Tuning: these are the only numbers to touch to make the whole dashboard
-   softer or harder to read. */
-
-@layer utilities {
-  [class~='text-white/10'] { color: rgba(255, 255, 255, 0.26); }
-  [class~='text-white/12'] { color: rgba(255, 255, 255, 0.28); }
-  [class~='text-white/15'] { color: rgba(255, 255, 255, 0.32); }
-  [class~='text-white/18'] { color: rgba(255, 255, 255, 0.36); }
-  [class~='text-white/20'] { color: rgba(255, 255, 255, 0.40); }
-  [class~='text-white/22'] { color: rgba(255, 255, 255, 0.42); }
-  [class~='text-white/25'] { color: rgba(255, 255, 255, 0.46); }
-  [class~='text-white/28'] { color: rgba(255, 255, 255, 0.50); }
-  [class~='text-white/30'] { color: rgba(255, 255, 255, 0.54); }
-  [class~='text-white/35'] { color: rgba(255, 255, 255, 0.60); }
-  [class~='text-white/40'] { color: rgba(255, 255, 255, 0.66); }
-  [class~='text-white/45'] { color: rgba(255, 255, 255, 0.70); }
-  [class~='text-white/50'] { color: rgba(255, 255, 255, 0.74); }
-  [class~='text-white/55'] { color: rgba(255, 255, 255, 0.78); }
-  [class~='text-white/60'] { color: rgba(255, 255, 255, 0.82); }
-  [class~='text-white/65'] { color: rgba(255, 255, 255, 0.85); }
-  [class~='text-white/70'] { color: rgba(255, 255, 255, 0.88); }
-  [class~='text-white/75'] { color: rgba(255, 255, 255, 0.90); }
-  [class~='text-white/80'] { color: rgba(255, 255, 255, 0.93); }
-  [class~='text-white/90'] { color: rgba(255, 255, 255, 0.97); }
-
-  /* Sub-surfaces inside a card (icon tiles, chips, segmented controls) were
-     invisible at 3–8% white. Lift them just enough to read as a surface. */
-  [class~='bg-white/3']  { background-color: rgba(255, 255, 255, 0.055); }
-  [class~='bg-white/4']  { background-color: rgba(255, 255, 255, 0.07); }
-  [class~='bg-white/5']  { background-color: rgba(255, 255, 255, 0.085); }
-  [class~='bg-white/6']  { background-color: rgba(255, 255, 255, 0.095); }
-  [class~='bg-white/8']  { background-color: rgba(255, 255, 255, 0.12); }
-  [class~='bg-white/10'] { background-color: rgba(255, 255, 255, 0.14); }
-
-  [class~='border-white/5']  { border-color: rgba(255, 255, 255, 0.10); }
-  [class~='border-white/6']  { border-color: rgba(255, 255, 255, 0.11); }
-  [class~='border-white/8']  { border-color: rgba(255, 255, 255, 0.14); }
-  [class~='border-white/10'] { border-color: rgba(255, 255, 255, 0.16); }
-  [class~='border-white/12'] { border-color: rgba(255, 255, 255, 0.18); }
-}
-
-/* Light themes drive their own contrast — opt out of the dark ramp entirely */
-.theme-light-surface [class*='bg-white\/'] {
-  background-color: rgba(0, 0, 0, 0.06) !important;
-}
-
 /* ── Wall-tablet type scale ──────────────────────────────────────────────────
    ~190 labels are pinned at 9–11px, which is a phone-distance size. On a
    tablet-sized viewport give each step +1px: enough to read across a room,
@@ -653,12 +432,3 @@ select {
   transition-duration: 0.001ms !important;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .gc,
-  .gc-btn {
-    transition: none;
-  }
-  .gc:hover {
-    transform: none;
-  }
-}

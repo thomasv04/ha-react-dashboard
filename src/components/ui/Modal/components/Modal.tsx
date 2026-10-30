@@ -8,8 +8,8 @@ import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { RichText } from '@/components/ui/RichText';
 
-const TEXT_CLASS = 'text-white/80 text-sm leading-relaxed whitespace-pre-wrap';
-const HTML_CLASS = 'text-white/80 text-sm leading-relaxed prose prose-invert prose-sm max-w-none';
+const TEXT_CLASS = 'text-[var(--ds-ink)] text-sm leading-relaxed whitespace-pre-wrap';
+const HTML_CLASS = 'text-[var(--ds-ink)] text-sm leading-relaxed prose prose-invert prose-sm max-w-none';
 
 // Safe content renderer — l'assainissement du HTML vit dans `RichText`.
 function ModalContentRenderer({ content }: { content: Modal['content'] }) {
@@ -27,7 +27,7 @@ function ModalContentRenderer({ content }: { content: Modal['content'] }) {
   }
 
   // ReactNode
-  return <div className='text-white/80 text-sm'>{content as React.ReactNode}</div>;
+  return <div className='text-[var(--ds-ink)] text-sm'>{content as React.ReactNode}</div>;
 }
 
 // Single modal card
@@ -49,9 +49,9 @@ function ModalCard({ modal, onClose }: ModalCardProps) {
   }[modal.width ?? 'md'];
 
   const variantClass: Record<NonNullable<ModalAction['variant']>, string> = {
-    default: 'bg-white/10 hover:bg-white/20 text-white/80 hover:text-white',
-    primary: 'bg-blue-500/80 hover:bg-blue-500 text-white',
-    danger: 'bg-red-500/80 hover:bg-red-500 text-white',
+    default: 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)]',
+    primary: 'bg-[var(--ds-accent)] text-white',
+    danger: 'bg-[var(--ds-alert)] text-white',
   };
 
   // Handle ESC key
@@ -110,7 +110,7 @@ function ModalCard({ modal, onClose }: ModalCardProps) {
       animate='visible'
       exit='exit'
       data-overlay
-      className='fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/45 backdrop-blur-sm'
+      className='fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/45'
       onClick={modal.dismissible ? onClose : undefined}
     >
       <motion.div
@@ -120,7 +120,7 @@ function ModalCard({ modal, onClose }: ModalCardProps) {
         animate='visible'
         exit='exit'
         onClick={e => e.stopPropagation()}
-        className={cn('gc rounded-3xl p-6 w-full shadow-2xl', widthClass)}
+        className={cn('bg-[var(--ds-surface-2)] rounded-[var(--ds-radius-xl)] p-6 w-full shadow-[var(--ds-shadow-sheet)]', widthClass)}
         role='dialog'
         aria-modal='true'
         aria-labelledby={modal.title ? 'modal-title' : undefined}
@@ -128,7 +128,7 @@ function ModalCard({ modal, onClose }: ModalCardProps) {
         {/* Header */}
         <div className='flex items-start justify-between mb-4'>
           {modal.title && (
-            <h2 id='modal-title' className='text-white font-bold text-lg pr-8'>
+            <h2 id='modal-title' className='text-[var(--ds-ink)] font-bold text-lg pr-8'>
               {modal.title}
             </h2>
           )}
@@ -136,7 +136,7 @@ function ModalCard({ modal, onClose }: ModalCardProps) {
             <button
               ref={firstFocusableRef}
               onClick={onClose}
-              className='flex-shrink-0 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/40 hover:text-white transition-colors ml-auto'
+              className='flex-shrink-0 w-8 h-8 rounded-full bg-[var(--ds-surface-3)] flex items-center justify-center text-[var(--ds-ink-muted)] transition-colors ml-auto'
               aria-label={t('common.close')}
             >
               <X size={16} />
@@ -163,7 +163,10 @@ function ModalCard({ modal, onClose }: ModalCardProps) {
                   // la garde ouverte jusque-là, rien d'autre.
                   onClose();
                 }}
-                className={cn('px-4 py-2 rounded-xl text-sm font-medium transition-all', variantClass[action.variant ?? 'default'])}
+                className={cn(
+                  'px-4 py-2 rounded-[var(--ds-radius-md)] text-sm font-medium transition-all',
+                  variantClass[action.variant ?? 'default']
+                )}
               >
                 {action.label}
               </button>

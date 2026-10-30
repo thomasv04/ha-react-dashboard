@@ -41,26 +41,25 @@ const viewPlan = (ctx: TourContext) => {
 export const TOURS: Record<string, TourStep[]> = {
   basics: [
     { anchor: '[data-tour="pages"]', key: 'pages' },
+    { anchor: '[data-tour="settings"]', key: 'settings' },
     { anchor: '[data-tour="edit"]', key: 'edit', adminOnly: true },
+    { anchor: '[data-panel-id]', key: 'panelButtons', adminOnly: true },
     { anchor: '[data-tour="add"]', key: 'add', setup: enterEdit, adminOnly: true },
     { anchor: '[data-tour="add-page"]', key: 'addPage', adminOnly: true },
     { anchor: '[data-tour="save"]', key: 'save', adminOnly: true },
-    { anchor: '[data-tour="dock"]', key: 'dock' },
-    { anchor: '[data-tour="settings"]', key: 'settings', setup: leaveEdit },
   ],
   widgets: [
     { anchor: '[data-tour="add"]', key: 'widgetsAdd', setup: enterEdit, adminOnly: true },
-    { anchor: '[data-tour="pages"]', key: 'widgetsResize', adminOnly: true },
+    { anchor: '[data-panel-id]', key: 'widgetsResize', adminOnly: true },
     { anchor: '[data-tour="save"]', key: 'widgetsSave', adminOnly: true },
   ],
   panels: [
-    { anchor: '[data-tour="panels-button"]', key: 'panelsCreate', setup: enterEdit, adminOnly: true },
-    { anchor: '[data-tour="dock"]', key: 'panelsDock', adminOnly: true },
-    { anchor: '[data-tour="save"]', key: 'panelsSave', adminOnly: true },
+    { anchor: '[data-tour="settings"]', key: 'panelsCreate', setup: leaveEdit, adminOnly: true },
+    { anchor: '[data-tour="pages"]', key: 'panelsDock', adminOnly: true },
   ],
   appearance: [
     { anchor: '[data-tour="settings"]', key: 'appearanceOpen', setup: leaveEdit },
-    { anchor: '[data-tour="wallpanel"]', key: 'appearanceWallpanel', setup: enterEdit, adminOnly: true },
+    { anchor: '[data-tour="settings"]', key: 'appearanceWallpanel', adminOnly: true },
   ],
   // Sur un plan en image, ce qui n'existe qu'en 3D — les vues, les onglets — est sauté.
   floorplan: [
@@ -231,7 +230,7 @@ export function TourOverlay({ tourId, onClose }: { tourId: TourId; onClose: () =
         {/* Découpe : le trou est l'élément lui-même, l'assombrissement vient de
             l'ombre portée étalée — un seul nœud plutôt que quatre volets. */}
         <motion.div
-          className='absolute rounded-2xl pointer-events-none'
+          className='absolute rounded-[var(--ds-radius-lg)] pointer-events-none'
           animate={{ top: box.top - PAD, left: box.left - PAD, width: box.width + PAD * 2, height: box.height + PAD * 2 }}
           transition={{ type: 'spring', stiffness: 320, damping: 32 }}
           style={{ boxShadow: '0 0 0 9999px rgba(0,0,0,0.72)', border: '2px solid rgba(255,255,255,0.55)' }}
@@ -241,7 +240,7 @@ export function TourOverlay({ tourId, onClose }: { tourId: TourId; onClose: () =
         <div className='absolute inset-0' onClick={next} />
 
         <motion.div
-          className='gc-overlay absolute rounded-2xl p-5'
+          className='bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-sheet)] absolute rounded-[var(--ds-radius-lg)] p-5'
           data-testid='tour-card'
           animate={{ top: card.top, left: card.left }}
           transition={{ type: 'spring', stiffness: 320, damping: 32 }}
@@ -250,27 +249,27 @@ export function TourOverlay({ tourId, onClose }: { tourId: TourId; onClose: () =
         >
           <button
             onClick={finish}
-            className='absolute top-3 right-3 p-1 rounded-lg text-white/35 hover:text-white/80 hover:bg-white/10 transition-colors'
+            className='absolute top-3 right-3 p-1 rounded-[var(--ds-radius-sm)] text-[var(--ds-ink-muted)] transition-colors'
             aria-label={t('common.close')}
           >
             <X size={14} />
           </button>
 
-          <p className='text-[10px] font-semibold uppercase tracking-widest text-blue-300/70' data-testid='tour-progress'>
+          <p className='text-[10px] font-semibold uppercase tracking-widest text-[var(--ds-accent)]' data-testid='tour-progress'>
             {index + 1}/{steps.length}
           </p>
-          <h3 className='mt-2 text-white font-semibold text-sm'>{t(`tour.steps.${step.key}.title`)}</h3>
-          <p className='mt-1.5 text-white/55 text-xs leading-relaxed'>{t(`tour.steps.${step.key}.body`)}</p>
+          <h3 className='mt-2 text-[var(--ds-ink)] font-semibold text-sm'>{t(`tour.steps.${step.key}.title`)}</h3>
+          <p className='mt-1.5 text-[var(--ds-ink-muted)] text-xs leading-relaxed'>{t(`tour.steps.${step.key}.body`)}</p>
 
           <div className='mt-4 flex items-center gap-2'>
-            <button onClick={finish} className='text-white/35 hover:text-white/70 text-xs transition-colors'>
+            <button onClick={finish} className='text-[var(--ds-ink-muted)] text-xs transition-colors'>
               {t('tour.skip')}
             </button>
             <div className='flex-1' />
             {index > 0 && (
               <button
                 onClick={() => setIndex(i => i - 1)}
-                className='px-3 py-1.5 rounded-lg text-xs font-medium text-white/60 hover:text-white hover:bg-white/10 transition-colors'
+                className='px-3 py-1.5 rounded-[var(--ds-radius-sm)] text-xs font-medium text-[var(--ds-ink-muted)] transition-colors'
               >
                 {t('tour.previous')}
               </button>
@@ -278,7 +277,7 @@ export function TourOverlay({ tourId, onClose }: { tourId: TourId; onClose: () =
             <button
               onClick={next}
               data-testid='tour-next'
-              className='px-3.5 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-400 text-white text-xs font-semibold transition-colors'
+              className='px-3.5 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-accent)] text-white text-xs font-semibold transition-colors'
             >
               {isLast ? t('tour.done') : t('tour.next')}
             </button>

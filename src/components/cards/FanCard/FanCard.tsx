@@ -36,7 +36,7 @@ export function FanCard() {
 
   if (!entity) {
     return (
-      <div ref={cardRef} className='gc h-full p-4'>
+      <div ref={cardRef} className='rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] text-[var(--ds-ink)] h-full p-4'>
         <CardPlaceholder icon={Fan} text={t('widgets.fan.notFound')} />
       </div>
     );

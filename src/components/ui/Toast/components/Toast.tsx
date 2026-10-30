@@ -12,9 +12,9 @@ interface ToastCardProps {
 
 function ToastCard({ toast, onDismiss }: ToastCardProps) {
   const variantClass: Record<NonNullable<ToastAction['variant']>, string> = {
-    default: 'bg-white/10 hover:bg-white/20 text-white/80 hover:text-white',
-    primary: 'bg-blue-500/80 hover:bg-blue-500 text-white',
-    danger: 'bg-red-500/80 hover:bg-red-500 text-white',
+    default: 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)]',
+    primary: 'bg-[var(--ds-accent)] text-white',
+    danger: 'bg-[var(--ds-alert)] text-white',
   };
 
   return (
@@ -24,25 +24,26 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, scale: 0.92, y: -8 }}
       transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-      className='gc rounded-2xl p-4 w-full max-w-sm shadow-2xl'
+      role='status'
+      className='bg-[var(--ds-surface-2)] text-[var(--ds-ink)] rounded-[var(--ds-radius-lg)] p-4 w-full max-w-sm shadow-[var(--ds-shadow-sheet)]'
     >
       <div className='flex items-start gap-3'>
         {/* Icon */}
-        {toast.icon && <div className='flex-shrink-0 mt-0.5 text-white/70'>{toast.icon}</div>}
+        {toast.icon && <div className='flex-shrink-0 mt-0.5 text-[var(--ds-ink)]'>{toast.icon}</div>}
 
         {/* Body */}
         <div className='flex-1 min-w-0'>
-          <p className='text-white font-semibold text-sm leading-snug'>{toast.title}</p>
-          {toast.description && <p className='text-white/50 text-xs mt-0.5 leading-relaxed'>{toast.description}</p>}
+          <p className='text-[var(--ds-ink)] font-semibold text-sm leading-snug'>{toast.title}</p>
+          {toast.description && <p className='text-[var(--ds-ink-muted)] text-xs mt-0.5 leading-relaxed'>{toast.description}</p>}
 
           {/* Progress bar for auto-dismiss */}
           {!toast.persistent && (
-            <div className='mt-2 h-0.5 bg-white/10 rounded-full overflow-hidden'>
+            <div className='mt-2 h-0.5 bg-[var(--ds-surface-3)] rounded-full overflow-hidden'>
               <motion.div
                 initial={{ width: '100%' }}
                 animate={{ width: '0%' }}
                 transition={{ duration: (toast.durationMs ?? 5000) / 1000, ease: 'linear' }}
-                className='h-full bg-white/30 rounded-full'
+                className='h-full bg-[var(--ds-surface-3)] rounded-full'
               />
             </div>
           )}
@@ -57,7 +58,10 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
                     action.onClick();
                     onDismiss();
                   }}
-                  className={cn('px-3 py-1.5 rounded-xl text-xs font-medium transition-all', variantClass[action.variant ?? 'default'])}
+                  className={cn(
+                    'px-3 py-1.5 rounded-[var(--ds-radius-md)] text-xs font-medium transition-all',
+                    variantClass[action.variant ?? 'default']
+                  )}
                 >
                   {action.label}
                 </button>
@@ -69,7 +73,7 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
         {/* Dismiss button */}
         <button
           onClick={onDismiss}
-          className='flex-shrink-0 w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/40 hover:text-white transition-colors'
+          className='flex-shrink-0 w-6 h-6 rounded-full bg-[var(--ds-surface-3)] flex items-center justify-center text-[var(--ds-ink-muted)] transition-colors'
         >
           <X size={12} />
         </button>

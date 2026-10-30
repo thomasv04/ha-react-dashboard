@@ -8,12 +8,12 @@
   "done": "Compris",
   "steps": {
     "pages": {
-      "title": "Vos pages",
-      "body": "Chaque onglet est une page distincte. Créez-en autant que nécessaire — une par pièce, une par étage, comme vous voulez."
+      "title": "Le rail",
+      "body": "À gauche, l'accueil en vert, puis vos pages et les panneaux épinglés. Une page par pièce, par étage, comme vous voulez."
     },
     "edit": {
       "title": "Mode édition",
-      "body": "Le crayon déverrouille la grille : déplacez, redimensionnez, configurez ou supprimez vos widgets. Rien ne bouge tant qu'il est éteint."
+      "body": "Le crayon ouvre toute la page en édition. Rien ne bouge tant qu’il est éteint."
     },
     "add": {
       "title": "Ajouter un widget",
@@ -21,27 +21,23 @@
     },
     "addPage": {
       "title": "Une nouvelle page",
-      "body": "Ajoutez une page pour séparer votre dashboard par pièce ou par étage. Chaque page garde sa propre grille."
+      "body": "Ajoutez une page pour séparer votre dashboard par pièce ou par étage. Chaque page a ses propres panneaux."
     },
     "save": {
       "title": "Enregistrer",
-      "body": "Rien n'est conservé tant que vous n'avez pas enregistré. La croix annule toutes les modifications depuis l'entrée en édition."
-    },
-    "dock": {
-      "title": "Le dock",
-      "body": "La barre du bas ouvre vos panneaux. Son engrenage permet de les réordonner ou d'en ajouter."
+      "body": "Rien n'est conservé tant que vous n'avez pas enregistré. La croix quitte l'édition ; Ctrl+Z annule geste par geste."
     },
     "settings": {
-      "title": "Réglages",
-      "body": "Thème, disposition, langue, sauvegarde. Tout ce qui change l'apparence du dashboard est ici."
+      "title": "Le lanceur",
+      "body": "Le bouton bleu ouvre le lanceur : pages favorites, panneaux, réglages, écran de veille, visite guidée."
     },
     "widgetsAdd": {
       "title": "Le catalogue",
-      "body": "Les widgets sont classés par catégorie. Choisissez-en un, puis sélectionnez l'entité Home Assistant qu'il doit piloter."
+      "body": "Les widgets sont classés par catégorie. Choisissez-en un, puis l'entité Home Assistant qu'il doit piloter. Le « + » d'un panneau l'y range directement."
     },
     "widgetsResize": {
-      "title": "Organiser la grille",
-      "body": "En mode édition, chaque card se déplace et se redimensionne par son coin inférieur droit. Chaque taille d'écran garde sa disposition."
+      "title": "Ranger les tuiles",
+      "body": "En édition, une tuile se glisse d'un panneau à l'autre, au doigt comme à la souris, et se redimensionne par son coin. Une seule disposition pour tous les écrans : sur un téléphone, les panneaux s'empilent."
     },
     "widgetsSave": {
       "title": "Conserver votre travail",
@@ -49,23 +45,19 @@
     },
     "panelsCreate": {
       "title": "Panneaux personnalisés",
-      "body": "Un panneau est une feuille plein écran que vous composez par blocs : rangées de volets, boutons d'action, titres de section."
+      "body": "Dans le lanceur, « Panneaux personnalisés » compose une feuille par blocs : rangées de volets, boutons d'action, titres de section."
     },
     "panelsDock": {
-      "title": "Le mettre dans le dock",
-      "body": "Une fois le panneau créé, ajoutez-le à la barre du bas via l'engrenage — il devient accessible en un geste."
-    },
-    "panelsSave": {
-      "title": "Enregistrer",
-      "body": "Les panneaux sont sauvegardés avec le reste du dashboard."
+      "title": "Les épingler au rail",
+      "body": "En mode édition, la punaise d’un panneau dans le lanceur l’épingle au rail : il s’ouvre en un geste."
     },
     "appearanceOpen": {
-      "title": "Les thèmes",
-      "body": "Sept thèmes, opacité des cards, fond d'écran, bascule jour/nuit automatique — tout est dans la section Apparence."
+      "title": "Les réglages",
+      "body": "Dans le lanceur : thème sombre ou clair, bascule jour/nuit automatique, sons, formats régionaux, langue."
     },
     "appearanceWallpanel": {
-      "title": "Mode mural",
-      "body": "Configurez un écran de veille pour une tablette fixée au mur : il prend le relais après un moment d'inactivité."
+      "title": "Écran de veille",
+      "body": "Toujours dans le lanceur : la veille d'une tablette murale — grande horloge ou cadre photo, et vos widgets par-dessus."
     },
     "planModel": {
       "title": "La maison",
@@ -90,6 +82,10 @@
     "planSave": {
       "title": "Enregistrer",
       "body": "Rien n'est gardé sans « Sauvegarder », et chaque geste s'annule d'un Ctrl+Z."
+    },
+    "panelButtons": {
+      "title": "Les panneaux",
+      "body": "Chaque page range ses tuiles dans des panneaux. ⚙ règle un panneau — titre, largeur, place sous le précédent —, ✎ ne modifie que lui."
     }
   }
 }

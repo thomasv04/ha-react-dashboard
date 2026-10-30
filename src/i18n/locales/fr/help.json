@@ -9,15 +9,15 @@
     },
     "widgets": {
       "title": "Ajouter et organiser des widgets",
-      "body": "Parcourir le catalogue, associer une entité, déplacer et redimensionner vos cards."
+      "body": "Parcourir le catalogue, associer une entité, ranger les tuiles dans les panneaux et les redimensionner."
     },
     "panels": {
       "title": "Configurer un panneau",
-      "body": "Composer un panneau plein écran par blocs, puis l'ajouter au dock du bas."
+      "body": "Composer un panneau par blocs depuis le lanceur, puis l'épingler au rail."
     },
     "appearance": {
       "title": "Apparence et mode mural",
-      "body": "Thèmes, fond d'écran, opacité des cards, et l'écran de veille pour une tablette murale."
+      "body": "Thème sombre ou clair, bascule jour/nuit, et l'écran de veille pour une tablette murale : grande horloge ou cadre photo."
     },
     "floorplan": {
       "title": "La page Plan",

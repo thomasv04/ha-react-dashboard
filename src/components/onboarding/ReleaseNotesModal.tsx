@@ -71,23 +71,23 @@ export function ReleaseNotesModal({ onClose }: { onClose: () => void }) {
       >
         <div
           data-testid='release-notes-modal'
-          className='gc-overlay pointer-events-auto w-full max-w-lg rounded-2xl overflow-hidden flex flex-col'
+          className='bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-sheet)] pointer-events-auto w-full max-w-lg rounded-[var(--ds-radius-lg)] overflow-hidden flex flex-col'
           style={{ maxHeight: 'min(85vh, 640px)' }}
         >
-          <div className='flex items-start justify-between px-6 pt-5 pb-4 border-b border-white/8 flex-shrink-0'>
+          <div className='flex items-start justify-between px-6 pt-5 pb-4 border-b border-[var(--ds-surface-3)] flex-shrink-0'>
             <div className='min-w-0'>
               <div className='flex items-center gap-2'>
-                <Sparkles size={15} className='text-blue-300 flex-shrink-0' />
-                <h2 className='text-white font-semibold text-base truncate'>{note.title}</h2>
+                <Sparkles size={15} className='text-[var(--ds-accent)] flex-shrink-0' />
+                <h2 className='text-[var(--ds-ink)] font-semibold text-base truncate'>{note.title}</h2>
               </div>
-              <p className='text-white/40 text-xs mt-1'>
+              <p className='text-[var(--ds-ink-muted)] text-xs mt-1'>
                 {t('releaseNotes.version', { version: note.version })} · {note.date}
               </p>
             </div>
             <button
               onClick={close}
               aria-label={t('common.close')}
-              className='p-1.5 rounded-lg text-white/35 hover:text-white/70 hover:bg-white/10 transition-colors flex-shrink-0'
+              className='p-1.5 rounded-[var(--ds-radius-sm)] text-[var(--ds-ink-muted)] transition-colors flex-shrink-0'
             >
               <X size={16} />
             </button>
@@ -95,14 +95,21 @@ export function ReleaseNotesModal({ onClose }: { onClose: () => void }) {
 
           <div className='flex-1 overflow-y-auto p-5 flex flex-col gap-3'>
             {note.items.map((item, i) => (
-              <div key={i} className='rounded-xl bg-white/[0.04] border border-white/8 p-4'>
-                <p className='text-white/70 text-sm leading-relaxed'>{item.text}</p>
-                {item.image && <img src={item.image} alt='' className='mt-3 w-full rounded-lg border border-white/10' loading='lazy' />}
+              <div key={i} className='rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] p-4'>
+                <p className='text-[var(--ds-ink)] text-sm leading-relaxed'>{item.text}</p>
+                {item.image && (
+                  <img
+                    src={item.image}
+                    alt=''
+                    className='mt-3 w-full rounded-[var(--ds-radius-sm)] border border-[var(--ds-surface-3)]'
+                    loading='lazy'
+                  />
+                )}
                 {item.tour && (
                   <button
                     onClick={() => launch(item.tour!)}
                     data-testid={`release-tour-${item.tour}`}
-                    className='mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-300 hover:bg-blue-500/30 transition-colors text-xs font-semibold'
+                    className='mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)] transition-colors text-xs font-semibold'
                   >
                     <Play size={11} /> {t('help.launch')}
                   </button>
@@ -111,11 +118,11 @@ export function ReleaseNotesModal({ onClose }: { onClose: () => void }) {
             ))}
           </div>
 
-          <div className='px-5 py-4 border-t border-white/8 flex justify-end flex-shrink-0'>
+          <div className='px-5 py-4 border-t border-[var(--ds-surface-3)] flex justify-end flex-shrink-0'>
             <button
               onClick={close}
               data-testid='release-notes-done'
-              className='px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-400 text-white text-xs font-semibold transition-colors'
+              className='px-4 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-accent)] text-white text-xs font-semibold transition-colors'
             >
               {t('releaseNotes.done')}
             </button>

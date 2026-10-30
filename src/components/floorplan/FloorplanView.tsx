@@ -997,7 +997,7 @@ export function FloorplanView() {
   const drawnPart = draft?.part;
 
   /** Point d'un dessin en cours, en % du plan : ambre, ou bleu là où poser une pastille. */
-  const dot = (at: { x: number; y: number } | null, color = 'bg-amber-400 ring-amber-400/30') =>
+  const dot = (at: { x: number; y: number } | null, color = 'bg-[var(--ds-warm-light)] ring-amber-400/30 text-[#3d2a00]') =>
     at && (
       <span
         className={cn('absolute w-3 h-3 rounded-full ring-4 pointer-events-none', color)}
@@ -1054,7 +1054,7 @@ export function FloorplanView() {
   const addPopover = adding && (
     // Remonté à chaque point : le sélecteur ne s'ouvre seul qu'au montage.
     <div key={`${adding.x}:${adding.y}`}>
-      {dot(adding, 'bg-blue-400 ring-blue-400/30')}
+      {dot(adding, 'bg-[var(--ds-accent)] ring-[var(--ds-accent)] text-white')}
       <DraftPopover
         title={t(lampArmed ? 'layout.floorplan.lampHere' : 'layout.floorplan.addHere')}
         onCancel={() => setAdding(null)}
@@ -1069,8 +1069,10 @@ export function FloorplanView() {
     <button
       onClick={() => setPanel(p => (p === id ? null : id))}
       className={cn(
-        'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors',
-        panel === id ? 'bg-blue-500/20 border-blue-500/40 text-blue-200' : 'bg-white/5 border-white/10 text-white/70 hover:text-white'
+        'flex items-center gap-1.5 px-2.5 py-1.5 rounded-[var(--ds-radius-sm)] text-xs font-medium border transition-colors',
+        panel === id
+          ? 'bg-[var(--ds-tile-on)] border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
+          : 'bg-[var(--ds-surface-2)] border-[var(--ds-surface-3)] text-[var(--ds-ink)]'
       )}
     >
       <Icon size={13} /> {label}
@@ -1124,14 +1126,14 @@ export function FloorplanView() {
       />
       {source === 'model' ? modelField : picker}
       <div className='flex items-center gap-2'>
-        <label className='flex items-center gap-1.5 text-xs text-white/60'>
+        <label className='flex items-center gap-1.5 text-xs text-[var(--ds-ink-muted)]'>
           {t('layout.floorplan.north')}
           <input
             type='number'
             step={15}
             value={floorplan?.north ?? 0}
             onChange={e => setFloorplan({ north: Number(e.target.value) || 0 })}
-            className='w-16 px-2 py-1 rounded-md text-xs bg-white/8 border border-white/15 text-white focus:outline-none focus:border-blue-500/60'
+            className='w-16 px-2 py-1 rounded-md text-xs bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)] focus:outline-none focus:border-[var(--ds-accent)]'
           />
         </label>
         <button
@@ -1140,7 +1142,7 @@ export function FloorplanView() {
             if (view) setFloorplan({ camera: view });
           }}
           disabled={!loaded}
-          className='ml-auto px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 text-white/70 hover:text-white disabled:opacity-40'
+          className='ml-auto px-2.5 py-1.5 rounded-[var(--ds-radius-sm)] text-xs font-medium bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)] disabled:opacity-40'
         >
           {t('layout.floorplan.saveView')}
         </button>
@@ -1163,13 +1165,16 @@ export function FloorplanView() {
       />
       {/* Le menu en haut à droite : les panneaux qu'il ouvre, après les vues. */}
       {menuPanels.map(panel => (
-        <div key={panel.id} className='flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white/5 text-xs text-white/70'>
+        <div
+          key={panel.id}
+          className='flex items-center gap-2 px-2 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] text-xs text-[var(--ds-ink)]'
+        >
           <span className='flex-1 truncate'>{panel.name}</span>
           <button
             onClick={() => setFloorplan({ panels: floorplan?.panels?.filter(ref => ref !== `custom:${panel.id}`) })}
             title={t('layout.floorplan.menuPanelRemove')}
             aria-label={t('layout.floorplan.menuPanelRemove')}
-            className='p-1 rounded-md text-red-300 hover:bg-red-500/20'
+            className='p-1 rounded-md text-[var(--ds-alert)]'
           >
             <Trash2 size={12} />
           </button>
@@ -1187,7 +1192,7 @@ export function FloorplanView() {
     <>
       <ToggleRow label={t('layout.floorplan.sky')} checked={floorplan?.sky !== false} onChange={on => setFloorplan({ sky: on })} />
       <ToggleRow label={t('layout.floorplan.lampGlow')} checked={!!floorplan?.lampGlow} onChange={on => setFloorplan({ lampGlow: on })} />
-      <label className='flex items-center gap-3 px-2 py-1.5 rounded-lg bg-white/5 text-xs text-white/70'>
+      <label className='flex items-center gap-3 px-2 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] text-xs text-[var(--ds-ink)]'>
         {t('layout.floorplan.nightLight')}
         <input
           type='range'
@@ -1200,9 +1205,9 @@ export function FloorplanView() {
             previewNight();
             setFloorplan({ nightLight: Number(e.target.value) });
           }}
-          className='flex-1 min-w-0 accent-blue-400'
+          className='flex-1 min-w-0 accent-[var(--ds-accent)]'
         />
-        <span className='w-9 text-right tabular-nums text-white/80'>{Math.round(nightLight * 100)}%</span>
+        <span className='w-9 text-right tabular-nums text-[var(--ds-ink)]'>{Math.round(nightLight * 100)}%</span>
       </label>
       <EntityPicker
         label={t('layout.floorplan.weather')}
@@ -1227,12 +1232,12 @@ export function FloorplanView() {
       />
       {/* Câbles, pluie, rotation immobiles : que l'appareil dise pourquoi. */}
       {(!motionOk || perfSettings.reduceAnimations) && (
-        <p className='px-0.5 text-[11px] leading-snug text-amber-200/80'>
+        <p className='px-0.5 text-[11px] leading-snug text-[var(--ds-warm-light)]'>
           {t(perfSettings.reduceAnimations ? 'layout.floorplan.motionOffSetting' : 'layout.floorplan.motionOffDevice')}
         </p>
       )}
       {MOCK && (
-        <label className='flex items-center gap-2 text-xs text-white/60'>
+        <label className='flex items-center gap-2 text-xs text-[var(--ds-ink-muted)]'>
           {t('layout.floorplan.mockSun')}
           <input
             type='range'
@@ -1243,7 +1248,7 @@ export function FloorplanView() {
             onChange={e => setMockHour(Number(e.target.value))}
             className='flex-1 min-w-0 accent-amber-400'
           />
-          <span className='w-11 text-right tabular-nums text-white/80'>{formatTime(new Date(today + mockHour * HOUR_MS))}</span>
+          <span className='w-11 text-right tabular-nums text-[var(--ds-ink)]'>{formatTime(new Date(today + mockHour * HOUR_MS))}</span>
         </label>
       )}
     </>
@@ -1328,7 +1333,7 @@ export function FloorplanView() {
             )}
             {cloudy && <Clouds {...cloudy} moving={animated} />}
             {failed ? (
-              <p className='m-auto absolute inset-0 h-fit w-fit max-w-sm px-4 py-3 rounded-2xl gc-overlay text-sm text-white/70 text-center'>
+              <p className='m-auto absolute inset-0 h-fit w-fit max-w-sm px-4 py-3 rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-sheet)] text-sm text-[var(--ds-ink)] text-center'>
                 {t(failed === 'webgl' ? 'layout.floorplan.webglError' : 'layout.floorplan.modelError')}
               </p>
             ) : (
@@ -1380,7 +1385,7 @@ export function FloorplanView() {
               </Suspense>
             )}
             {!loaded && !failed && (
-              <p className='absolute inset-0 m-auto h-fit w-fit text-sm text-white/45 pointer-events-none'>
+              <p className='absolute inset-0 m-auto h-fit w-fit text-sm text-[var(--ds-ink-muted)] pointer-events-none'>
                 {t('layout.floorplan.loading')}
               </p>
             )}
@@ -1502,7 +1507,7 @@ export function FloorplanView() {
                           at && (
                             <span
                               key={room.id}
-                              className='absolute px-2 py-0.5 rounded-full bg-black/55 text-[11px] text-white/85 pointer-events-none whitespace-nowrap'
+                              className='absolute px-2 py-0.5 rounded-full bg-black/55 text-[11px] text-white pointer-events-none whitespace-nowrap'
                               style={{ left: `${at.x}%`, top: `${at.y}%`, translate: '-50% -50%' }}
                             >
                               {room.name}
@@ -1589,7 +1594,7 @@ export function FloorplanView() {
                             type='button'
                             aria-label={t('layout.floorplan.partCorner')}
                             title={t('layout.floorplan.partCorner')}
-                            className='absolute z-20 w-4 h-4 rounded-full bg-amber-400 ring-4 ring-amber-400/30 cursor-move touch-none'
+                            className='absolute z-20 w-4 h-4 rounded-full bg-[var(--ds-warm-light)] ring-4 ring-amber-400/30 cursor-move touch-none text-[#3d2a00]'
                             style={{ left: `${at.x}%`, top: `${at.y}%`, translate: '-50% -50%' }}
                             onPointerDown={e => {
                               e.stopPropagation();
@@ -1614,13 +1619,13 @@ export function FloorplanView() {
                   translate: '-50% 0',
                 }}
               >
-                <p className='px-1 text-[11px] leading-snug text-white/65'>{t('layout.floorplan.openingUnnamedHelp')}</p>
+                <p className='px-1 text-[11px] leading-snug text-[var(--ds-ink-muted)]'>{t('layout.floorplan.openingUnnamedHelp')}</p>
                 <button
                   onClick={() => {
                     setDraft({ a: unnamed.anchor, from: unnamed.at });
                     setUnnamed(null);
                   }}
-                  className='ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 text-white/70 hover:text-white'
+                  className='ml-auto px-3 py-1.5 rounded-[var(--ds-radius-sm)] text-xs font-medium bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)]'
                 >
                   {t('layout.floorplan.openingDrawAnyway')}
                 </button>
@@ -1727,7 +1732,10 @@ export function FloorplanView() {
                 notice={
                   guards.length > 0 && (
                     <p
-                      className={cn('flex items-center gap-2 text-xs font-medium', openedNames.length ? 'text-red-300' : 'text-green-300')}
+                      className={cn(
+                        'flex items-center gap-2 text-xs font-medium',
+                        openedNames.length ? 'text-[var(--ds-alert)]' : 'text-[var(--ds-good)]'
+                      )}
                     >
                       {openedNames.length ? <ShieldAlert size={14} className='shrink-0' /> : <ShieldCheck size={14} className='shrink-0' />}
                       {securityText}
@@ -1787,14 +1795,16 @@ export function FloorplanView() {
             )}
           </div>
         ) : !image ? (
-          <div className='m-auto w-full max-w-sm flex flex-col items-center gap-3 p-6 rounded-3xl gc-overlay text-center'>
-            <MapIcon size={28} className='text-white/40' />
-            <h2 className='text-white/85 font-semibold'>{t('layout.floorplan.emptyTitle')}</h2>
-            <p className='text-white/45 text-sm'>{isEditMode ? t('layout.floorplan.imageHint') : t('layout.floorplan.emptyView')}</p>
+          <div className='m-auto w-full max-w-sm flex flex-col items-center gap-3 p-6 rounded-[var(--ds-radius-xl)] bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-sheet)] text-center'>
+            <MapIcon size={28} className='text-[var(--ds-ink-muted)]' />
+            <h2 className='text-[var(--ds-ink)] font-semibold'>{t('layout.floorplan.emptyTitle')}</h2>
+            <p className='text-[var(--ds-ink-muted)] text-sm'>
+              {isEditMode ? t('layout.floorplan.imageHint') : t('layout.floorplan.emptyView')}
+            </p>
             {isEditMode && (
               <div className='w-full flex flex-col gap-3 text-left'>
                 {picker}
-                <p className='text-white/45 text-xs text-center'>{t('layout.floorplan.orModel')}</p>
+                <p className='text-[var(--ds-ink-muted)] text-xs text-center'>{t('layout.floorplan.orModel')}</p>
                 {modelField}
               </div>
             )}
@@ -1883,23 +1893,23 @@ export function FloorplanView() {
         />
       )}
       {isEditMode && !model && image && (
-        <div className='absolute left-2 top-2 z-30 w-72 max-w-[calc(100%-1rem)] flex flex-col gap-2 p-2.5 rounded-2xl gc-overlay'>
+        <div className='absolute left-2 top-2 z-30 w-72 max-w-[calc(100%-1rem)] flex flex-col gap-2 p-2.5 rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-1)] text-[var(--ds-ink)] shadow-[var(--ds-shadow-sheet)]'>
           <div className='flex flex-wrap items-center gap-2'>
             {panelButton('image', ImageIcon, t('layout.floorplan.image'))}
             {panelButton('model', BoxIcon, t('layout.floorplan.model'))}
-            <label className='flex items-center gap-1.5 text-xs text-white/60 cursor-pointer select-none'>
+            <label className='flex items-center gap-1.5 text-xs text-[var(--ds-ink-muted)] cursor-pointer select-none'>
               <input
                 type='checkbox'
                 checked={floorplan?.dimAtNight !== false}
                 onChange={e => setFloorplan({ dimAtNight: e.target.checked })}
-                className='accent-blue-500'
+                className='accent-[var(--ds-accent)]'
               />
               {t('layout.floorplan.dimAtNight')}
             </label>
           </div>
           {panel === 'image' && picker}
           {panel === 'model' && modelField}
-          <p className='text-[11px] text-white/40 px-0.5'>{t(`layout.floorplan.${hint}`)}</p>
+          <p className='text-[11px] text-[var(--ds-ink-muted)] px-0.5'>{t(`layout.floorplan.${hint}`)}</p>
         </div>
       )}
     </div>

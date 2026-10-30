@@ -30,8 +30,6 @@
   "saveFailed": "Impossible de sauvegarder la configuration",
   "conflictTitle": "Modifié ailleurs",
   "conflictDescription": "Un autre appareil a enregistré entre-temps. Rechargez la page avant de refaire vos modifications.",
-  "pack": "Réorganiser",
-  "packTooltip": "Referme les trous de la mise en page (breakpoint affiché uniquement)",
   "repairedTitle": "Configuration réparée",
   "repairedDescription": "Des éléments illisibles ont été écartés. Le reste du dashboard est intact.",
   "undo": "Annuler (Ctrl+Z)",

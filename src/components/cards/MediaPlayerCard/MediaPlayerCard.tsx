@@ -189,7 +189,7 @@ export function MediaPlayerCard() {
 
   if (!entity) {
     return (
-      <div className='gc flex h-full items-center justify-center p-5'>
+      <div className='rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] text-[var(--ds-ink)] flex h-full items-center justify-center p-5'>
         <span className='text-sm text-[var(--ds-ink-muted)]'>{t('widgets.media_player.notFound')}</span>
       </div>
     );

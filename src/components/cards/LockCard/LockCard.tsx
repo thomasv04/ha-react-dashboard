@@ -49,7 +49,10 @@ export function LockCard() {
 
   if (!entity) {
     return (
-      <div ref={cardRef} className='gc flex h-full items-center justify-center p-4'>
+      <div
+        ref={cardRef}
+        className='rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] text-[var(--ds-ink)] flex h-full items-center justify-center p-4'
+      >
         <span className='text-sm text-[var(--ds-ink-muted)]'>{t('widgets.lock.notFound')}</span>
       </div>
     );
