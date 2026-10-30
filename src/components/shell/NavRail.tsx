@@ -12,6 +12,9 @@ import { useI18n } from '@/i18n';
 // bouton des apps, et le rail tombe pile sous lui.
 const RAIL_BUTTON = 'flex size-12 shrink-0 items-center justify-center rounded-[var(--ds-radius-md)] transition-colors';
 
+/** Couleurs des pastilles de pages, reprises des apps du lanceur. */
+const APP_COLORS = ['var(--ds-app-home)', 'var(--ds-app-music)', 'var(--ds-app-tv)', 'var(--ds-app-photo)', 'var(--ds-app-calendar)'];
+
 /**
  * Rail de navigation à gauche : la première page (l'accueil) en tête, les
  * autres pages dans la pilule, puis les panneaux épinglés. En mode édition,
@@ -73,15 +76,21 @@ export function NavRail() {
           const Icon = pageIcon(page);
           return (
             <div key={page.id} className='relative'>
+              {/* Le trait de la page ouverte, à gauche du rail, comme sur l'Echo Show. */}
+              {isActive && (
+                <span
+                  aria-hidden='true'
+                  className='absolute -left-5 top-1/2 h-12 w-1.5 -translate-y-1/2 rounded-full bg-[var(--ds-accent)] max-sm:hidden'
+                />
+              )}
               <button
                 onClick={() => setCurrentPage(page.id)}
                 title={page.label}
                 aria-label={page.label}
                 aria-current={isActive ? 'page' : undefined}
-                className={cn(
-                  RAIL_BUTTON,
-                  isActive ? 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)]' : 'text-[var(--ds-ink-muted)] hover:text-[var(--ds-ink)]'
-                )}
+                // Une pastille de couleur par page, comme les apps du lanceur ; la page ouverte est cerclée.
+                style={{ background: APP_COLORS[index % APP_COLORS.length] }}
+                className={cn(RAIL_BUTTON, 'text-white', isActive && 'outline-[3px] outline-offset-2 outline-[var(--ds-ink)]')}
               >
                 <Icon size={22} />
               </button>
@@ -118,10 +127,8 @@ export function NavRail() {
               title={panel.name}
               aria-label={panel.name}
               aria-pressed={isActive}
-              className={cn(
-                RAIL_BUTTON,
-                isActive ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'text-[var(--ds-ink-muted)] hover:text-[var(--ds-ink)]'
-              )}
+              style={{ background: 'var(--ds-app-music)' }}
+              className={cn(RAIL_BUTTON, 'text-white', isActive && 'outline-[3px] outline-offset-2 outline-[var(--ds-ink)]')}
             >
               <Icon size={22} />
             </button>
