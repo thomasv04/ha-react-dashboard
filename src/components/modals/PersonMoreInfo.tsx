@@ -20,7 +20,7 @@ export default function PersonMoreInfo({ entityId, widgetId }: { entityId: strin
   const personEntityId = entityId || config?.persons?.[0]?.entityId || '';
   const entity = useSafeEntity(personEntityId);
 
-  if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
+  if (!entity) return <div className='p-12 text-[var(--ds-ink-muted)] text-center'>{t('common.entityNotFound')}</div>;
 
   const name = config?.persons?.[0]?.name ?? friendlyName(entity) ?? personEntityId;
   const state = entity.state;
@@ -39,12 +39,24 @@ export default function PersonMoreInfo({ entityId, widgetId }: { entityId: strin
             [
               {
                 type: 'details',
-                title: 'Localisation',
+                title: t('common.moreInfo.location'),
                 entries: [
-                  { label: 'Zone', value: state, color: isHome ? 'text-emerald-400' : 'text-amber-400' },
-                  ...(lat != null && lon != null ? [{ label: 'Coordonnées', value: `${lat.toFixed(4)}, ${lon.toFixed(4)}` }] : []),
+                  {
+                    label: t('common.moreInfo.zone'),
+                    value: state,
+                    color: isHome ? 'text-[var(--ds-good)]' : 'text-[var(--ds-warm-light)]',
+                  },
+                  ...(lat != null && lon != null
+                    ? [{ label: t('common.moreInfo.coordinates'), value: `${lat.toFixed(4)}, ${lon.toFixed(4)}` }]
+                    : []),
                   ...(batteryLevel != null
-                    ? [{ label: 'Batterie', value: `${batteryLevel}%`, color: batteryLevel > 20 ? 'text-emerald-400' : 'text-red-400' }]
+                    ? [
+                        {
+                          label: t('common.moreInfo.battery'),
+                          value: `${batteryLevel}%`,
+                          color: batteryLevel > 20 ? 'text-[var(--ds-good)]' : 'text-[var(--ds-alert)]',
+                        },
+                      ]
                     : []),
                 ],
               },
@@ -67,7 +79,7 @@ export default function PersonMoreInfo({ entityId, widgetId }: { entityId: strin
 
       {/* Map */}
       {lat != null && lon != null ? (
-        <div className='mt-6 rounded-2xl overflow-hidden' style={{ height: 'clamp(16rem, 35vw, 24rem)' }}>
+        <div className='mt-6 rounded-[var(--ds-radius-lg)] overflow-hidden' style={{ height: 'clamp(16rem, 35vw, 24rem)' }}>
           <iframe
             title='Location'
             width='100%'
@@ -78,7 +90,7 @@ export default function PersonMoreInfo({ entityId, widgetId }: { entityId: strin
           />
         </div>
       ) : (
-        <div className='mt-6 flex items-center gap-2 text-white/40 text-sm bg-white/5 rounded-xl px-4 py-3'>
+        <div className='mt-6 flex items-center gap-2 text-[var(--ds-ink-muted)] text-sm bg-[var(--ds-sheet-section)] rounded-[var(--ds-radius-md)] px-4 py-3'>
           <MapPin size={16} />
           <span>Position GPS non disponible</span>
         </div>
@@ -86,14 +98,14 @@ export default function PersonMoreInfo({ entityId, widgetId }: { entityId: strin
 
       {/* Location info */}
       <div className='mt-4 space-y-2'>
-        <div className='flex items-center justify-between text-sm bg-white/5 rounded-xl px-4 py-3'>
-          <span className='text-white/50'>Zone</span>
-          <span className='text-white font-medium capitalize'>{state}</span>
+        <div className='flex items-center justify-between rounded-[var(--ds-radius-lg)] bg-[var(--ds-sheet-section)] px-5 py-4 text-[15px]'>
+          <span className='text-[var(--ds-ink-muted)]'>{t('common.moreInfo.zone')}</span>
+          <span className='text-[var(--ds-ink)] font-medium capitalize'>{state}</span>
         </div>
         {lat != null && lon != null && (
-          <div className='flex items-center justify-between text-sm bg-white/5 rounded-xl px-4 py-3'>
-            <span className='text-white/50'>Coordonnées</span>
-            <span className='text-white font-mono text-xs'>
+          <div className='flex items-center justify-between rounded-[var(--ds-radius-lg)] bg-[var(--ds-sheet-section)] px-5 py-4 text-[15px]'>
+            <span className='text-[var(--ds-ink-muted)]'>{t('common.moreInfo.coordinates')}</span>
+            <span className='text-[var(--ds-ink)] font-mono text-xs'>
               {lat.toFixed(4)}, {lon.toFixed(4)}
             </span>
           </div>

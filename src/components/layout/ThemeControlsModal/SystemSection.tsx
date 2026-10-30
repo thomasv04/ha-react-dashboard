@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Copy, Check, Server, Download, Upload, AlertTriangle, Compass, FileDown, FileUp } from 'lucide-react';
+import { Copy, Check, Download, Upload, AlertTriangle, Compass, FileDown, FileUp } from 'lucide-react';
 import { startTour } from '@/components/onboarding/TourOverlay';
 import { useI18n } from '@/i18n';
 import { apiFetch, isPanelMode } from '@/lib/api-base';
@@ -7,7 +7,8 @@ import { useTheme } from '@/context/ThemeContext';
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 import { encodeConfig, decodeConfig, type ConfigSnapshot } from '@/lib/config-string';
 import { ConfigHistorySection } from './ConfigHistorySection';
-import { SECTION_HEADING } from './typography';
+import { SECTION_HEADING, SETTINGS_CARD } from './typography';
+import { BUTTON_PRIMARY, BUTTON_SECONDARY, INPUT } from './controls';
 import { cn } from '@/lib/utils';
 
 export function SystemSection() {
@@ -17,20 +18,7 @@ export function SystemSection() {
   const [copied, setCopied] = useState(false);
 
   // ── Config string state ──
-  const {
-    themeId,
-    background,
-    cardOpacity,
-    perfSettings,
-    autoTheme,
-    layoutSettings,
-    setTheme,
-    setBackground,
-    setCardOpacity,
-    setPerfSettings,
-    setAutoTheme,
-    setLayoutSettings,
-  } = useTheme();
+  const { themeId, perfSettings, autoTheme, setTheme, setPerfSettings, setAutoTheme } = useTheme();
   const { pages, allLayouts, allWidgetConfigs, wallPanelConfig, wallPanelLayout, wallPanelWidgetConfigs, customPanels, dock, saveConfig } =
     useDashboardConfig();
   const [exportString, setExportString] = useState('');
@@ -69,7 +57,7 @@ export function SystemSection() {
   const handleExport = async () => {
     const snapshot: ConfigSnapshot = {
       v: 1,
-      theme: { themeId, background, cardOpacity, perfSettings, autoTheme, layoutSettings },
+      theme: { themeId, perfSettings, autoTheme },
       dashboard: {
         version: 2,
         pages,
@@ -146,11 +134,8 @@ export function SystemSection() {
 
     // Apply theme settings
     setTheme(snapshot.theme.themeId);
-    setBackground(snapshot.theme.background);
-    setCardOpacity(snapshot.theme.cardOpacity);
     setPerfSettings(snapshot.theme.perfSettings);
     setAutoTheme(snapshot.theme.autoTheme);
-    setLayoutSettings(snapshot.theme.layoutSettings);
 
     // Apply dashboard config
     if (!(await saveConfig(snapshot.dashboard))) {
@@ -166,73 +151,62 @@ export function SystemSection() {
     setTimeout(() => setImportStatus('idle'), 2500);
   };
 
+  const block = cn(SETTINGS_CARD, 'flex flex-col gap-3');
+  const note = 'text-[15px] leading-relaxed text-[var(--ds-ink-muted)]';
+  const area = cn(INPUT, 'h-auto resize-none py-3 font-mono text-sm');
+
   return (
-    <div className='flex flex-col gap-7'>
+    <div className='flex flex-col gap-3'>
       {/* ── Version réellement chargée ── */}
       {/* `__BUILD_VERSION__` vient de `config.yaml` au moment du build, donc du
           commit tagué. Ce champ lisait `RELEASE_NOTES[0]`, tenu à la main : un
           build 2.1.4 s'annonçait 2.1.3 et faisait croire à une mise à jour HACS
           qui n'était jamais arrivée. */}
-      <div className='flex items-baseline gap-2'>
+      <section className={cn(SETTINGS_CARD, 'flex items-baseline justify-between gap-3')}>
         <span className={SECTION_HEADING}>{t('settings.system_section.buildVersion')}</span>
-        <code data-testid='build-version' className='text-white/70 text-xs font-mono'>
+        <code data-testid='build-version' className='font-mono text-lg text-[var(--ds-ink)]'>
           {__BUILD_VERSION__}
         </code>
-      </div>
+      </section>
 
       {/* ── Visite guidée ── */}
-      <div>
-        <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
-          <Compass size={12} /> {t('tour.title')}
-        </h3>
-        <p className='text-white/40 text-xs mb-4 leading-relaxed'>{t('tour.replayDesc')}</p>
-        <button
-          onClick={() => startTour('basics')}
-          className='flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/8 border border-white/12 text-white/70 hover:bg-white/12 hover:text-white transition-colors text-xs font-semibold'
-        >
-          <Compass size={12} /> {t('tour.replay')}
+      <section className={block}>
+        <h3 className={SECTION_HEADING}>{t('tour.title')}</h3>
+        <p className={note}>{t('tour.replayDesc')}</p>
+        <button onClick={() => startTour('basics')} className={cn(BUTTON_SECONDARY, 'self-start')}>
+          <Compass size={18} /> {t('tour.replay')}
         </button>
-      </div>
+      </section>
 
       {/* ── Ingress URL ── */}
-      <div>
-        <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
-          <Server size={12} /> {t('settings.system_section.ingressTitle')}
-        </h3>
-        <p className='text-white/40 text-xs mb-4 leading-relaxed'>{t('settings.system_section.ingressDesc')}</p>
+      <section className={block}>
+        <h3 className={SECTION_HEADING}>{t('settings.system_section.ingressTitle')}</h3>
+        <p className={note}>{t('settings.system_section.ingressDesc')}</p>
 
         {loading ? (
-          <p className='text-white/30 text-xs'>{t('settings.system_section.ingressLoading')}</p>
+          <p className={note}>{t('settings.system_section.ingressLoading')}</p>
         ) : fullUrl ? (
           <div className='flex items-center gap-2'>
-            <div className='flex-1 min-w-0 bg-white/5 border border-white/10 rounded-lg px-3 py-2'>
-              <span className='text-white/70 text-xs font-mono truncate block'>{fullUrl}</span>
+            <div className={cn(INPUT, 'flex min-w-0 flex-1 items-center')}>
+              <span className='block truncate font-mono text-sm'>{fullUrl}</span>
             </div>
-            <button
-              onClick={copy}
-              className='flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-400 hover:bg-blue-500/30 transition-colors text-xs font-semibold flex-shrink-0'
-            >
-              {copied ? <Check size={12} /> : <Copy size={12} />}
+            <button onClick={copy} className={cn(BUTTON_PRIMARY, 'shrink-0')}>
+              {copied ? <Check size={18} /> : <Copy size={18} />}
               {copied ? t('settings.system_section.ingressCopied') : t('settings.system_section.ingressCopy')}
             </button>
           </div>
         ) : (
-          <p className='text-white/30 text-xs italic'>{t('settings.system_section.ingressNotAvailable')}</p>
+          <p className={cn(note, 'italic')}>{t('settings.system_section.ingressNotAvailable')}</p>
         )}
-      </div>
+      </section>
 
       {/* ── Export config ── */}
-      <div>
-        <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
-          <Download size={12} /> {t('settings.system_section.configExportTitle')}
-        </h3>
-        <p className='text-white/40 text-xs mb-4 leading-relaxed'>{t('settings.system_section.configExportDesc')}</p>
+      <section className={block}>
+        <h3 className={SECTION_HEADING}>{t('settings.system_section.configExportTitle')}</h3>
+        <p className={note}>{t('settings.system_section.configExportDesc')}</p>
 
-        <button
-          onClick={handleExport}
-          className='flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-400 hover:bg-blue-500/30 transition-colors text-xs font-semibold mb-3'
-        >
-          <Download size={12} />
+        <button onClick={handleExport} className={cn(BUTTON_PRIMARY, 'self-start')}>
+          <Download size={18} />
           {t('settings.system_section.configExportBtn')}
         </button>
 
@@ -243,35 +217,27 @@ export function SystemSection() {
               readOnly
               value={exportString}
               rows={4}
-              className='w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white/70 text-xs font-mono resize-none focus:outline-none focus:border-blue-500/40'
+              className={area}
               onClick={() => textareaRef.current?.select()}
             />
-            <div className='self-end flex items-center gap-2'>
-              <button
-                onClick={downloadExport}
-                className='flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/8 border border-white/12 text-white/70 hover:bg-white/12 hover:text-white transition-colors text-xs font-semibold'
-              >
-                <FileDown size={12} />
+            <div className='flex items-center gap-2 self-end'>
+              <button onClick={downloadExport} className={BUTTON_SECONDARY}>
+                <FileDown size={18} />
                 {t('settings.system_section.configExportDownload')}
               </button>
-              <button
-                onClick={copyExport}
-                className='flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-400 hover:bg-blue-500/30 transition-colors text-xs font-semibold'
-              >
-                {exportCopied ? <Check size={12} /> : <Copy size={12} />}
+              <button onClick={copyExport} className={BUTTON_PRIMARY}>
+                {exportCopied ? <Check size={18} /> : <Copy size={18} />}
                 {exportCopied ? t('settings.system_section.configExportCopied') : t('settings.system_section.configExportCopy')}
               </button>
             </div>
           </div>
         )}
-      </div>
+      </section>
 
       {/* ── Import config ── */}
-      <div>
-        <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
-          <Upload size={12} /> {t('settings.system_section.configImportTitle')}
-        </h3>
-        <p className='text-white/40 text-xs mb-4 leading-relaxed'>{t('settings.system_section.configImportDesc')}</p>
+      <section className={block}>
+        <h3 className={SECTION_HEADING}>{t('settings.system_section.configImportTitle')}</h3>
+        <p className={note}>{t('settings.system_section.configImportDesc')}</p>
 
         <textarea
           value={importString}
@@ -287,34 +253,34 @@ export function SystemSection() {
           }}
           rows={4}
           placeholder={t('settings.system_section.configImportPlaceholder')}
-          className='w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white/70 text-xs font-mono resize-none focus:outline-none focus:border-blue-500/40 placeholder:text-white/20 mb-3'
+          className={area}
         />
 
         {/* Le champ natif reste caché : son rendu par défaut jure avec le reste
-            de la modale, mais c'est bien lui qui ouvre le sélecteur. */}
-        <label className='inline-flex items-center gap-1.5 px-3 py-2 mb-3 rounded-lg bg-white/8 border border-white/12 text-white/70 hover:bg-white/12 hover:text-white transition-colors text-xs font-semibold cursor-pointer'>
-          <FileUp size={12} />
+            des réglages, mais c'est bien lui qui ouvre le sélecteur. */}
+        <label className={cn(BUTTON_SECONDARY, 'cursor-pointer self-start')}>
+          <FileUp size={18} />
           {t('settings.system_section.configImportFile')}
           <input type='file' accept='.hadash,.txt' className='hidden' onChange={e => loadImportFile(e.target.files?.[0])} />
         </label>
 
         {importStatus === 'error' && (
-          <div className='flex items-center gap-2 text-red-400 text-xs mb-3'>
-            <AlertTriangle size={12} />
+          <div className='flex items-center gap-2 text-[15px] text-[var(--ds-alert)]'>
+            <AlertTriangle size={16} />
             {importError}
           </div>
         )}
 
         {importStatus === 'success' && (
-          <div className='flex items-center gap-2 text-emerald-400 text-xs mb-3'>
-            <Check size={12} />
+          <div className='flex items-center gap-2 text-[15px] text-[var(--ds-good)]'>
+            <Check size={16} />
             {t('settings.system_section.configImportSuccess')}
           </div>
         )}
 
         {confirmImport && importStatus === 'idle' && (
-          <div className='flex items-center gap-2 text-amber-400 text-xs mb-3'>
-            <AlertTriangle size={12} />
+          <div className='flex items-center gap-2 text-[15px] text-[var(--ds-warm-light)]'>
+            <AlertTriangle size={16} />
             {t('settings.system_section.configImportConfirm')}
           </div>
         )}
@@ -322,14 +288,14 @@ export function SystemSection() {
         <button
           onClick={handleImport}
           disabled={!importString.trim() || importStatus === 'success'}
-          className='flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 transition-colors text-xs font-semibold disabled:opacity-30 disabled:cursor-not-allowed'
+          className={cn(BUTTON_PRIMARY, 'self-start')}
         >
-          <Upload size={12} />
+          <Upload size={18} />
           {confirmImport && importStatus === 'idle'
             ? t('settings.system_section.configImportConfirmBtn')
             : t('settings.system_section.configImportBtn')}
         </button>
-      </div>
+      </section>
 
       {/* ── Historique de configuration ── */}
       <ConfigHistorySection />

@@ -24,7 +24,7 @@ export default function SensorMoreInfo({ entityId, widgetId }: { entityId: strin
   const entity = useSafeEntity(entityId);
   const { data } = useEntityHistory(entityId, historyHours);
 
-  if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
+  if (!entity) return <div className='p-12 text-[var(--ds-ink-muted)] text-center'>{t('common.entityNotFound')}</div>;
 
   const domain = entityId.split('.')[0];
   const isNumeric = !isNaN(parseFloat(entity.state)) && !BINARY_DOMAINS.includes(domain);

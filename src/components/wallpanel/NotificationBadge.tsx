@@ -26,8 +26,7 @@ export function NotificationBadge({ onOpen }: { onOpen: () => void }) {
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: DURATION_ENTRANCE, ease: EASE_OUT }}
-      className='absolute top-3 left-1/2 -translate-x-1/2 z-[16] flex items-center gap-2 pl-3 pr-3.5 py-1.5 rounded-full
-                 bg-white/10 border border-white/15 text-white/80 backdrop-blur-sm hover:bg-white/15 transition-colors'
+      className='absolute left-1/2 top-4 z-[16] flex h-11 -translate-x-1/2 items-center gap-2 rounded-[var(--ds-radius-pill)] bg-[var(--ds-control)] px-4 text-[var(--ds-control-ink)]'
     >
       <motion.span
         animate={motionAllowed ? { rotate: [0, -12, 10, -6, 0] } : undefined}
@@ -36,9 +35,9 @@ export function NotificationBadge({ onOpen }: { onOpen: () => void }) {
         transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 6, ease: EASE_SINE }}
         style={{ originY: 0 }}
       >
-        <Bell size={14} />
+        <Bell size={18} />
       </motion.span>
-      <span className='text-xs font-semibold tabular-nums'>{count}</span>
+      <span className='text-[15px] font-semibold tabular-nums'>{count}</span>
     </motion.button>
   );
 }

@@ -7,27 +7,18 @@ const MINIMAL_SNAPSHOT: ConfigSnapshot = {
   v: 1,
   theme: {
     themeId: 'dark',
-    background: { mode: 'solid' },
-    cardOpacity: 0.12,
     perfSettings: {
-      reduceBlur: false,
       reduceAnimations: false,
       disableShadows: false,
       disableModalAnimation: false,
       lowQualityCamera: false,
     },
     autoTheme: { enabled: false, lightTheme: 'light', darkTheme: 'dark' },
-    layoutSettings: { gridGap: 16, cardRadius: 24, rowHeight: 80 },
   },
   dashboard: {
     version: 2,
     pages: [{ id: 'home', label: 'Home', icon: '🏠', type: 'grid' as const, order: 0 }],
-    layouts: {
-      home: {
-        widgets: { lg: [], md: [], sm: [] },
-        cols: { lg: 12, md: 8, sm: 4 },
-      },
-    },
+    layouts: { home: { panels: [] } },
     widgetConfigs: { home: {} },
   },
 };
@@ -35,23 +26,14 @@ const MINIMAL_SNAPSHOT: ConfigSnapshot = {
 const LARGE_SNAPSHOT: ConfigSnapshot = {
   v: 1,
   theme: {
-    themeId: 'clay',
-    background: {
-      mode: 'gradient',
-      color1: '#1a1a2e',
-      color2: '#16213e',
-      angle: 135,
-    } as ConfigSnapshot['theme']['background'],
-    cardOpacity: 0.25,
+    themeId: 'light',
     perfSettings: {
-      reduceBlur: true,
       reduceAnimations: false,
       disableShadows: true,
       disableModalAnimation: false,
       lowQualityCamera: false,
     },
     autoTheme: { enabled: true, lightTheme: 'light', darkTheme: 'dark' },
-    layoutSettings: { gridGap: 20, cardRadius: 16, rowHeight: 100 },
   },
   dashboard: {
     version: 2,
@@ -62,29 +44,21 @@ const LARGE_SNAPSHOT: ConfigSnapshot = {
     ],
     layouts: {
       home: {
-        widgets: {
-          lg: [
-            { id: 'w1', type: 'weather', x: 0, y: 0, w: 4, h: 3 },
-            { id: 'w2', type: 'light', x: 4, y: 0, w: 2, h: 2 },
-            { id: 'w3', type: 'thermostat', x: 6, y: 0, w: 3, h: 2 },
-            { id: 'w4', type: 'camera', x: 0, y: 3, w: 6, h: 4 },
-          ],
-          md: [
-            { id: 'w1', type: 'weather', x: 0, y: 0, w: 4, h: 3 },
-            { id: 'w2', type: 'light', x: 4, y: 0, w: 2, h: 2 },
-          ],
-          sm: [{ id: 'w1', type: 'weather', x: 0, y: 0, w: 4, h: 3 }],
-        },
-        cols: { lg: 12, md: 8, sm: 4 },
+        panels: [
+          {
+            id: 'main',
+            cols: 12,
+            widgets: [
+              { id: 'w1', type: 'weather', w: 4, h: 3 },
+              { id: 'w2', type: 'light', w: 2, h: 2 },
+              { id: 'w3', type: 'thermostat', w: 3, h: 2 },
+              { id: 'w4', type: 'camera', w: 6, h: 4 },
+            ],
+          },
+        ],
       },
-      media: {
-        widgets: { lg: [], md: [], sm: [] },
-        cols: { lg: 12, md: 8, sm: 4 },
-      },
-      security: {
-        widgets: { lg: [], md: [], sm: [] },
-        cols: { lg: 12, md: 8, sm: 4 },
-      },
+      media: { panels: [] },
+      security: { panels: [] },
     },
     widgetConfigs: {
       home: {

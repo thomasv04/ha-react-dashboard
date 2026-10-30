@@ -49,7 +49,6 @@ export default defineWidget({
     { key: 'area', label: 'widgets.room.fields.area.label', fieldType: 'area-controls' },
     { key: 'label', label: 'widgets.room.fields.label.label', fieldType: 'text' },
     { key: 'icon', label: 'widgets.room.fields.icon.label', fieldType: 'icon' },
-    { key: 'iconBg', label: 'widgets.room.fields.iconBg.label', fieldType: 'gradient' },
     { key: 'tempEntity', label: 'widgets.room.fields.tempEntity.label', fieldType: 'entity', domain: 'sensor' },
     { key: 'humidityEntity', label: 'widgets.room.fields.humidityEntity.label', fieldType: 'entity', domain: 'sensor' },
     { key: 'lightEntities', label: 'widgets.room.fields.lightEntities.label', fieldType: 'entity-list', domain: 'light' },
@@ -73,6 +72,5 @@ export default defineWidget({
   defaults: {
     label: 'Pièce',
     icon: 'Home',
-    iconBg: 'from-blue-500 to-sky-400',
   } satisfies WidgetDefaults<WidgetConfig>,
 });

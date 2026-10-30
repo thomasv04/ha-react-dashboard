@@ -1,13 +1,29 @@
-﻿import { useDashboardLayout, useEditMode } from '@/context/DashboardLayoutContext';
+import { useDashboardLayout, useEditMode, type GridWidget, type LayoutPanel } from '@/context/DashboardLayoutContext';
 import { useState, useEffect, useLayoutEffect, useRef, createContext, useContext, memo, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
+import { GripVertical, Minus, Pencil, Plus, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { useUser } from '@hakit/core';
+import { Sheet } from '@/components/ds/Sheet';
+import { SwitchTrack } from '@/components/ds/Switch';
 import { staggerGridContainer, staggerGridItem } from '@/lib/motion-variants';
 import { useLowPowerMotion } from '@/hooks/useLowPowerMotion';
-import { placeWidgetAt } from '@/lib/grid-utils';
-import { getMinSize } from '@/widgets';
-import { useGridDragDrop } from '@/hooks/useGridDragDrop';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import {
+  EDIT_PANEL_EVENT,
+  GRID_COL,
+  GRID_GAP,
+  GRID_ROW,
+  PANEL_COLS_MAX,
+  PANEL_COLS_MIN,
+  colsThatFit,
+  colsWidth,
+  findWidget,
+  type PanelZone,
+} from '@/lib/panel-grid';
+import { getMinSize, WIDGET_COMPONENTS, WIDGET_META } from '@/widgets';
 import { GridItemOverlay } from './GridItemOverlay';
+import { AddWidgetModal } from './AddWidgetModal';
 import { WidgetErrorBoundary } from '@/components/ui/WidgetErrorBoundary';
 import { useMoreInfo } from '@/context/MoreInfoContext';
 import { useWidgetConfig, WidgetConfigOverride } from '@/context/WidgetConfigContext';
@@ -19,10 +35,13 @@ import type { CardActionsConfig } from '@/types/card-actions';
 import { isVisible, visibilityEntityIds, type CardVisibilityConfig } from '@/types/card-visibility';
 import { matchStateStyle, stateStyleEntityIds, type CardStateStylesConfig } from '@/types/card-state-styles';
 import { useEntities } from '@/hooks/useEntities';
-import { useTheme } from '@/context/ThemeContext';
+import { useI18n } from '@/i18n';
+import { clamp, cn } from '@/lib/utils';
+import { AnimatePresence } from 'framer-motion';
 
 export type Breakpoint = 'lg' | 'md' | 'sm';
 
+/** Taille d'écran — ne sert plus qu'aux conditions de visibilité des cards. */
 export function resolveBreakpoint(w: number): Breakpoint {
   return w >= 1200 ? 'lg' : w >= 768 ? 'md' : 'sm';
 }
@@ -45,18 +64,98 @@ export const WIDGET_LABELS: Record<string, string> = {
   automation: 'Automatisation',
 };
 
-// Grid Context - contains breakpoint + drag state + drag handler functions
-// Handlers passed via context so GridItem can use them (like Tunet getDragProps)
+/** Où une tuile tombe : un panneau, son rang dedans, et la tuile devant laquelle elle se range. */
+interface DropTarget {
+  panelId: string;
+  index: number;
+  beforeId?: string;
+}
 
-import type { GhostPosition, DragHandlers } from '@/hooks/useGridDragDrop';
-import { clamp } from '@/lib/utils';
+/** Un panneau en cours de déplacement, et l'endroit où il tomberait. */
+interface PanelDrag {
+  id: string;
+  target: { panelId: string; zone: PanelZone } | null;
+}
+
+/**
+ * Suit le pointeur jusqu'au relâché : déplacement et redimensionnement
+ * partagent le même trio d'écouteurs.
+ */
+function trackPointer(onMove: (e: PointerEvent) => void, onUp: () => void) {
+  const up = () => {
+    onUp();
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', up);
+    window.removeEventListener('pointercancel', up);
+  };
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', up);
+  window.addEventListener('pointercancel', up);
+}
+
+/** Marge, en px, où le pointeur fait défiler ce qu'il survole pendant un glisser. */
+const EDGE = 72;
+const EDGE_STEP = 18;
+
+/** Fait défiler le plateau et le panneau survolé quand le pointeur frôle leur bord. */
+function scrollNearEdges(point: { x: number; y: number }, board: HTMLElement | null) {
+  const nudge = (el: HTMLElement, vertical: boolean) => {
+    const r = el.getBoundingClientRect();
+    const pos = vertical ? point.y : point.x;
+    const start = vertical ? r.top : r.left;
+    const end = vertical ? r.bottom : r.right;
+    const delta = pos < start + EDGE ? -EDGE_STEP : pos > end - EDGE ? EDGE_STEP : 0;
+    if (!delta) return;
+    if (vertical) el.scrollTop += delta;
+    else el.scrollLeft += delta;
+  };
+  if (board) nudge(board, false);
+  const scroller = document.elementFromPoint(point.x, point.y)?.closest<HTMLElement>('[data-panel-scroll]');
+  if (scroller) nudge(scroller, true);
+}
+
+type PointerStart = { clientX: number; clientY: number };
+
+/**
+ * Un glisser de bout en bout : la cible est relue à chaque image — et non à
+ * chaque mouvement —, car le défilement automatique la change sans que le
+ * pointeur bouge. Au doigt, le défilement de la page est retenu pendant le geste.
+ */
+function dragSession(start: PointerStart, board: HTMLElement | null, update: (x: number, y: number) => void, onUp: () => void) {
+  const point = { x: start.clientX, y: start.clientY };
+  let raf = 0;
+  const tick = () => {
+    scrollNearEdges(point, board);
+    update(point.x, point.y);
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  const hold = (e: TouchEvent) => e.cancelable && e.preventDefault();
+  window.addEventListener('touchmove', hold, { passive: false });
+  trackPointer(
+    e => {
+      point.x = e.clientX;
+      point.y = e.clientY;
+    },
+    () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('touchmove', hold);
+      onUp();
+    }
+  );
+}
+
+/** Méta des widgets, par type — calculée une fois. */
+const META = new Map(WIDGET_META.map(m => [m.type, m]));
 
 interface GridCtxValue {
   breakpoint: Breakpoint;
   draggingId: string | null;
-  dropTargetId: string | null;
-  ghostPosition: GhostPosition | null;
-  drag: DragHandlers;
+  dropTarget: DropTarget | null;
+  /** Commence le déplacement d'une tuile, au doigt comme à la souris. */
+  startDrag: (widgetId: string, start: PointerStart) => void;
+  panelDrag: PanelDrag | null;
+  startPanelDrag: (panelId: string, start: PointerStart) => void;
   startResize: (widgetId: string, clientX: number, clientY: number) => void;
   motionAllowed: boolean;
 }
@@ -69,23 +168,16 @@ function useGridCtx() {
   return ctx;
 }
 
-const NO_DRAG: DragHandlers = {
-  onItemDragStart: () => {},
-  onItemDragOver: () => {},
-  onItemDragEnter: () => {},
-  onItemDragLeave: () => {},
-  onItemDrop: () => {},
-  onItemDragEnd: () => {},
-  onItemTouchStart: () => {},
-  onItemTouchMove: () => {},
-  onItemTouchEnd: () => {},
-};
+/** Colonnes réellement disponibles dans le panneau : sa largeur, ou ce que l'écran laisse. */
+const PanelColsCtx = createContext(Infinity);
+
+/** Le panneau de la tuile est-il en édition ? Hors panneau (plan) : comme la page. */
+const PanelEditCtx = createContext(true);
 
 /**
  * Permet de rendre des `GridItem` **hors de la grille**, là où l'appelant les
  * positionne lui-même — une page plan. À utiliser avec `readonly` : ni glisser
- * ni redimensionnement ici. Les styles de placement de `GridItem`
- * (`gridColumnStart`…) sont sans effet hors d'un conteneur grille.
+ * ni redimensionnement ici.
  *
  * `lg` : un plan n'a qu'une disposition, celle des positions en %.
  */
@@ -95,9 +187,10 @@ export function FreeGridScope({ children }: { children: ReactNode }) {
     () => ({
       breakpoint: 'lg',
       draggingId: null,
-      dropTargetId: null,
-      ghostPosition: null,
-      drag: NO_DRAG,
+      dropTarget: null,
+      startDrag: () => {},
+      panelDrag: null,
+      startPanelDrag: () => {},
       startResize: () => {},
       motionAllowed,
     }),
@@ -108,9 +201,8 @@ export function FreeGridScope({ children }: { children: ReactNode }) {
 
 // ── Sélection multiple ───────────────────────────────────────────────────────
 //
-// `Shift`+clic ajoute une case à la sélection. Déplacer ou supprimer agit alors
-// sur tout le groupe — sans ça, réorganiser un bloc de six widgets demandait six
-// glissers successifs, chacun repoussant les autres.
+// `Shift`+clic ajoute une case à la sélection. Supprimer agit alors sur tout le
+// groupe.
 
 interface SelectionCtxValue {
   selected: ReadonlySet<string>;
@@ -133,161 +225,201 @@ export function WidgetIdProvider({ id, children }: { id: string; children: React
   return <WidgetIdCtx.Provider value={id}>{children}</WidgetIdCtx.Provider>;
 }
 
-// DashboardGrid - Pure CSS Grid + HTML5 Drag API (a la Tunet)
-// ZERO per-pixel JS during drag. Browser handles ghost image natively.
+/** Sous cette largeur d'écran (`md`), les panneaux s'empilent et la page défile. */
+const STACK_BELOW = 768;
+/** Marge intérieure d'un panneau, de chaque côté. */
+const PANEL_PADDING = 22;
+/**
+ * Marge du plateau, de chaque côté : le contour en pointillés d'un panneau en
+ * édition et le trait de dépôt d'un panneau glissé dépassent de sa boîte, et le
+ * défilement les rognerait.
+ */
+const BOARD_PAD = 14;
+/** Échelle la plus petite de la carte des panneaux. */
+const MAP_MIN_SCALE = 0.6;
 
-export function DashboardGrid({ children, readonly, className }: { children: ReactNode; readonly?: boolean; className?: string }) {
-  const { layoutSettings } = useTheme();
-  const GAP = layoutSettings.gridGap;
-  const ROW_HEIGHT_VAL = layoutSettings.rowHeight;
-  const { layout, setLayout } = useDashboardLayout();
-  const { isEditMode: ctxEditMode } = useEditMode();
+/**
+ * Les panneaux d'une page, côte à côte comme sur l'Echo Show — défilement
+ * horizontal s'ils ne tiennent pas, empilés sur un écran étroit. Chaque
+ * panneau range ses tuiles dans l'ordre, sur la trame fixe : pas de
+ * coordonnées, rien à tasser.
+ */
+export function DashboardGrid({ readonly, className }: { readonly?: boolean; className?: string }) {
+  const { layout, moveWidget, movePanelTo, updateWidget, addPanel } = useDashboardLayout();
+  const { isEditMode: ctxEditMode, editPanelId } = useEditMode();
   const isEditMode = ctxEditMode && !readonly;
+  // Le crayon du haut ouvre la carte des panneaux ; celui d'un panneau, ses tuiles seulement.
+  const map = isEditMode && !editPanelId;
+  const { t } = useI18n();
   const outerRef = useRef<HTMLDivElement>(null);
-  const [bp, setBp] = useState<Breakpoint>('lg');
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  const [width, setWidth] = useState(0);
   const motionAllowed = useLowPowerMotion();
-
-  const [gridWidth, setGridWidth] = useState(0);
 
   useLayoutEffect(() => {
     const el = outerRef.current;
     if (!el) return;
-    const measure = (w: number) => {
-      if (w > 0) {
-        setBp(resolveBreakpoint(w));
-        setGridWidth(w);
-      }
-    };
+    const measure = (w: number) => w > 0 && setWidth(w);
     measure(el.getBoundingClientRect().width);
     const obs = new ResizeObserver(entries => measure(entries[0]?.contentRect.width ?? 0));
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
 
-  const widgets = layout.widgets[bp];
-  const cols = layout.cols[bp];
+  // Sur l'écran, pas sur le plateau : les classes `md:` de la page décident du
+  // même seuil, et les deux ne doivent jamais diverger.
+  const stacked = useIsMobile(STACK_BELOW);
 
-  /**
-   * Largeur de colonne en pixels **entiers**, au lieu de `1fr`.
-   *
-   * Avec `1fr`, une largeur de conteneur qui ne se divise pas également donne
-   * des pistes fractionnaires (554,5 px) : les cards atterrissent alors sur des
-   * demi-pixels. Le compositeur aligne la couche sur des pixels entiers mais
-   * calcule la zone échantillonnée par `backdrop-filter` d'après le rectangle
-   * fractionnaire — d'où un liseré d'un demi-pixel sur les bords, qui
-   * apparaît et disparaît au gré des repeints. C'est l'origine des traits
-   * aléatoires sur l'interface.
-   *
-   * Le reliquat (au pire `cols - 1` px) reste inutilisé à droite : invisible.
-   */
-  const colWidth = useMemo(() => {
-    if (gridWidth <= 0) return null;
-    const available = gridWidth - (cols - 1) * GAP;
-    return Math.max(1, Math.floor(available / cols));
-  }, [gridWidth, cols, GAP]);
+  // La carte se réduit pour tenir en largeur — sans passer sous `MAP_MIN_SCALE` :
+  // plus petit, les boutons d'un panneau ne se toucheraient plus.
+  useLayoutEffect(() => {
+    const board = outerRef.current;
+    const inner = innerRef.current;
+    if (!board || !inner) return;
+    const fitMap = () => setScale(map && !stacked ? clamp((board.clientWidth - 2 * BOARD_PAD) / inner.offsetWidth, MAP_MIN_SCALE, 1) : 1);
+    fitMap();
+    const obs = new ResizeObserver(fitMap);
+    obs.observe(board);
+    obs.observe(inner);
+    return () => obs.disconnect();
+  }, [map, stacked, layout.panels]);
+  // Colonnes qu'un panneau peut afficher sans déborder de l'écran.
+  const fit = width > 0 ? colsThatFit(width - 2 * PANEL_PADDING - (stacked ? 0 : 2 * BOARD_PAD)) : PANEL_COLS_MAX;
 
-  const moveWidgetToCell = useCallback(
-    (widgetId: string, col: number, row: number) => {
-      const widget = widgets.find(w => w.id === widgetId);
-      if (!widget) return;
-      const clampedCol = clamp(col, 0, cols - widget.w);
-      const newWidgets = placeWidgetAt(
-        widget,
-        clampedCol,
-        row,
-        widgets.filter(w => w.id !== widgetId),
-        cols
+  // ── Déplacement d'une tuile ──────────────────────────────────
+  //
+  // Événements pointeur et non glisser-déposer HTML5 : celui-ci ne marche pas
+  // au doigt, et c'est au doigt qu'on range une tablette murale. La cible se lit
+  // sous le pointeur ; la tuile ne suit pas le doigt, la cible s'éclaire.
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
+  const dropRef = useRef<DropTarget | null>(null);
+
+  const startDrag = useCallback(
+    (widgetId: string, start: PointerStart) => {
+      setDraggingId(widgetId);
+
+      const targetAt = (x: number, y: number): DropTarget | null => {
+        const el = document.elementFromPoint(x, y);
+        const panel = el?.closest<HTMLElement>('[data-panel-id]');
+        if (!panel?.dataset.panelId) return null;
+        const tiles = [...panel.querySelectorAll<HTMLElement>('[data-panel-grid] > [data-widget-id]')];
+        const tile = el?.closest<HTMLElement>('[data-widget-id]');
+        const at = tile ? tiles.indexOf(tile) : -1;
+        if (at < 0) return { panelId: panel.dataset.panelId, index: tiles.length };
+        // Moitié droite de la tuile visée : on se range après elle.
+        const r = tile!.getBoundingClientRect();
+        const index = at + (x > r.left + r.width / 2 ? 1 : 0);
+        return { panelId: panel.dataset.panelId, index, beforeId: tiles[index]?.dataset.widgetId };
+      };
+
+      dragSession(
+        start,
+        outerRef.current,
+        (x, y) => {
+          const next = targetAt(x, y);
+          const prev = dropRef.current;
+          // Même cible qu'à l'image précédente : rien à redessiner.
+          if (prev?.panelId === next?.panelId && prev?.index === next?.index) return;
+          dropRef.current = next;
+          setDropTarget(next);
+        },
+        () => {
+          if (dropRef.current) moveWidget(widgetId, dropRef.current.panelId, dropRef.current.index);
+          dropRef.current = null;
+          setDraggingId(null);
+          setDropTarget(null);
+        }
       );
-      setLayout({ ...layout, widgets: { ...layout.widgets, [bp]: newWidgets } });
     },
-    [widgets, layout, bp, cols, setLayout]
+    [moveWidget]
   );
 
-  const {
-    draggingId,
-    dropTargetId,
-    ghostPosition,
-    dragHandlers: drag,
-  } = useGridDragDrop({
-    widgets,
-    cols,
-    containerRef: outerRef,
-    onWidgetMove: moveWidgetToCell,
-    gap: GAP,
-    rowHeight: ROW_HEIGHT_VAL,
-  });
+  // ── Déplacement d'un panneau entier ──────────────────────────
+  //
+  // Sur les bords gauche et droit d'un panneau : une colonne à côté ; sur sa
+  // moitié haute ou basse : dans sa colonne. Empilé (téléphone), il n'y a que
+  // haut et bas.
+  const [panelDrag, setPanelDrag] = useState<PanelDrag | null>(null);
+  const panelDragRef = useRef<PanelDrag | null>(null);
 
-  const maxRow = useMemo(() => widgets.reduce((max, w) => Math.max(max, w.y + w.h), 0), [widgets]);
+  const startPanelDrag = useCallback(
+    (panelId: string, start: PointerStart) => {
+      const set = (next: PanelDrag | null) => {
+        panelDragRef.current = next;
+        setPanelDrag(next);
+      };
+      set({ id: panelId, target: null });
 
-  // ── Resize handle logic ────────────────────────────────────
-  const resizeRef = useRef<{
-    widgetId: string;
-    startX: number;
-    startY: number;
-    startW: number;
-    startH: number;
-  } | null>(null);
+      const targetAt = (x: number, y: number): PanelDrag['target'] => {
+        const el = document.elementFromPoint(x, y);
+        const panel = el?.closest<HTMLElement>('[data-panel-id]');
+        if (!panel) {
+          // Sur « Ajouter un panneau » : une nouvelle colonne en fin de page.
+          const last = layout.panels[layout.panels.length - 1];
+          return el?.closest('[data-add-panel]') && last && last.id !== panelId ? { panelId: last.id, zone: 'right' } : null;
+        }
+        const id = panel.dataset.panelId!;
+        if (id === panelId) return null;
+        const r = panel.getBoundingClientRect();
+        const fx = (x - r.left) / r.width;
+        const fy = (y - r.top) / r.height;
+        const zone: PanelZone = !stacked && fx < 0.22 ? 'left' : !stacked && fx > 0.78 ? 'right' : fy < 0.5 ? 'above' : 'below';
+        return { panelId: id, zone };
+      };
 
+      dragSession(
+        start,
+        outerRef.current,
+        (x, y) => {
+          const next = targetAt(x, y);
+          const prev = panelDragRef.current?.target;
+          if (prev?.panelId === next?.panelId && prev?.zone === next?.zone) return;
+          set({ id: panelId, target: next });
+        },
+        () => {
+          const target = panelDragRef.current?.target;
+          if (target) movePanelTo(panelId, target.panelId, target.zone);
+          set(null);
+        }
+      );
+    },
+    [layout.panels, stacked, movePanelTo]
+  );
+
+  // ── Redimensionnement ────────────────────────────────────────
   const startResize = useCallback(
-    (widgetId: string, clientX: number, clientY: number) => {
-      const widget = widgets.find(w => w.id === widgetId);
-      if (!widget) return;
-      resizeRef.current = {
-        widgetId,
-        startX: clientX,
-        startY: clientY,
-        startW: widget.w,
-        startH: widget.h,
-      };
+    (widgetId: string, startX: number, startY: number) => {
+      const found = findWidget(layout, widgetId);
+      if (!found) return;
+      const { panel, widget } = found;
+      const min = getMinSize(widget.type, widget.disposition);
+      const maxW = Math.min(panel.cols, fit);
+      let last = { w: widget.w, h: widget.h };
 
-      const onMove = (moveX: number, moveY: number) => {
-        if (!resizeRef.current || !outerRef.current) return;
-        const containerRect = outerRef.current.getBoundingClientRect();
-        const cellWidth = (containerRect.width - (cols - 1) * GAP) / cols;
-        const cellHeight = ROW_HEIGHT_VAL;
-
-        const deltaW = Math.round((moveX - resizeRef.current.startX) / (cellWidth + GAP));
-        const deltaH = Math.round((moveY - resizeRef.current.startY) / (cellHeight + GAP));
-
-        const w = widgets.find(wi => wi.id === resizeRef.current!.widgetId);
-        if (!w) return;
-        const minS = getMinSize(w.type, bp, w.disposition);
-        const newW = clamp(resizeRef.current.startW + deltaW, minS.w, cols - w.x);
-        const newH = Math.max(minS.h, resizeRef.current.startH + deltaH);
-
-        setLayout({
-          ...layout,
-          widgets: {
-            ...layout.widgets,
-            [bp]: layout.widgets[bp].map(wi => (wi.id === resizeRef.current!.widgetId ? { ...wi, w: newW, h: newH } : wi)),
-          },
-        });
-      };
-
-      const onMouseMove = (e: MouseEvent) => onMove(e.clientX, e.clientY);
-      const onTouchMove = (e: TouchEvent) => {
-        const t = e.touches[0];
-        if (t) onMove(t.clientX, t.clientY);
-      };
-      const onEnd = () => {
-        resizeRef.current = null;
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onEnd);
-        document.removeEventListener('touchmove', onTouchMove);
-        document.removeEventListener('touchend', onEnd);
-      };
-
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup', onEnd);
-      document.addEventListener('touchmove', onTouchMove, { passive: false });
-      document.addEventListener('touchend', onEnd);
+      trackPointer(
+        ev => {
+          const next = {
+            w: clamp(widget.w + Math.round((ev.clientX - startX) / (GRID_COL + GRID_GAP)), Math.min(min.w, maxW), maxW),
+            h: Math.max(min.h, widget.h + Math.round((ev.clientY - startY) / (GRID_ROW + GRID_GAP))),
+          };
+          if (next.w === last.w && next.h === last.h) return;
+          last = next;
+          updateWidget(widgetId, next);
+        },
+        () => {}
+      );
     },
-    [widgets, cols, bp, setLayout, layout, GAP, ROW_HEIGHT_VAL]
+    [layout, fit, updateWidget]
   );
 
+  // Le palier et non la largeur : un pixel de plus ou de moins ne doit pas
+  // re-rendre toutes les tuiles.
+  const breakpoint = resolveBreakpoint(width || 1200);
   const ctxValue = useMemo<GridCtxValue>(
-    () => ({ breakpoint: bp, draggingId, dropTargetId, ghostPosition, drag, startResize, motionAllowed }),
-    [bp, draggingId, dropTargetId, ghostPosition, drag, startResize, motionAllowed]
+    () => ({ breakpoint, draggingId, dropTarget, startDrag, panelDrag, startPanelDrag, startResize, motionAllowed }),
+    [breakpoint, draggingId, dropTarget, startDrag, panelDrag, startPanelDrag, startResize, motionAllowed]
   );
 
   // ── Sélection multiple ─────────────────────────────────────
@@ -313,8 +445,55 @@ export function DashboardGrid({ children, readonly, className }: { children: Rea
     if (!isEditMode) setSelected(new Set());
   }, [isEditMode]);
 
-  // Extra rows for the grid background
-  const displayRows = maxRow + 2;
+  // Colonnes : un panneau « sous le précédent » rejoint la colonne de celui-ci.
+  const columns: { panel: LayoutPanel; index: number }[][] = [];
+  layout.panels.forEach((panel, index) => {
+    if (panel.below && columns.length) columns[columns.length - 1].push({ panel, index });
+    else columns.push([{ panel, index }]);
+  });
+
+  // ── Molette : de haut en bas dans un panneau qui défile, sinon de gauche à droite.
+  useEffect(() => {
+    const board = outerRef.current;
+    if (!board || stacked) return;
+    const onWheel = (e: WheelEvent) => {
+      // Un geste déjà horizontal (pavé tactile) ou un zoom : le navigateur s'en charge.
+      if (e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY) || board.scrollWidth <= board.clientWidth) return;
+      const scroller = (e.target as Element).closest<HTMLElement>('[data-panel-scroll]');
+      if (scroller && scroller.scrollHeight > scroller.clientHeight + 1) return;
+      e.preventDefault();
+      board.scrollLeft += e.deltaY;
+    };
+    board.addEventListener('wheel', onWheel, { passive: false });
+    return () => board.removeEventListener('wheel', onWheel);
+  }, [stacked]);
+
+  // ── Faire glisser le plateau à la souris ─────────────────────
+  //
+  // Au doigt le plateau se balaie déjà ; à la souris, on le saisit par n'importe
+  // quel endroit qui ne soit pas un contrôle — et le clic qui finit le geste est
+  // avalé, sinon la card sous le curseur ouvrirait sa fiche.
+  const onBoardPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const board = outerRef.current;
+    if (!board || stacked || e.pointerType !== 'mouse' || e.button !== 0 || isEditMode) return;
+    if ((e.target as Element).closest('button, a, input, select, textarea, [role="slider"], [role="switch"], [data-no-pan]')) return;
+    const startX = e.clientX;
+    const from = board.scrollLeft;
+    let moved = false;
+    trackPointer(
+      ev => {
+        if (!moved && Math.abs(ev.clientX - startX) < 6) return;
+        moved = true;
+        board.scrollLeft = from - (ev.clientX - startX);
+      },
+      () => {
+        if (!moved) return;
+        const swallow = (ev: Event) => ev.stopPropagation();
+        window.addEventListener('click', swallow, { capture: true, once: true });
+        setTimeout(() => window.removeEventListener('click', swallow, { capture: true }), 0);
+      }
+    );
+  };
 
   return (
     <GridCtx.Provider value={ctxValue}>
@@ -324,65 +503,402 @@ export function DashboardGrid({ children, readonly, className }: { children: Rea
           variants={motionAllowed ? staggerGridContainer : undefined}
           initial={motionAllowed ? 'hidden' : false}
           animate='visible'
-          className={[isEditMode ? 'dashboard-editing' : '', className].filter(Boolean).join(' ') || undefined}
-          style={{
-            display: 'grid',
-            // Pistes en px entiers dès que la largeur est connue ; `1fr` sur le
-            // tout premier rendu, avant mesure.
-            gridTemplateColumns: colWidth ? `repeat(${cols}, ${colWidth}px)` : `repeat(${cols}, 1fr)`,
-            gridAutoRows: `${ROW_HEIGHT_VAL}px`,
-            gap: `${GAP}px`,
-            minHeight: maxRow * ROW_HEIGHT_VAL + Math.max(0, maxRow - 1) * GAP,
-            width: '100%',
-            position: 'relative',
-          }}
-          onDragOver={e => {
-            if (!isEditMode) return;
-            drag.onItemDragOver(e);
-          }}
-          onDrop={e => {
-            if (!isEditMode) return;
-            drag.onItemDrop(e, '');
-          }}
+          onPointerDown={onBoardPointerDown}
+          // Le plateau tient dans l'écran : chaque colonne en prend toute la
+          // hauteur, et ce sont les panneaux — pas la page — qui défilent.
+          className={cn(
+            stacked ? 'w-full' : 'absolute -inset-x-3.5 -inset-y-1 overscroll-x-contain px-3.5 py-1',
+            // Une carte réduite tient en largeur : rien à faire défiler.
+            !stacked && (map && scale > MAP_MIN_SCALE ? 'overflow-x-hidden' : 'overflow-x-auto'),
+            isEditMode && 'dashboard-editing',
+            panelDrag && 'cursor-grabbing select-none',
+            className
+          )}
         >
-          {/* Grid background cells visible in edit mode */}
-          {isEditMode &&
-            Array.from({ length: displayRows * cols }, (_, i) => {
-              const row = Math.floor(i / cols);
-              const col = i % cols;
+          <div
+            ref={innerRef}
+            className={cn('flex gap-[22px]', stacked ? 'flex-col' : 'h-full w-max min-w-full')}
+            style={scale === 1 ? undefined : { transform: `scale(${scale})`, transformOrigin: '0 0', height: `calc(100% / ${scale})` }}
+          >
+            {columns.map(column => {
+              const head = column[0].panel;
+              const total = column.reduce((sum, { panel }) => sum + (panel.weight ?? 1), 0);
               return (
-                <div
-                  key={`bg-${col}-${row}`}
-                  className='rounded-xl border border-dashed border-white/[0.04] bg-white/[0.01]'
-                  style={{
-                    gridColumnStart: col + 1,
-                    gridRowStart: row + 1,
-                    pointerEvents: 'none',
-                  }}
-                />
+                <div key={head.id} className={cn('flex shrink-0 flex-col gap-[22px]', stacked && 'w-full')}>
+                  {column.map(({ panel, index }) => (
+                    <PanelSection
+                      key={panel.id}
+                      panel={panel}
+                      // Empilés, les panneaux d'une colonne ont la largeur de sa tête.
+                      cols={Math.min(head.cols, fit)}
+                      // Part de la hauteur de la colonne, hors panneau seul.
+                      share={column.length > 1 ? Math.round(((panel.weight ?? 1) / total) * 100) : undefined}
+                      stacked={stacked}
+                      readonly={!!readonly}
+                      mode={map ? 'map' : isEditMode && editPanelId === panel.id ? 'edit' : 'view'}
+                      // En édition d'un panneau, les autres s'effacent : on voit où l'on travaille.
+                      dimmed={isEditMode && !map && editPanelId !== panel.id}
+                      first={index === 0}
+                    />
+                  ))}
+                </div>
               );
             })}
-
-          {children}
-
-          {/* Ghost placeholder during drag */}
-          {isEditMode && ghostPosition && (
-            <div
-              className={ghostPosition.valid ? 'grid-placeholder' : 'grid-placeholder-invalid'}
-              style={{
-                gridColumnStart: ghostPosition.col + 1,
-                gridRowStart: ghostPosition.row + 1,
-                gridColumnEnd: `span ${ghostPosition.w}`,
-                gridRowEnd: `span ${ghostPosition.h}`,
-                pointerEvents: 'none',
-                zIndex: 40,
-                transition: 'all 0.15s ease',
-              }}
-            />
-          )}
+            {map && (
+              <button
+                data-add-panel
+                onClick={addPanel}
+                className={cn(
+                  'flex shrink-0 flex-col items-center justify-center gap-2 rounded-[30px] border-2 border-dashed border-[var(--ds-surface-3)] text-[15px] font-semibold text-[var(--ds-ink-muted)]',
+                  stacked ? 'min-h-[160px] w-full' : 'w-[200px]'
+                )}
+              >
+                <Plus size={28} />
+                {t('layout.panel.addPanel')}
+              </button>
+            )}
+          </div>
         </motion.div>
       </SelectionCtx.Provider>
     </GridCtx.Provider>
+  );
+}
+
+const ROUND = 'flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--ds-surface-3)] disabled:opacity-30';
+
+/** Trait qui montre où le panneau glissé se rangerait : dans l'écart, côté visé. */
+const DROP_BAR: Record<PanelZone, string> = {
+  left: '-left-[14px] inset-y-4 w-1.5',
+  right: '-right-[14px] inset-y-4 w-1.5',
+  above: '-top-[14px] inset-x-4 h-1.5',
+  below: '-bottom-[14px] inset-x-4 h-1.5',
+};
+
+/**
+ * Une tuile sur la carte des panneaux : sa place et sa taille réelles, mais son
+ * icône et son nom au lieu de la card. Grands à dessein — la carte est réduite.
+ */
+function MiniTile({ widget, cols }: { widget: GridWidget; cols: number }) {
+  const { t } = useI18n();
+  const meta = META.get(widget.type);
+  const Icon = meta?.icon;
+  return (
+    <div
+      className='flex min-w-0 flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-3)] p-2 text-center text-[15px] font-semibold text-[var(--ds-ink-muted)]'
+      style={{ gridColumn: `span ${Math.min(widget.w, cols)}`, gridRow: `span ${widget.h}` }}
+    >
+      {Icon && <Icon size={28} style={{ color: meta.color }} />}
+      <span className='max-w-full truncate'>{meta ? t(meta.label) : widget.type}</span>
+    </div>
+  );
+}
+
+/**
+ * Un panneau : son titre et ses boutons — poignée, réglages, modification —,
+ * puis ses tuiles rangées sur la trame.
+ *
+ * Il prend la hauteur de sa colonne (ou sa part, s'ils sont plusieurs) et ses
+ * tuiles défilent à l'intérieur : la page, elle, ne défile jamais.
+ *
+ * Réglages et modification passent par la barre d'édition (`EDIT_PANEL_EVENT`) :
+ * elle garde le code d'accès et l'enregistrement, et n'ouvre que ce panneau-là.
+ */
+function PanelSection({
+  panel,
+  cols,
+  share,
+  stacked,
+  readonly,
+  mode,
+  dimmed,
+  first,
+}: {
+  panel: LayoutPanel;
+  cols: number;
+  /** Part de la hauteur de sa colonne, en % — absente d'un panneau seul. */
+  share?: number;
+  stacked: boolean;
+  readonly: boolean;
+  /** `map` : la carte des panneaux, tuiles en vignettes ; `edit` : ses tuiles en édition. */
+  mode: 'view' | 'map' | 'edit';
+  /** Un autre panneau est en édition : celui-ci s'efface et ne répond plus. */
+  dimmed: boolean;
+  first: boolean;
+}) {
+  const { t } = useI18n();
+  const isAdmin = !!useUser()?.is_admin;
+  const { dropTarget, draggingId, panelDrag, startPanelDrag } = useGridCtx();
+  const [adding, setAdding] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const map = mode === 'map';
+  const editing = mode === 'edit';
+  const dropAtEnd = dropTarget?.panelId === panel.id && dropTarget.index >= panel.widgets.length;
+  const controls = isAdmin && !readonly;
+  const dropZone = panelDrag?.target?.panelId === panel.id ? panelDrag.target.zone : null;
+
+  // Une barre de défilement cachée ne dit pas qu'il y a une suite : un fondu en bas le dit.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [more, setMore] = useState(false);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || stacked) return;
+    const measure = () => setMore(el.scrollTop + el.clientHeight < el.scrollHeight - 4);
+    el.addEventListener('scroll', measure, { passive: true });
+    const obs = new ResizeObserver(measure);
+    obs.observe(el);
+    if (el.firstElementChild) obs.observe(el.firstElementChild);
+    return () => {
+      el.removeEventListener('scroll', measure);
+      obs.disconnect();
+    };
+  }, [stacked]);
+
+  const requestEdit = () => window.dispatchEvent(new CustomEvent(EDIT_PANEL_EVENT, { detail: panel.id }));
+
+  return (
+    <PanelColsCtx.Provider value={cols}>
+      <PanelEditCtx.Provider value={editing}>
+        <section
+          data-panel-id={panel.id}
+          style={stacked ? undefined : { flex: `${panel.weight ?? 1} 1 0%` }}
+          className={cn(
+            'relative flex min-h-0 w-full flex-col rounded-[30px] bg-[var(--ds-surface-1)] text-[var(--ds-ink)] transition-opacity',
+            (map || editing) && 'outline-2 outline-dashed outline-[var(--ds-accent)]',
+            dimmed && 'opacity-50',
+            panelDrag?.id === panel.id && 'opacity-40'
+          )}
+        >
+          {/* Rien ne se touche dans un panneau effacé — mais on peut y déposer une tuile. */}
+          {dimmed && <span aria-hidden='true' className='absolute inset-0 z-10 rounded-[30px]' />}
+          {dropZone && (
+            <span
+              aria-hidden='true'
+              className={cn('pointer-events-none absolute z-20 rounded-full bg-[var(--ds-accent)]', DROP_BAR[dropZone])}
+            />
+          )}
+
+          {/* La marge est ici et non sur le panneau : sa part de hauteur reste exacte. */}
+          <div className='flex min-h-0 flex-1 flex-col gap-3.5 p-[22px]'>
+            {(panel.title || (controls && !editing)) && (
+              <div className='flex min-h-11 shrink-0 items-center gap-2'>
+                {map && controls && (
+                  <button
+                    onPointerDown={e => {
+                      if (e.button !== 0) return;
+                      e.preventDefault();
+                      startPanelDrag(panel.id, e);
+                    }}
+                    aria-label={t('layout.panel.drag')}
+                    title={t('layout.panel.drag')}
+                    className={cn(ROUND, 'cursor-grab touch-none active:cursor-grabbing')}
+                  >
+                    <GripVertical size={18} />
+                  </button>
+                )}
+                <h2 className={cn('mx-1.5 min-w-0 flex-1 truncate text-xl font-semibold', !panel.title && 'text-[var(--ds-ink-muted)]')}>
+                  {panel.title || (map ? t('layout.panel.untitled') : '')}
+                </h2>
+                {/* ⚙ règle le panneau — dans la carte ; ✎ en range les tuiles. */}
+                {map && controls && (
+                  <button
+                    onClick={() => setSettingsOpen(true)}
+                    aria-label={t('layout.panel.settings')}
+                    title={t('layout.panel.settings')}
+                    className={ROUND}
+                  >
+                    <SlidersHorizontal size={18} />
+                  </button>
+                )}
+                {controls && !editing && (
+                  <button onClick={requestEdit} aria-label={t('layout.panel.edit')} title={t('layout.panel.edit')} className={ROUND}>
+                    <Pencil size={18} />
+                  </button>
+                )}
+              </div>
+            )}
+
+            <div
+              ref={scrollRef}
+              data-panel-scroll
+              className={cn(
+                !stacked && '-mx-1 -mb-1 min-h-0 flex-1 px-1 pb-1',
+                !stacked && (map ? 'overflow-hidden' : 'overflow-y-auto overscroll-contain scrollbar-none'),
+                more && '[mask-image:linear-gradient(to_bottom,#000_calc(100%-44px),transparent)]'
+              )}
+            >
+              <div
+                data-panel-grid
+                className={cn(
+                  'rounded-[var(--ds-radius-lg)]',
+                  dropAtEnd && draggingId && 'outline-dashed outline-2 outline-[var(--ds-accent)]'
+                )}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${cols}, ${GRID_COL}px)`,
+                  gridAutoRows: `${GRID_ROW}px`,
+                  // `dense` : une petite tuile comble le trou laissé par une grande.
+                  gridAutoFlow: 'row dense',
+                  gap: GRID_GAP,
+                  // Un panneau vide garde sa largeur : on voit où déposer.
+                  minWidth: colsWidth(cols),
+                }}
+              >
+                {panel.widgets.map(widget => {
+                  if (map) return <MiniTile key={widget.id} widget={widget} cols={cols} />;
+                  const Component = WIDGET_COMPONENTS[widget.type];
+                  if (!Component) return null;
+                  return (
+                    <GridItem key={widget.id} id={widget.id} widget={widget}>
+                      <Component />
+                    </GridItem>
+                  );
+                })}
+                {editing && (
+                  <button
+                    onClick={() => setAdding(true)}
+                    aria-label={t('layout.panel.addTile')}
+                    title={t('layout.panel.addTile')}
+                    className='flex flex-col items-center justify-center gap-1 rounded-[var(--ds-radius-lg)] border-2 border-dashed border-[var(--ds-surface-3)] text-sm font-semibold text-[var(--ds-ink-muted)]'
+                    style={{ gridColumn: `span ${Math.min(2, cols)}`, gridRow: 'span 2' }}
+                  >
+                    <Plus size={28} />
+                    {t('layout.panel.addTile')}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+        <AnimatePresence>{adding && <AddWidgetModal panelId={panel.id} onClose={() => setAdding(false)} />}</AnimatePresence>
+        <PanelSettings panel={panel} open={settingsOpen} onClose={() => setSettingsOpen(false)} first={first} share={share} />
+      </PanelEditCtx.Provider>
+    </PanelColsCtx.Provider>
+  );
+}
+
+/** Une ligne de réglage : un libellé, et son contrôle à droite. */
+const SETTING_ROW = 'flex items-center justify-between gap-3 rounded-[var(--ds-radius-xl)] bg-[var(--ds-sheet-section)] p-4';
+
+/** − valeur + : le pas de réglage commun à la largeur et à la hauteur. */
+function Stepper({
+  label,
+  value,
+  onChange,
+  min,
+  max,
+  less,
+  more,
+}: {
+  label: string;
+  value: string;
+  onChange: (delta: -1 | 1) => void;
+  min: boolean;
+  max: boolean;
+  less: string;
+  more: string;
+}) {
+  return (
+    <div className={SETTING_ROW}>
+      <span className='text-[15px] font-bold'>{label}</span>
+      <div className='flex items-center gap-2'>
+        <button onClick={() => onChange(-1)} disabled={min} aria-label={less} className={ROUND}>
+          <Minus size={18} />
+        </button>
+        <span className='min-w-[9ch] text-center text-sm tabular-nums'>{value}</span>
+        <button onClick={() => onChange(1)} disabled={max} aria-label={more} className={ROUND}>
+          <Plus size={18} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Réglages d'un panneau, dans une feuille : titre, largeur, hauteur, colonne, suppression. */
+function PanelSettings({
+  panel,
+  open,
+  onClose,
+  first,
+  share,
+}: {
+  panel: LayoutPanel;
+  open: boolean;
+  onClose: () => void;
+  first: boolean;
+  share?: number;
+}) {
+  const { t } = useI18n();
+  const { updatePanel, removePanel } = useDashboardLayout();
+  const [confirming, setConfirming] = useState(false);
+  const weight = panel.weight ?? 1;
+
+  return (
+    <Sheet open={open} onClose={onClose} title={panel.title || t('layout.panel.untitled')} closeLabel={t('common.close')}>
+      <div className='flex flex-col gap-3'>
+        <label className='flex flex-col gap-2 rounded-[var(--ds-radius-xl)] bg-[var(--ds-sheet-section)] p-4'>
+          <span className='text-[15px] font-bold'>{t('layout.panel.title')}</span>
+          <input
+            value={panel.title ?? ''}
+            onChange={e => updatePanel(panel.id, { title: e.target.value || undefined })}
+            placeholder={t('layout.panel.untitled')}
+            className='h-11 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] px-3 text-[17px] font-semibold outline-none placeholder:text-[var(--ds-ink-muted)]'
+          />
+        </label>
+
+        {/* Dans une colonne, les panneaux ont la largeur de celui du haut. */}
+        {!panel.below && (
+          <Stepper
+            label={t('layout.panel.width_label')}
+            value={t('layout.panel.width', { value: panel.cols })}
+            onChange={d => updatePanel(panel.id, { cols: panel.cols + d })}
+            min={panel.cols <= PANEL_COLS_MIN}
+            max={panel.cols >= PANEL_COLS_MAX}
+            less={t('layout.panel.narrower')}
+            more={t('layout.panel.wider')}
+          />
+        )}
+
+        {share !== undefined && (
+          <Stepper
+            label={t('layout.panel.height')}
+            value={t('layout.panel.heightShare', { value: share })}
+            onChange={d => updatePanel(panel.id, { weight: weight + d })}
+            min={weight <= 1}
+            max={weight >= 6}
+            less={t('layout.panel.shorter')}
+            more={t('layout.panel.taller')}
+          />
+        )}
+
+        {!first && (
+          <button
+            role='switch'
+            aria-checked={!!panel.below}
+            onClick={() => updatePanel(panel.id, { below: !panel.below || undefined })}
+            className={cn(SETTING_ROW, 'text-left')}
+          >
+            <span>
+              <span className='block text-[15px] font-bold'>{t('layout.panel.below')}</span>
+              <span className='block text-sm text-[var(--ds-ink-muted)]'>{t('layout.panel.belowDesc')}</span>
+            </span>
+            <SwitchTrack on={!!panel.below} />
+          </button>
+        )}
+
+        {/* Vide, il part d'un geste ; avec des tuiles, on confirme. */}
+        <button
+          onClick={() => {
+            if (panel.widgets.length && !confirming) return setConfirming(true);
+            onClose();
+            removePanel(panel.id);
+          }}
+          className='flex h-12 items-center justify-center gap-2 rounded-[var(--ds-radius-pill)] bg-[var(--ds-alert)] text-[15px] font-semibold text-white'
+        >
+          <Trash2 size={18} />
+          {confirming ? t('layout.panel.removeConfirm') : t('layout.panel.remove')}
+        </button>
+      </div>
+    </Sheet>
   );
 }
 
@@ -448,7 +964,7 @@ const MemoChildren = memo(function MemoChildren({
       }}
       {...(onLongPress && !isEditMode ? longPressHandlers : {})}
       style={{
-        borderRadius: 'var(--dash-card-radius, 24px)',
+        borderRadius: 'var(--ds-radius-lg)',
         opacity: dimmed ? 0 : 1,
         transition: 'opacity 0.25s ease',
         // Isole chaque widget : un re-rendu dans une card (une valeur de
@@ -463,19 +979,35 @@ const MemoChildren = memo(function MemoChildren({
   );
 });
 
-// GridItem - CSS Grid placement + HTML5 Drag + Touch
-// Handlers from GridCtx. ZERO per-pixel JS.
-
-export function GridItem({ id, children, readonly }: { id: string; children: ReactNode; readonly?: boolean }) {
+/**
+ * Une tuile : la card, ses gestes (fiche, actions, conditions, styles d'état)
+ * et, en édition, le calque qui la déplace et la redimensionne. Sa place vient
+ * de son rang dans le panneau ; elle n'en connaît que sa taille.
+ */
+export function GridItem({
+  id,
+  widget: given,
+  children,
+  readonly,
+}: {
+  id: string;
+  /** Fourni par le panneau ; sinon cherché dans la page (plan). */
+  widget?: GridWidget;
+  children: ReactNode;
+  readonly?: boolean;
+}) {
   const { layout } = useDashboardLayout();
   const { isEditMode: ctxEditMode } = useEditMode();
-  const { breakpoint, draggingId, dropTargetId, drag, startResize, motionAllowed } = useGridCtx();
+  const { breakpoint, draggingId, dropTarget, startDrag, startResize, motionAllowed } = useGridCtx();
+  const panelCols = useContext(PanelColsCtx);
+  const panelEditing = useContext(PanelEditCtx);
   const { openMoreInfo, state: moreInfoState } = useMoreInfo();
   const { getWidgetConfig } = useWidgetConfig();
   const selection = useGridSelection();
-  const isEditMode = ctxEditMode && !readonly;
+  const { t } = useI18n();
+  const isEditMode = ctxEditMode && panelEditing && !readonly;
 
-  const widget = layout.widgets[breakpoint]?.find(w => w.id === id);
+  const widget = given ?? findWidget(layout, id)?.widget;
   const hasMoreInfo = widget ? MORE_INFO_WIDGET_TYPES.includes(widget.type) : false;
 
   const handleMoreInfoClick = useCallback(
@@ -549,81 +1081,38 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
   if (!visible && !isEditMode) return null;
 
   const isDragging = draggingId === id;
-  const isDropTarget = dropTargetId === id;
   const isSelected = selection.selected.has(id);
-  const label = WIDGET_LABELS[widget.type] ?? widget.type;
+  // La tuile visée par un déplacement : on se rangera devant elle.
+  const isDropTarget = !isDragging && dropTarget?.beforeId === id;
+  const metaLabel = META.get(widget.type)?.label;
+  const label = metaLabel ? t(metaLabel) : widget.type;
   const isWidgetModalOpen = !isEditMode && moreInfoState?.widgetId === id;
-  const isStatic = widget.static ?? false;
-  const canDrag = isEditMode && !isStatic;
 
   const gridStyle: React.CSSProperties = {
-    gridColumnStart: widget.x + 1,
-    gridRowStart: widget.y + 1,
-    gridColumnEnd: `span ${widget.w}`,
-    gridRowEnd: `span ${widget.h}`,
-    transform: isDragging ? 'scale(1.05)' : 'none',
-    opacity: isDragging ? 0.6 : visible ? 1 : 0.35,
-    zIndex: isDragging ? 50 : 1,
-    transition: 'transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease',
-    boxShadow: isDragging
-      ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
-      : isDropTarget
-        ? '0 0 0 2px rgba(139, 92, 246, 0.6), 0 0 30px rgba(139, 92, 246, 0.3)'
-        : isSelected
-          ? '0 0 0 2px rgba(59, 130, 246, 0.9)'
-          : 'none',
+    // Plus large que ce que l'écran laisse au panneau : ramenée à sa largeur.
+    gridColumn: `span ${Math.min(widget.w, panelCols)}`,
+    gridRow: `span ${widget.h}`,
+    opacity: isDragging ? 0.4 : visible ? 1 : 0.35,
+    transition: 'opacity 0.2s ease, box-shadow 0.2s ease',
+    boxShadow: isDropTarget ? '-6px 0 0 0 var(--ds-accent)' : isSelected ? '0 0 0 3px var(--ds-accent)' : 'none',
   };
 
   return (
     <motion.div
       variants={motionAllowed ? staggerGridItem : undefined}
-      // `pointer-events-auto` : sans effet ici, mais l'écran de veille rend la
-      // grille dans un conteneur `pointer-events-none` pour laisser passer les
-      // balayages entre les cards — chaque card doit y rester cliquable.
-      className='relative h-full pointer-events-auto'
+      // `pointer-events-auto` : l'écran de veille rend la grille dans un
+      // conteneur `pointer-events-none` pour laisser passer les balayages entre
+      // les cards — chaque card doit y rester cliquable.
+      className='relative h-full pointer-events-auto rounded-[var(--ds-radius-lg)]'
       style={gridStyle}
       data-widget-id={id}
       onClickCapture={e => {
-        // `Capture` : la case entière est un handle de glisser, et l'overlay
-        // avale les clics. Intercepter à la descente est le seul moyen de voir
-        // le geste avant eux.
+        // `Capture` : l'overlay avale les clics. Intercepter à la descente est
+        // le seul moyen de voir le geste avant lui.
         if (!isEditMode || (!e.shiftKey && !e.ctrlKey && !e.metaKey)) return;
         e.preventDefault();
         e.stopPropagation();
         selection.toggle(id);
-      }}
-      draggable={canDrag}
-      onDragStart={e => {
-        if (!canDrag) {
-          e.preventDefault();
-          return;
-        }
-        // framer-motion type `onDragStart` avec une union d'events natifs ;
-        // le handler attend un DragEvent React, seul cas réel ici.
-        drag.onItemDragStart(e as unknown as React.DragEvent<Element>, id);
-      }}
-      onDragOver={drag.onItemDragOver}
-      onDragEnter={() => drag.onItemDragEnter(id)}
-      onDragLeave={drag.onItemDragLeave}
-      onDrop={e => drag.onItemDrop(e, id)}
-      onDragEnd={drag.onItemDragEnd}
-      onTouchStart={e => {
-        if (!canDrag) return;
-        if (!(e.target as HTMLElement)?.closest?.('[data-drag-handle]')) return;
-        if (e.cancelable) e.preventDefault();
-        const touch = e.touches[0];
-        if (!touch) return;
-        drag.onItemTouchStart(id, touch.clientX, touch.clientY);
-      }}
-      onTouchMove={e => {
-        if (!canDrag || draggingId !== id) return;
-        if (e.cancelable) e.preventDefault();
-        const touch = e.touches[0];
-        if (!touch) return;
-        drag.onItemTouchMove(touch.clientX, touch.clientY);
-      }}
-      onTouchEnd={() => {
-        if (draggingId === id) drag.onItemTouchEnd();
       }}
     >
       <WidgetIdCtx.Provider value={id}>
@@ -639,15 +1128,7 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
           </WidgetErrorBoundary>
         </StateStyled>
       </WidgetIdCtx.Provider>
-      {isEditMode && (
-        <GridItemOverlay
-          id={id}
-          label={label}
-          widget={widget}
-          breakpoint={breakpoint}
-          onResizeStart={(clientX, clientY) => startResize(id, clientX, clientY)}
-        />
-      )}
+      {isEditMode && <GridItemOverlay label={label} widget={widget} onDragStart={startDrag} onResizeStart={startResize} />}
     </motion.div>
   );
 }

@@ -30,12 +30,12 @@ export function DraftPopover({
       role='dialog'
       aria-label={title}
       onClick={e => e.stopPropagation()}
-      className='absolute z-40 w-64 p-2 rounded-xl gc-overlay cursor-default flex flex-col gap-2'
+      className='absolute z-40 w-64 p-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-sheet)] cursor-default flex flex-col gap-2'
       style={around ? besideStyle(around) : style}
     >
       <div className='flex items-center justify-between px-1'>
-        <span className='text-[11px] text-white/50'>{title}</span>
-        <button onClick={onCancel} aria-label={t('common.cancel')} className='p-0.5 rounded text-white/40 hover:text-white'>
+        <span className='text-[11px] text-[var(--ds-ink-muted)]'>{title}</span>
+        <button onClick={onCancel} aria-label={t('common.cancel')} className='p-0.5 rounded text-[var(--ds-ink-muted)]'>
           <X size={12} />
         </button>
       </div>
@@ -86,8 +86,10 @@ export function KindGrid<K extends string>({
             onClick={() => onChange(kind)}
             aria-pressed={value === kind}
             className={cn(
-              'flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-[10px] border transition-colors',
-              value === kind ? 'bg-white/12 border-white/30 text-white' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'
+              'flex flex-col items-center gap-0.5 py-1.5 rounded-[var(--ds-radius-sm)] text-[10px] border transition-colors',
+              value === kind
+                ? 'bg-[var(--ds-surface-3)] border-[var(--ds-surface-3)] text-[var(--ds-ink)]'
+                : 'bg-[var(--ds-surface-2)] border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
             )}
           >
             <Icon size={14} style={colors ? { color: colors[kind] } : undefined} />
@@ -117,12 +119,15 @@ export function DrawnList({
   if (!items.length && !add) return null;
   return (
     <div className='flex flex-col gap-1'>
-      <span className='text-[11px] text-white/40 px-0.5'>{title}</span>
+      <span className='text-[11px] text-[var(--ds-ink-muted)] px-0.5'>{title}</span>
       {items.map(({ id, label, icon: Icon, color }) => (
-        <div key={id} className='flex items-center gap-2 px-2 py-1 rounded-lg bg-white/5 text-xs text-white/70'>
-          <Icon size={13} className={cn('shrink-0', !color && 'text-white/40')} style={color ? { color } : undefined} />
+        <div
+          key={id}
+          className='flex items-center gap-2 px-2 py-1 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] text-xs text-[var(--ds-ink)]'
+        >
+          <Icon size={13} className={cn('shrink-0', !color && 'text-[var(--ds-ink-muted)]')} style={color ? { color } : undefined} />
           <span className='flex-1 truncate'>{label}</span>
-          <button onClick={() => onRemove(id)} title={removeLabel} aria-label={removeLabel} className='text-red-400/70 hover:text-red-400'>
+          <button onClick={() => onRemove(id)} title={removeLabel} aria-label={removeLabel} className='text-[var(--ds-alert)]'>
             <Trash2 size={12} />
           </button>
         </div>
@@ -132,8 +137,10 @@ export function DrawnList({
           onClick={add.onArm}
           aria-pressed={add.armed}
           className={cn(
-            'flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors',
-            add.armed ? 'bg-amber-500/20 border-amber-500/40 text-amber-200' : 'bg-white/5 border-white/10 text-white/70 hover:text-white'
+            'flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-[var(--ds-radius-sm)] text-xs font-medium border transition-colors',
+            add.armed
+              ? 'bg-[var(--ds-surface-3)] border-[var(--ds-warm-light)] text-[var(--ds-warm-light)]'
+              : 'bg-[var(--ds-surface-2)] border-[var(--ds-surface-3)] text-[var(--ds-ink)]'
           )}
         >
           <Plus size={13} /> {add.label}

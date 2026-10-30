@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { Settings, Palette, Zap, Languages, Server, LayoutGrid, Volume2, Globe, X } from 'lucide-react';
+import { useState, type MutableRefObject } from 'react';
+import { Palette, Zap, Languages, Server, LayoutGrid, Volume2, Globe, Monitor, X, type LucideIcon } from 'lucide-react';
+import { useUser } from '@hakit/core';
+import { WallPanelSettings } from '@/components/wallpanel/WallPanelSettings';
 import { AppearanceSection } from './AppearanceSection';
 import { PerformanceSection } from './PerformanceSection';
 import { LanguageSection } from './LanguageSection';
@@ -9,16 +11,38 @@ import { SoundSection } from './SoundSection';
 import { RegionalSection } from './RegionalSection';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
+import { isPanelMode } from '@/lib/api-base';
 
-type SettingsSection = 'appearance' | 'layout' | 'performance' | 'sound' | 'regional' | 'language' | 'system';
+type SettingsSection = 'appearance' | 'wallpanel' | 'layout' | 'performance' | 'sound' | 'regional' | 'language' | 'system';
 
-export function SettingsContent({ onClose }: { onClose: () => void }) {
+/** Couleur de la pastille de chaque section, comme celles du lanceur. */
+const SECTION_COLORS: Record<SettingsSection, string> = {
+  appearance: '#2f80ed',
+  wallpanel: '#c04fd6',
+  layout: '#2b9fb0',
+  performance: '#ee8a2c',
+  sound: '#e8466b',
+  regional: '#2fb38a',
+  language: '#8e5cf0',
+  system: '#4a5a78',
+};
+
+export function SettingsContent({ onClose, guard }: { onClose: () => void; guard: MutableRefObject<(() => boolean) | null> }) {
   const { t } = useI18n();
+  const isAdmin = !!useUser()?.is_admin;
   const [section, setSection] = useState<SettingsSection>('appearance');
+  // L'écran de veille garde son brouillon quand on change de section : il reste monté une fois ouvert.
+  const [wallpanelSeen, setWallpanelSeen] = useState(false);
+  const pick = (id: SettingsSection) => {
+    setSection(id);
+    if (id === 'wallpanel') setWallpanelSeen(true);
+  };
 
-  const NAV_ITEMS: { id: SettingsSection; label: string; Icon: React.ElementType }[] = [
+  const NAV_ITEMS: { id: SettingsSection; label: string; Icon: LucideIcon }[] = [
     { id: 'appearance', label: t('settings.appearance'), Icon: Palette },
-    { id: 'layout', label: t('settings.layout'), Icon: LayoutGrid },
+    ...(isAdmin ? [{ id: 'wallpanel' as const, label: t('settings.wallpanel'), Icon: Monitor }] : []),
+    // Il n'y reste que le plein écran, qui n'a de sens qu'en carte Lovelace.
+    ...(isPanelMode() ? [{ id: 'layout' as const, label: t('settings.layout'), Icon: LayoutGrid }] : []),
     { id: 'performance', label: t('settings.performance'), Icon: Zap },
     { id: 'sound', label: t('settings.sound'), Icon: Volume2 },
     { id: 'regional', label: t('settings.regional'), Icon: Globe },
@@ -26,77 +50,60 @@ export function SettingsContent({ onClose }: { onClose: () => void }) {
     { id: 'system', label: t('settings.system'), Icon: Server },
   ];
 
-  const SECTION_TITLES: Record<SettingsSection, string> = {
-    appearance: t('settings.appearance'),
-    layout: t('settings.layout'),
-    performance: t('settings.performance'),
-    sound: t('settings.sound'),
-    regional: t('settings.regional'),
-    language: t('settings.language'),
-    system: t('settings.system'),
-  };
+  const current = NAV_ITEMS.find(item => item.id === section) ?? NAV_ITEMS[0];
 
   return (
-    <div className='flex h-full'>
-      {/* ── Sidebar ── */}
-      <div className='w-56 flex-shrink-0 flex flex-col rounded-l-2xl border-r border-white/6' style={{ background: 'rgba(0, 0, 0, 0.18)' }}>
-        {/* Header */}
-        <div className='flex items-center gap-2.5 px-5 pt-5 pb-5 border-b border-white/6'>
-          <div className='p-1.5 rounded-lg bg-blue-500/20'>
-            <Settings size={14} className='text-blue-400' />
-          </div>
-          <span className='text-white font-semibold text-sm'>{t('settings.title')}</span>
-        </div>
+    <div className='flex h-full gap-4 p-4'>
+      {/* ── Liste des réglages ── */}
+      <nav
+        aria-label={t('settings.title')}
+        className='flex w-[300px] shrink-0 flex-col gap-1 overflow-y-auto rounded-[var(--ds-radius-xl)] bg-[var(--ds-surface-1)] p-3'
+      >
+        <h2 className='px-3 pb-2 pt-2 text-lg font-semibold text-[var(--ds-ink-muted)]'>{t('settings.title')}</h2>
+        {NAV_ITEMS.map(({ id, label, Icon }) => (
+          <button
+            key={id}
+            onClick={() => pick(id)}
+            aria-current={section === id ? 'page' : undefined}
+            className={cn(
+              'flex h-14 w-full items-center gap-3 rounded-[var(--ds-radius-lg)] px-3 text-left text-[17px]',
+              section === id ? 'bg-[var(--ds-surface-3)] font-semibold' : 'font-medium text-[var(--ds-ink-muted)]'
+            )}
+          >
+            <span className='flex size-10 shrink-0 items-center justify-center rounded-[13px]' style={{ background: SECTION_COLORS[id] }}>
+              <Icon size={20} className='text-white' />
+            </span>
+            <span className='truncate'>{label}</span>
+          </button>
+        ))}
 
-        {/* Nav */}
-        {/* Onglets en casse normale : sept intitulés en capitales très espacées
-            se lisaient un par un, et « Performances » débordait de la colonne.
-            La sélection reprend le bleu translucide du reste de l'application —
-            un aplat `bg-blue-500` plein était le seul de tout le dashboard. */}
-        <nav className='flex flex-col gap-0.5 p-3 flex-1'>
-          {NAV_ITEMS.map(({ id, label, Icon }) => (
-            <button
-              key={id}
-              onClick={() => setSection(id)}
-              className={cn(
-                'flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-left border transition-colors',
-                section === id
-                  ? 'bg-blue-500/15 border-blue-500/30 text-blue-200'
-                  : 'border-transparent text-white/45 hover:text-white/75 hover:bg-white/[0.05]'
-              )}
-            >
-              <Icon size={15} className='shrink-0' />
-              <span className='text-[13px] font-medium truncate'>{label}</span>
-            </button>
-          ))}
-        </nav>
+        {/* La version : c'est le premier renseignement qu'on cherche ici. */}
+        <p className='mt-auto px-3 pt-3 text-sm text-[var(--ds-ink-muted)]'>
+          {t('settings.footer')} <span className='font-mono'>v{__BUILD_VERSION__}</span>
+        </p>
+      </nav>
 
-        {/* Footer */}
-        {/* La version plutôt qu'un simple nom de produit : c'est le premier
-            renseignement qu'on cherche quand on ouvre les réglages. */}
-        <div className='px-5 py-4 border-t border-white/5 flex items-baseline gap-1.5'>
-          <span className='text-white/25 text-[11px]'>{t('settings.footer')}</span>
-          <span className='text-white/15 text-[10px] font-mono'>v{__BUILD_VERSION__}</span>
-        </div>
-      </div>
-
-      {/* ── Content ── */}
-      <div className='flex-1 min-w-0 flex flex-col rounded-r-2xl'>
-        {/* Top bar */}
-        <div className='flex items-center justify-between px-6 pt-5 pb-4 border-b border-white/6 flex-shrink-0'>
-          <h2 className='text-white font-semibold text-base'>{SECTION_TITLES[section]}</h2>
+      {/* ── Contenu ── */}
+      <div className='mx-auto flex min-w-0 w-full max-w-4xl flex-1 flex-col'>
+        <div className='flex shrink-0 items-center justify-between px-3 pb-3 pt-2'>
+          <h2 className='text-[32px] font-semibold'>{current.label}</h2>
           <button
             onClick={onClose}
             aria-label={t('common.close')}
-            className='p-1.5 rounded-lg text-white/35 hover:text-white/70 hover:bg-white/10 transition-colors'
+            title={t('common.close')}
+            className='flex size-12 items-center justify-center rounded-full bg-[var(--ds-surface-1)]'
           >
-            <X size={16} />
+            <X size={20} />
           </button>
         </div>
 
-        {/* Scrollable body */}
-        <div className='flex-1 overflow-y-auto p-6'>
+        <div className='min-h-0 flex-1 overflow-y-auto pr-1'>
           {section === 'appearance' && <AppearanceSection />}
+          {wallpanelSeen && isAdmin && (
+            <div className={cn('h-full', section !== 'wallpanel' && 'hidden')}>
+              <WallPanelSettings onClose={onClose} guard={guard} />
+            </div>
+          )}
           {section === 'layout' && <LayoutSection />}
           {section === 'performance' && <PerformanceSection />}
           {section === 'sound' && <SoundSection />}

@@ -1,0 +1,87 @@
+/* Généré par scripts/build-tokens.ts depuis src/design/tokens.json — ne pas modifier à la main. */
+
+:root {
+  --ds-ground: #07090c;
+  --ds-surface-1: #151a21;
+  --ds-surface-2: #222833;
+  --ds-surface-3: #2f3a4c;
+  --ds-ink: #eef1f5;
+  --ds-ink-muted: #aab4c3;
+  --ds-accent: #3b74e8;
+  --ds-tile-on: #1f6fb8;
+  --ds-tile-on-ink: #ffffff;
+  --ds-tile-on-muted: #d6e6f7;
+  --ds-control: #2b3a4e;
+  --ds-control-ink: #d4dce8;
+  --ds-home: #134a30;
+  --ds-home-ink: #7be0a5;
+  --ds-mint: #8de8c4;
+  --ds-heat: #f28c4b;
+  --ds-heat-ink: #f6a36e;
+  --ds-cool: #6f9be8;
+  --ds-warm-light: #f6cf72;
+  --ds-warm-light-ink: #3d2a05;
+  --ds-good: #3ecf7a;
+  --ds-good-ink: #062614;
+  --ds-alert: #e8466b;
+  --ds-app-music: #7a5cf0;
+  --ds-app-tv: #f07b2e;
+  --ds-app-photo: #c04fd6;
+  --ds-app-calendar: #ee8a2c;
+  --ds-app-home: #3b8de8;
+  --ds-sheet: #1d3a6e;
+  --ds-sheet-section: #28497f;
+}
+
+[data-theme='light'] {
+  --ds-ground: #e8ecf2;
+  --ds-surface-1: #f6f8fb;
+  --ds-surface-2: #ffffff;
+  --ds-surface-3: #d3dbe8;
+  --ds-ink: #1b2230;
+  --ds-ink-muted: #4a5568;
+  --ds-accent: #2456d6;
+  --ds-tile-on: #1d5fd6;
+  --ds-tile-on-ink: #ffffff;
+  --ds-tile-on-muted: #e3ecfb;
+  --ds-control: #2b3a4e;
+  --ds-control-ink: #d4dce8;
+  --ds-home: #1f6b45;
+  --ds-home-ink: #9cf0c2;
+  --ds-mint: #8de8c4;
+  --ds-heat: #f28c4b;
+  --ds-heat-ink: #c2571c;
+  --ds-cool: #6f9be8;
+  --ds-warm-light: #f6cf72;
+  --ds-warm-light-ink: #3d2a05;
+  --ds-good: #2f9e5c;
+  --ds-good-ink: #062614;
+  --ds-alert: #d6345a;
+  --ds-app-music: #7a5cf0;
+  --ds-app-tv: #f07b2e;
+  --ds-app-photo: #c04fd6;
+  --ds-app-calendar: #ee8a2c;
+  --ds-app-home: #3b8de8;
+  --ds-sheet: #e4e8f0;
+  --ds-sheet-section: #ffffff;
+}
+
+:root {
+  --ds-space-1: 4px;
+  --ds-space-2: 8px;
+  --ds-space-3: 12px;
+  --ds-space-4: 16px;
+  --ds-space-5: 22px;
+  --ds-space-6: 32px;
+  --ds-space-7: 48px;
+  --ds-radius-sm: 14px;
+  --ds-radius-md: 18px;
+  --ds-radius-lg: 22px;
+  --ds-radius-xl: 30px;
+  --ds-radius-2xl: 40px;
+  --ds-radius-pill: 9999px;
+  --ds-shadow-sheet: 0 30px 80px rgba(0, 0, 0, 0.45);
+  --ds-shadow-pin: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --ds-font-sans: Figtree, system-ui, sans-serif;
+  --ds-font-display: Archivo, Figtree, system-ui, sans-serif;
+}

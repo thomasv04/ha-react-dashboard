@@ -65,7 +65,7 @@ export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: s
     [helpers, entityId]
   );
 
-  if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
+  if (!entity) return <div className='p-12 text-[var(--ds-ink-muted)] text-center'>{t('common.entityNotFound')}</div>;
 
   const name = friendlyName(entity) ?? entityId;
   const currentTemp = entity.attributes.current_temperature as number | undefined;
@@ -132,7 +132,7 @@ export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: s
       <MoreInfoHeader icon={Thermometer} name={name} state={hvacMode.toUpperCase()} stateColor={actionColor} />
 
       {/* Gauge — même cadran que la card, en grand */}
-      <div className='gc-bare mx-auto mt-6 w-full max-w-[380px] aspect-[1/1.18]'>
+      <div className='mx-auto mt-2 w-full max-w-[380px] aspect-[1/1.18]'>
         <WidgetIdProvider id={widgetId}>
           <ThermostatCard />
         </WidgetIdProvider>

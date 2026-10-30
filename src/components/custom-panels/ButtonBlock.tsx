@@ -22,12 +22,12 @@ export function ButtonBlockRenderer({ block }: { block: ButtonBlock }) {
     <motion.button
       whileTap={{ scale: 0.95 }}
       onClick={call}
-      className={`w-full py-2.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 ${
-        isPrimary ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400' : 'gc-btn text-white/60 hover:text-white/80'
+      className={`flex h-[52px] w-full items-center justify-center gap-2 rounded-[var(--ds-radius-pill)] text-[15px] font-semibold ${
+        isPrimary ? 'bg-[var(--ds-accent)] text-white' : 'bg-[var(--ds-sheet-section)] text-[var(--ds-ink)]'
       }`}
     >
       {/* eslint-disable-next-line react-hooks/static-components */}
-      {Icon && <Icon size={16} />}
+      {Icon && <Icon size={20} />}
       {block.label}
     </motion.button>
   );

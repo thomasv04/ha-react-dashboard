@@ -50,20 +50,14 @@
       "customIcons": {
         "label": "Icônes personnalisées"
       }
-    }
+    },
+    "range": "max {high}° min {low}°"
   },
   "thermostat": {
     "label": "Thermostat",
     "notFound": "Entité introuvable",
     "currentTemp": "Température actuelle",
     "description": "Contrôle un thermostat climate.xxx avec la température cible.",
-    "heating": "CHAUFFER À",
-    "cooling": "REFROIDIR À",
-    "idle": "EN VEILLE",
-    "off": "ÉTEINT",
-    "fan_only": "VENTILATION",
-    "drying": "SÉCHAGE",
-    "preheating": "PRÉCHAUFFE",
     "dispositions": {
       "horizontal": {
         "label": "Horizontale"
@@ -85,6 +79,19 @@
       "showInfoPanel": {
         "label": "Panneau info (More Info)"
       }
+    },
+    "currently": "Actuellement {value}",
+    "decrease": "Baisser la consigne",
+    "increase": "Monter la consigne",
+    "mode": "Mode",
+    "modes": {
+      "heat": "Chauffage",
+      "cool": "Clim",
+      "heat_cool": "Chaud / froid",
+      "auto": "Auto",
+      "dry": "Déshumidif.",
+      "fan_only": "Ventilation",
+      "off": "Arrêt"
     }
   },
   "light": {
@@ -131,7 +138,12 @@
       "showInfoPanel": {
         "label": "Panneau info (More Info)"
       }
-    }
+    },
+    "brightnessValue": "Luminosité · {value} %",
+    "colorTempValue": "Température · {value} K",
+    "hue": "Teinte",
+    "state": "État",
+    "swatch": "Teinte {value}°"
   },
   "sensor": {
     "label": "Capteur",
@@ -198,6 +210,7 @@
     "notFound": "Volet introuvable",
     "openAction": "OUVRIR",
     "closeAction": "FERMER",
+    "stopAction": "ARRÊTER",
     "presetClosed": "FERMÉ",
     "presetOpen": "OUVERT",
     "percentOpen": "{value}% ouvert",
@@ -259,14 +272,19 @@
           "compact": "Compacte (1 ligne)"
         }
       }
-    }
+    },
+    "previous": "Morceau précédent",
+    "next": "Morceau suivant",
+    "play": "Lecture",
+    "pause": "Pause",
+    "volume": "Volume"
   },
   "person": {
     "label": "Personnes",
     "notFound": "Entité introuvable",
     "description": "Affiche la présence et localisation des personnes du foyer.",
-    "home": "MAISON",
-    "away": "ABSENT",
+    "home": "À la maison",
+    "away": "Absent",
     "noPeople": "Aucune personne configurée",
     "dispositions": {
       "default": {
@@ -384,8 +402,6 @@
     "charging": "En charge",
     "discharging": "En décharge",
     "standby": "Veille",
-    "flowIn": "W entrant",
-    "flowOut": "W sortant",
     "dispositions": {
       "default": {
         "label": "Standard"
@@ -410,14 +426,17 @@
       "showInfoPanel": {
         "label": "Panneau info (More Info)"
       }
-    }
+    },
+    "home": "Maison",
+    "battery": "Batterie",
+    "grid": "Réseau",
+    "producing": "produits en ce moment"
   },
   "tempo": {
     "label": "Tempo EDF",
     "description": "Couleur du jour Tempo RTE et heures pleines/creuses.",
     "offPeak": "Heures creuses",
     "peak": "Heures pleines",
-    "rate": "Tarif ",
     "tomorrow": "Demain",
     "blue": "Bleu",
     "white": "Blanc",
@@ -446,7 +465,9 @@
       "remainingRedEntity": {
         "label": "Jours rouge restants"
       }
-    }
+    },
+    "today": "Aujourd’hui",
+    "days": "{value} j"
   },
   "shortcuts": {
     "label": "Raccourcis",
@@ -490,7 +511,6 @@
     "label": "Feu à pellet",
     "title": "Feu à pellet",
     "description": "Contrôle un poêle à pellets (climate) : température cible, allumage/extinction.",
-    "current": "Actuel : ",
     "dispositions": {
       "default": {
         "label": "Standard"
@@ -503,7 +523,14 @@
       "name": {
         "label": "Nom affiché"
       }
-    }
+    },
+    "on": "Allumé",
+    "off": "Éteint",
+    "turnOn": "Allumer le poêle",
+    "turnOff": "Éteindre le poêle",
+    "currently": "Actuellement {value}",
+    "decrease": "Baisser la consigne",
+    "increase": "Monter la consigne"
   },
   "greeting": {
     "label": "Horloge",
@@ -674,9 +701,6 @@
       "icon": {
         "label": "Icône"
       },
-      "iconBg": {
-        "label": "Dégradé icône"
-      },
       "tempEntity": {
         "label": "Capteur température (sinon celui de la zone)"
       },
@@ -794,7 +818,8 @@
         "label": "Panneau info (More Info)"
       }
     },
-    "error": "[Erreur template : {message}]"
+    "error": "[Erreur template : {message}]",
+    "placeholder": "Carte template"
   },
   "vacuum": {
     "label": "Aspirateur",
@@ -864,7 +889,8 @@
           }
         }
       }
-    }
+    },
+    "back": "Retour"
   },
   "automation_list": {
     "label": "Liste d'automatisations",
@@ -891,7 +917,8 @@
           }
         }
       }
-    }
+    },
+    "activeCount": "{count} sur {total} actives"
   },
   "energy_flow": {
     "label": "Flux d'énergie",
@@ -1041,7 +1068,9 @@
       "allowAdd": {
         "label": "Champ d'ajout"
       }
-    }
+    },
+    "add": "Ajouter une tâche",
+    "remaining": "{count} restantes"
   },
   "fan": {
     "label": "Ventilateur",
@@ -1089,6 +1118,13 @@
       },
       "hour12": {
         "label": "Format 12 h (AM/PM)"
+      },
+      "display": {
+        "label": "Affichage",
+        "options": {
+          "time": "Heure",
+          "date": "Grande date"
+        }
       }
     }
   },

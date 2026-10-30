@@ -14,9 +14,7 @@
     "addPage": "Nouvelle page",
     "deletePage": "Supprimer la page"
   },
-  "editTooltipExit": "Quitter le mode édition",
   "editTooltipEnter": "Modifier le dashboard",
-  "cancelTooltip": "Annuler",
   "boot": {
     "connect": "Connexion à Home Assistant",
     "config": "Chargement du tableau de bord",
@@ -30,8 +28,6 @@
   "saveFailed": "Impossible de sauvegarder la configuration",
   "conflictTitle": "Modifié ailleurs",
   "conflictDescription": "Un autre appareil a enregistré entre-temps. Rechargez la page avant de refaire vos modifications.",
-  "pack": "Réorganiser",
-  "packTooltip": "Referme les trous de la mise en page (breakpoint affiché uniquement)",
   "repairedTitle": "Configuration réparée",
   "repairedDescription": "Des éléments illisibles ont été écartés. Le reste du dashboard est intact.",
   "undo": "Annuler (Ctrl+Z)",
@@ -48,5 +44,10 @@
   "selectionCount": "{value} sélectionné(s)",
   "selectionDelete": "Supprimer la sélection",
   "selectionClear": "Désélectionner",
-  "selectionHint": "Maj+clic pour sélectionner plusieurs cartes"
+  "selectionHint": "Maj+clic pour sélectionner plusieurs cartes",
+  "done": "Terminer",
+  "doneTooltip": "Enregistrer et terminer",
+  "discardTooltip": "Abandonner les modifications",
+  "discardConfirm": "Abandonner ?",
+  "backToLayout": "Disposition"
 }

@@ -58,14 +58,20 @@ export function EntityPicker({
     <div>
       {/* Pas d'étiquette vide : dans une rangée de liste, elle réservait sa
           hauteur et décalait le sélecteur du bouton de suppression. */}
-      {label && <label className='text-[11px] text-white/40 mb-1 block'>{label}</label>}
+      {label && <label className='mb-2 block text-sm font-semibold text-[var(--ds-ink-muted)]'>{label}</label>}
       <div
         ref={triggerRef}
-        className='flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:border-white/20 transition-colors'
+        className='flex h-12 cursor-pointer items-center gap-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-4'
         onClick={handleToggle}
       >
-        <span className={`text-sm flex-1 truncate ${value ? 'text-white/80' : 'text-white/30'}`}>{value || t('layout.entitySelect')}</span>
-        {open ? <ChevronUp size={14} className='text-white/30' /> : <ChevronDown size={14} className='text-white/30' />}
+        <span className={`flex-1 truncate text-base ${value ? 'text-[var(--ds-ink)]' : 'text-[var(--ds-ink-muted)]'}`}>
+          {value || t('layout.entitySelect')}
+        </span>
+        {open ? (
+          <ChevronUp size={18} className='text-[var(--ds-ink-muted)]' />
+        ) : (
+          <ChevronDown size={18} className='text-[var(--ds-ink-muted)]' />
+        )}
       </div>
 
       {open &&
@@ -76,28 +82,26 @@ export function EntityPicker({
               position: 'fixed',
               ...dropStyle,
               zIndex: 9999,
-              background: 'rgba(12, 16, 40, 0.98)',
-              backdropFilter: 'blur(20px)',
-              borderRadius: 8,
-              border: '1px solid rgba(255,255,255,0.12)',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+              background: 'var(--ds-sheet)',
+              borderRadius: 20,
+              boxShadow: 'var(--ds-shadow-sheet)',
               overflow: 'hidden',
-              maxHeight: 240,
+              maxHeight: 320,
             }}
           >
-            <div className='sticky top-0 p-2 border-b border-white/8' style={{ background: 'rgba(12, 16, 40, 0.98)' }}>
-              <div className='flex items-center gap-2 px-2 py-1.5 rounded-md bg-white/5'>
-                <Search size={13} className='text-white/30' />
+            <div className='sticky top-0 p-2' style={{ background: 'var(--ds-sheet)' }}>
+              <div className='flex h-11 items-center gap-2 rounded-full bg-[var(--ds-surface-3)] px-4'>
+                <Search size={16} className='text-[var(--ds-ink-muted)]' />
                 <input
                   autoFocus
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className='bg-transparent text-sm text-white/80 outline-none flex-1 placeholder:text-white/20'
+                  className='flex-1 bg-transparent text-base text-[var(--ds-ink)] outline-none placeholder:text-[var(--ds-ink-muted)]'
                   placeholder={t('layout.entitySearch')}
                 />
               </div>
             </div>
-            <div className='overflow-y-auto' style={{ maxHeight: 180 }}>
+            <div className='overflow-y-auto px-2 pb-2' style={{ maxHeight: 250 }}>
               {filtered.map(id => (
                 <button
                   key={id}
@@ -106,14 +110,14 @@ export function EntityPicker({
                     setOpen(false);
                     setSearch('');
                   }}
-                  className={`w-full text-left px-3 py-1.5 text-sm hover:bg-white/8 transition-colors truncate ${
-                    id === value ? 'text-blue-400 bg-blue-500/10' : 'text-white/60'
+                  className={`h-11 w-full truncate rounded-[var(--ds-radius-md)] px-3 text-left text-base ${
+                    id === value ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'text-[var(--ds-ink)]'
                   }`}
                 >
                   {id}
                 </button>
               ))}
-              {filtered.length === 0 && <p className='px-3 py-2 text-white/25 text-xs'>{t('layout.entityNoResult')}</p>}
+              {filtered.length === 0 && <p className='px-3 py-2 text-sm text-[var(--ds-ink-muted)]'>{t('layout.entityNoResult')}</p>}
             </div>
           </div>,
           document.body

@@ -11,8 +11,6 @@ export type {
   TempoCardConfig,
   ThermostatCardConfig,
   RoomControl,
-  RoomEntry,
-  RoomsGridConfig,
   RoomCardConfig,
   GroupChild,
   GroupCardConfig,

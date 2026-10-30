@@ -1,6 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { useDashboardConfig, wallPanelWidgetConfigsOf } from './useDashboardConfig';
+import { resetConfigLoadState, useDashboardConfig, wallPanelWidgetConfigsOf } from './useDashboardConfig';
 import type { DashboardConfigV2 } from '@/context/DashboardLayoutContext';
 
 // ── Mocks ───────────────────────────────────────────────────────────────────────
@@ -21,6 +21,7 @@ vi.mock('@/lib/api-base', () => ({
 beforeEach(() => {
   vi.restoreAllMocks();
   mockAddToast.mockClear();
+  resetConfigLoadState();
   // Le hook démarre désormais depuis un cache local : sans nettoyage, un test
   // hériterait de la config écrite par le précédent.
   localStorage.clear();
@@ -48,7 +49,7 @@ describe('useDashboardConfig', () => {
     const v2Config = {
       version: 2,
       pages: [{ id: 'home', label: 'Home', icon: 'LayoutGrid', type: 'grid', order: 0 }],
-      layouts: { home: { widgets: { lg: [], md: [], sm: [] } } },
+      layouts: { home: { panels: [{ id: 'p', title: 'Favoris', cols: 6, widgets: [{ id: 'w', type: 'light', w: 2, h: 2 }] }] } },
       widgetConfigs: { home: {} },
     };
     mockFetch(v2Config);
@@ -79,7 +80,7 @@ describe('useDashboardConfig', () => {
     // After migration the v1 layout ends up under "home" page. Les coordonnées
     // absentes du format v1 sont complétées plutôt que de faire disparaître la
     // carte (cf. `sanitizeWidget`).
-    expect(result.current.allLayouts.home.widgets.lg).toEqual([{ id: 'w1', type: 'light', x: 0, y: 0, w: 2, h: 2 }]);
+    expect(result.current.allLayouts.home.panels[0].widgets).toEqual([{ id: 'w1', type: 'light', w: 2, h: 2 }]);
   });
 
   it('handles "no config" (message response) by using defaults', async () => {
@@ -97,7 +98,7 @@ describe('useDashboardConfig', () => {
   const NEW_CONFIG = {
     version: 2 as const,
     pages: [{ id: 'custom', label: 'Custom', icon: 'Star', type: 'grid' as const, order: 0 }],
-    layouts: { custom: { widgets: { lg: [], md: [], sm: [] }, cols: { lg: 12, md: 8, sm: 4 } } },
+    layouts: { custom: { panels: [] } },
     widgetConfigs: { custom: {} },
   };
 
@@ -238,8 +239,8 @@ describe('useDashboardConfig', () => {
     // La carte sans type disparaît, celle dont la position est cassée survit
     // avec des coordonnées de repli — supprimer le travail de l'utilisateur
     // pour un `x` corrompu serait pire que le défaut lui-même.
-    expect(result.current.allLayouts.home.widgets.lg.map(w => w.id)).toEqual(['ok', 'position-cassée']);
-    expect(result.current.allLayouts.home.widgets.lg[1]).toMatchObject({ x: 0, y: 0, w: 2, h: 2 });
+    expect(result.current.allLayouts.home.panels[0].widgets.map(w => w.id)).toEqual(['ok', 'position-cassée']);
+    expect(result.current.allLayouts.home.panels[0].widgets[1]).toMatchObject({ w: 2, h: 2 });
     expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'dashboard.repairedTitle' }));
   });
 
@@ -264,6 +265,18 @@ describe('useDashboardConfig', () => {
     expect(result.current.error).toBeInstanceOf(Error);
     expect(result.current.error?.message).toBe('Network error');
     expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'dashboard.offlineTitle' }));
+  });
+
+  it('plusieurs instances partagent une seule requête et une seule alerte', async () => {
+    mockFetchReject(new Error('Network error'));
+
+    const { result } = renderHook(() => [useDashboardConfig(), useDashboardConfig(), useDashboardConfig()]);
+    await waitFor(() => expect(result.current.every(c => !c.isLoading)).toBe(true));
+
+    // Le dashboard, la barre d'édition et la veille montent tous le hook : sans
+    // partage, chacun faisait son GET et affichait son propre « Hors ligne ».
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(mockAddToast.mock.calls.filter(([toast]) => toast.title === 'dashboard.offlineTitle')).toHaveLength(1);
   });
 
   // ── Non-régression : « des fois ça reste bloqué » ─────────────────────────
@@ -292,7 +305,7 @@ describe('useDashboardConfig', () => {
     const cachedConfig = {
       version: 2,
       pages: [{ id: 'home', label: 'Depuis le cache', icon: 'LayoutGrid', type: 'grid', order: 0 }],
-      layouts: { home: { widgets: { lg: [], md: [], sm: [] }, cols: { lg: 12, md: 8, sm: 4 } } },
+      layouts: { home: { panels: [] } },
       widgetConfigs: { home: {} },
     };
     localStorage.setItem('ha-dashboard-config-cache', JSON.stringify(cachedConfig));

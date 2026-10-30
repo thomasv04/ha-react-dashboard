@@ -1,6 +1,4 @@
 import { useMemo, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { ListChecks, Check, Plus, ListX, PartyPopper } from 'lucide-react';
 import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useHass } from '@hakit/core';
@@ -26,8 +24,6 @@ interface TodoItem {
 }
 
 type ItemsResponse = { items?: TodoItem[] };
-
-const ACCENT = '#fbbf24';
 
 export function TodoCard() {
   const { t } = useI18n();
@@ -87,91 +83,95 @@ export function TodoCard() {
 
   if (!entityId) {
     return (
-      <div ref={cardRef} className='gc rounded-3xl p-4 h-full'>
+      <div ref={cardRef} className='rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] text-[var(--ds-ink)] h-full p-4'>
         <CardPlaceholder icon={ListChecks} text={t('widgets.todo.notFound')} hint={t('widgets.todo.notFoundHint')} compact={size.compact} />
       </div>
     );
   }
 
   return (
-    <motion.div
+    <div
       ref={cardRef}
-      {...CARD_ENTRANCE}
-      className={cn('gc rounded-3xl h-full overflow-hidden select-none flex flex-col', size.squat ? 'px-3 py-2' : 'p-3.5')}
+      className={cn(
+        'flex h-full select-none flex-col overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] text-[var(--ds-ink)]',
+        size.squat ? 'justify-center px-4' : 'gap-3 p-[var(--ds-space-4)]'
+      )}
     >
-      {/* En-tête */}
-      <div className='flex items-center gap-2 shrink-0'>
-        <div
-          className='w-7 h-7 rounded-xl flex items-center justify-center border shrink-0'
-          style={{ background: `${ACCENT}1f`, borderColor: `${ACCENT}3a` }}
-        >
-          <ListChecks size={13} style={{ color: ACCENT }} />
+      {/* En-tête : nom et nombre de tâches restantes */}
+      <div className='flex shrink-0 items-center gap-3'>
+        <ListChecks size={22} aria-hidden='true' className='shrink-0 text-[var(--ds-accent)]' />
+        <div className='min-w-0'>
+          <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>
+          <div className='truncate text-sm text-[var(--ds-ink-muted)]'>{t('widgets.todo.remaining', { count: remaining })}</div>
         </div>
-        <span className='text-white/40 text-xs font-medium truncate'>{name}</span>
-        <span className='ml-auto text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full border bg-white/5 text-white/30 border-white/8 shrink-0'>
-          {remaining}
-        </span>
       </div>
 
       {/* Liste */}
-      <div className='flex-1 min-h-0 mt-2'>
-        {error ? (
-          <CardPlaceholder icon={ListX} text={t('widgets.todo.error')} tone='error' compact={size.compact} />
-        ) : loading && items.length === 0 ? (
-          <CardPlaceholder icon={ListChecks} text={t('common.loading')} tone='loading' compact={size.compact} />
-        ) : items.length === 0 ? (
-          <CardPlaceholder icon={PartyPopper} text={t('widgets.todo.empty')} compact={size.compact} />
-        ) : (
-          <div className='flex flex-col gap-1 h-full overflow-y-auto scrollbar-none' style={{ scrollbarWidth: 'none' }}>
-            <AnimatePresence initial={false}>
+      {!size.squat && (
+        <div className='min-h-0 flex-1'>
+          {error ? (
+            <CardPlaceholder icon={ListX} text={t('widgets.todo.error')} tone='error' compact={size.compact} />
+          ) : loading && items.length === 0 ? (
+            <CardPlaceholder icon={ListChecks} text={t('common.loading')} tone='loading' compact={size.compact} />
+          ) : items.length === 0 ? (
+            <CardPlaceholder icon={PartyPopper} text={t('widgets.todo.empty')} compact={size.compact} />
+          ) : (
+            <ul className='flex h-full flex-col gap-1 overflow-y-auto' style={{ scrollbarWidth: 'none' }}>
               {items.map(item => {
                 const done = item.status === 'completed';
                 return (
-                  <motion.button
-                    key={item.uid}
-                    layout
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    onClick={() => toggleItem(item)}
-                    className='flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-colors text-left shrink-0'
-                  >
-                    <span
-                      className='w-4 h-4 rounded-md border flex items-center justify-center shrink-0'
-                      style={done ? { background: `${ACCENT}30`, borderColor: `${ACCENT}60` } : { borderColor: 'rgba(255,255,255,0.18)' }}
+                  <li key={item.uid}>
+                    <button
+                      role='checkbox'
+                      aria-checked={done}
+                      onClick={() => toggleItem(item)}
+                      className='flex min-h-11 w-full items-center gap-3 rounded-[var(--ds-radius-md)] px-1 text-left'
                     >
-                      {done && <Check size={10} style={{ color: ACCENT }} />}
-                    </span>
-                    <span className={cn('text-sm truncate flex-1 min-w-0', done ? 'text-white/25 line-through' : 'text-white/80')}>
-                      {item.summary}
-                    </span>
-                  </motion.button>
+                      <span
+                        aria-hidden='true'
+                        className={cn(
+                          'flex size-6 shrink-0 items-center justify-center rounded-full',
+                          done ? 'bg-[var(--ds-accent)] text-white' : 'border-2 border-[var(--ds-ink-muted)]'
+                        )}
+                      >
+                        {done && <Check size={14} strokeWidth={3} />}
+                      </span>
+                      <span className={cn('min-w-0 flex-1 truncate text-[17px]', done && 'text-[var(--ds-ink-muted)] line-through')}>
+                        {item.summary}
+                      </span>
+                    </button>
+                  </li>
                 );
               })}
-            </AnimatePresence>
-          </div>
-        )}
-      </div>
+            </ul>
+          )}
+        </div>
+      )}
 
       {/* Ajout — masqué dès que la card n'a plus la place */}
       {allowAdd && !size.compact && (
-        <form onSubmit={addItem} className='shrink-0 mt-2 flex items-center gap-1.5'>
+        <form onSubmit={addItem} className='flex shrink-0 items-center gap-2'>
+          <label className='sr-only' htmlFor={`todo-add-${widgetId}`}>
+            {t('widgets.todo.add')}
+          </label>
           <input
+            id={`todo-add-${widgetId}`}
             value={draft}
             onChange={e => setDraft(e.target.value)}
             onClick={e => e.stopPropagation()}
             placeholder={t('widgets.todo.addPlaceholder')}
-            className='flex-1 min-w-0 bg-white/5 border border-white/8 rounded-xl px-2.5 py-1.5 text-xs text-white/80 placeholder:text-white/25 outline-none focus:border-white/20'
+            className='h-11 min-w-0 flex-1 rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)] px-4 text-[15px] outline-none placeholder:text-[var(--ds-ink-muted)]'
           />
           <button
             type='submit'
-            className='w-7 h-7 rounded-xl border flex items-center justify-center shrink-0'
-            style={{ background: `${ACCENT}1f`, borderColor: `${ACCENT}3a` }}
+            aria-label={t('widgets.todo.add')}
+            title={t('widgets.todo.add')}
+            className='flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--ds-accent)] text-white'
           >
-            <Plus size={13} style={{ color: ACCENT }} />
+            <Plus size={20} />
           </button>
         </form>
       )}
-    </motion.div>
+    </div>
   );
 }

@@ -48,14 +48,14 @@ export function PartPopover({
       <div className='flex items-center gap-2'>
         <button
           onClick={() => onChange({ ...part, side: part.side === 1 ? -1 : 1 })}
-          className='flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs bg-white/5 border border-white/10 text-white/70 hover:text-white'
+          className='flex items-center gap-1.5 px-2 py-1.5 rounded-[var(--ds-radius-sm)] text-xs bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)]'
         >
           <ArrowLeftRight size={12} /> {t('layout.floorplan.partFlip')}
         </button>
         <button
           onClick={onAdd}
           disabled={!part.entityId}
-          className='ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-500/80 text-white hover:bg-blue-500 disabled:opacity-40'
+          className='ml-auto px-3 py-1.5 rounded-[var(--ds-radius-sm)] text-xs font-medium bg-[var(--ds-accent)] text-white disabled:opacity-40'
         >
           {t('common.add')}
         </button>

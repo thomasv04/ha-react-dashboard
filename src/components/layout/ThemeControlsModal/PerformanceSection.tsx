@@ -3,6 +3,9 @@ import { Activity } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import type { PerfSettings } from '@/context/ThemeContext';
 import { PerfToggle } from './PerfToggle';
+import { BUTTON_SECONDARY } from './controls';
+import { SETTINGS_CARD } from './typography';
+import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 
 // ── FPS meter hook ────────────────────────────────────────────────────────────
@@ -46,7 +49,14 @@ function FPSMeter() {
   const [measuring, setMeasuring] = useState(false);
   const fps = useFPS(measuring);
 
-  const color = fps === null ? 'text-white/30' : fps >= 55 ? 'text-green-400' : fps >= 30 ? 'text-yellow-400' : 'text-red-400';
+  const color =
+    fps === null
+      ? 'text-[var(--ds-ink-muted)]'
+      : fps >= 55
+        ? 'text-[var(--ds-good)]'
+        : fps >= 30
+          ? 'text-[var(--ds-warm-light)]'
+          : 'text-[var(--ds-alert)]';
   const label =
     fps === null
       ? '—'
@@ -57,28 +67,21 @@ function FPSMeter() {
           : t('settings.performance_section.fpsLow');
 
   return (
-    <div className='flex flex-col gap-3 p-4 rounded-xl bg-white/4 border border-white/8'>
+    <div className={cn(SETTINGS_CARD, 'flex flex-col gap-3')}>
       <div className='flex items-center justify-between'>
         <div className='flex items-center gap-2'>
-          <Activity size={14} className='text-white/40' />
-          <span className='text-white/60 text-xs font-medium'>{t('settings.performance_section.fps')}</span>
+          <Activity size={20} className='text-[var(--ds-ink-muted)]' />
+          <span className='text-lg font-semibold'>{t('settings.performance_section.fps')}</span>
         </div>
-        <button
-          onClick={() => setMeasuring(v => !v)}
-          className={`px-3 py-1 rounded-lg text-xs font-medium transition-all border ${
-            measuring
-              ? 'bg-red-500/20 border-red-500/40 text-red-300 hover:bg-red-500/30'
-              : 'bg-white/8 border-white/15 text-white/50 hover:bg-white/12 hover:text-white/70'
-          }`}
-        >
+        <button onClick={() => setMeasuring(v => !v)} className={cn(BUTTON_SECONDARY, 'h-11', measuring && 'text-[var(--ds-alert)]')}>
           {measuring ? t('settings.performance_section.fpsStop') : t('settings.performance_section.fpsMeasure')}
         </button>
       </div>
 
       <div className='flex items-end gap-3'>
-        <span className={`text-4xl font-bold tabular-nums leading-none transition-colors ${color}`}>{fps ?? '··'}</span>
+        <span className={`text-5xl font-bold tabular-nums leading-none transition-colors ${color}`}>{fps ?? '··'}</span>
         <div className='flex flex-col pb-0.5'>
-          <span className='text-white/30 text-xs leading-tight'>fps</span>
+          <span className='text-[var(--ds-ink-muted)] text-sm leading-tight'>fps</span>
           {measuring && fps !== null && <span className={`text-xs font-medium leading-tight ${color}`}>{label}</span>}
         </div>
         {measuring && fps !== null && (
@@ -87,7 +90,13 @@ function FPSMeter() {
               <div
                 key={i}
                 className={`w-1.5 rounded-sm transition-all ${
-                  fps >= threshold ? (fps >= 55 ? 'bg-green-400' : fps >= 30 ? 'bg-yellow-400' : 'bg-red-400') : 'bg-white/10'
+                  fps >= threshold
+                    ? fps >= 55
+                      ? 'bg-[var(--ds-good)] text-[var(--ds-good-ink)]'
+                      : fps >= 30
+                        ? 'bg-[var(--ds-warm-light)] text-[var(--ds-warm-light-ink)]'
+                        : 'bg-[var(--ds-alert)] text-white'
+                    : 'bg-[var(--ds-surface-3)]'
                 }`}
                 style={{ height: `${8 + i * 4}px` }}
               />
@@ -96,7 +105,9 @@ function FPSMeter() {
         )}
       </div>
 
-      {!measuring && <p className='text-white/25 text-[10px] leading-relaxed'>{t('settings.performance_section.fpsDescription')}</p>}
+      {!measuring && (
+        <p className='text-[15px] leading-relaxed text-[var(--ds-ink-muted)]'>{t('settings.performance_section.fpsDescription')}</p>
+      )}
     </div>
   );
 }
@@ -110,17 +121,11 @@ export function PerformanceSection() {
   }
 
   return (
-    <div className='flex flex-col gap-5'>
+    <div className='flex flex-col gap-3'>
       <FPSMeter />
 
-      <div className='flex flex-col'>
-        <p className='text-white/35 text-xs mb-5 leading-relaxed'>{t('settings.performance_section.intro')}</p>
-        <PerfToggle
-          checked={perfSettings.reduceBlur}
-          onChange={() => toggle('reduceBlur')}
-          label={t('settings.performance_section.reduceBlur')}
-          description={t('settings.performance_section.reduceBlurDesc')}
-        />
+      <div className='flex flex-col gap-3'>
+        <p className='px-1 text-[15px] leading-relaxed text-[var(--ds-ink-muted)]'>{t('settings.performance_section.intro')}</p>
         <PerfToggle
           checked={perfSettings.reduceAnimations}
           onChange={() => toggle('reduceAnimations')}

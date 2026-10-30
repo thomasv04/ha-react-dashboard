@@ -25,8 +25,8 @@ export function MultiSelectField({
 
   return (
     <div>
-      <label className='text-[11px] text-white/40 mb-2 block'>{label}</label>
-      <div className='flex flex-wrap gap-1.5'>
+      <label className='mb-2 block text-sm font-semibold text-[var(--ds-ink-muted)]'>{label}</label>
+      <div className='flex flex-wrap gap-2'>
         {options.map(opt => {
           const active = current.includes(opt.value);
           return (
@@ -35,10 +35,8 @@ export function MultiSelectField({
               type='button'
               onClick={() => onChange(active ? current.filter(v => v !== opt.value) : [...current, opt.value])}
               className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all',
-                active
-                  ? 'bg-blue-500/20 border-blue-500/40 text-blue-300'
-                  : 'bg-white/5 border-white/10 text-white/40 hover:border-white/20 hover:text-white/60'
+                'flex h-11 items-center gap-2 rounded-full px-4 text-[15px] font-semibold transition-colors',
+                active ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'bg-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
               )}
             >
               {opt.icon && <span>{opt.icon}</span>}

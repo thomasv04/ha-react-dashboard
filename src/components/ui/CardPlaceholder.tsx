@@ -47,7 +47,7 @@ export function CardPlaceholder({ icon: Icon, text, tone = 'empty', hint, compac
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: 'spring', stiffness: 260, damping: 24 }}
-        className='relative w-11 h-11 rounded-2xl border flex items-center justify-center shrink-0'
+        className='relative w-11 h-11 rounded-[var(--ds-radius-lg)] border flex items-center justify-center shrink-0'
         style={{
           background: `rgba(${rgb},0.05)`,
           borderColor: `rgba(${rgb},0.10)`,
@@ -72,7 +72,7 @@ export function CardPlaceholder({ icon: Icon, text, tone = 'empty', hint, compac
         <span className='text-sm font-medium leading-tight' style={{ color: `rgba(${rgb},0.45)` }}>
           {text}
         </span>
-        {hint && <span className='text-[10px] leading-tight text-white/25'>{hint}</span>}
+        {hint && <span className='text-[10px] leading-tight text-[var(--ds-ink-muted)]'>{hint}</span>}
       </div>
     </div>
   );

@@ -47,10 +47,10 @@ export function ListEditor({
   return (
     <div>
       <div className='flex items-center justify-between mb-2'>
-        <label className='text-[11px] text-white/40'>{label}</label>
+        <label className='text-sm text-[var(--ds-ink-muted)]'>{label}</label>
         <button
           onClick={addItem}
-          className='flex items-center gap-1 px-2 py-1 rounded-md bg-blue-500/15 hover:bg-blue-500/25 text-blue-400 text-[11px]'
+          className='flex items-center gap-1 px-2 py-1 rounded-md bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] text-sm'
         >
           <Plus size={11} /> {t('common.add')}
         </button>
@@ -60,29 +60,30 @@ export function ListEditor({
           const itemLabel = (item.label || item.name || item.id || `Item ${idx + 1}`) as string;
           const isExpanded = expandedIdx === idx;
           return (
-            <div key={idx} className='rounded-lg border border-white/8 overflow-hidden'>
-              <div
-                className='flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-white/5'
-                onClick={() => setExpandedIdx(isExpanded ? null : idx)}
-              >
-                <span className='text-sm text-white/60 flex-1 truncate'>{itemLabel}</span>
+            <div key={idx} className='rounded-[var(--ds-radius-sm)] border border-[var(--ds-surface-3)] overflow-hidden'>
+              <div className='flex items-center gap-2 px-3 py-2 cursor-pointer' onClick={() => setExpandedIdx(isExpanded ? null : idx)}>
+                <span className='text-sm text-[var(--ds-ink-muted)] flex-1 truncate'>{itemLabel}</span>
                 <button
                   onClick={e => {
                     e.stopPropagation();
                     removeItem(idx);
                   }}
-                  className='p-1 rounded hover:bg-red-500/20 text-red-400/50 hover:text-red-400'
+                  className='p-1 rounded text-[var(--ds-alert)]'
                 >
                   <Trash2 size={12} />
                 </button>
-                {isExpanded ? <ChevronUp size={13} className='text-white/25' /> : <ChevronDown size={13} className='text-white/25' />}
+                {isExpanded ? (
+                  <ChevronUp size={13} className='text-[var(--ds-ink-muted)]' />
+                ) : (
+                  <ChevronDown size={13} className='text-[var(--ds-ink-muted)]' />
+                )}
               </div>
               {isExpanded && (
                 <div
                   className={
                     twoCol
-                      ? 'px-3 pb-3 pt-2 border-t border-white/6 grid grid-cols-2 gap-x-3 gap-y-2'
-                      : 'px-3 pb-3 space-y-2 border-t border-white/6'
+                      ? 'px-3 pb-3 pt-2 border-t border-[var(--ds-surface-3)] grid grid-cols-2 gap-x-3 gap-y-2'
+                      : 'px-3 pb-3 space-y-2 border-t border-[var(--ds-surface-3)]'
                   }
                 >
                   {itemFields.map(field => {
@@ -102,7 +103,7 @@ export function ListEditor({
                       const list = (item[field.key] as string[]) ?? [];
                       content = (
                         <div>
-                          <label className='text-[11px] text-white/40 mb-1 block'>{t(field.label)}</label>
+                          <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{t(field.label)}</label>
                           {list.map((eid, eidx) => (
                             <div key={eidx} className='flex items-center gap-1 mb-1'>
                               <EntityPicker
@@ -123,16 +124,13 @@ export function ListEditor({
                                     list.filter((_, i) => i !== eidx)
                                   )
                                 }
-                                className='p-1 text-red-400/50 hover:text-red-400'
+                                className='p-1 text-[var(--ds-alert)]'
                               >
                                 <Trash2 size={11} />
                               </button>
                             </div>
                           ))}
-                          <button
-                            onClick={() => updateItem(idx, field.key, [...list, ''])}
-                            className='text-[11px] text-blue-400/60 hover:text-blue-400'
-                          >
+                          <button onClick={() => updateItem(idx, field.key, [...list, ''])} className='text-sm text-[var(--ds-accent)]'>
                             + {t('layout.addEntityBtn')}
                           </button>
                         </div>
@@ -156,11 +154,11 @@ export function ListEditor({
                     } else if (field.fieldType === 'select' && field.options) {
                       content = (
                         <div>
-                          <label className='text-[11px] text-white/40 mb-1 block'>{t(field.label)}</label>
+                          <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{t(field.label)}</label>
                           <select
                             value={(item[field.key] as string) || field.options[0].value}
                             onChange={e => updateItem(idx, field.key, e.target.value)}
-                            className='w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 outline-none focus:border-blue-500/50 cursor-pointer'
+                            className='w-full px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)] outline-none focus:outline-2 focus:outline-[var(--ds-accent)] cursor-pointer'
                             style={{ colorScheme: 'dark' }}
                           >
                             {field.options.map(opt => (
@@ -181,10 +179,10 @@ export function ListEditor({
                               onChange={e => updateItem(idx, field.key, e.target.checked)}
                               className='sr-only peer'
                             />
-                            <div className='w-9 h-5 rounded-full bg-white/10 peer-checked:bg-blue-500/60 transition-colors' />
-                            <div className='absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-md transition-transform peer-checked:translate-x-4' />
+                            <div className='w-9 h-5 rounded-full bg-[var(--ds-surface-3)] peer-checked:bg-[var(--ds-tile-on)] transition-colors' />
+                            <div className='absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-[var(--ds-surface-3)] shadow-md transition-transform peer-checked:translate-x-4' />
                           </div>
-                          <span className='text-xs text-white/60'>{t(field.label)}</span>
+                          <span className='text-xs text-[var(--ds-ink-muted)]'>{t(field.label)}</span>
                         </label>
                       );
                     } else if (field.fieldType === 'panel-select') {

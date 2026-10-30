@@ -17,14 +17,7 @@ interface WallPanelSheetProps {
   children: ReactNode;
 }
 
-/**
- * Feuille de verre de l'écran de veille, ancrée en haut ou en bas.
- *
- * Le voile est le **seul** plan flouté : imbriquer un `backdrop-filter` (la
- * classe `.gc`) dans un autre coûte une passe de composition supplémentaire à
- * chaque image, ce qu'une tablette murale ne tient pas. La feuille prend donc
- * un fond opaque plutôt que `.gc`.
- */
+/** Feuille de l'écran de veille, ancrée en haut ou en bas, sur fond opaque. */
 export function WallPanelSheet({ side, title, icon, action, onClose, children }: WallPanelSheetProps) {
   const isBottom = side === 'bottom';
   const dragControls = useDragControls();
@@ -42,7 +35,7 @@ export function WallPanelSheet({ side, title, icon, action, onClose, children }:
 
   const handle = (
     <div className='flex justify-center py-3 shrink-0 cursor-grab active:cursor-grabbing' onPointerDown={startDrag}>
-      <div className='w-10 h-1 rounded-full bg-white/25' />
+      <div className='h-1.5 w-12 rounded-full bg-[var(--ds-ink-muted)] opacity-50' />
     </div>
   );
 
@@ -59,7 +52,7 @@ export function WallPanelSheet({ side, title, icon, action, onClose, children }:
           e.stopPropagation();
           onClose();
         }}
-        className='absolute inset-0 z-20 bg-black/45 backdrop-blur-md'
+        className='absolute inset-0 z-20 bg-black/55'
       />
       <motion.div
         variants={isBottom ? bottomSheet : topSheet}
@@ -75,19 +68,18 @@ export function WallPanelSheet({ side, title, icon, action, onClose, children }:
         onClick={e => e.stopPropagation()}
         className={cn(
           'absolute inset-x-0 z-[21] mx-auto w-[min(96vw,720px)] max-h-[62vh] flex flex-col overflow-hidden',
-          'border border-white/10 shadow-2xl text-white',
-          isBottom ? 'bottom-0 rounded-t-[28px]' : 'top-0 rounded-b-[28px]'
+          'bg-[var(--ds-sheet)] text-[var(--ds-ink)] shadow-[var(--ds-shadow-sheet)]',
+          isBottom ? 'bottom-0 rounded-t-[var(--ds-radius-xl)]' : 'top-0 rounded-b-[var(--ds-radius-xl)]'
         )}
-        style={{ background: 'rgba(8,12,35,0.94)' }}
       >
         {isBottom && handle}
 
-        <div className='flex items-center justify-between gap-3 px-5 py-3 border-b border-white/[0.08] shrink-0'>
+        <div className='flex shrink-0 items-center justify-between gap-3 px-6 py-3'>
           {/* Le titre est une zone de préhension, pas la rangée entière : sinon
               le bouton d'action verrait chaque appui démarrer un glissement. */}
           <div className='flex items-center gap-2.5 min-w-0 flex-1 cursor-grab active:cursor-grabbing' onPointerDown={startDrag}>
-            {icon && <span className='text-white/60 shrink-0'>{icon}</span>}
-            <h2 className='text-sm font-semibold truncate'>{title}</h2>
+            {icon && <span className='shrink-0 text-[var(--ds-ink-muted)]'>{icon}</span>}
+            <h2 className='truncate text-xl font-semibold'>{title}</h2>
           </div>
           {action}
         </div>
@@ -96,7 +88,7 @@ export function WallPanelSheet({ side, title, icon, action, onClose, children }:
           variants={staggerContainer}
           initial='hidden'
           animate='visible'
-          className='flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2.5'
+          className='flex flex-1 flex-col gap-2.5 overflow-y-auto px-4 pb-4 pt-1'
         >
           {children}
         </motion.div>

@@ -67,7 +67,9 @@ export function CustomPanelBlocks({ panel }: { panel: CustomPanel }) {
           <SafeBlock block={block} card={twoCols} />
         </div>
       ))}
-      {panel.blocks.length === 0 && <div className='text-white/30 text-sm text-center py-6'>{t('layout.customPanel.emptyPanel')}</div>}
+      {panel.blocks.length === 0 && (
+        <div className='py-6 text-center text-sm text-[var(--ds-ink-muted)]'>{t('layout.customPanel.emptyPanel')}</div>
+      )}
     </div>
   );
 }

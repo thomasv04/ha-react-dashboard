@@ -32,17 +32,8 @@ describe('haThemeToTokens', () => {
     expect(tokens.bgCard).toBe(THEMES.dark.tokens.bgCard);
   });
 
-  it('retire la teinte de card', () => {
-    // `cardTint` recompose la surface depuis le curseur d'opacité ; garder
-    // celle du thème sombre rendrait le curseur incohérent avec la couleur
-    // importée.
-    const tokens = haThemeToTokens({ 'card-background-color': '#202030' });
-    expect(tokens.cardTint).toBeUndefined();
-    expect(tokens.bgCard).toBe('#202030');
-  });
-
   it('accepte un thème entièrement vide', () => {
-    expect(haThemeToTokens({})).toEqual({ ...THEMES.dark.tokens, cardTint: undefined });
+    expect(haThemeToTokens({})).toEqual(THEMES.dark.tokens);
   });
 });
 

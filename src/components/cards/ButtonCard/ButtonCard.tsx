@@ -1,6 +1,4 @@
 import { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { Play, Check, AlertTriangle, X } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -8,11 +6,9 @@ import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { ButtonCardConfig } from '@/types/widget-configs';
 import { cn } from '@/lib/utils';
 import { resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-map';
-import { useRipple, RippleLayer } from '@/components/ui/Ripple';
 import { useI18n } from '@/i18n';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useColor } from '@/hooks/useColor';
-import { colorAlpha } from '@/lib/color-value';
 
 type FeedbackState = 'idle' | 'confirming' | 'running' | 'success' | 'error';
 
@@ -22,14 +18,13 @@ export function ButtonCard() {
   const widgetId = useWidgetId();
   const config = getWidgetConfig<ButtonCardConfig>(widgetId || 'button');
   const helpers = useHass(s => s.helpers);
-  const { ripples, trigger: triggerRipple } = useRipple();
   const playFeedback = useSoundFeedback('button', config?.soundOverrides);
 
   const [feedback, setFeedback] = useState<FeedbackState>('idle');
 
   const label = config?.label ?? t('widgets.button.label');
   const subtitle = config?.subtitle;
-  const color = useColor(config?.color) ?? '#3b82f6';
+  const color = useColor(config?.color) ?? 'var(--ds-accent)';
   const domain = config?.domain ?? 'script';
   const service = config?.service ?? 'turn_on';
   const requireConfirm = config?.requireConfirm ?? false;
@@ -69,7 +64,7 @@ export function ButtonCard() {
   }, [helpers, domain, service, config, setFeedback, playFeedback]);
 
   const handlePress = useCallback(
-    (e: React.MouseEvent | React.PointerEvent) => {
+    (e: React.MouseEvent) => {
       e.stopPropagation();
       if (feedback === 'running') return;
       if (requireConfirm && feedback !== 'confirming') {
@@ -90,136 +85,80 @@ export function ButtonCard() {
     [setFeedback]
   );
 
-  // Derive colors from accent
-  const bgActive = colorAlpha(color, 9);
-  const borderActive = colorAlpha(color, 19);
-  const bgIdle = 'rgba(255,255,255,0.05)';
-  const borderIdle = 'rgba(255,255,255,0.08)';
-
-  const isActive = feedback !== 'idle' && feedback !== 'confirming';
+  // Pastille d'état : la couleur du bouton au repos, good ou alert après l'action.
+  const pebble =
+    feedback === 'success'
+      ? 'var(--ds-good)'
+      : feedback === 'error'
+        ? 'var(--ds-alert)'
+        : feedback === 'running'
+          ? 'var(--ds-surface-3)'
+          : color;
 
   return (
-    <motion.div {...CARD_ENTRANCE} className='gc rounded-3xl p-3.5 flex flex-col h-full relative overflow-hidden select-none'>
-      <RippleLayer ripples={ripples} color={colorAlpha(color, 13)} />
-
-      {/* Confirm overlay */}
-      <AnimatePresence>
-        {feedback === 'confirming' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className='absolute inset-0 z-10 rounded-3xl flex flex-col items-center justify-center gap-3 px-4'
-            style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}
-          >
-            <AlertTriangle size={22} style={{ color }} />
-            <p className='text-white/80 text-xs text-center font-medium leading-snug'>{confirmText}</p>
-            <div className='flex gap-2'>
-              <motion.button
-                whileTap={{ scale: 0.93 }}
-                onClick={cancelConfirm}
-                className='px-3 py-1.5 rounded-xl border text-xs font-semibold text-white/50 border-white/12 bg-white/6'
-              >
-                {t('widgets.button.cancel')}
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.93 }}
-                onClick={handlePress}
-                onPointerDown={triggerRipple}
-                className='px-3 py-1.5 rounded-xl border text-xs font-bold'
-                style={{ background: bgActive, borderColor: borderActive, color }}
-              >
-                {t('widgets.button.confirm')}
-              </motion.button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Main button body */}
-      <motion.button
-        className='flex-1 flex flex-col items-center justify-center gap-2 w-full rounded-2xl border transition-all duration-300 cursor-pointer'
-        style={isActive ? { background: bgActive, borderColor: borderActive } : { background: bgIdle, borderColor: borderIdle }}
-        onPointerDown={triggerRipple}
+    <div className='relative h-full select-none overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] text-[var(--ds-ink)]'>
+      <button
+        className='flex h-full w-full flex-col items-center justify-center gap-3 p-[var(--ds-space-4)] transition-transform active:scale-[0.98] disabled:active:scale-100'
         onClick={handlePress}
-        whileTap={feedback !== 'running' ? { scale: 0.95 } : undefined}
         disabled={feedback === 'running'}
+        aria-busy={feedback === 'running'}
       >
-        {/* Icon area */}
-        <AnimatePresence mode='wait'>
-          {feedback === 'running' && (
-            <motion.div
-              key='running'
-              initial={{ scale: 0.6, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.6, opacity: 0 }}
-              className='w-12 h-12 rounded-2xl flex items-center justify-center border'
-              style={{ background: bgActive, borderColor: borderActive }}
-            >
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
-                className='w-5 h-5 rounded-full border-2 border-t-transparent'
-                style={{ borderColor: colorAlpha(color, 38), borderTopColor: color }}
-              />
-            </motion.div>
+        <span className='flex size-14 shrink-0 items-center justify-center rounded-full text-white' style={{ background: pebble }}>
+          {feedback === 'running' ? (
+            <span
+              aria-hidden='true'
+              className='size-6 animate-spin rounded-full border-[3px] border-[var(--ds-ink-muted)] border-t-transparent'
+            />
+          ) : feedback === 'success' ? (
+            <Check size={26} aria-hidden='true' />
+          ) : feedback === 'error' ? (
+            <X size={26} aria-hidden='true' />
+          ) : customIconUrl ? (
+            <img src={customIconUrl} alt='' className='size-7 object-contain' />
+          ) : (
+            // eslint-disable-next-line react-hooks/static-components
+            <IconComponent size={26} aria-hidden='true' />
           )}
-          {feedback === 'success' && (
-            <motion.div
-              key='success'
-              initial={{ scale: 0.6, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.6, opacity: 0 }}
-              className='w-12 h-12 rounded-2xl flex items-center justify-center border'
-              style={{ background: 'rgba(74,222,128,0.14)', borderColor: 'rgba(74,222,128,0.28)' }}
-            >
-              <Check size={22} className='text-green-400' />
-            </motion.div>
-          )}
-          {feedback === 'error' && (
-            <motion.div
-              key='error'
-              initial={{ scale: 0.6, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.6, opacity: 0 }}
-              className='w-12 h-12 rounded-2xl flex items-center justify-center border'
-              style={{ background: 'rgba(248,113,113,0.14)', borderColor: 'rgba(248,113,113,0.28)' }}
-            >
-              <X size={22} className='text-red-400' />
-            </motion.div>
-          )}
-          {(feedback === 'idle' || feedback === 'confirming') && (
-            <motion.div
-              key='idle'
-              initial={{ scale: 0.6, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.6, opacity: 0 }}
-              className='w-12 h-12 rounded-2xl flex items-center justify-center border transition-all duration-300'
-              style={{ background: bgActive, borderColor: borderActive }}
-            >
-              {customIconUrl ? (
-                <img src={customIconUrl} alt='' className='w-6 h-6 object-contain' />
-              ) : (
-                // eslint-disable-next-line react-hooks/static-components
-                <IconComponent size={24} style={{ color }} />
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Label */}
-        <div className='flex flex-col items-center gap-0.5 px-2'>
+        </span>
+        <span className='flex min-w-0 flex-col items-center'>
           <span
             className={cn(
-              'text-sm font-semibold text-center leading-tight transition-colors duration-300',
-              feedback === 'success' ? 'text-green-400' : feedback === 'error' ? 'text-red-400' : 'text-white/80'
+              'max-w-full truncate text-center text-[17px] font-semibold leading-tight',
+              feedback === 'success' && 'text-[var(--ds-good)]',
+              feedback === 'error' && 'text-[var(--ds-alert)]'
             )}
           >
             {feedback === 'success' ? t('widgets.button.done') : feedback === 'error' ? t('widgets.button.error') : label}
           </span>
-          {subtitle && feedback === 'idle' && <span className='text-[10px] text-white/30 text-center leading-tight'>{subtitle}</span>}
+          {subtitle && feedback === 'idle' && <span className='max-w-full truncate text-sm text-[var(--ds-ink-muted)]'>{subtitle}</span>}
+        </span>
+      </button>
+
+      {/* Confirmation : un voile opaque, deux pilules */}
+      {feedback === 'confirming' && (
+        <div
+          role='alertdialog'
+          aria-label={confirmText}
+          className='absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[var(--ds-surface-1)] px-4'
+        >
+          <AlertTriangle size={24} aria-hidden='true' className='text-[var(--ds-heat)]' />
+          <p className='text-center text-[15px] font-semibold leading-snug'>{confirmText}</p>
+          <div className='flex gap-2'>
+            <button
+              onClick={cancelConfirm}
+              className='h-11 rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)] px-5 text-sm font-semibold'
+            >
+              {t('widgets.button.cancel')}
+            </button>
+            <button
+              onClick={handlePress}
+              className='h-11 rounded-[var(--ds-radius-pill)] bg-[var(--ds-tile-on)] px-5 text-sm font-bold text-[var(--ds-tile-on-ink)]'
+            >
+              {t('widgets.button.confirm')}
+            </button>
+          </div>
         </div>
-      </motion.button>
-    </motion.div>
+      )}
+    </div>
   );
 }

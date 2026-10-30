@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useI18n } from '@/i18n';
@@ -41,24 +39,19 @@ export function GreetingCard() {
     : formats.formatDate(now, 'long');
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: DURATION_ENTRANCE }}
-      className='flex items-center justify-between px-1'
-    >
+    <div className='flex h-full items-center justify-between gap-4 px-1 text-[var(--ds-ink)]'>
       {/* Greeting + date */}
       <div>
-        <div className='text-white/60 text-sm font-medium'>{greeting}</div>
-        <div className='text-white/30 text-xs mt-0.5 capitalize'>{date}</div>
+        <div className='text-[40px] font-semibold leading-tight tracking-[-0.5px]'>{greeting}</div>
+        <div className='text-base capitalize text-[var(--ds-ink-muted)]'>{date}</div>
       </div>
 
       {/* Live clock */}
       <div className='flex items-baseline gap-1 tabular-nums'>
-        <span className='text-5xl font-thin text-white tracking-tight leading-none'>{hm}</span>
-        <span className='text-xl font-thin text-white/30 leading-none'>{sec}</span>
+        <span className='text-[56px] font-light leading-none tracking-tight'>{hm}</span>
+        <span className='text-xl font-light leading-none text-[var(--ds-ink-muted)]'>{sec}</span>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -79,10 +72,10 @@ export function ClockWidget() {
   return (
     <div className='flex flex-col items-end shrink-0'>
       <div className='flex items-baseline gap-1 tabular-nums'>
-        <span className='text-4xl font-thin text-white tracking-tight leading-none'>{hm}</span>
-        <span className='text-base font-thin text-white/30 leading-none'>{sec}</span>
+        <span className='text-4xl font-light leading-none tracking-tight text-[var(--ds-ink)]'>{hm}</span>
+        <span className='text-base font-light leading-none text-[var(--ds-ink-muted)]'>{sec}</span>
       </div>
-      <div className='text-[11px] text-white/35 capitalize mt-0.5 font-medium'>{date}</div>
+      <div className='mt-0.5 text-sm font-medium capitalize text-[var(--ds-ink-muted)]'>{date}</div>
     </div>
   );
 }

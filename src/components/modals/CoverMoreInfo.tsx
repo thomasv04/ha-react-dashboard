@@ -43,7 +43,7 @@ export default function CoverMoreInfo({ entityId, widgetId }: { entityId: string
   const entity = useSafeEntity(entityId);
   const helpers = useHass(s => s.helpers);
 
-  if (!entity) return <div className='p-12 text-white/40 text-center'>{t('common.entityNotFound')}</div>;
+  if (!entity) return <div className='p-12 text-[var(--ds-ink-muted)] text-center'>{t('common.entityNotFound')}</div>;
 
   const name = config?.name ?? friendlyName(entity) ?? entityId;
   const position = (entity.attributes.current_position as number | undefined) ?? 0;
@@ -115,7 +115,7 @@ export default function CoverMoreInfo({ entityId, widgetId }: { entityId: string
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={shownPosition}
-          className='relative rounded-xl border border-white/10 overflow-hidden cursor-ns-resize touch-none select-none'
+          className='relative rounded-[var(--ds-radius-md)] overflow-hidden cursor-ns-resize touch-none select-none'
           style={{ width: 200, height: 280, background: 'rgba(255,255,255,0.03)' }}
           onPointerDown={e => {
             e.currentTarget.setPointerCapture(e.pointerId);
@@ -153,26 +153,26 @@ export default function CoverMoreInfo({ entityId, widgetId }: { entityId: string
             ))}
           </div>
         </div>
-        <p className='text-white/60 text-sm mt-3 font-medium'>{t('widgets.cover.percentOpen', { value: shownPosition })}</p>
+        <p className='text-[var(--ds-ink-muted)] text-sm mt-3 font-medium'>{t('widgets.cover.percentOpen', { value: shownPosition })}</p>
       </div>
 
       {/* Control buttons */}
       <div className='flex items-center justify-center gap-3 mt-6'>
         <button
           onClick={() => callService('open_cover')}
-          className='flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-sm font-medium transition-colors'
+          className='flex h-11 items-center gap-2 rounded-[var(--ds-radius-pill)] bg-[var(--ds-sheet-section)] px-5 text-[15px] font-semibold'
         >
           <ChevronUp size={16} /> {t('widgets.cover.openAction')}
         </button>
         <button
           onClick={() => callService('stop_cover')}
-          className='flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-sm font-medium transition-colors'
+          className='flex h-11 items-center gap-2 rounded-[var(--ds-radius-pill)] bg-[var(--ds-sheet-section)] px-5 text-[15px] font-semibold'
         >
           <Square size={14} /> {t('common.stop')}
         </button>
         <button
           onClick={() => callService('close_cover')}
-          className='flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-sm font-medium transition-colors'
+          className='flex h-11 items-center gap-2 rounded-[var(--ds-radius-pill)] bg-[var(--ds-sheet-section)] px-5 text-[15px] font-semibold'
         >
           <ChevronDown size={16} /> {t('widgets.cover.closeAction')}
         </button>

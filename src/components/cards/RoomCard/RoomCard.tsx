@@ -1,6 +1,5 @@
 import { useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Thermometer, Lightbulb, Droplets, ChevronRight, Package } from 'lucide-react';
+import { Lightbulb, ChevronRight, Package } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { usePanel, type PanelId } from '@/context/PanelContext';
 import { useEntities } from '@/hooks/useEntities';
@@ -8,7 +7,6 @@ import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { RoomCardConfig, RoomControl } from '@/types/widget-configs';
 import { resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-map';
-import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { useGroupEmbedded } from '@/components/cards/GroupCard/GroupCard';
@@ -18,8 +16,6 @@ import { useLongPress } from '@/hooks/useLongPress';
 import { useMoreInfoOptional } from '@/context/MoreInfoContext';
 import { modalTypeFor } from '@/components/modals/more-info-registry';
 import { useArea, useAreaControls, areaEntityIds, areaSensor } from '@/hooks/useAreaControls';
-import { gradientCss } from '@/lib/gradient';
-import { colorAlpha } from '@/lib/color-value';
 import type { SoundPreset } from '@/lib/sounds';
 
 // ── Control button ─────────────────────────────────────────────────────────────
@@ -41,7 +37,7 @@ function ControlButton({
 
   const IconComp = !customIconUrl ? (resolveIcon(iconName) ?? Package) : null;
 
-  const { color, active } = useControlState(ctrl);
+  const { active } = useControlState(ctrl);
 
   // Appui long : la fiche de l'entité pilotée. Un bouton de domaine en pilote
   // plusieurs — ponytail: on ouvre la première, faute d'une fiche « groupe ».
@@ -68,14 +64,8 @@ function ControlButton({
   };
 
   return (
-    <motion.button
+    <button
       ref={btnRef}
-      whileHover={{
-        scale: 1.04,
-        backgroundColor: active ? colorAlpha(color, 16) : 'rgba(255,255,255,0.10)',
-        borderColor: active ? colorAlpha(color, 30) : 'rgba(255,255,255,0.18)',
-      }}
-      whileTap={{ scale: 0.88 }}
       onClick={handleClick}
       {...longPress}
       onPointerDown={e => {
@@ -86,27 +76,21 @@ function ControlButton({
         longPress.onPointerDown(e);
       }}
       title={ctrl.label}
-      className='flex-1 flex flex-col items-center justify-center gap-1 rounded-xl border cursor-pointer transition-colors duration-300'
-      style={{
-        padding: embedded ? '6px 4px' : '8px 4px',
-        ...(active
-          ? { background: colorAlpha(color, 9), borderColor: colorAlpha(color, 19) }
-          : { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }),
-      }}
+      aria-pressed={active}
+      className={cn(
+        'flex min-h-[64px] flex-1 flex-col items-center justify-center gap-1.5 rounded-[var(--ds-radius-md)] px-1 text-sm font-semibold transition-colors',
+        active ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)]',
+        embedded && 'min-h-[52px]'
+      )}
     >
       {customIconUrl ? (
-        <img src={customIconUrl} alt='' className='w-4 h-4 object-contain' />
+        <img src={customIconUrl} alt='' className='size-5 object-contain' />
       ) : IconComp ? (
         // eslint-disable-next-line react-hooks/static-components
-        <IconComp size={embedded ? 14 : 16} style={active ? { color } : { color: 'rgba(255,255,255,0.35)' }} />
+        <IconComp size={20} aria-hidden='true' />
       ) : null}
-      <span
-        className='text-[9px] font-medium leading-none truncate max-w-full px-1'
-        style={active ? { color } : { color: 'rgba(255,255,255,0.35)' }}
-      >
-        {ctrl.label}
-      </span>
-    </motion.button>
+      <span className='max-w-full truncate px-1'>{ctrl.label}</span>
+    </button>
   );
 }
 
@@ -136,33 +120,25 @@ function LightToggle({
   };
 
   return (
-    <motion.button
-      whileHover={{
-        scale: 1.04,
-        backgroundColor: anyOn ? 'rgba(251,191,36,0.22)' : 'rgba(255,255,255,0.10)',
-        borderColor: anyOn ? 'rgba(251,191,36,0.40)' : 'rgba(255,255,255,0.18)',
-      }}
-      whileTap={{ scale: 0.88 }}
+    <button
       onClick={handleToggleAll}
-      className='flex-1 flex flex-col items-center justify-center gap-1 rounded-xl border cursor-pointer transition-colors duration-300'
-      style={{
-        padding: embedded ? '6px 4px' : '8px 4px',
-        ...(anyOn
-          ? { background: 'rgba(251,191,36,0.14)', borderColor: 'rgba(251,191,36,0.28)' }
-          : { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }),
-      }}
+      aria-pressed={anyOn}
+      className={cn(
+        'flex min-h-[64px] flex-1 flex-col items-center justify-center gap-1.5 rounded-[var(--ds-radius-md)] px-1 text-sm font-semibold transition-colors',
+        anyOn ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)]',
+        embedded && 'min-h-[52px]'
+      )}
     >
-      <Lightbulb size={embedded ? 14 : 16} style={anyOn ? { color: '#fbbf24' } : { color: 'rgba(255,255,255,0.35)' }} />
-      <span className='text-[9px] font-medium leading-none' style={anyOn ? { color: '#fbbf24' } : { color: 'rgba(255,255,255,0.35)' }}>
-        {anyOn ? t('widgets.light.on') : t('widgets.light.off')}
-      </span>
-    </motion.button>
+      <Lightbulb size={20} aria-hidden='true' fill={anyOn ? 'currentColor' : 'none'} />
+      <span>{anyOn ? t('widgets.light.on') : t('widgets.light.off')}</span>
+    </button>
   );
 }
 
 // ── Main RoomCard ──────────────────────────────────────────────────────────────
 
 export function RoomCard() {
+  const { language } = useI18n();
   const embedded = useGroupEmbedded();
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
@@ -170,7 +146,6 @@ export function RoomCard() {
   const { openPanel } = usePanel();
 
   const iconName = config?.icon ?? 'Home';
-  const iconBg = config?.iconBg ?? 'from-blue-500 to-sky-400';
   const panelId = config?.panelId;
 
   // Zone HA : tout ce que la card affiche en découle, et les champs de
@@ -207,78 +182,48 @@ export function RoomCard() {
     if (panelId) openPanel(panelId as PanelId);
   };
 
-  // When embedded inside a GroupCard, we strip the gc class (no double glassmorphism)
-  const baseClass = embedded
-    ? 'rounded-2xl flex flex-col overflow-hidden h-full cursor-default'
-    : 'gc rounded-2xl flex flex-col overflow-hidden h-full cursor-default';
-
-  const bgStyle = embedded ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' } : undefined;
+  const facts = [
+    temp !== null && !isNaN(temp) ? `${temp.toLocaleString(language, { maximumFractionDigits: 1 })}°` : null,
+    humidity !== null && !isNaN(humidity) ? `${humidity.toFixed(0)} %` : null,
+  ].filter(Boolean);
 
   return (
     // Le geste s'arrête à la card : elle n'agit que par ses boutons. Sans ça, un
     // clic à côté d'un bouton déclenchait l'action de card, et un appui long
     // ouvrait deux fiches — celle du bouton visé et celle de la card.
-    <div className={baseClass} style={bgStyle} onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
-      {/* Header */}
-      <div className={cn('flex items-start gap-2.5', embedded ? 'p-2.5' : 'p-3')}>
-        {/* Icon */}
-        {/* `background` en style quand la valeur est connue : les classes
-            Tailwind ne couvrent que les dégradés écrits dans les sources, pas
-            un dégradé composé à la main. `iconBg` reste en classe pour les
-            anciennes configurations qu'on ne sait pas relire. */}
-        <div
-          className={cn(
-            'rounded-xl flex items-center justify-center shrink-0 shadow-md bg-gradient-to-br',
-            !gradientCss(iconBg) && iconBg,
-            embedded ? 'w-8 h-8' : 'w-9 h-9'
-          )}
-          style={{ backgroundImage: gradientCss(iconBg) }}
-        >
-          {customIconUrl ? (
-            <img src={customIconUrl} alt='' className='w-4 h-4 object-contain' />
-          ) : IconComp ? (
-            // eslint-disable-next-line react-hooks/static-components
-            <IconComp size={embedded ? 15 : 17} className='text-white' strokeWidth={1.8} />
-          ) : null}
+    <div
+      className={cn(
+        'flex h-full cursor-default flex-col gap-3 overflow-hidden rounded-[var(--ds-radius-lg)] text-[var(--ds-ink)]',
+        embedded ? 'bg-[var(--ds-surface-2)] p-3' : 'bg-[var(--ds-surface-2)] p-[var(--ds-space-4)]'
+      )}
+      onClick={e => e.stopPropagation()}
+      onPointerDown={e => e.stopPropagation()}
+    >
+      {/* En-tête : le nom de la pièce en grand, ses mesures dessous */}
+      <div className='flex items-start gap-3'>
+        {customIconUrl ? (
+          <img src={customIconUrl} alt='' className='mt-1 size-6 shrink-0 object-contain' />
+        ) : IconComp ? (
+          // eslint-disable-next-line react-hooks/static-components
+          <IconComp size={24} aria-hidden='true' className='mt-1 shrink-0 text-[var(--ds-accent)]' />
+        ) : null}
+        <div className='min-w-0 flex-1'>
+          <div className={cn('truncate leading-tight text-[var(--ds-accent)]', embedded ? 'text-xl' : 'text-[28px]')}>{label}</div>
+          {facts.length > 0 && <div className='truncate text-sm text-[var(--ds-ink-muted)]'>{facts.join(' · ')}</div>}
         </div>
-
-        {/* Name + sensors */}
-        <div className='flex flex-col min-w-0 flex-1'>
-          <div className='flex items-center justify-between gap-1'>
-            <span className={cn('text-white/90 font-semibold leading-tight truncate', embedded ? 'text-xs' : 'text-sm')}>{label}</span>
-            {panelId && (
-              <motion.button
-                whileTap={{ scale: 0.88 }}
-                onClick={handlePanelClick}
-                className='shrink-0 w-5 h-5 rounded-lg flex items-center justify-center border transition-colors'
-                style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }}
-              >
-                <ChevronRight size={11} className='text-white/40' />
-              </motion.button>
-            )}
-          </div>
-          {(temp !== null || humidity !== null) && (
-            <div className='flex items-center gap-2 mt-0.5'>
-              {temp !== null && !isNaN(temp) && (
-                <span className='text-[10px] text-white/45 font-medium flex items-center gap-0.5'>
-                  <Thermometer size={9} className='text-white/25' />
-                  <AnimatedNumber value={temp} decimals={1} suffix='°' />
-                </span>
-              )}
-              {humidity !== null && !isNaN(humidity) && (
-                <span className='text-[10px] text-white/45 font-medium flex items-center gap-0.5'>
-                  <Droplets size={9} className='text-sky-400/50' />
-                  {humidity.toFixed(0)}%
-                </span>
-              )}
-            </div>
-          )}
-        </div>
+        {panelId && (
+          <button
+            onClick={handlePanelClick}
+            aria-label={label}
+            className='flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'
+          >
+            <ChevronRight size={18} />
+          </button>
+        )}
       </div>
 
-      {/* Controls */}
       {hasControls && (
-        <div className={cn('flex gap-1.5 mt-auto', embedded ? 'px-2.5 pb-2.5' : 'px-3 pb-3')}>
+        <div className='mt-auto flex gap-2'>
           {lightEntities.length > 0 && controls.length === 0 && (
             <LightToggle entityIds={lightEntities} embedded={embedded} soundOverrides={config?.soundOverrides} />
           )}

@@ -1,6 +1,4 @@
 import { useRef } from 'react';
-import { motion } from 'framer-motion';
-import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { Fan, RefreshCw } from 'lucide-react';
 import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useHass } from '@hakit/core';
@@ -11,15 +9,15 @@ import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useFanSpeed } from '@/hooks/useFanSpeed';
 import { useI18n } from '@/i18n';
-import { cn } from '@/lib/utils';
 import type { FanCardConfig } from '@/types/widget-configs';
 import { friendlyName } from '@/lib/ha-service';
+import { DeviceTile } from '@/components/ds/DeviceTile';
+import { PillSlider } from '@/components/ds/PillSlider';
+import { Chip } from '@/components/ds/Chip';
 
 /** `FanEntityFeature` — bits utilisés ici */
 const FEATURE_SET_SPEED = 1;
 const FEATURE_OSCILLATE = 2;
-
-const ACCENT = '#38bdf8';
 
 export function FanCard() {
   const { t } = useI18n();
@@ -38,7 +36,7 @@ export function FanCard() {
 
   if (!entity) {
     return (
-      <div ref={cardRef} className='gc rounded-3xl p-4 h-full'>
+      <div ref={cardRef} className='rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] text-[var(--ds-ink)] h-full p-4'>
         <CardPlaceholder icon={Fan} text={t('widgets.fan.notFound')} />
       </div>
     );
@@ -54,14 +52,12 @@ export function FanCard() {
   // vitesses n'a pas à exposer un curseur au pourcent près.
   const step = (entity.attributes.percentage_step as number | undefined) ?? 1;
 
-  const handleToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleToggle = () => {
     helpers.callService({ domain: 'fan', service: 'toggle', target: { entity_id: entityId } });
     playFeedback(isOn ? 'toggle_off' : 'toggle_on');
   };
 
-  const handleOscillate = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleOscillate = () => {
     helpers.callService({
       domain: 'fan',
       service: 'oscillate',
@@ -71,163 +67,35 @@ export function FanCard() {
     playFeedback('click');
   };
 
-  const handleSpeed = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    setPercentage(parseInt(e.target.value, 10));
-  };
+  const stateLabel = isOn
+    ? supportsSpeed
+      ? `${t('widgets.fan.on')} · ${Math.round(percentage)} %`
+      : t('widgets.fan.on')
+    : t('widgets.fan.off');
+
+  // Vitesse et oscillation restent visibles à l'arrêt : bouger le curseur
+  // rallume (`fan.set_percentage` allume implicitement).
+  const showControls = !size.compact && (supportsSpeed || supportsOscillate);
 
   return (
-    <motion.div
-      ref={cardRef}
-      {...CARD_ENTRANCE}
-      className={cn(
-        'gc rounded-3xl h-full overflow-hidden select-none',
-        size.squat ? 'px-3 py-2 flex items-center gap-3' : 'p-3.5 flex flex-col'
-      )}
-      style={
-        isOn
-          ? {
-              background: `linear-gradient(180deg, ${ACCENT}26, ${ACCENT}12)`,
-              borderColor: `${ACCENT}44`,
-              boxShadow: `var(--dash-elev-card), 0 0 28px -8px ${ACCENT}66`,
-            }
-          : undefined
-      }
-    >
-      {/* En-tête */}
-      <div className={cn('flex items-center justify-between shrink-0', size.squat ? 'hidden' : 'mb-1')}>
-        <span className='text-white/40 text-xs font-medium truncate'>{name}</span>
-        <span
-          className={cn(
-            'text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full border shrink-0 ml-2',
-            isOn ? 'text-sky-300' : 'bg-white/5 text-white/25 border-white/8'
-          )}
-          style={isOn ? { background: `${ACCENT}18`, borderColor: `${ACCENT}35` } : undefined}
-        >
-          {isOn && supportsSpeed ? `${Math.round(percentage)}%` : isOn ? 'ON' : 'OFF'}
-        </span>
-      </div>
-
-      {/* Bouton : l'hélice tourne d'autant plus vite que la vitesse est haute */}
-      <div className={cn('relative flex items-center justify-center', size.squat ? 'shrink-0' : 'flex-1 min-h-0')}>
-        {/* Anneau de souffle — la card garde une présence même à l'arrêt, et
-            respire au rythme du ventilateur quand il tourne. */}
-        {!size.squat && (
-          <motion.span
-            aria-hidden
-            className='absolute rounded-full border pointer-events-none'
-            style={{
-              width: size.compact ? 76 : 92,
-              height: size.compact ? 76 : 92,
-              borderColor: isOn ? `${ACCENT}22` : 'rgba(255,255,255,0.05)',
-              background: isOn ? `radial-gradient(circle, ${ACCENT}1a 0%, transparent 70%)` : 'transparent',
-            }}
-            animate={isOn ? { scale: [1, 1.06, 1], opacity: [0.7, 1, 0.7] } : { scale: 1, opacity: 1 }}
-            transition={isOn ? { duration: 2.6, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}
+    <div ref={cardRef} className='h-full'>
+      <DeviceTile name={name} state={stateLabel} icon={Fan} active={isOn} onToggle={handleToggle} layout={size.squat ? 'row' : 'stack'}>
+        {showControls && supportsSpeed && (
+          <PillSlider
+            value={percentage}
+            onChange={setPercentage}
+            step={step}
+            label={t('widgets.fan.speed')}
+            valueText={`${Math.round(percentage)} %`}
+            fill={isOn ? 'var(--ds-tile-on-ink)' : 'var(--ds-tile-on)'}
+            track={isOn ? 'rgba(0, 0, 0, 0.22)' : 'var(--ds-surface-3)'}
+            className='h-11'
           />
         )}
-
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={handleToggle}
-          className={cn(
-            'relative border flex items-center justify-center transition-all duration-300',
-            size.squat ? 'w-10 h-10 rounded-xl' : size.compact ? 'w-14 h-14 rounded-2xl' : 'w-16 h-16 rounded-2xl'
-          )}
-          style={
-            isOn
-              ? {
-                  background: `${ACCENT}18`,
-                  borderColor: `${ACCENT}35`,
-                  boxShadow: `0 0 20px -6px ${ACCENT}, inset 0 1px 0 rgba(255,255,255,0.10)`,
-                }
-              : {
-                  background: 'rgba(255,255,255,0.05)',
-                  borderColor: 'rgba(255,255,255,0.08)',
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
-                }
-          }
-        >
-          <motion.span
-            className='relative flex'
-            animate={isOn ? { rotate: 360 } : { rotate: 0 }}
-            transition={
-              isOn
-                ? { repeat: Infinity, ease: 'linear', duration: Math.max(0.6, 3 - (supportsSpeed ? percentage : 100) / 45) }
-                : { duration: 0.3 }
-            }
-          >
-            <Fan
-              size={size.squat ? 18 : size.compact ? 24 : 28}
-              className={isOn ? '' : 'text-white/25'}
-              style={isOn ? { color: ACCENT, filter: `drop-shadow(0 0 10px ${ACCENT}99)` } : undefined}
-            />
-          </motion.span>
-        </motion.button>
-      </div>
-
-      {size.squat && (
-        <div className='flex-1 min-w-0'>
-          <div className='text-white/40 text-xs font-medium truncate'>{name}</div>
-          <div className='text-xs font-semibold' style={{ color: isOn ? ACCENT : 'rgba(255,255,255,0.25)' }}>
-            {isOn && supportsSpeed ? `${Math.round(percentage)}%` : isOn ? t('widgets.fan.on') : t('widgets.fan.off')}
-          </div>
-        </div>
-      )}
-
-      {/* Vitesse + oscillation — visibles même à l'arrêt : sinon la card se
-          vidait entièrement dès qu'on éteignait le ventilateur. Bouger le
-          curseur rallume (`fan.set_percentage` allume implicitement). */}
-      {!size.compact && (supportsSpeed || supportsOscillate) && (
-        <div className='shrink-0 mt-2 flex flex-col gap-2'>
-          {supportsSpeed && (
-            <input
-              type='range'
-              min={0}
-              max={100}
-              step={step}
-              value={percentage}
-              onChange={handleSpeed}
-              onClick={e => e.stopPropagation()}
-              className={cn(
-                `w-full h-1.5 rounded-full appearance-none cursor-pointer transition-opacity
-                [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5
-                [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:cursor-grab
-                [&::-webkit-slider-thumb]:active:cursor-grabbing [&::-webkit-slider-thumb]:shadow-md`,
-                isOn ? 'opacity-100' : 'opacity-45'
-              )}
-              style={{
-                background: `linear-gradient(to right, ${ACCENT} 0%, ${ACCENT} ${percentage}%, rgba(255,255,255,0.06) ${percentage}%, rgba(255,255,255,0.06) 100%)`,
-                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.35)',
-              }}
-            />
-          )}
-
-          {supportsOscillate && (
-            <button
-              onClick={handleOscillate}
-              className={cn(
-                'flex items-center justify-center gap-1.5 py-1.5 rounded-xl border text-[11px] font-semibold transition-colors',
-                oscillating ? 'text-sky-300' : 'border-white/8 bg-white/5 text-white/40 hover:bg-white/8'
-              )}
-              style={
-                oscillating ? { background: `${ACCENT}18`, borderColor: `${ACCENT}35`, boxShadow: `0 0 14px -6px ${ACCENT}` } : undefined
-              }
-            >
-              <RefreshCw size={12} className={oscillating ? 'animate-spin [animation-duration:3s]' : undefined} />
-              {t('widgets.fan.oscillate')}
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Ventilateur sans vitesse ni oscillation : le bouton est tout ce qu'il
-          y a, on lui adjoint son libellé plutôt que de laisser du vide. */}
-      {!size.squat && !supportsSpeed && !supportsOscillate && (
-        <div className='shrink-0 mt-1 text-center text-xs font-semibold' style={{ color: isOn ? ACCENT : 'rgba(255,255,255,0.3)' }}>
-          {isOn ? t('widgets.fan.on') : t('widgets.fan.off')}
-        </div>
-      )}
-    </motion.div>
+        {showControls && supportsOscillate && (
+          <Chip icon={RefreshCw} label={t('widgets.fan.oscillate')} active={oscillating} onClick={handleOscillate} />
+        )}
+      </DeviceTile>
+    </div>
   );
 }

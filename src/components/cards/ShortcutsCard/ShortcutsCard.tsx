@@ -1,8 +1,5 @@
-import { motion } from 'framer-motion';
-import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { Blinds, Lightbulb, Cpu, Flower2, Bell, ShieldHalf, Camera, type LucideIcon } from 'lucide-react';
 import { usePanel, type PanelId } from '@/context/PanelContext';
-import { cn } from '@/lib/utils';
 import { useEntities } from '@/hooks/useEntities';
 import { useI18n } from '@/i18n';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -64,17 +61,12 @@ export function ShortcutsCard() {
   const entities = useEntities(shortcuts.map(s => s.statusEntity).filter((id): id is string => !!id));
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: DURATION_ENTRANCE, delay: 0.1 }}
-      className='gc rounded-3xl p-5 h-full'
-    >
-      <div className='text-white/40 text-xs uppercase tracking-wider mb-4 font-medium'>{t('widgets.shortcuts.header')}</div>
-      {shortcuts.length === 0 && <p className='text-white/30 text-xs leading-relaxed'>{t('widgets.shortcuts.empty')}</p>}
-      <div className='grid grid-cols-2 gap-2'>
+    <div className='flex h-full flex-col gap-3 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] p-[var(--ds-space-4)] text-[var(--ds-ink)]'>
+      <div className='shrink-0 text-[17px] font-semibold'>{t('widgets.shortcuts.header')}</div>
+      {shortcuts.length === 0 && <p className='text-sm text-[var(--ds-ink-muted)]'>{t('widgets.shortcuts.empty')}</p>}
+      <div className='grid min-h-0 flex-1 auto-rows-fr grid-cols-2 gap-2.5'>
         {shortcuts.map((s, i) => {
-          // Dynamic status from entity
+          // État dynamique, lu sur l'entité associée
           let entityState: string | null = null;
           if (s.statusEntity) {
             const state = entities?.[s.statusEntity]?.state;
@@ -85,50 +77,24 @@ export function ShortcutsCard() {
           }
 
           return (
-            <motion.button
+            <button
               key={s.id ?? i}
-              initial={{ opacity: 0, scale: 0.9, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ type: 'spring', stiffness: 350, damping: 25, delay: i * 0.05 }}
-              whileHover={{ scale: 1.03, y: -1 }}
-              whileTap={{ scale: 0.96 }}
               onClick={() => s.id !== null && openPanel(s.id)}
-              className={cn(
-                'rounded-2xl px-4 py-3 flex items-center gap-3 text-left transition-all duration-200',
-                'border border-white/8 hover:border-white/15'
-              )}
-              style={{ background: `color-mix(in srgb, ${s.accent} 15%, transparent)` }}
+              className='flex min-h-[72px] flex-col justify-between rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-3)] p-3.5 text-left transition-transform active:scale-[0.98]'
             >
-              <motion.div
-                className={cn('w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/10')}
-                whileHover={{ rotate: [0, -8, 8, 0], scale: 1.1 }}
-                whileTap={{ scale: 0.9, rotate: 0 }}
-                transition={{ duration: DURATION_ENTRANCE }}
-              >
-                {s.customIconUrl ? (
-                  <img src={s.customIconUrl} alt='' className='w-[18px] h-[18px] object-contain' />
-                ) : s.Icon ? (
-                  <s.Icon size={18} style={{ color: s.accent }} />
-                ) : null}
-              </motion.div>
-              <div className='flex flex-col min-w-0'>
-                <span className='text-white/90 text-sm font-medium leading-tight'>{s.label}</span>
-                {entityState && (
-                  <motion.span
-                    initial={{ opacity: 0, x: -4 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                    className='text-[10px] leading-tight mt-0.5'
-                    style={{ color: s.accent }}
-                  >
-                    {entityState}
-                  </motion.span>
-                )}
-              </div>
-            </motion.button>
+              {s.customIconUrl ? (
+                <img src={s.customIconUrl} alt='' className='size-6 object-contain' />
+              ) : s.Icon ? (
+                <s.Icon size={22} aria-hidden='true' style={{ color: s.accent }} />
+              ) : null}
+              <span className='min-w-0'>
+                <span className='block truncate text-[15px] font-bold leading-tight'>{s.label}</span>
+                {entityState && <span className='block truncate text-[13px] text-[var(--ds-ink-muted)]'>{entityState}</span>}
+              </span>
+            </button>
           );
         })}
       </div>
-    </motion.div>
+    </div>
   );
 }

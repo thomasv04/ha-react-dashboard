@@ -43,7 +43,9 @@ function Badge({ entityId, state, attributes }: { entityId: string; state?: stri
       onClick={() => openMoreInfo(entityId, modalTypeFor(entityId), entityId, ref.current?.getBoundingClientRect() ?? null)}
       title={name}
       className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs transition-colors cursor-pointer ${
-        missing ? 'bg-white/3 border-white/8 text-white/25' : 'bg-white/8 border-white/12 text-white/70 hover:bg-white/14 hover:text-white'
+        missing
+          ? 'bg-[var(--ds-surface-2)] border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
+          : 'bg-[var(--ds-surface-3)] border-[var(--ds-surface-3)] text-[var(--ds-ink)]'
       }`}
     >
       {iconNode}
@@ -91,7 +93,7 @@ export function PageBadges() {
             <button
               onClick={() => set(badges.filter(b => b !== entityId))}
               title={t('common.delete')}
-              className='absolute -top-1.5 -right-1.5 p-0.5 rounded-full bg-red-500/80 text-white hover:bg-red-500 transition-colors'
+              className='absolute -top-1.5 -right-1.5 p-0.5 rounded-full bg-[var(--ds-alert)] text-white transition-colors'
             >
               <X size={10} />
             </button>
@@ -102,7 +104,7 @@ export function PageBadges() {
       {isEditMode && !adding && (
         <button
           onClick={() => setAdding(true)}
-          className='flex items-center gap-1 px-2.5 py-1 rounded-full border border-dashed border-white/20 text-white/40 hover:text-white/70 hover:border-white/35 text-xs transition-colors cursor-pointer'
+          className='flex items-center gap-1 px-2.5 py-1 rounded-full border border-dashed border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)] text-xs transition-colors cursor-pointer'
         >
           <Plus size={12} /> {t('layout.badges.add')}
         </button>

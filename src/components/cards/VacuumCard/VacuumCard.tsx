@@ -1,7 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { DURATION_ENTRANCE } from '@/lib/motion-tokens';
 import { Play, Pause, Square, LocateFixed, Home, ChevronRight, Battery, MapPin, ListOrdered, ChevronDown } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { callHAService, friendlyName } from '@/lib/ha-service';
@@ -12,6 +10,7 @@ import type { VacuumCardConfig, VacuumSelectEntity } from '@/types/widget-config
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
+import { SwitchTrack } from '@/components/ds/Switch';
 
 type VacuumState = 'cleaning' | 'docked' | 'idle' | 'paused' | 'returning' | 'error' | string;
 
@@ -68,88 +67,63 @@ function VacuumSelectControl({ entityId, label }: VacuumSelectEntity) {
       <button
         ref={triggerRef}
         onClick={() => setOpen(o => !o)}
-        className='w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl gc-inner hover:bg-white/8 transition-colors text-left'
+        aria-expanded={open}
+        className='flex w-full items-center justify-between gap-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-3 py-2 text-left'
       >
         <div className='min-w-0 flex-1'>
-          <div className='text-white/40 text-[10px] truncate'>{displayLabel}</div>
-          <div className='text-white text-xs font-medium truncate'>{humanizeOption(currentValue)}</div>
+          <div className='truncate text-xs text-[var(--ds-ink-muted)]'>{displayLabel}</div>
+          <div className='truncate text-sm font-semibold'>{humanizeOption(currentValue)}</div>
         </div>
-        <ChevronDown size={14} className={cn('text-white/30 shrink-0 transition-transform', open && 'rotate-180')} />
+        <ChevronDown
+          size={16}
+          aria-hidden='true'
+          className={cn('shrink-0 text-[var(--ds-ink-muted)] transition-transform', open && 'rotate-180')}
+        />
       </button>
 
       {createPortal(
-        <AnimatePresence>
-          {open && options.length > 0 && pos && (
-            <>
-              {/* Invisible backdrop to close on click */}
-              <div className='fixed inset-0 z-[120]' onClick={() => setOpen(false)} />
-              <motion.div
-                ref={portalRef}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 6 }}
-                transition={{ duration: 0.15 }}
-                className='fixed z-[121] gc rounded-xl shadow-2xl border border-white/10 overflow-hidden max-h-52 overflow-y-auto'
-                style={{ bottom: window.innerHeight - pos.top + 4, left: pos.left, width: pos.width }}
-              >
-                {options.map(option => (
-                  <button
-                    key={option}
-                    onClick={() => selectOption(option)}
-                    className={cn(
-                      'w-full text-left px-3 py-2.5 text-xs transition-colors hover:bg-white/8',
-                      option === currentValue ? 'text-blue-400 font-semibold bg-blue-500/10' : 'text-white/70'
-                    )}
-                  >
-                    {humanizeOption(option)}
-                  </button>
-                ))}
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>,
+        open && options.length > 0 && pos && (
+          <>
+            {/* Fond invisible : un clic à côté referme la liste */}
+            <div className='fixed inset-0 z-[120]' onClick={() => setOpen(false)} />
+            <div
+              ref={portalRef}
+              className='fixed z-[121] max-h-52 overflow-y-auto rounded-[var(--ds-radius-md)] bg-[var(--ds-sheet)] text-[var(--ds-ink)] shadow-[var(--ds-shadow-sheet)]'
+              style={{ bottom: window.innerHeight - pos.top + 4, left: pos.left, width: pos.width }}
+            >
+              {options.map(option => (
+                <button
+                  key={option}
+                  onClick={() => selectOption(option)}
+                  className={cn('w-full px-4 py-3 text-left text-sm', option === currentValue && 'font-semibold text-[var(--ds-accent)]')}
+                >
+                  {humanizeOption(option)}
+                </button>
+              ))}
+            </div>
+          </>
+        ),
         document.body
       )}
     </>
   );
 }
 
-// ── Vacuum SVG animation ──────────────────────────────────────────────────────
-function VacuumAnimation({ state, className }: { state: VacuumState; className?: string }) {
+// ── Robot ─────────────────────────────────────────────────────────────────────
+/** Le robot vu de dessus ; l'anneau pointillé tourne pendant le ménage. */
+function VacuumDisc({ state }: { state: VacuumState }) {
   const isCleaning = state === 'cleaning' || state === 'segment_cleaning';
   return (
-    <div className={cn('relative flex items-center justify-center', className)}>
-      {/* Outer ring */}
-      <motion.div
-        animate={isCleaning ? { rotate: 360 } : { rotate: 0 }}
-        transition={isCleaning ? { duration: 8, repeat: Infinity, ease: 'linear' } : {}}
-        className='absolute w-28 h-28 rounded-full border-2 border-dashed border-teal-400/20'
+    <div aria-hidden='true' className='relative flex size-28 items-center justify-center'>
+      <div
+        className={cn(
+          'absolute inset-0 rounded-full border-2 border-dashed',
+          isCleaning ? 'animate-[spin_8s_linear_infinite] border-[var(--ds-accent)]' : 'border-[var(--ds-surface-3)]'
+        )}
       />
-      {/* Inner ring */}
-      <motion.div
-        animate={isCleaning ? { scale: [1, 1.05, 1] } : {}}
-        transition={isCleaning ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : {}}
-        className='w-20 h-20 rounded-full border-2 border-teal-400/40 flex items-center justify-center bg-teal-400/5'
-      >
-        <div className='w-4 h-4 rounded-full border-2 border-teal-400/60' />
-      </motion.div>
-      {/* Cleaning dots */}
-      {isCleaning && (
-        <>
-          <motion.div
-            animate={{ opacity: [0, 1, 0], y: [0, -8, 0] }}
-            transition={{ duration: 2, repeat: Infinity, delay: 0 }}
-            className='absolute w-1.5 h-1.5 rounded-full bg-teal-400/40'
-            style={{ top: '20%', right: '30%' }}
-          />
-          <motion.div
-            animate={{ opacity: [0, 1, 0], y: [0, 6, 0] }}
-            transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }}
-            className='absolute w-1 h-1 rounded-full bg-teal-400/30'
-            style={{ bottom: '25%', left: '35%' }}
-          />
-        </>
-      )}
+      <div className='flex size-20 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'>
+        <div className={cn('size-4 rounded-full border-2', isCleaning ? 'border-[var(--ds-accent)]' : 'border-[var(--ds-ink-muted)]')} />
+      </div>
     </div>
   );
 }
@@ -170,103 +144,77 @@ function RoomSelect({ rooms, selectedRooms, sequentialMode, onToggle, onToggleSe
   if (!rooms?.length) return null;
 
   return (
-    <motion.div
-      initial={{ x: 50, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      exit={{ x: 50, opacity: 0 }}
-      transition={{ duration: 0.25 }}
-      className='flex flex-col gap-3 h-full'
-    >
-      {/* Header */}
-      <div className='flex items-center gap-2'>
-        <motion.button
-          whileTap={{ scale: 0.9 }}
+    <div className='flex h-full flex-col gap-3'>
+      <div className='flex items-center gap-3'>
+        <button
           onClick={onBack}
-          className='w-8 h-8 rounded-xl gc-btn flex items-center justify-center text-white/40'
+          aria-label={t('widgets.vacuum.back')}
+          title={t('widgets.vacuum.back')}
+          className='flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'
         >
-          <ChevronRight size={16} className='rotate-180' />
-        </motion.button>
-        <div className='flex-1'>
-          <div className='text-white font-semibold text-sm'>{t('widgets.vacuum.cleanAreas')}</div>
-        </div>
+          <ChevronRight size={18} className='rotate-180' />
+        </button>
+        <div className='truncate text-[17px] font-semibold'>{t('widgets.vacuum.cleanAreas')}</div>
       </div>
 
-      {/* Room grid */}
-      <div className='grid grid-cols-3 gap-2 flex-1 overflow-y-auto'>
+      {/* Les pièces : le numéro dit l'ordre de passage */}
+      <div className='grid flex-1 grid-cols-3 content-start gap-2 overflow-y-auto'>
         {rooms.map(room => {
           const isSelected = selectedRooms.includes(room.id);
           return (
-            <motion.button
+            <button
               key={room.id}
-              whileTap={{ scale: 0.94 }}
               onClick={() => onToggle(room.id)}
+              aria-pressed={isSelected}
               className={cn(
-                'relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl text-xs font-medium transition-all border',
-                isSelected
-                  ? 'bg-blue-500/15 border-blue-500/30 text-blue-300'
-                  : 'gc-inner border-transparent text-white/40 hover:text-white/60 hover:border-white/10'
+                'relative flex min-h-[64px] flex-col items-center justify-center gap-1.5 rounded-[var(--ds-radius-md)] px-2 py-3 text-sm font-semibold',
+                isSelected ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'bg-[var(--ds-surface-3)]'
               )}
             >
-              <MapPin size={18} className={isSelected ? 'text-blue-400' : 'text-white/30'} />
+              <MapPin size={18} aria-hidden='true' />
               <span className='text-center leading-tight'>{room.name}</span>
               {isSelected && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className='absolute -top-1 -right-1 w-5 h-5 rounded-full bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center'
-                >
+                <span className='absolute right-1.5 top-1.5 flex size-5 items-center justify-center rounded-full bg-white text-[11px] font-bold text-[var(--ds-tile-on)]'>
                   {selectedRooms.indexOf(room.id) + 1}
-                </motion.div>
+                </span>
               )}
-            </motion.button>
+            </button>
           );
         })}
       </div>
 
-      {/* Sequential mode toggle */}
-      <motion.button
-        whileTap={{ scale: 0.97 }}
+      <button
+        role='switch'
+        aria-checked={sequentialMode}
         onClick={onToggleSequential}
-        className={cn(
-          'flex items-center gap-2.5 px-3 py-2.5 rounded-2xl text-xs font-medium transition-all border',
-          sequentialMode
-            ? 'bg-orange-500/15 border-orange-500/30 text-orange-300'
-            : 'gc-inner border-transparent text-white/40 hover:text-white/60'
-        )}
+        className='flex items-center gap-3 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-3 py-2 text-left'
       >
-        <ListOrdered size={16} className={sequentialMode ? 'text-orange-400' : 'text-white/30'} />
-        <div className='flex-1 text-left'>
-          <div className={sequentialMode ? 'text-orange-300' : 'text-white/60'}>{t('widgets.vacuum.sequentialMode')}</div>
-          <div className='text-[10px] text-white/30 mt-0.5'>{t('widgets.vacuum.sequentialDesc')}</div>
+        <ListOrdered size={18} aria-hidden='true' className='shrink-0' />
+        <div className='min-w-0 flex-1'>
+          <div className='text-sm font-semibold'>{t('widgets.vacuum.sequentialMode')}</div>
+          <div className='text-xs text-[var(--ds-ink-muted)]'>{t('widgets.vacuum.sequentialDesc')}</div>
         </div>
-        <div className={cn('w-8 h-5 rounded-full relative transition-colors', sequentialMode ? 'bg-orange-500' : 'bg-white/10')}>
-          <motion.div
-            animate={{ x: sequentialMode ? 14 : 2 }}
-            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-            className='absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm'
-          />
-        </div>
-      </motion.button>
+        <SwitchTrack on={sequentialMode} />
+      </button>
 
-      {/* Note */}
-      <div className='text-white/30 text-[10px] text-center'>
+      <div className='text-center text-xs text-[var(--ds-ink-muted)]'>
         {sequentialMode ? t('widgets.vacuum.sequentialNote') : t('widgets.vacuum.orderNote')}
       </div>
 
-      {/* Start cleaning */}
-      <motion.button
-        whileTap={{ scale: 0.97 }}
+      <button
         onClick={onStart}
         disabled={selectedRooms.length === 0}
         className={cn(
-          'w-full py-3 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors',
-          selectedRooms.length > 0 ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400' : 'bg-white/5 text-white/20 cursor-not-allowed'
+          'flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-[var(--ds-radius-pill)] text-[15px] font-semibold',
+          selectedRooms.length > 0
+            ? 'bg-[var(--ds-accent)] text-white'
+            : 'cursor-not-allowed bg-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
         )}
       >
-        <Play size={16} />
+        <Play size={18} fill='currentColor' aria-hidden='true' />
         {t('widgets.vacuum.startCleaning', { count: selectedRooms.length })}
-      </motion.button>
-    </motion.div>
+      </button>
+    </div>
   );
 }
 
@@ -404,160 +352,107 @@ export function VacuumCard() {
   const isCleaning = stateKey === 'cleaning' || stateKey === 'segment_cleaning';
   const isPaused = stateKey === 'paused';
 
+  // Le geste principal — lancer, mettre en pause, reprendre — en grand et en
+  // couleur ; les autres en ronds neutres.
   const CONTROLS = [
-    ...(isPaused
-      ? [
-          {
-            icon: <Play size={16} />,
-            action: 'start',
-            label: t('widgets.vacuum.resume'),
-            color: 'bg-teal-500/20 text-teal-400 hover:bg-teal-500/30',
-          },
-        ]
+    isPaused
+      ? { icon: Play, action: 'start', label: t('widgets.vacuum.resume') }
       : isCleaning
-        ? [
-            {
-              icon: <Pause size={16} />,
-              action: 'pause',
-              label: t('widgets.vacuum.pause'),
-              color: 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30',
-            },
-          ]
-        : [
-            {
-              icon: <Play size={16} />,
-              action: 'start',
-              label: t('widgets.vacuum.start'),
-              color: 'bg-teal-500/20 text-teal-400 hover:bg-teal-500/30',
-            },
-          ]),
-    {
-      icon: <Square size={14} />,
-      action: 'stop',
-      label: t('widgets.vacuum.stop'),
-      color: 'bg-red-500/15 text-red-400 hover:bg-red-500/25',
-    },
-    {
-      icon: <Home size={14} />,
-      action: 'return_to_base',
-      label: t('widgets.vacuum.dock'),
-      color: 'gc-btn text-white/60 hover:text-white/80',
-    },
-    {
-      icon: <LocateFixed size={14} />,
-      action: 'locate',
-      label: t('widgets.vacuum.locate'),
-      color: 'bg-blue-500/15 text-blue-400 hover:bg-blue-500/25',
-    },
+        ? { icon: Pause, action: 'pause', label: t('widgets.vacuum.pause') }
+        : { icon: Play, action: 'start', label: t('widgets.vacuum.start') },
+    { icon: Square, action: 'stop', label: t('widgets.vacuum.stop') },
+    { icon: Home, action: 'return_to_base', label: t('widgets.vacuum.dock') },
+    { icon: LocateFixed, action: 'locate', label: t('widgets.vacuum.locate') },
   ];
+  const batteryColor =
+    battery === undefined ? undefined : battery > 50 ? 'var(--ds-good)' : battery > 20 ? 'var(--ds-warm-light)' : 'var(--ds-alert)';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: DURATION_ENTRANCE, delay: 0.15 }}
-      className='gc rounded-3xl p-4 h-full flex flex-col overflow-hidden'
-    >
-      <AnimatePresence mode='wait'>
-        {step === 'rooms' ? (
-          <RoomSelect
-            key='rooms'
-            rooms={rooms}
-            selectedRooms={selectedRooms}
-            sequentialMode={sequentialMode}
-            onToggle={toggleRoom}
-            onToggleSequential={() => setSequentialMode(s => !s)}
-            onStart={startRoomCleaning}
-            onBack={() => setStep('main')}
-            t={t}
-          />
-        ) : (
-          <motion.div
-            key='main'
-            initial={{ x: -50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -50, opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className='flex flex-col h-full'
-          >
-            {/* Status header */}
-            <div className='flex items-center justify-between mb-1'>
-              <div>
-                <div className='text-white font-semibold text-lg'>{stateLabel}</div>
-                <div className='text-white/40 text-xs'>{name}</div>
-              </div>
-              {battery !== undefined && (
-                <div className='flex items-center gap-1.5 text-white/50 text-xs'>
-                  <span>{battery}%</span>
-                  <Battery size={16} className={cn(battery > 50 ? 'text-green-400' : battery > 20 ? 'text-yellow-400' : 'text-red-400')} />
-                </div>
-              )}
+    <div className='flex h-full flex-col overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] p-[var(--ds-space-4)] text-[var(--ds-ink)]'>
+      {step === 'rooms' ? (
+        <RoomSelect
+          rooms={rooms}
+          selectedRooms={selectedRooms}
+          sequentialMode={sequentialMode}
+          onToggle={toggleRoom}
+          onToggleSequential={() => setSequentialMode(s => !s)}
+          onStart={startRoomCleaning}
+          onBack={() => setStep('main')}
+          t={t}
+        />
+      ) : (
+        <div className='flex h-full flex-col gap-3'>
+          <div className='flex items-start justify-between gap-3'>
+            <div className='min-w-0'>
+              <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>
+              <div className='truncate text-sm text-[var(--ds-ink-muted)]'>{stateLabel}</div>
             </div>
-
-            {/* Sequential queue indicator */}
-            {/* eslint-disable-next-line react-hooks/refs */}
-            {queueActive && queueRef.current.length > 0 && (
-              <div className='flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-500/10 border border-orange-500/20 mb-2'>
-                <ListOrdered size={14} className='text-orange-400' />
-                <span className='text-orange-300 text-xs font-medium'>
-                  {/* eslint-disable-next-line react-hooks/refs */}
-                  {t('widgets.vacuum.queueProgress', { current: queueIndex + 1, total: queueRef.current.length })}
-                </span>
+            {battery !== undefined && (
+              <div className='flex shrink-0 items-center gap-1.5 text-sm text-[var(--ds-ink-muted)]'>
+                <span>{battery} %</span>
+                <Battery size={18} aria-hidden='true' style={{ color: batteryColor }} />
               </div>
             )}
+          </div>
 
-            {/* Vacuum animation */}
-            <div className='flex-1 flex items-center justify-center min-h-[100px]'>
-              <VacuumAnimation state={stateKey} />
+          {/* Ménage pièce par pièce : où en est la file */}
+          {/* eslint-disable-next-line react-hooks/refs */}
+          {queueActive && queueRef.current.length > 0 && (
+            <div className='flex h-9 items-center gap-2 self-start rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)] px-3.5 text-sm font-semibold'>
+              <ListOrdered size={16} aria-hidden='true' className='text-[var(--ds-accent)]' />
+              {/* eslint-disable-next-line react-hooks/refs */}
+              {t('widgets.vacuum.queueProgress', { current: queueIndex + 1, total: queueRef.current.length })}
             </div>
+          )}
 
-            {/* Control buttons */}
-            <div className='flex items-center justify-center gap-3 my-3'>
-              {CONTROLS.map(({ icon, action, label, color }) => (
-                <motion.button
-                  key={action}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => call(action)}
-                  className={cn('w-11 h-11 rounded-full flex items-center justify-center transition-colors', color)}
-                  title={label}
-                >
-                  {icon}
-                </motion.button>
+          <div className='flex min-h-[100px] flex-1 items-center justify-center'>
+            <VacuumDisc state={stateKey} />
+          </div>
+
+          <div className='flex shrink-0 items-center justify-center gap-3'>
+            {CONTROLS.map(({ icon: Icon, action, label }, i) => (
+              <button
+                key={action}
+                onClick={() => call(action)}
+                aria-label={label}
+                title={label}
+                className={cn(
+                  'flex shrink-0 items-center justify-center rounded-full transition-transform active:scale-95',
+                  i === 0 ? 'size-14 bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'size-12 bg-[var(--ds-surface-3)]'
+                )}
+              >
+                <Icon size={i === 0 ? 24 : 20} fill={i === 0 ? 'currentColor' : 'none'} />
+              </button>
+            ))}
+          </div>
+
+          {/* Les sélecteurs : puissance d'aspiration, débit d'eau, parcours… */}
+          {selects.length > 0 && (
+            <div className={cn('grid shrink-0 gap-2', selects.length === 1 ? 'grid-cols-1' : 'grid-cols-2')}>
+              {selects.map(sel => (
+                <VacuumSelectControl key={sel.entityId} entityId={sel.entityId} label={sel.label} />
               ))}
             </div>
+          )}
 
-            {/* Select controls (fan speed, scrub intensity, mop route…) */}
-            {selects.length > 0 && (
-              <div className={cn('grid gap-1.5 mb-2', selects.length === 1 ? 'grid-cols-1' : 'grid-cols-2')}>
-                {selects.map(sel => (
-                  <VacuumSelectControl key={sel.entityId} entityId={sel.entityId} label={sel.label} />
-                ))}
+          {hasRooms && (
+            <button
+              onClick={() => {
+                setSelectedRooms([]);
+                setStep('rooms');
+              }}
+              className='flex w-full shrink-0 items-center justify-between gap-3 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-4 py-3 text-left'
+            >
+              <MapPin size={18} aria-hidden='true' className='shrink-0' />
+              <div className='min-w-0 flex-1'>
+                <div className='text-sm font-semibold'>{t('widgets.vacuum.cleaning')}</div>
+                <div className='text-xs text-[var(--ds-ink-muted)]'>{t('widgets.vacuum.byArea')}</div>
               </div>
-            )}
-
-            {/* Room cleaning shortcut */}
-            {hasRooms && (
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                onClick={() => {
-                  setSelectedRooms([]);
-                  setStep('rooms');
-                }}
-                className='w-full py-2.5 rounded-2xl gc-inner hover:bg-white/10 transition-colors flex items-center justify-between px-4'
-              >
-                <div className='flex items-center gap-2 text-white/60'>
-                  <MapPin size={16} />
-                  <div className='text-left'>
-                    <div className='text-xs font-semibold text-white/70'>{t('widgets.vacuum.cleaning')}</div>
-                    <div className='text-[10px] text-white/40'>{t('widgets.vacuum.byArea')}</div>
-                  </div>
-                </div>
-                <ChevronRight size={16} className='text-white/30' />
-              </motion.button>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+              <ChevronRight size={18} aria-hidden='true' className='shrink-0 text-[var(--ds-ink-muted)]' />
+            </button>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

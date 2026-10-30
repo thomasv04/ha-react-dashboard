@@ -1,183 +1,122 @@
-import { Palette, Image, Sliders, Sun } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-import { THEMES, tintToHex, type ThemeId, type BuiltInThemeId, type BackgroundMode, type EffectPalette } from '@/config/themes';
-import { ImageBackgroundPicker } from './ImageBackgroundPicker';
+import { THEMES, type ThemeId, type BuiltInThemeId, type ThemeTokens } from '@/config/themes';
 import { useI18n } from '@/i18n';
-import { DEFAULT_EDGE_BEHAVIOUR } from '@/lib/background-motion';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
+import { SwitchTrack } from '@/components/ds/Switch';
 import { DEFAULT_ILLUMINANCE_THRESHOLD } from '@/hooks/useAutoTheme';
 import { HAThemeImport } from './HAThemeImport';
-import { FIELD_LABEL, SECTION_HEADING } from './typography';
+import { FIELD_LABEL, SECTION_HEADING, SETTINGS_CARD } from './typography';
 import { cn } from '@/lib/utils';
+
+/** Une vignette de dashboard aux couleurs du thème : fond, trois cartes, accent. */
+function ThemePreview({ tokens }: { tokens: ThemeTokens }) {
+  return (
+    <span
+      aria-hidden
+      className='relative block h-[120px] w-full overflow-hidden rounded-[var(--ds-radius-lg)]'
+      style={{ background: tokens.bgPrimary }}
+    >
+      <span className='absolute left-3 top-3 size-4 rounded-[5px]' style={{ background: tokens.accent }} />
+      <span className='absolute right-3 top-2.5 h-3 w-10 rounded' style={{ background: tokens.textPrimary }} />
+      <span className='absolute bottom-3 left-3 top-10 w-[42%] rounded-xl' style={{ background: tokens.bgCard }} />
+      <span className='absolute right-3 top-10 h-[34%] w-[46%] rounded-xl' style={{ background: tokens.bgCard }} />
+      <span className='absolute bottom-3 right-3 h-[34%] w-[46%] rounded-xl' style={{ background: tokens.bgCard }} />
+      <span className='absolute left-6 top-14 h-1.5 w-12 rounded' style={{ background: tokens.textPrimary }} />
+      <span className='absolute left-6 top-[72px] h-1.5 w-16 rounded' style={{ background: tokens.textMuted }} />
+    </span>
+  );
+}
 
 export function AppearanceSection() {
   const { t } = useI18n();
-  const {
-    themeId,
-    tokens,
-    setTheme,
-    background,
-    setBackground,
-    cardOpacity,
-    setCardOpacity,
-    layoutSettings,
-    setLayoutSettings,
-    autoTheme,
-    setAutoTheme,
-  } = useTheme();
-  const cardBlur = layoutSettings.cardBlur ?? tokens.glassBlur;
+  const { themeId, setTheme, autoTheme, setAutoTheme } = useTheme();
 
   return (
-    <div className='flex flex-col gap-7'>
-      {/* Theme selector */}
-      <div>
-        <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
-          <Palette size={12} /> {t('settings.appearance_section.theme')}
-        </h3>
-        <div className='grid grid-cols-3 gap-2'>
-          {(Object.entries(THEMES) as [BuiltInThemeId, (typeof THEMES)[BuiltInThemeId]][]).map(([id, theme]) => (
-            <button
-              key={id}
-              onClick={() => setTheme(id)}
-              className={`p-3 rounded-xl border text-sm font-medium transition-all ${
-                themeId === id ? 'border-blue-500 bg-blue-500/20 text-white' : 'border-white/10 bg-white/5 text-white/60 hover:bg-white/10'
-              }`}
-            >
-              <div
-                className='w-full h-6 rounded-lg mb-2'
-                style={{
-                  backgroundColor: theme.tokens.bgPrimary,
-                  border: `1px solid ${theme.tokens.border}`,
-                }}
-              />
-              {theme.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Card opacity (hidden in clay mode — cards are opaque — unless the theme
-          gives a tint to recompose them, like Sea Glass) */}
-      {(tokens.mode !== 'clay' || tokens.cardTint) && (
-        <div>
-          <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
-            <Sliders size={12} /> {t('settings.appearance_section.cardOpacity')}
-          </h3>
-          <div className='flex items-center gap-3'>
-            <input
-              type='range'
-              min={0}
-              max={100}
-              value={Math.round(cardOpacity * 100)}
-              onChange={e => setCardOpacity(parseInt(e.target.value, 10) / 100)}
-              className='flex-1 accent-blue-500'
-            />
-            <span className='text-white/50 text-sm w-10 text-right tabular-nums'>{Math.round(cardOpacity * 100)}%</span>
-          </div>
-        </div>
-      )}
-
-      {/* Flou du fond des cards : ce qui transparaît du fond d'écran */}
-      {(tokens.mode !== 'clay' || tokens.cardTint) && (
-        <div>
-          <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
-            <Sliders size={12} /> {t('settings.appearance_section.cardBlur')}
-          </h3>
-          <div className='flex items-center gap-3'>
-            <input
-              type='range'
-              min={0}
-              max={40}
-              value={cardBlur}
-              onChange={e => setLayoutSettings({ ...layoutSettings, cardBlur: parseInt(e.target.value, 10) })}
-              className='flex-1 accent-blue-500'
-            />
-            <span className='text-white/50 text-sm w-10 text-right tabular-nums'>{cardBlur}px</span>
-          </div>
-        </div>
-      )}
-
-      {/* Couleur des cards : remplace la teinte du thème (thèmes translucides seulement) */}
-      {tokens.cardTint && (
-        <div>
-          <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
-            <Palette size={12} /> {t('settings.appearance_section.cardColor')}
-          </h3>
-          <div className='flex items-center gap-3'>
-            <input
-              type='color'
-              value={layoutSettings.cardColor ?? tintToHex(tokens.cardTint)}
-              onChange={e => setLayoutSettings({ ...layoutSettings, cardColor: e.target.value })}
-              aria-label={t('settings.appearance_section.cardColor')}
-              className='w-10 h-10 rounded-lg border border-white/10 bg-transparent cursor-pointer'
-            />
-            <span className='text-white/50 text-sm tabular-nums uppercase'>{layoutSettings.cardColor ?? tintToHex(tokens.cardTint)}</span>
-            {layoutSettings.cardColor && (
+    <div className='flex flex-col gap-4'>
+      {/* Thème */}
+      <section className={SETTINGS_CARD}>
+        <h3 className={cn(SECTION_HEADING, 'mb-4')}>{t('settings.appearance_section.theme')}</h3>
+        <div role='radiogroup' aria-label={t('settings.appearance_section.theme')} className='grid grid-cols-2 gap-4'>
+          {(Object.entries(THEMES) as [BuiltInThemeId, (typeof THEMES)[BuiltInThemeId]][]).map(([id, theme]) => {
+            const on = themeId === id;
+            return (
               <button
-                onClick={() => setLayoutSettings({ ...layoutSettings, cardColor: undefined })}
-                className='ml-auto px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white/60 text-xs hover:bg-white/10'
+                key={id}
+                role='radio'
+                aria-checked={on}
+                onClick={() => setTheme(id)}
+                className='flex flex-col gap-3 rounded-[var(--ds-radius-xl)] bg-transparent p-1 text-left'
               >
-                {t('settings.appearance_section.cardColorReset')}
+                <span className={cn('rounded-[var(--ds-radius-xl)] p-1', on && 'outline-[3px] outline-[var(--ds-accent)]')}>
+                  <ThemePreview tokens={theme.tokens} />
+                </span>
+                <span
+                  className={cn('flex items-center gap-2.5 px-1 text-lg', on ? 'font-semibold' : 'font-medium text-[var(--ds-ink-muted)]')}
+                >
+                  <span
+                    className={cn(
+                      'flex size-7 items-center justify-center rounded-full',
+                      on ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'border-2 border-[var(--ds-ink-muted)]'
+                    )}
+                  >
+                    {on && <Check size={16} strokeWidth={3.5} />}
+                  </span>
+                  {theme.label}
+                </span>
               </button>
-            )}
-          </div>
+            );
+          })}
         </div>
-      )}
+      </section>
 
       {/* Thème repris de Home Assistant */}
       <HAThemeImport />
 
-      {/* Auto day/night theme */}
-      <div>
-        <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
-          <Sun size={12} /> {t('settings.appearance_section.autoTheme')}
-        </h3>
-        <p className='text-white/30 text-[11px] mb-3'>{t('settings.appearance_section.autoThemeDesc')}</p>
-        <label className='flex items-center gap-3 cursor-pointer mb-3'>
-          <input
-            type='checkbox'
-            checked={autoTheme.enabled}
-            onChange={e => setAutoTheme({ ...autoTheme, enabled: e.target.checked })}
-            className='accent-blue-500 w-4 h-4'
-          />
-          <span className='text-white/60 text-sm'>{t('settings.appearance_section.autoTheme')}</span>
-        </label>
+      {/* Thème automatique jour / nuit */}
+      <section className={cn(SETTINGS_CARD, 'flex flex-col gap-4')}>
+        <button
+          role='switch'
+          aria-checked={autoTheme.enabled}
+          onClick={() => setAutoTheme({ ...autoTheme, enabled: !autoTheme.enabled })}
+          className='flex w-full items-center justify-between gap-4 text-left'
+        >
+          <span className='min-w-0'>
+            <span className={cn(SECTION_HEADING, 'block')}>{t('settings.appearance_section.autoTheme')}</span>
+            <span className='mt-1 block text-[15px] text-[var(--ds-ink-muted)]'>{t('settings.appearance_section.autoThemeDesc')}</span>
+          </span>
+          <SwitchTrack on={autoTheme.enabled} />
+        </button>
+
         {autoTheme.enabled && (
           <div className='grid grid-cols-2 gap-3'>
-            <div>
-              <span className={cn(FIELD_LABEL, 'block mb-1.5')}>{t('settings.appearance_section.autoThemeLight')}</span>
-              <select
-                value={autoTheme.lightTheme}
-                onChange={e => setAutoTheme({ ...autoTheme, lightTheme: e.target.value as ThemeId })}
-                className='w-full bg-white/8 border border-white/12 rounded-lg px-2 py-1.5 text-white/70 text-xs'
-              >
-                {(Object.keys(THEMES) as BuiltInThemeId[]).map(id => (
-                  <option key={id} value={id}>
-                    {THEMES[id].label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <span className={cn(FIELD_LABEL, 'block mb-1.5')}>{t('settings.appearance_section.autoThemeDark')}</span>
-              <select
-                value={autoTheme.darkTheme}
-                onChange={e => setAutoTheme({ ...autoTheme, darkTheme: e.target.value as ThemeId })}
-                className='w-full bg-white/8 border border-white/12 rounded-lg px-2 py-1.5 text-white/70 text-xs'
-              >
-                {(Object.keys(THEMES) as BuiltInThemeId[]).map(id => (
-                  <option key={id} value={id}>
-                    {THEMES[id].label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {(
+              [
+                ['autoThemeLight', 'lightTheme'],
+                ['autoThemeDark', 'darkTheme'],
+              ] as const
+            ).map(([label, key]) => (
+              <label key={key} className='flex flex-col gap-2'>
+                <span className={FIELD_LABEL}>{t(`settings.appearance_section.${label}`)}</span>
+                <select
+                  value={autoTheme[key]}
+                  onChange={e => setAutoTheme({ ...autoTheme, [key]: e.target.value as ThemeId })}
+                  className='h-12 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-3 text-base text-[var(--ds-ink)]'
+                >
+                  {(Object.keys(THEMES) as BuiltInThemeId[]).map(id => (
+                    <option key={id} value={id}>
+                      {THEMES[id].label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ))}
           </div>
         )}
 
         {/* Source de la bascule : le soleil, ou un capteur de luminosité. */}
         {autoTheme.enabled && (
-          <div className='mt-4 flex flex-col gap-2.5'>
+          <div className='flex flex-col gap-3'>
             <span className={FIELD_LABEL}>{t('settings.appearance_section.autoThemeSource')}</span>
             <EntityPicker
               label={t('settings.appearance_section.autoThemeSensor')}
@@ -185,272 +124,26 @@ export function AppearanceSection() {
               value={autoTheme.illuminanceEntity ?? ''}
               onChange={v => setAutoTheme({ ...autoTheme, illuminanceEntity: v })}
             />
-            <p className='text-white/25 text-[11px] leading-relaxed'>{t('settings.appearance_section.autoThemeSensorDesc')}</p>
+            <p className='text-sm leading-relaxed text-[var(--ds-ink-muted)]'>{t('settings.appearance_section.autoThemeSensorDesc')}</p>
 
             {autoTheme.illuminanceEntity && (
               <div className='flex items-center gap-3'>
-                <label className='text-white/45 text-xs w-24'>{t('settings.appearance_section.autoThemeThreshold')}</label>
+                <label className='w-28 text-sm font-semibold text-[var(--ds-ink-muted)]'>
+                  {t('settings.appearance_section.autoThemeThreshold')}
+                </label>
                 <input
                   type='number'
                   min={0}
                   value={autoTheme.illuminanceThreshold ?? DEFAULT_ILLUMINANCE_THRESHOLD}
                   onChange={e => setAutoTheme({ ...autoTheme, illuminanceThreshold: Math.max(0, parseInt(e.target.value, 10) || 0) })}
-                  className='w-24 bg-white/8 border border-white/12 rounded-lg px-2 py-1.5 text-white/70 text-xs'
+                  className='h-12 w-28 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-3 text-base text-[var(--ds-ink)]'
                 />
-                <span className='text-white/25 text-[11px] flex-1'>{t('settings.appearance_section.autoThemeThresholdDesc')}</span>
+                <span className='flex-1 text-sm text-[var(--ds-ink-muted)]'>{t('settings.appearance_section.autoThemeThresholdDesc')}</span>
               </div>
             )}
           </div>
         )}
-      </div>
-
-      {/* Background */}
-      <div>
-        <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
-          <Image size={12} /> {t('settings.appearance_section.background')}
-        </h3>
-        <div className='flex flex-wrap gap-2 mb-4'>
-          {(['solid', 'gradient', 'image', 'aurora', 'lavaLamp'] as BackgroundMode[]).map(mode => (
-            <button
-              key={mode}
-              onClick={() => setBackground({ ...background, mode })}
-              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                background.mode === mode
-                  ? 'bg-blue-500/20 text-blue-400 border border-blue-500/40'
-                  : 'bg-white/5 text-white/50 border border-white/10 hover:bg-white/8'
-              }`}
-            >
-              {mode === 'solid'
-                ? t('settings.appearance_section.backgroundSolid')
-                : mode === 'gradient'
-                  ? t('settings.appearance_section.backgroundGradient')
-                  : mode === 'image'
-                    ? t('settings.appearance_section.backgroundImage')
-                    : mode === 'aurora'
-                      ? t('settings.appearance_section.backgroundAurora')
-                      : t('settings.appearance_section.backgroundLavaLamp')}
-            </button>
-          ))}
-        </div>
-
-        {background.mode === 'solid' && (
-          <div className='flex items-center gap-3'>
-            <label className='text-white/45 text-xs w-16'>{t('settings.appearance_section.color')}</label>
-            <input
-              type='color'
-              value={background.color ?? '#0a0a14'}
-              onChange={e => setBackground({ ...background, color: e.target.value })}
-              className='w-8 h-8 rounded cursor-pointer border-0 bg-transparent'
-            />
-          </div>
-        )}
-
-        {background.mode === 'gradient' && (
-          <div className='flex flex-col gap-3'>
-            <div className='flex items-center gap-3'>
-              <label className='text-white/45 text-xs w-16'>{t('settings.appearance_section.color1')}</label>
-              <input
-                type='color'
-                value={background.gradientFrom ?? '#0a0a14'}
-                onChange={e => setBackground({ ...background, gradientFrom: e.target.value })}
-                className='w-8 h-8 rounded cursor-pointer border-0 bg-transparent'
-              />
-            </div>
-            <div className='flex items-center gap-3'>
-              <label className='text-white/45 text-xs w-16'>{t('settings.appearance_section.color2')}</label>
-              <input
-                type='color'
-                value={background.gradientTo ?? '#1a1a2e'}
-                onChange={e => setBackground({ ...background, gradientTo: e.target.value })}
-                className='w-8 h-8 rounded cursor-pointer border-0 bg-transparent'
-              />
-            </div>
-            <div className='flex items-center gap-3'>
-              <label className='text-white/45 text-xs w-16'>{t('settings.appearance_section.angle')}</label>
-              <input
-                type='range'
-                min={0}
-                max={360}
-                value={background.gradientAngle ?? 135}
-                onChange={e => setBackground({ ...background, gradientAngle: parseInt(e.target.value, 10) })}
-                className='flex-1 accent-blue-500'
-              />
-              <span className='text-white/40 text-xs w-8 tabular-nums'>{background.gradientAngle ?? 135}°</span>
-            </div>
-          </div>
-        )}
-
-        {background.mode === 'image' && <ImageBackgroundPicker background={background} setBackground={setBackground} />}
-        {background.mode === 'image' && (
-          <div className='flex flex-col gap-3'>
-            <div className='flex items-center gap-3'>
-              <label className='text-white/45 text-xs w-16'>{t('settings.appearance_section.overlay')}</label>
-              <input
-                type='range'
-                min={0}
-                max={100}
-                value={Math.round((background.overlayOpacity ?? 0.5) * 100)}
-                onChange={e => setBackground({ ...background, overlayOpacity: parseInt(e.target.value, 10) / 100 })}
-                className='flex-1 accent-blue-500'
-              />
-              <span className='text-white/40 text-xs w-8 tabular-nums'>{Math.round((background.overlayOpacity ?? 0.5) * 100)}%</span>
-            </div>
-          </div>
-        )}
-
-        {(background.mode === 'aurora' || background.mode === 'lavaLamp') &&
-          (() => {
-            const isAurora = background.mode === 'aurora';
-            const cfg = isAurora ? (background.aurora ?? {}) : (background.lava ?? {});
-            const countKey = isAurora ? 'orbCount' : 'blobCount';
-            const countLabel = isAurora
-              ? t('settings.appearance_section.effectOrbCount')
-              : t('settings.appearance_section.effectBlobCount');
-            const count = (cfg as Record<string, number | undefined>)[countKey] ?? 5;
-            const palette = cfg.palette ?? 'default';
-            const speed = cfg.speed ?? 1;
-            const size = cfg.size ?? 1;
-            const opacity = cfg.opacity ?? 1;
-            const sway = cfg.sway ?? 1;
-            const edge = cfg.edgeBehaviour ?? DEFAULT_EDGE_BEHAVIOUR;
-
-            const update = (patch: object) => {
-              if (isAurora) {
-                setBackground({ ...background, aurora: { ...cfg, ...patch } });
-              } else {
-                setBackground({ ...background, lava: { ...cfg, ...patch } });
-              }
-            };
-
-            const palettes: { id: EffectPalette; label: string }[] = [
-              { id: 'default', label: t('settings.appearance_section.effectPaletteDefault') },
-              { id: 'warm', label: t('settings.appearance_section.effectPaletteWarm') },
-              { id: 'cool', label: t('settings.appearance_section.effectPaletteCool') },
-              { id: 'nature', label: t('settings.appearance_section.effectPaletteNature') },
-              { id: 'mono', label: t('settings.appearance_section.effectPaletteMono') },
-            ];
-
-            return (
-              <div className='flex flex-col gap-3 mt-1'>
-                {/* Palette */}
-                <div>
-                  <span className={cn(FIELD_LABEL, 'block mb-1.5')}>{t('settings.appearance_section.effectPalette')}</span>
-                  <div className='flex flex-wrap gap-1.5'>
-                    {palettes.map(p => (
-                      <button
-                        key={p.id}
-                        onClick={() => update({ palette: p.id })}
-                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
-                          palette === p.id
-                            ? 'bg-blue-500/20 text-blue-400 border border-blue-500/40'
-                            : 'bg-white/5 text-white/50 border border-white/10 hover:bg-white/8'
-                        }`}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Count */}
-                <div className='flex items-center gap-3'>
-                  <label className='text-white/45 text-xs w-16'>{countLabel}</label>
-                  <input
-                    type='range'
-                    min={1}
-                    max={12}
-                    step={1}
-                    value={count}
-                    onChange={e => update({ [countKey]: parseInt(e.target.value, 10) })}
-                    className='flex-1 accent-blue-500'
-                  />
-                  <span className='text-white/40 text-xs w-8 tabular-nums text-right'>{count}</span>
-                </div>
-
-                {/* Speed */}
-                <div className='flex items-center gap-3'>
-                  <label className='text-white/45 text-xs w-16'>{t('settings.appearance_section.effectSpeed')}</label>
-                  <input
-                    type='range'
-                    min={10}
-                    max={300}
-                    step={10}
-                    value={Math.round(speed * 100)}
-                    onChange={e => update({ speed: parseInt(e.target.value, 10) / 100 })}
-                    className='flex-1 accent-blue-500'
-                  />
-                  <span className='text-white/40 text-xs w-8 tabular-nums text-right'>{Math.round(speed * 100)}%</span>
-                </div>
-
-                {/* Size */}
-                <div className='flex items-center gap-3'>
-                  <label className='text-white/45 text-xs w-16'>{t('settings.appearance_section.effectSize')}</label>
-                  <input
-                    type='range'
-                    min={30}
-                    max={200}
-                    step={10}
-                    value={Math.round(size * 100)}
-                    onChange={e => update({ size: parseInt(e.target.value, 10) / 100 })}
-                    className='flex-1 accent-blue-500'
-                  />
-                  <span className='text-white/40 text-xs w-8 tabular-nums text-right'>{Math.round(size * 100)}%</span>
-                </div>
-
-                {/* Opacity / Intensity */}
-                <div className='flex items-center gap-3'>
-                  <label className='text-white/45 text-xs w-16'>{t('settings.appearance_section.effectOpacity')}</label>
-                  <input
-                    type='range'
-                    min={10}
-                    max={200}
-                    step={10}
-                    value={Math.round(opacity * 100)}
-                    onChange={e => update({ opacity: parseInt(e.target.value, 10) / 100 })}
-                    className='flex-1 accent-blue-500'
-                  />
-                  <span className='text-white/40 text-xs w-8 tabular-nums text-right'>{Math.round(opacity * 100)}%</span>
-                </div>
-
-                {/* Sway / Movement */}
-                <div className='flex items-center gap-3'>
-                  <label className='text-white/45 text-xs w-16'>{t('settings.appearance_section.effectSway')}</label>
-                  <input
-                    type='range'
-                    min={0}
-                    max={300}
-                    step={10}
-                    value={Math.round(sway * 100)}
-                    onChange={e => update({ sway: parseInt(e.target.value, 10) / 100 })}
-                    className='flex-1 accent-blue-500'
-                  />
-                  <span className='text-white/40 text-xs w-8 tabular-nums text-right'>{Math.round(sway * 100)}%</span>
-                </div>
-
-                {/* Comportement au bord — ce qui arrive quand une bulle sort de l'écran */}
-                <div className='flex flex-col gap-1.5'>
-                  <label className='text-white/45 text-xs'>{t('settings.appearance_section.effectEdge')}</label>
-                  <div className='flex gap-1.5'>
-                    {(['fade', 'bounce', 'wrap'] as const).map(mode => (
-                      <button
-                        key={mode}
-                        onClick={() => update({ edgeBehaviour: mode })}
-                        className={`flex-1 px-2 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
-                          edge === mode
-                            ? 'bg-blue-500/25 border-blue-500/40 text-blue-200'
-                            : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'
-                        }`}
-                      >
-                        {t(`settings.appearance_section.effectEdge_${mode}`)}
-                      </button>
-                    ))}
-                  </div>
-                  <p className='text-white/25 text-[11px]'>{t(`settings.appearance_section.effectEdgeHint_${edge}`)}</p>
-                </div>
-              </div>
-            );
-          })()}
-      </div>
+      </section>
     </div>
   );
 }

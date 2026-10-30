@@ -167,19 +167,22 @@ test('in edit mode, a click on the plan places a chip, and dragging moves it', a
   await page.screenshot({ path: testInfo.outputPath('floorplan-edit.png'), animations: 'disabled' });
 });
 
-test('the tab arrows move the plan before the home page', async ({ page }) => {
+test('the rail lists the plan after the home page, and edit mode offers to delete it', async ({ page }) => {
   await openPlan(page);
-  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
+  const rail = page.getByRole('navigation', { name: 'Pages' });
 
-  // Les libellés d'onglet (en capitales) — pas le bouton « + Plan », qui dit la même chose.
+  // La première page en tête du rail, les suivantes dans la pilule.
   const labels = () =>
-    page
-      .locator('[data-tour="pages"] > button span.uppercase')
-      .allInnerTexts()
-      .then(t => t.map(s => s.trim().toUpperCase()).filter(s => s === 'ACCUEIL' || s === 'PLAN'));
-  expect(await labels()).toEqual(['ACCUEIL', 'PLAN']);
+    rail
+      .getByRole('button')
+      .evaluateAll(els => els.map(el => el.getAttribute('aria-label')))
+      .then(names => names.filter(name => name === 'Accueil' || name === 'Plan'));
+  expect(await labels()).toEqual(['Accueil', 'Plan']);
 
-  // `exact` : le nom accessible de l'onglet lui-même contient celui de la flèche.
-  await page.getByRole('button', { name: 'Déplacer à gauche', exact: true }).click();
-  expect(await labels()).toEqual(['PLAN', 'ACCUEIL']);
+  // En édition, la page ouverte porte ses actions. Seconde du rail, elle ne se
+  // déplace ni vers le haut (l'accueil reste en tête) ni vers le bas.
+  await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
+  await expect(rail.getByRole('button', { name: 'Supprimer la page' })).toBeVisible();
+  await expect(rail.getByRole('button', { name: 'Monter' })).toHaveCount(0);
+  await expect(rail.getByRole('button', { name: 'Descendre' })).toHaveCount(0);
 });

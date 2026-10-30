@@ -24,12 +24,12 @@ export function InlineButtonRenderer({ btn, compact = false }: { btn: InlineButt
       onClick={call}
       // `compact` : la version d'en-tête, qui partage sa ligne avec le titre et
       // la fermeture — elle se serre au lieu de prendre toute la largeur.
-      className={`rounded-2xl font-semibold flex items-center justify-center gap-2 min-w-0 ${
-        compact ? 'px-3 py-1.5 text-xs' : 'flex-1 py-2.5 text-sm'
-      } ${isPrimary ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400' : 'gc-btn text-white/60 hover:text-white/80'}`}
+      className={`flex min-w-0 items-center justify-center gap-2 rounded-[var(--ds-radius-pill)] font-semibold ${
+        compact ? 'h-11 px-4 text-sm' : 'h-[52px] flex-1 text-[15px]'
+      } ${isPrimary ? 'bg-[var(--ds-accent)] text-white' : 'bg-[var(--ds-sheet-section)] text-[var(--ds-ink)]'}`}
     >
       {/* eslint-disable-next-line react-hooks/static-components */}
-      {Icon && <Icon size={compact ? 13 : 16} className='flex-shrink-0' />}
+      {Icon && <Icon size={compact ? 18 : 20} className='flex-shrink-0' />}
       {btn.label && <span className='truncate'>{btn.label}</span>}
     </motion.button>
   );

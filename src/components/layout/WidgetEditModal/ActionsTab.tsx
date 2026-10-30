@@ -12,7 +12,7 @@ const GESTURES = [
 ] as const;
 
 const inputClass =
-  'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white/80 text-sm focus:outline-none focus:border-blue-500/40 placeholder:text-white/20';
+  'w-full bg-[var(--ds-surface-3)] rounded-[var(--ds-radius-sm)] px-3 py-2 text-[var(--ds-ink)] text-sm focus:outline-none focus:outline-2 focus:outline-[var(--ds-accent)] placeholder:text-[var(--ds-ink-muted)]';
 
 function ActionEditor({ value, onChange }: { value: CardAction | undefined; onChange: (v: CardAction | undefined) => void }) {
   const { t } = useI18n();
@@ -32,10 +32,10 @@ function ActionEditor({ value, onChange }: { value: CardAction | undefined; onCh
               // comportement actuel dans la config.
               type === 'default' ? onChange(undefined) : patch({ action: type })
             }
-            className={`px-2 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+            className={`px-2 py-1.5 rounded-[var(--ds-radius-sm)] border text-xs font-medium transition-colors cursor-pointer ${
               action === type
-                ? 'bg-blue-500/25 border-blue-500/40 text-blue-200'
-                : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white/80'
+                ? 'bg-[var(--ds-tile-on)] border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
+                : 'bg-[var(--ds-surface-3)] border-transparent text-[var(--ds-ink-muted)]'
             }`}
           >
             {t(`layout.actions.type.${type}`)}
@@ -50,7 +50,7 @@ function ActionEditor({ value, onChange }: { value: CardAction | undefined; onCh
       {action === 'call-service' && (
         <>
           <label className='block'>
-            <span className='block text-white/45 text-xs mb-1.5'>{t('layout.actions.service')}</span>
+            <span className='block text-[var(--ds-ink-muted)] text-xs mb-1.5'>{t('layout.actions.service')}</span>
             <input
               value={value?.service ?? ''}
               onChange={e => patch({ service: e.target.value })}
@@ -60,10 +60,10 @@ function ActionEditor({ value, onChange }: { value: CardAction | undefined; onCh
           </label>
           <div>
             <EntityPicker label={t('layout.actions.entity')} value={value?.entityId ?? ''} onChange={v => patch({ entityId: v })} />
-            <p className='text-white/25 text-[11px] mt-1'>{t('layout.actions.entityHint')}</p>
+            <p className='text-[var(--ds-ink-muted)] text-sm mt-1'>{t('layout.actions.entityHint')}</p>
           </div>
           <label className='block'>
-            <span className='block text-white/45 text-xs mb-1.5'>{t('layout.actions.serviceData')}</span>
+            <span className='block text-[var(--ds-ink-muted)] text-xs mb-1.5'>{t('layout.actions.serviceData')}</span>
             <textarea
               value={value?.serviceData ?? ''}
               onChange={e => patch({ serviceData: e.target.value })}
@@ -77,7 +77,7 @@ function ActionEditor({ value, onChange }: { value: CardAction | undefined; onCh
 
       {action === 'url' && (
         <label className='block'>
-          <span className='block text-white/45 text-xs mb-1.5'>{t('layout.actions.url')}</span>
+          <span className='block text-[var(--ds-ink-muted)] text-xs mb-1.5'>{t('layout.actions.url')}</span>
           <input value={value?.url ?? ''} onChange={e => patch({ url: e.target.value })} placeholder='https://…' className={inputClass} />
         </label>
       )}
@@ -97,10 +97,10 @@ export function ActionsTab({ draft, updateField }: { draft: Record<string, unkno
 
   return (
     <div className='space-y-6'>
-      <p className='text-white/40 text-xs leading-relaxed'>{t('layout.actions.intro')}</p>
+      <p className='text-[var(--ds-ink-muted)] text-xs leading-relaxed'>{t('layout.actions.intro')}</p>
       {GESTURES.map(({ key, label }) => (
         <div key={key}>
-          <h4 className='text-white/45 text-[11px] font-semibold tracking-widest uppercase mb-2.5'>{t(label)}</h4>
+          <h4 className='text-[var(--ds-ink-muted)] text-sm font-semibold tracking-widest uppercase mb-2.5'>{t(label)}</h4>
           <ActionEditor value={draft[key] as CardAction | undefined} onChange={v => updateField(key, v)} />
         </div>
       ))}

@@ -1,12 +1,9 @@
 import { useMemo, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { BatteryLow, BatteryFull } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
-import { ProgressBar } from '@/components/charts/ProgressBar';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 import type { BatteriesCardConfig } from '@/types/widget-configs';
@@ -51,10 +48,11 @@ function useBatteries(): Battery[] {
   });
 }
 
+/** Rouge sous le seuil, orange jusqu'au double, vert au-delà. */
 function levelColor(level: number, threshold: number): string {
-  if (level <= threshold) return '#f87171';
-  if (level <= threshold * 2) return '#fbbf24';
-  return '#34d399';
+  if (level <= threshold) return 'var(--ds-alert)';
+  if (level <= threshold * 2) return 'var(--ds-heat)';
+  return 'var(--ds-good)';
 }
 
 export function BatteriesCard() {
@@ -82,57 +80,62 @@ export function BatteriesCard() {
   const name = config?.name ?? t('widgets.batteries.label');
 
   return (
-    <motion.div
+    <div
       ref={cardRef}
-      {...CARD_ENTRANCE}
-      className={cn('gc rounded-3xl h-full overflow-hidden select-none flex flex-col', size.squat ? 'px-3 py-2' : 'p-3.5')}
+      className={cn(
+        'flex h-full select-none flex-col gap-3 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] text-[var(--ds-ink)]',
+        size.squat ? 'justify-center px-4' : 'p-[var(--ds-space-4)]'
+      )}
     >
-      {/* En-tête : le compteur de batteries faibles est l'information utile */}
-      <div className='flex items-center gap-2 shrink-0'>
-        <div
-          className='w-7 h-7 rounded-xl flex items-center justify-center border shrink-0'
-          style={
-            lowCount > 0
-              ? { background: 'rgba(248,113,113,0.12)', borderColor: 'rgba(248,113,113,0.25)' }
-              : { background: 'rgba(52,211,153,0.10)', borderColor: 'rgba(52,211,153,0.22)' }
-          }
-        >
-          {lowCount > 0 ? <BatteryLow size={14} className='text-red-400' /> : <BatteryFull size={14} className='text-emerald-400' />}
+      {/* En-tête : le compteur de piles faibles est l'information utile */}
+      <div className='flex shrink-0 items-center gap-3'>
+        {lowCount > 0 ? (
+          <BatteryLow size={22} aria-hidden='true' className='shrink-0 text-[var(--ds-alert)]' />
+        ) : (
+          <BatteryFull size={22} aria-hidden='true' className='shrink-0 text-[var(--ds-good)]' />
+        )}
+        <div className='min-w-0'>
+          <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>
+          <div className={cn('truncate text-sm', lowCount > 0 ? 'text-[var(--ds-alert)]' : 'text-[var(--ds-ink-muted)]')}>
+            {t('widgets.batteries.lowCount', { count: lowCount, threshold })}
+          </div>
         </div>
-        <span className='text-white/40 text-xs font-medium truncate'>{name}</span>
-        <span
-          className={cn(
-            'ml-auto text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full border shrink-0',
-            lowCount > 0 ? 'text-red-300 bg-red-400/10 border-red-400/25' : 'text-white/25 bg-white/5 border-white/8'
-          )}
-        >
-          {t('widgets.batteries.lowCount', { count: lowCount, threshold })}
-        </span>
       </div>
 
-      {/* Liste */}
-      {shown.length === 0 ? (
-        <div className='flex-1 flex items-center justify-center'>
-          <span className='text-white/25 text-sm'>{t(onlyLow ? 'widgets.batteries.allHealthy' : 'widgets.batteries.empty')}</span>
-        </div>
-      ) : (
-        <div className='flex flex-col gap-1.5 flex-1 min-h-0 overflow-y-auto scrollbar-none mt-2' style={{ scrollbarWidth: 'none' }}>
-          {shown.map(b => (
-            <div key={b.id} className='flex items-center gap-2.5 shrink-0'>
-              <span className='text-white/60 text-xs truncate flex-1 min-w-0'>{b.name}</span>
-              <div className='w-16 shrink-0'>
-                <ProgressBar value={b.level} color={levelColor(b.level, threshold)} height={5} />
-              </div>
-              <span
-                className='text-[11px] font-medium tabular-nums w-9 text-right shrink-0'
-                style={{ color: levelColor(b.level, threshold) }}
-              >
-                {Math.round(b.level)}%
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-    </motion.div>
+      {/* Liste : une pilule par appareil, remplie à son niveau */}
+      {!size.squat &&
+        (shown.length === 0 ? (
+          <div className='flex flex-1 items-center justify-center'>
+            <span className='text-sm text-[var(--ds-ink-muted)]'>
+              {t(onlyLow ? 'widgets.batteries.allHealthy' : 'widgets.batteries.empty')}
+            </span>
+          </div>
+        ) : (
+          <ul className='flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto' style={{ scrollbarWidth: 'none' }}>
+            {shown.map(b => {
+              const color = levelColor(b.level, threshold);
+              return (
+                <li key={b.id} className='flex shrink-0 items-center gap-3'>
+                  <span className='min-w-0 flex-1 truncate text-[15px]'>{b.name}</span>
+                  <div
+                    role='progressbar'
+                    aria-label={b.name}
+                    aria-valuenow={Math.round(b.level)}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    className='relative h-7 w-[40%] shrink-0 overflow-hidden rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)]'
+                  >
+                    <div
+                      className='h-full rounded-[var(--ds-radius-pill)]'
+                      style={{ width: `${Math.max(6, b.level)}%`, background: color }}
+                    />
+                  </div>
+                  <span className='w-11 shrink-0 text-right text-sm font-bold tabular-nums'>{Math.round(b.level)} %</span>
+                </li>
+              );
+            })}
+          </ul>
+        ))}
+    </div>
   );
 }

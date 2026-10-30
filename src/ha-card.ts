@@ -25,7 +25,7 @@ const CSS_URL = new URL(/* @vite-ignore */ './assets/dashboard.css', import.meta
 
 // La SPA charge cette police depuis son `index.html`, fichier qui n'existe pas
 // en mode carte : sans ça, le dashboard tombe sur la police par défaut de HA.
-const FONT_URL = 'https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap';
+const FONT_URL = 'https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Archivo:wdth,wght@125,800&display=swap';
 
 function addLink(parent: Node & ParentNode, href: string, marker: string): void {
   if ((parent as Element).querySelector(`link[${marker}]`)) return;

@@ -1,17 +1,13 @@
 import type { DashboardConfigV2 } from '@/context/DashboardLayoutContext';
-import type { BackgroundConfig } from '@/config/themes';
 import type { ThemeId } from '@/config/themes';
-import type { PerfSettings, AutoThemeConfig, LayoutSettings } from '@/context/ThemeContext';
+import type { PerfSettings, AutoThemeConfig } from '@/context/ThemeContext';
 
 // ── Types ───────────────────────────────────────────────────────────────────────
 
 export interface ThemeSettingsSnapshot {
   themeId: ThemeId;
-  background: BackgroundConfig;
-  cardOpacity: number;
   perfSettings: PerfSettings;
   autoTheme: AutoThemeConfig;
-  layoutSettings: LayoutSettings;
 }
 
 export interface ConfigSnapshot {

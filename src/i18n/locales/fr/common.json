@@ -28,5 +28,30 @@
   "widgetUnavailable": "Widget indisponible",
   "panelUnavailable": "Panneau indisponible",
   "retry": "Réessayer",
-  "serviceRejected": "Commande refusée par Home Assistant"
+  "serviceRejected": "Commande refusée par Home Assistant",
+  "moreInfo": {
+    "timeline": "Historique",
+    "lastChanged": "Dernier changement",
+    "lastUpdated": "Dernière mise à jour",
+    "period": "Période",
+    "attributes": "Attributs",
+    "energyBalance": "Bilan énergétique",
+    "solarSurplus": "Surplus solaire",
+    "netConsumption": "Consommation nette",
+    "balanced": "Équilibré",
+    "breakdown": "Répartition",
+    "hours": "{value} h",
+    "info": "Informations",
+    "lastTriggered": "Dernière exécution",
+    "mode": "Mode",
+    "state": "État",
+    "location": "Localisation",
+    "zone": "Zone",
+    "coordinates": "Coordonnées",
+    "battery": "Batterie",
+    "cameraUnavailable": "Caméra non disponible",
+    "stream": "Direct",
+    "snapshot": "Image",
+    "refresh": "Actualiser"
+  }
 }

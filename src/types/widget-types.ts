@@ -153,24 +153,6 @@ export interface RoomControl {
   entityIds?: string[];
 }
 
-export interface RoomEntry {
-  area: string;
-  label: string;
-  icon: string;
-  iconBg: string;
-  tempEntity?: string;
-  humidityEntity?: string;
-  lightEntities?: string[];
-  panelId?: string;
-  controls?: RoomControl[];
-}
-
-export interface RoomsGridConfig extends WidgetSoundOverrides {
-  type: 'rooms';
-  rooms: RoomEntry[];
-  columns?: number;
-}
-
 // ── Shortcuts ─────────────────────────────────────────────────────────────────
 export interface ShortcutEntry {
   id: string;
@@ -433,7 +415,6 @@ export interface RoomCardConfig extends WidgetSoundOverrides {
   type: 'room';
   label: string;
   icon: string;
-  iconBg: string;
   tempEntity?: string;
   humidityEntity?: string;
   lightEntities?: string[];
@@ -520,6 +501,8 @@ export interface FanCardConfig {
 export interface ClockCardConfig {
   type: 'clock';
   name?: string;
+  /** `date` : la grande date de l'Echo Show (« JEU. OCT. 29 ») à la place de l'heure */
+  display?: 'time' | 'date';
   /** Cadran analogique quand la card est assez haute */
   showAnalog?: boolean;
   showDate?: boolean;
@@ -571,8 +554,7 @@ export type WidgetConfig =
   | TodoCardConfig
   | FanCardConfig
   | ClockCardConfig
-  | ChipCardConfig
-  | RoomsGridConfig;
+  | ChipCardConfig;
 
 /** Map of widget id → its config */
 export type WidgetConfigs = Record<string, WidgetConfig>;

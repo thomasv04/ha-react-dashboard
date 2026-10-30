@@ -71,14 +71,14 @@ export function TemplateEditor({ value, onChange, entityId }: { value: string; o
         <div className='relative'>
           <button
             onClick={() => setShowSnippets(!showSnippets)}
-            className='flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/70 text-[11px] transition-colors'
+            className='flex items-center gap-1 px-2 py-1 rounded-md bg-[var(--ds-surface-2)] text-[var(--ds-ink-muted)] text-[11px] transition-colors'
           >
             Snippets <ChevronDown size={10} />
           </button>
           {showSnippets && (
             <div
-              className='absolute z-50 top-full left-0 mt-1 w-56 rounded-lg border border-white/10 shadow-xl overflow-hidden'
-              style={{ background: 'rgba(12, 16, 40, 0.98)' }}
+              className='absolute z-50 top-full left-0 mt-1 w-56 rounded-[var(--ds-radius-sm)] border border-[var(--ds-surface-3)] shadow-[var(--ds-shadow-sheet)] overflow-hidden'
+              style={{ background: 'var(--ds-surface-1)' }}
             >
               {SNIPPETS.map(s => (
                 <button
@@ -87,7 +87,7 @@ export function TemplateEditor({ value, onChange, entityId }: { value: string; o
                     insertAtCursor(s.code);
                     setShowSnippets(false);
                   }}
-                  className='w-full text-left px-3 py-1.5 text-[11px] text-white/60 hover:bg-white/8 hover:text-white/90'
+                  className='w-full text-left px-3 py-1.5 text-[11px] text-[var(--ds-ink-muted)]'
                 >
                   {s.label}
                 </button>
@@ -100,23 +100,23 @@ export function TemplateEditor({ value, onChange, entityId }: { value: string; o
         <div className='relative'>
           <button
             onClick={() => setShowEntityPicker(!showEntityPicker)}
-            className='flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/70 text-[11px] transition-colors'
+            className='flex items-center gap-1 px-2 py-1 rounded-md bg-[var(--ds-surface-2)] text-[var(--ds-ink-muted)] text-[11px] transition-colors'
           >
             <Plus size={10} /> Entité
           </button>
           {showEntityPicker && (
             <div
-              className='absolute z-50 top-full left-0 mt-1 w-64 rounded-lg border border-white/10 shadow-xl overflow-hidden'
-              style={{ background: 'rgba(12, 16, 40, 0.98)' }}
+              className='absolute z-50 top-full left-0 mt-1 w-64 rounded-[var(--ds-radius-sm)] border border-[var(--ds-surface-3)] shadow-[var(--ds-shadow-sheet)] overflow-hidden'
+              style={{ background: 'var(--ds-surface-1)' }}
             >
-              <div className='p-2 border-b border-white/8'>
-                <div className='flex items-center gap-2 px-2 py-1 rounded bg-white/5'>
-                  <Search size={11} className='text-white/30' />
+              <div className='p-2 border-b border-[var(--ds-surface-3)]'>
+                <div className='flex items-center gap-2 px-2 py-1 rounded bg-[var(--ds-surface-2)]'>
+                  <Search size={11} className='text-[var(--ds-ink-muted)]' />
                   <input
                     autoFocus
                     value={entitySearch}
                     onChange={e => setEntitySearch(e.target.value)}
-                    className='bg-transparent text-[11px] text-white/80 outline-none flex-1 placeholder:text-white/20'
+                    className='bg-transparent text-[11px] text-[var(--ds-ink)] outline-none flex-1 placeholder:text-[var(--ds-ink-muted)]'
                     placeholder='Rechercher une entité...'
                   />
                 </div>
@@ -130,7 +130,7 @@ export function TemplateEditor({ value, onChange, entityId }: { value: string; o
                       setShowEntityPicker(false);
                       setEntitySearch('');
                     }}
-                    className='w-full text-left px-3 py-1.5 text-[11px] text-white/60 hover:bg-white/8 hover:text-white/90 truncate'
+                    className='w-full text-left px-3 py-1.5 text-[11px] text-[var(--ds-ink-muted)] truncate'
                   >
                     {id}
                   </button>
@@ -144,7 +144,7 @@ export function TemplateEditor({ value, onChange, entityId }: { value: string; o
         {entityId && (
           <button
             onClick={() => insertAtCursor(`states('${entityId}')`)}
-            className='px-2 py-1 rounded-md bg-blue-500/10 hover:bg-blue-500/20 text-blue-400/70 hover:text-blue-400 text-[11px] transition-colors'
+            className='px-2 py-1 rounded-md bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] text-[11px] transition-colors'
           >
             + entité courante
           </button>
@@ -158,10 +158,12 @@ export function TemplateEditor({ value, onChange, entityId }: { value: string; o
         onChange={e => onChange(e.target.value)}
         rows={4}
         className={cn(
-          'w-full px-3 py-2 rounded-lg border text-xs text-white/80 outline-none resize-y',
+          'w-full px-3 py-2 rounded-[var(--ds-radius-sm)] border text-xs text-[var(--ds-ink)] outline-none resize-y',
           'font-mono leading-relaxed bg-black/20',
-          'placeholder:text-white/15',
-          error ? 'border-red-500/40 focus:border-red-500/70' : 'border-white/10 focus:border-blue-500/50'
+          'placeholder:text-[var(--ds-ink-muted)]',
+          error
+            ? 'border-[var(--ds-alert)] focus:border-[var(--ds-accent)]'
+            : 'border-[var(--ds-surface-3)] focus:border-[var(--ds-accent)]'
         )}
         placeholder={"{% set v = states('sensor.xxx') %}\n{{ v }}"}
         spellCheck={false}
@@ -169,15 +171,15 @@ export function TemplateEditor({ value, onChange, entityId }: { value: string; o
 
       {/* Preview / Error */}
       {error ? (
-        <div className='flex items-start gap-2 px-2 py-1.5 rounded-md bg-red-500/10 border border-red-500/20'>
-          <AlertTriangle size={12} className='text-red-400 mt-0.5 shrink-0' />
-          <span className='text-[10px] text-red-300/80 font-mono leading-relaxed'>{error}</span>
+        <div className='flex items-start gap-2 px-2 py-1.5 rounded-md bg-[var(--ds-surface-3)] border border-[var(--ds-alert)]'>
+          <AlertTriangle size={12} className='text-[var(--ds-alert)] mt-0.5 shrink-0' />
+          <span className='text-[10px] text-[var(--ds-alert)] font-mono leading-relaxed'>{error}</span>
         </div>
       ) : preview ? (
-        <div className='flex items-center gap-2 px-2 py-1.5 rounded-md bg-green-500/8 border border-green-500/15'>
-          <Check size={11} className='text-green-400 shrink-0' />
-          <span className='text-[11px] text-green-300/70'>{t('layout.previewLabel')} </span>
-          <span className='text-[11px] text-green-200/90 font-mono truncate'>{preview}</span>
+        <div className='flex items-center gap-2 px-2 py-1.5 rounded-md bg-[var(--ds-surface-3)] border border-[var(--ds-good)]'>
+          <Check size={11} className='text-[var(--ds-good)] shrink-0' />
+          <span className='text-[11px] text-[var(--ds-good)]'>{t('layout.previewLabel')} </span>
+          <span className='text-[11px] text-[var(--ds-good)] font-mono truncate'>{preview}</span>
         </div>
       ) : null}
     </div>
@@ -207,7 +209,7 @@ export function TemplateField<T extends string | number>({
   return (
     <div className='space-y-1'>
       <div className='flex items-center justify-between mb-1'>
-        <label className='text-[11px] text-white/40'>{label}</label>
+        <label className='text-[11px] text-[var(--ds-ink-muted)]'>{label}</label>
         {/* Toggle value ↔ template */}
         <button
           onClick={() => {
@@ -223,8 +225,8 @@ export function TemplateField<T extends string | number>({
           className={cn(
             'flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono transition-colors',
             isTemplate
-              ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:bg-purple-500/30'
-              : 'bg-white/5 text-white/30 hover:text-white/60 hover:bg-white/10'
+              ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] border border-[var(--ds-accent)]'
+              : 'bg-[var(--ds-surface-2)] text-[var(--ds-ink-muted)]'
           )}
           title={isTemplate ? 'Revenir à valeur fixe' : 'Activer le mode template (Jinja2)'}
         >

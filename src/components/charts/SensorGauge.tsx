@@ -38,19 +38,19 @@ export function SensorGauge({ value, min = 0, max = 100, unit = '', color = '#60
   return (
     <div className='flex flex-col items-center'>
       <svg width={size} height={size / 2 + 15} viewBox={`0 0 ${size} ${size / 2 + 15}`}>
-        <path d={bgArc} fill='none' stroke='rgba(255,255,255,0.08)' strokeWidth={strokeW} strokeLinecap='round' />
+        <path d={bgArc} fill='none' stroke='var(--ds-surface-3)' strokeWidth={strokeW} strokeLinecap='round' />
         {valueArc && <path d={valueArc} fill='none' stroke={color} strokeWidth={strokeW} strokeLinecap='round' />}
         <text x={cx} y={cy - 2} textAnchor='middle' dominantBaseline='middle' fill='white' fontWeight='bold' fontSize={size * 0.22}>
           {displayValue}
           {unit && (
-            <tspan fill='rgba(255,255,255,0.4)' fontSize={size * 0.12}>
+            <tspan fill='var(--ds-ink-muted)' fontSize={size * 0.12}>
               {' '}
               {unit}
             </tspan>
           )}
         </text>
       </svg>
-      {label && <span className='text-white/40 text-xs uppercase tracking-wider -mt-1'>{label}</span>}
+      {label && <span className='text-[var(--ds-ink-muted)] text-xs uppercase tracking-wider -mt-1'>{label}</span>}
     </div>
   );
 }

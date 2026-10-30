@@ -28,14 +28,14 @@ export function RoomNamePopover({
         e.preventDefault();
         onAdd(name.trim() || defaultName);
       }}
-      className='absolute z-40 w-56 p-2 rounded-xl gc-overlay cursor-default flex flex-col gap-2'
+      className='absolute z-40 w-56 p-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-sheet)] cursor-default flex flex-col gap-2'
       style={{
         left: `clamp(7rem, ${at.x}%, calc(100% - 7rem))`,
         top: `clamp(0.5rem, ${at.y}%, calc(100% - 7rem))`,
         translate: '-50% 0',
       }}
     >
-      <label htmlFor='floorplan-room-name' className='text-[11px] text-white/50 px-1'>
+      <label htmlFor='floorplan-room-name' className='text-[11px] text-[var(--ds-ink-muted)] px-1'>
         {t('layout.floorplan.roomName')}
       </label>
       <input
@@ -44,13 +44,13 @@ export function RoomNamePopover({
         value={name}
         onChange={e => setName(e.target.value)}
         onFocus={e => e.currentTarget.select()}
-        className='w-full px-3 py-1.5 rounded-lg text-sm bg-white/8 border border-white/15 text-white focus:outline-none focus:border-blue-500/60'
+        className='w-full px-3 py-1.5 rounded-[var(--ds-radius-sm)] text-sm bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)] focus:outline-none focus:border-[var(--ds-accent)]'
       />
       <div className='flex justify-end gap-2'>
-        <button type='button' onClick={onCancel} className='px-3 py-1.5 rounded-lg text-xs text-white/60 hover:text-white'>
+        <button type='button' onClick={onCancel} className='px-3 py-1.5 rounded-[var(--ds-radius-sm)] text-xs text-[var(--ds-ink-muted)]'>
           {t('common.cancel')}
         </button>
-        <button type='submit' className='px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-500/80 text-white hover:bg-blue-500'>
+        <button type='submit' className='px-3 py-1.5 rounded-[var(--ds-radius-sm)] text-xs font-medium bg-[var(--ds-accent)] text-white'>
           {t('common.add')}
         </button>
       </div>

@@ -110,7 +110,7 @@ function Snippet({ automation, eventType }: { automation: string; eventType: str
               key={label}
               onClick={() => setDevTools(on)}
               className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-colors ${
-                devTools === on ? 'bg-white/15 text-white/85' : 'text-white/35 hover:text-white/60 hover:bg-white/5'
+                devTools === on ? 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)]' : 'text-[var(--ds-ink-muted)]'
               }`}
             >
               {label}
@@ -120,13 +120,13 @@ function Snippet({ automation, eventType }: { automation: string; eventType: str
         <button
           onClick={copy}
           aria-label={t('common.copy')}
-          className='flex items-center gap-1 px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 text-white/60 hover:text-white text-[10px] font-semibold transition-colors'
+          className='flex items-center gap-1 px-2 py-1 rounded-md bg-[var(--ds-surface-3)] text-[var(--ds-ink-muted)] text-[10px] font-semibold transition-colors'
         >
           {copied ? <Check size={11} /> : <Copy size={11} />}
           {copied ? t('help.events.copied') : t('common.copy')}
         </button>
       </div>
-      <pre className='overflow-x-auto rounded-lg bg-black/35 border border-white/8 p-3 text-[11px] leading-relaxed text-white/70'>
+      <pre className='overflow-x-auto rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] p-3 text-[11px] leading-relaxed text-[var(--ds-ink)]'>
         <code>{yaml}</code>
       </pre>
     </div>
@@ -174,7 +174,7 @@ export function EventsDoc() {
 
   return (
     <div className='flex flex-col gap-4'>
-      <p className='text-white/45 text-xs leading-relaxed'>{t('help.events.intro')}</p>
+      <p className='text-[var(--ds-ink-muted)] text-xs leading-relaxed'>{t('help.events.intro')}</p>
 
       {(
         [
@@ -183,16 +183,16 @@ export function EventsDoc() {
           { id: 'notification', yaml: NOTIFICATION_YAML, preview: previewNotification },
         ] as const
       ).map(({ id, yaml, preview }) => (
-        <div key={id} className='rounded-xl bg-white/[0.04] border border-white/8 p-4'>
+        <div key={id} className='rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] p-4'>
           <div className='flex items-center justify-between gap-3'>
             <div className='min-w-0'>
-              <code className='text-blue-300 text-xs font-semibold'>ha_dashboard_{id}</code>
-              <p className='text-white/45 text-xs mt-1 leading-relaxed'>{t(`help.events.${id}Desc`)}</p>
+              <code className='text-[var(--ds-accent)] text-xs font-semibold'>ha_dashboard_{id}</code>
+              <p className='text-[var(--ds-ink-muted)] text-xs mt-1 leading-relaxed'>{t(`help.events.${id}Desc`)}</p>
             </div>
             <button
               onClick={preview}
               data-testid={`events-preview-${id}`}
-              className='flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-300 hover:bg-blue-500/30 transition-colors text-xs font-semibold flex-shrink-0'
+              className='flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)] transition-colors text-xs font-semibold flex-shrink-0'
             >
               <Eye size={11} /> {t('help.events.preview')}
             </button>
@@ -201,7 +201,7 @@ export function EventsDoc() {
         </div>
       ))}
 
-      <p className='text-white/30 text-[11px] leading-relaxed'>{t('help.events.tip')}</p>
+      <p className='text-[var(--ds-ink-muted)] text-[11px] leading-relaxed'>{t('help.events.tip')}</p>
     </div>
   );
 }

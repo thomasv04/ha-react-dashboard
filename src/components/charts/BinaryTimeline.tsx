@@ -47,12 +47,12 @@ export function BinaryTimeline({ data }: BinaryTimelineProps) {
   }, [data, now]);
 
   if (segments.length === 0) {
-    return <div className='text-white/30 text-sm text-center py-4'>{t('common.noData')}</div>;
+    return <div className='text-[var(--ds-ink-muted)] text-sm text-center py-4'>{t('common.noData')}</div>;
   }
 
   return (
     <div className='space-y-4'>
-      <div className='relative h-6 rounded-full overflow-hidden bg-white/5'>
+      <div className='relative h-6 rounded-full overflow-hidden bg-[var(--ds-surface-2)]'>
         {segments.map((seg, i) => (
           <div
             key={i}
@@ -69,8 +69,8 @@ export function BinaryTimeline({ data }: BinaryTimelineProps) {
         {events.map((evt, i) => (
           <div key={i} className='flex items-center gap-2 text-xs'>
             <span className='w-2 h-2 rounded-full shrink-0' style={{ backgroundColor: evt.on ? '#10b981' : '#6b7280' }} />
-            <span className='text-white/70 font-medium uppercase'>{evt.state}</span>
-            <span className='text-white/40 ml-auto'>{formatRelativeTime(evt.time, now)}</span>
+            <span className='text-[var(--ds-ink)] font-medium uppercase'>{evt.state}</span>
+            <span className='text-[var(--ds-ink-muted)] ml-auto'>{formatRelativeTime(evt.time, now)}</span>
           </div>
         ))}
       </div>

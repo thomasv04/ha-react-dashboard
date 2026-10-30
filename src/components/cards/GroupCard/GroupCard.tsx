@@ -44,18 +44,18 @@ export function GroupCard() {
   const gridCols = columns === 1 ? 'grid-cols-1' : columns === 3 ? 'grid-cols-3' : 'grid-cols-2';
 
   return (
-    <div className='gc rounded-3xl h-full flex flex-col overflow-hidden'>
+    <div className='flex h-full flex-col overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-1)] text-[var(--ds-ink)]'>
       {/* Header */}
       {title && (
-        <div className='px-3.5 pt-3 pb-1.5 shrink-0'>
-          <span className='text-white/40 text-xs font-semibold uppercase tracking-wider'>{title}</span>
+        <div className='shrink-0 px-4 pb-2 pt-3.5'>
+          <span className='text-[17px] font-semibold'>{title}</span>
         </div>
       )}
 
       {/* Children grid */}
       {children.length === 0 ? (
         <div className='flex-1 flex items-center justify-center'>
-          <p className='text-white/20 text-sm'>{t('widgets.group.empty')}</p>
+          <p className='text-sm text-[var(--ds-ink-muted)]'>{t('widgets.group.empty')}</p>
         </div>
       ) : (
         <div
@@ -68,7 +68,7 @@ export function GroupCard() {
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: DURATION_FAST, delay: i * 0.04 }}
-              className='min-h-0 overflow-hidden rounded-2xl'
+              className='min-h-0 overflow-hidden rounded-[var(--ds-radius-lg)]'
             >
               <GroupChildRenderer child={child} />
             </motion.div>

@@ -120,23 +120,27 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
 
   return (
     <div ref={triggerRef}>
-      <label className='text-[11px] text-white/40 mb-1 block'>{label}</label>
+      <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>
       <div
-        className='flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:border-white/20 transition-colors'
+        className='flex items-center gap-2 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] cursor-pointer transition-colors'
         onClick={handleToggle}
       >
         {SelectedIcon ? (
           // eslint-disable-next-line react-hooks/static-components
-          <SelectedIcon size={16} className='text-white/70 shrink-0' />
+          <SelectedIcon size={16} className='text-[var(--ds-ink)] shrink-0' />
         ) : isCustom ? (
           <img src={getCustomIconUrl(value)} alt='' className='w-4 h-4 object-contain shrink-0' />
         ) : (
-          <div className='w-4 h-4 rounded bg-white/10 shrink-0' />
+          <div className='w-4 h-4 rounded bg-[var(--ds-surface-3)] shrink-0' />
         )}
-        <span className={`text-sm flex-1 truncate ${value ? 'text-white/80' : 'text-white/30'}`}>
+        <span className={`text-sm flex-1 truncate ${value ? 'text-[var(--ds-ink)]' : 'text-[var(--ds-ink-muted)]'}`}>
           {isCustom ? t('layout.iconCustom') : value || t('layout.iconChoose')}
         </span>
-        {open ? <ChevronUp size={14} className='text-white/30' /> : <ChevronDown size={14} className='text-white/30' />}
+        {open ? (
+          <ChevronUp size={14} className='text-[var(--ds-ink-muted)]' />
+        ) : (
+          <ChevronDown size={14} className='text-[var(--ds-ink-muted)]' />
+        )}
       </div>
 
       {open &&
@@ -147,20 +151,19 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
               position: 'fixed',
               ...dropStyle,
               zIndex: 9999,
-              background: 'rgba(12, 16, 40, 0.98)',
-              backdropFilter: 'blur(20px)',
+              background: 'var(--ds-surface-1)',
               borderRadius: 12,
-              border: '1px solid rgba(255,255,255,0.12)',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+              border: '1px solid var(--ds-surface-3)',
+              boxShadow: 'var(--ds-shadow-sheet)',
               overflow: 'hidden',
             }}
           >
             {/* Tabs: Lucide | Custom */}
-            <div className='flex border-b border-white/8'>
+            <div className='flex border-b border-[var(--ds-surface-3)]'>
               <button
                 onClick={() => setTab('lucide')}
                 className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
-                  tab === 'lucide' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-white/40 hover:text-white/60'
+                  tab === 'lucide' ? 'text-[var(--ds-accent)] border-b-2 border-[var(--ds-accent)]' : 'text-[var(--ds-ink-muted)]'
                 }`}
               >
                 {t('layout.tabLucide')}
@@ -168,7 +171,7 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
               <button
                 onClick={() => setTab('custom')}
                 className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
-                  tab === 'custom' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-white/40 hover:text-white/60'
+                  tab === 'custom' ? 'text-[var(--ds-accent)] border-b-2 border-[var(--ds-accent)]' : 'text-[var(--ds-ink-muted)]'
                 }`}
               >
                 {t('layout.tabCustom')}
@@ -178,18 +181,18 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
             {tab === 'lucide' && (
               <>
                 {/* Search */}
-                <div className='sticky top-0 p-2 border-b border-white/8' style={{ background: 'rgba(12, 16, 40, 0.98)' }}>
-                  <div className='flex items-center gap-2 px-2 py-1.5 rounded-md bg-white/5'>
-                    <Search size={13} className='text-white/30' />
+                <div className='sticky top-0 p-2 border-b border-[var(--ds-surface-3)]' style={{ background: 'var(--ds-surface-1)' }}>
+                  <div className='flex items-center gap-2 px-2 py-1.5 rounded-md bg-[var(--ds-surface-2)]'>
+                    <Search size={13} className='text-[var(--ds-ink-muted)]' />
                     <input
                       autoFocus
                       value={search}
                       onChange={e => setSearch(e.target.value)}
-                      className='bg-transparent text-sm text-white/80 outline-none flex-1 placeholder:text-white/20'
+                      className='bg-transparent text-sm text-[var(--ds-ink)] outline-none flex-1 placeholder:text-[var(--ds-ink-muted)]'
                       placeholder={t('layout.iconSearch')}
                     />
                   </div>
-                  <div className='text-[10px] text-white/25 mt-1 px-1'>{t('layout.iconCount', { count: filtered.length })}</div>
+                  <div className='text-xs text-[var(--ds-ink-muted)] mt-1 px-1'>{t('layout.iconCount', { count: filtered.length })}</div>
                 </div>
 
                 {/* Icon grid — virtualized */}
@@ -200,7 +203,7 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
                   onScroll={e => setScrollTop((e.currentTarget as HTMLDivElement).scrollTop)}
                 >
                   {filtered.length === 0 ? (
-                    <p className='text-center text-white/25 text-xs py-4'>{t('layout.noIconFound')}</p>
+                    <p className='text-center text-[var(--ds-ink-muted)] text-xs py-4'>{t('layout.noIconFound')}</p>
                   ) : (
                     <div style={{ height: totalH, position: 'relative' }}>
                       <div style={{ position: 'absolute', top: firstVisible * ROW_H, left: 0, right: 0 }}>
@@ -219,10 +222,10 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
                                     setOpen(false);
                                     setSearch('');
                                   }}
-                                  className={`flex flex-col items-center justify-center p-2 rounded-lg transition-colors ${
+                                  className={`flex flex-col items-center justify-center p-2 rounded-[var(--ds-radius-sm)] transition-colors ${
                                     isActive
-                                      ? 'bg-blue-500/20 border border-blue-500/40 text-blue-300'
-                                      : 'hover:bg-white/8 text-white/50 hover:text-white/80 border border-transparent'
+                                      ? 'bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
+                                      : 'text-[var(--ds-ink-muted)] border border-transparent'
                                   }`}
                                 >
                                   <Ico size={20} />
@@ -245,7 +248,7 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className='flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-lg text-xs font-medium bg-white/5 border border-dashed border-white/20 text-white/50 hover:bg-white/10 hover:text-white/70 hover:border-white/30 transition-all disabled:opacity-40'
+                  className='flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-[var(--ds-radius-sm)] text-xs font-medium bg-[var(--ds-surface-2)] border border-dashed border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)] transition-all disabled:opacity-40'
                 >
                   <Upload size={13} />
                   {uploading ? t('layout.iconUploading') : t('layout.uploadIcon')}
@@ -257,8 +260,8 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
                   onChange={handleFileUpload}
                   className='hidden'
                 />
-                {uploadError && <p className='text-red-400 text-[10px] px-1'>{uploadError}</p>}
-                <p className='text-white/25 text-[10px] px-1'>PNG · WebP · SVG — max 2 Mo (redimensionné à 128×128)</p>
+                {uploadError && <p className='text-[var(--ds-alert)] text-xs px-1'>{uploadError}</p>}
+                <p className='text-[var(--ds-ink-muted)] text-xs px-1'>PNG · WebP · SVG — max 2 Mo (redimensionné à 128×128)</p>
 
                 {/* Custom icons grid */}
                 <div className='overflow-y-auto' style={{ maxHeight: 200 }}>
@@ -274,12 +277,14 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
                               onChange(iconValue);
                               setOpen(false);
                             }}
-                            className={`flex flex-col items-center justify-center p-2 rounded-lg transition-colors w-full ${
-                              isActive ? 'bg-blue-500/20 border border-blue-500/40' : 'hover:bg-white/8 border border-transparent'
+                            className={`flex flex-col items-center justify-center p-2 rounded-[var(--ds-radius-sm)] transition-colors w-full ${
+                              isActive
+                                ? 'bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
+                                : 'border border-transparent'
                             }`}
                           >
                             <img src={assetUrl(icon.url)} alt={icon.originalName} className='w-6 h-6 object-contain' />
-                            <span className='text-[7px] mt-1 truncate w-full text-center text-white/40 leading-tight'>
+                            <span className='text-[7px] mt-1 truncate w-full text-center text-[var(--ds-ink-muted)] leading-tight'>
                               {icon.originalName.replace(/\.[^.]+$/, '')}
                             </span>
                           </button>
@@ -288,7 +293,7 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
                               e.stopPropagation();
                               handleDeleteIcon(icon.filename);
                             }}
-                            className='absolute -top-1 -right-1 p-0.5 rounded-full bg-red-500/20 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity'
+                            className='absolute -top-1 -right-1 p-0.5 rounded-full bg-[var(--ds-surface-3)] text-[var(--ds-alert)] opacity-0 group-hover:opacity-100 transition-opacity'
                             title='Supprimer'
                           >
                             <Trash2 size={10} />
@@ -297,7 +302,9 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
                       );
                     })}
                   </div>
-                  {customIcons.length === 0 && <p className='text-center text-white/25 text-xs py-4'>{t('layout.noCustomIcon')}</p>}
+                  {customIcons.length === 0 && (
+                    <p className='text-center text-[var(--ds-ink-muted)] text-xs py-4'>{t('layout.noCustomIcon')}</p>
+                  )}
                 </div>
               </div>
             )}
@@ -334,23 +341,27 @@ export function GradientPicker({ value, onChange, label }: { value: string; onCh
 
   return (
     <div className='relative' ref={containerRef}>
-      <label className='text-[11px] text-white/40 mb-1 block'>{label}</label>
+      <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>
       <div
-        className='flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:border-white/20 transition-colors'
+        className='flex items-center gap-2 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] cursor-pointer transition-colors'
         onClick={() => setOpen(!open)}
       >
         {/* Preview swatch */}
-        <div className='w-5 h-5 rounded-md shrink-0' style={{ background: gradientCss(value) ?? 'rgba(255,255,255,0.1)' }} />
-        <span className={`text-sm flex-1 truncate ${value ? 'text-white/80' : 'text-white/30'}`}>
+        <div className='w-5 h-5 rounded-md shrink-0' style={{ background: gradientCss(value) ?? 'var(--ds-surface-3)' }} />
+        <span className={`text-sm flex-1 truncate ${value ? 'text-[var(--ds-ink)]' : 'text-[var(--ds-ink-muted)]'}`}>
           {current?.label ?? (isCustomGradient(value) ? 'Sur mesure' : value || 'Choisir un dégradé...')}
         </span>
-        {open ? <ChevronUp size={14} className='text-white/30' /> : <ChevronDown size={14} className='text-white/30' />}
+        {open ? (
+          <ChevronUp size={14} className='text-[var(--ds-ink-muted)]' />
+        ) : (
+          <ChevronDown size={14} className='text-[var(--ds-ink-muted)]' />
+        )}
       </div>
 
       {open && (
         <div
-          className='absolute z-50 mt-1 w-full rounded-xl border border-white/12 shadow-2xl overflow-hidden'
-          style={{ background: 'rgba(12, 16, 40, 0.98)', backdropFilter: 'blur(20px)' }}
+          className='absolute z-50 mt-1 w-full rounded-[var(--ds-radius-md)] border border-[var(--ds-surface-3)] shadow-[var(--ds-shadow-sheet)] overflow-hidden'
+          style={{ background: 'var(--ds-surface-1)' }}
         >
           <div className='overflow-y-auto p-2' style={{ maxHeight: 280 }}>
             <div className='grid grid-cols-2 gap-1.5'>
@@ -363,15 +374,19 @@ export function GradientPicker({ value, onChange, label }: { value: string; onCh
                       onChange(preset.value);
                       setOpen(false);
                     }}
-                    className={`flex items-center gap-2 px-2.5 py-2 rounded-lg transition-colors text-left ${
-                      isActive ? 'bg-blue-500/15 border border-blue-500/40' : 'hover:bg-white/6 border border-transparent'
+                    className={`flex items-center gap-2 px-2.5 py-2 rounded-[var(--ds-radius-sm)] transition-colors text-left ${
+                      isActive
+                        ? 'bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
+                        : 'border border-transparent'
                     }`}
                   >
                     <div
-                      className='w-8 h-8 rounded-lg shrink-0'
+                      className='w-8 h-8 rounded-[var(--ds-radius-sm)] shrink-0'
                       style={{ background: `linear-gradient(135deg, ${preset.from}, ${preset.to})` }}
                     />
-                    <span className={`text-xs leading-tight ${isActive ? 'text-blue-300' : 'text-white/60'}`}>{preset.label}</span>
+                    <span className={`text-xs leading-tight ${isActive ? 'text-[var(--ds-accent)]' : 'text-[var(--ds-ink-muted)]'}`}>
+                      {preset.label}
+                    </span>
                   </button>
                 );
               })}
@@ -381,15 +396,15 @@ export function GradientPicker({ value, onChange, label }: { value: string; onCh
           {/* Sur mesure — deux sélecteurs de couleur natifs plutôt qu'un champ de
               classes Tailwind : ces classes-là n'étaient jamais générées, et le
               dégradé saisi ne peignait rien. */}
-          <div className='border-t border-white/8 p-2'>
-            <label className='text-[10px] text-white/30 mb-1.5 block'>Sur mesure</label>
+          <div className='border-t border-[var(--ds-surface-3)] p-2'>
+            <label className='text-xs text-[var(--ds-ink-muted)] mb-1.5 block'>Sur mesure</label>
             <div className='flex items-center gap-2'>
               <input
                 type='color'
                 aria-label='Couleur de départ'
                 value={custom.from}
                 onChange={e => onChange(customGradient(e.target.value, custom.to))}
-                className='w-8 h-8 rounded-md bg-transparent border border-white/10 cursor-pointer'
+                className='w-8 h-8 rounded-md bg-transparent border border-[var(--ds-surface-3)] cursor-pointer'
               />
               <div className='flex-1 h-8 rounded-md' style={{ background: `linear-gradient(135deg, ${custom.from}, ${custom.to})` }} />
               <input
@@ -397,7 +412,7 @@ export function GradientPicker({ value, onChange, label }: { value: string; onCh
                 aria-label="Couleur d'arrivée"
                 value={custom.to}
                 onChange={e => onChange(customGradient(custom.from, e.target.value))}
-                className='w-8 h-8 rounded-md bg-transparent border border-white/10 cursor-pointer'
+                className='w-8 h-8 rounded-md bg-transparent border border-[var(--ds-surface-3)] cursor-pointer'
               />
             </div>
           </div>

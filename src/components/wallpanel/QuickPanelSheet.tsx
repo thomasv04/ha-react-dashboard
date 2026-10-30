@@ -24,7 +24,7 @@ export function QuickPanelSheet({ panelId, onClose }: { panelId: string; onClose
   // catalogue renvoie `undefined`, et la feuille n'a pas à rester sans repère.
   const IconComponent = panel?.icon ? resolveIcon(panel.icon) : null;
   // eslint-disable-next-line react-hooks/static-components
-  const icon = IconComponent ? <IconComponent size={16} /> : <LayoutGrid size={16} />;
+  const icon = IconComponent ? <IconComponent size={20} /> : <LayoutGrid size={20} />;
 
   return (
     <WallPanelSheet side='bottom' title={panel?.name ?? t('layout.wallPanel.gestures.quickMenu')} icon={icon} onClose={onClose}>
@@ -34,7 +34,7 @@ export function QuickPanelSheet({ panelId, onClose }: { panelId: string; onClose
         </motion.div>
       ))}
       {(!panel || panel.blocks.length === 0) && (
-        <p className='text-white/30 text-sm text-center py-8'>{t('layout.wallPanel.gestures.noQuickPanel')}</p>
+        <p className='py-8 text-center text-sm text-[var(--ds-ink-muted)]'>{t('layout.wallPanel.gestures.noQuickPanel')}</p>
       )}
     </WallPanelSheet>
   );

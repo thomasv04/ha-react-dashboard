@@ -1,6 +1,4 @@
 import { useMemo, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { CalendarDays, CalendarCheck, CalendarX } from 'lucide-react';
 import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useHass } from '@hakit/core';
@@ -82,24 +80,21 @@ export function CalendarCard() {
   };
 
   return (
-    <motion.div
+    <div
       ref={cardRef}
-      {...CARD_ENTRANCE}
-      className={cn('gc rounded-3xl h-full overflow-hidden select-none flex flex-col', size.squat ? 'px-3 py-2' : 'p-3.5')}
+      className={cn(
+        'flex h-full select-none flex-col overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] text-[var(--ds-ink)]',
+        size.squat ? 'justify-center gap-1 px-4' : 'gap-3 p-[var(--ds-space-4)]'
+      )}
     >
       {/* En-tête */}
-      <div className='flex items-center gap-2 shrink-0'>
-        <div
-          className='w-7 h-7 rounded-xl flex items-center justify-center border shrink-0'
-          style={{ background: 'rgba(167,139,250,0.12)', borderColor: 'rgba(167,139,250,0.25)' }}
-        >
-          <CalendarDays size={13} className='text-violet-400' />
-        </div>
-        <span className='text-white/40 text-xs font-medium truncate'>{name}</span>
+      <div className='flex shrink-0 items-center gap-3'>
+        <CalendarDays size={22} aria-hidden='true' className='shrink-0 text-[var(--ds-app-calendar)]' />
+        <span className='truncate text-[17px] font-semibold'>{name}</span>
       </div>
 
       {/* Liste */}
-      <div className='flex-1 min-h-0 mt-2'>
+      <div className='min-h-0 flex-1'>
         {entityIds.length === 0 ? (
           <CardPlaceholder
             icon={CalendarDays}
@@ -114,22 +109,25 @@ export function CalendarCard() {
         ) : events.length === 0 ? (
           <CardPlaceholder icon={CalendarCheck} text={t('widgets.calendar.empty')} compact={size.compact} />
         ) : (
-          <div className='flex flex-col gap-1.5 h-full overflow-y-auto scrollbar-none' style={{ scrollbarWidth: 'none' }}>
+          <ul className='flex h-full flex-col gap-2 overflow-y-auto' style={{ scrollbarWidth: 'none' }}>
             {events.map((event, i) => (
-              <div key={`${event.start}-${i}`} className='flex items-center gap-2.5 shrink-0'>
-                <span className='w-1 h-7 rounded-full shrink-0' style={{ background: 'rgba(167,139,250,0.6)' }} />
-                <div className='flex flex-col min-w-0 flex-1'>
-                  <span className='text-white/85 text-sm font-medium truncate leading-tight'>{event.summary}</span>
-                  <span className='text-white/35 text-[10px] font-medium truncate'>
+              <li
+                key={`${event.start}-${i}`}
+                className='flex shrink-0 gap-3 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-3 py-2.5'
+              >
+                <span aria-hidden='true' className='w-1.5 shrink-0 rounded-full bg-[var(--ds-accent)]' />
+                <div className='flex min-w-0 flex-1 flex-col'>
+                  <span className='truncate text-sm font-bold'>
                     {formatWhen(event)}
-                    {event.location && ` · ${event.location}`}
+                    {event.location && <span className='font-normal text-[var(--ds-ink-muted)]'> · {event.location}</span>}
                   </span>
+                  <span className='truncate text-[17px] leading-tight'>{event.summary}</span>
                 </div>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }

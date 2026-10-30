@@ -4,9 +4,9 @@ import { DURATION_FAST } from '@/lib/motion-tokens';
 import { X } from 'lucide-react';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import type { WidgetConfig } from '@/types/widget-configs';
-import { WIDGET_FIELD_DEFS } from '@/widgets';
+import { WIDGET_FIELD_DEFS, WIDGET_META } from '@/widgets';
 import { EntityListField } from './EntityListField';
-import { WIDGET_LABELS, resolveBreakpoint } from '@/components/layout/DashboardGrid';
+import { WIDGET_LABELS } from '@/components/layout/DashboardGrid';
 import { IconPicker, GradientPicker } from '@/components/layout/WidgetPickers';
 import { TemplateEditor } from '@/components/layout/TemplateField';
 import { CardLayoutTab } from '@/components/layout/CardLayoutTab';
@@ -27,7 +27,13 @@ import type { SoundPreset } from '@/lib/sounds';
 import { GroupWidgetsTab } from './GroupWidgetsTab';
 import { ActionsTab } from './ActionsTab';
 import { VisibilityTab } from './VisibilityTab';
+import { SwitchTrack } from '@/components/ds/Switch';
 import { useI18n } from '@/i18n';
+
+/** Un champ de réglage : un bloc arrondi sur le fond de la feuille. */
+const FIELD_CARD = 'rounded-[var(--ds-radius-xl)] bg-[var(--ds-sheet-section)] p-4';
+
+type Tab = 'config' | 'widgets' | 'advanced' | 'layout' | 'sound' | 'actions' | 'visibility';
 
 export function WidgetEditModal() {
   const { t } = useI18n();
@@ -36,23 +42,16 @@ export function WidgetEditModal() {
 
   const config = editingWidgetId ? widgetConfigs[editingWidgetId] : null;
   const fields = config ? WIDGET_FIELD_DEFS[config.type] : null;
-  const label = config ? (WIDGET_LABELS[config.type] ?? config.type) : '';
+  const metaLabel = config ? WIDGET_META.find(m => m.type === config.type)?.label : undefined;
+  const label = config ? (metaLabel ? t(metaLabel) : (WIDGET_LABELS[config.type] ?? config.type)) : '';
   const hasDispositions = config ? !!WIDGET_DISPOSITIONS[config.type]?.length : false;
   const hasAdvanced = fields ? fields.some(f => f.fieldType === 'weather-icons') : false;
   const hasSounds = config ? !!WIDGET_SOUND_ACTIONS[config.type]?.length : false;
 
-  const [breakpoint, setBreakpoint] = useState(() => resolveBreakpoint(window.innerWidth));
-
-  useEffect(() => {
-    const handler = () => setBreakpoint(resolveBreakpoint(window.innerWidth));
-    window.addEventListener('resize', handler);
-    return () => window.removeEventListener('resize', handler);
-  }, []);
-
   const isGroup = config?.type === 'group';
 
   // Tabs: config vs widgets (group) vs advanced vs layout vs sound
-  const [activeTab, setActiveTab] = useState<'config' | 'widgets' | 'advanced' | 'layout' | 'sound' | 'actions' | 'visibility'>('config');
+  const [activeTab, setActiveTab] = useState<Tab>('config');
 
   // Local draft so we can cancel
   const [draft, setDraft] = useState<Record<string, unknown> | null>(null);
@@ -104,350 +103,290 @@ export function WidgetEditModal() {
     setDraft(prev => (prev ? { ...prev, [key]: value } : prev));
   };
 
+  type FieldDef = NonNullable<typeof fields>[number];
+  const renderField = (field: FieldDef) => {
+    // ── Template fields: always show TemplateEditor ──
+    if (field.fieldType === 'template') {
+      return (
+        <div key={field.key} className='space-y-1'>
+          <label className='block text-sm font-semibold text-[var(--ds-ink-muted)]'>{t(field.label)}</label>
+          <TemplateEditor
+            value={(draft[field.key] as string) ?? ''}
+            onChange={v => updateField(field.key, v)}
+            entityId={draft.entityId as string | undefined}
+          />
+        </div>
+      );
+    }
+
+    // ── Standard fields ──
+    if (field.fieldType === 'entity') {
+      return (
+        <EntityPicker
+          key={field.key}
+          value={(draft[field.key] as string) ?? ''}
+          onChange={v => updateField(field.key, v)}
+          domain={field.domain}
+          label={t(field.label)}
+        />
+      );
+    }
+    if (field.fieldType === 'entity-list') {
+      return (
+        <EntityListField
+          key={field.key}
+          label={t(field.label)}
+          value={(draft[field.key] as string[]) ?? []}
+          onChange={v => updateField(field.key, v)}
+          domain={field.domain}
+        />
+      );
+    }
+    if (field.fieldType === 'icon') {
+      return (
+        <IconPicker
+          key={field.key}
+          value={(draft[field.key] as string) ?? ''}
+          onChange={v => updateField(field.key, v)}
+          label={t(field.label)}
+        />
+      );
+    }
+    if (field.fieldType === 'gradient') {
+      return (
+        <GradientPicker
+          key={field.key}
+          value={(draft[field.key] as string) ?? ''}
+          onChange={v => updateField(field.key, v)}
+          label={t(field.label)}
+        />
+      );
+    }
+    if (field.fieldType === 'list' && field.itemFields) {
+      return (
+        <ListEditor
+          key={field.key}
+          items={(draft[field.key] as Record<string, unknown>[]) ?? []}
+          onChange={v => updateField(field.key, v)}
+          itemFields={field.itemFields}
+          label={t(field.label)}
+        />
+      );
+    }
+    if (field.fieldType === 'boolean') {
+      const on = (draft[field.key] as boolean) ?? true;
+      return (
+        <button
+          key={field.key}
+          role='switch'
+          aria-checked={on}
+          onClick={() => updateField(field.key, !on)}
+          className='flex w-full items-center justify-between gap-4 text-left'
+        >
+          <span className='text-base font-semibold'>{t(field.label)}</span>
+          <SwitchTrack on={on} />
+        </button>
+      );
+    }
+    if (field.fieldType === 'area-controls') {
+      return (
+        <AreaControlsField
+          key={field.key}
+          label={t(field.label)}
+          area={(draft.area as string) ?? ''}
+          controls={(draft.areaControls as string[]) ?? []}
+          onChange={next => {
+            updateField('area', next.area);
+            updateField('areaControls', next.controls);
+          }}
+        />
+      );
+    }
+    if (field.fieldType === 'panel-select') {
+      return (
+        <PanelSelectField
+          key={field.key}
+          value={(draft[field.key] as string) ?? ''}
+          onChange={v => updateField(field.key, v)}
+          label={t(field.label)}
+        />
+      );
+    }
+    if (field.fieldType === 'multiselect' && field.options) {
+      return (
+        <MultiSelectField
+          key={field.key}
+          label={t(field.label)}
+          options={field.options}
+          value={draft[field.key] as string[] | undefined}
+          onChange={v => updateField(field.key, v)}
+        />
+      );
+    }
+    if (field.fieldType === 'select' && field.options) {
+      return (
+        <div key={field.key}>
+          <label className='mb-2 block text-sm font-semibold text-[var(--ds-ink-muted)]'>{t(field.label)}</label>
+          <select
+            value={(draft[field.key] as string) ?? field.options[0].value}
+            onChange={e => updateField(field.key, e.target.value)}
+            className='h-12 w-full cursor-pointer rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-3 text-base text-[var(--ds-ink)] outline-none focus:outline-2 focus:outline-[var(--ds-accent)]'
+            style={{ colorScheme: 'dark' }}
+          >
+            {field.options.map(opt => (
+              <option key={opt.value} value={opt.value} className='bg-[#0c1028]'>
+                {t(opt.label)}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
+    }
+    return (
+      <FieldInput
+        key={field.key}
+        value={(draft[field.key] as string | number) ?? ''}
+        onChange={v => updateField(field.key, v)}
+        label={t(field.label)}
+        type={field.fieldType === 'number' ? 'number' : 'text'}
+      />
+    );
+  };
+
+  const tabs = (
+    [
+      isGroup && { id: 'widgets', label: 'layout.tabs.widgets' },
+      { id: 'config', label: 'layout.tabs.config' },
+      hasAdvanced && { id: 'advanced', label: 'layout.tabs.advanced' },
+      hasDispositions && { id: 'layout', label: 'layout.tabs.layout' },
+      { id: 'actions', label: 'layout.tabs.actions' },
+      { id: 'visibility', label: 'layout.tabs.visibility' },
+      hasSounds && { id: 'sound', label: 'layout.tabs.sound' },
+    ] as const
+  ).filter(Boolean) as { id: Tab; label: string }[];
+
   return (
     <>
-      {/* Backdrop */}
+      {/* Voile léger : la tuile reste visible derrière la feuille, et touche-t-on ailleurs on ferme. */}
       <motion.div
         key='widget-edit-backdrop'
         data-overlay
-        className='fixed inset-0 z-[70] bg-black/60'
-        style={{ backdropFilter: 'blur(8px)' }}
+        className='fixed inset-0 z-[70] bg-black/25'
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={handleClose}
       />
-      {/* Modal */}
-      <motion.div
+      {/* Feuille de réglages, à droite — le même volet que celui d'un panneau. */}
+      <motion.section
         key='widget-edit-modal'
-        className='fixed inset-0 z-[71] flex items-center justify-center pointer-events-none'
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        role='dialog'
+        aria-modal='true'
+        aria-label={label}
+        className={cn(
+          'fixed bottom-4 right-4 top-4 z-[71] flex flex-col overflow-hidden rounded-[var(--ds-radius-2xl)] bg-[var(--ds-sheet)] text-[var(--ds-ink)] shadow-[var(--ds-shadow-sheet)]',
+          isGroup ? 'w-[min(680px,calc(100vw-32px))]' : 'w-[min(460px,calc(100vw-32px))]'
+        )}
+        initial={{ opacity: 0, x: 40 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: 40 }}
         transition={{ duration: DURATION_FAST }}
       >
-        <div
-          className={cn(
-            'pointer-events-auto w-full mx-4 rounded-2xl border border-white/12 shadow-2xl overflow-hidden flex flex-col md:flex-row',
-            isGroup ? 'max-w-5xl' : 'max-w-4xl'
+        <header className='flex shrink-0 items-start justify-between gap-3 px-6 pb-3 pt-6'>
+          <div className='min-w-0'>
+            <h2 className='truncate text-[26px] font-bold'>{label}</h2>
+            <p className='text-base text-[var(--ds-ink-muted)]'>{t('layout.livePreview')}</p>
+          </div>
+          <button
+            onClick={handleClose}
+            aria-label={t('common.close')}
+            title={t('common.close')}
+            className='flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'
+          >
+            <X size={18} />
+          </button>
+        </header>
+
+        {/* Aperçu : la card telle qu'elle sera, qui suit chaque réglage. */}
+        <div className='mx-6 mb-3 max-h-[210px] shrink-0 overflow-auto rounded-[var(--ds-radius-xl)] bg-[var(--ds-surface-1)] p-3'>
+          {PreviewComponent && editingWidgetId ? (
+            <WidgetIdProvider id={editingWidgetId}>
+              <PreviewComponent />
+            </WidgetIdProvider>
+          ) : (
+            <p className='py-6 text-center text-sm text-[var(--ds-ink-muted)]'>{t('layout.noPreviewAvailable')}</p>
           )}
-          style={{ background: 'rgba(12, 16, 40, 0.97)', backdropFilter: 'blur(20px)', maxHeight: '90vh' }}
-        >
-          {/* ── Left: Live preview ── */}
-          <div className={cn('flex flex-col border-b md:border-b-0 md:border-r border-white/8', isGroup ? 'md:w-2/5' : 'md:w-1/2')}>
-            {/* Header */}
-            <div className='flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/8'>
-              <div className='flex items-center gap-3'>
-                <div
-                  className={cn(
-                    'w-8 h-8 rounded-xl flex items-center justify-center bg-gradient-to-br',
-                    isGroup ? 'from-indigo-500 to-blue-400' : 'from-blue-500 to-cyan-400'
-                  )}
-                >
-                  <span className='text-white text-xs font-bold'>{label.charAt(0)}</span>
-                </div>
-                <div>
-                  <h2 className='text-white font-semibold text-base'>{label}</h2>
-                  <p className='text-white/30 text-[11px]'>{t('layout.livePreview')}</p>
-                </div>
-              </div>
-              <button
-                onClick={handleClose}
-                className='p-1.5 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/10 transition-colors'
-              >
-                <X size={16} />
-              </button>
-            </div>
-            {/* Preview area */}
-            <div className='flex-1 flex items-center justify-center p-6 min-h-[200px] overflow-hidden'>
-              {PreviewComponent && editingWidgetId ? (
-                <div className='w-full max-h-[50vh] overflow-auto rounded-2xl'>
-                  <WidgetIdProvider id={editingWidgetId}>
-                    <PreviewComponent />
-                  </WidgetIdProvider>
-                </div>
-              ) : (
-                <p className='text-white/20 text-sm'>{t('layout.noPreviewAvailable')}</p>
-              )}
-            </div>
-          </div>
-
-          {/* ── Right: Settings form ── */}
-          <div className={cn('flex flex-col', isGroup ? 'md:w-3/5' : 'md:w-1/2')}>
-            {/* Tab bar */}
-            <div className='flex border-b border-white/10'>
-              {isGroup && (
-                <button
-                  onClick={() => setActiveTab('widgets')}
-                  className={cn(
-                    'px-4 py-3 text-sm font-medium transition-colors cursor-pointer',
-                    activeTab === 'widgets' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-white/40 hover:text-white/60'
-                  )}
-                >
-                  {t('layout.tabs.widgets')}
-                </button>
-              )}
-              <button
-                onClick={() => setActiveTab('config')}
-                className={cn(
-                  'px-4 py-3 text-sm font-medium transition-colors cursor-pointer',
-                  activeTab === 'config' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-white/40 hover:text-white/60'
-                )}
-              >
-                {t('layout.tabs.config')}
-              </button>
-              {hasAdvanced && (
-                <button
-                  onClick={() => setActiveTab('advanced')}
-                  className={cn(
-                    'px-4 py-3 text-sm font-medium transition-colors cursor-pointer',
-                    activeTab === 'advanced' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-white/40 hover:text-white/60'
-                  )}
-                >
-                  {t('layout.tabs.advanced')}
-                </button>
-              )}
-              {hasDispositions && (
-                <button
-                  onClick={() => setActiveTab('layout')}
-                  className={cn(
-                    'px-4 py-3 text-sm font-medium transition-colors cursor-pointer',
-                    activeTab === 'layout' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-white/40 hover:text-white/60'
-                  )}
-                >
-                  {t('layout.tabs.layout')}
-                </button>
-              )}
-              <button
-                onClick={() => setActiveTab('actions')}
-                className={cn(
-                  'px-4 py-3 text-sm font-medium transition-colors cursor-pointer',
-                  activeTab === 'actions' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-white/40 hover:text-white/60'
-                )}
-              >
-                {t('layout.tabs.actions')}
-              </button>
-              <button
-                onClick={() => setActiveTab('visibility')}
-                className={cn(
-                  'px-4 py-3 text-sm font-medium transition-colors cursor-pointer',
-                  activeTab === 'visibility' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-white/40 hover:text-white/60'
-                )}
-              >
-                {t('layout.tabs.visibility')}
-              </button>
-              {hasSounds && (
-                <button
-                  onClick={() => setActiveTab('sound')}
-                  className={cn(
-                    'px-4 py-3 text-sm font-medium transition-colors cursor-pointer',
-                    activeTab === 'sound' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-white/40 hover:text-white/60'
-                  )}
-                >
-                  {t('layout.tabs.sound')}
-                </button>
-              )}
-            </div>
-
-            {/* Fields / Layout tab */}
-            <div className='flex-1 overflow-y-auto px-5 py-4 space-y-4'>
-              {activeTab === 'config' &&
-                fields
-                  .filter(f => f.fieldType !== 'weather-icons')
-                  .map(field => {
-                    // ── Template fields: always show TemplateEditor ──
-                    if (field.fieldType === 'template') {
-                      return (
-                        <div key={field.key} className='space-y-1'>
-                          <label className='block text-xs text-white/40 font-medium'>{t(field.label)}</label>
-                          <TemplateEditor
-                            value={(draft[field.key] as string) ?? ''}
-                            onChange={v => updateField(field.key, v)}
-                            entityId={draft.entityId as string | undefined}
-                          />
-                        </div>
-                      );
-                    }
-
-                    // ── Standard fields ──
-                    if (field.fieldType === 'entity') {
-                      return (
-                        <EntityPicker
-                          key={field.key}
-                          value={(draft[field.key] as string) ?? ''}
-                          onChange={v => updateField(field.key, v)}
-                          domain={field.domain}
-                          label={t(field.label)}
-                        />
-                      );
-                    }
-                    if (field.fieldType === 'entity-list') {
-                      return (
-                        <EntityListField
-                          key={field.key}
-                          label={t(field.label)}
-                          value={(draft[field.key] as string[]) ?? []}
-                          onChange={v => updateField(field.key, v)}
-                          domain={field.domain}
-                        />
-                      );
-                    }
-                    if (field.fieldType === 'icon') {
-                      return (
-                        <IconPicker
-                          key={field.key}
-                          value={(draft[field.key] as string) ?? ''}
-                          onChange={v => updateField(field.key, v)}
-                          label={t(field.label)}
-                        />
-                      );
-                    }
-                    if (field.fieldType === 'gradient') {
-                      return (
-                        <GradientPicker
-                          key={field.key}
-                          value={(draft[field.key] as string) ?? ''}
-                          onChange={v => updateField(field.key, v)}
-                          label={t(field.label)}
-                        />
-                      );
-                    }
-                    if (field.fieldType === 'list' && field.itemFields) {
-                      return (
-                        <ListEditor
-                          key={field.key}
-                          items={(draft[field.key] as Record<string, unknown>[]) ?? []}
-                          onChange={v => updateField(field.key, v)}
-                          itemFields={field.itemFields}
-                          label={t(field.label)}
-                        />
-                      );
-                    }
-                    if (field.fieldType === 'boolean') {
-                      return (
-                        <label key={field.key} className='flex items-center gap-3 cursor-pointer select-none py-1'>
-                          <div className='relative'>
-                            <input
-                              type='checkbox'
-                              checked={(draft[field.key] as boolean) ?? true}
-                              onChange={e => updateField(field.key, e.target.checked)}
-                              className='sr-only peer'
-                            />
-                            <div className='w-9 h-5 rounded-full bg-white/10 peer-checked:bg-blue-500/60 transition-colors' />
-                            <div className='absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-md transition-transform peer-checked:translate-x-4' />
-                          </div>
-                          <span className='text-xs text-white/60'>{t(field.label)}</span>
-                        </label>
-                      );
-                    }
-                    if (field.fieldType === 'area-controls') {
-                      return (
-                        <AreaControlsField
-                          key={field.key}
-                          label={t(field.label)}
-                          area={(draft.area as string) ?? ''}
-                          controls={(draft.areaControls as string[]) ?? []}
-                          onChange={next => {
-                            updateField('area', next.area);
-                            updateField('areaControls', next.controls);
-                          }}
-                        />
-                      );
-                    }
-                    if (field.fieldType === 'panel-select') {
-                      return (
-                        <PanelSelectField
-                          key={field.key}
-                          value={(draft[field.key] as string) ?? ''}
-                          onChange={v => updateField(field.key, v)}
-                          label={t(field.label)}
-                        />
-                      );
-                    }
-                    if (field.fieldType === 'multiselect' && field.options) {
-                      return (
-                        <MultiSelectField
-                          key={field.key}
-                          label={t(field.label)}
-                          options={field.options}
-                          value={draft[field.key] as string[] | undefined}
-                          onChange={v => updateField(field.key, v)}
-                        />
-                      );
-                    }
-                    if (field.fieldType === 'select' && field.options) {
-                      return (
-                        <div key={field.key}>
-                          <label className='text-[11px] text-white/40 mb-1 block'>{t(field.label)}</label>
-                          <select
-                            value={(draft[field.key] as string) ?? field.options[0].value}
-                            onChange={e => updateField(field.key, e.target.value)}
-                            className='w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 outline-none focus:border-blue-500/50 cursor-pointer'
-                            style={{ colorScheme: 'dark' }}
-                          >
-                            {field.options.map(opt => (
-                              <option key={opt.value} value={opt.value} className='bg-[#0c1028]'>
-                                {t(opt.label)}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      );
-                    }
-                    return (
-                      <FieldInput
-                        key={field.key}
-                        value={(draft[field.key] as string | number) ?? ''}
-                        onChange={v => updateField(field.key, v)}
-                        label={t(field.label)}
-                        type={field.fieldType === 'number' ? 'number' : 'text'}
-                      />
-                    );
-                  })}
-              {activeTab === 'widgets' && isGroup && <GroupWidgetsTab groupId={editingWidgetId} draft={draft} updateField={updateField} />}
-              {activeTab === 'advanced' &&
-                hasAdvanced &&
-                fields
-                  .filter(f => f.fieldType === 'weather-icons')
-                  .map(field => (
-                    <WeatherIconsEditor
-                      key={field.key}
-                      value={draft[field.key] as Record<string, string> | undefined}
-                      onChange={v => updateField(field.key, v)}
-                    />
-                  ))}
-              {activeTab === 'actions' && draft && <ActionsTab draft={draft as Record<string, unknown>} updateField={updateField} />}
-              {activeTab === 'visibility' && draft && (
-                <VisibilityTab draft={draft as Record<string, unknown>} updateField={updateField} widgetType={config?.type} />
-              )}
-              {activeTab === 'layout' && hasDispositions && <CardLayoutTab widgetId={editingWidgetId} breakpoint={breakpoint} />}
-              {activeTab === 'sound' && hasSounds && config && (
-                <SoundTab
-                  widgetType={config.type}
-                  soundOverrides={draft.soundOverrides as Record<string, SoundPreset> | undefined}
-                  onChange={overrides => updateField('soundOverrides', Object.keys(overrides).length ? overrides : undefined)}
-                />
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className='flex items-center justify-end gap-2 px-5 py-3 border-t border-white/8'>
-              <button
-                onClick={handleClose}
-                className='px-4 py-2 rounded-xl text-sm text-white/50 hover:text-white/70 hover:bg-white/8 transition-colors'
-              >
-                {t('layout.cancel')}
-              </button>
-              <button
-                onClick={handleSave}
-                className='px-4 py-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 text-blue-300 text-sm font-medium transition-colors'
-              >
-                {t('layout.apply')}
-              </button>
-            </div>
-          </div>
         </div>
-      </motion.div>
+
+        {/* Onglets : des pastilles, qui défilent s'il y en a trop pour la largeur. */}
+        <div role='tablist' className='flex shrink-0 gap-1.5 overflow-x-auto px-6 pb-3 scrollbar-none'>
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              role='tab'
+              aria-selected={activeTab === tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                'h-11 shrink-0 rounded-full px-5 text-[15px] font-semibold',
+                activeTab === tab.id
+                  ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'
+                  : 'bg-[var(--ds-surface-1)] text-[var(--ds-ink-muted)]'
+              )}
+            >
+              {t(tab.label)}
+            </button>
+          ))}
+        </div>
+
+        {/* Champs */}
+        <div className='min-h-0 flex-1 space-y-3 overflow-y-auto px-6 pb-3'>
+          {activeTab === 'config' &&
+            fields
+              .filter(f => f.fieldType !== 'weather-icons')
+              .map(field => (
+                <div key={field.key} className={FIELD_CARD}>
+                  {renderField(field)}
+                </div>
+              ))}
+          {activeTab === 'widgets' && isGroup && <GroupWidgetsTab groupId={editingWidgetId} draft={draft} updateField={updateField} />}
+          {activeTab === 'advanced' &&
+            hasAdvanced &&
+            fields
+              .filter(f => f.fieldType === 'weather-icons')
+              .map(field => (
+                <div key={field.key} className={FIELD_CARD}>
+                  <WeatherIconsEditor
+                    value={draft[field.key] as Record<string, string> | undefined}
+                    onChange={v => updateField(field.key, v)}
+                  />
+                </div>
+              ))}
+          {activeTab === 'actions' && draft && <ActionsTab draft={draft as Record<string, unknown>} updateField={updateField} />}
+          {activeTab === 'visibility' && draft && (
+            <VisibilityTab draft={draft as Record<string, unknown>} updateField={updateField} widgetType={config?.type} />
+          )}
+          {activeTab === 'layout' && hasDispositions && <CardLayoutTab widgetId={editingWidgetId} />}
+          {activeTab === 'sound' && hasSounds && config && (
+            <SoundTab
+              widgetType={config.type}
+              soundOverrides={draft.soundOverrides as Record<string, SoundPreset> | undefined}
+              onChange={overrides => updateField('soundOverrides', Object.keys(overrides).length ? overrides : undefined)}
+            />
+          )}
+        </div>
+
+        <footer className='flex shrink-0 items-center justify-end gap-2 px-6 py-4'>
+          <button onClick={handleClose} className='h-12 rounded-full px-5 text-base font-semibold text-[var(--ds-ink-muted)]'>
+            {t('layout.cancel')}
+          </button>
+          <button
+            onClick={handleSave}
+            className='h-12 rounded-full bg-[var(--ds-tile-on)] px-7 text-base font-bold text-[var(--ds-tile-on-ink)]'
+          >
+            {t('layout.apply')}
+          </button>
+        </footer>
+      </motion.section>
     </>
   );
 }

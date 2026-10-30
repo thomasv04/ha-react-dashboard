@@ -19,18 +19,6 @@ vi.mock('@/components/layout/DashboardGrid', () => ({
   useWidgetId: () => 'weather',
 }));
 
-vi.mock('@/components/ui/AnimatedNumber', () => ({
-  AnimatedNumber: ({ value, decimals = 0, suffix = '' }: { value: number; decimals?: number; suffix?: string }) => {
-    const display = decimals > 0 ? value.toFixed(decimals) : Math.round(value).toString();
-    return (
-      <span>
-        {display}
-        {suffix}
-      </span>
-    );
-  },
-}));
-
 vi.mock('@hakit/core', () => ({
   useHass: (selector: (s: { entities: Record<string, unknown> }) => unknown) => selector({ entities: { 'weather.home': {} } }),
   useWeather: () => ({

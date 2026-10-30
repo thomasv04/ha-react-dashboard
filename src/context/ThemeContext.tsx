@@ -1,14 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
-import {
-  THEMES,
-  HA_THEME_ID,
-  themeTokens,
-  isKnownTheme,
-  hexToTint,
-  type ThemeId,
-  type ThemeTokens,
-  type BackgroundConfig,
-} from '@/config/themes';
+import { THEMES, HA_THEME_ID, themeTokens, normalizeThemeId, type ThemeId, type ThemeTokens } from '@/config/themes';
 import { useSettingsSync } from '@/hooks/useSettingsSync';
 
 export interface AutoThemeConfig {
@@ -32,7 +23,6 @@ export interface AutoThemeConfig {
 }
 
 export interface PerfSettings {
-  reduceBlur: boolean;
   reduceAnimations: boolean;
   disableShadows: boolean;
   disableModalAnimation: boolean;
@@ -41,32 +31,10 @@ export interface PerfSettings {
 }
 
 const DEFAULT_PERF_SETTINGS: PerfSettings = {
-  reduceBlur: false,
   reduceAnimations: false,
   disableShadows: false,
   disableModalAnimation: false,
   lowQualityCamera: false,
-};
-
-export interface LayoutSettings {
-  /** Grid gap between cards in px (4–40) */
-  gridGap: number;
-  /** Card border radius in px (0–32) */
-  cardRadius: number;
-  /** Row height in px (60–160) */
-  rowHeight: number;
-  /** Flou du fond des cards en px (0–40). Absent : celui du thème, remis à
-      zéro à chaque changement de thème, comme l'opacité. */
-  cardBlur?: number;
-  /** Couleur des cards (`#rrggbb`), pour les thèmes à teinte (`cardTint`).
-      Absente : celle du thème, remise à zéro comme le flou. */
-  cardColor?: string;
-}
-
-const DEFAULT_LAYOUT_SETTINGS: LayoutSettings = {
-  gridGap: 16,
-  cardRadius: 24,
-  rowHeight: 80,
 };
 
 /** Thème repris de Home Assistant, résolu à l'exécution (cf. `ha-themes.ts`). */
@@ -135,20 +103,12 @@ interface ThemeContextValue {
   themeId: ThemeId;
   tokens: ThemeTokens;
   setTheme: (id: ThemeId) => void;
-  background: BackgroundConfig;
-  setBackground: (bg: BackgroundConfig) => void;
-  /** Card opacity override (0-1, défaut = theme.glassOpacity) */
-  cardOpacity: number;
-  setCardOpacity: (v: number) => void;
   /** Performance settings */
   perfSettings: PerfSettings;
   setPerfSettings: (s: PerfSettings) => void;
   /** Auto day/night theme */
   autoTheme: AutoThemeConfig;
   setAutoTheme: (cfg: AutoThemeConfig) => void;
-  /** Layout settings (gap, radius, row height) */
-  layoutSettings: LayoutSettings;
-  setLayoutSettings: (s: LayoutSettings) => void;
   /** Sound feedback settings */
   soundSettings: SoundSettings;
   setSoundSettings: (s: SoundSettings) => void;
@@ -210,13 +170,15 @@ const DEFAULT_AUTO_THEME: AutoThemeConfig = {
   illuminanceThreshold: 50,
 };
 
+/** Les thèmes jour/nuit enregistrés peuvent désigner un thème retiré en 4.0. */
+function withKnownThemes(cfg: AutoThemeConfig): AutoThemeConfig {
+  return { ...cfg, lightTheme: normalizeThemeId(cfg.lightTheme), darkTheme: normalizeThemeId(cfg.darkTheme) };
+}
+
 function loadSettings(): {
   themeId: ThemeId;
-  background: BackgroundConfig;
-  cardOpacity: number;
   perfSettings: PerfSettings;
   autoTheme: AutoThemeConfig;
-  layoutSettings: LayoutSettings;
   soundSettings: SoundSettings;
   regionalSettings: RegionalSettings;
   behaviourSettings: BehaviourSettings;
@@ -228,29 +190,18 @@ function loadSettings(): {
       const parsed = JSON.parse(stored) as {
         v?: number;
         themeId?: ThemeId;
-        background?: BackgroundConfig;
-        cardOpacity?: number;
         perfSettings?: Partial<PerfSettings>;
         autoTheme?: Partial<AutoThemeConfig>;
-        layoutSettings?: Partial<LayoutSettings>;
         soundSettings?: Partial<SoundSettings>;
         regionalSettings?: Partial<RegionalSettings>;
         behaviourSettings?: Partial<BehaviourSettings>;
         importedTheme?: ImportedTheme | null;
       };
-      const themeId = parsed.themeId ?? 'dark';
-      // Avant la v2 le curseur d'opacité n'était branché sur rien : la valeur
-      // stockée n'a jamais reflété un choix visible. On repart du défaut du
-      // thème une fois, sinon tout le monde hériterait d'une card à 4 %.
-      const cardOpacity =
-        parsed.v === SETTINGS_VERSION && parsed.cardOpacity != null ? parsed.cardOpacity : themeTokens(themeId).glassOpacity;
+      const themeId = normalizeThemeId(parsed.themeId);
       return {
         themeId,
-        background: parsed.background ?? { mode: 'solid' },
-        cardOpacity,
         perfSettings: { ...DEFAULT_PERF_SETTINGS, ...(parsed.perfSettings ?? {}) },
-        autoTheme: { ...DEFAULT_AUTO_THEME, ...(parsed.autoTheme ?? {}) },
-        layoutSettings: { ...DEFAULT_LAYOUT_SETTINGS, ...(parsed.layoutSettings ?? {}) },
+        autoTheme: withKnownThemes({ ...DEFAULT_AUTO_THEME, ...(parsed.autoTheme ?? {}) }),
         soundSettings: { ...DEFAULT_SOUND_SETTINGS, ...(parsed.soundSettings ?? {}) },
         regionalSettings: { ...DEFAULT_REGIONAL_SETTINGS, ...(parsed.regionalSettings ?? {}) },
         behaviourSettings: { ...DEFAULT_BEHAVIOUR_SETTINGS, ...(parsed.behaviourSettings ?? {}) },
@@ -262,11 +213,8 @@ function loadSettings(): {
   }
   return {
     themeId: 'dark',
-    background: { mode: 'solid' },
-    cardOpacity: THEMES.dark.tokens.glassOpacity,
     perfSettings: DEFAULT_PERF_SETTINGS,
     autoTheme: DEFAULT_AUTO_THEME,
-    layoutSettings: DEFAULT_LAYOUT_SETTINGS,
     soundSettings: DEFAULT_SOUND_SETTINGS,
     regionalSettings: DEFAULT_REGIONAL_SETTINGS,
     behaviourSettings: DEFAULT_BEHAVIOUR_SETTINGS,
@@ -277,11 +225,8 @@ function loadSettings(): {
 export function ThemeContextProvider({ children }: { children: ReactNode }) {
   const saved = loadSettings();
   const [themeId, setThemeId] = useState<ThemeId>(saved.themeId);
-  const [background, setBackgroundState] = useState<BackgroundConfig>(saved.background);
-  const [cardOpacity, setCardOpacityState] = useState(saved.cardOpacity);
   const [perfSettings, setPerfSettingsState] = useState<PerfSettings>(saved.perfSettings);
   const [autoTheme, setAutoThemeState] = useState<AutoThemeConfig>(saved.autoTheme);
-  const [layoutSettings, setLayoutSettingsState] = useState<LayoutSettings>(saved.layoutSettings);
   const [soundSettings, setSoundSettingsState] = useState<SoundSettings>(saved.soundSettings);
   const [regionalSettings, setRegionalSettingsState] = useState<RegionalSettings>(saved.regionalSettings);
   const [behaviourSettings, setBehaviourSettingsState] = useState<BehaviourSettings>(saved.behaviourSettings);
@@ -297,42 +242,22 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     () => ({
       v: SETTINGS_VERSION,
       themeId,
-      background,
-      cardOpacity,
       perfSettings,
       autoTheme,
-      layoutSettings,
       soundSettings,
       regionalSettings,
       behaviourSettings,
       importedTheme,
     }),
-    [
-      themeId,
-      background,
-      cardOpacity,
-      perfSettings,
-      autoTheme,
-      layoutSettings,
-      soundSettings,
-      regionalSettings,
-      behaviourSettings,
-      importedTheme,
-    ]
+    [themeId, perfSettings, autoTheme, soundSettings, regionalSettings, behaviourSettings, importedTheme]
   );
   const handleRemoteUpdate = useCallback((remote: typeof syncedSettings) => {
-    if (remote.themeId && isKnownTheme(remote.themeId)) {
-      setThemeId(remote.themeId);
-      // Même migration que dans `loadSettings` : une opacité venue d'un
-      // enregistrement pré-v2 n'a jamais été appliquée, on ne la ressuscite pas.
-      setCardOpacityState(
-        remote.v === SETTINGS_VERSION && remote.cardOpacity != null ? remote.cardOpacity : themeTokens(remote.themeId).glassOpacity
-      );
+    if (remote.themeId) {
+      const id = normalizeThemeId(remote.themeId);
+      setThemeId(id);
     }
-    if (remote.background) setBackgroundState(remote.background);
     if (remote.perfSettings) setPerfSettingsState({ ...DEFAULT_PERF_SETTINGS, ...remote.perfSettings });
-    if (remote.autoTheme) setAutoThemeState({ ...DEFAULT_AUTO_THEME, ...remote.autoTheme });
-    if (remote.layoutSettings) setLayoutSettingsState({ ...DEFAULT_LAYOUT_SETTINGS, ...remote.layoutSettings });
+    if (remote.autoTheme) setAutoThemeState(withKnownThemes({ ...DEFAULT_AUTO_THEME, ...remote.autoTheme }));
     if (remote.soundSettings) setSoundSettingsState({ ...DEFAULT_SOUND_SETTINGS, ...remote.soundSettings });
     if (remote.regionalSettings) setRegionalSettingsState({ ...DEFAULT_REGIONAL_SETTINGS, ...remote.regionalSettings });
     if (remote.behaviourSettings) setBehaviourSettingsState({ ...DEFAULT_BEHAVIOUR_SETTINGS, ...remote.behaviourSettings });
@@ -344,56 +269,26 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
     root.style.setProperty('--dash-bg-primary', tokens.bgPrimary);
-    // Le curseur d'opacité ne pilotait rien : il écrivait `--dash-glass-opacity`,
-    // qu'aucune règle CSS ne lisait. On recompose la surface à partir de la
-    // teinte du thème pour que le curseur agisse réellement sur les cards.
-    if (tokens.cardTint) {
-      const tint = layoutSettings.cardColor ? hexToTint(layoutSettings.cardColor) : tokens.cardTint;
-      root.style.setProperty('--dash-bg-card', `rgba(${tint} / ${cardOpacity})`);
-      root.style.setProperty('--dash-bg-card-hover', `rgba(${tint} / ${Math.min(1, cardOpacity * 1.5 + 0.02)})`);
-    } else {
-      root.style.setProperty('--dash-bg-card', tokens.bgCard);
-      root.style.setProperty('--dash-bg-card-hover', tokens.bgCardHover);
-    }
+    root.style.setProperty('--dash-bg-card', tokens.bgCard);
+    root.style.setProperty('--dash-bg-card-hover', tokens.bgCardHover);
     root.style.setProperty('--dash-text-primary', tokens.textPrimary);
     root.style.setProperty('--dash-text-secondary', tokens.textSecondary);
     root.style.setProperty('--dash-text-muted', tokens.textMuted);
     root.style.setProperty('--dash-accent', tokens.accent);
     root.style.setProperty('--dash-border', tokens.border);
-    root.style.setProperty('--dash-glass-blur', `${layoutSettings.cardBlur ?? tokens.glassBlur}px`);
-    root.style.setProperty('--dash-glass-opacity', String(cardOpacity));
     root.style.setProperty('--dash-status-success', tokens.statusSuccess);
     root.style.setProperty('--dash-status-warning', tokens.statusWarning);
     root.style.setProperty('--dash-status-error', tokens.statusError);
     root.style.setProperty('--dash-status-info', tokens.statusInfo);
 
-    // Clay-specific variables & class
-    const isClay = tokens.mode === 'clay';
-    root.classList.toggle('theme-clay', isClay);
-    root.classList.toggle('theme-clay-dark', isClay && themeId === 'clay-dark');
-    root.classList.toggle('theme-sea-glass', themeId === 'sea-glass' || themeId === 'sea-glass-dark');
-    root.classList.toggle('theme-sea-glass-dark', themeId === 'sea-glass-dark');
-    // Any light-surface theme (clay light *and* the plain light theme) needs the
-    // hardcoded `text-white/*` utilities remapped to dark text, otherwise the
-    // cards turn white and the text stays invisible.
+    // `theme-light-surface` : les barres de défilement claires (index.css).
     root.classList.toggle('theme-light-surface', !!tokens.light);
     root.dataset.theme = tokens.light ? 'light' : 'dark';
-    root.style.setProperty('--dash-shadow-color', tokens.shadowColor ?? '');
-    root.style.setProperty('--dash-shadow-highlight', tokens.shadowHighlight ?? '');
-  }, [tokens, cardOpacity, themeId, layoutSettings.cardBlur, layoutSettings.cardColor]);
-
-  // Layout CSS variables
-  useEffect(() => {
-    const root = document.documentElement;
-    root.style.setProperty('--dash-grid-gap', `${layoutSettings.gridGap}px`);
-    root.style.setProperty('--dash-card-radius', `${layoutSettings.cardRadius}px`);
-    root.style.setProperty('--dash-row-height', `${layoutSettings.rowHeight}px`);
-  }, [layoutSettings]);
+  }, [tokens]);
 
   // Performance CSS classes on <html>
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.toggle('perf-reduce-blur', perfSettings.reduceBlur);
     root.classList.toggle('perf-no-animations', perfSettings.reduceAnimations);
     root.classList.toggle('perf-no-shadows', perfSettings.disableShadows);
   }, [perfSettings]);
@@ -405,41 +300,24 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
       JSON.stringify({
         v: SETTINGS_VERSION,
         themeId,
-        background,
-        cardOpacity,
         perfSettings,
         autoTheme,
-        layoutSettings,
         soundSettings,
         regionalSettings,
         behaviourSettings,
         importedTheme,
       })
     );
-  }, [
-    themeId,
-    background,
-    cardOpacity,
-    perfSettings,
-    autoTheme,
-    layoutSettings,
-    soundSettings,
-    regionalSettings,
-    behaviourSettings,
-    importedTheme,
-  ]);
+  }, [themeId, perfSettings, autoTheme, soundSettings, regionalSettings, behaviourSettings, importedTheme]);
 
-  const setTheme = useCallback((id: ThemeId) => {
+  const setTheme = useCallback((requested: ThemeId) => {
+    // Un import de configuration peut encore porter un thème retiré en 4.0.
+    const id = normalizeThemeId(requested);
     setThemeId(id);
-    setCardOpacityState(themeTokens(id).glassOpacity);
-    setLayoutSettingsState(s => ({ ...s, cardBlur: undefined, cardColor: undefined }));
   }, []);
 
-  const setBackground = useCallback((bg: BackgroundConfig) => setBackgroundState(bg), []);
-  const setCardOpacity = useCallback((v: number) => setCardOpacityState(v), []);
   const setPerfSettings = useCallback((s: PerfSettings) => setPerfSettingsState(s), []);
   const setAutoTheme = useCallback((cfg: AutoThemeConfig) => setAutoThemeState(cfg), []);
-  const setLayoutSettings = useCallback((s: LayoutSettings) => setLayoutSettingsState(s), []);
   const setSoundSettings = useCallback((s: SoundSettings) => setSoundSettingsState(s), []);
   const setRegionalSettings = useCallback((s: RegionalSettings) => setRegionalSettingsState(s), []);
   const setBehaviourSettings = useCallback((s: BehaviourSettings) => setBehaviourSettingsState(s), []);
@@ -450,16 +328,10 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
       themeId,
       tokens,
       setTheme,
-      background,
-      setBackground,
-      cardOpacity,
-      setCardOpacity,
       perfSettings,
       setPerfSettings,
       autoTheme,
       setAutoTheme,
-      layoutSettings,
-      setLayoutSettings,
       soundSettings,
       setSoundSettings,
       regionalSettings,
@@ -472,21 +344,15 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     [
       themeId,
       tokens,
-      background,
-      cardOpacity,
       perfSettings,
       autoTheme,
-      layoutSettings,
       soundSettings,
       regionalSettings,
       behaviourSettings,
       importedTheme,
       setTheme,
-      setBackground,
-      setCardOpacity,
       setPerfSettings,
       setAutoTheme,
-      setLayoutSettings,
       setSoundSettings,
       setRegionalSettings,
       setBehaviourSettings,

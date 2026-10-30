@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { Search, RotateCcw, Check } from 'lucide-react';
 import { useI18n, SUPPORTED_LANGUAGES, getDefaultTranslations } from '@/i18n';
-import { SECTION_HEADING } from './typography';
+import { SECTION_HEADING, SETTINGS_CARD } from './typography';
+import { BUTTON_SECONDARY, Segmented } from './controls';
 import { cn } from '@/lib/utils';
 
 export function LanguageSection() {
@@ -38,90 +39,71 @@ export function LanguageSection() {
   }
 
   return (
-    <div className='flex flex-col gap-5'>
-      {/* Language picker */}
-      <div>
-        <p className={cn(SECTION_HEADING, 'mb-3')}>{t('settings.language_section.languageLabel')}</p>
-        <div className='flex gap-2'>
-          {SUPPORTED_LANGUAGES.map(lang => (
-            <button
-              key={lang.code}
-              onClick={() => setLanguage(lang.code)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all border ${
-                language === lang.code
-                  ? 'bg-blue-500/20 border-blue-500/40 text-blue-300'
-                  : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white/70'
-              }`}
-            >
-              {lang.label}
-            </button>
-          ))}
-        </div>
-      </div>
+    <div className='flex flex-col gap-3'>
+      {/* Langue */}
+      <section className={cn(SETTINGS_CARD, 'flex flex-col gap-3')}>
+        <h3 className={SECTION_HEADING}>{t('settings.language_section.languageLabel')}</h3>
+        <Segmented
+          value={language}
+          onChange={setLanguage}
+          label={t('settings.language_section.languageLabel')}
+          options={SUPPORTED_LANGUAGES.map(lang => ({ value: lang.code, label: lang.label }))}
+        />
+      </section>
 
-      {/* Overrides */}
-      <div className='flex flex-col gap-3'>
+      {/* Traductions personnalisées */}
+      <section className={cn(SETTINGS_CARD, 'flex flex-col gap-3')}>
         <div>
-          <p className={cn(SECTION_HEADING, 'mb-1')}>{t('settings.language_section.overridesTitle')}</p>
-          <p className='text-white/30 text-[11px] leading-relaxed'>{t('settings.language_section.overridesDescription')}</p>
+          <h3 className={SECTION_HEADING}>{t('settings.language_section.overridesTitle')}</h3>
+          <p className='mt-1 text-[15px] leading-relaxed text-[var(--ds-ink-muted)]'>
+            {t('settings.language_section.overridesDescription')}
+          </p>
         </div>
 
         {/* Search + filter */}
         <div className='flex gap-2'>
-          <div className='flex-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 focus-within:border-white/20 transition-colors'>
-            <Search size={12} className='text-white/30 shrink-0' />
+          <div className='flex h-12 flex-1 items-center gap-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-4 focus-within:outline-2 focus-within:outline-[var(--ds-accent)]'>
+            <Search size={16} className='text-[var(--ds-ink-muted)] shrink-0' />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder={t('settings.language_section.searchPlaceholder')}
-              className='bg-transparent text-xs text-white/70 outline-none flex-1 placeholder:text-white/25'
+              className='flex-1 bg-transparent text-base text-[var(--ds-ink)] outline-none placeholder:text-[var(--ds-ink-muted)]'
             />
           </div>
           <button
             onClick={() => setShowOnlyCustom(v => !v)}
-            className={`px-3 py-2 rounded-lg text-xs font-medium border transition-all whitespace-nowrap ${
-              showOnlyCustom
-                ? 'bg-blue-500/20 border-blue-500/40 text-blue-300'
-                : 'bg-white/5 border-white/10 text-white/40 hover:text-white/60'
-            }`}
+            aria-pressed={showOnlyCustom}
+            className={cn(BUTTON_SECONDARY, 'whitespace-nowrap', showOnlyCustom && 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]')}
           >
             {showOnlyCustom ? t('settings.language_section.showAll') : t('settings.language_section.showOnlyCustom')}
           </button>
         </div>
 
         {/* Table */}
-        <div className='rounded-xl border border-white/8 overflow-hidden'>
+        <div className='overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-3)]'>
           {/* Header */}
-          <div className='grid grid-cols-[2fr_2fr_2fr_auto] gap-2 px-3 py-2 bg-white/4 border-b border-white/8'>
-            <span className='text-white/30 text-[10px] font-semibold uppercase tracking-wider'>
-              {t('settings.language_section.keyColumn')}
-            </span>
-            <span className='text-white/30 text-[10px] font-semibold uppercase tracking-wider'>
-              {t('settings.language_section.defaultColumn')}
-            </span>
-            <span className='text-white/30 text-[10px] font-semibold uppercase tracking-wider'>
-              {t('settings.language_section.customColumn')}
-            </span>
+          <div className='grid grid-cols-[2fr_2fr_2fr_auto] gap-2 bg-[var(--ds-surface-1)] px-4 py-3'>
+            <span className='text-sm font-semibold text-[var(--ds-ink-muted)]'>{t('settings.language_section.keyColumn')}</span>
+            <span className='text-sm font-semibold text-[var(--ds-ink-muted)]'>{t('settings.language_section.defaultColumn')}</span>
+            <span className='text-sm font-semibold text-[var(--ds-ink-muted)]'>{t('settings.language_section.customColumn')}</span>
             <span className='w-5' />
           </div>
 
           {/* Rows */}
-          <div className='max-h-[320px] overflow-y-auto divide-y divide-white/5'>
+          <div className='max-h-[360px] divide-y divide-[var(--ds-surface-1)] overflow-y-auto'>
             {filtered.length === 0 ? (
-              <div className='py-8 text-center text-white/25 text-xs'>{t('settings.language_section.noResults')}</div>
+              <div className='py-8 text-center text-[15px] text-[var(--ds-ink-muted)]'>{t('settings.language_section.noResults')}</div>
             ) : (
               filtered.map(({ key, value }) => {
                 const override = overrides[key];
                 const isEditing = editingKey === key;
                 return (
-                  <div
-                    key={key}
-                    className='grid grid-cols-[2fr_2fr_2fr_auto] gap-2 px-3 py-2 items-center hover:bg-white/3 transition-colors'
-                  >
-                    <span className='text-white/40 text-[10px] font-mono truncate' title={key}>
+                  <div key={key} className='grid grid-cols-[2fr_2fr_2fr_auto] items-center gap-2 px-4 py-2.5'>
+                    <span className='truncate font-mono text-sm text-[var(--ds-ink-muted)]' title={key}>
                       {key}
                     </span>
-                    <span className='text-white/40 text-[11px] truncate' title={value}>
+                    <span className='text-[var(--ds-ink-muted)] text-sm truncate' title={value}>
                       {value}
                     </span>
                     <div className='min-w-0'>
@@ -135,16 +117,20 @@ export function LanguageSection() {
                             if (e.key === 'Enter') commitEdit(key);
                             if (e.key === 'Escape') setEditingKey(null);
                           }}
-                          className='w-full px-2 py-1 rounded bg-white/10 border border-blue-500/40 text-white text-[11px] outline-none'
+                          className='h-10 w-full rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-1)] px-3 text-base text-[var(--ds-ink)] outline-2 outline-[var(--ds-accent)]'
                           placeholder={value}
                         />
                       ) : (
                         <button
                           onClick={() => startEdit(key)}
-                          className='w-full text-left px-2 py-1 rounded hover:bg-white/8 transition-colors text-[11px] truncate'
+                          className='h-10 w-full truncate rounded-[var(--ds-radius-sm)] px-3 text-left text-base'
                           title={override ?? ''}
                         >
-                          {override ? <span className='text-blue-300'>{override}</span> : <span className='text-white/20 italic'>—</span>}
+                          {override ? (
+                            <span className='text-[var(--ds-accent)]'>{override}</span>
+                          ) : (
+                            <span className='text-[var(--ds-ink-muted)] italic'>—</span>
+                          )}
                         </button>
                       )}
                     </div>
@@ -152,14 +138,17 @@ export function LanguageSection() {
                       {override ? (
                         <button
                           onClick={() => removeOverride(key)}
-                          className='p-1 rounded text-white/25 hover:text-red-400 transition-colors'
+                          className='flex size-10 items-center justify-center rounded-full text-[var(--ds-ink-muted)]'
                           title={t('settings.language_section.resetTooltip')}
                         >
-                          <RotateCcw size={11} />
+                          <RotateCcw size={16} />
                         </button>
                       ) : isEditing ? (
-                        <button onClick={() => commitEdit(key)} className='p-1 rounded text-green-400'>
-                          <Check size={11} />
+                        <button
+                          onClick={() => commitEdit(key)}
+                          className='flex size-10 items-center justify-center rounded-full text-[var(--ds-good)]'
+                        >
+                          <Check size={16} />
                         </button>
                       ) : (
                         <span className='w-5' />
@@ -172,10 +161,10 @@ export function LanguageSection() {
           </div>
         </div>
 
-        <p className='text-white/20 text-[10px]'>
+        <p className='text-sm text-[var(--ds-ink-muted)]'>
           {Object.keys(overrides).length} override{Object.keys(overrides).length !== 1 ? 's' : ''} active
         </p>
-      </div>
+      </section>
     </div>
   );
 }

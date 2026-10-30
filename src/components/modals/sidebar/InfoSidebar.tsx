@@ -45,7 +45,7 @@ export type SidebarModule =
 
 export function InfoSidebar({ modules }: { modules: SidebarModule[] }) {
   return (
-    <div className='space-y-4'>
+    <div className='flex flex-col gap-3'>
       {modules.map((mod, i) => {
         switch (mod.type) {
           case 'timeline':

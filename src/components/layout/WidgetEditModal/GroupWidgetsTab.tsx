@@ -95,21 +95,21 @@ export function ChildFieldRenderer({
             onChange={e => onPatch({ [field.key]: e.target.checked })}
             className='sr-only peer'
           />
-          <div className='w-8 h-4 rounded-full bg-white/10 peer-checked:bg-blue-500/60 transition-colors' />
-          <div className='absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white shadow-md transition-transform peer-checked:translate-x-4' />
+          <div className='w-8 h-4 rounded-full bg-[var(--ds-surface-3)] peer-checked:bg-[var(--ds-tile-on)] transition-colors' />
+          <div className='absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-[var(--ds-surface-3)] shadow-md transition-transform peer-checked:translate-x-4' />
         </div>
-        <span className='text-xs text-white/55'>{t(field.label)}</span>
+        <span className='text-xs text-[var(--ds-ink-muted)]'>{t(field.label)}</span>
       </label>
     );
   }
   if (field.fieldType === 'select' && field.options) {
     return (
       <div key={field.key}>
-        <label className='text-[11px] text-white/40 mb-1 block'>{t(field.label)}</label>
+        <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{t(field.label)}</label>
         <select
           value={(draft[field.key] as string) ?? field.options[0].value}
           onChange={e => onPatch({ [field.key]: e.target.value })}
-          className='w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 outline-none focus:border-blue-500/50 cursor-pointer'
+          className='w-full px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)] outline-none focus:outline-2 focus:outline-[var(--ds-accent)] cursor-pointer'
           style={{ colorScheme: 'dark' }}
         >
           {field.options.map(opt => (
@@ -159,7 +159,7 @@ export function ChildFieldRenderer({
   if (field.fieldType === 'template') {
     return (
       <div key={field.key} className='space-y-1'>
-        <label className='block text-[11px] text-white/40'>{t(field.label)}</label>
+        <label className='block text-sm text-[var(--ds-ink-muted)]'>{t(field.label)}</label>
         <TemplateEditor
           value={(draft[field.key] as string) ?? ''}
           onChange={v => onPatch({ [field.key]: v })}
@@ -217,32 +217,34 @@ function ChildRow({ child, onRemove }: { child: GroupChild; onRemove: () => void
     <Reorder.Item
       value={child}
       className={cn(
-        'rounded-xl border transition-colors overflow-hidden',
-        expanded ? 'border-indigo-500/30 bg-indigo-500/4' : 'border-white/8 bg-white/3'
+        'rounded-[var(--ds-radius-md)] border transition-colors overflow-hidden',
+        expanded
+          ? 'border-[var(--ds-accent)] bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'
+          : 'border-[var(--ds-surface-3)] bg-[var(--ds-surface-2)]'
       )}
     >
       {/* Row header */}
       <div className='flex items-center gap-2.5 px-3 py-2.5'>
         {/* Drag handle — only this part is draggable */}
-        <GripVertical size={14} className='text-white/20 shrink-0 cursor-grab active:cursor-grabbing' />
+        <GripVertical size={14} className='text-[var(--ds-ink-muted)] shrink-0 cursor-grab active:cursor-grabbing' />
 
         {/* Type icon */}
         {meta ? (
           <div
-            className='w-7 h-7 rounded-xl flex items-center justify-center shrink-0'
+            className='w-7 h-7 rounded-[var(--ds-radius-md)] flex items-center justify-center shrink-0'
             style={{ background: `${meta.color}20`, border: `1px solid ${meta.color}35` }}
           >
             <meta.icon size={14} style={{ color: meta.color }} />
           </div>
         ) : (
-          <div className='w-7 h-7 rounded-xl bg-white/5 border border-white/8 shrink-0' />
+          <div className='w-7 h-7 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] shrink-0' />
         )}
 
         {/* Name */}
         <div className='flex flex-col min-w-0 flex-1'>
-          <span className='text-white/75 text-sm font-medium leading-tight'>{meta ? t(meta.label) : child.type}</span>
+          <span className='text-[var(--ds-ink)] text-sm font-medium leading-tight'>{meta ? t(meta.label) : child.type}</span>
           {(draft.name as string) || (draft.label as string) ? (
-            <span className='text-white/30 text-[10px] truncate'>{(draft.name as string) || (draft.label as string)}</span>
+            <span className='text-[var(--ds-ink-muted)] text-xs truncate'>{(draft.name as string) || (draft.label as string)}</span>
           ) : null}
         </div>
 
@@ -251,17 +253,14 @@ function ChildRow({ child, onRemove }: { child: GroupChild; onRemove: () => void
           <button
             onClick={() => setExpanded(v => !v)}
             className={cn(
-              'p-1.5 rounded-lg transition-colors shrink-0',
-              expanded ? 'bg-indigo-500/20 text-indigo-400' : 'hover:bg-white/8 text-white/25 hover:text-white/60'
+              'p-1.5 rounded-[var(--ds-radius-sm)] transition-colors shrink-0',
+              expanded ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'text-[var(--ds-ink-muted)]'
             )}
           >
             {expanded ? <ChevronUp size={13} /> : <Pencil size={13} />}
           </button>
         )}
-        <button
-          onClick={onRemove}
-          className='p-1.5 rounded-lg hover:bg-red-500/15 text-white/20 hover:text-red-400 transition-colors shrink-0'
-        >
+        <button onClick={onRemove} className='p-1.5 rounded-[var(--ds-radius-sm)] text-[var(--ds-ink-muted)] transition-colors shrink-0'>
           <Trash2 size={13} />
         </button>
       </div>
@@ -276,7 +275,7 @@ function ChildRow({ child, onRemove }: { child: GroupChild; onRemove: () => void
             transition={{ duration: 0.18 }}
             className='overflow-hidden'
           >
-            <div className='px-3 pb-3 pt-2 border-t border-white/6'>
+            <div className='px-3 pb-3 pt-2 border-t border-[var(--ds-surface-3)]'>
               {/* Simple fields in 2-col grid, complex ones full width */}
               <div className='grid grid-cols-2 gap-x-3 gap-y-3'>
                 {fields.map(field => {
@@ -335,9 +334,9 @@ export function GroupWidgetsTab({ groupId: _groupId, draft, updateField }: Group
   return (
     <div className='space-y-3'>
       {/* Header */}
-      <div className='flex items-center gap-2 pb-2 border-b border-white/8'>
-        <Settings2 size={14} className='text-indigo-400' />
-        <span className='text-sm font-semibold text-white/70'>
+      <div className='flex items-center gap-2 pb-2 border-b border-[var(--ds-surface-3)]'>
+        <Settings2 size={14} className='text-[var(--ds-accent)]' />
+        <span className='text-sm font-semibold text-[var(--ds-ink)]'>
           {t('widgets.group.widgets')} ({children.length})
         </span>
       </div>
@@ -345,8 +344,8 @@ export function GroupWidgetsTab({ groupId: _groupId, draft, updateField }: Group
       {/* Empty state */}
       {children.length === 0 && !pickerOpen && (
         <div className='text-center py-4'>
-          <p className='text-white/25 text-sm'>{t('widgets.group.noWidgets')}</p>
-          <p className='text-white/15 text-xs mt-1'>{t('widgets.group.addHint')}</p>
+          <p className='text-[var(--ds-ink-muted)] text-sm'>{t('widgets.group.noWidgets')}</p>
+          <p className='text-[var(--ds-ink-muted)] text-xs mt-1'>{t('widgets.group.addHint')}</p>
         </div>
       )}
 
@@ -359,16 +358,16 @@ export function GroupWidgetsTab({ groupId: _groupId, draft, updateField }: Group
         </Reorder.Group>
       )}
 
-      {children.length > 0 && <p className='text-white/18 text-[11px] text-center'>{t('widgets.group.dragToReorder')}</p>}
+      {children.length > 0 && <p className='text-[var(--ds-ink-muted)] text-sm text-center'>{t('widgets.group.dragToReorder')}</p>}
 
       {/* Add toggle */}
       <button
         onClick={() => setPickerOpen(v => !v)}
         className={cn(
-          'w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-medium transition-all',
+          'w-full flex items-center justify-center gap-2 py-2.5 rounded-[var(--ds-radius-md)] border text-sm font-medium transition-all',
           pickerOpen
-            ? 'border-indigo-500/50 text-indigo-400 bg-indigo-500/8'
-            : 'border-dashed border-white/14 text-white/40 hover:border-indigo-500/40 hover:text-indigo-400 hover:bg-indigo-500/6'
+            ? 'border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)] bg-[var(--ds-tile-on)]'
+            : 'border-dashed border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
         )}
       >
         <Plus size={15} />
@@ -391,15 +390,15 @@ export function GroupWidgetsTab({ groupId: _groupId, draft, updateField }: Group
                 <button
                   key={meta.type}
                   onClick={() => addChild(meta.type)}
-                  className='flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-white/8 bg-white/3 hover:bg-white/6 hover:border-white/14 transition-all text-left'
+                  className='flex items-center gap-2.5 px-3 py-2.5 rounded-[var(--ds-radius-md)] border border-[var(--ds-surface-3)] bg-[var(--ds-surface-2)] transition-all text-left'
                 >
                   <div
-                    className='w-7 h-7 rounded-xl flex items-center justify-center shrink-0'
+                    className='w-7 h-7 rounded-[var(--ds-radius-md)] flex items-center justify-center shrink-0'
                     style={{ background: `${meta.color}20`, border: `1px solid ${meta.color}35` }}
                   >
                     <meta.icon size={14} style={{ color: meta.color }} />
                   </div>
-                  <span className='text-white/65 text-xs font-medium leading-tight'>{t(meta.label)}</span>
+                  <span className='text-[var(--ds-ink-muted)] text-xs font-medium leading-tight'>{t(meta.label)}</span>
                 </button>
               ))}
             </div>

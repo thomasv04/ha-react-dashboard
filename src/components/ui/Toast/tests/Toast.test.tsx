@@ -88,8 +88,8 @@ describe('ToastContainer', () => {
     });
     const allToast1 = await screen.findAllByText('Toast 1');
     const allToast2 = await screen.findAllByText('Toast 2');
-    expect(allToast1.some(el => el.closest('.gc'))).toBe(true);
-    expect(allToast2.some(el => el.closest('.gc'))).toBe(true);
+    expect(allToast1.some(el => el.closest('[role="status"]'))).toBe(true);
+    expect(allToast2.some(el => el.closest('[role="status"]'))).toBe(true);
   });
 });
 

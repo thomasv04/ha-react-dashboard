@@ -1,14 +1,13 @@
 import { useEffect, useState, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { Plus, CloudUpload, X } from 'lucide-react';
+import { Plus, Check, X } from 'lucide-react';
 import { useWallPanel } from '@/context/WallPanelContext';
 import { PageProvider, type Page } from '@/context/PageContext';
 import { WidgetConfigProvider, useWidgetConfig } from '@/context/WidgetConfigContext';
 import { DashboardLayoutProvider, useDashboardLayout, useEditMode } from '@/context/DashboardLayoutContext';
-import { DashboardGrid, GridItem } from '@/components/layout/DashboardGrid';
+import { DashboardGrid } from '@/components/layout/DashboardGrid';
 import { AddWidgetModal } from '@/components/layout/AddWidgetModal';
 import { WidgetEditModal } from '@/components/layout/WidgetEditModal';
-import { WIDGET_COMPONENTS } from '@/widgets';
 import { useI18n } from '@/i18n';
 import { widgetExtentOf, type WallPanelConfig, type WidgetAnchor } from '@/types/wallpanel';
 import type { WidgetConfigs } from '@/types/widget-configs';
@@ -48,9 +47,9 @@ const WALLPANEL_PAGES: Page[] = [{ id: 'wallpanel', label: 'WallPanel', type: 'g
  */
 function WallPanelEditActions({ onSave }: { onSave?: WallPanelSave }) {
   const { t } = useI18n();
-  const { allLayouts } = useDashboardLayout();
+  const { allLayouts, layout, addPanel } = useDashboardLayout();
   const { allWidgetConfigsByPage } = useWidgetConfig();
-  const { setEditMode } = useEditMode();
+  const { setEditMode, editPanelId, setEditPanelId } = useEditMode();
   const { exitWallPanelEditMode, setWallPanelLayout, setWallPanelWidgetConfigs } = useWallPanel();
   const [showAddModal, setShowAddModal] = useState(false);
 
@@ -59,6 +58,13 @@ function WallPanelEditActions({ onSave }: { onSave?: WallPanelSave }) {
     setEditMode(true);
     return () => setEditMode(false);
   }, [setEditMode]);
+
+  // La veille n'a qu'un panneau : on l'édite d'emblée, tuiles à la main. Sans
+  // lui, la grille s'ouvrait sur la carte des panneaux — où l'on ne range rien.
+  useEffect(() => {
+    setEditPanelId(layout.panels[0]?.id ?? addPanel());
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- à l'ouverture seulement
+  }, []);
 
   // « Enregistrer » n'ecrivait que dans le contexte : il fallait ensuite passer
   // le dashboard en edition et l'enregistrer *aussi*, sans quoi la disposition
@@ -82,24 +88,25 @@ function WallPanelEditActions({ onSave }: { onSave?: WallPanelSave }) {
       <div className='fixed top-4 right-4 z-[210] flex items-center gap-2'>
         <button
           onClick={() => setShowAddModal(true)}
-          className='flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 text-blue-300 text-sm font-medium transition-colors backdrop-blur-sm'
+          className='flex h-12 items-center gap-2 rounded-full bg-[var(--ds-surface-3)] px-5 text-base font-semibold text-[var(--ds-ink)]'
         >
-          <Plus size={15} />
-          {t('common.add')}
+          <Plus size={18} />
+          {t('layout.panel.addTile')}
         </button>
         <button
           onClick={handleSave}
-          className='flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 text-green-300 text-sm font-medium transition-colors backdrop-blur-sm'
+          className='flex h-12 items-center gap-2 rounded-full bg-[var(--ds-tile-on)] px-6 text-base font-bold text-[var(--ds-tile-on-ink)]'
         >
-          <CloudUpload size={15} />
-          {t('common.save')}
+          <Check size={18} strokeWidth={3} />
+          {t('dashboard.done')}
         </button>
         <button
           onClick={exitWallPanelEditMode}
-          className='p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white/60 hover:text-white transition-colors backdrop-blur-sm'
-          title='Annuler'
+          className='flex size-12 items-center justify-center rounded-full bg-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
+          title={t('dashboard.discardTooltip')}
+          aria-label={t('dashboard.discardTooltip')}
         >
-          <X size={16} />
+          <X size={18} />
         </button>
       </div>
 
@@ -107,33 +114,10 @@ function WallPanelEditActions({ onSave }: { onSave?: WallPanelSave }) {
       <WidgetEditModal />
 
       {/* Add widget modal */}
-      <AnimatePresence>{showAddModal && <AddWidgetModal onClose={() => setShowAddModal(false)} />}</AnimatePresence>
+      <AnimatePresence>
+        {showAddModal && <AddWidgetModal panelId={editPanelId ?? undefined} onClose={() => setShowAddModal(false)} />}
+      </AnimatePresence>
     </div>
-  );
-}
-
-/**
- * Renders the current wallpanel layout's widgets as GridItems.
- * Must be inside the nested DashboardLayoutProvider.
- */
-function WallPanelGridWidgets() {
-  const { layout } = useDashboardLayout();
-  const widgets = layout.widgets.lg;
-  return (
-    <>
-      {widgets.map(widget => {
-        // `WIDGET_COMPONENTS`, comme la grille du dashboard : une liste propre
-        // a l'ecran de veille n'en connaissait que dix, et tout widget ajoute
-        // depuis — camera, volet, aspirateur… — disparaissait sans un mot.
-        const Component = WIDGET_COMPONENTS[widget.type];
-        if (!Component) return null;
-        return (
-          <GridItem key={widget.id} id={widget.id}>
-            <Component />
-          </GridItem>
-        );
-      })}
-    </>
   );
 }
 
@@ -170,9 +154,7 @@ export function WallPanelReadonlyShell() {
               cette bande couvre toute la largeur, et en `auto` elle interceptait
               les balayages destinés au fond entre deux cards. */}
           <div className={`pointer-events-none ${anchorStyle(config).className}`} style={anchorStyle(config).style}>
-            <DashboardGrid readonly>
-              <WallPanelGridWidgets />
-            </DashboardGrid>
+            <DashboardGrid readonly />
           </div>
         </DashboardLayoutProvider>
       </WidgetConfigProvider>
@@ -205,9 +187,7 @@ export function WallPanelEditShell({ onSave }: { onSave?: WallPanelSave }) {
         <DashboardLayoutProvider initialLayouts={initialLayouts}>
           <WallPanelEditActions onSave={onSave} />
           <div className={`pointer-events-auto ${anchorStyle(config).className}`} style={anchorStyle(config).style}>
-            <DashboardGrid>
-              <WallPanelGridWidgets />
-            </DashboardGrid>
+            <DashboardGrid />
           </div>
         </DashboardLayoutProvider>
       </WidgetConfigProvider>

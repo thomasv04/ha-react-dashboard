@@ -13,7 +13,7 @@ function EmptyIllustration() {
       {/* Main back card */}
       <rect x='65' y='38' width='150' height='108' rx='16' fill='#1e1b4b' stroke='rgba(139,92,246,0.25)' strokeWidth='1.5' />
       <rect x='78' y='52' width='62' height='8' rx='4' fill='rgba(139,92,246,0.45)' />
-      <rect x='78' y='70' width='124' height='5' rx='2.5' fill='rgba(255,255,255,0.1)' />
+      <rect x='78' y='70' width='124' height='5' rx='2.5' fill='var(--ds-surface-3)' />
       <rect x='78' y='82' width='100' height='5' rx='2.5' fill='rgba(255,255,255,0.07)' />
       <rect x='78' y='94' width='115' height='5' rx='2.5' fill='rgba(255,255,255,0.07)' />
       <rect x='78' y='106' width='85' height='5' rx='2.5' fill='rgba(255,255,255,0.05)' />
@@ -98,8 +98,8 @@ export function DashboardEmptyState() {
           <EmptyIllustration />
         </motion.div>
 
-        <h2 className='mt-8 text-2xl font-bold text-white'>{t('dashboard.emptyState.title')}</h2>
-        <p className='mt-3 text-white/50 text-sm max-w-xs leading-relaxed'>{t('dashboard.emptyState.subtitle')}</p>
+        <h2 className='mt-8 text-2xl font-bold text-[var(--ds-ink)]'>{t('dashboard.emptyState.title')}</h2>
+        <p className='mt-3 text-[var(--ds-ink-muted)] text-sm max-w-xs leading-relaxed'>{t('dashboard.emptyState.subtitle')}</p>
 
         {user?.is_admin && (
           <motion.button
@@ -107,7 +107,7 @@ export function DashboardEmptyState() {
             whileTap={{ scale: 0.96 }}
             whileHover={{ scale: 1.03 }}
             data-tour='add-widget'
-            className='mt-8 flex items-center gap-2 px-7 py-3 rounded-full text-white font-semibold text-sm shadow-lg shadow-violet-900/40'
+            className='mt-8 flex items-center gap-2 px-7 py-3 rounded-full text-[var(--ds-ink)] font-semibold text-sm shadow-lg shadow-violet-900/40'
             style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)' }}
           >
             <Plus size={16} />

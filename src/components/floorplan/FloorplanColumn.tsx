@@ -5,10 +5,11 @@ import { FreeGridScope } from '@/components/layout/DashboardGrid';
 import { AddWidgetModal } from '@/components/layout/AddWidgetModal';
 import { useDashboardLayout, type GridWidget } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
-import { useTheme } from '@/context/ThemeContext';
+import { GRID_GAP, GRID_ROW } from '@/lib/panel-grid';
 import { getMinSize } from '@/widgets';
 import { useI18n } from '@/i18n';
 import { ItemContent } from './FloorplanItem';
+import { layoutWidgets } from '@/lib/panel-grid';
 
 /** Petit bouton de la barre d'une card de la colonne, en édition. */
 function ToolButton({ icon: Icon, label, onClick, danger }: { icon: typeof Plus; label: string; onClick: () => void; danger?: boolean }) {
@@ -18,7 +19,7 @@ function ToolButton({ icon: Icon, label, onClick, danger }: { icon: typeof Plus;
       title={label}
       aria-label={label}
       className={
-        danger ? 'p-1.5 rounded-lg text-red-300 hover:bg-red-500/25' : 'p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10'
+        danger ? 'p-1.5 rounded-[var(--ds-radius-sm)] text-[var(--ds-alert)]' : 'p-1.5 rounded-[var(--ds-radius-sm)] text-[var(--ds-ink)]'
       }
     >
       <Icon size={13} />
@@ -36,32 +37,26 @@ export function FloorplanColumn({ ids, width, onChange }: { ids: string[]; width
   const { t } = useI18n();
   const { layout, isEditMode, updateWidget, removeWidget } = useDashboardLayout();
   const { setEditingWidgetId } = useWidgetConfig();
-  const { layoutSettings } = useTheme();
   const [adding, setAdding] = useState(false);
-  const widgets = ids.flatMap(id => layout.widgets.lg.find(w => w.id === id) ?? []);
+  const all = layoutWidgets(layout);
+  const widgets = ids.flatMap(id => all.find(w => w.id === id) ?? []);
 
   const move = (i: number, by: -1 | 1) => {
     const next = widgets.map(w => w.id);
     [next[i], next[i + by]] = [next[i + by], next[i]];
     onChange(next);
   };
-  const resize = (w: GridWidget, by: -1 | 1) =>
-    updateWidget(w.id, { h: Math.max(getMinSize(w.type, 'lg', w.disposition).h, w.h + by) }, 'lg');
+  const resize = (w: GridWidget, by: -1 | 1) => updateWidget(w.id, { h: Math.max(getMinSize(w.type, w.disposition).h, w.h + by) });
 
   return (
     <div data-floorplan-column className='absolute left-3 top-3 bottom-3 z-30 overflow-y-auto overscroll-contain' style={{ width }}>
       <FreeGridScope>
-        <div className='flex flex-col' style={{ gap: layoutSettings.gridGap }}>
+        <div className='flex flex-col' style={{ gap: GRID_GAP }}>
           {widgets.map((w, i) => (
-            <div
-              key={w.id}
-              data-column-item={w.id}
-              className='relative shrink-0'
-              style={{ height: w.h * layoutSettings.rowHeight + (w.h - 1) * layoutSettings.gridGap }}
-            >
+            <div key={w.id} data-column-item={w.id} className='relative shrink-0' style={{ height: w.h * GRID_ROW + (w.h - 1) * GRID_GAP }}>
               <ItemContent id={w.id} type={w.type} isEditMode={isEditMode} />
               {isEditMode && (
-                <div className='absolute right-2 top-2 flex items-center gap-0.5 p-1 rounded-xl gc-overlay'>
+                <div className='absolute right-2 top-2 flex items-center gap-0.5 p-1 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-sheet)]'>
                   {i > 0 && <ToolButton icon={ChevronUp} label={t('layout.floorplan.columnUp')} onClick={() => move(i, -1)} />}
                   {i < widgets.length - 1 && (
                     <ToolButton icon={ChevronDown} label={t('layout.floorplan.columnDown')} onClick={() => move(i, 1)} />
@@ -77,7 +72,7 @@ export function FloorplanColumn({ ids, width, onChange }: { ids: string[]; width
           {isEditMode && (
             <button
               onClick={() => setAdding(true)}
-              className='shrink-0 flex items-center justify-center gap-1.5 py-3 rounded-2xl border border-dashed border-white/25 text-sm text-white/70 hover:text-white hover:border-white/45 transition-colors'
+              className='shrink-0 flex items-center justify-center gap-1.5 py-3 rounded-[var(--ds-radius-lg)] border border-dashed border-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)] transition-colors'
             >
               <Plus size={15} />
               {t('layout.addWidget')}

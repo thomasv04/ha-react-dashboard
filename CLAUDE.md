@@ -153,6 +153,13 @@ le générateur écrit aussi : l'interface de configuration dans
 `src/types/widget-types.ts`. L'union `GridWidget['type']`, elle, se dérive des
 manifestes enregistrés.
 
+### Où vit une tuile
+
+Une page est une suite de panneaux, chacun avec ses tuiles dans l'ordre (pas de
+coordonnées) — voir `docs/GRID_SYSTEM_GUIDE.md`. Trame fixe : colonnes de 96 px,
+rangées de 80 px (`src/lib/panel-grid.ts`). Une seule disposition pour tous les
+écrans.
+
 ### Anatomie du composant
 
 Une card **doit** s'adapter à sa case, sur les deux axes — les rangées de la

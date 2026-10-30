@@ -59,7 +59,7 @@ export function LoadingScreen({ stage, onSkip, onRetry }: LoadingScreenProps) {
         initial={{ opacity: 0, y: 12, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className='gc rounded-3xl w-full max-w-sm px-6 py-7 flex flex-col items-center gap-6'
+        className='bg-[var(--ds-surface-2)] rounded-[var(--ds-radius-xl)] w-full max-w-sm px-6 py-7 flex flex-col items-center gap-6'
       >
         {/* Marque animée — trois anneaux concentriques qui respirent */}
         <div className='relative w-16 h-16 shrink-0'>
@@ -89,10 +89,10 @@ export function LoadingScreen({ stage, onSkip, onRetry }: LoadingScreenProps) {
                   className={cn(
                     'w-6 h-6 rounded-full flex items-center justify-center shrink-0 border transition-colors duration-300',
                     done
-                      ? 'bg-green-500/15 border-green-500/30 text-green-400'
+                      ? 'bg-[var(--ds-good)] border-[var(--ds-good)] text-[var(--ds-good-ink)]'
                       : active
-                        ? 'bg-white/10 border-white/20 text-white/80'
-                        : 'bg-white/5 border-white/8 text-white/25'
+                        ? 'bg-[var(--ds-surface-3)] border-[var(--ds-surface-3)] text-[var(--ds-ink)]'
+                        : 'bg-[var(--ds-surface-2)] border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
                   )}
                 >
                   {done ? (
@@ -106,7 +106,7 @@ export function LoadingScreen({ stage, onSkip, onRetry }: LoadingScreenProps) {
                 <span
                   className={cn(
                     'text-sm transition-colors duration-300',
-                    done ? 'text-white/50' : active ? 'text-white font-medium' : 'text-white/30'
+                    done ? 'text-[var(--ds-ink-muted)]' : active ? 'text-[var(--ds-ink)] font-medium' : 'text-[var(--ds-ink-muted)]'
                   )}
                 >
                   {t(`dashboard.boot.${s}`)}
@@ -123,14 +123,14 @@ export function LoadingScreen({ stage, onSkip, onRetry }: LoadingScreenProps) {
             animate={{ opacity: 1, height: 'auto' }}
             className='w-full flex flex-col items-center gap-3 overflow-hidden'
           >
-            <div className='flex items-start gap-2 text-amber-300/80 text-xs leading-snug'>
+            <div className='flex items-start gap-2 text-[var(--ds-warm-light)] text-xs leading-snug'>
               <TriangleAlert size={14} className='shrink-0 mt-0.5' />
               <span>{t('dashboard.boot.slow')}</span>
             </div>
             {onRetry && (
               <button
                 onClick={onRetry}
-                className='w-full h-11 rounded-2xl bg-blue-500 hover:bg-blue-400 text-sm font-semibold text-white active:scale-[0.98] transition-transform'
+                className='w-full h-11 rounded-[var(--ds-radius-lg)] bg-[var(--ds-accent)] text-sm font-semibold text-white active:scale-[0.98] transition-transform'
               >
                 {t('dashboard.boot.retry')}
               </button>
@@ -138,7 +138,7 @@ export function LoadingScreen({ stage, onSkip, onRetry }: LoadingScreenProps) {
             {onSkip && (
               <button
                 onClick={onSkip}
-                className='gc-btn w-full h-11 rounded-2xl text-sm font-semibold text-white/85 active:scale-[0.98] transition-transform'
+                className='bg-[var(--ds-surface-2)] w-full h-11 rounded-[var(--ds-radius-lg)] text-sm font-semibold text-[var(--ds-ink)] active:scale-[0.98] transition-transform'
               >
                 {t('dashboard.boot.continueOffline')}
               </button>

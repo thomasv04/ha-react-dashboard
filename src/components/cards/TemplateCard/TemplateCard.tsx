@@ -1,5 +1,3 @@
-import { motion } from 'framer-motion';
-import { CARD_ENTRANCE } from '@/lib/motion-tokens';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useOptionalTemplate } from '@/hooks/useTemplate';
@@ -9,6 +7,7 @@ import type { TemplateCardConfig } from '@/types/widget-configs';
 import { cn } from '@/lib/utils';
 import { resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-map';
 import { FileCode2 } from 'lucide-react';
+import { useI18n } from '@/i18n';
 
 // ── Resolve MDI icon name → lucide ────────────────────────────────────────────
 function resolveIconName(raw: string): string {
@@ -18,6 +17,7 @@ function resolveIconName(raw: string): string {
 }
 
 export function TemplateCard() {
+  const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<TemplateCardConfig>(widgetId || 'template');
@@ -40,26 +40,26 @@ export function TemplateCard() {
   const hasSecondary = !!secondaryInfo;
 
   return (
-    <motion.div {...CARD_ENTRANCE} className='gc rounded-3xl p-5 flex items-center gap-4 h-full'>
+    <div className='flex h-full items-center gap-4 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] p-[var(--ds-space-4)] text-[var(--ds-ink)]'>
       {/* Icon / Image */}
       {(IconComponent || imageUrl || customIconUrl) && (
         <div className='shrink-0'>
           {imageUrl ? (
-            <img src={imageUrl} alt='' className='w-10 h-10 rounded-xl object-cover' />
+            <img src={imageUrl} alt='' className='size-12 rounded-full object-cover' />
           ) : customIconUrl ? (
             <div
-              className={cn('w-10 h-10 rounded-xl flex items-center justify-center', iconColor ? '' : 'bg-white/5')}
+              className={cn('flex size-12 items-center justify-center rounded-full', iconColor ? '' : 'bg-[var(--ds-surface-3)]')}
               style={iconColor ? { backgroundColor: colorAlpha(iconColor, 12) } : undefined}
             >
               <img src={customIconUrl} alt='' className='w-5 h-5 object-contain' />
             </div>
           ) : IconComponent ? (
             <div
-              className={cn('w-10 h-10 rounded-xl flex items-center justify-center', iconColor ? '' : 'bg-white/5')}
+              className={cn('flex size-12 items-center justify-center rounded-full', iconColor ? '' : 'bg-[var(--ds-surface-3)]')}
               style={iconColor ? { backgroundColor: colorAlpha(iconColor, 12) } : undefined}
             >
               {/* eslint-disable-next-line react-hooks/static-components */}
-              <IconComponent size={20} className='text-white/60' style={iconColor ? { color: iconColor } : undefined} />
+              <IconComponent size={22} className='text-[var(--ds-ink-muted)]' style={iconColor ? { color: iconColor } : undefined} />
             </div>
           ) : null}
         </div>
@@ -67,17 +67,17 @@ export function TemplateCard() {
 
       {/* Fallback icon when nothing configured */}
       {!IconComponent && !imageUrl && !customIconUrl && (
-        <div className='shrink-0 w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center'>
-          <FileCode2 size={20} className='text-white/40' />
+        <div className='flex size-12 shrink-0 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'>
+          <FileCode2 size={22} className='text-[var(--ds-ink-muted)]' />
         </div>
       )}
 
       {/* Text content */}
       <div className='min-w-0 flex-1'>
-        {hasPrimary && <div className='text-white text-sm font-medium truncate'>{primaryInfo}</div>}
-        {hasSecondary && <div className='text-white/40 text-xs mt-0.5 truncate'>{secondaryInfo}</div>}
-        {!hasPrimary && !hasSecondary && <div className='text-white/20 text-sm'>Carte template</div>}
+        {hasPrimary && <div className='truncate text-[17px] font-semibold leading-tight'>{primaryInfo}</div>}
+        {hasSecondary && <div className='truncate text-sm text-[var(--ds-ink-muted)]'>{secondaryInfo}</div>}
+        {!hasPrimary && !hasSecondary && <div className='text-sm text-[var(--ds-ink-muted)]'>{t('widgets.template.placeholder')}</div>}
       </div>
-    </motion.div>
+    </div>
   );
 }

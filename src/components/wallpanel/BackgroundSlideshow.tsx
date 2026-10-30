@@ -118,7 +118,7 @@ export function BackgroundSlideshow({ config, ref, onCountChange }: BackgroundSl
   }, [currentIdx, orderedUrls.length, config.image_duration, go]);
 
   if (orderedUrls.length === 0) {
-    return <div className='absolute inset-0' style={{ background: 'linear-gradient(135deg, #0c1028 0%, #1a2550 100%)' }} />;
+    return <div className='absolute inset-0 bg-[var(--ds-surface-1)]' />;
   }
 
   const blurPx = config.style.backgroundBlur ?? 0;
@@ -157,13 +157,6 @@ export function BackgroundSlideshow({ config, ref, onCountChange }: BackgroundSl
           }}
         />
       )}
-      {/* Vignette subtile pour améliorer la lisibilité des widgets */}
-      <div
-        className='absolute inset-0 pointer-events-none'
-        style={{
-          background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.4) 100%)',
-        }}
-      />
     </div>
   );
 }

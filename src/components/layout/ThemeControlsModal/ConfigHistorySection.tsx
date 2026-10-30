@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { History, RotateCcw, AlertTriangle } from 'lucide-react';
+import { RotateCcw, AlertTriangle } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import { apiFetch } from '@/lib/api-base';
-import { SECTION_HEADING } from './typography';
+import { SECTION_HEADING, SETTINGS_CARD } from './typography';
+import { BUTTON_SECONDARY } from './controls';
 import { cn } from '@/lib/utils';
 
 interface HistoryEntry {
@@ -70,42 +71,42 @@ export function ConfigHistorySection() {
   if (error) return null;
 
   return (
-    <div>
-      <h3 className={cn(SECTION_HEADING, 'mb-3 flex items-center gap-2')}>
-        <History size={12} /> {t('settings.system_section.historyTitle')}
-      </h3>
-      <p className='text-white/40 text-xs mb-4 leading-relaxed'>{t('settings.system_section.historyDesc')}</p>
+    <section className={cn(SETTINGS_CARD, 'flex flex-col gap-3')}>
+      <h3 className={SECTION_HEADING}>{t('settings.system_section.historyTitle')}</h3>
+      <p className='text-[15px] leading-relaxed text-[var(--ds-ink-muted)]'>{t('settings.system_section.historyDesc')}</p>
 
       {entries === null ? (
-        <p className='text-white/30 text-xs'>{t('common.loading')}</p>
+        <p className='text-[15px] text-[var(--ds-ink-muted)]'>{t('common.loading')}</p>
       ) : entries.length === 0 ? (
-        <p className='text-white/30 text-xs italic'>{t('settings.system_section.historyEmpty')}</p>
+        <p className='text-[15px] italic text-[var(--ds-ink-muted)]'>{t('settings.system_section.historyEmpty')}</p>
       ) : (
-        <ul className='flex flex-col gap-1.5'>
+        <ul className='flex flex-col gap-2'>
           {entries.map(entry => (
-            <li key={entry.id} className='flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2'>
+            <li key={entry.id} className='flex items-center gap-3 rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-3)] px-4 py-3'>
               <div className='flex-1 min-w-0'>
-                <span className='text-white/70 text-xs block truncate'>{parseDate(entry.created_at).toLocaleString(language)}</span>
-                <span className='text-white/30 text-[11px]'>
+                <span className='block truncate text-base font-medium text-[var(--ds-ink)]'>
+                  {parseDate(entry.created_at).toLocaleString(language)}
+                </span>
+                <span className='text-[var(--ds-ink-muted)] text-sm'>
                   {formatSize(entry.size)}
                   {entry.label ? ` · ${entry.label}` : ''}
                 </span>
               </div>
               <button
                 onClick={() => restore(entry.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors text-xs font-semibold flex-shrink-0 ${
-                  confirmId === entry.id
-                    ? 'bg-amber-500/20 border-amber-500/30 text-amber-400 hover:bg-amber-500/30'
-                    : 'bg-white/8 border-white/12 text-white/70 hover:bg-white/12 hover:text-white'
-                }`}
+                className={cn(
+                  BUTTON_SECONDARY,
+                  'h-11 shrink-0 bg-[var(--ds-surface-1)]',
+                  confirmId === entry.id && 'text-[var(--ds-warm-light)]'
+                )}
               >
-                {confirmId === entry.id ? <AlertTriangle size={12} /> : <RotateCcw size={12} />}
+                {confirmId === entry.id ? <AlertTriangle size={16} /> : <RotateCcw size={16} />}
                 {confirmId === entry.id ? t('settings.system_section.historyConfirm') : t('common.restore')}
               </button>
             </li>
           ))}
         </ul>
       )}
-    </div>
+    </section>
   );
 }

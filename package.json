@@ -19,6 +19,7 @@
     "test:coverage": "vitest run --coverage",
     "test:coverage:watch": "vitest --coverage",
     "sync": "npx tsx scripts/sync-types.ts",
+    "tokens": "tsx scripts/build-tokens.ts",
     "prebuild": "npm run prettier",
     "deploy": "npx tsx scripts/deploy.ts",
     "deploy:integration": "npx tsx scripts/deploy-integration.ts",

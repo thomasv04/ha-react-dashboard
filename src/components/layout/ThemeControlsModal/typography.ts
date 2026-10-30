@@ -1,14 +1,13 @@
 /**
- * Les deux styles de texte que les sept sections des réglages répètent.
- *
- * La même chaîne de classes était recopiée dix-huit fois pour les titres et
- * six pour les intitulés de champ. Toucher au ton des réglages demandait donc
- * vingt-quatre modifications identiques — autant dire qu'on n'y touchait pas,
- * et le panneau criait en capitales très espacées d'un bout à l'autre.
+ * Les styles que les sections des réglages répètent : le titre d'un groupe, et
+ * l'intitulé d'un champ. Toucher au ton des réglages se fait ici, une fois.
  */
 
 /** Titre d'un groupe de réglages. */
-export const SECTION_HEADING = 'text-white/50 text-[11px] font-semibold uppercase tracking-wider';
+export const SECTION_HEADING = 'text-[var(--ds-ink)] text-xl font-semibold';
 
 /** Intitulé d'un champ, sous le titre du groupe. */
-export const FIELD_LABEL = 'text-white/35 text-[10px] uppercase tracking-wide';
+export const FIELD_LABEL = 'text-[var(--ds-ink-muted)] text-sm font-semibold';
+
+/** Un groupe de réglages : un bloc arrondi sur le fond de la feuille. */
+export const SETTINGS_CARD = 'rounded-[var(--ds-radius-xl)] bg-[var(--ds-sheet-section)] p-5';

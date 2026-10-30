@@ -1,72 +1,53 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION_FAST } from '@/lib/motion-tokens';
-import { Settings } from 'lucide-react';
 import { SettingsContent } from './SettingsContent';
 import { START_TOUR_EVENT } from '@/components/onboarding/TourOverlay';
 
-export function ThemeControlsModal() {
-  const [isOpen, setIsOpen] = useState(false);
+/** Les réglages, en plein écran. Ils s'ouvrent depuis le lanceur d'apps. */
+export function ThemeControlsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  /**
+   * Une section peut avoir des modifications en attente (l'écran de veille) :
+   * elle y dépose une garde qui, si elle les retient, répond `true` — on ne
+   * ferme alors pas.
+   */
+  const guard = useRef<(() => boolean) | null>(null);
+  const close = () => {
+    if (!guard.current?.()) onClose();
+  };
 
   // Le tour met en avant des éléments du dashboard : les réglages doivent
-  // s'effacer, sinon le projecteur éclaire le dos de leur propre backdrop.
+  // s'effacer, sinon ils les recouvrent.
   useEffect(() => {
-    const close = () => setIsOpen(false);
-    window.addEventListener(START_TOUR_EVENT, close);
-    return () => window.removeEventListener(START_TOUR_EVENT, close);
-  }, []);
+    window.addEventListener(START_TOUR_EVENT, onClose);
+    return () => window.removeEventListener(START_TOUR_EVENT, onClose);
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `close` ne lit que des refs et `onClose`
+  }, [open, onClose]);
 
   return (
-    <>
-      {/* Trigger button – fixed top-left */}
-      <motion.button
-        onClick={() => setIsOpen(v => !v)}
-        whileTap={{ scale: 0.92 }}
-        data-tour='settings'
-        title='Paramètres'
-        className={`fixed top-4 left-4 z-50 p-2.5 rounded-xl border transition-colors backdrop-blur-sm ${
-          isOpen
-            ? 'bg-blue-500/30 border-blue-500/50 text-blue-200'
-            : 'bg-white/10 border-white/20 text-white/70 hover:text-white hover:bg-white/20'
-        }`}
-      >
-        <Settings size={17} />
-      </motion.button>
-
-      {/* Modal */}
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              key='settings-modal-backdrop'
-              data-overlay
-              className='fixed inset-0 z-[60] bg-black/60'
-              style={{ backdropFilter: 'blur(4px)' }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
-            />
-            {/* Panel */}
-            <motion.div
-              key='settings-modal'
-              className='fixed inset-0 z-[61] flex items-center justify-center pointer-events-none p-4'
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              transition={{ duration: DURATION_FAST }}
-            >
-              <div
-                className='gc-overlay pointer-events-auto w-full max-w-3xl rounded-2xl overflow-hidden'
-                style={{ height: 'min(88vh, 640px)' }}
-              >
-                <SettingsContent onClose={() => setIsOpen(false)} />
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </>
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          key='settings-modal'
+          role='dialog'
+          aria-modal='true'
+          data-overlay
+          className='fixed inset-0 z-[61] bg-[var(--ds-sheet)] text-[var(--ds-ink)]'
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.98 }}
+          transition={{ duration: DURATION_FAST }}
+        >
+          <SettingsContent onClose={close} guard={guard} />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

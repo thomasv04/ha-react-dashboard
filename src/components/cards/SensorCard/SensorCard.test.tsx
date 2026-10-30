@@ -43,18 +43,6 @@ vi.mock('@/hooks/useSensorHistory', () => ({
   useSensorHistory: () => ({ data: [], loading: false }),
 }));
 
-vi.mock('@/components/ui/AnimatedNumber', () => ({
-  AnimatedNumber: ({ value, decimals = 0, suffix = '' }: { value: number; decimals?: number; suffix?: string }) => {
-    const display = decimals > 0 ? value.toFixed(decimals) : Math.round(value).toString();
-    return (
-      <span>
-        {display}
-        {suffix}
-      </span>
-    );
-  },
-}));
-
 import { SensorCard } from './SensorCard';
 
 describe('SensorCard', () => {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { DEFAULT_LAYOUT, type DashboardConfigV2, type DashboardLayout, type GridWidget } from '@/context/DashboardLayoutContext';
+import { type DashboardConfigV2, type DashboardLayout, type GridWidget } from '@/context/DashboardLayoutContext';
 import type { WidgetConfigs } from '@/types/widget-configs';
 import { DEFAULT_WIDGET_CONFIGS } from '@/widgets';
 import { DEFAULT_PAGES, type Page } from '@/context/PageContext';
@@ -8,6 +8,7 @@ import type { CustomPanel, DockConfig } from '@/types/custom-panel';
 import { useToast } from '@/context/ToastContext';
 import { useI18n } from '@/i18n';
 import { apiFetch } from '@/lib/api-base';
+import { EMPTY_LAYOUT, layoutWidgets, toPanelLayout } from '@/lib/panel-grid';
 import { withDemoFloorplan } from '@/mocks/demoFloorplan';
 
 /** Au-delà, on considère le serveur injoignable et on rend depuis le cache. */
@@ -26,6 +27,44 @@ const CACHE_KEY = 'ha-dashboard-config-cache';
  */
 let serverRevision = 0;
 
+/**
+ * Chargement en cours, partagé par tous les appelants du hook.
+ *
+ * Le hook est monté par le dashboard, la barre d'édition, la veille, les
+ * réglages… : chacun refaisait sa propre requête — six GET identiques au
+ * démarrage — et, serveur injoignable, sa propre alerte. Les appels qui se
+ * chevauchent rejoignent la même requête.
+ */
+let inflight: Promise<{ data: unknown; revision: number }> | null = null;
+
+function fetchConfig(): Promise<{ data: unknown; revision: number }> {
+  inflight ??= (async () => {
+    // `AbortController` plutôt qu'un `fetch` nu : sans délai maximal, une
+    // connexion qui pend (wifi faible, serveur qui ne répond plus) laissait la
+    // promesse en suspens — l'écran de chargement ne partait jamais.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    try {
+      const res = await apiFetch('/api/config', { signal: controller.signal });
+      const data: unknown = await res.json();
+      return { data, revision: Number(res.headers.get('X-Config-Revision') ?? 0) };
+    } finally {
+      clearTimeout(timer);
+      inflight = null;
+    }
+  })();
+  return inflight;
+}
+
+/** Une alerte par page et par sorte : les instances du hook ne se la répètent pas. */
+const toastsShown = new Set<'offline' | 'repaired'>();
+
+/** Remet à zéro ce que les instances se partagent — pour les tests, qui n'ont pas de nouvelle page à chaque cas. */
+export function resetConfigLoadState() {
+  inflight = null;
+  toastsShown.clear();
+}
+
 /** Étape de chargement, consommée par l'écran de démarrage. */
 export type ConfigStatus =
   | 'loading' // premier chargement, rien à afficher
@@ -43,8 +82,8 @@ export type ConfigStatus =
 // Une fonction de garde suffit : le schéma est petit et stable. `zod` ajouterait
 // une dépendance et une deuxième définition de la même forme.
 
-/** Position de repli d'un widget dont les coordonnées sont illisibles. */
-const FALLBACK_BOX = { x: 0, y: 0, w: 2, h: 2 };
+/** Taille de repli d'un widget dont les dimensions sont illisibles. */
+const FALLBACK_BOX = { w: 2, h: 2 };
 
 /**
  * Rend un widget affichable, ou `null` s'il ne peut pas l'être.
@@ -53,9 +92,9 @@ const FALLBACK_BOX = { x: 0, y: 0, w: 2, h: 2 };
  *
  * - **`id` ou `type` manquant** → écarté. La grille indexe par `id` et le rendu
  *   choisit le composant par `type` : sans eux, il n'y a rien à afficher.
- * - **coordonnée illisible** → réparée. Une carte mal placée reste une carte que
- *   l'utilisateur a créée et configurée ; la supprimer pour un `x` corrompu
- *   détruirait son travail là où un déplacement suffit à réparer.
+ * - **dimension illisible** → réparée. Une carte mal dimensionnée reste une carte
+ *   que l'utilisateur a créée et configurée ; la supprimer pour un `w` corrompu
+ *   détruirait son travail là où un redimensionnement suffit à réparer.
  */
 function sanitizeWidget(w: unknown): GridWidget | null {
   if (!w || typeof w !== 'object') return null;
@@ -63,7 +102,7 @@ function sanitizeWidget(w: unknown): GridWidget | null {
   if (typeof g.id !== 'string' || typeof g.type !== 'string') return null;
 
   const box: Record<string, number> = {};
-  for (const k of ['x', 'y', 'w', 'h'] as const) {
+  for (const k of ['w', 'h'] as const) {
     box[k] = typeof g[k] === 'number' && Number.isFinite(g[k]) ? (g[k] as number) : FALLBACK_BOX[k];
   }
   return { ...g, ...box } as unknown as GridWidget;
@@ -82,23 +121,27 @@ function sanitizeConfig(config: DashboardConfigV2): { config: DashboardConfigV2;
   const pages = Array.isArray(config.pages) ? config.pages.filter(p => p && typeof p.id === 'string') : [...DEFAULT_PAGES];
   dropped += (Array.isArray(config.pages) ? config.pages.length : 0) - pages.length;
 
+  // Les dispositions d'avant la 4.0 (grilles libres en coordonnées) passent
+  // ici au format des panneaux.
+  const sanitizeLayout = (raw: unknown): DashboardLayout => {
+    const panels = toPanelLayout(raw).panels.filter(p => p && typeof p.id === 'string' && Array.isArray(p.widgets));
+    return {
+      panels: panels.map(p => {
+        const kept = p.widgets.map(sanitizeWidget).filter((w): w is GridWidget => w !== null);
+        dropped += p.widgets.length - kept.length;
+        return { ...p, cols: typeof p.cols === 'number' && p.cols > 0 ? p.cols : 12, widgets: kept };
+      }),
+    };
+  };
+
   const layouts: Record<string, DashboardLayout> = {};
-  for (const [pageId, layout] of Object.entries(config.layouts ?? {})) {
-    const widgets = { lg: [], md: [], sm: [] } as DashboardLayout['widgets'];
-    for (const bp of ['lg', 'md', 'sm'] as const) {
-      const list = layout?.widgets?.[bp];
-      if (!Array.isArray(list)) continue;
-      const kept = list.map(sanitizeWidget).filter((w): w is GridWidget => w !== null);
-      dropped += list.length - kept.length;
-      widgets[bp] = kept;
-    }
-    layouts[pageId] = { ...layout, widgets };
-  }
+  for (const [pageId, layout] of Object.entries(config.layouts ?? {})) layouts[pageId] = sanitizeLayout(layout);
+  const wallPanel = config.wallPanel && { ...config.wallPanel, layout: sanitizeLayout(config.wallPanel.layout) };
 
   // Aucune page valide : mieux vaut un dashboard vierge, où les réglages
   // restent accessibles, qu'un écran sans rien du tout.
   return {
-    config: { ...config, pages: pages.length ? pages : [...DEFAULT_PAGES], layouts },
+    config: { ...config, pages: pages.length ? pages : [...DEFAULT_PAGES], layouts, ...(wallPanel && { wallPanel }) },
     dropped,
   };
 }
@@ -115,7 +158,7 @@ export function wallPanelWidgetConfigsOf(v2: DashboardConfigV2): WidgetConfigs {
   const saved = v2.wallPanel?.widgetConfigs;
   if (saved && Object.keys(saved).length > 0) return saved;
 
-  const ids = new Set((v2.wallPanel?.layout?.widgets?.lg ?? []).map(w => w.id));
+  const ids = new Set(layoutWidgets(toPanelLayout(v2.wallPanel?.layout)).map(w => w.id));
   const harvested: WidgetConfigs = {};
   for (const configs of Object.values(v2.widgetConfigs ?? {})) {
     for (const [id, config] of Object.entries(configs)) {
@@ -133,7 +176,7 @@ function migrateConfig(data: unknown): DashboardConfigV2 {
   }
 
   // v1 migration: put everything under the "home" page
-  let layout: DashboardLayout = DEFAULT_LAYOUT;
+  let layout: DashboardLayout = EMPTY_LAYOUT;
   let widgetConfigs: WidgetConfigs = DEFAULT_WIDGET_CONFIGS;
 
   if (data && typeof data === 'object') {
@@ -166,7 +209,8 @@ function migrateConfig(data: unknown): DashboardConfigV2 {
 function readCache(): DashboardConfigV2 | null {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
-    return raw ? (JSON.parse(raw) as DashboardConfigV2) : null;
+    // Un cache écrit avant la 4.0 porte encore des grilles en coordonnées.
+    return raw ? sanitizeConfig(JSON.parse(raw) as DashboardConfigV2).config : null;
   } catch {
     return null;
   }
@@ -195,7 +239,7 @@ export function useDashboardConfig() {
     withDemo({
       version: 2,
       pages: cached?.pages ?? DEFAULT_PAGES,
-      layouts: cached?.layouts ?? { home: DEFAULT_LAYOUT },
+      layouts: cached?.layouts ?? { home: EMPTY_LAYOUT },
       widgetConfigs: cached?.widgetConfigs ?? { home: DEFAULT_WIDGET_CONFIGS },
     })
   );
@@ -204,9 +248,7 @@ export function useDashboardConfig() {
   const [allLayouts, setAllLayouts] = useState<Record<string, DashboardLayout>>(initial.layouts);
   const [allWidgetConfigs, setAllWidgetConfigs] = useState<Record<string, WidgetConfigs>>(initial.widgetConfigs);
   const [wallPanelConfig, setWallPanelConfig] = useState<WallPanelConfig>(cached?.wallPanel?.config ?? DEFAULT_WALLPANEL_CONFIG);
-  const [wallPanelLayout, setWallPanelLayout] = useState<DashboardLayout>(
-    cached?.wallPanel?.layout ?? { ...DEFAULT_LAYOUT, widgets: { lg: [], md: [], sm: [] } }
-  );
+  const [wallPanelLayout, setWallPanelLayout] = useState<DashboardLayout>(cached?.wallPanel?.layout ?? EMPTY_LAYOUT);
   const [wallPanelWidgetConfigs, setWallPanelWidgetConfigs] = useState<WidgetConfigs>(cached ? wallPanelWidgetConfigsOf(cached) : {});
   const [customPanels, setCustomPanels] = useState<CustomPanel[]>(cached?.customPanels ?? []);
   const [dock, setDock] = useState<DockConfig | undefined>(cached?.dock);
@@ -241,17 +283,12 @@ export function useDashboardConfig() {
     };
 
     const load = async () => {
-      // `AbortSignal.timeout` plutôt qu'un `fetch` nu : sans délai maximal, une
-      // connexion qui pend (wifi faible, serveur qui ne répond plus) laissait la
-      // promesse en suspens — l'écran de chargement ne partait jamais.
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
       try {
-        const res = await apiFetch('/api/config', { signal: controller.signal });
-        const data: unknown = await res.json();
+        const { data, revision } = await fetchConfig();
         if (cancelled) return;
 
-        serverRevision = Number(res.headers.get('X-Config-Revision') ?? 0);
+        serverRevision = revision;
+        toastsShown.delete('offline');
 
         if (data && typeof data === 'object' && 'message' in data) {
           // Pas encore de config côté serveur : dashboard vierge, pas une erreur.
@@ -260,7 +297,8 @@ export function useDashboardConfig() {
           const { config, dropped } = sanitizeConfig(migrateConfig(data));
           apply(config);
           setStatus('ready');
-          if (dropped > 0) {
+          if (dropped > 0 && !toastsShown.has('repaired')) {
+            toastsShown.add('repaired');
             console.warn(`[config] ${dropped} élément(s) invalide(s) écarté(s)`);
             addToast({ title: t('dashboard.repairedTitle'), description: t('dashboard.repairedDescription'), sound: false });
           }
@@ -277,15 +315,14 @@ export function useDashboardConfig() {
 
         // Un seul toast, au premier échec, et seulement sans cache — sinon le
         // dashboard est utilisable et l'alerte serait du bruit.
-        if (attempt === 0 && !hadCache) {
+        if (attempt === 0 && !hadCache && !toastsShown.has('offline')) {
+          toastsShown.add('offline');
           addToast({ title: t('dashboard.offlineTitle'), description: t('dashboard.offlineDescription'), sound: false });
         }
 
         const delay = RETRY_DELAYS_MS[Math.min(attempt, RETRY_DELAYS_MS.length - 1)];
         attempt += 1;
         retryTimer = setTimeout(load, delay);
-      } finally {
-        clearTimeout(timer);
       }
     };
 

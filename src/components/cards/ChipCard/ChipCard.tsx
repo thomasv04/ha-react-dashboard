@@ -87,9 +87,6 @@ function defaultIcon(domain: string, deviceClass: string | undefined, state: str
 /** Ce qu'un tap bascule. Le reste — capteurs surtout — ouvre sa fiche. */
 const TOGGLE_DOMAINS = new Set(['light', 'switch', 'fan', 'input_boolean', 'cover', 'lock']);
 
-/** La couleur « allumé » du reste du dashboard. */
-const ACTIVE_COLOR = '#fbbf24';
-
 /**
  * L'état d'une entité, en une pastille.
  *
@@ -166,7 +163,8 @@ export function ChipCard() {
   // Un capteur n'est ni « allumé » ni « éteint » : sa valeur n'a pas à se colorer.
   const active = !unavailable && domain !== 'sensor' && isActiveState(state);
   const lamp = domain === 'light' ? lightColor(state, entity?.attributes) : null;
-  const iconColor = active ? (lamp ? `rgb(${lamp.join(',')})` : ACTIVE_COLOR) : 'rgba(255,255,255,0.5)';
+  // Allumée, une lampe garde sa vraie couleur sur l'icône.
+  const iconColor = lamp && active ? `rgb(${lamp.join(',')})` : undefined;
 
   const customIconUrl = config?.icon && isCustomIcon(config.icon) ? getCustomIconUrl(config.icon) : undefined;
   const Icon = customIconUrl ? null : (resolveIcon(config?.icon) ?? defaultIcon(domain, deviceClass, state));
@@ -188,20 +186,23 @@ export function ChipCard() {
           longPress.onPointerDown(e);
         }}
         className={cn(
-          'gc flex items-center gap-[0.4em] px-[0.75em] py-[0.35em] whitespace-nowrap select-none cursor-pointer',
+          'flex cursor-pointer select-none items-center gap-[0.4em] whitespace-nowrap rounded-[var(--ds-radius-pill)] px-[0.9em] py-[0.45em] transition-colors',
+          active ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'bg-[var(--ds-surface-2)] text-[var(--ds-ink)]',
           unavailable && 'opacity-45'
         )}
         // `cqi` : sur un plan, le texte suit la largeur du plan dans des bornes lisibles.
-        style={{ borderRadius: 9999, fontSize: 'clamp(11px, 0.85cqi, 15px)' }}
+        style={{ fontSize: 'clamp(11px, 0.85cqi, 15px)' }}
       >
         {customIconUrl ? (
           <img src={customIconUrl} alt='' className='object-contain' style={{ width: '1.15em', height: '1.15em' }} />
         ) : Icon ? (
           // eslint-disable-next-line react-hooks/static-components
-          <Icon size='1.15em' style={{ color: iconColor }} />
+          <Icon size='1.15em' aria-hidden='true' style={{ color: iconColor }} />
         ) : null}
-        {config?.name && <span className='text-white/55 font-medium'>{config.name}</span>}
-        <span className='text-white/90 font-semibold tabular-nums'>{label}</span>
+        {config?.name && (
+          <span className={cn('font-medium', active ? 'text-[var(--ds-tile-on-muted)]' : 'text-[var(--ds-ink-muted)]')}>{config.name}</span>
+        )}
+        <span className='font-semibold tabular-nums'>{label}</span>
       </button>
     </div>
   );

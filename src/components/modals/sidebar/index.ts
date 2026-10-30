@@ -10,5 +10,6 @@ export {
   PresetsModule,
   SelectModule,
   EntityIdModule,
+  SheetSection,
 } from './modules';
 export type { DetailEntry, PowerBarEntry, PresetEntry } from './modules';

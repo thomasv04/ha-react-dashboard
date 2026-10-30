@@ -1,171 +1,184 @@
-import { memo, useState } from 'react';
-import { MoveDiagonal, Pencil, Trash2, Settings, Copy } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { DURATION_MICRO } from '@/lib/motion-tokens';
-import { useDashboardLayout, useSizePresets, type GridWidget, type SizePresetName } from '@/context/DashboardLayoutContext';
+import { useRef, useState } from 'react';
+import { Copy, Lock, MoveDiagonal, Settings, Trash2 } from 'lucide-react';
+import { useDashboardLayout, useSizePresets, type GridWidget } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { WIDGET_DISPOSITIONS } from '@/widgets';
 import { useI18n } from '@/i18n';
-import type { Breakpoint } from './DashboardGrid';
+import { cn } from '@/lib/utils';
 
 interface GridItemOverlayProps {
-  id: string;
   label: string;
   widget: GridWidget;
-  breakpoint: Breakpoint;
-  onResizeStart: (clientX: number, clientY: number) => void;
+  /** Appui sur le fond du calque : la tuile se déplace. */
+  onDragStart: (widgetId: string, start: { clientX: number; clientY: number }) => void;
+  onResizeStart: (widgetId: string, clientX: number, clientY: number) => void;
 }
 
-function GridItemOverlayInner({ id, label, widget, breakpoint, onResizeStart }: GridItemOverlayProps) {
+const ROUND = 'flex size-10 items-center justify-center rounded-full';
+
+/** Appui prolongé, en ms, avant qu'une tuile se laisse saisir au doigt. */
+const TOUCH_HOLD = 220;
+/** Mouvement toléré, en px, pendant cet appui : au-delà, c'est un défilement. */
+const TOUCH_SLOP = 8;
+
+/**
+ * Calque d'édition d'une tuile. Son fond se saisit pour la déplacer ; ses
+ * boutons — qui gardent leur geste pour eux — la configurent, la dupliquent, la
+ * suppriment, et son coin la redimensionne.
+ */
+export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: GridItemOverlayProps) {
+  const id = widget.id;
   const { t } = useI18n();
   const { removeWidget, duplicateWidget } = useDashboardLayout();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const { cycleSize, getCurrentPresetName } = useSizePresets();
   const { setEditingWidgetId } = useWidgetConfig();
   const hasDispositions = !!WIDGET_DISPOSITIONS[widget.type]?.length;
-  const presetName: SizePresetName | null = getCurrentPresetName(id, breakpoint);
+  const keep = (e: React.PointerEvent) => e.stopPropagation();
+  const holdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /**
+   * À la souris, la tuile se saisit aussitôt. Au doigt, il faut la tenir un
+   * instant : sans ça, poser le doigt pour faire défiler le panneau déplacerait
+   * une tuile à chaque fois.
+   */
+  const onGrab = (e: React.PointerEvent) => {
+    if (e.pointerType === 'mouse') {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      return onDragStart(id, e);
+    }
+    const start = { clientX: e.clientX, clientY: e.clientY };
+    const cancel = () => {
+      if (holdRef.current) clearTimeout(holdRef.current);
+      holdRef.current = null;
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', cancel);
+      window.removeEventListener('pointercancel', cancel);
+    };
+    const onMove = (m: PointerEvent) => {
+      if (Math.hypot(m.clientX - start.clientX, m.clientY - start.clientY) > TOUCH_SLOP) cancel();
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', cancel);
+    window.addEventListener('pointercancel', cancel);
+    holdRef.current = setTimeout(() => {
+      cancel();
+      onDragStart(id, start);
+    }, TOUCH_HOLD);
+  };
 
   if (widget.static) {
     return (
-      <div className='absolute top-2 right-2 z-10 flex items-center gap-1'>
+      <div className='absolute right-2 top-2 z-10 flex items-center gap-1.5'>
         <button
           onClick={() => setEditingWidgetId(id)}
-          className='p-1.5 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-400/70 hover:text-blue-300 transition-colors cursor-pointer'
-          title={`Configurer ${label}`}
+          className={cn(ROUND, 'bg-[var(--ds-accent)] text-white')}
+          title={t('layout.configureWidget')}
+          aria-label={t('layout.configureWidget')}
         >
-          <Settings size={11} />
+          <Settings size={16} />
         </button>
-        <div className='p-1.5 rounded-lg bg-black/30 border border-white/10 text-white/35' title={`${label} - widget fixe`}>
-          <Pencil size={11} />
-        </div>
+        <span className={cn(ROUND, 'bg-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]')} title={label}>
+          <Lock size={14} />
+        </span>
       </div>
     );
   }
 
   return (
     <div
-      className='absolute inset-0 z-10 rounded-2xl overflow-hidden flex flex-col cursor-grab active:cursor-grabbing'
-      style={{ background: 'rgba(8, 12, 35, 0.55)' }}
-      data-drag-handle
+      onPointerDown={onGrab}
+      title={t('layout.panel.moveTile')}
+      className='absolute inset-0 z-10 flex cursor-grab select-none flex-col rounded-[var(--ds-radius-lg)] bg-[color-mix(in_srgb,var(--ds-surface-3)_94%,transparent)] text-[var(--ds-ink)] outline-2 outline-dashed outline-[var(--ds-ink-muted)] active:cursor-grabbing'
     >
-      <div className='flex items-center justify-between px-3 pt-2.5'>
-        <span className='text-[11px] font-medium text-white/45'>{label}</span>
-        <div className='flex items-center gap-1'>
+      <div className='flex items-start justify-between gap-2 p-2'>
+        <span className='truncate pl-1 pt-1.5 text-sm font-semibold'>{label}</span>
+        <div className='flex shrink-0 items-center gap-1.5' onPointerDown={keep}>
           <button
-            onMouseDown={e => e.stopPropagation()}
             onClick={() => setEditingWidgetId(id)}
-            className='p-1.5 rounded-lg bg-blue-500/15 hover:bg-blue-500/35 text-blue-400/70 hover:text-blue-300 transition-colors cursor-pointer'
+            className={cn(ROUND, 'bg-[var(--ds-accent)]')}
             title={t('layout.configureWidget')}
+            aria-label={t('layout.configureWidget')}
           >
-            <Settings size={12} />
+            <Settings size={16} />
           </button>
           {/* Dupliquer — reprend aussi la configuration. Refaire à la main un
               thermostat ou un graphe finement réglé était le geste le plus
               fastidieux du mode édition. */}
           <button
-            onMouseDown={e => e.stopPropagation()}
             onClick={() => duplicateWidget(id)}
-            className='p-1.5 rounded-lg bg-white/8 hover:bg-white/20 text-white/50 hover:text-white transition-colors cursor-pointer'
+            className={cn(ROUND, 'bg-[var(--ds-surface-1)]')}
             title={t('layout.duplicateWidget')}
+            aria-label={t('layout.duplicateWidget')}
           >
-            <Copy size={12} />
+            <Copy size={16} />
           </button>
-          <div className='relative'>
-            <button
-              onMouseDown={e => e.stopPropagation()}
-              onClick={() => setConfirmingDelete(true)}
-              className='p-1.5 rounded-lg bg-red-500/15 hover:bg-red-500/35 text-red-400/70 hover:text-red-300 transition-colors cursor-pointer'
-              title={t('layout.removeWidget')}
-            >
-              <Trash2 size={12} />
-            </button>
-            <AnimatePresence>
-              {confirmingDelete && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9, y: -4 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, y: -4 }}
-                  transition={{ duration: DURATION_MICRO }}
-                  onMouseDown={e => e.stopPropagation()}
-                  className='absolute right-0 top-8 z-50 flex flex-col gap-1.5 p-2.5 rounded-xl bg-[#1a1a2e] border border-red-500/30 shadow-xl min-w-[140px]'
-                >
-                  <span className='text-[11px] text-white/70 font-medium whitespace-nowrap'>{t('layout.removeWidgetConfirm')}</span>
-                  <div className='flex gap-1.5'>
-                    <button
-                      onClick={() => setConfirmingDelete(false)}
-                      className='flex-1 text-[10px] px-2 py-1 rounded-lg bg-white/8 text-white/50 hover:bg-white/15 transition-colors cursor-pointer'
-                    >
-                      {t('layout.removeWidgetCancel')}
-                    </button>
-                    <button
-                      onClick={() => {
-                        removeWidget(id);
-                        setConfirmingDelete(false);
-                      }}
-                      className='flex-1 text-[10px] px-2 py-1 rounded-lg bg-red-500/25 text-red-300 hover:bg-red-500/40 transition-colors cursor-pointer'
-                    >
-                      {t('layout.removeWidgetConfirmBtn')}
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          <button
+            onClick={() => setConfirmingDelete(true)}
+            className={cn(ROUND, 'bg-[var(--ds-alert)]')}
+            title={t('layout.removeWidget')}
+            aria-label={t('layout.removeWidget')}
+          >
+            <Trash2 size={16} />
+          </button>
         </div>
       </div>
-      <div className='flex-1' />
-      <div className='flex items-center justify-between px-3 pb-2.5'>
-        <span className='text-[10px] text-white/25'>
-          {widget.w}c × {widget.h}r
-        </span>
-        {hasDispositions ? (
-          <button
-            onMouseDown={e => e.stopPropagation()}
-            onClick={() => setEditingWidgetId(id)}
-            className='flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/8 hover:bg-purple-500/25 border border-white/12 hover:border-purple-400/40 text-white/40 hover:text-purple-200 transition-all cursor-pointer'
-            title={t('layout.layout')}
-          >
-            <MoveDiagonal size={11} />
-            <span className='text-[10px] font-medium'>
-              {widget.w}×{widget.h}
-            </span>
-          </button>
-        ) : (
-          <button
-            onMouseDown={e => e.stopPropagation()}
-            onClick={() => cycleSize(id, breakpoint)}
-            className='flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/8 hover:bg-purple-500/25 border border-white/12 hover:border-purple-400/40 text-white/40 hover:text-purple-200 transition-all cursor-pointer'
-            title={t('layout.changeSize')}
-          >
-            <MoveDiagonal size={11} />
-            <span className='text-[10px] font-medium'>{presetName ?? t('layout.sizeNormal')}</span>
-          </button>
-        )}
-      </div>
-      {/* Resize handle (bottom-right corner) */}
-      {hasDispositions && (
+
+      {confirmingDelete && (
+        // Recouvre toute la tuile : sur une tuile d'une rangée, une boîte posée dans
+        // le flux débordait sous le calque des voisines, qui interceptaient les appuis.
         <div
-          className='absolute bottom-0 right-0 w-6 h-6 cursor-se-resize z-20 flex items-center justify-center'
-          onMouseDown={e => {
+          className='absolute inset-0 z-20 flex flex-col items-center justify-center gap-1.5 rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-1)] p-2 text-[var(--ds-ink)]'
+          onPointerDown={keep}
+        >
+          <span className='text-center text-sm font-semibold'>{t('layout.removeWidgetConfirm')}</span>
+          <div className='flex gap-2'>
+            <button
+              onClick={() => setConfirmingDelete(false)}
+              className='h-8 rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)] px-4 text-sm font-semibold'
+            >
+              {t('layout.removeWidgetCancel')}
+            </button>
+            <button
+              onClick={() => removeWidget(id)}
+              className='h-8 rounded-[var(--ds-radius-pill)] bg-[var(--ds-alert)] px-4 text-sm font-semibold text-white'
+            >
+              {t('layout.removeWidgetConfirmBtn')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className='mt-auto flex items-end justify-between gap-2 p-2'>
+        {/* Une disposition se choisit dans la fiche ; sinon, les trois tailles prédéfinies tournent. */}
+        <button
+          onPointerDown={keep}
+          onClick={() => (hasDispositions ? setEditingWidgetId(id) : cycleSize(id))}
+          className='flex h-9 items-center gap-1.5 rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-1)] px-3 text-sm font-semibold'
+          title={hasDispositions ? t('layout.layout') : t('layout.changeSize')}
+        >
+          <MoveDiagonal size={14} />
+          {hasDispositions ? `${widget.w}×${widget.h}` : (getCurrentPresetName(id) ?? t('layout.sizeNormal'))}
+        </button>
+        <span
+          role='button'
+          aria-label={t('layout.panel.resize')}
+          title={t('layout.panel.resize')}
+          className={cn(ROUND, 'cursor-se-resize touch-none bg-[var(--ds-surface-1)]')}
+          onPointerDown={e => {
             e.stopPropagation();
             e.preventDefault();
-            onResizeStart(e.clientX, e.clientY);
-          }}
-          onTouchStart={e => {
-            e.stopPropagation();
-            const touch = e.touches[0];
-            if (touch) onResizeStart(touch.clientX, touch.clientY);
+            onResizeStart(id, e.clientX, e.clientY);
           }}
         >
-          <svg width='10' height='10' viewBox='0 0 10 10' className='text-white/30'>
+          <svg width='12' height='12' viewBox='0 0 10 10' aria-hidden='true'>
             <line x1='9' y1='1' x2='1' y2='9' stroke='currentColor' strokeWidth='1.5' />
             <line x1='9' y1='4' x2='4' y2='9' stroke='currentColor' strokeWidth='1.5' />
             <line x1='9' y1='7' x2='7' y2='9' stroke='currentColor' strokeWidth='1.5' />
           </svg>
-        </div>
-      )}
+        </span>
+      </div>
     </div>
   );
 }
-
-export const GridItemOverlay = memo(GridItemOverlayInner);

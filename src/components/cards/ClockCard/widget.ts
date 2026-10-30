@@ -31,6 +31,15 @@ export default defineWidget({
 
   fields: [
     { key: 'name', label: 'widgets.clock.fields.name.label', fieldType: 'text' },
+    {
+      key: 'display',
+      label: 'widgets.clock.fields.display.label',
+      fieldType: 'select',
+      options: [
+        { value: 'time', label: 'widgets.clock.fields.display.options.time' },
+        { value: 'date', label: 'widgets.clock.fields.display.options.date' },
+      ],
+    },
     { key: 'showAnalog', label: 'widgets.clock.fields.showAnalog.label', fieldType: 'boolean' },
     { key: 'showDate', label: 'widgets.clock.fields.showDate.label', fieldType: 'boolean' },
     { key: 'showSeconds', label: 'widgets.clock.fields.showSeconds.label', fieldType: 'boolean' },

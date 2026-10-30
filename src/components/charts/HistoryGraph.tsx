@@ -83,7 +83,7 @@ export function HistoryGraph({ data, height = 350, color = '#60a5fa' }: HistoryG
 
   if (points.length < 2) {
     return (
-      <div className='flex items-center justify-center text-white/30 text-sm' style={{ height }}>
+      <div className='flex items-center justify-center text-[var(--ds-ink-muted)] text-sm' style={{ height }}>
         {t('common.noData')}
       </div>
     );
@@ -105,7 +105,7 @@ export function HistoryGraph({ data, height = 350, color = '#60a5fa' }: HistoryG
           x={PADDING_LEFT - 8}
           y={lbl.y + 4}
           textAnchor='end'
-          fill='rgba(255,255,255,0.35)'
+          fill='var(--ds-ink-muted)'
           fontSize={10}
           fontFamily='monospace'
         >
@@ -115,15 +115,7 @@ export function HistoryGraph({ data, height = 350, color = '#60a5fa' }: HistoryG
 
       {/* X-axis labels */}
       {xLabels.map((lbl, i) => (
-        <text
-          key={`x-${i}`}
-          x={lbl.x}
-          y={height - 5}
-          textAnchor='middle'
-          fill='rgba(255,255,255,0.35)'
-          fontSize={10}
-          fontFamily='monospace'
-        >
+        <text key={`x-${i}`} x={lbl.x} y={height - 5} textAnchor='middle' fill='var(--ds-ink-muted)' fontSize={10} fontFamily='monospace'>
           {lbl.label}
         </text>
       ))}
@@ -136,7 +128,7 @@ export function HistoryGraph({ data, height = 350, color = '#60a5fa' }: HistoryG
           y1={lbl.y}
           x2={W - PADDING_RIGHT}
           y2={lbl.y}
-          stroke='rgba(255,255,255,0.05)'
+          stroke='var(--ds-surface-3)'
           strokeWidth={1}
         />
       ))}

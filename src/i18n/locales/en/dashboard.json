@@ -14,9 +14,7 @@
     "addPage": "New page",
     "deletePage": "Delete page"
   },
-  "editTooltipExit": "Exit edit mode",
   "editTooltipEnter": "Edit dashboard",
-  "cancelTooltip": "Cancel",
   "boot": {
     "connect": "Connecting to Home Assistant",
     "config": "Loading dashboard",
@@ -30,8 +28,6 @@
   "saveFailed": "Could not save the configuration",
   "conflictTitle": "Changed elsewhere",
   "conflictDescription": "Another device saved in the meantime. Reload the page before redoing your changes.",
-  "pack": "Reflow",
-  "packTooltip": "Close gaps in the layout (current breakpoint only)",
   "repairedTitle": "Configuration repaired",
   "repairedDescription": "Unreadable items were dropped. The rest of the dashboard is intact.",
   "undo": "Undo (Ctrl+Z)",
@@ -48,5 +44,10 @@
   "selectionCount": "{value} selected",
   "selectionDelete": "Delete selection",
   "selectionClear": "Clear selection",
-  "selectionHint": "Shift+click to select multiple cards"
+  "selectionHint": "Shift+click to select multiple cards",
+  "done": "Done",
+  "doneTooltip": "Save and finish",
+  "discardTooltip": "Discard changes",
+  "discardConfirm": "Discard?",
+  "backToLayout": "Layout"
 }

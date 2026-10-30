@@ -65,12 +65,12 @@ export function AreaControlsField({
 
   return (
     <div className='space-y-2'>
-      <label className='text-[11px] text-white/40 block'>{label}</label>
+      <label className='text-sm text-[var(--ds-ink-muted)] block'>{label}</label>
 
       <select
         value={area}
         onChange={e => onChange({ area: e.target.value, controls: [] })}
-        className='w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 outline-none focus:border-blue-500/50 cursor-pointer'
+        className='w-full px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)] outline-none focus:outline-2 focus:outline-[var(--ds-accent)] cursor-pointer'
         style={{ colorScheme: 'dark' }}
       >
         <option value='' className='bg-[#0c1028]'>
@@ -89,12 +89,12 @@ export function AreaControlsField({
             {controls.map(token => (
               <span
                 key={token}
-                className='flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] text-white/70'
+                className='flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full bg-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)]'
               >
                 {isEntityToken(token) ? entityLabel(token) : domainLabel(token)}
                 <button
                   onClick={() => onChange({ area, controls: controls.filter(c => c !== token) })}
-                  className='p-0.5 rounded-full text-white/30 hover:text-red-400 hover:bg-red-500/10'
+                  className='p-0.5 rounded-full text-[var(--ds-ink-muted)]'
                 >
                   <X size={11} />
                 </button>
@@ -105,7 +105,7 @@ export function AreaControlsField({
           <button
             ref={triggerRef}
             onClick={handleToggle}
-            className='flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 text-blue-400 text-[11px] transition-colors'
+            className='flex items-center gap-1.5 px-2.5 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] text-sm transition-colors'
           >
             <Plus size={11} /> {t('layout.areaControls.add')}
             {open ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
@@ -121,23 +121,22 @@ export function AreaControlsField({
               position: 'fixed',
               ...dropStyle,
               zIndex: 9999,
-              background: 'rgba(12, 16, 40, 0.98)',
-              backdropFilter: 'blur(20px)',
+              background: 'var(--ds-surface-1)',
               borderRadius: 8,
-              border: '1px solid rgba(255,255,255,0.12)',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+              border: '1px solid var(--ds-surface-3)',
+              boxShadow: 'var(--ds-shadow-sheet)',
               overflow: 'hidden',
               maxHeight: 300,
             }}
           >
-            <div className='p-2 border-b border-white/8'>
-              <div className='flex items-center gap-2 px-2 py-1.5 rounded-md bg-white/5'>
-                <Search size={13} className='text-white/30' />
+            <div className='p-2 border-b border-[var(--ds-surface-3)]'>
+              <div className='flex items-center gap-2 px-2 py-1.5 rounded-md bg-[var(--ds-surface-2)]'>
+                <Search size={13} className='text-[var(--ds-ink-muted)]' />
                 <input
                   autoFocus
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className='bg-transparent text-sm text-white/80 outline-none flex-1 placeholder:text-white/20'
+                  className='bg-transparent text-sm text-[var(--ds-ink)] outline-none flex-1 placeholder:text-[var(--ds-ink-muted)]'
                   placeholder={t('layout.entitySearch')}
                 />
               </div>
@@ -145,30 +144,30 @@ export function AreaControlsField({
 
             <div className='overflow-y-auto' style={{ maxHeight: 240 }}>
               {availableDomains.length > 0 && (
-                <p className='px-3 pt-2 pb-1 text-[10px] uppercase tracking-wider text-white/25'>{t('layout.areaControls.domains')}</p>
+                <p className='px-3 pt-2 pb-1 text-xs uppercase tracking-wider text-[var(--ds-ink-muted)]'>
+                  {t('layout.areaControls.domains')}
+                </p>
               )}
               {availableDomains.map(d => (
-                <button
-                  key={d}
-                  onClick={() => add(d)}
-                  className='w-full text-left px-3 py-1.5 text-sm text-white/60 hover:bg-white/8 hover:text-white/90'
-                >
+                <button key={d} onClick={() => add(d)} className='w-full text-left px-3 py-1.5 text-sm text-[var(--ds-ink-muted)]'>
                   {domainLabel(d)}
                 </button>
               ))}
 
               {availableEntities.length > 0 && (
-                <p className='px-3 pt-2 pb-1 text-[10px] uppercase tracking-wider text-white/25'>{t('layout.areaControls.entities')}</p>
+                <p className='px-3 pt-2 pb-1 text-xs uppercase tracking-wider text-[var(--ds-ink-muted)]'>
+                  {t('layout.areaControls.entities')}
+                </p>
               )}
               {availableEntities.map(e => (
-                <button key={e.entity_id} onClick={() => add(e.entity_id)} className='w-full text-left px-3 py-1.5 hover:bg-white/8 group'>
-                  <span className='block text-sm text-white/60 group-hover:text-white/90 truncate'>{friendlyName(e) ?? e.entity_id}</span>
-                  <span className='block text-[10px] text-white/25 font-mono truncate'>{e.entity_id}</span>
+                <button key={e.entity_id} onClick={() => add(e.entity_id)} className='w-full text-left px-3 py-1.5 group'>
+                  <span className='block text-sm text-[var(--ds-ink-muted)] truncate'>{friendlyName(e) ?? e.entity_id}</span>
+                  <span className='block text-xs text-[var(--ds-ink-muted)] font-mono truncate'>{e.entity_id}</span>
                 </button>
               ))}
 
               {!availableDomains.length && !availableEntities.length && (
-                <p className='px-3 py-2 text-white/25 text-xs'>{t('layout.entityNoResult')}</p>
+                <p className='px-3 py-2 text-[var(--ds-ink-muted)] text-xs'>{t('layout.entityNoResult')}</p>
               )}
             </div>
           </div>,

@@ -31,13 +31,13 @@ widgets configurables, panneaux sur mesure, mise à jour en temps réel.
 
 ## ✨ Features
 
-- ✅ **Responsive CSS Grid** — Auto-layout on mobile, tablet, desktop
-- ✅ **Drag-and-Drop** — Rearrange widgets in edit mode
+- ✅ **Panneaux de tuiles** — façon Echo Show : panneaux titrés côte à côte, une seule disposition qui s'empile sur téléphone
+- ✅ **Glisser-déposer** — les tuiles passent d'un panneau à l'autre, au doigt comme à la souris
 - ✅ **Add/Remove Widgets** — Customize your dashboard
 - ✅ **Real-time Updates** — WebSocket integration with Home Assistant
 - ✅ **Cloud Storage** — Save layout to Home Assistant (per-user)
 - ✅ **No Authentication (Add-on mode)** — Automatic HA session management
-- ✅ **Thèmes** — Sombre, Clair, Verre, Minuit, Émeraude, Clay, Sea Glass (clair et sombre), ou un thème repris de Home Assistant ; opacité, flou et couleur des cards réglables
+- ✅ **Thèmes** — Sombre ou Clair, bascule jour/nuit automatique, ou un thème repris de Home Assistant
 - ✅ **Storybook Stories** — All components documented
 
 ---

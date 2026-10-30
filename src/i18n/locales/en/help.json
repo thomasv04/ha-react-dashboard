@@ -9,15 +9,15 @@
     },
     "widgets": {
       "title": "Add and arrange widgets",
-      "body": "Browse the catalogue, bind an entity, move and resize your cards."
+      "body": "Browse the catalog, link an entity, arrange tiles in panels and resize them."
     },
     "panels": {
       "title": "Set up a panel",
-      "body": "Build a full-screen panel out of blocks, then add it to the bottom dock."
+      "body": "Build a panel from blocks in the launcher, then pin it to the rail."
     },
     "appearance": {
       "title": "Look and wall panel",
-      "body": "Themes, wallpaper, card opacity, and the screensaver mode for a wall-mounted tablet."
+      "body": "Dark or light theme, day/night switch, and the wall-tablet screensaver: large clock or photo frame."
     },
     "floorplan": {
       "title": "The Plan page",
