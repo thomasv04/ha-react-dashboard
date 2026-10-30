@@ -5,15 +5,12 @@ import { useCustomPanels } from '@/context/CustomPanelContext';
 import { usePanel, type PanelId } from '@/context/PanelContext';
 import { resolveIcon, useIconCatalog } from '@/lib/lucide-icon-map';
 import { cn } from '@/lib/utils';
-import { pageIcon, sortPages } from './page-icon';
+import { pageColor, pageIcon, sortPages } from './page-icon';
 import { useI18n } from '@/i18n';
 
 // 48 px + 6 px de marge de chaque côté : la pilule fait 60 px, la largeur du
 // bouton des apps, et le rail tombe pile sous lui.
 const RAIL_BUTTON = 'flex size-12 shrink-0 items-center justify-center rounded-[var(--ds-radius-md)] transition-colors';
-
-/** Couleurs des pastilles de pages, reprises des apps du lanceur. */
-const APP_COLORS = ['var(--ds-app-home)', 'var(--ds-app-music)', 'var(--ds-app-tv)', 'var(--ds-app-photo)', 'var(--ds-app-calendar)'];
 
 /**
  * Rail de navigation à gauche : la première page (l'accueil) en tête, les
@@ -89,7 +86,7 @@ export function NavRail() {
                 aria-label={page.label}
                 aria-current={isActive ? 'page' : undefined}
                 // Une pastille de couleur par page, comme les apps du lanceur ; la page ouverte est cerclée.
-                style={{ background: APP_COLORS[index % APP_COLORS.length] }}
+                style={{ background: pageColor(index + 1) }}
                 className={cn(RAIL_BUTTON, 'text-white', isActive && 'outline-[3px] outline-offset-2 outline-[var(--ds-ink)]')}
               >
                 <Icon size={22} />

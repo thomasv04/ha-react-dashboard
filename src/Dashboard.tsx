@@ -133,7 +133,7 @@ function DashboardContent() {
   return (
     <LayoutGroup>
       <div className='min-h-screen w-full overflow-x-hidden text-[var(--ds-ink)]'>
-        <TopBar onOpenLauncher={() => setLauncherOpen(true)} />
+        <TopBar launcherOpen={launcherOpen} onToggleLauncher={() => setLauncherOpen(open => !open)} />
         <NavRail />
         <Launcher open={launcherOpen} onClose={closeLauncher} />
 

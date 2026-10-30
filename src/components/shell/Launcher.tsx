@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@hakit/core';
-import { Compass, Layers, LayoutGrid, Pin, PinOff, Settings, Sparkles, X, type LucideIcon } from 'lucide-react';
+import { Compass, Layers, LayoutGrid, Pin, PinOff, Settings, Sparkles, type LucideIcon } from 'lucide-react';
 import { usePages } from '@/context/PageContext';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { usePanel } from '@/context/PanelContext';
@@ -11,12 +11,13 @@ import { DURATION_FAST } from '@/lib/motion-tokens';
 import { START_TOUR_EVENT } from '@/components/onboarding/TourOverlay';
 import { SHOW_RELEASE_NOTES_EVENT } from '@/components/onboarding/ReleaseNotesModal';
 import { CustomPanelEditorModal } from '@/components/custom-panels';
+import { AddWidgetModal } from '@/components/layout/AddWidgetModal';
 import { ThemeControlsModal } from '@/components/layout/ThemeControlsModal';
 import { cn } from '@/lib/utils';
-import { pageIcon, sortPages } from './page-icon';
+import { pageColor, pageIcon, sortPages } from './page-icon';
 import { useI18n } from '@/i18n';
 
-type Dialog = 'settings' | 'panels' | null;
+type Dialog = 'settings' | 'panels' | 'gallery' | null;
 
 /**
  * Lanceur d'apps : une feuille qui recouvre l'écran, les pages en favoris à
@@ -77,10 +78,10 @@ export function Launcher({ open, onClose }: { open: boolean; onClose: () => void
             >
               <section className='sm:w-[340px] shrink-0 overflow-y-auto bg-black/15 p-7 flex flex-col gap-1'>
                 <h2 className='mb-3 text-2xl font-semibold'>{t('layout.shell.favorites')}</h2>
-                {sorted.map(page => {
+                {sorted.map((page, index) => {
                   const Icon = pageIcon(page);
                   return (
-                    <LauncherItem key={page.id} Icon={Icon} color='var(--ds-app-home)' onClick={run(() => setCurrentPage(page.id))}>
+                    <LauncherItem key={page.id} Icon={Icon} color={pageColor(index)} onClick={run(() => setCurrentPage(page.id))}>
                       {page.label}
                     </LauncherItem>
                   );
@@ -118,6 +119,11 @@ export function Launcher({ open, onClose }: { open: boolean; onClose: () => void
                   })}
                   {panels.length === 0 && <p className='py-4 text-[var(--ds-ink-muted)]'>{t('layout.shell.noPanels')}</p>}
 
+                  {isAdmin && (
+                    <LauncherItem Icon={LayoutGrid} color='var(--ds-app-home)' onClick={run(() => setDialog('gallery'))}>
+                      {t('layout.shell.widgetGallery')}
+                    </LauncherItem>
+                  )}
                   <LauncherItem Icon={Settings} color='var(--ds-control)' onClick={run(() => setDialog('settings'))}>
                     {t('layout.shell.settings')}
                   </LauncherItem>
@@ -142,21 +148,13 @@ export function Launcher({ open, onClose }: { open: boolean; onClose: () => void
                   </LauncherItem>
                 </div>
               </section>
-
-              <button
-                onClick={onClose}
-                title={t('layout.shell.closeLauncher')}
-                aria-label={t('layout.shell.closeLauncher')}
-                className='absolute right-5 top-5 flex size-11 items-center justify-center rounded-full hover:bg-black/15'
-              >
-                <X size={22} />
-              </button>
             </motion.div>
           </>
         )}
       </AnimatePresence>
 
       <ThemeControlsModal open={dialog === 'settings'} onClose={() => setDialog(null)} />
+      <AnimatePresence>{dialog === 'gallery' && <AddWidgetModal onClose={() => setDialog(null)} />}</AnimatePresence>
       <AnimatePresence>{dialog === 'panels' && <CustomPanelEditorModal onClose={() => setDialog(null)} />}</AnimatePresence>
     </>
   );

@@ -1,5 +1,5 @@
 import { useUser } from '@hakit/core';
-import { Grip } from 'lucide-react';
+import { Grip, X } from 'lucide-react';
 import { useNow } from '@/hooks/useNow';
 import { useWeatherNow } from '@/hooks/useWeatherNow';
 import { useFormats } from '@/hooks/useFormats';
@@ -9,7 +9,7 @@ import { useI18n } from '@/i18n';
  * Barre du haut : lanceur d'apps à gauche, météo, heure et utilisateur à droite.
  * Lisible de loin — c'est ce qu'on regarde en passant devant la tablette.
  */
-export function TopBar({ onOpenLauncher }: { onOpenLauncher: () => void }) {
+export function TopBar({ launcherOpen, onToggleLauncher }: { launcherOpen: boolean; onToggleLauncher: () => void }) {
   const { t } = useI18n();
   const { formatTime } = useFormats();
   const now = useNow();
@@ -17,15 +17,18 @@ export function TopBar({ onOpenLauncher }: { onOpenLauncher: () => void }) {
   const { temperature, Icon: WeatherIcon } = useWeatherNow();
 
   return (
-    <header className='fixed inset-x-0 top-0 z-40 flex items-center justify-between px-6 sm:px-10 pt-6 pointer-events-none'>
+    // Au-dessus du voile du lanceur : le bouton devient son X, comme sur l'Echo Show.
+    <header
+      className={`fixed inset-x-0 top-0 ${launcherOpen ? 'z-[62]' : 'z-40'} flex items-center justify-between px-6 sm:px-10 pt-6 pointer-events-none`}
+    >
       <button
-        onClick={onOpenLauncher}
+        onClick={onToggleLauncher}
         data-tour='settings'
-        title={t('layout.shell.openLauncher')}
-        aria-label={t('layout.shell.openLauncher')}
+        title={launcherOpen ? t('layout.shell.closeLauncher') : t('layout.shell.openLauncher')}
+        aria-label={launcherOpen ? t('layout.shell.closeLauncher') : t('layout.shell.openLauncher')}
         className='pointer-events-auto flex size-[60px] items-center justify-center rounded-[var(--ds-radius-md)] bg-[var(--ds-accent)] text-white active:scale-95 transition-transform'
       >
-        <Grip size={28} />
+        {launcherOpen ? <X size={28} /> : <Grip size={28} />}
       </button>
 
       <div className='flex items-center gap-6 text-[var(--ds-ink)]'>

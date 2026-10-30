@@ -562,7 +562,8 @@
     "movePageUp": "Monter",
     "movePageDown": "Descendre",
     "deletePage": "Supprimer la page",
-    "noPanels": "Aucun panneau pour l’instant"
+    "noPanels": "Aucun panneau pour l’instant",
+    "widgetGallery": "Galerie de widgets"
   },
   "panel": {
     "untitled": "Panneau sans titre",
