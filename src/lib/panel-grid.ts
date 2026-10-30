@@ -31,6 +31,56 @@ export const newPanelId = () => `panel-${Date.now().toString(36)}-${Math.random(
 
 export const newPanel = (cols = PANEL_COLS_DEFAULT): LayoutPanel => ({ id: newPanelId(), cols, widgets: [] });
 
+/** Où lâcher un panneau par rapport à celui qu'on vise. */
+export type PanelZone = 'left' | 'right' | 'above' | 'below';
+
+/**
+ * Déplace un panneau d'après l'endroit où on le lâche.
+ *
+ * - `left` / `right` : une colonne à lui, avant ou après celle du panneau visé ;
+ * - `above` / `below` : dans la colonne du panneau visé, au-dessus ou en dessous.
+ *
+ * Une colonne est une suite de panneaux dont tous, sauf le premier, ont
+ * `below` : retirer une tête de colonne passe donc la main à son suivant.
+ */
+export function placePanel(layout: DashboardLayout, id: string, targetId: string, zone: PanelZone): DashboardLayout {
+  if (id === targetId) return layout;
+  const from = layout.panels.findIndex(p => p.id === id);
+  if (from < 0 || !layout.panels.some(p => p.id === targetId)) return layout;
+
+  const moving = layout.panels[from];
+  const rest = layout.panels.filter(p => p.id !== id).map(p => ({ ...p }));
+  // Le panneau qui était sous lui devient tête de colonne.
+  const successor = layout.panels[from + 1];
+  if (!moving.below && successor?.below) rest.find(p => p.id === successor.id)!.below = undefined;
+
+  const t = rest.findIndex(p => p.id === targetId);
+  const head = (i: number) => {
+    while (i > 0 && rest[i].below) i--;
+    return i;
+  };
+  const tail = (i: number) => {
+    while (rest[i + 1]?.below) i++;
+    return i;
+  };
+
+  const placed: LayoutPanel = { ...moving, below: undefined };
+  let at: number;
+  if (zone === 'left') at = head(t);
+  else if (zone === 'right') at = tail(t) + 1;
+  else if (zone === 'above') {
+    at = t;
+    placed.below = rest[t].below;
+    rest[t].below = true;
+  } else {
+    at = t + 1;
+    placed.below = true;
+  }
+  rest.splice(at, 0, placed);
+  rest[0].below = undefined;
+  return { ...layout, panels: rest };
+}
+
 /** Un widget de la page et le panneau qui le porte. */
 export function findWidget(layout: DashboardLayout, id: string): { panel: LayoutPanel; widget: GridWidget } | undefined {
   for (const panel of layout.panels) {

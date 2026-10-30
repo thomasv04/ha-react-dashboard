@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from 'react';
 import type { WidgetConfigs } from '@/types/widget-configs';
 import { isTypingTarget } from '@/lib/utils';
-import { EMPTY_LAYOUT, findWidget, newPanel, toPanelLayout } from '@/lib/panel-grid';
+import { EMPTY_LAYOUT, findWidget, newPanel, placePanel, toPanelLayout, type PanelZone } from '@/lib/panel-grid';
 import { usePages, type Page } from '@/context/PageContext';
 import type { WallPanelConfig } from '@/types/wallpanel';
 import type { CustomPanel, DockConfig } from '@/types/custom-panel';
@@ -69,6 +69,8 @@ export interface LayoutPanel {
   cols: number;
   /** Rangé sous le panneau précédent, dans sa colonne, plutôt qu'à sa droite. */
   below?: boolean;
+  /** Part de la hauteur de la colonne quand plusieurs panneaux s'y empilent (1 par défaut). */
+  weight?: number;
   widgets: GridWidget[];
 }
 
@@ -129,8 +131,8 @@ interface LayoutContextValue {
   updatePanel: (id: string, updates: Partial<Omit<LayoutPanel, 'id' | 'widgets'>>) => void;
   /** Supprime un panneau et ses tuiles */
   removePanel: (id: string) => void;
-  /** Décale un panneau d'un cran vers la gauche (-1) ou la droite (+1) */
-  movePanel: (id: string, delta: -1 | 1) => void;
+  /** Lâche un panneau près d'un autre : à côté (nouvelle colonne) ou dans sa colonne */
+  movePanelTo: (id: string, targetId: string, zone: PanelZone) => void;
   allLayouts: Record<string, DashboardLayout>;
   /** Revient au point de retour précédent (Ctrl+Z) */
   undo: () => void;
@@ -433,16 +435,8 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
 
   const removePanel = useCallback((id: string) => mutate(l => ({ ...l, panels: l.panels.filter(p => p.id !== id) })), [mutate]);
 
-  const movePanel = useCallback(
-    (id: string, delta: -1 | 1) =>
-      mutate(l => {
-        const from = l.panels.findIndex(p => p.id === id);
-        const to = from + delta;
-        if (from < 0 || to < 0 || to >= l.panels.length) return l;
-        const panels = [...l.panels];
-        [panels[from], panels[to]] = [panels[to], panels[from]];
-        return { ...l, panels };
-      }),
+  const movePanelTo = useCallback(
+    (id: string, targetId: string, zone: PanelZone) => mutate(l => placePanel(l, id, targetId, zone)),
     [mutate]
   );
 
@@ -492,7 +486,7 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
       addPanel,
       updatePanel,
       removePanel,
-      movePanel,
+      movePanelTo,
       allLayouts: layouts,
       undo,
       redo,
@@ -512,7 +506,7 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
       addPanel,
       updatePanel,
       removePanel,
-      movePanel,
+      movePanelTo,
       layouts,
       undo,
       redo,

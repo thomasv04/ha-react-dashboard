@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Copy, Lock, MoveDiagonal, Settings, Trash2 } from 'lucide-react';
 import { useDashboardLayout, useSizePresets, type GridWidget } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -10,11 +10,16 @@ interface GridItemOverlayProps {
   label: string;
   widget: GridWidget;
   /** Appui sur le fond du calque : la tuile se déplace. */
-  onDragStart: (widgetId: string, e: React.PointerEvent) => void;
+  onDragStart: (widgetId: string, start: { clientX: number; clientY: number }) => void;
   onResizeStart: (widgetId: string, clientX: number, clientY: number) => void;
 }
 
-const ROUND = 'flex size-9 items-center justify-center rounded-full';
+const ROUND = 'flex size-10 items-center justify-center rounded-full';
+
+/** Appui prolongé, en ms, avant qu'une tuile se laisse saisir au doigt. */
+const TOUCH_HOLD = 220;
+/** Mouvement toléré, en px, pendant cet appui : au-delà, c'est un défilement. */
+const TOUCH_SLOP = 8;
 
 /**
  * Calque d'édition d'une tuile. Son fond se saisit pour la déplacer ; ses
@@ -30,6 +35,38 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
   const { setEditingWidgetId } = useWidgetConfig();
   const hasDispositions = !!WIDGET_DISPOSITIONS[widget.type]?.length;
   const keep = (e: React.PointerEvent) => e.stopPropagation();
+  const holdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /**
+   * À la souris, la tuile se saisit aussitôt. Au doigt, il faut la tenir un
+   * instant : sans ça, poser le doigt pour faire défiler le panneau déplacerait
+   * une tuile à chaque fois.
+   */
+  const onGrab = (e: React.PointerEvent) => {
+    if (e.pointerType === 'mouse') {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      return onDragStart(id, e);
+    }
+    const start = { clientX: e.clientX, clientY: e.clientY };
+    const cancel = () => {
+      if (holdRef.current) clearTimeout(holdRef.current);
+      holdRef.current = null;
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', cancel);
+      window.removeEventListener('pointercancel', cancel);
+    };
+    const onMove = (m: PointerEvent) => {
+      if (Math.hypot(m.clientX - start.clientX, m.clientY - start.clientY) > TOUCH_SLOP) cancel();
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', cancel);
+    window.addEventListener('pointercancel', cancel);
+    holdRef.current = setTimeout(() => {
+      cancel();
+      onDragStart(id, start);
+    }, TOUCH_HOLD);
+  };
 
   if (widget.static) {
     return (
@@ -51,11 +88,9 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
 
   return (
     <div
-      onPointerDown={e => onDragStart(id, e)}
+      onPointerDown={onGrab}
       title={t('layout.panel.moveTile')}
-      // `touch-none` : au doigt, le navigateur défilerait la page au lieu de
-      // laisser glisser la tuile.
-      className='absolute inset-0 z-10 flex cursor-grab touch-none flex-col rounded-[var(--ds-radius-lg)] bg-black/65 text-white outline-2 outline-dashed outline-white/40 active:cursor-grabbing'
+      className='absolute inset-0 z-10 flex cursor-grab select-none flex-col rounded-[var(--ds-radius-lg)] bg-black/55 text-white outline-2 outline-dashed outline-white/40 active:cursor-grabbing'
     >
       <div className='flex items-start justify-between gap-2 p-2'>
         <span className='truncate pl-1 pt-1.5 text-sm font-semibold'>{label}</span>
@@ -128,7 +163,7 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
           role='button'
           aria-label={t('layout.panel.resize')}
           title={t('layout.panel.resize')}
-          className={cn(ROUND, 'cursor-se-resize bg-white/20')}
+          className={cn(ROUND, 'cursor-se-resize touch-none bg-white/20')}
           onPointerDown={e => {
             e.stopPropagation();
             e.preventDefault();

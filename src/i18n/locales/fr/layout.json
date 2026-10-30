@@ -570,8 +570,6 @@
     "width": "{value} colonnes",
     "narrower": "Plus étroit",
     "wider": "Plus large",
-    "moveLeft": "Vers la gauche",
-    "moveRight": "Vers la droite",
     "remove": "Supprimer le panneau",
     "removeConfirm": "Supprimer ce panneau et ses tuiles ?",
     "addTile": "Ajouter une tuile",
@@ -582,7 +580,11 @@
     "edit": "Modifier ce panneau",
     "below": "Sous le panneau précédent",
     "belowDesc": "Le panneau se range dans la même colonne, en dessous.",
-    "order": "Ordre",
-    "width_label": "Largeur"
+    "width_label": "Largeur",
+    "drag": "Déplacer le panneau",
+    "height": "Hauteur",
+    "heightShare": "{value} % de la colonne",
+    "shorter": "Moins haut",
+    "taller": "Plus haut"
   }
 }

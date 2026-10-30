@@ -1,6 +1,6 @@
 import { PanelProvider } from '@/context/PanelContext';
 import { CustomPanelProvider } from '@/context/CustomPanelContext';
-import { DashboardLayoutProvider, useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { DashboardLayoutProvider, useDashboardLayout, useEditMode } from '@/context/DashboardLayoutContext';
 import { WidgetConfigProvider } from '@/context/WidgetConfigContext';
 import { PageProvider } from '@/context/PageContext';
 import { MoreInfoProvider } from '@/context/MoreInfoContext';
@@ -123,6 +123,9 @@ function DashboardContent() {
   const { currentPage } = usePages();
   usePageRouting();
   const widgets = layoutWidgets(layout);
+  const { isEditMode } = useEditMode();
+  // Sans panneau ni édition, il n'y a rien à dessiner : l'écran d'accueil vide s'en charge.
+  const hasBoard = layout.panels.length > 0 || isEditMode;
   const isFloorplan = currentPage?.type === 'floorplan';
   const [launcherOpen, setLauncherOpen] = useState(false);
   const closeLauncher = useCallback(() => setLauncherOpen(false), []);
@@ -140,7 +143,7 @@ function DashboardContent() {
         <div
           className={cn(
             'pt-[112px] pl-3 pr-3 sm:pl-[124px] sm:pr-6',
-            isFloorplan ? 'h-dvh flex flex-col pb-24 sm:pb-6' : 'max-w-[1600px] pb-28 sm:pb-10'
+            isFloorplan ? 'h-dvh flex flex-col pb-24 sm:pb-6' : 'max-w-[1600px] pb-28 sm:pb-6 md:flex md:h-dvh md:flex-col'
           )}
         >
           {/* Pastilles d'état de la page — n'occupent aucune place si vides */}
@@ -156,7 +159,12 @@ function DashboardContent() {
             </WidgetErrorBoundary>
           ) : (
             <>
-              <DashboardGrid />
+              {/* À partir de `md`, le plateau prend tout l'écran restant : ce sont les panneaux qui défilent, pas la page. */}
+              {hasBoard && (
+                <div className='relative md:min-h-0 md:flex-1'>
+                  <DashboardGrid />
+                </div>
+              )}
 
               {widgets.length === 0 && <DashboardEmptyState />}
             </>

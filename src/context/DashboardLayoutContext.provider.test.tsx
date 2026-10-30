@@ -148,10 +148,10 @@ describe('panneaux', () => {
     const result = setup();
     const p1 = step(result, c => c.addPanel());
     const p2 = step(result, c => c.addPanel());
-    step(result, c => c.movePanel(p2, -1));
+    step(result, c => c.movePanelTo(p2, p1, 'left'));
     expect(result.current.layout.panels.map(p => p.id)).toEqual([p2, p1]);
-    // Au bord : rien ne bouge.
-    step(result, c => c.movePanel(p2, -1));
+    // Sur lui-même : rien ne bouge.
+    step(result, c => c.movePanelTo(p2, p2, 'right'));
     expect(result.current.layout.panels.map(p => p.id)).toEqual([p2, p1]);
     step(result, c => c.removePanel(p2));
     expect(result.current.layout.panels.map(p => p.id)).toEqual([p1]);
