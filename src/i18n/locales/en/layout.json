@@ -262,9 +262,8 @@
     "widgetsInfo": "Widgets are freely placed on the screensaver via the same grid system as the main dashboard. Click Demo to preview the overlay and add widgets.",
     "widgetCount_one": "{count} widget configured",
     "widgetCount_other": "{count} widgets configured",
-    "openPreview": "Open preview",
     "backgroundBlur": "Background blur: {value}px",
-    "editWidgets": "Edit widgets",
+    "editWidgets": "Screensaver widgets",
     "dismissOverlay": "Dismiss screensaver",
     "gestures": {
       "tab": "Gestures",
@@ -303,7 +302,8 @@
     "nextPhoto": "Next photo",
     "clockLayout": "Time",
     "clockLarge": "Large clock",
-    "clockPhoto": "Photo frame"
+    "clockPhoto": "Photo frame",
+    "editWidgetsAction": "Edit widgets"
   },
   "panelNoneCreated": "No panel yet — create one from the edit mode.",
   "duplicateWidget": "Duplicate widget",

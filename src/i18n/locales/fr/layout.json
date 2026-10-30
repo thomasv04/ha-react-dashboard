@@ -262,9 +262,8 @@
     "widgetsInfo": "Les widgets sont disposés librement sur l'écran de veille via le même système de grille que le dashboard principal. Cliquez sur Démo pour prévisualiser l'overlay et ajouter des widgets.",
     "widgetCount_one": "{count} widget configuré",
     "widgetCount_other": "{count} widgets configurés",
-    "openPreview": "Ouvrir l'aperçu",
     "backgroundBlur": "Flou de fond : {value}px",
-    "editWidgets": "Modifier les widgets",
+    "editWidgets": "Widgets de la veille",
     "dismissOverlay": "Fermer l'écran de veille",
     "gestures": {
       "tab": "Gestes",
@@ -303,7 +302,8 @@
     "nextPhoto": "Photo suivante",
     "clockLayout": "Heure",
     "clockLarge": "Grande horloge",
-    "clockPhoto": "Cadre photo"
+    "clockPhoto": "Cadre photo",
+    "editWidgetsAction": "Modifier les widgets"
   },
   "panelNoneCreated": "Aucun panneau pour l'instant — créez-en un depuis le mode édition.",
   "duplicateWidget": "Dupliquer le widget",

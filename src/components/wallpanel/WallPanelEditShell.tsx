@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { Plus, CloudUpload, X } from 'lucide-react';
+import { Plus, Check, X } from 'lucide-react';
 import { useWallPanel } from '@/context/WallPanelContext';
 import { PageProvider, type Page } from '@/context/PageContext';
 import { WidgetConfigProvider, useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -47,9 +47,9 @@ const WALLPANEL_PAGES: Page[] = [{ id: 'wallpanel', label: 'WallPanel', type: 'g
  */
 function WallPanelEditActions({ onSave }: { onSave?: WallPanelSave }) {
   const { t } = useI18n();
-  const { allLayouts } = useDashboardLayout();
+  const { allLayouts, layout, addPanel } = useDashboardLayout();
   const { allWidgetConfigsByPage } = useWidgetConfig();
-  const { setEditMode } = useEditMode();
+  const { setEditMode, editPanelId, setEditPanelId } = useEditMode();
   const { exitWallPanelEditMode, setWallPanelLayout, setWallPanelWidgetConfigs } = useWallPanel();
   const [showAddModal, setShowAddModal] = useState(false);
 
@@ -58,6 +58,13 @@ function WallPanelEditActions({ onSave }: { onSave?: WallPanelSave }) {
     setEditMode(true);
     return () => setEditMode(false);
   }, [setEditMode]);
+
+  // La veille n'a qu'un panneau : on l'édite d'emblée, tuiles à la main. Sans
+  // lui, la grille s'ouvrait sur la carte des panneaux — où l'on ne range rien.
+  useEffect(() => {
+    setEditPanelId(layout.panels[0]?.id ?? addPanel());
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- à l'ouverture seulement
+  }, []);
 
   // « Enregistrer » n'ecrivait que dans le contexte : il fallait ensuite passer
   // le dashboard en edition et l'enregistrer *aussi*, sans quoi la disposition
@@ -81,24 +88,25 @@ function WallPanelEditActions({ onSave }: { onSave?: WallPanelSave }) {
       <div className='fixed top-4 right-4 z-[210] flex items-center gap-2'>
         <button
           onClick={() => setShowAddModal(true)}
-          className='flex items-center gap-2 px-4 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)] text-sm font-medium transition-colors'
+          className='flex h-12 items-center gap-2 rounded-full bg-[var(--ds-surface-3)] px-5 text-base font-semibold text-[var(--ds-ink)]'
         >
-          <Plus size={15} />
-          {t('common.add')}
+          <Plus size={18} />
+          {t('layout.panel.addTile')}
         </button>
         <button
           onClick={handleSave}
-          className='flex items-center gap-2 px-4 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-good)] border border-[var(--ds-good)] text-[var(--ds-good-ink)] text-sm font-medium transition-colors'
+          className='flex h-12 items-center gap-2 rounded-full bg-[var(--ds-tile-on)] px-6 text-base font-bold text-[var(--ds-tile-on-ink)]'
         >
-          <CloudUpload size={15} />
-          {t('common.save')}
+          <Check size={18} strokeWidth={3} />
+          {t('dashboard.done')}
         </button>
         <button
           onClick={exitWallPanelEditMode}
-          className='p-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)] transition-colors'
-          title='Annuler'
+          className='flex size-12 items-center justify-center rounded-full bg-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
+          title={t('dashboard.discardTooltip')}
+          aria-label={t('dashboard.discardTooltip')}
         >
-          <X size={16} />
+          <X size={18} />
         </button>
       </div>
 
@@ -106,7 +114,7 @@ function WallPanelEditActions({ onSave }: { onSave?: WallPanelSave }) {
       <WidgetEditModal />
 
       {/* Add widget modal */}
-      <AnimatePresence>{showAddModal && <AddWidgetModal onClose={() => setShowAddModal(false)} />}</AnimatePresence>
+      <AnimatePresence>{showAddModal && <AddWidgetModal panelId={editPanelId ?? undefined} onClose={() => setShowAddModal(false)} />}</AnimatePresence>
     </div>
   );
 }

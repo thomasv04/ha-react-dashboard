@@ -83,7 +83,8 @@ interface WallPanelSettingsProps {
  */
 export function WallPanelSettings({ onClose, guard }: WallPanelSettingsProps) {
   const { t } = useI18n();
-  const { config, updateConfig, activate, wallPanelLayout, wallPanelWidgetConfigs } = useWallPanel();
+  const { config, updateConfig, activate, enterWallPanelEditMode, wallPanelLayout, wallPanelWidgetConfigs } = useWallPanel();
+  const widgetTotal = layoutWidgets(wallPanelLayout).length;
   const { pages } = usePages();
   const { allLayouts } = useDashboardLayout();
   const { allWidgetConfigsByPage } = useWidgetConfig();
@@ -149,6 +150,17 @@ export function WallPanelSettings({ onClose, guard }: WallPanelSettingsProps) {
     else updateConfig(draft);
     onClose();
     setTimeout(activate, 300);
+  };
+
+  // Même chemin que la démo, mais la veille s'ouvre directement en édition.
+  const handleEditWidgets = async () => {
+    if (dirty) await save();
+    else updateConfig(draft);
+    onClose();
+    setTimeout(() => {
+      activate();
+      enterWallPanelEditMode();
+    }, 300);
   };
 
   const addImageUrl = () => {
@@ -465,18 +477,20 @@ export function WallPanelSettings({ onClose, guard }: WallPanelSettingsProps) {
               </div>
             </div>
 
-            <div className='p-3 rounded-[var(--ds-radius-md)] border border-[var(--ds-surface-3)] bg-[var(--ds-surface-2)] text-center'>
-              <p className='text-[var(--ds-ink-muted)] text-xs mb-2'>
-                {layoutWidgets(wallPanelLayout).length}{' '}
-                {layoutWidgets(wallPanelLayout).length !== 1
-                  ? t('layout.wallPanel.widgetCount_other')
-                  : t('layout.wallPanel.widgetCount_one')}
-              </p>
+            {/* Les widgets se rangent sur la veille elle-même, comme sur le dashboard. */}
+            <div className={cn(CARD, 'flex items-center justify-between gap-4')}>
+              <div className='min-w-0'>
+                <p className='text-lg font-semibold'>{t('layout.wallPanel.editWidgets')}</p>
+                <p className='mt-0.5 text-[15px] text-[var(--ds-ink-muted)]'>
+                  {t(widgetTotal === 1 ? 'layout.wallPanel.widgetCount_one' : 'layout.wallPanel.widgetCount_other', { count: widgetTotal })}
+                </p>
+              </div>
               <button
-                onClick={handleDemo}
-                className='text-xs px-4 py-2 rounded-[var(--ds-radius-md)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)] bg-[var(--ds-tile-on)] transition-colors'
+                onClick={handleEditWidgets}
+                className='flex h-12 shrink-0 items-center gap-2 rounded-full bg-[var(--ds-tile-on)] px-6 text-base font-bold text-[var(--ds-tile-on-ink)]'
               >
-                {t('layout.wallPanel.openPreview')}
+                <Layers size={18} />
+                {t('layout.wallPanel.editWidgetsAction')}
               </button>
             </div>
           </div>

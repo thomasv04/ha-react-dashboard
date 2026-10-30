@@ -57,13 +57,13 @@ test("un réglage sur l'anneau ne remonte pas jusqu'à la case", () => {
   );
   const dial = container.querySelector('svg[viewBox="0 0 200 200"]')!.parentElement!;
 
-  // Bord droit de l'anneau (3 h) : 5/6 de la course de 10 à 30 °C → 26,67, arrondi au pas de 0,5.
+  // Bord droit de l'anneau (3 h) : 210/240 de la course de 10 à 30 °C → 27,5.
   fireEvent.pointerDown(dial, { clientX: 188, clientY: 100, button: 0, pointerId: 1 });
   fireEvent.pointerUp(dial, { clientX: 188, clientY: 100, pointerId: 1 });
   fireEvent.click(dial, { clientX: 188, clientY: 100 });
   expect(parentDown).not.toHaveBeenCalled();
   expect(parentClick).not.toHaveBeenCalled();
-  expect(callServiceMock).toHaveBeenCalledWith(expect.objectContaining({ serviceData: { temperature: 26.5 } }));
+  expect(callServiceMock).toHaveBeenCalledWith(expect.objectContaining({ serviceData: { temperature: 27.5 } }));
 
   // Le centre n'est pas une poignée : l'appui reste à la case.
   callServiceMock.mockClear();

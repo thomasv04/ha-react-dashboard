@@ -7,8 +7,11 @@ const RADIUS = 88;
 const STROKE = 14;
 const KNOB = 10;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-/** Ouverture de l'arc : 270°, l'espace libre en bas accueille les modes. */
-const SWEEP = 270;
+/**
+ * Ouverture de l'arc : 240°. L'espace libre en bas accueille les modes, et les
+ * extrémités de l'arc s'arrêtent assez haut pour laisser les flèches aux coins.
+ */
+const SWEEP = 240;
 /** Angle où l'arc commence : l'ouverture est centrée en bas. */
 const START = 90 + (360 - SWEEP) / 2;
 const ARC = (CIRCUMFERENCE * SWEEP) / 360;
@@ -178,10 +181,9 @@ export function Dial<T extends string>({
   const index = modes?.findIndex(m => m.id === activeMode) ?? -1;
   const visible = modes && index >= 0 ? [modes[index - 1], modes[index], modes[index + 1]] : [];
 
-  // Les flèches se tiennent côte à côte sous la consigne, au centre de l'anneau :
-  // aux extrémités de l'arc, elles le touchaient dès que la tuile rétrécissait.
+  // Aux deux coins du bas, sur la ligne du mode actif, comme sur l'Echo Show.
   const arrow =
-    'flex size-[13cqw] min-h-11 min-w-11 items-center justify-center rounded-full bg-[var(--ds-surface-3)] text-[var(--ds-ink)] disabled:opacity-40';
+    'absolute bottom-[6cqw] flex size-[13cqw] min-h-11 min-w-11 items-center justify-center rounded-full bg-[var(--ds-surface-3)] text-[var(--ds-ink)] disabled:opacity-40';
 
   return (
     <div
@@ -215,10 +217,11 @@ export function Dial<T extends string>({
       </div>
 
       {visible.length > 0 && (
+        // Le mode actif tient la ligne des flèches ; ses voisins, au-dessus et au-dessous.
         <div
           role='radiogroup'
           aria-label={labels.modes}
-          className='absolute inset-x-0 bottom-0 flex flex-col items-center gap-px text-[max(12px,3.8cqw)]'
+          className='absolute inset-x-0 bottom-[6cqw] flex h-[13cqw] min-h-11 items-center justify-center text-[max(12px,3.8cqw)]'
         >
           {visible.map((m, i) =>
             m ? (
@@ -231,39 +234,37 @@ export function Dial<T extends string>({
                 onClick={() => onModeChange?.(i === 1 && modes ? modes[(index + 1) % modes.length].id : m.id)}
                 className={cn(
                   i === 1
-                    ? 'rounded-full bg-[var(--ds-surface-3)] px-[6.5cqw] py-[1.8cqw] text-[max(14px,4.4cqw)] font-medium text-[var(--ds-ink)]'
-                    : 'text-[var(--ds-ink-muted)] opacity-60 @max-[17.5rem]:hidden'
+                    ? 'rounded-full bg-[var(--ds-surface-3)] px-[7cqw] py-[2.2cqw] text-[max(14px,4.6cqw)] font-medium text-[var(--ds-ink)]'
+                    : 'absolute left-1/2 -translate-x-1/2 text-[var(--ds-ink-muted)] opacity-60 @max-[13rem]:hidden',
+                  i === 0 && 'bottom-full',
+                  i === 2 && 'top-full'
                 )}
               >
                 {m.label}
               </button>
-            ) : (
-              <span key={i} aria-hidden='true' className='h-[1.2em]' />
-            )
+            ) : null
           )}
         </div>
       )}
 
-      <div className='absolute inset-x-0 top-[66%] flex justify-center gap-[5cqw]'>
-        <button
-          onClick={() => onChange(clamp(value - step, min, max))}
-          disabled={value <= min}
-          aria-label={labels.decrease}
-          title={labels.decrease}
-          className={arrow}
-        >
-          <ChevronDown size={20} />
-        </button>
-        <button
-          onClick={() => onChange(clamp(value + step, min, max))}
-          disabled={value >= max}
-          aria-label={labels.increase}
-          title={labels.increase}
-          className={arrow}
-        >
-          <ChevronUp size={20} />
-        </button>
-      </div>
+      <button
+        onClick={() => onChange(clamp(value - step, min, max))}
+        disabled={value <= min}
+        aria-label={labels.decrease}
+        title={labels.decrease}
+        className={cn(arrow, 'left-0')}
+      >
+        <ChevronDown size={20} />
+      </button>
+      <button
+        onClick={() => onChange(clamp(value + step, min, max))}
+        disabled={value >= max}
+        aria-label={labels.increase}
+        title={labels.increase}
+        className={cn(arrow, 'right-0')}
+      >
+        <ChevronUp size={20} />
+      </button>
     </div>
   );
 }
