@@ -78,26 +78,26 @@ function EntityPickerStep({ meta, onBack, onConfirm }: { meta: WidgetMeta; onBac
       className='flex flex-col h-full'
     >
       {/* Header */}
-      <div className='flex items-center gap-2 px-4 pt-4 pb-3 border-b border-[var(--ds-surface-3)] shrink-0'>
-        <button onClick={onBack} className='p-1.5 rounded-[var(--ds-radius-sm)] text-[var(--ds-ink-muted)] transition-colors'>
-          <ArrowLeft size={14} />
+      <div className='flex shrink-0 items-center gap-3 px-5 pb-3 pt-5'>
+        <button onClick={onBack} className='flex size-11 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'>
+          <ArrowLeft size={18} />
         </button>
         <div>
-          <p className='text-[var(--ds-ink)] text-sm font-semibold'>{t('layout.chooseEntity')}</p>
-          <p className='text-[var(--ds-ink-muted)] text-[10px] font-mono'>{meta.entityDomain}.*</p>
+          <p className='text-[var(--ds-ink)] text-xl font-bold'>{t('layout.chooseEntity')}</p>
+          <p className='text-[var(--ds-ink-muted)] text-sm font-mono'>{meta.entityDomain}.*</p>
         </div>
       </div>
 
       {/* Search */}
-      <div className='px-4 py-2.5 shrink-0'>
-        <div className='flex items-center gap-2 px-3 py-1.5 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] focus-within:border-[var(--ds-accent)] transition-colors'>
-          <Search size={12} className='text-[var(--ds-ink-muted)] shrink-0' />
+      <div className='px-5 py-2 shrink-0'>
+        <div className='flex h-12 items-center gap-2 rounded-full bg-[var(--ds-surface-3)] px-4 focus-within:outline-2 focus-within:outline-[var(--ds-accent)]'>
+          <Search size={16} className='text-[var(--ds-ink-muted)] shrink-0' />
           <input
             autoFocus
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder={t('layout.searchInDomain', { domain: meta.entityDomain ?? '' })}
-            className='bg-transparent text-xs text-[var(--ds-ink)] outline-none flex-1 placeholder:text-[var(--ds-ink-muted)]'
+            className='bg-transparent text-base text-[var(--ds-ink)] outline-none flex-1 placeholder:text-[var(--ds-ink-muted)]'
           />
         </div>
       </div>
@@ -114,7 +114,7 @@ function EntityPickerStep({ meta, onBack, onConfirm }: { meta: WidgetMeta; onBac
             <button
               key={e.id}
               onClick={() => setPicked(e.id)}
-              className='w-full flex items-center gap-2.5 px-3 py-2 rounded-[var(--ds-radius-md)] text-left transition-all'
+              className='w-full flex min-h-14 items-center gap-3 px-3 py-2 rounded-[var(--ds-radius-lg)] text-left transition-all'
               style={{
                 background: picked === e.id ? `${meta.color}18` : 'transparent',
                 border: `1px solid ${picked === e.id ? meta.color + '40' : 'transparent'}`,
@@ -130,8 +130,8 @@ function EntityPickerStep({ meta, onBack, onConfirm }: { meta: WidgetMeta; onBac
                 {picked === e.id && <Check size={9} className='text-[var(--ds-ink)]' strokeWidth={3} />}
               </div>
               <div className='min-w-0 flex-1'>
-                <p className='text-[var(--ds-ink)] text-xs font-medium truncate'>{e.name}</p>
-                <p className='text-[var(--ds-ink-muted)] text-[10px] font-mono truncate'>{e.id}</p>
+                <p className='text-[var(--ds-ink)] text-base font-medium truncate'>{e.name}</p>
+                <p className='text-[var(--ds-ink-muted)] text-xs font-mono truncate'>{e.id}</p>
               </div>
             </button>
           ))
@@ -139,11 +139,11 @@ function EntityPickerStep({ meta, onBack, onConfirm }: { meta: WidgetMeta; onBac
       </div>
 
       {/* Confirm button */}
-      <div className='px-4 pb-4 pt-2 shrink-0'>
+      <div className='px-5 pb-5 pt-2 shrink-0'>
         <button
           onClick={() => picked && onConfirm(picked)}
           disabled={!picked}
-          className='w-full flex items-center justify-center gap-2 py-2.5 rounded-[var(--ds-radius-md)] text-sm font-semibold transition-all'
+          className='w-full flex h-14 items-center justify-center gap-2 rounded-full text-lg font-bold transition-all'
           style={{
             background: picked ? 'var(--ds-tile-on)' : 'var(--ds-surface-2)',
             border: `1px solid ${picked ? 'var(--ds-tile-on)' : 'var(--ds-surface-3)'}`,
@@ -280,23 +280,23 @@ export function PreviewPanel({
             {/* ── Widget info ─────────────────────────────────────── */}
             <div className='px-6 pt-2 shrink-0 space-y-2'>
               <div className='flex items-center gap-2.5'>
-                <h3 className='text-[var(--ds-ink)] font-semibold text-[15px] truncate'>{t(meta.label)}</h3>
+                <h3 className='text-[var(--ds-ink)] font-bold text-[26px] truncate'>{t(meta.label)}</h3>
                 {catalogEntry && (
-                  <span className='shrink-0 px-2 py-0.5 rounded-md bg-[var(--ds-surface-2)] text-[var(--ds-ink-muted)] text-[10px] font-mono'>
+                  <span className='shrink-0 rounded-full bg-[var(--ds-surface-3)] px-3 py-1 text-[var(--ds-ink-muted)] text-sm font-semibold'>
                     {catalogEntry.lg.w}×{catalogEntry.lg.h}
                   </span>
                 )}
               </div>
-              <p className='text-[var(--ds-ink-muted)] text-[12.5px] leading-relaxed'>{t(meta.description)}</p>
+              <p className='text-[var(--ds-ink-muted)] text-base leading-relaxed'>{t(meta.description)}</p>
             </div>
 
             {/* ── Add button ──────────────────────────────────────── */}
             <div className='px-6 pb-6 pt-4 shrink-0'>
               <button
                 onClick={handleAddClick}
-                className='w-full flex items-center justify-center gap-2 py-2.5 rounded-[var(--ds-radius-md)] text-sm font-semibold transition-colors bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
+                className='w-full flex h-14 items-center justify-center gap-2 rounded-full text-lg font-bold transition-colors bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'
               >
-                <Plus size={14} strokeWidth={2.5} />
+                <Plus size={20} strokeWidth={2.5} />
                 {meta.entityDomain ? t('layout.chooseEntityArrow') : t('layout.addToDashboard')}
               </button>
             </div>

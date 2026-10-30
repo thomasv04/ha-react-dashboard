@@ -11,7 +11,7 @@ import { CATEGORIES, type Category } from './widget-meta';
 import { WIDGET_META } from '@/widgets';
 import { useI18n } from '@/i18n';
 import { PreviewPanel } from './PreviewPanel';
-import { ListRow } from './ListRow';
+import { WidgetCard } from './WidgetCard';
 
 interface AddWidgetModalProps {
   onClose: () => void;
@@ -66,6 +66,8 @@ export function AddWidgetModal({ onClose, onAdded, panelId }: AddWidgetModalProp
     if (id) setEditingWidgetId(id);
   };
 
+  const count = (id: Category) => (id === 'all' ? WIDGET_META.length : WIDGET_META.filter(m => m.category === id).length);
+
   return (
     <>
       {/* Backdrop */}
@@ -79,7 +81,7 @@ export function AddWidgetModal({ onClose, onAdded, panelId }: AddWidgetModalProp
         onClick={onClose}
       />
 
-      {/* Modal */}
+      {/* Galerie : catégories, cartes, puis le widget choisi */}
       <motion.div
         key='add-modal'
         className='fixed inset-0 z-[61] flex items-center justify-center p-4 pointer-events-none'
@@ -89,59 +91,76 @@ export function AddWidgetModal({ onClose, onAdded, panelId }: AddWidgetModalProp
         transition={{ duration: 0.22, ease: EASE_OUT }}
       >
         <div
-          className='pointer-events-auto w-full flex overflow-hidden rounded-[var(--ds-radius-xl)] border border-[var(--ds-surface-3)] shadow-[var(--ds-shadow-sheet)]'
-          style={{
-            background: 'var(--ds-surface-1)',
-            maxHeight: 'min(720px, calc(100vh - 32px))',
-            maxWidth: 900,
-            height: 660,
-          }}
+          role='dialog'
+          aria-modal='true'
+          aria-label={t('layout.addWidget')}
+          className='pointer-events-auto grid w-full grid-cols-[minmax(0,1fr)_340px] gap-3 overflow-hidden rounded-[var(--ds-radius-2xl)] bg-[var(--ds-sheet)] p-3 text-[var(--ds-ink)] shadow-[var(--ds-shadow-sheet)] lg:grid-cols-[230px_minmax(0,1fr)_380px]'
+          style={{ maxWidth: 1280, height: 'min(820px, calc(100dvh - 32px))' }}
         >
-          {/* ── LEFT: list ─────────────────────────────────────────── */}
-          <div className='flex flex-col w-[292px] shrink-0 border-r border-[var(--ds-surface-3)]'>
-            {/* Header + search */}
-            <div className='px-5 pt-5 pb-3 border-b border-[var(--ds-surface-3)] shrink-0 space-y-3'>
-              <div className='flex items-center justify-between'>
-                <h2 className='text-[var(--ds-ink)] font-semibold text-[15px]'>{t('layout.addWidget')}</h2>
-                <button
-                  onClick={onClose}
-                  aria-label={t('common.close')}
-                  className='p-1.5 rounded-[var(--ds-radius-md)] text-[var(--ds-ink-muted)] transition-colors'
-                >
-                  <X size={15} />
-                </button>
-              </div>
-              <div className='flex items-center gap-2 px-3 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] focus-within:border-[var(--ds-accent)] transition-colors'>
-                <Search size={13} className='text-[var(--ds-ink-muted)] shrink-0' />
+          {/* ── Catégories ─────────────────────────────────────────── */}
+          <nav
+            aria-label={t('layout.addWidget')}
+            className='hidden min-h-0 flex-col gap-1 overflow-y-auto rounded-[var(--ds-radius-xl)] bg-[var(--ds-surface-1)] p-3 lg:flex'
+          >
+            <h2 className='px-3 pb-2 pt-2 text-lg font-semibold text-[var(--ds-ink-muted)]'>{t('layout.addWidget')}</h2>
+            {CATEGORIES.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setCategory(cat.id)}
+                aria-current={category === cat.id}
+                className={cn(
+                  'flex h-14 items-center gap-3 rounded-[var(--ds-radius-lg)] px-3 text-left text-[17px]',
+                  category === cat.id ? 'bg-[var(--ds-surface-3)] font-semibold' : 'font-medium text-[var(--ds-ink-muted)]'
+                )}
+              >
+                <span className='flex size-10 shrink-0 items-center justify-center rounded-[13px]' style={{ background: cat.color }}>
+                  <cat.icon size={20} className='text-white' />
+                </span>
+                <span className='flex-1 truncate'>{t(cat.label)}</span>
+                <span className='text-sm tabular-nums text-[var(--ds-ink-muted)]'>{count(cat.id)}</span>
+              </button>
+            ))}
+          </nav>
+
+          {/* ── Recherche et cartes ────────────────────────────────── */}
+          <section className='flex min-h-0 min-w-0 flex-col gap-3'>
+            <div className='flex shrink-0 items-center gap-3'>
+              <label className='flex h-14 flex-1 items-center gap-3 rounded-full bg-[var(--ds-surface-1)] px-5 text-[var(--ds-ink-muted)] focus-within:outline-2 focus-within:outline-[var(--ds-accent)]'>
+                <Search size={20} className='shrink-0' />
                 <input
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   placeholder={t('layout.searchWidget')}
-                  className='bg-transparent text-sm text-[var(--ds-ink)] outline-none flex-1 placeholder:text-[var(--ds-ink-muted)]'
+                  aria-label={t('layout.searchWidget')}
+                  className='min-w-0 flex-1 bg-transparent text-lg text-[var(--ds-ink)] outline-none placeholder:text-[var(--ds-ink-muted)]'
                   autoFocus
                 />
                 {search && (
-                  <button onClick={() => setSearch('')} className='text-[var(--ds-ink-muted)] transition-colors'>
-                    <X size={12} />
+                  <button onClick={() => setSearch('')} aria-label={t('common.close')} className='text-[var(--ds-ink-muted)]'>
+                    <X size={16} />
                   </button>
                 )}
-              </div>
+              </label>
+              <button
+                onClick={onClose}
+                aria-label={t('common.close')}
+                title={t('common.close')}
+                className='flex size-14 shrink-0 items-center justify-center rounded-full bg-[var(--ds-surface-1)]'
+              >
+                <X size={20} />
+              </button>
             </div>
 
-            {/* Category pills */}
-            {/* `flex-wrap` et non un défilement horizontal : huit pastilles ne
-                tenaient pas sur la largeur, et la barre de défilement qui en
-                sortait barrait la colonne d'un trait gris. */}
-            <div className='flex flex-wrap items-center gap-1.5 px-5 py-3 border-b border-[var(--ds-surface-3)] shrink-0'>
+            {/* Sous `lg`, la colonne des catégories disparaît : des pastilles la remplacent. */}
+            <div className='flex shrink-0 flex-wrap gap-2 lg:hidden'>
               {CATEGORIES.map(cat => (
                 <button
                   key={cat.id}
                   onClick={() => setCategory(cat.id)}
+                  aria-pressed={category === cat.id}
                   className={cn(
-                    'px-2.5 py-1 rounded-[var(--ds-radius-sm)] text-[11px] font-medium whitespace-nowrap transition-all shrink-0',
-                    category === cat.id
-                      ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] border border-[var(--ds-accent)]'
-                      : 'bg-[var(--ds-surface-2)] text-[var(--ds-ink-muted)] border border-transparent'
+                    'h-10 rounded-full px-4 text-sm font-semibold',
+                    category === cat.id ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'bg-[var(--ds-surface-1)] text-[var(--ds-ink-muted)]'
                   )}
                 >
                   {t(cat.label)}
@@ -149,23 +168,24 @@ export function AddWidgetModal({ onClose, onAdded, panelId }: AddWidgetModalProp
               ))}
             </div>
 
-            {/* List */}
-            <div className='flex-1 overflow-y-auto px-3 py-2 space-y-px min-h-0'>
+            <div className='min-h-0 flex-1 overflow-y-auto pr-1'>
               {filtered.length === 0 ? (
-                <div className='flex flex-col items-center justify-center py-10'>
-                  <Search size={22} className='text-[var(--ds-ink-muted)] mb-2' />
-                  <p className='text-[var(--ds-ink-muted)] text-xs'>{t('layout.noResults')}</p>
+                <div className='flex h-full flex-col items-center justify-center gap-2 text-[var(--ds-ink-muted)]'>
+                  <Search size={28} />
+                  <p className='text-base'>{t('layout.noResults')}</p>
                 </div>
               ) : (
-                filtered.map(meta => (
-                  <ListRow key={meta.type} meta={meta} selected={selected === meta.type} onClick={() => setSelected(meta.type)} />
-                ))
+                <div className='grid grid-cols-2 gap-3 xl:grid-cols-3'>
+                  {filtered.map(meta => (
+                    <WidgetCard key={meta.type} meta={meta} selected={selected === meta.type} onClick={() => setSelected(meta.type)} />
+                  ))}
+                </div>
               )}
             </div>
-          </div>
+          </section>
 
-          {/* ── RIGHT: preview ─────────────────────────────────────── */}
-          <div className='flex-1 min-w-0'>
+          {/* ── Le widget choisi ───────────────────────────────────── */}
+          <div className='min-h-0 min-w-0 overflow-hidden rounded-[var(--ds-radius-xl)] bg-[var(--ds-surface-1)]'>
             <PreviewPanel meta={selectedMeta} onAdd={handleAdd} />
           </div>
         </div>

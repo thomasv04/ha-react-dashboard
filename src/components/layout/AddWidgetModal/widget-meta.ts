@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import { Activity, Home, LayoutGrid, Lightbulb, Server, Thermometer, Video, Zap, type LucideIcon } from 'lucide-react';
 import type { GridWidget } from '@/context/DashboardLayoutContext';
 
 // ── Preview dimension engine ──────────────────────────────────────────────────
@@ -10,7 +10,7 @@ import type { GridWidget } from '@/context/DashboardLayoutContext';
 // mise en page qu'une fois posées.
 const COL_PX = 110;
 const ROW_PX = 80;
-const PREVIEW_MAX_W = 480;
+const PREVIEW_MAX_W = 320;
 const PREVIEW_MAX_H = 300;
 const MAX_SCALE = 1.25;
 
@@ -80,13 +80,13 @@ export interface WidgetMeta {
   entityConfigKey?: string;
 }
 
-export const CATEGORIES: { id: Category; label: string }[] = [
-  { id: 'all', label: 'layout.widgetCategories.all' },
-  { id: 'sensors', label: 'layout.widgetCategories.sensors' },
-  { id: 'lights', label: 'layout.widgetCategories.lights' },
-  { id: 'climate', label: 'layout.widgetCategories.climate' },
-  { id: 'energy', label: 'layout.widgetCategories.energy' },
-  { id: 'cameras', label: 'layout.widgetCategories.cameras' },
-  { id: 'home', label: 'layout.widgetCategories.home' },
-  { id: 'system', label: 'layout.widgetCategories.system' },
+export const CATEGORIES: { id: Category; label: string; icon: LucideIcon; color: string }[] = [
+  { id: 'all', label: 'layout.widgetCategories.all', icon: LayoutGrid, color: '#2f80ed' },
+  { id: 'sensors', label: 'layout.widgetCategories.sensors', icon: Activity, color: '#2b9fb0' },
+  { id: 'lights', label: 'layout.widgetCategories.lights', icon: Lightbulb, color: '#d99a2b' },
+  { id: 'climate', label: 'layout.widgetCategories.climate', icon: Thermometer, color: '#f07b2e' },
+  { id: 'energy', label: 'layout.widgetCategories.energy', icon: Zap, color: '#2fb38a' },
+  { id: 'cameras', label: 'layout.widgetCategories.cameras', icon: Video, color: '#8e5cf0' },
+  { id: 'home', label: 'layout.widgetCategories.home', icon: Home, color: '#3b8de8' },
+  { id: 'system', label: 'layout.widgetCategories.system', icon: Server, color: '#4a5a78' },
 ];
