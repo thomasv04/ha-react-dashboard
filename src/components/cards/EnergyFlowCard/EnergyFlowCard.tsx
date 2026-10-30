@@ -160,7 +160,7 @@ export function EnergyFlowCard() {
 
   // Couleurs des nœuds et texte lisible dessus — les points du flux prennent celle du nœud.
   const COLORS = { solar: 'var(--ds-warm-light)', home: 'var(--ds-cool)', battery: 'var(--ds-good)', grid: 'var(--ds-tile-on)' };
-  const INK = { solar: '#3d2a05', home: '#0d1a33', battery: '#062614', grid: '#ffffff' };
+  const INK = { solar: 'var(--ds-warm-light-ink)', home: '#0d1a33', battery: 'var(--ds-good-ink)', grid: '#ffffff' };
 
   const solarF = fmt(solar);
   const homeF = fmt(home);

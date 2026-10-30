@@ -306,7 +306,7 @@ export function SystemSection() {
         <button
           onClick={handleImport}
           disabled={!importString.trim() || importStatus === 'success'}
-          className='flex items-center gap-1.5 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-good)] border border-[var(--ds-good)] text-[#062614] transition-colors text-xs font-semibold disabled:opacity-30 disabled:cursor-not-allowed'
+          className='flex items-center gap-1.5 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-good)] border border-[var(--ds-good)] text-[var(--ds-good-ink)] transition-colors text-xs font-semibold disabled:opacity-30 disabled:cursor-not-allowed'
         >
           <Upload size={12} />
           {confirmImport && importStatus === 'idle'

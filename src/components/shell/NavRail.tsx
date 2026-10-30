@@ -1,18 +1,12 @@
-import { ChevronDown, ChevronUp, Home, LayoutGrid, Map as MapIcon, Music, Plus, Settings, X, type LucideIcon } from 'lucide-react';
-import { usePages, type PageType } from '@/context/PageContext';
+import { ChevronDown, ChevronUp, Home, LayoutGrid, Map as MapIcon, Plus, X, type LucideIcon } from 'lucide-react';
+import { usePages } from '@/context/PageContext';
 import { useEditMode } from '@/context/DashboardLayoutContext';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { usePanel, type PanelId } from '@/context/PanelContext';
 import { resolveIcon, useIconCatalog } from '@/lib/lucide-icon-map';
 import { cn } from '@/lib/utils';
+import { pageIcon, sortPages } from './page-icon';
 import { useI18n } from '@/i18n';
-
-const DEFAULT_ICONS: Record<PageType, LucideIcon> = {
-  grid: LayoutGrid,
-  media: Music,
-  settings: Settings,
-  floorplan: MapIcon,
-};
 
 // 48 px + 6 px de marge de chaque côté : la pilule fait 60 px, la largeur du
 // bouton des apps, et le rail tombe pile sous lui.
@@ -33,7 +27,7 @@ export function NavRail() {
   const { panels, dock } = useCustomPanels();
   const { activePanel, openPanel, closePanel } = usePanel();
 
-  const sorted = [...pages].sort((a, b) => a.order - b.order);
+  const sorted = sortPages(pages);
   const [home, ...others] = sorted;
   // Un panneau supprimé disparaît du rail sans laisser de trou.
   const pinned = dock.panels.map(id => panels.find(p => p.id === id)).filter((p): p is (typeof panels)[number] => !!p);
@@ -76,7 +70,7 @@ export function NavRail() {
       >
         {others.map((page, index) => {
           const isActive = page.id === currentPageId;
-          const Icon = (page.icon ? resolveIcon(page.icon) : undefined) ?? DEFAULT_ICONS[page.type];
+          const Icon = pageIcon(page);
           return (
             <div key={page.id} className='relative'>
               <button

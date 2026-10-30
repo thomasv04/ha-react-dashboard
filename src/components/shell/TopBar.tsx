@@ -1,6 +1,7 @@
 import { useUser } from '@hakit/core';
 import { Grip } from 'lucide-react';
-import { useNow, useWeatherNow } from '@/hooks/useWeatherNow';
+import { useNow } from '@/hooks/useNow';
+import { useWeatherNow } from '@/hooks/useWeatherNow';
 import { useFormats } from '@/hooks/useFormats';
 import { useI18n } from '@/i18n';
 

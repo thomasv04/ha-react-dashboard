@@ -7,7 +7,6 @@ import { Sheet } from './Sheet';
 import { PillSlider } from './PillSlider';
 import { Dial } from './Dial';
 import { DeviceTile } from './DeviceTile';
-import { RoomLightTile } from './RoomLightTile';
 
 /** Composants de base de la v2, aux jetons du design system (`src/design/tokens.json`). */
 const meta: Meta = {
@@ -33,26 +32,6 @@ export const Tuiles: Story = {
           onToggle={() => setLock(v => !v)}
           onMore={() => {}}
           moreLabel='Plus de réglages'
-        />
-      </div>
-    );
-  },
-};
-
-export const TuileDePiece: Story = {
-  render: function Render() {
-    const [on, setOn] = useState(true);
-    const [brightness, setBrightness] = useState(60);
-    return (
-      <div className='w-[480px]'>
-        <RoomLightTile
-          room="Chambre d'amis"
-          on={on}
-          brightness={brightness}
-          onToggle={() => setOn(v => !v)}
-          onBrightness={setBrightness}
-          labels={{ toggle: 'Allumer ou éteindre', brightness: 'Luminosité', more: 'Options de la pièce' }}
-          onMore={() => {}}
         />
       </div>
     );

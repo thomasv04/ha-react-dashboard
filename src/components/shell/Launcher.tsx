@@ -1,21 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@hakit/core';
-import {
-  Compass,
-  Layers,
-  LayoutGrid,
-  Map as MapIcon,
-  Monitor,
-  Music,
-  Pin,
-  PinOff,
-  Settings,
-  Sparkles,
-  X,
-  type LucideIcon,
-} from 'lucide-react';
-import { usePages, type PageType } from '@/context/PageContext';
+import { Compass, Layers, LayoutGrid, Monitor, Pin, PinOff, Settings, Sparkles, X, type LucideIcon } from 'lucide-react';
+import { usePages } from '@/context/PageContext';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { usePanel } from '@/context/PanelContext';
 import { useEditMode } from '@/context/DashboardLayoutContext';
@@ -27,14 +14,8 @@ import { WallPanelConfigModal } from '@/components/wallpanel/WallPanelConfigModa
 import { CustomPanelEditorModal } from '@/components/custom-panels';
 import { ThemeControlsModal } from '@/components/layout/ThemeControlsModal';
 import { cn } from '@/lib/utils';
+import { pageIcon, sortPages } from './page-icon';
 import { useI18n } from '@/i18n';
-
-const DEFAULT_ICONS: Record<PageType, LucideIcon> = {
-  grid: LayoutGrid,
-  media: Music,
-  settings: Settings,
-  floorplan: MapIcon,
-};
 
 type Dialog = 'settings' | 'screensaver' | 'panels' | null;
 
@@ -60,7 +41,7 @@ export function Launcher({ open, onClose }: { open: boolean; onClose: () => void
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
-  const sorted = [...pages].sort((a, b) => a.order - b.order);
+  const sorted = sortPages(pages);
   const togglePin = (id: string) =>
     setDock({ ...dock, panels: dock.panels.includes(id) ? dock.panels.filter(p => p !== id) : [...dock.panels, id] });
 
@@ -98,7 +79,7 @@ export function Launcher({ open, onClose }: { open: boolean; onClose: () => void
               <section className='sm:w-[340px] shrink-0 overflow-y-auto bg-black/15 p-7 flex flex-col gap-1'>
                 <h2 className='mb-3 text-2xl font-semibold'>{t('layout.shell.favorites')}</h2>
                 {sorted.map(page => {
-                  const Icon = (page.icon ? resolveIcon(page.icon) : undefined) ?? DEFAULT_ICONS[page.type];
+                  const Icon = pageIcon(page);
                   return (
                     <LauncherItem key={page.id} Icon={Icon} color='var(--ds-app-home)' onClick={run(() => setCurrentPage(page.id))}>
                       {page.label}

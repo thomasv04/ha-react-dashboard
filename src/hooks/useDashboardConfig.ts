@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { DEFAULT_LAYOUT, type DashboardConfigV2, type DashboardLayout, type GridWidget } from '@/context/DashboardLayoutContext';
+import { type DashboardConfigV2, type DashboardLayout, type GridWidget } from '@/context/DashboardLayoutContext';
 import type { WidgetConfigs } from '@/types/widget-configs';
 import { DEFAULT_WIDGET_CONFIGS } from '@/widgets';
 import { DEFAULT_PAGES, type Page } from '@/context/PageContext';
@@ -8,7 +8,7 @@ import type { CustomPanel, DockConfig } from '@/types/custom-panel';
 import { useToast } from '@/context/ToastContext';
 import { useI18n } from '@/i18n';
 import { apiFetch } from '@/lib/api-base';
-import { layoutWidgets, toPanelLayout } from '@/lib/panel-grid';
+import { EMPTY_LAYOUT, layoutWidgets, toPanelLayout } from '@/lib/panel-grid';
 import { withDemoFloorplan } from '@/mocks/demoFloorplan';
 
 /** Au-delà, on considère le serveur injoignable et on rend depuis le cache. */
@@ -138,7 +138,7 @@ function migrateConfig(data: unknown): DashboardConfigV2 {
   }
 
   // v1 migration: put everything under the "home" page
-  let layout: DashboardLayout = DEFAULT_LAYOUT;
+  let layout: DashboardLayout = EMPTY_LAYOUT;
   let widgetConfigs: WidgetConfigs = DEFAULT_WIDGET_CONFIGS;
 
   if (data && typeof data === 'object') {
@@ -201,7 +201,7 @@ export function useDashboardConfig() {
     withDemo({
       version: 2,
       pages: cached?.pages ?? DEFAULT_PAGES,
-      layouts: cached?.layouts ?? { home: DEFAULT_LAYOUT },
+      layouts: cached?.layouts ?? { home: EMPTY_LAYOUT },
       widgetConfigs: cached?.widgetConfigs ?? { home: DEFAULT_WIDGET_CONFIGS },
     })
   );
@@ -210,7 +210,7 @@ export function useDashboardConfig() {
   const [allLayouts, setAllLayouts] = useState<Record<string, DashboardLayout>>(initial.layouts);
   const [allWidgetConfigs, setAllWidgetConfigs] = useState<Record<string, WidgetConfigs>>(initial.widgetConfigs);
   const [wallPanelConfig, setWallPanelConfig] = useState<WallPanelConfig>(cached?.wallPanel?.config ?? DEFAULT_WALLPANEL_CONFIG);
-  const [wallPanelLayout, setWallPanelLayout] = useState<DashboardLayout>(cached?.wallPanel?.layout ?? DEFAULT_LAYOUT);
+  const [wallPanelLayout, setWallPanelLayout] = useState<DashboardLayout>(cached?.wallPanel?.layout ?? EMPTY_LAYOUT);
   const [wallPanelWidgetConfigs, setWallPanelWidgetConfigs] = useState<WidgetConfigs>(cached ? wallPanelWidgetConfigsOf(cached) : {});
   const [customPanels, setCustomPanels] = useState<CustomPanel[]>(cached?.customPanels ?? []);
   const [dock, setDock] = useState<DockConfig | undefined>(cached?.dock);

@@ -1,4 +1,5 @@
 import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { findWidget } from '@/lib/panel-grid';
 import { WIDGET_DISPOSITIONS, getMinSize } from '@/widgets';
 import { cn, clamp } from '@/lib/utils';
 import { useI18n } from '@/i18n';
@@ -10,15 +11,14 @@ interface CardLayoutTabProps {
 export function CardLayoutTab({ widgetId }: CardLayoutTabProps) {
   const { t } = useI18n();
   const { layout, updateWidget } = useDashboardLayout();
-  const panel = layout.panels.find(p => p.widgets.some(w => w.id === widgetId));
-  const widget = panel?.widgets.find(w => w.id === widgetId);
-
-  if (!panel || !widget) return null;
+  const found = findWidget(layout, widgetId);
+  if (!found) return null;
+  const { panel, widget } = found;
 
   // La tuile ne dépasse pas la largeur de son panneau.
   const cols = panel.cols;
   const dispositions = WIDGET_DISPOSITIONS[widget.type] ?? [];
-  const minSize = getMinSize(widget.type, 'lg', widget.disposition);
+  const minSize = getMinSize(widget.type, widget.disposition);
 
   const maxW = cols;
   const maxH = 12;

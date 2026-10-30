@@ -15,6 +15,8 @@ import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { friendlyName } from '@/lib/ha-service';
 import { DeviceTile } from '@/components/ds/DeviceTile';
 import { PillSlider } from '@/components/ds/PillSlider';
+import { COLOR_TEMP_TRACK, HUE_TRACK, TRACK_MARKER } from '@/components/ds/light-tracks';
+import { SheetSection } from '@/components/modals/sidebar';
 import { Sheet } from '@/components/ds/Sheet';
 
 /** Convert HA color_temp (mireds) to a 0-100 slider value (warm=0, cool=100) */
@@ -45,12 +47,7 @@ function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
   return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
 }
 
-const COLOR_TEMP_TRACK = 'linear-gradient(to right, #ff9d4d, #ffe4b5 40%, #ffffff 65%, #cce8ff)';
-const HUE_TRACK =
-  'linear-gradient(to right, hsl(0,90%,55%), hsl(60,90%,55%), hsl(120,90%,55%), hsl(180,90%,55%), hsl(240,90%,55%), hsl(300,90%,55%), hsl(360,90%,55%))';
 const COLOR_WHEEL = 'conic-gradient(#ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ef4444)';
-/** Repère de position sur une piste en dégradé : la piste porte déjà la couleur. */
-const MARKER = 'rgba(255, 255, 255, 0.35)';
 
 export function LightCard() {
   const { t } = useI18n();
@@ -158,8 +155,7 @@ export function LightCard() {
   const colorSheet = hasColorSettings && (
     <Sheet open={sheetOpen} onClose={() => setSheetOpen(false)} title={name} subtitle={stateLabel} closeLabel={t('common.close')}>
       {showBrightness && (
-        <div className='flex flex-col gap-3 rounded-[26px] bg-[var(--ds-surface-2)] p-5'>
-          <span className='text-center font-bold'>{t('widgets.light.brightness')}</span>
+        <SheetSection title={t('widgets.light.brightness')}>
           <PillSlider
             value={currentBrightness}
             min={1}
@@ -168,13 +164,12 @@ export function LightCard() {
             valueText={`${currentBrightness} %`}
             icon={Icon}
             fill={lampColor}
-            iconColor='#3d2a05'
+            iconColor='var(--ds-warm-light-ink)'
           />
-        </div>
+        </SheetSection>
       )}
       {showColorTemp && (
-        <div className='flex flex-col gap-3 rounded-[26px] bg-[var(--ds-surface-2)] p-5'>
-          <span className='text-center font-bold'>{t('widgets.light.colorTemp')}</span>
+        <SheetSection title={t('widgets.light.colorTemp')}>
           <PillSlider
             value={colorTempSlider}
             onChange={pct => {
@@ -184,13 +179,12 @@ export function LightCard() {
             label={t('widgets.light.colorTemp')}
             valueText={colorTempSlider < 50 ? t('widgets.light.warm') : t('widgets.light.cold')}
             track={COLOR_TEMP_TRACK}
-            fill={MARKER}
+            fill={TRACK_MARKER}
           />
-        </div>
+        </SheetSection>
       )}
       {showColor && (
-        <div className='flex flex-col gap-3 rounded-[26px] bg-[var(--ds-surface-2)] p-5'>
-          <span className='text-center font-bold'>{t('widgets.light.color')}</span>
+        <SheetSection title={t('widgets.light.color')}>
           <PillSlider
             value={currentHue}
             max={359}
@@ -201,9 +195,9 @@ export function LightCard() {
             label={t('widgets.light.color')}
             valueText={`${currentHue}°`}
             track={HUE_TRACK}
-            fill={MARKER}
+            fill={TRACK_MARKER}
           />
-        </div>
+        </SheetSection>
       )}
     </Sheet>
   );
@@ -263,7 +257,7 @@ export function LightCard() {
         valueText={`${currentBrightness} %`}
         icon={Icon}
         fill={lampColor}
-        iconColor='#3d2a05'
+        iconColor='var(--ds-warm-light-ink)'
         className='min-h-0 flex-1 w-[min(110px,60%)]'
       />
 

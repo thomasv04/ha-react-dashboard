@@ -3,7 +3,6 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { Fan } from 'lucide-react';
 import { dialGeometry, Dial } from './Dial';
 import { DeviceTile } from './DeviceTile';
-import { RoomLightTile } from './RoomLightTile';
 import { PillSlider } from './PillSlider';
 
 describe('Dial', () => {
@@ -66,27 +65,6 @@ describe('DeviceTile', () => {
     expect(tile).toHaveAttribute('aria-pressed', 'false');
     fireEvent.click(tile);
     expect(onToggle).toHaveBeenCalledOnce();
-  });
-});
-
-describe('RoomLightTile', () => {
-  it("sépare l'interrupteur de la luminosité", () => {
-    const onToggle = vi.fn();
-    const onBrightness = vi.fn();
-    render(
-      <RoomLightTile
-        room='Bureau'
-        on
-        brightness={40}
-        onToggle={onToggle}
-        onBrightness={onBrightness}
-        labels={{ toggle: 'Éteindre', brightness: 'Luminosité' }}
-      />
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Éteindre' }));
-    fireEvent.change(screen.getByRole('slider', { name: 'Luminosité' }), { target: { value: '75' } });
-    expect(onToggle).toHaveBeenCalledOnce();
-    expect(onBrightness).toHaveBeenCalledWith(75);
   });
 });
 

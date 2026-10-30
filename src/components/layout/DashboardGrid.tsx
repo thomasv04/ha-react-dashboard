@@ -1,4 +1,4 @@
-import { useDashboardLayout, useEditMode, type LayoutPanel } from '@/context/DashboardLayoutContext';
+import { useDashboardLayout, useEditMode, type GridWidget, type LayoutPanel } from '@/context/DashboardLayoutContext';
 import { useState, useEffect, useLayoutEffect, useRef, createContext, useContext, memo, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
@@ -17,7 +17,7 @@ import {
   PANEL_COLS_MIN,
   colsThatFit,
   colsWidth,
-  layoutWidgets,
+  findWidget,
 } from '@/lib/panel-grid';
 import { getMinSize, WIDGET_COMPONENTS, WIDGET_META } from '@/widgets';
 import { GridItemOverlay } from './GridItemOverlay';
@@ -62,11 +62,31 @@ export const WIDGET_LABELS: Record<string, string> = {
   automation: 'Automatisation',
 };
 
-/** Où une tuile tombe : un panneau, et son rang dedans. */
+/** Où une tuile tombe : un panneau, son rang dedans, et la tuile devant laquelle elle se range. */
 interface DropTarget {
   panelId: string;
   index: number;
+  beforeId?: string;
 }
+
+/**
+ * Suit le pointeur jusqu'au relâché : déplacement et redimensionnement
+ * partagent le même trio d'écouteurs.
+ */
+function trackPointer(onMove: (e: PointerEvent) => void, onUp: () => void) {
+  const up = () => {
+    onUp();
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', up);
+    window.removeEventListener('pointercancel', up);
+  };
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', up);
+  window.addEventListener('pointercancel', up);
+}
+
+/** Libellés i18n des widgets, par type — calculés une fois. */
+const META_LABELS = new Map(WIDGET_META.map(m => [m.type, m.label]));
 
 interface GridCtxValue {
   breakpoint: Breakpoint;
@@ -199,25 +219,27 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
         if (at < 0) return { panelId: panel.dataset.panelId, index: tiles.length };
         // Moitié droite de la tuile visée : on se range après elle.
         const r = tile!.getBoundingClientRect();
-        return { panelId: panel.dataset.panelId, index: at + (x > r.left + r.width / 2 ? 1 : 0) };
+        const index = at + (x > r.left + r.width / 2 ? 1 : 0);
+        return { panelId: panel.dataset.panelId, index, beforeId: tiles[index]?.dataset.widgetId };
       };
 
-      const onMove = (ev: PointerEvent) => {
-        dropRef.current = targetAt(ev.clientX, ev.clientY);
-        setDropTarget(dropRef.current);
-      };
-      const onUp = () => {
-        if (dropRef.current) moveWidget(widgetId, dropRef.current.panelId, dropRef.current.index);
-        dropRef.current = null;
-        setDraggingId(null);
-        setDropTarget(null);
-        window.removeEventListener('pointermove', onMove);
-        window.removeEventListener('pointerup', onUp);
-        window.removeEventListener('pointercancel', onUp);
-      };
-      window.addEventListener('pointermove', onMove);
-      window.addEventListener('pointerup', onUp);
-      window.addEventListener('pointercancel', onUp);
+      trackPointer(
+        ev => {
+          const next = targetAt(ev.clientX, ev.clientY);
+          const prev = dropRef.current;
+          // Même cible qu'au mouvement précédent : rien à redessiner. Sans ce
+          // garde, toute la page se re-rendait à chaque pixel du glisser.
+          if (prev?.panelId === next?.panelId && prev?.index === next?.index) return;
+          dropRef.current = next;
+          setDropTarget(next);
+        },
+        () => {
+          if (dropRef.current) moveWidget(widgetId, dropRef.current.panelId, dropRef.current.index);
+          dropRef.current = null;
+          setDraggingId(null);
+          setDropTarget(null);
+        }
+      );
     },
     [moveWidget]
   );
@@ -225,37 +247,35 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
   // ── Redimensionnement ────────────────────────────────────────
   const startResize = useCallback(
     (widgetId: string, startX: number, startY: number) => {
-      const panel = layout.panels.find(p => p.widgets.some(w => w.id === widgetId));
-      const widget = panel?.widgets.find(w => w.id === widgetId);
-      if (!panel || !widget) return;
-      const min = getMinSize(widget.type, 'lg', widget.disposition);
+      const found = findWidget(layout, widgetId);
+      if (!found) return;
+      const { panel, widget } = found;
+      const min = getMinSize(widget.type, widget.disposition);
       const maxW = Math.min(panel.cols, fit);
       let last = { w: widget.w, h: widget.h };
 
-      const onMove = (ev: PointerEvent) => {
-        const next = {
-          w: clamp(widget.w + Math.round((ev.clientX - startX) / (GRID_COL + GRID_GAP)), Math.min(min.w, maxW), maxW),
-          h: Math.max(min.h, widget.h + Math.round((ev.clientY - startY) / (GRID_ROW + GRID_GAP))),
-        };
-        if (next.w === last.w && next.h === last.h) return;
-        last = next;
-        updateWidget(widgetId, next);
-      };
-      const onUp = () => {
-        window.removeEventListener('pointermove', onMove);
-        window.removeEventListener('pointerup', onUp);
-        window.removeEventListener('pointercancel', onUp);
-      };
-      window.addEventListener('pointermove', onMove);
-      window.addEventListener('pointerup', onUp);
-      window.addEventListener('pointercancel', onUp);
+      trackPointer(
+        ev => {
+          const next = {
+            w: clamp(widget.w + Math.round((ev.clientX - startX) / (GRID_COL + GRID_GAP)), Math.min(min.w, maxW), maxW),
+            h: Math.max(min.h, widget.h + Math.round((ev.clientY - startY) / (GRID_ROW + GRID_GAP))),
+          };
+          if (next.w === last.w && next.h === last.h) return;
+          last = next;
+          updateWidget(widgetId, next);
+        },
+        () => {}
+      );
     },
     [layout, fit, updateWidget]
   );
 
+  // Le palier et non la largeur : un pixel de plus ou de moins ne doit pas
+  // re-rendre toutes les tuiles.
+  const breakpoint = resolveBreakpoint(width || 1200);
   const ctxValue = useMemo<GridCtxValue>(
-    () => ({ breakpoint: resolveBreakpoint(width || 1200), draggingId, dropTarget, startDrag, startResize, motionAllowed }),
-    [width, draggingId, dropTarget, startDrag, startResize, motionAllowed]
+    () => ({ breakpoint, draggingId, dropTarget, startDrag, startResize, motionAllowed }),
+    [breakpoint, draggingId, dropTarget, startDrag, startResize, motionAllowed]
   );
 
   // ── Sélection multiple ─────────────────────────────────────
@@ -433,7 +453,7 @@ function PanelSection({
               const Component = WIDGET_COMPONENTS[widget.type];
               if (!Component) return null;
               return (
-                <GridItem key={widget.id} id={widget.id}>
+                <GridItem key={widget.id} id={widget.id} widget={widget}>
                   <Component />
                 </GridItem>
               );
@@ -639,7 +659,18 @@ const MemoChildren = memo(function MemoChildren({
  * et, en édition, le calque qui la déplace et la redimensionne. Sa place vient
  * de son rang dans le panneau ; elle n'en connaît que sa taille.
  */
-export function GridItem({ id, children, readonly }: { id: string; children: ReactNode; readonly?: boolean }) {
+export function GridItem({
+  id,
+  widget: given,
+  children,
+  readonly,
+}: {
+  id: string;
+  /** Fourni par le panneau ; sinon cherché dans la page (plan). */
+  widget?: GridWidget;
+  children: ReactNode;
+  readonly?: boolean;
+}) {
   const { layout } = useDashboardLayout();
   const { isEditMode: ctxEditMode } = useEditMode();
   const { breakpoint, draggingId, dropTarget, startDrag, startResize, motionAllowed } = useGridCtx();
@@ -651,7 +682,7 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
   const { t } = useI18n();
   const isEditMode = ctxEditMode && panelEditing && !readonly;
 
-  const widget = layoutWidgets(layout).find(w => w.id === id);
+  const widget = given ?? findWidget(layout, id)?.widget;
   const hasMoreInfo = widget ? MORE_INFO_WIDGET_TYPES.includes(widget.type) : false;
 
   const handleMoreInfoClick = useCallback(
@@ -727,10 +758,9 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
   const isDragging = draggingId === id;
   const isSelected = selection.selected.has(id);
   // La tuile visée par un déplacement : on se rangera devant elle.
-  const isDropTarget =
-    !!dropTarget && !isDragging && layout.panels.find(p => p.id === dropTarget.panelId)?.widgets[dropTarget.index]?.id === id;
-  const meta = WIDGET_META.find(m => m.type === widget.type);
-  const label = meta ? t(meta.label) : widget.type;
+  const isDropTarget = !isDragging && dropTarget?.beforeId === id;
+  const metaLabel = META_LABELS.get(widget.type);
+  const label = metaLabel ? t(metaLabel) : widget.type;
   const isWidgetModalOpen = !isEditMode && moreInfoState?.widgetId === id;
 
   const gridStyle: React.CSSProperties = {
@@ -773,15 +803,7 @@ export function GridItem({ id, children, readonly }: { id: string; children: Rea
           </WidgetErrorBoundary>
         </StateStyled>
       </WidgetIdCtx.Provider>
-      {isEditMode && (
-        <GridItemOverlay
-          id={id}
-          label={label}
-          widget={widget}
-          onDragStart={e => startDrag(id, e)}
-          onResizeStart={(clientX, clientY) => startResize(id, clientX, clientY)}
-        />
-      )}
+      {isEditMode && <GridItemOverlay label={label} widget={widget} onDragStart={startDrag} onResizeStart={startResize} />}
     </motion.div>
   );
 }

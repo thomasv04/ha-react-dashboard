@@ -402,8 +402,6 @@
     "charging": "Charging",
     "discharging": "Discharging",
     "standby": "Standby",
-    "flowIn": "W in",
-    "flowOut": "W out",
     "dispositions": {
       "default": {
         "label": "Standard"

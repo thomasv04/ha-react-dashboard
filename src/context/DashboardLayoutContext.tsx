@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from 'react';
 import type { WidgetConfigs } from '@/types/widget-configs';
 import { isTypingTarget } from '@/lib/utils';
-import { EMPTY_LAYOUT, newPanel, toPanelLayout } from '@/lib/panel-grid';
+import { EMPTY_LAYOUT, findWidget, newPanel, toPanelLayout } from '@/lib/panel-grid';
 import { usePages, type Page } from '@/context/PageContext';
 import type { WallPanelConfig } from '@/types/wallpanel';
 import type { CustomPanel, DockConfig } from '@/types/custom-panel';
@@ -165,9 +165,6 @@ const HISTORY_LIMIT = 20;
 /** Mutations plus rapprochées que ça = un seul point de retour. */
 const HISTORY_COALESCE_MS = 400;
 
-/** Page sans panneau — vierge, ou dont l'API a renvoyé un fichier vide. */
-export const DEFAULT_LAYOUT: DashboardLayout = EMPTY_LAYOUT;
-
 /** Applique `fn` à chaque panneau ; les autres pages ne bougent pas. */
 const mapPanels = (layout: DashboardLayout, fn: (p: LayoutPanel) => LayoutPanel): DashboardLayout => ({
   ...layout,
@@ -185,7 +182,7 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
   const { updateWidgetConfig: widgetCfgUpdate, getWidgetConfig } = useWidgetConfig();
 
   const [layouts, setLayouts] = useState<Record<string, DashboardLayout>>(() =>
-    initialLayouts && Object.keys(initialLayouts).length > 0 ? initialLayouts : { home: DEFAULT_LAYOUT }
+    initialLayouts && Object.keys(initialLayouts).length > 0 ? initialLayouts : { home: EMPTY_LAYOUT }
   );
   const [isEditMode, setEditModeState] = useState(false);
   const [editPanelId, setEditPanelId] = useState<string | null>(null);
@@ -211,14 +208,14 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
         if (pageIds.has(id)) updated[id] = l;
       }
       for (const page of pages) {
-        if (!(page.id in updated)) updated[page.id] = DEFAULT_LAYOUT;
+        if (!(page.id in updated)) updated[page.id] = EMPTY_LAYOUT;
       }
       return updated;
     });
   }, [pages]);
 
   // Current page's layout (derived)
-  const layout = layouts[currentPageId] ?? DEFAULT_LAYOUT;
+  const layout = layouts[currentPageId] ?? EMPTY_LAYOUT;
 
   // ── Annuler / rétablir ──────────────────────────────────────────────────────
   //
@@ -315,7 +312,7 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
   const mutate = useCallback(
     (fn: (layout: DashboardLayout) => DashboardLayout) => {
       pushHistory();
-      setLayouts(prev => ({ ...prev, [currentPageId]: fn(prev[currentPageId] ?? DEFAULT_LAYOUT) }));
+      setLayouts(prev => ({ ...prev, [currentPageId]: fn(prev[currentPageId] ?? EMPTY_LAYOUT) }));
     },
     [currentPageId, pushHistory]
   );
@@ -378,7 +375,7 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
    */
   const duplicateWidget = useCallback(
     (id: string) => {
-      const source = (layoutsRef.current[currentPageId] ?? DEFAULT_LAYOUT).panels.flatMap(p => p.widgets).find(w => w.id === id);
+      const source = findWidget(layoutsRef.current[currentPageId] ?? EMPTY_LAYOUT, id)?.widget;
       if (!source) return '';
       const newId = `${source.type}-${Date.now()}`;
       mutate(l =>
@@ -398,7 +395,7 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
   const moveWidget = useCallback(
     (id: string, panelId: string, index?: number) =>
       mutate(l => {
-        const widget = l.panels.flatMap(p => p.widgets).find(w => w.id === id);
+        const widget = findWidget(l, id)?.widget;
         if (!widget) return l;
         return mapPanels(l, p => {
           const rest = p.widgets.filter(w => w.id !== id);
@@ -449,11 +446,9 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
     [mutate]
   );
 
-  const findWidget = (l: DashboardLayout, id: string) => l.panels.flatMap(p => p.widgets).find(w => w.id === id);
-
   const cycleSize = useCallback(
     (id: string) => {
-      const widget = findWidget(layoutsRef.current[currentPageId] ?? DEFAULT_LAYOUT, id);
+      const widget = findWidget(layoutsRef.current[currentPageId] ?? EMPTY_LAYOUT, id)?.widget;
       if (!widget || widget.static) return;
       const presets = SIZE_PRESETS[widget.type]?.lg;
       if (!presets || presets.length === 0) return;
@@ -467,7 +462,7 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
 
   const getCurrentPresetName = useCallback(
     (id: string): SizePresetName | null => {
-      const widget = findWidget(layouts[currentPageId] ?? DEFAULT_LAYOUT, id);
+      const widget = findWidget(layouts[currentPageId] ?? EMPTY_LAYOUT, id)?.widget;
       if (!widget) return null;
       const presets = SIZE_PRESETS[widget.type]?.lg;
       if (!presets) return null;

@@ -97,7 +97,7 @@ export function EnergyCard() {
           <span
             className={cn(
               'shrink-0 rounded-[var(--ds-radius-pill)] px-3 py-1 text-sm font-bold',
-              state === 'charging' ? 'bg-[var(--ds-good)] text-[#062614]' : 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)]'
+              state === 'charging' ? 'bg-[var(--ds-good)] text-[var(--ds-good-ink)]' : 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)]'
             )}
           >
             {stateLabel}

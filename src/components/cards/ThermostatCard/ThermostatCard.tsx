@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Flame, Power, Snowflake } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
@@ -32,7 +32,6 @@ export function ThermostatCard() {
   const thermostat = useSafeEntity(entityId);
   const helpers = useHass(s => s.helpers);
   const playFeedback = useSoundFeedback();
-  const cardRef = useRef<HTMLDivElement>(null);
 
   // Consigne suivie pendant un glisser, rendue à HA dès qu'il répond.
   const haTemp = thermostat?.attributes.temperature as number | undefined;
@@ -80,10 +79,7 @@ export function ThermostatCard() {
   const Icon = hvacMode === 'off' ? Power : isCooling ? Snowflake : Flame;
 
   return (
-    <div
-      ref={cardRef}
-      className='flex h-full select-none flex-col overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] px-[var(--ds-space-4)] pb-2 pt-[var(--ds-space-4)] text-[var(--ds-ink)]'
-    >
+    <div className='flex h-full select-none flex-col overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] px-[var(--ds-space-4)] pb-2 pt-[var(--ds-space-4)] text-[var(--ds-ink)]'>
       <span className='truncate text-[17px] font-medium'>{name}</span>
       {/* Le cadran est carré : il prend le plus grand carré que laisse la case. */}
       <div className='flex min-h-0 flex-1 items-center justify-center' style={{ containerType: 'size' }}>
@@ -100,7 +96,7 @@ export function ThermostatCard() {
             caption={current != null ? t('widgets.thermostat.currently', { value: formatTemp(current, language) }) : undefined}
             icon={<Icon size={22} aria-hidden='true' />}
             modes={modes}
-            activeMode={modes.some(m => m.id === hvacMode) ? hvacMode : undefined}
+            activeMode={hvacMode}
             onModeChange={setMode}
             labels={{
               decrease: t('widgets.thermostat.decrease'),

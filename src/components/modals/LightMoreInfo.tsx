@@ -4,6 +4,7 @@ import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { PillSlider } from '@/components/ds/PillSlider';
+import { COLOR_TEMP_TRACK, HUE_TRACK, TRACK_MARKER } from '@/components/ds/light-tracks';
 import { MoreInfoHeader } from './MoreInfoHeader';
 import { InfoSidebar, SheetSection, type SidebarModule } from './sidebar';
 import type { LightCardConfig } from '@/types/widget-types';
@@ -15,47 +16,6 @@ type ColorTab = 'color' | 'color_temp';
 
 /** Les teintes proposées d'un toucher, avant le curseur. */
 const SWATCHES = [300, 350, 15, 35, 325, 95, 45, 130];
-
-/** Curseur sur un dégradé (teinte, chaleur) : une pastille blanche marque la valeur. */
-function GradientSlider({
-  value,
-  min,
-  max,
-  background,
-  label,
-  valueText,
-  onChange,
-}: {
-  value: number;
-  min: number;
-  max: number;
-  background: string;
-  label: string;
-  valueText: string;
-  onChange: (value: number) => void;
-}) {
-  const ratio = max > min ? Math.min(1, Math.max(0, (value - min) / (max - min))) : 0;
-  return (
-    <div className='relative h-[52px] rounded-[var(--ds-radius-pill)]' style={{ background }}>
-      <span
-        aria-hidden='true'
-        className='pointer-events-none absolute top-1/2 size-11 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white shadow-[var(--ds-shadow-pin)]'
-        // Bornée pour que la pastille ne déborde pas des bouts arrondis.
-        style={{ left: `calc(26px + ${ratio} * (100% - 52px))` }}
-      />
-      <input
-        type='range'
-        min={min}
-        max={max}
-        value={value}
-        onChange={e => onChange(Number(e.target.value))}
-        aria-label={label}
-        aria-valuetext={valueText}
-        className='absolute inset-0 h-full w-full cursor-pointer opacity-0'
-      />
-    </div>
-  );
-}
 
 export default function LightMoreInfo({ entityId, widgetId }: { entityId: string; widgetId: string }) {
   const { t } = useI18n();
@@ -225,22 +185,23 @@ export default function LightMoreInfo({ entityId, widgetId }: { entityId: string
                   />
                 ))}
               </div>
-              <GradientSlider
+              <PillSlider
                 value={hue}
-                min={0}
-                max={360}
-                background='linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)'
+                max={359}
+                track={HUE_TRACK}
+                fill={TRACK_MARKER}
                 label={t('widgets.light.hue')}
                 valueText={`${hue}°`}
                 onChange={handleHue}
               />
             </div>
           ) : (
-            <GradientSlider
+            <PillSlider
               value={colorTempKelvin ?? minKelvin}
               min={minKelvin}
               max={maxKelvin}
-              background='linear-gradient(to right, #ff9500, #ffd4a0, #fff5e6, #e8eeff, #b4c8ff)'
+              track={COLOR_TEMP_TRACK}
+              fill={TRACK_MARKER}
               label={t('widgets.light.colorTemp')}
               valueText={`${colorTempKelvin ?? minKelvin} K`}
               onChange={handleColorTemp}

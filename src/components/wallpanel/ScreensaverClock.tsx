@@ -1,4 +1,5 @@
-import { useNow, useWeatherNow } from '@/hooks/useWeatherNow';
+import { useNow } from '@/hooks/useNow';
+import { useWeatherNow } from '@/hooks/useWeatherNow';
 import { PagerArrows } from '@/components/ds/PagerArrows';
 import { useFormats } from '@/hooks/useFormats';
 import { useI18n } from '@/i18n';

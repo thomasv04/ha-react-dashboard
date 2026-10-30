@@ -89,7 +89,7 @@ export function LoadingScreen({ stage, onSkip, onRetry }: LoadingScreenProps) {
                   className={cn(
                     'w-6 h-6 rounded-full flex items-center justify-center shrink-0 border transition-colors duration-300',
                     done
-                      ? 'bg-[var(--ds-good)] border-[var(--ds-good)] text-[#062614]'
+                      ? 'bg-[var(--ds-good)] border-[var(--ds-good)] text-[var(--ds-good-ink)]'
                       : active
                         ? 'bg-[var(--ds-surface-3)] border-[var(--ds-surface-3)] text-[var(--ds-ink)]'
                         : 'bg-[var(--ds-surface-2)] border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'

@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { useState } from 'react';
 import { Copy, Lock, MoveDiagonal, Settings, Trash2 } from 'lucide-react';
 import { useDashboardLayout, useSizePresets, type GridWidget } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -7,12 +7,11 @@ import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 
 interface GridItemOverlayProps {
-  id: string;
   label: string;
   widget: GridWidget;
   /** Appui sur le fond du calque : la tuile se déplace. */
-  onDragStart: (e: React.PointerEvent) => void;
-  onResizeStart: (clientX: number, clientY: number) => void;
+  onDragStart: (widgetId: string, e: React.PointerEvent) => void;
+  onResizeStart: (widgetId: string, clientX: number, clientY: number) => void;
 }
 
 const ROUND = 'flex size-9 items-center justify-center rounded-full';
@@ -22,7 +21,8 @@ const ROUND = 'flex size-9 items-center justify-center rounded-full';
  * boutons — qui gardent leur geste pour eux — la configurent, la dupliquent, la
  * suppriment, et son coin la redimensionne.
  */
-function GridItemOverlayInner({ id, label, widget, onDragStart, onResizeStart }: GridItemOverlayProps) {
+export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: GridItemOverlayProps) {
+  const id = widget.id;
   const { t } = useI18n();
   const { removeWidget, duplicateWidget } = useDashboardLayout();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -51,7 +51,7 @@ function GridItemOverlayInner({ id, label, widget, onDragStart, onResizeStart }:
 
   return (
     <div
-      onPointerDown={onDragStart}
+      onPointerDown={e => onDragStart(id, e)}
       title={t('layout.panel.moveTile')}
       // `touch-none` : au doigt, le navigateur défilerait la page au lieu de
       // laisser glisser la tuile.
@@ -132,7 +132,7 @@ function GridItemOverlayInner({ id, label, widget, onDragStart, onResizeStart }:
           onPointerDown={e => {
             e.stopPropagation();
             e.preventDefault();
-            onResizeStart(e.clientX, e.clientY);
+            onResizeStart(id, e.clientX, e.clientY);
           }}
         >
           <svg width='12' height='12' viewBox='0 0 10 10' aria-hidden='true'>
@@ -145,5 +145,3 @@ function GridItemOverlayInner({ id, label, widget, onDragStart, onResizeStart }:
     </div>
   );
 }
-
-export const GridItemOverlay = memo(GridItemOverlayInner);

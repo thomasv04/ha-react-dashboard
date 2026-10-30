@@ -997,7 +997,10 @@ export function FloorplanView() {
   const drawnPart = draft?.part;
 
   /** Point d'un dessin en cours, en % du plan : ambre, ou bleu là où poser une pastille. */
-  const dot = (at: { x: number; y: number } | null, color = 'bg-[var(--ds-warm-light)] ring-amber-400/30 text-[#3d2a00]') =>
+  const dot = (
+    at: { x: number; y: number } | null,
+    color = 'bg-[var(--ds-warm-light)] ring-amber-400/30 text-[var(--ds-warm-light-ink)]'
+  ) =>
     at && (
       <span
         className={cn('absolute w-3 h-3 rounded-full ring-4 pointer-events-none', color)}
@@ -1594,7 +1597,7 @@ export function FloorplanView() {
                             type='button'
                             aria-label={t('layout.floorplan.partCorner')}
                             title={t('layout.floorplan.partCorner')}
-                            className='absolute z-20 w-4 h-4 rounded-full bg-[var(--ds-warm-light)] ring-4 ring-amber-400/30 cursor-move touch-none text-[#3d2a00]'
+                            className='absolute z-20 w-4 h-4 rounded-full bg-[var(--ds-warm-light)] ring-4 ring-amber-400/30 cursor-move touch-none text-[var(--ds-warm-light-ink)]'
                             style={{ left: `${at.x}%`, top: `${at.y}%`, translate: '-50% -50%' }}
                             onPointerDown={e => {
                               e.stopPropagation();

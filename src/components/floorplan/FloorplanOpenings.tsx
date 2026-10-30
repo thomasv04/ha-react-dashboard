@@ -138,7 +138,10 @@ export function OpeningsTab({
                     className={cn('flex items-center gap-1 text-[10px]', open ? 'text-[var(--ds-good)]' : 'text-[var(--ds-ink-muted)]')}
                   >
                     <span
-                      className={cn('w-1.5 h-1.5 rounded-full', open ? 'bg-[var(--ds-good)] text-[#062614]' : 'bg-[var(--ds-surface-3)]')}
+                      className={cn(
+                        'w-1.5 h-1.5 rounded-full',
+                        open ? 'bg-[var(--ds-good)] text-[var(--ds-good-ink)]' : 'bg-[var(--ds-surface-3)]'
+                      )}
                     />
                     {t(open ? 'layout.floorplan.openingStateOpen' : 'layout.floorplan.openingStateClosed')}
                   </span>

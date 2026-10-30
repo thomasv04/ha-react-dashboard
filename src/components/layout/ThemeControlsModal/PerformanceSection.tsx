@@ -96,9 +96,9 @@ function FPSMeter() {
                 className={`w-1.5 rounded-sm transition-all ${
                   fps >= threshold
                     ? fps >= 55
-                      ? 'bg-[var(--ds-good)] text-[#062614]'
+                      ? 'bg-[var(--ds-good)] text-[var(--ds-good-ink)]'
                       : fps >= 30
-                        ? 'bg-[var(--ds-warm-light)] text-[#3d2a00]'
+                        ? 'bg-[var(--ds-warm-light)] text-[var(--ds-warm-light-ink)]'
                         : 'bg-[var(--ds-alert)] text-white'
                     : 'bg-[var(--ds-surface-3)]'
                 }`}

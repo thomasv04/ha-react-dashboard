@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
@@ -6,38 +6,9 @@ import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 import type { ClockCardConfig } from '@/types/widget-configs';
 import { useFormats } from '@/hooks/useFormats';
+import { useNow } from '@/hooks/useNow';
 
 const ACCENT = 'var(--ds-accent)';
-
-/**
- * Horloge du navigateur, recalée sur la frontière de seconde ou de minute.
- *
- * Un `setInterval` posé au montage dérive : il change d'heure à un instant
- * arbitraire hérité du moment où la card est apparue. On vise la prochaine
- * frontière, ce qui évite aussi de re-rendre chaque seconde une horloge qui
- * n'affiche que les minutes.
- */
-function useNow(withSeconds: boolean): Date {
-  const [now, setNow] = useState(() => new Date());
-
-  useEffect(() => {
-    let id: ReturnType<typeof setTimeout>;
-    const period = withSeconds ? 1_000 : 60_000;
-    const schedule = () => {
-      id = setTimeout(
-        () => {
-          setNow(new Date());
-          schedule();
-        },
-        period - (Date.now() % period)
-      );
-    };
-    schedule();
-    return () => clearTimeout(id);
-  }, [withSeconds]);
-
-  return now;
-}
 
 /** Cadran analogique — disque plein, index aux heures, trotteuse en accent. */
 function AnalogFace({ date, size }: { date: Date; size: number }) {

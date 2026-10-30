@@ -88,7 +88,7 @@ function WallPanelEditActions({ onSave }: { onSave?: WallPanelSave }) {
         </button>
         <button
           onClick={handleSave}
-          className='flex items-center gap-2 px-4 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-good)] border border-[var(--ds-good)] text-[#062614] text-sm font-medium transition-colors'
+          className='flex items-center gap-2 px-4 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-good)] border border-[var(--ds-good)] text-[var(--ds-good-ink)] text-sm font-medium transition-colors'
         >
           <CloudUpload size={15} />
           {t('common.save')}

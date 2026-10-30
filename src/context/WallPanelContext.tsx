@@ -3,9 +3,8 @@ import type { WallPanelConfig } from '@/types/wallpanel';
 import { DEFAULT_WALLPANEL_CONFIG } from '@/types/wallpanel';
 import type { DashboardLayout } from '@/context/DashboardLayoutContext';
 import type { WidgetConfigs } from '@/types/widget-configs';
-import { DEFAULT_LAYOUT } from '@/context/DashboardLayoutContext';
 import { usePages } from '@/context/PageContext';
-import { layoutWidgets, toPanelLayout } from '@/lib/panel-grid';
+import { EMPTY_LAYOUT, layoutWidgets, toPanelLayout } from '@/lib/panel-grid';
 
 interface WallPanelContextValue {
   config: WallPanelConfig;
@@ -56,7 +55,7 @@ export function WallPanelProvider({ children, initialConfig, initialLayout, init
   const [config, setConfig] = useState<WallPanelConfig>(initialConfig ?? DEFAULT_WALLPANEL_CONFIG);
   const [isActive, setIsActive] = useState(false);
   const [isWallPanelEditMode, setIsWallPanelEditMode] = useState(false);
-  const [wallPanelLayout, setWallPanelLayout] = useState<DashboardLayout>(initialLayout ? toPanelLayout(initialLayout) : DEFAULT_LAYOUT);
+  const [wallPanelLayout, setWallPanelLayout] = useState<DashboardLayout>(initialLayout ? toPanelLayout(initialLayout) : EMPTY_LAYOUT);
   const [wallPanelWidgetConfigs, setWallPanelWidgetConfigs] = useState<WidgetConfigs>(initialWidgetConfigs ?? {});
 
   // La configuration servie arrive après le premier rendu : au démarrage, le

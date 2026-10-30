@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION_FAST } from '@/lib/motion-tokens';
 import { PencilLine, Check, X, CloudUpload, Plus, Loader2, HelpCircle, Undo2, Redo2, Trash2 } from 'lucide-react';
@@ -38,23 +38,6 @@ export function EditButton() {
 
   const isAdmin = !!user?.is_admin;
 
-  // ✎ ou ⚙ sur un panneau : on n'édite que lui, derrière le même code d'accès.
-  useEffect(() => {
-    const onEditPanel = (e: Event) => {
-      if (!isAdmin) return;
-      setEditPanelId((e as CustomEvent<string>).detail);
-      if (isEditMode) return;
-      if (!behaviourSettings.editPin) return setEditMode(true);
-      setPinEntry('');
-      setPinWrong(false);
-      setPinPrompt(true);
-    };
-    window.addEventListener(EDIT_PANEL_EVENT, onEditPanel);
-    return () => window.removeEventListener(EDIT_PANEL_EVENT, onEditPanel);
-  }, [isAdmin, isEditMode, behaviourSettings.editPin, setEditMode, setEditPanelId]);
-
-  if (!isAdmin) return null;
-
   /**
    * Entrée en édition, éventuellement derrière un code.
    *
@@ -62,12 +45,25 @@ export function EditButton() {
    * peut le lire. Il empêche le geste involontaire sur une tablette murale —
    * la vraie protection des écritures est côté serveur (`adminWrites`).
    */
-  const enterEditMode = () => {
+  const enterEditMode = useCallback(() => {
     if (!behaviourSettings.editPin) return setEditMode(true);
     setPinEntry('');
     setPinWrong(false);
     setPinPrompt(true);
-  };
+  }, [behaviourSettings.editPin, setEditMode]);
+
+  // ✎ ou ⚙ sur un panneau : on n'édite que lui, derrière le même code d'accès.
+  useEffect(() => {
+    const onEditPanel = (e: Event) => {
+      if (!isAdmin) return;
+      setEditPanelId((e as CustomEvent<string>).detail);
+      if (!isEditMode) enterEditMode();
+    };
+    window.addEventListener(EDIT_PANEL_EVENT, onEditPanel);
+    return () => window.removeEventListener(EDIT_PANEL_EVENT, onEditPanel);
+  }, [isAdmin, isEditMode, enterEditMode, setEditPanelId]);
+
+  if (!isAdmin) return null;
 
   const submitPin = () => {
     if (pinEntry !== behaviourSettings.editPin) return setPinWrong(true);
@@ -215,7 +211,7 @@ export function EditButton() {
                 data-tour='save'
                 disabled={isSaving}
                 title={t('common.save')}
-                className='flex items-center gap-2 px-3 sm:px-4 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-good)] border border-[var(--ds-good)] text-[#062614] text-sm font-medium transition-colors disabled:opacity-50'
+                className='flex items-center gap-2 px-3 sm:px-4 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-good)] border border-[var(--ds-good)] text-[var(--ds-good-ink)] text-sm font-medium transition-colors disabled:opacity-50'
               >
                 {isSaving ? <Loader2 size={15} className='animate-spin' /> : <CloudUpload size={15} />}
                 <span className='hidden sm:inline'>{isSaving ? t('dashboard.saving') : t('common.save')}</span>

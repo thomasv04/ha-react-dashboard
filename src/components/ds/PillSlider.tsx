@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { clamp, cn } from '@/lib/utils';
 
 /**
  * Curseur en pilule : la partie remplie montre la valeur (luminosité, volume,
@@ -37,7 +37,7 @@ export function PillSlider({
   className?: string;
 }) {
   const vertical = orientation === 'vertical';
-  const ratio = max > min ? Math.min(1, Math.max(0, (value - min) / (max - min))) : 0;
+  const ratio = max > min ? clamp((value - min) / (max - min), 0, 1) : 0;
   const size = `${Math.round(ratio * 100)}%`;
 
   return (

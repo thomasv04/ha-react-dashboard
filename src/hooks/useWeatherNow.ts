@@ -1,32 +1,24 @@
-import { useEffect, useState } from 'react';
-import { Cloud, CloudRain, CloudSnow, CloudSun, Moon, Sun, type LucideIcon } from 'lucide-react';
-import { useEntitiesByDomain } from '@/hooks/useEntities';
+import { useHass } from '@hakit/core';
+import type { LucideIcon } from 'lucide-react';
+import { useSafeEntity } from '@/hooks/useSafeEntity';
+import { conditionIcon } from '@/lib/weather';
 
-const CONDITION_ICONS: Record<string, LucideIcon> = {
-  sunny: Sun,
-  'clear-night': Moon,
-  partlycloudy: CloudSun,
-  rainy: CloudRain,
-  pouring: CloudRain,
-  snowy: CloudSnow,
-  'snowy-rainy': CloudSnow,
-};
-
-/** Heure de la barre, rafraîchie assez souvent pour ne jamais rater une minute. */
-export function useNow(): Date {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 10_000);
-    return () => clearInterval(id);
-  }, []);
-  return now;
-}
-
-/** Météo du moment. Pas de réglage dédié : la première entité météo de l'installation. */
+/**
+ * Météo du moment. Pas de réglage dédié : la première entité météo de
+ * l'installation.
+ *
+ * Le sélecteur ne rend que son identifiant — une chaîne stable — puis l'entité
+ * est lue seule : la température est un attribut, qu'une comparaison sur l'état
+ * seul laisserait figée tant que le ciel ne change pas.
+ */
 export function useWeatherNow(): { temperature: number | undefined; Icon: LucideIcon } {
-  const weather = useEntitiesByDomain('weather')[0];
+  const weatherId = useHass(s => {
+    for (const id in s.entities ?? {}) if (id.startsWith('weather.')) return id;
+    return '';
+  });
+  const weather = useSafeEntity(weatherId);
   return {
     temperature: weather?.attributes.temperature as number | undefined,
-    Icon: CONDITION_ICONS[weather?.state ?? ''] ?? Cloud,
+    Icon: conditionIcon(weather?.state ?? '').Icon,
   };
 }

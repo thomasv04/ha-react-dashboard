@@ -402,8 +402,6 @@
     "charging": "En charge",
     "discharging": "En décharge",
     "standby": "Veille",
-    "flowIn": "W entrant",
-    "flowOut": "W sortant",
     "dispositions": {
       "default": {
         "label": "Standard"

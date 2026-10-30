@@ -1,4 +1,5 @@
 import type { DashboardLayout, GridWidget, LayoutPanel } from '@/context/DashboardLayoutContext';
+import { clamp } from '@/lib/utils';
 
 /**
  * Trame des panneaux : colonnes et rangées de taille fixe, comme sur l'Echo
@@ -30,6 +31,15 @@ export const newPanelId = () => `panel-${Date.now().toString(36)}-${Math.random(
 
 export const newPanel = (cols = PANEL_COLS_DEFAULT): LayoutPanel => ({ id: newPanelId(), cols, widgets: [] });
 
+/** Un widget de la page et le panneau qui le porte. */
+export function findWidget(layout: DashboardLayout, id: string): { panel: LayoutPanel; widget: GridWidget } | undefined {
+  for (const panel of layout.panels) {
+    const widget = panel.widgets.find(w => w.id === id);
+    if (widget) return { panel, widget };
+  }
+  return undefined;
+}
+
 /** Tous les widgets d'une page, panneau après panneau. */
 export const layoutWidgets = (layout: DashboardLayout): GridWidget[] => layout.panels.flatMap(p => p.widgets);
 
@@ -57,7 +67,7 @@ export function panelsFromLegacy(legacy: { widgets?: { lg?: LegacyWidget[] }; co
   const list = (legacy.widgets?.lg ?? []).filter(w => w && typeof w === 'object');
   if (list.length === 0) return [];
   const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
-  const cols = Math.min(PANEL_COLS_MAX, Math.max(PANEL_COLS_MIN, legacy.cols?.lg ?? PANEL_COLS_MAX));
+  const cols = clamp(legacy.cols?.lg ?? PANEL_COLS_MAX, PANEL_COLS_MIN, PANEL_COLS_MAX);
   const widgets = [...list]
     .sort((a, b) => num(a.y) - num(b.y) || num(a.x) - num(b.x))
     .map(({ x: _x, y: _y, ...w }) => (typeof w.w === 'number' ? { ...w, w: Math.min(w.w, cols) } : w));

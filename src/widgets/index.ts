@@ -131,7 +131,8 @@ export function getDisposition(widgetType: string, dispositionId?: string) {
   return dispositions[0];
 }
 
-/** Taille minimum d'un widget à un breakpoint donné. */
-export function getMinSize(widgetType: string, breakpoint: 'lg' | 'md' | 'sm', dispositionId?: string): { w: number; h: number } {
-  return getDisposition(widgetType, dispositionId)?.minSize[breakpoint] ?? { w: 1, h: 1 };
+/** Taille minimum d'un widget. */
+export function getMinSize(widgetType: string, dispositionId?: string): { w: number; h: number } {
+  // Une seule disposition depuis la 4.0 : les tailles `lg` des manifestes font foi.
+  return getDisposition(widgetType, dispositionId)?.minSize.lg ?? { w: 1, h: 1 };
 }

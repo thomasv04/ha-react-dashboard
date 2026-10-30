@@ -1,6 +1,6 @@
 import { useRef, type PointerEvent, type ReactNode } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { clamp, cn } from '@/lib/utils';
 
 /** Géométrie dans un viewBox de 200 : arc + trait ≈ 95 % de la largeur. */
 const RADIUS = 88;
@@ -9,6 +9,8 @@ const KNOB = 10;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 /** Ouverture de l'arc : 270°, l'espace libre en bas accueille les modes. */
 const SWEEP = 270;
+/** Angle où l'arc commence : l'ouverture est centrée en bas. */
+const START = 90 + (360 - SWEEP) / 2;
 const ARC = (CIRCUMFERENCE * SWEEP) / 360;
 /**
  * Vide de part et d'autre de la pastille, le long de l'arc : rayon de la
@@ -25,11 +27,11 @@ type Segment = { from: number; to: number };
  * l'arc ; en clim il part de la fin. Exporté pour être testé.
  */
 export function dialGeometry(value: number, min: number, max: number, mode: 'heat' | 'cool') {
-  const ratio = max > min ? Math.min(1, Math.max(0, (value - min) / (max - min))) : 0;
+  const ratio = max > min ? clamp((value - min) / (max - min), 0, 1) : 0;
   const at = ARC * ratio;
   const before: Segment = { from: 0, to: at - GAP };
   const after: Segment = { from: at + GAP, to: ARC };
-  const angle = ((90 + (360 - SWEEP) / 2 + SWEEP * ratio) * Math.PI) / 180;
+  const angle = ((START + SWEEP * ratio) * Math.PI) / 180;
   return {
     fill: mode === 'heat' ? before : after,
     track: mode === 'heat' ? after : before,
@@ -55,7 +57,7 @@ function Arc({ segment, color }: { segment: Segment; color: string }) {
       strokeLinecap='round'
       strokeDasharray={`${length} ${CIRCUMFERENCE}`}
       strokeDashoffset={-segment.from}
-      transform={`rotate(${90 + (360 - SWEEP) / 2} 100 100)`}
+      transform={`rotate(${START} 100 100)`}
     />
   );
 }
@@ -67,14 +69,13 @@ function Arc({ segment, color }: { segment: Segment; color: string }) {
  */
 export function valueAtPoint(x: number, y: number, min: number, max: number, step: number): number | null {
   if (Math.hypot(x - 100, y - 100) < RADIUS - STROKE * 1.5) return null;
-  const start = 90 + (360 - SWEEP) / 2;
   const deg = (Math.atan2(y - 100, x - 100) * 180) / Math.PI;
-  let along = (((deg - start) % 360) + 360) % 360;
+  let along = (((deg - START) % 360) + 360) % 360;
   // Dans l'ouverture du bas : la borne la plus proche, pour que le min et le max
   // restent atteignables d'un geste vif.
   if (along > SWEEP) along = along > SWEEP + (360 - SWEEP) / 2 ? 0 : SWEEP;
   const raw = min + (along / SWEEP) * (max - min);
-  return Math.min(max, Math.max(min, Math.round(raw / step) * step));
+  return clamp(Math.round(raw / step) * step, min, max);
 }
 
 export interface DialMode<T extends string> {
@@ -101,7 +102,6 @@ export function Dial<T extends string>({
   modes,
   activeMode,
   onModeChange,
-  showArrows = true,
   labels,
 }: {
   value: number;
@@ -122,7 +122,6 @@ export function Dial<T extends string>({
   modes?: DialMode<T>[];
   activeMode?: T;
   onModeChange?: (mode: T) => void;
-  showArrows?: boolean;
   labels: { decrease: string; increase: string; modes?: string };
 }) {
   const geometry = dialGeometry(value, min, max, mode);
@@ -133,9 +132,12 @@ export function Dial<T extends string>({
   // Valeur au début du geste : `onDrag` fait déjà suivre `value`, la comparer
   // à elle au lâcher n'enverrait jamais rien.
   const startRef = useRef(value);
+  // Cadre du cadran, lu au début du geste : le relire à chaque mouvement
+  // forçait un calcul de mise en page par image pendant tout le glisser.
+  const rectRef = useRef<DOMRect | null>(null);
 
   const pointValue = (e: PointerEvent) => {
-    const rect = boxRef.current!.getBoundingClientRect();
+    const rect = rectRef.current ?? boxRef.current!.getBoundingClientRect();
     return valueAtPoint(((e.clientX - rect.left) / rect.width) * 200, ((e.clientY - rect.top) / rect.height) * 200, min, max, step);
   };
 
@@ -145,8 +147,9 @@ export function Dial<T extends string>({
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     ownsGestureRef.current = false;
     if (e.button !== 0 || (e.target as Element).closest('button')) return;
+    rectRef.current = e.currentTarget.getBoundingClientRect();
     const v = pointValue(e);
-    if (v === null) return;
+    if (v === null) return (rectRef.current = null);
     ownsGestureRef.current = true;
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -166,10 +169,10 @@ export function Dial<T extends string>({
     e.stopPropagation();
     const v = dragRef.current;
     dragRef.current = null;
+    rectRef.current = null;
     if (v !== startRef.current) onChange(v);
   };
   const color = mode === 'heat' ? 'var(--ds-heat)' : 'var(--ds-cool)';
-  const clamp = (v: number) => Math.min(max, Math.max(min, v));
 
   // L'actif et ses deux voisins : trois lignes tiennent dans l'ouverture de l'arc.
   const index = modes?.findIndex(m => m.id === activeMode) ?? -1;
@@ -184,7 +187,10 @@ export function Dial<T extends string>({
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
-      onPointerCancel={() => (dragRef.current = null)}
+      onPointerCancel={() => {
+        dragRef.current = null;
+        rectRef.current = null;
+      }}
       // Le `click` de fin de réglage ne doit pas remonter jusqu'à la case, qui ouvrirait la fiche.
       onClick={e => ownsGestureRef.current && e.stopPropagation()}
       className='@container relative aspect-square w-full touch-none select-none'
@@ -234,28 +240,24 @@ export function Dial<T extends string>({
         </div>
       )}
 
-      {showArrows && (
-        <>
-          <button
-            onClick={() => onChange(clamp(value - step))}
-            disabled={value <= min}
-            aria-label={labels.decrease}
-            title={labels.decrease}
-            className={cn(arrow, '-left-[6%]')}
-          >
-            <ChevronDown size={20} />
-          </button>
-          <button
-            onClick={() => onChange(clamp(value + step))}
-            disabled={value >= max}
-            aria-label={labels.increase}
-            title={labels.increase}
-            className={cn(arrow, '-right-[6%]')}
-          >
-            <ChevronUp size={20} />
-          </button>
-        </>
-      )}
+      <button
+        onClick={() => onChange(clamp(value - step, min, max))}
+        disabled={value <= min}
+        aria-label={labels.decrease}
+        title={labels.decrease}
+        className={cn(arrow, '-left-[6%]')}
+      >
+        <ChevronDown size={20} />
+      </button>
+      <button
+        onClick={() => onChange(clamp(value + step, min, max))}
+        disabled={value >= max}
+        aria-label={labels.increase}
+        title={labels.increase}
+        className={cn(arrow, '-right-[6%]')}
+      >
+        <ChevronUp size={20} />
+      </button>
     </div>
   );
 }

@@ -38,14 +38,15 @@ export function FloorplanColumn({ ids, width, onChange }: { ids: string[]; width
   const { layout, isEditMode, updateWidget, removeWidget } = useDashboardLayout();
   const { setEditingWidgetId } = useWidgetConfig();
   const [adding, setAdding] = useState(false);
-  const widgets = ids.flatMap(id => layoutWidgets(layout).find(w => w.id === id) ?? []);
+  const all = layoutWidgets(layout);
+  const widgets = ids.flatMap(id => all.find(w => w.id === id) ?? []);
 
   const move = (i: number, by: -1 | 1) => {
     const next = widgets.map(w => w.id);
     [next[i], next[i + by]] = [next[i + by], next[i]];
     onChange(next);
   };
-  const resize = (w: GridWidget, by: -1 | 1) => updateWidget(w.id, { h: Math.max(getMinSize(w.type, 'lg', w.disposition).h, w.h + by) });
+  const resize = (w: GridWidget, by: -1 | 1) => updateWidget(w.id, { h: Math.max(getMinSize(w.type, w.disposition).h, w.h + by) });
 
   return (
     <div data-floorplan-column className='absolute left-3 top-3 bottom-3 z-30 overflow-y-auto overscroll-contain' style={{ width }}>
