@@ -178,8 +178,10 @@ export function Dial<T extends string>({
   const index = modes?.findIndex(m => m.id === activeMode) ?? -1;
   const visible = modes && index >= 0 ? [modes[index - 1], modes[index], modes[index + 1]] : [];
 
+  // Les flèches se tiennent côte à côte sous la consigne, au centre de l'anneau :
+  // aux extrémités de l'arc, elles le touchaient dès que la tuile rétrécissait.
   const arrow =
-    'absolute top-[74%] flex size-[12%] min-h-11 min-w-11 items-center justify-center rounded-full bg-[var(--ds-surface-3)] text-[var(--ds-ink)] disabled:opacity-40';
+    'flex size-[13cqw] min-h-11 min-w-11 items-center justify-center rounded-full bg-[var(--ds-surface-3)] text-[var(--ds-ink)] disabled:opacity-40';
 
   return (
     <div
@@ -224,11 +226,13 @@ export function Dial<T extends string>({
                 key={m.id}
                 role='radio'
                 aria-checked={i === 1}
-                onClick={() => onModeChange?.(m.id)}
+                // L'actif passe au mode suivant : quand le cadran est petit, ses
+                // voisins sont masqués et c'est le seul moyen d'en changer.
+                onClick={() => onModeChange?.(i === 1 && modes ? modes[(index + 1) % modes.length].id : m.id)}
                 className={cn(
                   i === 1
                     ? 'rounded-full bg-[var(--ds-surface-3)] px-[6.5cqw] py-[1.8cqw] text-[max(14px,4.4cqw)] font-medium text-[var(--ds-ink)]'
-                    : 'text-[var(--ds-ink-muted)] opacity-60'
+                    : 'text-[var(--ds-ink-muted)] opacity-60 @max-[17.5rem]:hidden'
                 )}
               >
                 {m.label}
@@ -240,24 +244,26 @@ export function Dial<T extends string>({
         </div>
       )}
 
-      <button
-        onClick={() => onChange(clamp(value - step, min, max))}
-        disabled={value <= min}
-        aria-label={labels.decrease}
-        title={labels.decrease}
-        className={cn(arrow, '-left-[6%]')}
-      >
-        <ChevronDown size={20} />
-      </button>
-      <button
-        onClick={() => onChange(clamp(value + step, min, max))}
-        disabled={value >= max}
-        aria-label={labels.increase}
-        title={labels.increase}
-        className={cn(arrow, '-right-[6%]')}
-      >
-        <ChevronUp size={20} />
-      </button>
+      <div className='absolute inset-x-0 top-[66%] flex justify-center gap-[5cqw]'>
+        <button
+          onClick={() => onChange(clamp(value - step, min, max))}
+          disabled={value <= min}
+          aria-label={labels.decrease}
+          title={labels.decrease}
+          className={arrow}
+        >
+          <ChevronDown size={20} />
+        </button>
+        <button
+          onClick={() => onChange(clamp(value + step, min, max))}
+          disabled={value >= max}
+          aria-label={labels.increase}
+          title={labels.increase}
+          className={arrow}
+        >
+          <ChevronUp size={20} />
+        </button>
+      </div>
     </div>
   );
 }
