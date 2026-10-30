@@ -183,7 +183,7 @@ const DINING_FLOOR = [
 
 /** Sauvegarde, puis attend que le serveur ait gardé `expected` : la liste `key` du plan, chaque élément résumé par `describe`. */
 async function expectSaved<T>(page: Page, request: APIRequestContext, key: string, describe: (item: T) => string, expected: string[]) {
-  await page.getByRole('button', { name: 'Sauvegarder' }).click();
+  await page.getByRole('button', { name: 'Enregistrer et terminer' }).click();
   await expect
     .poll(async () => {
       const config = await (await request.get(`${API}/api/config`)).json();
@@ -674,7 +674,7 @@ test('in edit mode, the Openings tab lists the doors of the model, and links one
   // Liée à une entité fermée : elle l'est.
   await expect(openings(page)).toHaveAttribute('data-floorplan-openings', /Porte_Cuisine_1=0/);
 
-  await page.getByRole('button', { name: 'Sauvegarder' }).click();
+  await page.getByRole('button', { name: 'Enregistrer et terminer' }).click();
   await expect
     .poll(() => savedLinks(request))
     .toEqual(['Porte_Chambre_1 binary_sensor.porte_cellier', 'Porte_Cuisine_1 binary_sensor.porte_entree']);
@@ -720,7 +720,7 @@ test('a window moves with its contact under a shutter of its own, and a lock sit
   await page.getByPlaceholder('Rechercher...').fill('lock.garage');
   await page.getByRole('button', { name: 'lock.garage', exact: true }).click();
   await door.getByRole('button', { name: 'Lier', exact: true }).click();
-  await page.getByRole('button', { name: 'Sauvegarder' }).click();
+  await page.getByRole('button', { name: 'Enregistrer et terminer' }).click();
 
   // Déverrouillée : son cadenas, sur la porte, propose de la verrouiller.
   const lock = page.locator('[data-floorplan-lock="lock.garage"]');
@@ -739,7 +739,7 @@ test('in edit mode, the Openings tab proposes the entity named like an opening, 
   await page.getByRole('button', { name: "Lier l'entité proposée" }).click();
   await expect(page.getByRole('button', { name: /^Volet_Chambre.*Proposée/ })).toHaveCount(0);
 
-  await page.getByRole('button', { name: 'Sauvegarder' }).click();
+  await page.getByRole('button', { name: 'Enregistrer et terminer' }).click();
   await expect.poll(() => savedLinks(request)).toContain('Volet_Chambre_1 cover.volet_chambre');
 });
 

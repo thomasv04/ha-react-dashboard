@@ -50,12 +50,11 @@ test.describe('Visite guidée', () => {
     await waitForDashboard(page);
     await expect(page.getByTestId('tour-card')).toBeVisible({ timeout: 10_000 });
 
-    // 1/7 « Vos pages » → 2/7 « Mode édition » → 3/7 « Ajouter un widget »,
-    // dont l'ancre n'existe que dans la barre d'actions du mode édition.
-    await page.getByTestId('tour-next').click();
-    await page.getByTestId('tour-next').click();
+    // 1/7 « Vos pages » → 2/7 « Le lanceur » → 3/7 « Mode édition » → 4/7 « Les panneaux »
+    // → 5/7 « Ajouter », dont l'ancre n'existe que dans la barre d'actions du mode édition.
+    for (let i = 0; i < 4; i++) await page.getByTestId('tour-next').click();
 
-    await expect(page.getByTestId('tour-progress')).toHaveText('3/7');
+    await expect(page.getByTestId('tour-progress')).toHaveText('5/7');
     await expect(page.locator('.dashboard-editing')).toBeVisible();
     await spotlightCovers(page, '[data-tour="add"]');
   });
@@ -65,8 +64,7 @@ test.describe('Visite guidée', () => {
     await waitForDashboard(page);
     await expect(page.getByTestId('tour-card')).toBeVisible({ timeout: 10_000 });
 
-    await page.getByTestId('tour-next').click();
-    await page.getByTestId('tour-next').click();
+    for (let i = 0; i < 4; i++) await page.getByTestId('tour-next').click();
     await expect(page.locator('.dashboard-editing')).toBeVisible();
 
     await page.getByRole('button', { name: 'Passer' }).click();
@@ -107,8 +105,8 @@ test.describe("Modale d'aide", () => {
 
     await expect(page.getByTestId('help-modal')).toHaveCount(0);
     await expect(page.getByTestId('tour-card')).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByTestId('tour-progress')).toHaveText('1/3');
-    await spotlightCovers(page, '[data-tour="panels-button"]');
+    await expect(page.getByTestId('tour-progress')).toHaveText('1/2');
+    await spotlightCovers(page, '[data-tour="settings"]');
   });
 
   test("la barre d'édition ne recouvre pas les onglets de page", async ({ page }) => {
@@ -217,15 +215,20 @@ test.describe('Gestes sur les cards', () => {
     await page.goto('/');
     await waitForDashboard(page);
 
-    const gauge = page.locator('[data-widget-id="thermostat-seed"] svg.cursor-grab');
+    const gauge = page.locator('[data-widget-id="thermostat-seed"] svg[viewBox="0 0 200 200"]');
     await expect(gauge).toBeVisible();
     const box = (await gauge.boundingBox())!;
 
-    // Glissement maintenu bien au-delà des 500 ms de l'appui long.
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.2);
+    // Glissement maintenu bien au-delà des 500 ms de l'appui long, le long de l'anneau
+    // (rayon 44 % de la largeur du cadran) : le centre n'est pas une poignée.
+    const onRing = (degrees: number) => {
+      const a = (degrees * Math.PI) / 180;
+      return [box.x + box.width * (0.5 + 0.44 * Math.sin(a)), box.y + box.height * (0.5 - 0.44 * Math.cos(a))] as const;
+    };
+    await page.mouse.move(...onRing(0));
     await page.mouse.down();
     for (let i = 1; i <= 6; i++) {
-      await page.mouse.move(box.x + box.width * (0.5 + i * 0.05), box.y + box.height * 0.4);
+      await page.mouse.move(...onRing(i * 12));
       await page.waitForTimeout(120);
     }
     await page.mouse.up();

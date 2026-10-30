@@ -126,21 +126,23 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
       </div>
 
       {confirmingDelete && (
+        // Recouvre toute la tuile : sur une tuile d'une rangée, une boîte posée dans
+        // le flux débordait sous le calque des voisines, qui interceptaient les appuis.
         <div
-          className='mx-2 flex flex-col gap-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-1)] p-3 text-[var(--ds-ink)]'
+          className='absolute inset-0 z-20 flex flex-col items-center justify-center gap-1.5 rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-1)] p-2 text-[var(--ds-ink)]'
           onPointerDown={keep}
         >
-          <span className='text-sm font-semibold'>{t('layout.removeWidgetConfirm')}</span>
+          <span className='text-center text-sm font-semibold'>{t('layout.removeWidgetConfirm')}</span>
           <div className='flex gap-2'>
             <button
               onClick={() => setConfirmingDelete(false)}
-              className='h-9 flex-1 rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)] text-sm font-semibold'
+              className='h-8 rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)] px-4 text-sm font-semibold'
             >
               {t('layout.removeWidgetCancel')}
             </button>
             <button
               onClick={() => removeWidget(id)}
-              className='h-9 flex-1 rounded-[var(--ds-radius-pill)] bg-[var(--ds-alert)] text-sm font-semibold text-white'
+              className='h-8 rounded-[var(--ds-radius-pill)] bg-[var(--ds-alert)] px-4 text-sm font-semibold text-white'
             >
               {t('layout.removeWidgetConfirmBtn')}
             </button>

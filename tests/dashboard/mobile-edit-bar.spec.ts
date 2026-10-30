@@ -27,17 +27,17 @@ async function enterEditMode(page: Page) {
   await page.goto('/');
   await page.waitForSelector('[data-widget-id]', { timeout: 15_000 });
   await page.getByRole('button', { name: 'Modifier le dashboard' }).click();
-  await expect(page.getByRole('button', { name: 'Quitter le mode édition' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Abandonner les modifications' })).toBeVisible();
 }
 
 test.describe('Barre du mode édition en 375 px', () => {
   test('ne recouvre pas le bouton Apparence', async ({ page }) => {
     await enterEditMode(page);
 
-    const appearance = await page.getByRole('button', { name: 'Paramètres' }).first().boundingBox();
+    const appearance = await page.getByRole('button', { name: 'Ouvrir les apps' }).first().boundingBox();
     expect(appearance).not.toBeNull();
 
-    for (const name of ['Ajouter', 'Sauvegarder', 'Quitter le mode édition']) {
+    for (const name of ['Ajouter un panneau', 'Enregistrer et terminer', 'Abandonner les modifications']) {
       const box = await page.getByRole('button', { name }).first().boundingBox();
       expect(box, `bouton ${name} introuvable`).not.toBeNull();
       expect(overlaps(box!, appearance!), `« ${name} » recouvre le bouton Apparence`).toBe(false);
@@ -47,7 +47,7 @@ test.describe('Barre du mode édition en 375 px', () => {
   test('tient entièrement dans l’écran', async ({ page }) => {
     await enterEditMode(page);
 
-    for (const name of ['Ajouter', 'Sauvegarder', 'Quitter le mode édition']) {
+    for (const name of ['Ajouter un panneau', 'Enregistrer et terminer', 'Abandonner les modifications']) {
       const box = (await page.getByRole('button', { name }).first().boundingBox())!;
       expect(box.x, `« ${name} » déborde à gauche`).toBeGreaterThanOrEqual(0);
       expect(box.x + box.width, `« ${name} » déborde à droite`).toBeLessThanOrEqual(375);
@@ -58,7 +58,7 @@ test.describe('Barre du mode édition en 375 px', () => {
     expect(overflow).toBeLessThanOrEqual(0);
   });
 
-  test('ne recouvre pas les onglets de page', async ({ page }) => {
+  test('ne recouvre pas le rail des pages', async ({ page }) => {
     await enterEditMode(page);
 
     const tab = await page
@@ -67,7 +67,7 @@ test.describe('Barre du mode édition en 375 px', () => {
       .boundingBox();
     expect(tab).not.toBeNull();
 
-    for (const name of ['Ajouter', 'Sauvegarder']) {
+    for (const name of ['Ajouter un panneau', 'Enregistrer et terminer']) {
       const box = (await page.getByRole('button', { name }).first().boundingBox())!;
       expect(overlaps(box, tab!), `« ${name} » recouvre les onglets`).toBe(false);
     }
@@ -78,6 +78,6 @@ test.describe('Barre du mode édition en 375 px', () => {
     await enterEditMode(page);
 
     // Sous 640 px les boutons sont réduits à leur icône ; au-delà, le texte revient.
-    await expect(page.getByRole('button', { name: 'Sauvegarder' })).toContainText('Sauvegarder');
+    await expect(page.getByRole('button', { name: 'Enregistrer et terminer' })).toContainText('Terminer');
   });
 });
