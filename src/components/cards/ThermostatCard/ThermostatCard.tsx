@@ -81,9 +81,9 @@ export function ThermostatCard() {
   return (
     <div className='flex h-full select-none flex-col overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] px-[var(--ds-space-4)] pb-2 pt-[var(--ds-space-4)] text-[var(--ds-ink)]'>
       <span className='truncate text-[17px] font-medium'>{name}</span>
-      {/* Le cadran est carré : il prend le plus grand carré que laisse la case. */}
+      {/* Le cadran est un cercle dans une bande un peu plus large que haute (les flèches sont dans les marges). */}
       <div className='flex min-h-0 flex-1 items-center justify-center' style={{ containerType: 'size' }}>
-        <div style={{ width: 'min(100cqw, 100cqh)' }}>
+        <div style={{ width: 'min(100cqw, 125cqh)' }}>
           <Dial
             value={target}
             min={range.min}

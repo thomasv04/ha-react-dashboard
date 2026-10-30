@@ -8,10 +8,10 @@ const STROKE = 14;
 const KNOB = 10;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 /**
- * Ouverture de l'arc : 240°. L'espace libre en bas accueille les modes, et les
- * extrémités de l'arc s'arrêtent assez haut pour laisser les flèches aux coins.
+ * Ouverture de l'arc : 285°, comme sur l'Echo Show. L'espace libre en bas accueille les modes ; les
+ * flèches, elles, restent hors du cercle, dans les coins de la tuile.
  */
-const SWEEP = 240;
+const SWEEP = 285;
 /** Angle où l'arc commence : l'ouverture est centrée en bas. */
 const START = 90 + (360 - SWEEP) / 2;
 const ARC = (CIRCUMFERENCE * SWEEP) / 360;
@@ -128,7 +128,8 @@ export function Dial<T extends string>({
   labels: { decrease: string; increase: string; modes?: string };
 }) {
   const geometry = dialGeometry(value, min, max, mode);
-  const boxRef = useRef<HTMLDivElement>(null);
+  // Le cercle seul : les flèches vivent dans les marges, hors de lui.
+  const ringRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<number | null>(null);
   // Le geste en cours a-t-il commencé sur l'anneau ? Lu par le `click` qui le termine.
   const ownsGestureRef = useRef(false);
@@ -140,7 +141,7 @@ export function Dial<T extends string>({
   const rectRef = useRef<DOMRect | null>(null);
 
   const pointValue = (e: PointerEvent) => {
-    const rect = rectRef.current ?? boxRef.current!.getBoundingClientRect();
+    const rect = rectRef.current ?? ringRef.current!.getBoundingClientRect();
     return valueAtPoint(((e.clientX - rect.left) / rect.width) * 200, ((e.clientY - rect.top) / rect.height) * 200, min, max, step);
   };
 
@@ -150,7 +151,7 @@ export function Dial<T extends string>({
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     ownsGestureRef.current = false;
     if (e.button !== 0 || (e.target as Element).closest('button')) return;
-    rectRef.current = e.currentTarget.getBoundingClientRect();
+    rectRef.current = ringRef.current!.getBoundingClientRect();
     const v = pointValue(e);
     if (v === null) return (rectRef.current = null);
     ownsGestureRef.current = true;
@@ -187,7 +188,6 @@ export function Dial<T extends string>({
 
   return (
     <div
-      ref={boxRef}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -197,55 +197,57 @@ export function Dial<T extends string>({
       }}
       // Le `click` de fin de réglage ne doit pas remonter jusqu'à la case, qui ouvrirait la fiche.
       onClick={e => ownsGestureRef.current && e.stopPropagation()}
-      className='@container relative aspect-square w-full touch-none select-none'
+      className='@container relative w-full touch-none select-none'
     >
-      <svg viewBox='0 0 200 200' className='size-full' aria-hidden='true'>
-        <Arc segment={geometry.track} color='var(--ds-surface-3)' />
-        <Arc segment={geometry.fill} color={color} />
-        <circle cx={geometry.knob.x} cy={geometry.knob.y} r={KNOB} fill={color} />
-      </svg>
+      <div ref={ringRef} className='relative mx-auto aspect-square w-[80%]'>
+        <svg viewBox='0 0 200 200' className='size-full' aria-hidden='true'>
+          <Arc segment={geometry.track} color='var(--ds-surface-3)' />
+          <Arc segment={geometry.fill} color={color} />
+          <circle cx={geometry.knob.x} cy={geometry.knob.y} r={KNOB} fill={color} />
+        </svg>
 
-      <div className='absolute inset-0 flex flex-col items-center justify-center pb-[12%]' role='status'>
-        {icon}
-        <span
-          className={cn('text-[24cqw] leading-[1.05] tracking-[-1px]', mode === 'heat' ? 'font-bold' : 'font-light')}
-          style={{ color: mode === 'heat' ? 'var(--ds-heat-ink)' : 'var(--ds-ink)' }}
-        >
-          {display}
-        </span>
-        {caption && <span className='text-[max(12px,4.2cqw)] text-[var(--ds-ink-muted)]'>{caption}</span>}
-      </div>
-
-      {visible.length > 0 && (
-        // Le mode actif tient la ligne des flèches ; ses voisins, au-dessus et au-dessous.
-        <div
-          role='radiogroup'
-          aria-label={labels.modes}
-          className='absolute inset-x-0 bottom-[6cqw] flex h-[13cqw] min-h-11 items-center justify-center text-[max(12px,3.8cqw)]'
-        >
-          {visible.map((m, i) =>
-            m ? (
-              <button
-                key={m.id}
-                role='radio'
-                aria-checked={i === 1}
-                // L'actif passe au mode suivant : quand le cadran est petit, ses
-                // voisins sont masqués et c'est le seul moyen d'en changer.
-                onClick={() => onModeChange?.(i === 1 && modes ? modes[(index + 1) % modes.length].id : m.id)}
-                className={cn(
-                  i === 1
-                    ? 'rounded-full bg-[var(--ds-surface-3)] px-[7cqw] py-[2.2cqw] text-[max(14px,4.6cqw)] font-medium text-[var(--ds-ink)]'
-                    : 'absolute left-1/2 -translate-x-1/2 text-[var(--ds-ink-muted)] opacity-60 @max-[13rem]:hidden',
-                  i === 0 && 'bottom-full',
-                  i === 2 && 'top-full'
-                )}
-              >
-                {m.label}
-              </button>
-            ) : null
-          )}
+        <div className='absolute inset-0 flex flex-col items-center justify-center pb-[12%]' role='status'>
+          {icon}
+          <span
+            className={cn('text-[19cqw] leading-[1.05] tracking-[-1px]', mode === 'heat' ? 'font-bold' : 'font-light')}
+            style={{ color: mode === 'heat' ? 'var(--ds-heat-ink)' : 'var(--ds-ink)' }}
+          >
+            {display}
+          </span>
+          {caption && <span className='text-[max(12px,4.2cqw)] text-[var(--ds-ink-muted)]'>{caption}</span>}
         </div>
-      )}
+
+        {visible.length > 0 && (
+          // Le mode actif tient la ligne des flèches ; ses voisins, au-dessus et au-dessous.
+          <div
+            role='radiogroup'
+            aria-label={labels.modes}
+            className='absolute inset-x-0 bottom-[6cqw] flex h-[13cqw] min-h-11 items-center justify-center text-[max(12px,3.8cqw)]'
+          >
+            {visible.map((m, i) =>
+              m ? (
+                <button
+                  key={m.id}
+                  role='radio'
+                  aria-checked={i === 1}
+                  // L'actif passe au mode suivant : quand le cadran est petit, ses
+                  // voisins sont masqués et c'est le seul moyen d'en changer.
+                  onClick={() => onModeChange?.(i === 1 && modes ? modes[(index + 1) % modes.length].id : m.id)}
+                  className={cn(
+                    i === 1
+                      ? 'rounded-full bg-[var(--ds-surface-3)] px-[7cqw] py-[2.2cqw] text-[max(14px,4.6cqw)] font-medium text-[var(--ds-ink)]'
+                      : 'absolute left-1/2 -translate-x-1/2 text-[var(--ds-ink-muted)] opacity-60 @max-[13rem]:hidden',
+                    i === 0 && 'bottom-full',
+                    i === 2 && 'top-full'
+                  )}
+                >
+                  {m.label}
+                </button>
+              ) : null
+            )}
+          </div>
+        )}
+      </div>
 
       <button
         onClick={() => onChange(clamp(value - step, min, max))}
