@@ -10,7 +10,10 @@ const meta: Meta<typeof ThermostatCard> = {
     Story => (
       <PageProvider>
         <WidgetConfigProvider>
-          <Story />
+          {/* Une tuile de la grille : la card s'adapte à sa case, elle n'a pas de taille propre. */}
+          <div style={{ width: 320, height: 272 }}>
+            <Story />
+          </div>
         </WidgetConfigProvider>
       </PageProvider>
     ),

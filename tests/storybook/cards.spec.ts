@@ -125,8 +125,8 @@ test.describe('WeatherCard', () => {
 
   test('shows 4-day forecast', async ({ page }) => {
     // Mock has 5 forecast days → shows 4 (skips today)
-    // Forecast uses flex layout with day items
-    const forecastItems = page.locator('.flex.gap-1 > div, .flex.gap-2 > div').filter({ hasText: /°/ });
+    // Une colonne par jour, dans une grille de quatre
+    const forecastItems = page.locator('.grid-cols-4 > div').filter({ hasText: /°/ });
     await expect(forecastItems.first()).toBeVisible();
     expect(await forecastItems.count()).toBeGreaterThanOrEqual(4);
   });
