@@ -160,7 +160,9 @@ export function AddWidgetModal({ onClose, onAdded, panelId }: AddWidgetModalProp
                   aria-pressed={category === cat.id}
                   className={cn(
                     'h-10 rounded-full px-4 text-sm font-semibold',
-                    category === cat.id ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'bg-[var(--ds-surface-1)] text-[var(--ds-ink-muted)]'
+                    category === cat.id
+                      ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'
+                      : 'bg-[var(--ds-surface-1)] text-[var(--ds-ink-muted)]'
                   )}
                 >
                   {t(cat.label)}

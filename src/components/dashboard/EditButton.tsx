@@ -269,7 +269,9 @@ export function EditButton() {
       </div>
 
       {/* Modal ajout de widget */}
-      <AnimatePresence>{showAddModal && <AddWidgetModal panelId={editPanelId ?? undefined} onClose={() => setShowAddModal(false)} />}</AnimatePresence>
+      <AnimatePresence>
+        {showAddModal && <AddWidgetModal panelId={editPanelId ?? undefined} onClose={() => setShowAddModal(false)} />}
+      </AnimatePresence>
 
       {/* Aide / documentation */}
       <AnimatePresence>{showHelp && <HelpModal onClose={() => setShowHelp(false)} />}</AnimatePresence>

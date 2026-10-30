@@ -11,7 +11,9 @@ export function WidgetCard({ meta, selected, onClick }: { meta: WidgetMeta; sele
       aria-pressed={selected}
       className={cn(
         'flex min-w-0 flex-col gap-3 rounded-[var(--ds-radius-xl)] p-3 text-left transition-colors',
-        selected ? 'bg-[var(--ds-sheet-section)] outline-[3px] -outline-offset-[3px] outline-[var(--ds-accent)]' : 'bg-[var(--ds-surface-2)]'
+        selected
+          ? 'bg-[var(--ds-sheet-section)] outline-[3px] -outline-offset-[3px] outline-[var(--ds-accent)]'
+          : 'bg-[var(--ds-surface-2)]'
       )}
     >
       <span className='flex h-24 items-center justify-center rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-3)]'>

@@ -192,9 +192,7 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
                       placeholder={t('layout.iconSearch')}
                     />
                   </div>
-                  <div className='text-xs text-[var(--ds-ink-muted)] mt-1 px-1'>
-                    {t('layout.iconCount', { count: filtered.length })}
-                  </div>
+                  <div className='text-xs text-[var(--ds-ink-muted)] mt-1 px-1'>{t('layout.iconCount', { count: filtered.length })}</div>
                 </div>
 
                 {/* Icon grid — virtualized */}

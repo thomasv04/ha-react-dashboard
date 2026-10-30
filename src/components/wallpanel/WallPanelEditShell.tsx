@@ -114,7 +114,9 @@ function WallPanelEditActions({ onSave }: { onSave?: WallPanelSave }) {
       <WidgetEditModal />
 
       {/* Add widget modal */}
-      <AnimatePresence>{showAddModal && <AddWidgetModal panelId={editPanelId ?? undefined} onClose={() => setShowAddModal(false)} />}</AnimatePresence>
+      <AnimatePresence>
+        {showAddModal && <AddWidgetModal panelId={editPanelId ?? undefined} onClose={() => setShowAddModal(false)} />}
+      </AnimatePresence>
     </div>
   );
 }

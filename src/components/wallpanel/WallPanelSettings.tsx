@@ -1,5 +1,5 @@
 import { useEffect, useState, type MutableRefObject } from 'react';
-import { Play, Plus, Trash2, Clock, Image, Layers, Settings2, Hand, CloudUpload, Loader2 } from 'lucide-react';
+import { X, Play, Plus, Trash2, Clock, Image, Layers, Settings2, Hand, CloudUpload, Loader2 } from 'lucide-react';
 import { SwitchTrack } from '@/components/ds/Switch';
 import { BUTTON_PRIMARY, INPUT, Segmented } from '@/components/layout/ThemeControlsModal/controls';
 import { useWallPanel } from '@/context/WallPanelContext';

@@ -169,9 +169,7 @@ function GridPreview({ cols, widgetW, widgetH }: { cols: number; widgetW: number
             key={i}
             className={cn(
               'rounded-sm transition-colors',
-              isWidget
-                ? 'bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
-                : 'bg-[var(--ds-surface-3)]'
+              isWidget ? 'bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]' : 'bg-[var(--ds-surface-3)]'
             )}
           />
         );
