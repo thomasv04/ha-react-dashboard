@@ -65,7 +65,7 @@ export function AreaControlsField({
 
   return (
     <div className='space-y-2'>
-      <label className='text-[11px] text-[var(--ds-ink-muted)] block'>{label}</label>
+      <label className='text-sm text-[var(--ds-ink-muted)] block'>{label}</label>
 
       <select
         value={area}
@@ -89,7 +89,7 @@ export function AreaControlsField({
             {controls.map(token => (
               <span
                 key={token}
-                className='flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-[11px] text-[var(--ds-ink)]'
+                className='flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)]'
               >
                 {isEntityToken(token) ? entityLabel(token) : domainLabel(token)}
                 <button
@@ -105,7 +105,7 @@ export function AreaControlsField({
           <button
             ref={triggerRef}
             onClick={handleToggle}
-            className='flex items-center gap-1.5 px-2.5 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] text-[11px] transition-colors'
+            className='flex items-center gap-1.5 px-2.5 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] text-sm transition-colors'
           >
             <Plus size={11} /> {t('layout.areaControls.add')}
             {open ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
@@ -144,7 +144,7 @@ export function AreaControlsField({
 
             <div className='overflow-y-auto' style={{ maxHeight: 240 }}>
               {availableDomains.length > 0 && (
-                <p className='px-3 pt-2 pb-1 text-[10px] uppercase tracking-wider text-[var(--ds-ink-muted)]'>
+                <p className='px-3 pt-2 pb-1 text-xs uppercase tracking-wider text-[var(--ds-ink-muted)]'>
                   {t('layout.areaControls.domains')}
                 </p>
               )}
@@ -155,14 +155,14 @@ export function AreaControlsField({
               ))}
 
               {availableEntities.length > 0 && (
-                <p className='px-3 pt-2 pb-1 text-[10px] uppercase tracking-wider text-[var(--ds-ink-muted)]'>
+                <p className='px-3 pt-2 pb-1 text-xs uppercase tracking-wider text-[var(--ds-ink-muted)]'>
                   {t('layout.areaControls.entities')}
                 </p>
               )}
               {availableEntities.map(e => (
                 <button key={e.entity_id} onClick={() => add(e.entity_id)} className='w-full text-left px-3 py-1.5 group'>
                   <span className='block text-sm text-[var(--ds-ink-muted)] truncate'>{friendlyName(e) ?? e.entity_id}</span>
-                  <span className='block text-[10px] text-[var(--ds-ink-muted)] font-mono truncate'>{e.entity_id}</span>
+                  <span className='block text-xs text-[var(--ds-ink-muted)] font-mono truncate'>{e.entity_id}</span>
                 </button>
               ))}
 

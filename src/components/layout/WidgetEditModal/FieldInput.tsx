@@ -11,7 +11,7 @@ export function FieldInput({
 }) {
   return (
     <div>
-      <label className='text-[11px] text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>
+      <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>
       <input
         type={type}
         value={value ?? ''}

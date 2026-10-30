@@ -58,7 +58,7 @@ export function EntityPicker({
     <div>
       {/* Pas d'étiquette vide : dans une rangée de liste, elle réservait sa
           hauteur et décalait le sélecteur du bouton de suppression. */}
-      {label && <label className='text-[11px] text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>}
+      {label && <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>}
       <div
         ref={triggerRef}
         className='flex items-center gap-2 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] cursor-pointer transition-colors'

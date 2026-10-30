@@ -25,7 +25,7 @@ export function MultiSelectField({
 
   return (
     <div>
-      <label className='text-[11px] text-[var(--ds-ink-muted)] mb-2 block'>{label}</label>
+      <label className='text-sm text-[var(--ds-ink-muted)] mb-2 block'>{label}</label>
       <div className='flex flex-wrap gap-1.5'>
         {options.map(opt => {
           const active = current.includes(opt.value);

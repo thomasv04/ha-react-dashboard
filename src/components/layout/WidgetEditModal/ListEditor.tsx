@@ -47,10 +47,10 @@ export function ListEditor({
   return (
     <div>
       <div className='flex items-center justify-between mb-2'>
-        <label className='text-[11px] text-[var(--ds-ink-muted)]'>{label}</label>
+        <label className='text-sm text-[var(--ds-ink-muted)]'>{label}</label>
         <button
           onClick={addItem}
-          className='flex items-center gap-1 px-2 py-1 rounded-md bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] text-[11px]'
+          className='flex items-center gap-1 px-2 py-1 rounded-md bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] text-sm'
         >
           <Plus size={11} /> {t('common.add')}
         </button>
@@ -103,7 +103,7 @@ export function ListEditor({
                       const list = (item[field.key] as string[]) ?? [];
                       content = (
                         <div>
-                          <label className='text-[11px] text-[var(--ds-ink-muted)] mb-1 block'>{t(field.label)}</label>
+                          <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{t(field.label)}</label>
                           {list.map((eid, eidx) => (
                             <div key={eidx} className='flex items-center gap-1 mb-1'>
                               <EntityPicker
@@ -130,7 +130,7 @@ export function ListEditor({
                               </button>
                             </div>
                           ))}
-                          <button onClick={() => updateItem(idx, field.key, [...list, ''])} className='text-[11px] text-[var(--ds-accent)]'>
+                          <button onClick={() => updateItem(idx, field.key, [...list, ''])} className='text-sm text-[var(--ds-accent)]'>
                             + {t('layout.addEntityBtn')}
                           </button>
                         </div>
@@ -154,7 +154,7 @@ export function ListEditor({
                     } else if (field.fieldType === 'select' && field.options) {
                       content = (
                         <div>
-                          <label className='text-[11px] text-[var(--ds-ink-muted)] mb-1 block'>{t(field.label)}</label>
+                          <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{t(field.label)}</label>
                           <select
                             value={(item[field.key] as string) || field.options[0].value}
                             onChange={e => updateItem(idx, field.key, e.target.value)}

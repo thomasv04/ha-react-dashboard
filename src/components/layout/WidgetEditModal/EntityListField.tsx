@@ -26,7 +26,7 @@ export function EntityListField({
 
   return (
     <div>
-      <label className='text-[11px] text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>
+      <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>
 
       {value.map((entityId, index) => (
         <div key={index} className='flex items-center gap-1 mb-1'>
@@ -51,7 +51,7 @@ export function EntityListField({
         </div>
       ))}
 
-      <button onClick={() => onChange([...value, ''])} className='flex items-center gap-1 text-[11px] text-[var(--ds-accent)]'>
+      <button onClick={() => onChange([...value, ''])} className='flex items-center gap-1 text-sm text-[var(--ds-accent)]'>
         <Plus size={11} /> {t('layout.addEntityBtn')}
       </button>
     </div>

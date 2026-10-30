@@ -49,7 +49,7 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
             <>
               <div className='flex items-center gap-2 px-3 pt-2 pb-1'>
                 <Layers size={11} className='text-[var(--ds-ink-muted)]' />
-                <span className='text-[10px] font-semibold text-[var(--ds-ink-muted)] uppercase tracking-wider'>
+                <span className='text-xs font-semibold text-[var(--ds-ink-muted)] uppercase tracking-wider'>
                   {t('layout.panelCustom')}
                 </span>
               </div>
@@ -82,7 +82,7 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
 
   return (
     <div>
-      {label && <label className='text-[11px] text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>}
+      {label && <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>}
       <div
         ref={triggerRef}
         onClick={handleOpen}
