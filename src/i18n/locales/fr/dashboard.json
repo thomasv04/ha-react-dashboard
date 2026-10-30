@@ -48,5 +48,6 @@
   "done": "Terminer",
   "doneTooltip": "Enregistrer et terminer",
   "discardTooltip": "Abandonner les modifications",
-  "discardConfirm": "Abandonner ?"
+  "discardConfirm": "Abandonner ?",
+  "backToLayout": "Disposition"
 }

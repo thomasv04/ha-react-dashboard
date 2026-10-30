@@ -145,8 +145,8 @@ function dragSession(start: PointerStart, board: HTMLElement | null, update: (x:
   );
 }
 
-/** Libellés i18n des widgets, par type — calculés une fois. */
-const META_LABELS = new Map(WIDGET_META.map(m => [m.type, m.label]));
+/** Méta des widgets, par type — calculée une fois. */
+const META = new Map(WIDGET_META.map(m => [m.type, m]));
 
 interface GridCtxValue {
   breakpoint: Breakpoint;
@@ -229,6 +229,14 @@ export function WidgetIdProvider({ id, children }: { id: string; children: React
 const STACK_BELOW = 768;
 /** Marge intérieure d'un panneau, de chaque côté. */
 const PANEL_PADDING = 22;
+/**
+ * Marge du plateau, de chaque côté : le contour en pointillés d'un panneau en
+ * édition et le trait de dépôt d'un panneau glissé dépassent de sa boîte, et le
+ * défilement les rognerait.
+ */
+const BOARD_PAD = 14;
+/** Échelle la plus petite de la carte des panneaux. */
+const MAP_MIN_SCALE = 0.6;
 
 /**
  * Les panneaux d'une page, côte à côte comme sur l'Echo Show — défilement
@@ -240,8 +248,12 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
   const { layout, moveWidget, movePanelTo, updateWidget, addPanel } = useDashboardLayout();
   const { isEditMode: ctxEditMode, editPanelId } = useEditMode();
   const isEditMode = ctxEditMode && !readonly;
+  // Le crayon du haut ouvre la carte des panneaux ; celui d'un panneau, ses tuiles seulement.
+  const map = isEditMode && !editPanelId;
   const { t } = useI18n();
   const outerRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
   const [width, setWidth] = useState(0);
   const motionAllowed = useLowPowerMotion();
 
@@ -258,8 +270,22 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
   // Sur l'écran, pas sur le plateau : les classes `md:` de la page décident du
   // même seuil, et les deux ne doivent jamais diverger.
   const stacked = useIsMobile(STACK_BELOW);
+
+  // La carte se réduit pour tenir en largeur — sans passer sous `MAP_MIN_SCALE` :
+  // plus petit, les boutons d'un panneau ne se toucheraient plus.
+  useLayoutEffect(() => {
+    const board = outerRef.current;
+    const inner = innerRef.current;
+    if (!board || !inner) return;
+    const fitMap = () => setScale(map && !stacked ? clamp((board.clientWidth - 2 * BOARD_PAD) / inner.offsetWidth, MAP_MIN_SCALE, 1) : 1);
+    fitMap();
+    const obs = new ResizeObserver(fitMap);
+    obs.observe(board);
+    obs.observe(inner);
+    return () => obs.disconnect();
+  }, [map, stacked, layout.panels]);
   // Colonnes qu'un panneau peut afficher sans déborder de l'écran.
-  const fit = width > 0 ? colsThatFit(width - 2 * PANEL_PADDING) : PANEL_COLS_MAX;
+  const fit = width > 0 ? colsThatFit(width - 2 * PANEL_PADDING - (stacked ? 0 : 2 * BOARD_PAD)) : PANEL_COLS_MAX;
 
   // ── Déplacement d'une tuile ──────────────────────────────────
   //
@@ -481,49 +507,57 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
           // Le plateau tient dans l'écran : chaque colonne en prend toute la
           // hauteur, et ce sont les panneaux — pas la page — qui défilent.
           className={cn(
-            'flex w-full gap-[22px]',
-            stacked ? 'flex-col' : 'absolute inset-0 overflow-x-auto overscroll-x-contain',
+            stacked ? 'w-full' : 'absolute -inset-x-3.5 -inset-y-1 overscroll-x-contain px-3.5 py-1',
+            // Une carte réduite tient en largeur : rien à faire défiler.
+            !stacked && (map && scale > MAP_MIN_SCALE ? 'overflow-x-hidden' : 'overflow-x-auto'),
             isEditMode && 'dashboard-editing',
             panelDrag && 'cursor-grabbing select-none',
             className
           )}
         >
-          {columns.map(column => {
-            const head = column[0].panel;
-            const total = column.reduce((sum, { panel }) => sum + (panel.weight ?? 1), 0);
-            return (
-              <div key={head.id} className={cn('flex shrink-0 flex-col gap-[22px]', stacked && 'w-full')}>
-                {column.map(({ panel, index }) => (
-                  <PanelSection
-                    key={panel.id}
-                    panel={panel}
-                    // Empilés, les panneaux d'une colonne ont la largeur de sa tête.
-                    cols={Math.min(head.cols, fit)}
-                    // Part de la hauteur de la colonne, hors panneau seul.
-                    share={column.length > 1 ? Math.round(((panel.weight ?? 1) / total) * 100) : undefined}
-                    stacked={stacked}
-                    readonly={!!readonly}
-                    editing={isEditMode && (!editPanelId || editPanelId === panel.id)}
-                    first={index === 0}
-                  />
-                ))}
-              </div>
-            );
-          })}
-          {/* Un panneau seul en édition : la page, elle, ne change pas. */}
-          {isEditMode && !editPanelId && (
-            <button
-              data-add-panel
-              onClick={addPanel}
-              className={cn(
-                'flex shrink-0 flex-col items-center justify-center gap-2 rounded-[30px] border-2 border-dashed border-[var(--ds-surface-3)] text-[15px] font-semibold text-[var(--ds-ink-muted)]',
-                stacked ? 'min-h-[160px] w-full' : 'w-[200px]'
-              )}
-            >
-              <Plus size={28} />
-              {t('layout.panel.addPanel')}
-            </button>
-          )}
+          <div
+            ref={innerRef}
+            className={cn('flex gap-[22px]', stacked ? 'flex-col' : 'h-full w-max min-w-full')}
+            style={scale === 1 ? undefined : { transform: `scale(${scale})`, transformOrigin: '0 0', height: `calc(100% / ${scale})` }}
+          >
+            {columns.map(column => {
+              const head = column[0].panel;
+              const total = column.reduce((sum, { panel }) => sum + (panel.weight ?? 1), 0);
+              return (
+                <div key={head.id} className={cn('flex shrink-0 flex-col gap-[22px]', stacked && 'w-full')}>
+                  {column.map(({ panel, index }) => (
+                    <PanelSection
+                      key={panel.id}
+                      panel={panel}
+                      // Empilés, les panneaux d'une colonne ont la largeur de sa tête.
+                      cols={Math.min(head.cols, fit)}
+                      // Part de la hauteur de la colonne, hors panneau seul.
+                      share={column.length > 1 ? Math.round(((panel.weight ?? 1) / total) * 100) : undefined}
+                      stacked={stacked}
+                      readonly={!!readonly}
+                      mode={map ? 'map' : isEditMode && editPanelId === panel.id ? 'edit' : 'view'}
+                      // En édition d'un panneau, les autres s'effacent : on voit où l'on travaille.
+                      dimmed={isEditMode && !map && editPanelId !== panel.id}
+                      first={index === 0}
+                    />
+                  ))}
+                </div>
+              );
+            })}
+            {map && (
+              <button
+                data-add-panel
+                onClick={addPanel}
+                className={cn(
+                  'flex shrink-0 flex-col items-center justify-center gap-2 rounded-[30px] border-2 border-dashed border-[var(--ds-surface-3)] text-[15px] font-semibold text-[var(--ds-ink-muted)]',
+                  stacked ? 'min-h-[160px] w-full' : 'w-[200px]'
+                )}
+              >
+                <Plus size={28} />
+                {t('layout.panel.addPanel')}
+              </button>
+            )}
+          </div>
         </motion.div>
       </SelectionCtx.Provider>
     </GridCtx.Provider>
@@ -541,6 +575,25 @@ const DROP_BAR: Record<PanelZone, string> = {
 };
 
 /**
+ * Une tuile sur la carte des panneaux : sa place et sa taille réelles, mais son
+ * icône et son nom au lieu de la card. Grands à dessein — la carte est réduite.
+ */
+function MiniTile({ widget, cols }: { widget: GridWidget; cols: number }) {
+  const { t } = useI18n();
+  const meta = META.get(widget.type);
+  const Icon = meta?.icon;
+  return (
+    <div
+      className='flex min-w-0 flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-3)] p-2 text-center text-[15px] font-semibold text-[var(--ds-ink-muted)]'
+      style={{ gridColumn: `span ${Math.min(widget.w, cols)}`, gridRow: `span ${widget.h}` }}
+    >
+      {Icon && <Icon size={28} style={{ color: meta.color }} />}
+      <span className='max-w-full truncate'>{meta ? t(meta.label) : widget.type}</span>
+    </div>
+  );
+}
+
+/**
  * Un panneau : son titre et ses boutons — poignée, réglages, modification —,
  * puis ses tuiles rangées sur la trame.
  *
@@ -556,7 +609,8 @@ function PanelSection({
   share,
   stacked,
   readonly,
-  editing,
+  mode,
+  dimmed,
   first,
 }: {
   panel: LayoutPanel;
@@ -565,7 +619,10 @@ function PanelSection({
   share?: number;
   stacked: boolean;
   readonly: boolean;
-  editing: boolean;
+  /** `map` : la carte des panneaux, tuiles en vignettes ; `edit` : ses tuiles en édition. */
+  mode: 'view' | 'map' | 'edit';
+  /** Un autre panneau est en édition : celui-ci s'efface et ne répond plus. */
+  dimmed: boolean;
   first: boolean;
 }) {
   const { t } = useI18n();
@@ -573,17 +630,11 @@ function PanelSection({
   const { dropTarget, draggingId, panelDrag, startPanelDrag } = useGridCtx();
   const [adding, setAdding] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  // ⚙ hors édition : on attend d'y être entré (code éventuel) pour ouvrir.
-  const [settingsWanted, setSettingsWanted] = useState(false);
+  const map = mode === 'map';
+  const editing = mode === 'edit';
   const dropAtEnd = dropTarget?.panelId === panel.id && dropTarget.index >= panel.widgets.length;
   const controls = isAdmin && !readonly;
   const dropZone = panelDrag?.target?.panelId === panel.id ? panelDrag.target.zone : null;
-
-  useEffect(() => {
-    if (!settingsWanted || !editing) return;
-    setSettingsWanted(false);
-    setSettingsOpen(true);
-  }, [settingsWanted, editing]);
 
   // Une barre de défilement cachée ne dit pas qu'il y a une suite : un fondu en bas le dit.
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -612,10 +663,13 @@ function PanelSection({
           style={stacked ? undefined : { flex: `${panel.weight ?? 1} 1 0%` }}
           className={cn(
             'relative flex min-h-0 w-full flex-col rounded-[30px] bg-[var(--ds-surface-1)] text-[var(--ds-ink)] transition-opacity',
-            editing && 'outline-2 outline-dashed outline-[var(--ds-accent)]',
+            (map || editing) && 'outline-2 outline-dashed outline-[var(--ds-accent)]',
+            dimmed && 'opacity-50',
             panelDrag?.id === panel.id && 'opacity-40'
           )}
         >
+          {/* Rien ne se touche dans un panneau effacé — mais on peut y déposer une tuile. */}
+          {dimmed && <span aria-hidden='true' className='absolute inset-0 z-10 rounded-[30px]' />}
           {dropZone && (
             <span
               aria-hidden='true'
@@ -625,9 +679,9 @@ function PanelSection({
 
           {/* La marge est ici et non sur le panneau : sa part de hauteur reste exacte. */}
           <div className='flex min-h-0 flex-1 flex-col gap-3.5 p-[22px]'>
-            {(panel.title || controls) && (
+            {(panel.title || (controls && !editing)) && (
               <div className='flex min-h-11 shrink-0 items-center gap-2'>
-                {editing && controls && (
+                {map && controls && (
                   <button
                     onPointerDown={e => {
                       if (e.button !== 0) return;
@@ -641,23 +695,24 @@ function PanelSection({
                     <GripVertical size={18} />
                   </button>
                 )}
-                <h2 className='mx-1.5 min-w-0 flex-1 truncate text-xl font-semibold'>{panel.title}</h2>
-                {controls && (
-                  <>
-                    <button
-                      onClick={() => (editing ? setSettingsOpen(true) : (setSettingsWanted(true), requestEdit()))}
-                      aria-label={t('layout.panel.settings')}
-                      title={t('layout.panel.settings')}
-                      className={ROUND}
-                    >
-                      <SlidersHorizontal size={18} />
-                    </button>
-                    {!editing && (
-                      <button onClick={requestEdit} aria-label={t('layout.panel.edit')} title={t('layout.panel.edit')} className={ROUND}>
-                        <Pencil size={18} />
-                      </button>
-                    )}
-                  </>
+                <h2 className={cn('mx-1.5 min-w-0 flex-1 truncate text-xl font-semibold', !panel.title && 'text-[var(--ds-ink-muted)]')}>
+                  {panel.title || (map ? t('layout.panel.untitled') : '')}
+                </h2>
+                {/* ⚙ règle le panneau — dans la carte ; ✎ en range les tuiles. */}
+                {map && controls && (
+                  <button
+                    onClick={() => setSettingsOpen(true)}
+                    aria-label={t('layout.panel.settings')}
+                    title={t('layout.panel.settings')}
+                    className={ROUND}
+                  >
+                    <SlidersHorizontal size={18} />
+                  </button>
+                )}
+                {controls && !editing && (
+                  <button onClick={requestEdit} aria-label={t('layout.panel.edit')} title={t('layout.panel.edit')} className={ROUND}>
+                    <Pencil size={18} />
+                  </button>
                 )}
               </div>
             )}
@@ -666,7 +721,8 @@ function PanelSection({
               ref={scrollRef}
               data-panel-scroll
               className={cn(
-                !stacked && '-mx-1 -mb-1 min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 pb-1 scrollbar-none',
+                !stacked && '-mx-1 -mb-1 min-h-0 flex-1 px-1 pb-1',
+                !stacked && (map ? 'overflow-hidden' : 'overflow-y-auto overscroll-contain scrollbar-none'),
                 more && '[mask-image:linear-gradient(to_bottom,#000_calc(100%-44px),transparent)]'
               )}
             >
@@ -688,6 +744,7 @@ function PanelSection({
                 }}
               >
                 {panel.widgets.map(widget => {
+                  if (map) return <MiniTile key={widget.id} widget={widget} cols={cols} />;
                   const Component = WIDGET_COMPONENTS[widget.type];
                   if (!Component) return null;
                   return (
@@ -1027,7 +1084,7 @@ export function GridItem({
   const isSelected = selection.selected.has(id);
   // La tuile visée par un déplacement : on se rangera devant elle.
   const isDropTarget = !isDragging && dropTarget?.beforeId === id;
-  const metaLabel = META_LABELS.get(widget.type);
+  const metaLabel = META.get(widget.type)?.label;
   const label = metaLabel ? t(metaLabel) : widget.type;
   const isWidgetModalOpen = !isEditMode && moreInfoState?.widgetId === id;
 

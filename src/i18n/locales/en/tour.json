@@ -13,7 +13,7 @@
     },
     "edit": {
       "title": "Edit mode",
-      "body": "The pencil opens the whole page for editing. Nothing moves while it is off."
+      "body": "The top pencil opens the map of panels: create, move and set them up. A panel's pencil arranges its tiles. Nothing moves while they are off."
     },
     "add": {
       "title": "Add a widget",
@@ -85,7 +85,7 @@
     },
     "panelButtons": {
       "title": "Panels",
-      "body": "Each page arranges its tiles in panels. ⚙ sets up a panel — title, width, place below the previous one — and ✎ edits only that panel."
+      "body": "Each page arranges its tiles in panels. On the map, ⚙ sets up a panel — title, width, place below the previous one — and the handle moves it; ✎ edits only its tiles."
     }
   }
 }

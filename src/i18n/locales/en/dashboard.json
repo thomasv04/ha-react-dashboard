@@ -48,5 +48,6 @@
   "done": "Done",
   "doneTooltip": "Save and finish",
   "discardTooltip": "Discard changes",
-  "discardConfirm": "Discard?"
+  "discardConfirm": "Discard?",
+  "backToLayout": "Layout"
 }

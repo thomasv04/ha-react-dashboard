@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION_FAST } from '@/lib/motion-tokens';
-import { PencilLine, Check, X, Plus, Loader2, HelpCircle, Undo2, Redo2, Trash2 } from 'lucide-react';
+import { PencilLine, Check, X, Plus, Loader2, HelpCircle, Undo2, Redo2, Trash2, ChevronLeft } from 'lucide-react';
 import { useUser } from '@hakit/core';
 import { useDashboardLayout, useEditMode } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -20,8 +20,8 @@ import { cn } from '@/lib/utils';
 export function EditButton() {
   const { t } = useI18n();
   const user = useUser();
-  const { isEditMode, setEditMode, setEditPanelId } = useEditMode();
-  const { saveLayout, allLayouts, undo, redo, canUndo, canRedo, removeWidgets } = useDashboardLayout();
+  const { isEditMode, setEditMode, editPanelId, setEditPanelId } = useEditMode();
+  const { saveLayout, allLayouts, undo, redo, canUndo, canRedo, removeWidgets, addPanel } = useDashboardLayout();
   const { allWidgetConfigsByPage } = useWidgetConfig();
   const { pages } = usePages();
   const { config: wpConfig, wallPanelLayout, wallPanelWidgetConfigs } = useWallPanel();
@@ -162,6 +162,17 @@ export function EditButton() {
               transition={{ duration: DURATION_FAST }}
               className='flex items-center gap-2 pointer-events-auto'
             >
+              {/* Dans un panneau : retour à la carte des panneaux. */}
+              {editPanelId && (
+                <button
+                  onClick={() => setEditPanelId(null)}
+                  className='flex h-11 items-center gap-1 rounded-full bg-[var(--ds-surface-3)] pl-3 pr-4 text-[15px] font-semibold text-[var(--ds-ink)]'
+                >
+                  <ChevronLeft size={18} />
+                  {t('dashboard.backToLayout')}
+                </button>
+              )}
+
               {/* Aide — visite guidée et documentation */}
               <button
                 onClick={() => setShowHelp(true)}
@@ -226,17 +237,17 @@ export function EditButton() {
                 </div>
               )}
 
-              {/* Bouton Ajouter */}
-              {/* `title` : sous 640 px le libellé disparaît, le bouton se
+              {/* Ajouter : un panneau sur la carte, une tuile dans un panneau.
+                  `title` : sous 640 px le libellé disparaît, le bouton se
                   retrouverait sans nom accessible. */}
               <button
-                onClick={() => setShowAddModal(true)}
+                onClick={() => (editPanelId ? setShowAddModal(true) : addPanel())}
                 data-tour='add'
-                title={t('common.add')}
+                title={editPanelId ? t('layout.panel.addTile') : t('layout.panel.addPanel')}
                 className='flex h-11 items-center gap-2 rounded-full bg-[var(--ds-surface-3)] px-4 text-[15px] font-semibold text-[var(--ds-ink)]'
               >
                 <Plus size={18} />
-                <span className='hidden sm:inline'>{t('common.add')}</span>
+                <span className='hidden sm:inline'>{editPanelId ? t('layout.panel.addTile') : t('layout.panel.addPanel')}</span>
               </button>
 
               {/* Abandonner les modifications — confirmé par un second appui. */}
@@ -258,7 +269,7 @@ export function EditButton() {
       </div>
 
       {/* Modal ajout de widget */}
-      <AnimatePresence>{showAddModal && <AddWidgetModal onClose={() => setShowAddModal(false)} />}</AnimatePresence>
+      <AnimatePresence>{showAddModal && <AddWidgetModal panelId={editPanelId ?? undefined} onClose={() => setShowAddModal(false)} />}</AnimatePresence>
 
       {/* Aide / documentation */}
       <AnimatePresence>{showHelp && <HelpModal onClose={() => setShowHelp(false)} />}</AnimatePresence>

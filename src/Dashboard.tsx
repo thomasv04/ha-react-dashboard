@@ -143,7 +143,7 @@ function DashboardContent() {
         <div
           className={cn(
             'pt-[112px] pl-3 pr-3 sm:pl-[124px] sm:pr-6',
-            isFloorplan ? 'h-dvh flex flex-col pb-24 sm:pb-6' : 'max-w-[1600px] pb-28 sm:pb-6 md:flex md:h-dvh md:flex-col'
+            isFloorplan ? 'h-dvh flex flex-col pb-24 sm:pb-6' : 'pb-28 sm:pb-6 md:flex md:h-dvh md:flex-col'
           )}
         >
           {/* Pastilles d'état de la page — n'occupent aucune place si vides */}

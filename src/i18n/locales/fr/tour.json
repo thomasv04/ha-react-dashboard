@@ -13,7 +13,7 @@
     },
     "edit": {
       "title": "Mode édition",
-      "body": "Le crayon ouvre toute la page en édition. Rien ne bouge tant qu’il est éteint."
+      "body": "Le crayon du haut ouvre la carte des panneaux : on les crée, les déplace, les règle. Le crayon d'un panneau range ses tuiles. Rien ne bouge tant qu'ils sont éteints."
     },
     "add": {
       "title": "Ajouter un widget",
@@ -85,7 +85,7 @@
     },
     "panelButtons": {
       "title": "Les panneaux",
-      "body": "Chaque page range ses tuiles dans des panneaux. ⚙ règle un panneau — titre, largeur, place sous le précédent —, ✎ ne modifie que lui."
+      "body": "Chaque page range ses tuiles dans des panneaux. Dans la carte, ⚙ règle un panneau — titre, largeur, place sous le précédent — et la poignée le déplace ; ✎ ne modifie que ses tuiles."
     }
   }
 }
