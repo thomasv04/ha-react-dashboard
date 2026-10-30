@@ -24,8 +24,8 @@
       "body": "Ajoutez une page pour séparer votre dashboard par pièce ou par étage. Chaque page a ses propres panneaux."
     },
     "save": {
-      "title": "Enregistrer",
-      "body": "Rien n'est conservé tant que vous n'avez pas enregistré. La croix quitte l'édition ; Ctrl+Z annule geste par geste."
+      "title": "Terminer",
+      "body": "« Terminer » enregistre et quitte l'édition. La croix abandonne les modifications ; Ctrl+Z annule geste par geste."
     },
     "settings": {
       "title": "Le lanceur",

@@ -426,6 +426,22 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
     else columns.push([{ panel, index }]);
   });
 
+  // ── Molette : de haut en bas dans un panneau qui défile, sinon de gauche à droite.
+  useEffect(() => {
+    const board = outerRef.current;
+    if (!board || stacked) return;
+    const onWheel = (e: WheelEvent) => {
+      // Un geste déjà horizontal (pavé tactile) ou un zoom : le navigateur s'en charge.
+      if (e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY) || board.scrollWidth <= board.clientWidth) return;
+      const scroller = (e.target as Element).closest<HTMLElement>('[data-panel-scroll]');
+      if (scroller && scroller.scrollHeight > scroller.clientHeight + 1) return;
+      e.preventDefault();
+      board.scrollLeft += e.deltaY;
+    };
+    board.addEventListener('wheel', onWheel, { passive: false });
+    return () => board.removeEventListener('wheel', onWheel);
+  }, [stacked]);
+
   // ── Faire glisser le plateau à la souris ─────────────────────
   //
   // Au doigt le plateau se balaie déjà ; à la souris, on le saisit par n'importe
@@ -569,6 +585,23 @@ function PanelSection({
     setSettingsOpen(true);
   }, [settingsWanted, editing]);
 
+  // Une barre de défilement cachée ne dit pas qu'il y a une suite : un fondu en bas le dit.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [more, setMore] = useState(false);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || stacked) return;
+    const measure = () => setMore(el.scrollTop + el.clientHeight < el.scrollHeight - 4);
+    el.addEventListener('scroll', measure, { passive: true });
+    const obs = new ResizeObserver(measure);
+    obs.observe(el);
+    if (el.firstElementChild) obs.observe(el.firstElementChild);
+    return () => {
+      el.removeEventListener('scroll', measure);
+      obs.disconnect();
+    };
+  }, [stacked]);
+
   const requestEdit = () => window.dispatchEvent(new CustomEvent(EDIT_PANEL_EVENT, { detail: panel.id }));
 
   return (
@@ -630,8 +663,12 @@ function PanelSection({
             )}
 
             <div
+              ref={scrollRef}
               data-panel-scroll
-              className={cn(!stacked && '-mx-1 -mb-1 min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 pb-1 scrollbar-none')}
+              className={cn(
+                !stacked && '-mx-1 -mb-1 min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 pb-1 scrollbar-none',
+                more && '[mask-image:linear-gradient(to_bottom,#000_calc(100%-44px),transparent)]'
+              )}
             >
               <div
                 data-panel-grid
@@ -664,10 +701,11 @@ function PanelSection({
                     onClick={() => setAdding(true)}
                     aria-label={t('layout.panel.addTile')}
                     title={t('layout.panel.addTile')}
-                    className='flex items-center justify-center rounded-[var(--ds-radius-lg)] border-2 border-dashed border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
+                    className='flex flex-col items-center justify-center gap-1 rounded-[var(--ds-radius-lg)] border-2 border-dashed border-[var(--ds-surface-3)] text-sm font-semibold text-[var(--ds-ink-muted)]'
                     style={{ gridColumn: `span ${Math.min(2, cols)}`, gridRow: 'span 2' }}
                   >
                     <Plus size={28} />
+                    {t('layout.panel.addTile')}
                   </button>
                 )}
               </div>

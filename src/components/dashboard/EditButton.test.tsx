@@ -40,7 +40,7 @@ describe('EditButton — sauvegarde', () => {
     // les changements disparaissaient au rechargement.
     saveConfig.mockResolvedValue(false);
     render(<EditButton />);
-    await userEvent.click(screen.getByTitle('common.save'));
+    await userEvent.click(screen.getByTitle('dashboard.doneTooltip'));
 
     expect(saveConfig).toHaveBeenCalled();
     expect(setEditMode).not.toHaveBeenCalledWith(false);
@@ -49,7 +49,7 @@ describe('EditButton — sauvegarde', () => {
   it('quitte le mode édition une fois la sauvegarde réussie', async () => {
     saveConfig.mockResolvedValue(true);
     render(<EditButton />);
-    await userEvent.click(screen.getByTitle('common.save'));
+    await userEvent.click(screen.getByTitle('dashboard.doneTooltip'));
 
     expect(setEditMode).toHaveBeenCalledWith(false);
   });

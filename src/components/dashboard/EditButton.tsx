@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION_FAST } from '@/lib/motion-tokens';
-import { PencilLine, Check, X, CloudUpload, Plus, Loader2, HelpCircle, Undo2, Redo2, Trash2 } from 'lucide-react';
+import { PencilLine, Check, X, Plus, Loader2, HelpCircle, Undo2, Redo2, Trash2 } from 'lucide-react';
 import { useUser } from '@hakit/core';
 import { useDashboardLayout, useEditMode } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -15,6 +15,7 @@ import { useI18n } from '@/i18n';
 import { useGridSelection } from '@/components/layout/DashboardGrid';
 import { useTheme } from '@/context/ThemeContext';
 import { EDIT_PANEL_EVENT } from '@/lib/panel-grid';
+import { cn } from '@/lib/utils';
 
 export function EditButton() {
   const { t } = useI18n();
@@ -35,6 +36,22 @@ export function EditButton() {
   const [pinPrompt, setPinPrompt] = useState(false);
   const [pinEntry, setPinEntry] = useState('');
   const [pinWrong, setPinWrong] = useState(false);
+  // ✕ : un premier appui demande confirmation, un second abandonne.
+  const [confirmingDiscard, setConfirmingDiscard] = useState(false);
+
+  // Les configurations de widgets ne passent pas par la pile « annuler » : on
+  // repère leurs changements en comparant à ce qu'elles étaient en entrant.
+  const entryConfigs = useRef(allWidgetConfigsByPage);
+  useEffect(() => {
+    if (isEditMode) entryConfigs.current = allWidgetConfigsByPage;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- relevé à l'entrée seulement
+  }, [isEditMode]);
+
+  useEffect(() => {
+    if (!confirmingDiscard) return;
+    const id = setTimeout(() => setConfirmingDiscard(false), 4000);
+    return () => clearTimeout(id);
+  }, [confirmingDiscard]);
 
   const isAdmin = !!user?.is_admin;
 
@@ -90,6 +107,18 @@ export function EditButton() {
     if (saved) setEditMode(false);
   };
 
+  /**
+   * Abandonne l'édition. Sans modification, on sort simplement ; sinon un
+   * second appui — que la page rechargée tient pour définitif : la dernière
+   * version enregistrée revient, jusque dans les configurations de widgets.
+   */
+  const handleDiscard = () => {
+    const dirty = canUndo || allWidgetConfigsByPage !== entryConfigs.current;
+    if (!dirty) return setEditMode(false);
+    if (!confirmingDiscard) return setConfirmingDiscard(true);
+    window.location.reload();
+  };
+
   return (
     <>
       {/* À droite du bouton du lanceur, dans la barre du haut. `flex-wrap` :
@@ -98,24 +127,29 @@ export function EditButton() {
           les boutons les captent. */}
       <div className='fixed top-[30px] left-[96px] sm:left-[116px] right-4 z-50 flex flex-wrap items-center gap-2 pointer-events-none'>
         {/* Bouton toggle édition */}
+        {/* Hors édition, le crayon ; en édition, « Terminer » : il enregistre et
+            quitte, comme le « Terminé » d'Amazon — un seul geste évident. */}
         <motion.button
           onClick={() => {
-            if (isEditMode) return setEditMode(false);
+            if (isEditMode) return void handleSave();
             // Le crayon de la barre ouvre toute la page.
             setEditPanelId(null);
             enterEditMode();
           }}
-          whileTap={{ scale: 0.92 }}
-          data-tour='edit'
-          title={isEditMode ? t('dashboard.editTooltipExit') : t('dashboard.editTooltipEnter')}
-          aria-label={isEditMode ? t('dashboard.editTooltipExit') : t('dashboard.editTooltipEnter')}
-          className={`flex size-[52px] items-center justify-center rounded-full transition-colors pointer-events-auto ${
+          disabled={isSaving}
+          whileTap={{ scale: 0.95 }}
+          data-tour={isEditMode ? 'save' : 'edit'}
+          title={isEditMode ? t('dashboard.doneTooltip') : t('dashboard.editTooltipEnter')}
+          aria-label={isEditMode ? t('dashboard.doneTooltip') : t('dashboard.editTooltipEnter')}
+          className={cn(
+            'pointer-events-auto flex h-[52px] items-center justify-center gap-2 rounded-full text-[17px] font-semibold transition-colors disabled:opacity-60',
             isEditMode
-              ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'
-              : 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)] hover:bg-[var(--ds-surface-2)]'
-          }`}
+              ? 'bg-[var(--ds-tile-on)] px-6 text-[var(--ds-tile-on-ink)]'
+              : 'w-[52px] bg-[var(--ds-surface-3)] text-[var(--ds-ink)]'
+          )}
         >
-          {isEditMode ? <Check size={20} /> : <PencilLine size={20} />}
+          {isEditMode ? isSaving ? <Loader2 size={20} className='animate-spin' /> : <Check size={20} /> : <PencilLine size={20} />}
+          {isEditMode && <span className='hidden sm:inline'>{isSaving ? t('dashboard.saving') : t('dashboard.done')}</span>}
         </motion.button>
 
         <AnimatePresence>
@@ -135,32 +169,32 @@ export function EditButton() {
                 data-testid='help-button'
                 title={t('help.title')}
                 aria-label={t('help.title')}
-                className='p-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)] transition-colors'
+                className='flex size-11 items-center justify-center rounded-full bg-[var(--ds-surface-3)] text-[var(--ds-ink)]'
               >
-                <HelpCircle size={15} />
+                <HelpCircle size={18} />
               </button>
 
               {/* Annuler / rétablir — Ctrl+Z et Ctrl+Maj+Z font la même chose.
                   Les boutons existent parce que le raccourci n'existe pas sur
                   une tablette murale, là où le glisser-déposer rate le plus. */}
-              <div className='flex items-center rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] overflow-hidden'>
+              <div className='flex h-11 items-center overflow-hidden rounded-full bg-[var(--ds-surface-3)]'>
                 <button
                   onClick={undo}
                   disabled={!canUndo}
                   title={t('dashboard.undo')}
                   aria-label={t('dashboard.undo')}
-                  className='p-2 text-[var(--ds-ink)] transition-colors disabled:opacity-25 disabled:hover:bg-transparent'
+                  className='flex h-full w-11 items-center justify-center text-[var(--ds-ink)] disabled:opacity-25'
                 >
-                  <Undo2 size={15} />
+                  <Undo2 size={18} />
                 </button>
                 <button
                   onClick={redo}
                   disabled={!canRedo}
                   title={t('dashboard.redo')}
                   aria-label={t('dashboard.redo')}
-                  className='p-2 text-[var(--ds-ink)] transition-colors disabled:opacity-25 disabled:hover:bg-transparent'
+                  className='flex h-full w-11 items-center justify-center text-[var(--ds-ink)] disabled:opacity-25'
                 >
-                  <Redo2 size={15} />
+                  <Redo2 size={18} />
                 </button>
               </div>
 
@@ -199,31 +233,24 @@ export function EditButton() {
                 onClick={() => setShowAddModal(true)}
                 data-tour='add'
                 title={t('common.add')}
-                className='flex items-center gap-2 px-3 sm:px-4 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)] text-sm font-medium transition-colors'
+                className='flex h-11 items-center gap-2 rounded-full bg-[var(--ds-surface-3)] px-4 text-[15px] font-semibold text-[var(--ds-ink)]'
               >
-                <Plus size={15} />
+                <Plus size={18} />
                 <span className='hidden sm:inline'>{t('common.add')}</span>
               </button>
 
-              {/* Bouton Sauvegarder */}
+              {/* Abandonner les modifications — confirmé par un second appui. */}
               <button
-                onClick={handleSave}
-                data-tour='save'
-                disabled={isSaving}
-                title={t('common.save')}
-                className='flex items-center gap-2 px-3 sm:px-4 py-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-good)] border border-[var(--ds-good)] text-[var(--ds-good-ink)] text-sm font-medium transition-colors disabled:opacity-50'
+                onClick={handleDiscard}
+                title={t('dashboard.discardTooltip')}
+                aria-label={t('dashboard.discardTooltip')}
+                className={cn(
+                  'flex h-11 items-center justify-center gap-2 rounded-full text-[15px] font-semibold',
+                  confirmingDiscard ? 'bg-[var(--ds-alert)] px-4 text-white' : 'w-11 bg-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
+                )}
               >
-                {isSaving ? <Loader2 size={15} className='animate-spin' /> : <CloudUpload size={15} />}
-                <span className='hidden sm:inline'>{isSaving ? t('dashboard.saving') : t('common.save')}</span>
-              </button>
-
-              {/* Bouton Annuler */}
-              <button
-                onClick={() => setEditMode(false)}
-                className='p-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)] transition-colors'
-                title={t('dashboard.cancelTooltip')}
-              >
-                <X size={16} />
+                <X size={18} />
+                {confirmingDiscard && <span>{t('dashboard.discardConfirm')}</span>}
               </button>
             </motion.div>
           )}

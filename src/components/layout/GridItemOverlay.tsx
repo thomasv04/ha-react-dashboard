@@ -79,7 +79,7 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
         >
           <Settings size={16} />
         </button>
-        <span className={cn(ROUND, 'bg-black/45 text-white')} title={label}>
+        <span className={cn(ROUND, 'bg-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]')} title={label}>
           <Lock size={14} />
         </span>
       </div>
@@ -90,7 +90,7 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
     <div
       onPointerDown={onGrab}
       title={t('layout.panel.moveTile')}
-      className='absolute inset-0 z-10 flex cursor-grab select-none flex-col rounded-[var(--ds-radius-lg)] bg-black/55 text-white outline-2 outline-dashed outline-white/40 active:cursor-grabbing'
+      className='absolute inset-0 z-10 flex cursor-grab select-none flex-col rounded-[var(--ds-radius-lg)] bg-[color-mix(in_srgb,var(--ds-surface-3)_94%,transparent)] text-[var(--ds-ink)] outline-2 outline-dashed outline-[var(--ds-ink-muted)] active:cursor-grabbing'
     >
       <div className='flex items-start justify-between gap-2 p-2'>
         <span className='truncate pl-1 pt-1.5 text-sm font-semibold'>{label}</span>
@@ -108,7 +108,7 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
               fastidieux du mode édition. */}
           <button
             onClick={() => duplicateWidget(id)}
-            className={cn(ROUND, 'bg-white/20')}
+            className={cn(ROUND, 'bg-[var(--ds-surface-1)]')}
             title={t('layout.duplicateWidget')}
             aria-label={t('layout.duplicateWidget')}
           >
@@ -153,7 +153,7 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
         <button
           onPointerDown={keep}
           onClick={() => (hasDispositions ? setEditingWidgetId(id) : cycleSize(id))}
-          className='flex h-9 items-center gap-1.5 rounded-[var(--ds-radius-pill)] bg-white/20 px-3 text-sm font-semibold'
+          className='flex h-9 items-center gap-1.5 rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-1)] px-3 text-sm font-semibold'
           title={hasDispositions ? t('layout.layout') : t('layout.changeSize')}
         >
           <MoveDiagonal size={14} />
@@ -163,7 +163,7 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
           role='button'
           aria-label={t('layout.panel.resize')}
           title={t('layout.panel.resize')}
-          className={cn(ROUND, 'cursor-se-resize touch-none bg-white/20')}
+          className={cn(ROUND, 'cursor-se-resize touch-none bg-[var(--ds-surface-1)]')}
           onPointerDown={e => {
             e.stopPropagation();
             e.preventDefault();

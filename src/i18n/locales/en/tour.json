@@ -24,8 +24,8 @@
       "body": "Add a page to split your dashboard by room or floor. Each page has its own panels."
     },
     "save": {
-      "title": "Save",
-      "body": "Nothing is kept until you save. The cross leaves edit mode; Ctrl+Z undoes one step at a time."
+      "title": "Done",
+      "body": "“Done” saves and leaves edit mode. The cross discards your changes; Ctrl+Z undoes one step at a time."
     },
     "settings": {
       "title": "The launcher",

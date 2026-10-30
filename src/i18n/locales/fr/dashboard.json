@@ -14,9 +14,7 @@
     "addPage": "Nouvelle page",
     "deletePage": "Supprimer la page"
   },
-  "editTooltipExit": "Quitter le mode édition",
   "editTooltipEnter": "Modifier le dashboard",
-  "cancelTooltip": "Annuler",
   "boot": {
     "connect": "Connexion à Home Assistant",
     "config": "Chargement du tableau de bord",
@@ -46,5 +44,9 @@
   "selectionCount": "{value} sélectionné(s)",
   "selectionDelete": "Supprimer la sélection",
   "selectionClear": "Désélectionner",
-  "selectionHint": "Maj+clic pour sélectionner plusieurs cartes"
+  "selectionHint": "Maj+clic pour sélectionner plusieurs cartes",
+  "done": "Terminer",
+  "doneTooltip": "Enregistrer et terminer",
+  "discardTooltip": "Abandonner les modifications",
+  "discardConfirm": "Abandonner ?"
 }

@@ -14,9 +14,7 @@
     "addPage": "New page",
     "deletePage": "Delete page"
   },
-  "editTooltipExit": "Exit edit mode",
   "editTooltipEnter": "Edit dashboard",
-  "cancelTooltip": "Cancel",
   "boot": {
     "connect": "Connecting to Home Assistant",
     "config": "Loading dashboard",
@@ -46,5 +44,9 @@
   "selectionCount": "{value} selected",
   "selectionDelete": "Delete selection",
   "selectionClear": "Clear selection",
-  "selectionHint": "Shift+click to select multiple cards"
+  "selectionHint": "Shift+click to select multiple cards",
+  "done": "Done",
+  "doneTooltip": "Save and finish",
+  "discardTooltip": "Discard changes",
+  "discardConfirm": "Discard?"
 }
