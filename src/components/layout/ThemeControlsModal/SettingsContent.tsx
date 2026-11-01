@@ -84,7 +84,8 @@ export function SettingsContent({ onClose, guard }: { onClose: () => void; guard
       </nav>
 
       {/* ── Contenu ── */}
-      <div className='mx-auto flex min-w-0 w-full max-w-4xl flex-1 flex-col'>
+      {/* L'écran de veille a son aperçu en colonne : il lui faut plus de largeur. */}
+      <div className={cn('mx-auto flex min-w-0 w-full flex-1 flex-col', section === 'wallpanel' ? 'max-w-[1400px]' : 'max-w-4xl')}>
         <div className='flex shrink-0 items-center justify-between px-3 pb-3 pt-2'>
           <h2 className='text-[32px] font-semibold'>{current.label}</h2>
           <button

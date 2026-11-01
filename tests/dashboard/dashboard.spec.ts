@@ -265,4 +265,37 @@ test.describe('Settings', () => {
     await expect(settings.getByRole('button', { name: 'Écran de veille' })).toBeVisible();
     await expect(settings.getByRole('radio', { name: 'Sombre' })).toBeVisible();
   });
+
+  test('screensaver settings save on their own, with a live preview', async ({ page, request }) => {
+    const API = 'http://localhost:8098';
+    const before = await (await request.get(`${API}/api/config`)).json();
+    try {
+      await page.goto('/');
+      await waitForDashboard(page);
+      await page.getByRole('button', { name: 'Ouvrir les apps' }).click();
+      await page.getByRole('button', { name: 'Paramètres' }).click();
+      const settings = page.getByRole('dialog');
+      await settings.getByRole('button', { name: 'Écran de veille' }).click();
+
+      // L'aperçu est là, et plus de bouton « Sauvegarder » : l'état s'affiche à sa place.
+      await expect(settings.getByRole('img', { name: "Aperçu de l'écran de veille" })).toBeVisible();
+      const status = settings.getByTestId('wallpanel-save-status');
+      await expect(status).toHaveText('Enregistré');
+      await expect(settings.getByRole('button', { name: 'Sauvegarder', exact: true })).toHaveCount(0);
+
+      // Un réglage part tout seul sur le serveur.
+      await settings.getByRole('button', { name: 'Style' }).click();
+      await settings.getByRole('radio', { name: 'Cadre photo' }).click();
+      await expect(status).toHaveAttribute('data-status', 'saved', { timeout: 5000 });
+      await expect
+        .poll(async () => (await (await request.get(`${API}/api/config`)).json()).wallPanel?.config?.clock_layout, { timeout: 5000 })
+        .toBe('photo');
+
+      // Tout est enregistré : la fermeture n'est pas retenue.
+      await settings.getByRole('button', { name: 'Fermer', exact: true }).click();
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+    } finally {
+      await request.put(`${API}/api/config`, { data: before });
+    }
+  });
 });

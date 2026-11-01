@@ -303,7 +303,22 @@
     "clockLayout": "Time",
     "clockLarge": "Large clock",
     "clockPhoto": "Photo frame",
-    "editWidgetsAction": "Edit widgets"
+    "editWidgetsAction": "Edit widgets",
+    "autosave": {
+      "saved": "Saved",
+      "saving": "Saving…",
+      "error": "Save failed",
+      "retry": "Retry",
+      "closing": "Saving — settings will close as soon as it is done.",
+      "closeError": "Your latest changes could not be saved."
+    },
+    "preview": {
+      "title": "Preview",
+      "label": "Screensaver preview",
+      "show": "View screensaver",
+      "hint": "The preview follows every setting. Changes are saved automatically.",
+      "plan": "Floor plan"
+    }
   },
   "panelNoneCreated": "No panel yet — create one from the edit mode.",
   "duplicateWidget": "Duplicate widget",

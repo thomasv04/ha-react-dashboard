@@ -9,29 +9,10 @@ import { DashboardGrid } from '@/components/layout/DashboardGrid';
 import { AddWidgetModal } from '@/components/layout/AddWidgetModal';
 import { WidgetEditModal } from '@/components/layout/WidgetEditModal';
 import { useI18n } from '@/i18n';
-import { widgetExtentOf, type WallPanelConfig, type WidgetAnchor } from '@/types/wallpanel';
+import { anchorStyle } from './anchor';
+import type { WallPanelConfig } from '@/types/wallpanel';
 import type { WidgetConfigs } from '@/types/widget-configs';
 import type { DashboardLayout } from '@/context/DashboardLayoutContext';
-
-/** Où la grille se pose sur l'overlay. La largeur vient de `widgetExtentOf`. */
-const ANCHOR_CLASS: Record<WidgetAnchor, string> = {
-  top: 'absolute top-0 left-1/2 -translate-x-1/2 px-5 pt-8',
-  bottom: 'absolute bottom-0 left-1/2 -translate-x-1/2 px-5 pb-8',
-  left: 'absolute inset-y-0 left-0 px-5 py-8 overflow-y-auto',
-  right: 'absolute inset-y-0 right-0 px-5 py-8 overflow-y-auto',
-};
-
-/** Classe et largeur de la zone des widgets, pour une configuration donnée. */
-function anchorStyle(config: WallPanelConfig): { className: string; style: React.CSSProperties } {
-  const anchor = config.widgetAnchor ?? 'top';
-  const extent = widgetExtentOf(config);
-  return {
-    className: ANCHOR_CLASS[anchor],
-    // `maxWidth` seulement en haut et en bas : sur un côté, la bande *est* la
-    // part demandée, la borner à 1440 px n'aurait aucun sens sur un écran étroit.
-    style: anchor === 'left' || anchor === 'right' ? { width: `${extent}%` } : { width: `${extent}%`, maxWidth: 1440 },
-  };
-}
 
 /** Enregistre la disposition et les configs de l'ecran de veille sur le serveur. */
 export type WallPanelSave = (layout: DashboardLayout, widgetConfigs: WidgetConfigs) => Promise<boolean>;
@@ -126,8 +107,10 @@ function WallPanelEditActions({ onSave }: { onSave?: WallPanelSave }) {
  * Required so DashboardGrid/GridItem can resolve widget positions from the
  * wallpanel layout rather than the main dashboard layout.
  */
-export function WallPanelReadonlyShell() {
-  const { wallPanelLayout, wallPanelWidgetConfigs, config } = useWallPanel();
+export function WallPanelReadonlyShell({ config: override }: { config?: WallPanelConfig } = {}) {
+  const { wallPanelLayout, wallPanelWidgetConfigs, config: current } = useWallPanel();
+  // L'aperçu des réglages passe son brouillon : la zone suit l'ancrage choisi avant l'enregistrement.
+  const config = override ?? current;
 
   // Figés au montage : `DashboardLayoutProvider` ne lit ces valeurs *initiales*
   // qu'une fois, et une référence neuve à chaque rendu relancerait sa
