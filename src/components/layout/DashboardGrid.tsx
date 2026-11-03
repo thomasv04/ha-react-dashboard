@@ -513,7 +513,8 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
           className={cn(
             stacked ? 'w-full' : 'absolute -inset-x-3.5 -inset-y-1 overscroll-x-contain px-3.5 py-1',
             // Une carte réduite tient en largeur : rien à faire défiler.
-            !stacked && (map && scale > MAP_MIN_SCALE ? 'overflow-x-hidden' : 'overflow-x-auto'),
+            // Pas de barre de défilement : on sait que le plateau se fait glisser.
+            !stacked && (map && scale > MAP_MIN_SCALE ? 'overflow-x-hidden' : 'overflow-x-auto scrollbar-none'),
             isEditMode && 'dashboard-editing',
             panelDrag && 'cursor-grabbing select-none',
             className
@@ -730,7 +731,7 @@ function PanelSection({
               data-panel-scroll
               className={cn(
                 !stacked && '-mx-1 -mb-1 min-h-0 flex-1 px-1 pb-1',
-                !stacked && (map ? 'overflow-hidden' : 'overflow-y-auto overscroll-contain scrollbar-none'),
+                !stacked && (map ? 'overflow-hidden' : 'overflow-y-auto overscroll-y-contain scrollbar-none'),
                 more && '[mask-image:linear-gradient(to_bottom,#000_calc(100%-44px),transparent)]'
               )}
             >
