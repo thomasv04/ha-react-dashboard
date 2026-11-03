@@ -933,3 +933,41 @@ export function polylineMidpoint(points: Vec3[]): Vec3 {
   }
   return points[points.length - 1];
 }
+
+/** Les familles de pastilles que le filtre du plan montre ou cache. */
+export const CHIP_KINDS = ['light', 'sensor', 'security', 'device'] as const;
+export type ChipKind = (typeof CHIP_KINDS)[number];
+
+/** Ce qui garde la maison : un contact, un détecteur, une alarme. */
+const SECURITY_CLASSES = new Set([
+  'door',
+  'window',
+  'opening',
+  'garage_door',
+  'lock',
+  'motion',
+  'occupancy',
+  'presence',
+  'smoke',
+  'gas',
+  'carbon_monoxide',
+  'moisture',
+  'safety',
+  'tamper',
+  'vibration',
+]);
+const SECURITY_DOMAINS = new Set(['lock', 'alarm_control_panel', 'camera', 'cover']);
+const SENSOR_DOMAINS = new Set(['sensor', 'binary_sensor', 'climate', 'weather', 'water_heater']);
+
+/**
+ * La famille d'une pastille, d'après son entité : les lumières, les capteurs
+ * (températures, humidité, climat), ce qui garde la maison (contacts,
+ * mouvements, serrures, volets), et le reste des appareils.
+ */
+export function chipKind(entityId: string, deviceClass?: string): ChipKind {
+  const domain = entityId.split('.')[0];
+  if (domain === 'light') return 'light';
+  if (SECURITY_DOMAINS.has(domain) || (domain === 'binary_sensor' && deviceClass && SECURITY_CLASSES.has(deviceClass))) return 'security';
+  if (SENSOR_DOMAINS.has(domain)) return 'sensor';
+  return 'device';
+}

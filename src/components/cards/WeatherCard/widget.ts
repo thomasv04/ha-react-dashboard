@@ -56,6 +56,7 @@ export default defineWidget({
 
   fields: [
     { key: 'entityId', label: 'widgets.weather.fields.entityId.label', fieldType: 'entity', domain: 'weather' },
+    { key: 'name', label: 'widgets.weather.fields.name.label', fieldType: 'text' },
     { key: 'customIcons', label: 'widgets.weather.fields.customIcons.label', fieldType: 'weather-icons' },
   ],
 

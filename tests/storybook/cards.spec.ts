@@ -206,3 +206,23 @@ test.describe('TempoCard', () => {
     await expect(page.getByText(/Bleu/i).first()).toBeVisible();
   });
 });
+
+// ── MediaPlayerCard ───────────────────────────────────────────────────────────
+
+test.describe('MediaPlayerCard', () => {
+  test('la card affiche le titre du mock', async ({ page }) => {
+    await page.goto('/iframe.html?id=cards-mediaplayercard--default&viewMode=story');
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByText('Bohemian Rhapsody')).toBeVisible();
+  });
+
+  test('la fiche affiche pochette, titre, progression et contrôles', async ({ page }) => {
+    await page.goto('/iframe.html?id=cards-mediaplayercard--more-info&viewMode=story');
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByRole('heading', { name: 'Bohemian Rhapsody' })).toBeVisible();
+    await expect(page.getByTestId('media-cover')).toBeVisible();
+    await expect(page.getByText('2:48')).toBeVisible();
+    await expect(page.getByRole('button', { name: /pause/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cuisine' })).toBeVisible();
+  });
+});

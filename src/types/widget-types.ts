@@ -41,6 +41,11 @@ export interface CameraEntry {
   name: string;
   /** Camera entity whose still image is shown while the stream loads */
   posterEntity?: string;
+  /**
+   * Entité dont le dernier changement date l'événement affiché sous le nom
+   * (« il y a 3 min ») — typiquement un détecteur de mouvement de la caméra.
+   */
+  eventEntity?: string;
 }
 
 export type CameraStreamMode = 'auto' | 'mjpeg' | 'hls';
@@ -75,6 +80,8 @@ export type WeatherCondition =
 export interface WeatherCardConfig {
   type: 'weather';
   entityId: string; // weather.xxx
+  /** Ville affichée au-dessus de la température (« Paris, FR »). Absente : rien. */
+  name?: string;
   /** Advanced: override default icons per weather condition.
    *  Value is a Lucide icon name or "custom:/uploads/icons/{file}" */
   customIcons?: Partial<Record<WeatherCondition, string>>;

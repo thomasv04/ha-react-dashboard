@@ -11,6 +11,7 @@ import type { LockCardConfig } from '@/types/widget-configs';
 import { friendlyName } from '@/lib/ha-service';
 import { DeviceTile } from '@/components/ds/DeviceTile';
 import { Chip } from '@/components/ds/Chip';
+import { cn } from '@/lib/utils';
 
 /** `LockEntityFeature.OPEN` — le pêne peut être escamoté (gâche électrique) */
 const FEATURE_OPEN = 1;
@@ -95,18 +96,67 @@ export function LockCard() {
           ? t('widgets.lock.locked')
           : t('widgets.lock.unlocked');
 
+  const StateIcon = isJammed ? TriangleAlert : isLocked ? Lock : LockOpen;
+  // Verrouillée = état sûr, mis en avant. Une demande de confirmation
+  // repasse la tuile en neutre : on voit que le prochain appui ouvre.
+  const secured = isLocked && !confirming;
+
+  // Trois rangées et plus : la tuile de l'Echo Show, en grand. Un bouton rond au
+  // centre porte l'action ; orange quand la porte est ouverte, pour qu'on le voie
+  // de loin. Plus bas, la tuile reste celle d'une seule icône.
+  if (!size.squat && (size.h === 'normal' || size.h === 'tall')) {
+    const tall = size.h === 'tall';
+    const hint = confirming || isJammed || isMoving ? undefined : t(isLocked ? 'widgets.lock.tapToUnlock' : 'widgets.lock.tapToLock');
+    const tone = isJammed
+      ? 'border-[3px] border-[var(--ds-alert)] bg-[color-mix(in_srgb,var(--ds-alert)_24%,transparent)] text-[var(--ds-alert)] [--halo:var(--ds-alert)]'
+      : secured
+        ? 'bg-white/20 text-[var(--ds-tile-on-ink)] [--halo:#fff]'
+        : 'border-[3px] border-[var(--ds-heat)] bg-[color-mix(in_srgb,var(--ds-heat)_24%,transparent)] text-[var(--ds-heat-ink)] [--halo:var(--ds-heat)]';
+    return (
+      <div
+        ref={cardRef}
+        className={cn(
+          'flex h-full select-none flex-col overflow-hidden rounded-[var(--ds-radius-lg)] p-[var(--ds-space-4)] transition-colors',
+          secured ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'bg-[var(--ds-surface-2)] text-[var(--ds-ink)]'
+        )}
+      >
+        <div className='min-w-0'>
+          <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>
+          <div className={cn('truncate text-sm', secured ? 'text-[var(--ds-tile-on-muted)]' : 'text-[var(--ds-ink-muted)]')}>{label}</div>
+        </div>
+        <div className='flex min-h-0 flex-1 flex-col items-center justify-center gap-8'>
+          <button
+            onClick={handleToggle}
+            aria-pressed={isLocked}
+            aria-label={hint ?? label}
+            className={cn(
+              'flex shrink-0 items-center justify-center rounded-full transition-transform active:scale-95',
+              'shadow-[0_0_0_14px_color-mix(in_srgb,var(--halo)_16%,transparent),0_0_0_30px_color-mix(in_srgb,var(--halo)_7%,transparent)]',
+              tall ? 'size-32' : 'size-24',
+              tone,
+              (isMoving || confirming) && 'animate-pulse'
+            )}
+          >
+            <StateIcon size={tall ? 56 : 42} strokeWidth={1.75} aria-hidden='true' />
+          </button>
+          {hint && (
+            <span className={cn('text-sm font-medium', secured ? 'text-[var(--ds-tile-on-muted)]' : 'text-[var(--ds-ink-muted)]')}>
+              {hint}
+            </span>
+          )}
+        </div>
+        {supportsOpen && (
+          <div className='flex justify-center'>
+            <Chip icon={DoorOpen} label={t('widgets.lock.openAction')} onClick={() => call('open')} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div ref={cardRef} className='h-full'>
-      <DeviceTile
-        name={name}
-        state={label}
-        icon={isJammed ? TriangleAlert : isLocked ? Lock : LockOpen}
-        // Verrouillée = état sûr, mis en avant. Une demande de confirmation
-        // repasse la tuile en neutre : on voit que le prochain appui ouvre.
-        active={isLocked && !confirming}
-        onToggle={handleToggle}
-        layout={size.squat ? 'row' : 'stack'}
-      >
+      <DeviceTile name={name} state={label} icon={StateIcon} active={secured} onToggle={handleToggle} layout={size.squat ? 'row' : 'stack'}>
         {/* Ouverture du pêne : action distincte, jamais fusionnée au bouton */}
         {supportsOpen && !size.compact && <Chip icon={DoorOpen} label={t('widgets.lock.openAction')} onClick={() => call('open')} />}
       </DeviceTile>

@@ -1,10 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { Lightbulb, Sun } from 'lucide-react';
-import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { PillSlider } from '@/components/ds/PillSlider';
 import { COLOR_TEMP_TRACK, HUE_TRACK, TRACK_MARKER } from '@/components/ds/light-tracks';
+import { LightSwatches, lightState, useLightActions } from '@/components/ds/LightControls';
 import { MoreInfoHeader } from './MoreInfoHeader';
 import { InfoSidebar, SheetSection, type SidebarModule } from './sidebar';
 import type { LightCardConfig } from '@/types/widget-types';
@@ -14,9 +14,6 @@ import { cn } from '@/lib/utils';
 
 type ColorTab = 'color' | 'color_temp';
 
-/** Les teintes proposées d'un toucher, avant le curseur. */
-const SWATCHES = [300, 350, 15, 35, 325, 95, 45, 130];
-
 export default function LightMoreInfo({ entityId, widgetId }: { entityId: string; widgetId: string }) {
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
@@ -25,70 +22,26 @@ export default function LightMoreInfo({ entityId, widgetId }: { entityId: string
   const [historyHours, setHistoryHours] = useState(24);
   const [colorTab, setColorTab] = useState<ColorTab>('color');
   const entity = useSafeEntity(entityId);
-  const helpers = useHass(s => s.helpers);
-
-  const handleToggle = useCallback(() => {
-    helpers.callService({
-      domain: 'light',
-      service: 'toggle',
-      target: { entity_id: entityId },
-    });
-  }, [helpers, entityId]);
-
-  const handleBrightness = useCallback(
-    (pct: number) => {
-      helpers.callService({
-        domain: 'light',
-        service: 'turn_on',
-        target: { entity_id: entityId },
-        serviceData: { brightness_pct: pct },
-      });
-    },
-    [helpers, entityId]
-  );
-
-  const handleColorTemp = useCallback(
-    (kelvin: number) => {
-      helpers.callService({
-        domain: 'light',
-        service: 'turn_on',
-        target: { entity_id: entityId },
-        serviceData: { color_temp_kelvin: kelvin },
-      });
-    },
-    [helpers, entityId]
-  );
-
-  const handleHue = useCallback(
-    (hue: number) => {
-      helpers.callService({
-        domain: 'light',
-        service: 'turn_on',
-        target: { entity_id: entityId },
-        serviceData: { hs_color: [hue, 100] },
-      });
-    },
-    [helpers, entityId]
-  );
+  const actions = useLightActions(entityId);
 
   if (!entity) return <div className='p-12 text-center text-[var(--ds-ink-muted)]'>{t('common.entityNotFound')}</div>;
 
-  const isOn = entity.state === 'on';
   const name = config?.name ?? friendlyName(entity) ?? entityId;
-  const colorModes = (entity.attributes.supported_color_modes as string[]) ?? [];
-  const isDimmable = colorModes.some(m => m !== 'onoff');
-  const supportsColorTemp = colorModes.includes('color_temp');
-  const supportsColor = colorModes.some(m => ['hs', 'rgb', 'xy'].includes(m));
+  const {
+    isOn,
+    dimmable: isDimmable,
+    color: supportsColor,
+    colorTemp: supportsColorTemp,
+    brightness,
+    brightnessPct,
+    kelvin: colorTempKelvin,
+    minKelvin,
+    maxKelvin,
+    hsColor,
+    hue,
+  } = lightState(entity);
   // Un seul des deux : pas d'onglets, la section montre celui qui existe.
   const tab: ColorTab = supportsColor && supportsColorTemp ? colorTab : supportsColor ? 'color' : 'color_temp';
-
-  const brightness = entity.attributes.brightness as number | undefined;
-  const brightnessPct = brightness != null ? Math.round((brightness / 255) * 100) : 0;
-  const colorTempKelvin = entity.attributes.color_temp_kelvin as number | undefined;
-  const minKelvin = (entity.attributes.min_color_temp_kelvin as number) ?? 2700;
-  const maxKelvin = (entity.attributes.max_color_temp_kelvin as number) ?? 6500;
-  const hsColor = entity.attributes.hs_color as [number, number] | undefined;
-  const hue = Math.round(hsColor?.[0] ?? 0);
 
   return (
     <div className='flex flex-col gap-3 p-6'>
@@ -105,7 +58,7 @@ export default function LightMoreInfo({ entityId, widgetId }: { entityId: string
           role='switch'
           aria-checked={isOn}
           aria-label={name}
-          onClick={handleToggle}
+          onClick={actions.toggle}
           className={cn(
             'flex h-[76px] w-[170px] items-center rounded-[var(--ds-radius-pill)] p-1.5 transition-colors',
             isOn ? 'justify-end bg-[var(--ds-tile-on)]' : 'justify-start bg-[var(--ds-surface-3)]'
@@ -126,7 +79,7 @@ export default function LightMoreInfo({ entityId, widgetId }: { entityId: string
         <SheetSection title={t('widgets.light.brightnessValue', { value: brightnessPct })}>
           <PillSlider
             value={brightnessPct}
-            onChange={handleBrightness}
+            onChange={actions.brightness}
             label={t('widgets.light.brightness')}
             valueText={`${brightnessPct} %`}
             icon={Sun}
@@ -170,21 +123,7 @@ export default function LightMoreInfo({ entityId, widgetId }: { entityId: string
 
           {tab === 'color' ? (
             <div className='flex flex-col gap-4'>
-              <div className='flex flex-wrap justify-center gap-3.5'>
-                {SWATCHES.map(h => (
-                  <button
-                    key={h}
-                    onClick={() => handleHue(h)}
-                    aria-label={t('widgets.light.swatch', { value: h })}
-                    aria-pressed={isOn && Math.abs(hue - h) < 3}
-                    className={cn(
-                      'size-11 rounded-full',
-                      isOn && Math.abs(hue - h) < 3 && 'shadow-[0_0_0_3px_var(--ds-sheet-section),0_0_0_6px_var(--ds-ink)]'
-                    )}
-                    style={{ background: `hsl(${h} 85% 55%)` }}
-                  />
-                ))}
-              </div>
+              <LightSwatches hue={hue} isOn={isOn} onPick={actions.hue} />
               <PillSlider
                 value={hue}
                 max={359}
@@ -192,7 +131,7 @@ export default function LightMoreInfo({ entityId, widgetId }: { entityId: string
                 fill={TRACK_MARKER}
                 label={t('widgets.light.hue')}
                 valueText={`${hue}°`}
-                onChange={handleHue}
+                onChange={actions.hue}
               />
             </div>
           ) : (
@@ -204,7 +143,7 @@ export default function LightMoreInfo({ entityId, widgetId }: { entityId: string
               fill={TRACK_MARKER}
               label={t('widgets.light.colorTemp')}
               valueText={`${colorTempKelvin ?? minKelvin} K`}
-              onChange={handleColorTemp}
+              onChange={actions.kelvin}
             />
           )}
         </SheetSection>

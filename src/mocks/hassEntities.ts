@@ -194,9 +194,18 @@ export const MOCK_ENTITIES: Record<string, MockEntityState> = {
     friendly_name: 'Salon',
     media_title: 'Bohemian Rhapsody',
     media_artist: 'Queen',
+    media_album_name: 'A Night at the Opera',
+    media_duration: 354,
+    media_position: 168,
+    entity_picture:
+      "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%237a5cf0'/><stop offset='1' stop-color='%23e8466b'/></linearGradient></defs><rect width='100' height='100' fill='url(%23g)'/></svg>",
+    source: 'Salon',
+    source_list: ['Salon', 'Cuisine', 'Terrasse'],
+    shuffle: false,
+    repeat: 'off',
     volume_level: 0.4,
     is_volume_muted: false,
-    supported_features: 152639,
+    supported_features: 154687,
   }),
 
   // Automations
@@ -208,7 +217,13 @@ export const MOCK_ENTITIES: Record<string, MockEntityState> = {
   // These ensure every widget renders in the AddWidgetModal preview even when
   // the user's HA instance doesn't have the generic fallback entity IDs.
   'sensor.bedroom_temperature': entity('sensor.bedroom_temperature', '20.4', { unit_of_measurement: '°C', friendly_name: 'Chambre' }),
-  'light.living_room': entity('light.living_room', 'on', { brightness: 180, color_mode: 'brightness', friendly_name: 'Salon' }),
+  'light.living_room': entity('light.living_room', 'on', {
+    brightness: 180,
+    color_mode: 'hs',
+    supported_color_modes: ['hs', 'color_temp'],
+    hs_color: [35, 100],
+    friendly_name: 'Salon',
+  }),
   'cover.living_room': entity('cover.living_room', 'open', { current_position: 60, friendly_name: 'Volet Salon' }),
   'person.user_1': entity('person.user_1', 'home', { friendly_name: 'Utilisateur', entity_picture: '' }),
   'automation.example': entity('automation.example', 'on', { friendly_name: "Exemple d'automatisation" }),

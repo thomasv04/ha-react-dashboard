@@ -55,6 +55,7 @@ export default defineWidget({
         { key: 'entityId', label: 'widgets.camera.fields.cameras.item.entityId.label', fieldType: 'entity', domain: 'camera' },
         { key: 'name', label: 'widgets.camera.fields.cameras.item.name.label', fieldType: 'text' },
         { key: 'posterEntity', label: 'widgets.camera.fields.cameras.item.posterEntity.label', fieldType: 'entity', domain: 'camera' },
+        { key: 'eventEntity', label: 'widgets.camera.fields.cameras.item.eventEntity.label', fieldType: 'entity' },
       ],
     },
     {

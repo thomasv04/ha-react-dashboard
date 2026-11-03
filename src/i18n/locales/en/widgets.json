@@ -47,6 +47,9 @@
       "entityId": {
         "label": "Weather entity"
       },
+      "name": {
+        "label": "City shown"
+      },
       "customIcons": {
         "label": "Custom icons"
       }
@@ -277,7 +280,20 @@
     "next": "Next track",
     "play": "Play",
     "pause": "Pause",
-    "volume": "Volume"
+    "volume": "Volume",
+    "shuffle": "Shuffle",
+    "repeat": "Repeat",
+    "repeatOff": "Repeat off",
+    "repeatAll": "Repeat all",
+    "repeatOne": "Repeat one",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "source": "Output / source",
+    "playlist": "Playlist",
+    "position": "Progress",
+    "nothingPlaying": "Nothing playing",
+    "album": "Album",
+    "unknownTitle": "Unknown title"
   },
   "person": {
     "label": "People",
@@ -381,6 +397,9 @@
           },
           "posterEntity": {
             "label": "Placeholder image (snapshot entity)"
+          },
+          "eventEntity": {
+            "label": "Event entity (X min ago)"
           }
         }
       },
@@ -1011,6 +1030,8 @@
     "jammed": "Jammed",
     "confirmUnlock": "Tap to confirm",
     "openAction": "OPEN",
+    "tapToUnlock": "Tap to unlock",
+    "tapToLock": "Tap to lock",
     "fields": {
       "entityId": {
         "label": "Lock"
@@ -1045,6 +1066,22 @@
       "max": {
         "label": "Number of events"
       }
+    },
+    "moreInfo": {
+      "title": "Calendar",
+      "today": "Today",
+      "changeView": "Change view",
+      "viewMonth": "Month view",
+      "viewDay": "Day view",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "prevDay": "Previous day",
+      "nextDay": "Next day",
+      "add": "Add event (coming soon)",
+      "noEvents": "No events this day",
+      "allDay": "All day",
+      "untitled": "Untitled",
+      "hasEvents": "{count} event(s)"
     }
   },
   "todo": {

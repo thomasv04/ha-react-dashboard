@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   cableFlow,
+  chipKind,
   cloudiness,
   cloudLook,
   compassHeading,
@@ -711,5 +712,24 @@ describe('solar fields', () => {
     expect(solarGlow('unavailable', { unit_of_measurement: 'W' })).toBe(0);
     // Par paliers : 1 520 W brillent comme 1 500.
     expect(solarGlow('1520', { unit_of_measurement: 'W' })).toBe(0.5);
+  });
+});
+
+describe('chipKind', () => {
+  it('sorts a chip by what its entity does', () => {
+    expect(chipKind('light.salon')).toBe('light');
+    expect(chipKind('sensor.temperature_salon', 'temperature')).toBe('sensor');
+    expect(chipKind('climate.salon')).toBe('sensor');
+    expect(chipKind('binary_sensor.porte', 'door')).toBe('security');
+    expect(chipKind('binary_sensor.couloir', 'motion')).toBe('security');
+    expect(chipKind('lock.entree')).toBe('security');
+    expect(chipKind('cover.volet')).toBe('security');
+    expect(chipKind('switch.prise')).toBe('device');
+    expect(chipKind('media_player.salon')).toBe('device');
+  });
+
+  it('keeps a binary sensor of no particular class among the sensors', () => {
+    expect(chipKind('binary_sensor.batterie_faible', 'battery')).toBe('sensor');
+    expect(chipKind('binary_sensor.quelque_chose')).toBe('sensor');
   });
 });

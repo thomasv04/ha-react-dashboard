@@ -10,11 +10,13 @@ import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { CameraCardConfig } from '@/types/widget-configs';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useI18n } from '@/i18n';
+import { useRelativeTime, JUST_NOW } from '@/hooks/useRelativeTime';
 
 interface Cam {
   entityId: string;
   name: string;
   posterEntity?: string;
+  eventEntity?: string;
 }
 
 export function CameraCard() {
@@ -27,7 +29,8 @@ export function CameraCard() {
   const streamMode = config?.streamMode ?? 'auto';
 
   const helpers = useHass(s => s.helpers);
-  const entities = useEntities([selectorEntity]);
+  // Les entités d'événement de toutes les caméras : `current` ne se connaît qu'après le sélecteur.
+  const entities = useEntities([selectorEntity, ...cameras.flatMap(c => (c.eventEntity ? [c.eventEntity] : []))]);
   const playFeedback = useSoundFeedback();
 
   const haSelected = entities[selectorEntity]?.state as string | undefined;
@@ -48,6 +51,10 @@ export function CameraCard() {
   }
 
   const current = cameras.find(c => c.name === selected) ?? cameras[0];
+  const lastEvent = current?.eventEntity
+    ? (entities[current.eventEntity] as unknown as { last_changed?: string } | undefined)?.last_changed
+    : undefined;
+  const sinceEvent = useRelativeTime(lastEvent);
   // Widget fraîchement posé : aucune caméra choisie. Sans ce garde, la card
   // plantait sur `current.entityId` et emportait tout le dashboard avec elle.
   const hasCamera = !!current;
@@ -123,7 +130,14 @@ export function CameraCard() {
         {/* Camera name overlay */}
         {/* Nom en haut à gauche, sur l'image, comme les vignettes de la maquette */}
         <div className='pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 bg-gradient-to-b from-black/60 to-transparent px-3.5 pb-6 pt-3 text-white'>
-          <span className='truncate text-[17px] font-semibold'>{current.name}</span>
+          <div className='min-w-0'>
+            <div className='truncate text-[17px] font-semibold'>{current.name}</div>
+            {sinceEvent && (
+              <div className='truncate text-sm font-medium text-white/80'>
+                {sinceEvent === JUST_NOW ? t('widgets.sensor.justNow') : t('widgets.sensor.updatedAgo', { value: sinceEvent })}
+              </div>
+            )}
+          </div>
           {protocol && (
             <span className='shrink-0 rounded-[var(--ds-radius-pill)] bg-black/55 px-2.5 py-1 text-xs font-semibold'>{protocol}</span>
           )}

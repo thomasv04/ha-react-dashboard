@@ -265,4 +265,78 @@ test.describe('Settings', () => {
     await expect(settings.getByRole('button', { name: 'Écran de veille' })).toBeVisible();
     await expect(settings.getByRole('radio', { name: 'Sombre' })).toBeVisible();
   });
+
+  test('screensaver settings save on their own, with a live preview', async ({ page, request }) => {
+    const API = 'http://localhost:8098';
+    const before = await (await request.get(`${API}/api/config`)).json();
+    try {
+      await page.goto('/');
+      await waitForDashboard(page);
+      await page.getByRole('button', { name: 'Ouvrir les apps' }).click();
+      await page.getByRole('button', { name: 'Paramètres' }).click();
+      const settings = page.getByRole('dialog');
+      await settings.getByRole('button', { name: 'Écran de veille' }).click();
+
+      // L'aperçu est là, et plus de bouton « Sauvegarder » : l'état s'affiche à sa place.
+      await expect(settings.getByRole('img', { name: "Aperçu de l'écran de veille" })).toBeVisible();
+      const status = settings.getByTestId('wallpanel-save-status');
+      await expect(status).toHaveText('Enregistré');
+      await expect(settings.getByRole('button', { name: 'Sauvegarder', exact: true })).toHaveCount(0);
+
+      // Un réglage part tout seul sur le serveur.
+      await settings.getByRole('button', { name: 'Style' }).click();
+      await settings.getByRole('radio', { name: 'Cadre photo' }).click();
+      await expect(status).toHaveAttribute('data-status', 'saved', { timeout: 5000 });
+      await expect
+        .poll(async () => (await (await request.get(`${API}/api/config`)).json()).wallPanel?.config?.clock_layout, { timeout: 5000 })
+        .toBe('photo');
+
+      // Tout est enregistré : la fermeture n'est pas retenue.
+      await settings.getByRole('button', { name: 'Fermer', exact: true }).click();
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+    } finally {
+      await request.put(`${API}/api/config`, { data: before });
+    }
+  });
+});
+
+// ── Assist ────────────────────────────────────────────────────────────────────
+
+test.describe('Assist', () => {
+  /** Ouvre Assist depuis le lanceur ; l'agent de démonstration répond en mode simulé. */
+  async function openAssist(page: Page) {
+    await page.goto('/');
+    await waitForDashboard(page);
+    await page.getByRole('button', { name: 'Ouvrir les apps' }).click();
+    await page.getByRole('button', { name: 'Assist' }).click();
+    const assist = page.getByRole('dialog', { name: 'Assist' });
+    await expect(assist).toBeVisible();
+    return assist;
+  }
+
+  test('answers a question in a bubble, from the launcher', async ({ page }) => {
+    const assist = await openAssist(page);
+    // Micro présent, mais la reconnaissance vocale n'est pas disponible.
+    await expect(assist.getByRole('button', { name: 'Dictée vocale' })).toBeDisabled();
+
+    await assist.getByLabel('Message pour Assist').fill('Allume la lumière du séjour');
+    await assist.getByRole('button', { name: 'Envoyer' }).click();
+    await expect(assist.getByText('Allume la lumière du séjour')).toBeVisible();
+    await expect(assist.getByText('Lumières du séjour allumées')).toBeVisible();
+  });
+
+  test('a suggestion card asks the question, and the feed can be restarted', async ({ page }) => {
+    const assist = await openAssist(page);
+    await assist.getByRole('button', { name: 'Quelle est la température du séjour ?' }).click();
+    await expect(assist.getByText('Il fait 21,6 °C dans le séjour')).toBeVisible();
+    await assist.getByRole('button', { name: 'Nouvelle conversation' }).click();
+    await expect(assist.getByText('Que puis-je faire pour vous ?')).toBeVisible();
+  });
+
+  test('tells when Home Assistant cannot be reached', async ({ page }) => {
+    const assist = await openAssist(page);
+    await assist.getByLabel('Message pour Assist').fill('panne');
+    await assist.getByRole('button', { name: 'Envoyer' }).click();
+    await expect(assist.getByRole('alert')).toContainText('injoignable');
+  });
 });

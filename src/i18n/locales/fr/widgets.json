@@ -47,6 +47,9 @@
       "entityId": {
         "label": "Entité météo"
       },
+      "name": {
+        "label": "Ville affichée"
+      },
       "customIcons": {
         "label": "Icônes personnalisées"
       }
@@ -277,7 +280,20 @@
     "next": "Morceau suivant",
     "play": "Lecture",
     "pause": "Pause",
-    "volume": "Volume"
+    "volume": "Volume",
+    "shuffle": "Lecture aléatoire",
+    "repeat": "Répétition",
+    "repeatOff": "Répétition désactivée",
+    "repeatAll": "Répéter tout",
+    "repeatOne": "Répéter ce titre",
+    "mute": "Couper le son",
+    "unmute": "Rétablir le son",
+    "source": "Sortie / source",
+    "playlist": "Liste de lecture",
+    "position": "Progression",
+    "nothingPlaying": "Aucune lecture en cours",
+    "album": "Album",
+    "unknownTitle": "Titre inconnu"
   },
   "person": {
     "label": "Personnes",
@@ -381,6 +397,9 @@
           },
           "posterEntity": {
             "label": "Image d'attente (entité instantané)"
+          },
+          "eventEntity": {
+            "label": "Entité d'événement (« il y a X min »)"
           }
         }
       },
@@ -1011,6 +1030,8 @@
     "jammed": "Bloquée",
     "confirmUnlock": "Appuyer pour confirmer",
     "openAction": "OUVRIR",
+    "tapToUnlock": "Touchez pour déverrouiller",
+    "tapToLock": "Touchez pour verrouiller",
     "fields": {
       "entityId": {
         "label": "Serrure"
@@ -1045,6 +1066,22 @@
       "max": {
         "label": "Nombre d'évènements"
       }
+    },
+    "moreInfo": {
+      "title": "Calendrier",
+      "today": "Aujourd'hui",
+      "changeView": "Changer de vue",
+      "viewMonth": "Vue mensuelle",
+      "viewDay": "Vue journée",
+      "prevMonth": "Mois précédent",
+      "nextMonth": "Mois suivant",
+      "prevDay": "Jour précédent",
+      "nextDay": "Jour suivant",
+      "add": "Ajouter un évènement (bientôt)",
+      "noEvents": "Aucun évènement ce jour",
+      "allDay": "Toute la journée",
+      "untitled": "Sans titre",
+      "hasEvents": "{count} évènement(s)"
     }
   },
   "todo": {

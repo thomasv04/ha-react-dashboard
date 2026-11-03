@@ -15,11 +15,18 @@ vi.mock('@/context/WidgetConfigContext', () => ({
 }));
 
 const callServiceMock = vi.fn();
+const threeMinutesAgo = new Date(Date.now() - 3 * 60_000).toISOString();
 
 vi.mock('@hakit/core', () => ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   useHass: (selector?: any) => {
-    const state = { entities: { 'input_select.camera_selector': { state: undefined } }, helpers: { callService: callServiceMock } };
+    const state = {
+      entities: {
+        'input_select.camera_selector': { state: undefined },
+        'binary_sensor.motion': { state: 'off', last_changed: threeMinutesAgo },
+      },
+      helpers: { callService: callServiceMock },
+    };
     return typeof selector === 'function' ? selector(state) : state;
   },
 }));
@@ -49,4 +56,19 @@ test('shows an empty state instead of crashing when no camera is configured', as
 
   render(<CameraCard />);
   expect(screen.getByText('widgets.camera.empty')).toBeDefined();
+});
+
+test('affiche « il y a X min » quand la caméra a une entité d’événement', async () => {
+  const { useWidgetConfig } = await import('@/context/WidgetConfigContext');
+  vi.mocked(useWidgetConfig).mockReturnValueOnce({
+    getWidgetConfig: () => ({ cameras: [{ entityId: 'camera.driveway', name: 'Allée', eventEntity: 'binary_sensor.motion' }] }),
+  } as unknown as ReturnType<typeof useWidgetConfig>);
+
+  render(<CameraCard />);
+  expect(screen.getByText('widgets.sensor.updatedAgo')).toBeDefined();
+});
+
+test('n’affiche aucune ancienneté sans entité d’événement', () => {
+  render(<CameraCard />);
+  expect(screen.queryByText('widgets.sensor.updatedAgo')).toBeNull();
 });

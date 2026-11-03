@@ -14,6 +14,11 @@ export interface WallPanelStyle {
    * wallpanel-screensaver-image-background).
    */
   containBlurBackground?: boolean;
+  /**
+   * Deux photos portrait côte à côte sur un écran en paysage, comme les Google
+   * Home. Actif sauf s'il vaut `false` : les configs antérieures en profitent.
+   */
+  pairPortraits?: boolean;
 }
 
 export interface WallPanelGestures {

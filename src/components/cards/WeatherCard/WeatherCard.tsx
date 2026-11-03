@@ -1,5 +1,4 @@
 import { useRef } from 'react';
-import { cn } from '@/lib/utils';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { Sun } from 'lucide-react';
 import { conditionIcon } from '@/lib/weather';
@@ -10,6 +9,7 @@ import type { WeatherCardConfig } from '@/types/widget-configs';
 import type { WeatherCondition } from '@/types/widget-types';
 import { resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-map';
 import { useI18n } from '@/i18n';
+import { getWeatherLayout } from './weather-layout';
 
 /** L'icône d'une condition, ou celle que l'utilisateur a choisie pour elle. */
 function ConditionIcon({
@@ -50,7 +50,8 @@ export function WeatherCard() {
   return <WeatherCardInner entityId={entityId} config={config ?? null} />;
 }
 
-const CHIP = 'inline-flex h-9 items-center rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)] px-3.5 text-sm font-semibold';
+const CHIP =
+  'inline-flex h-9 max-w-full items-center truncate whitespace-nowrap rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)] px-3.5 text-sm font-semibold';
 
 function WeatherCardInner({ entityId, config }: { entityId: string; config: WeatherCardConfig | null }) {
   const { t, tArray, language } = useI18n();
@@ -76,9 +77,7 @@ function WeatherCardInner({ entityId, config }: { entityId: string; config: Weat
   // Divulgation progressive : chaque bloc n'apparaît que s'il a la place.
   const cardRef = useRef<HTMLDivElement>(null);
   const size = useWidgetSize(cardRef);
-  const showStats = size.h !== 'squat' && size.h !== 'short';
-  const showForecast = (size.h === 'normal' || size.h === 'tall') && next4.length > 0;
-  const showPressure = size.w !== 'xs' && size.w !== 'sm';
+  const { showStats, showForecast, showPressure, tempClass, iconSize } = getWeatherLayout(size, next4.length);
 
   // Une seule rangée : tout tient sur une ligne.
   if (size.squat) {
@@ -97,17 +96,44 @@ function WeatherCardInner({ entityId, config }: { entityId: string; config: Weat
     );
   }
 
+  // Deux rangées : la ville, puis l'icône et la température à gauche, la
+  // condition et les extrêmes du jour à droite — la tuile météo de l'Echo Show.
+  if (size.h === 'short') {
+    const showSide = size.w !== 'xs' && size.w !== 'sm';
+    return (
+      <div
+        ref={cardRef}
+        className='flex h-full flex-col justify-center gap-1 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] px-[var(--ds-space-4)] text-[var(--ds-ink)]'
+      >
+        {config?.name && <div className='truncate text-[15px] font-semibold'>{config.name}</div>}
+        <div className='flex items-center gap-3'>
+          <ConditionIcon condition={weather.state} size={36} customIcons={config?.customIcons} />
+          <span className='shrink-0 text-5xl font-light leading-none tracking-[-2px]'>{tempText}</span>
+          {showSide && (
+            <div className='ml-auto min-w-0 text-right'>
+              <div className='truncate text-[15px] font-semibold capitalize'>{label}</div>
+              {range && <div className='truncate text-sm text-[var(--ds-ink-muted)]'>{range}</div>}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={cardRef}
       className='flex h-full flex-col gap-3 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] p-[var(--ds-space-4)] text-[var(--ds-ink)]'
     >
+      {config?.name && <div className='truncate text-[15px] font-semibold'>{config.name}</div>}
       <div className='flex items-start justify-between gap-3'>
         <div className='min-w-0'>
-          <div className={cn('font-light leading-none tracking-[-2px]', size.h === 'short' ? 'text-5xl' : 'text-[72px]')}>{tempText}</div>
+          <div className={`font-light leading-none ${tempClass}`}>{tempText}</div>
           <div className='mt-1 truncate text-sm capitalize text-[var(--ds-ink-muted)]'>{subtitle}</div>
         </div>
-        <ConditionIcon condition={weather.state} size={size.h === 'short' ? 40 : 56} customIcons={config?.customIcons} />
+        <div className='shrink-0'>
+          <ConditionIcon condition={weather.state} size={iconSize} customIcons={config?.customIcons} />
+        </div>
       </div>
 
       {showStats && (

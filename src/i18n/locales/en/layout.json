@@ -256,6 +256,7 @@
     "fitContain": "Contain (full)",
     "fitFill": "Fill (stretched)",
     "blurBackground": "Blur background (fill letterbox)",
+    "pairPortraits": "Two portrait photos side by side",
     "orderRandom": "Random",
     "orderSequential": "Sequential",
     "imageDuration": "Duration per image",
@@ -303,7 +304,22 @@
     "clockLayout": "Time",
     "clockLarge": "Large clock",
     "clockPhoto": "Photo frame",
-    "editWidgetsAction": "Edit widgets"
+    "editWidgetsAction": "Edit widgets",
+    "autosave": {
+      "saved": "Saved",
+      "saving": "Saving…",
+      "error": "Save failed",
+      "retry": "Retry",
+      "closing": "Saving — settings will close as soon as it is done.",
+      "closeError": "Your latest changes could not be saved."
+    },
+    "preview": {
+      "title": "Preview",
+      "label": "Screensaver preview",
+      "show": "View screensaver",
+      "hint": "The preview follows every setting. Changes are saved automatically.",
+      "plan": "Floor plan"
+    }
   },
   "panelNoneCreated": "No panel yet — create one from the edit mode.",
   "duplicateWidget": "Duplicate widget",
@@ -543,7 +559,17 @@
     "openingUnnamedTitle": "Object without a valid name",
     "openingUnnamedHelp": "Sweet Home 3D exported it without a name: its own has an accent, or a sign the plugin refuses. In Sweet Home 3D, double-click it and change its “Name”: its type first, without accents or a trailing “#” — Window_Bedroom, Door_Kitchen… —, one name per opening. Then export the model again: it will link in one click.",
     "openingDrawAnyway": "Draw it instead",
-    "openingSingle": "All in one piece: nothing can move. In Sweet Home 3D, remove the trailing “#” from its name."
+    "openingSingle": "All in one piece: nothing can move. In Sweet Home 3D, remove the trailing “#” from its name.",
+    "homePill": "My home",
+    "homeBack": "Back to the overview",
+    "filter": "Filter pins",
+    "colorWheel": "Color wheel",
+    "filterKind": {
+      "light": "Lights",
+      "sensor": "Sensors",
+      "security": "Security",
+      "device": "Devices"
+    }
   },
   "shell": {
     "openLauncher": "Open apps",
@@ -563,7 +589,8 @@
     "movePageDown": "Move down",
     "deletePage": "Delete page",
     "noPanels": "No panel yet",
-    "widgetGallery": "Widget gallery"
+    "widgetGallery": "Widget gallery",
+    "assist": "Assist"
   },
   "panel": {
     "untitled": "Untitled panel",
@@ -587,5 +614,34 @@
     "heightShare": "{value}% of the column",
     "shorter": "Shorter",
     "taller": "Taller"
+  },
+  "assist": {
+    "title": "Assist",
+    "subtitle": "Home assistant",
+    "close": "Close Assist",
+    "newConversation": "New conversation",
+    "inputLabel": "Message for Assist",
+    "placeholder": "Ask a question…",
+    "send": "Send",
+    "micLabel": "Voice input",
+    "micUnavailable": "Voice recognition is not available yet",
+    "thinking": "Assist is thinking…",
+    "you": "You",
+    "assist": "Assist",
+    "emptyTitle": "What can I do for you?",
+    "emptyHint": "Type a request or try a suggestion.",
+    "suggestionsLabel": "Suggestions",
+    "suggestions": {
+      "lights": "Turn on the living room lights",
+      "temperature": "What is the living room temperature?",
+      "lightsOff": "Turn off all the lights"
+    },
+    "noAnswer": "Assist gave no answer.",
+    "targets": "Affected",
+    "errors": {
+      "unreachable": "Home Assistant is unreachable. Check the connection and try again.",
+      "noAgent": "No conversation agent is set up in Home Assistant. Enable Assist under Settings › Voice assistants.",
+      "unknown": "Assist could not process the request. Try again."
+    }
   }
 }

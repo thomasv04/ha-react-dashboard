@@ -256,6 +256,7 @@
     "fitContain": "Contain (entier)",
     "fitFill": "Fill (étiré)",
     "blurBackground": "Fond flou (remplir les bandes)",
+    "pairPortraits": "Deux photos portrait côte à côte",
     "orderRandom": "Aléatoire",
     "orderSequential": "Séquentiel",
     "imageDuration": "Durée par image",
@@ -303,7 +304,22 @@
     "clockLayout": "Heure",
     "clockLarge": "Grande horloge",
     "clockPhoto": "Cadre photo",
-    "editWidgetsAction": "Modifier les widgets"
+    "editWidgetsAction": "Modifier les widgets",
+    "autosave": {
+      "saved": "Enregistré",
+      "saving": "Enregistrement…",
+      "error": "Échec de l'enregistrement",
+      "retry": "Réessayer",
+      "closing": "Enregistrement en cours — les réglages se ferment dès qu'il aboutit.",
+      "closeError": "Les dernières modifications n'ont pas pu être enregistrées."
+    },
+    "preview": {
+      "title": "Aperçu",
+      "label": "Aperçu de l'écran de veille",
+      "show": "Voir la veille",
+      "hint": "L'aperçu suit chaque réglage. Les modifications sont enregistrées automatiquement.",
+      "plan": "Plan"
+    }
   },
   "panelNoneCreated": "Aucun panneau pour l'instant — créez-en un depuis le mode édition.",
   "duplicateWidget": "Dupliquer le widget",
@@ -543,7 +559,17 @@
     "openingUnnamedTitle": "Objet sans nom valide",
     "openingUnnamedHelp": "Sweet Home 3D l'a exporté sans nom : le sien a un accent, ou un signe que le plugin refuse. Dans Sweet Home 3D, double-cliquez-le et changez son « Nom » : son type d'abord, sans accent ni « # » final — Fenetre_Chambre, Porte_Cuisine… —, un nom par ouverture. Puis exportez de nouveau la maquette : il se liera d'un clic.",
     "openingDrawAnyway": "Le dessiner",
-    "openingSingle": "D'un seul tenant : rien ne peut bouger. Dans Sweet Home 3D, retirez le « # » final de son nom."
+    "openingSingle": "D'un seul tenant : rien ne peut bouger. Dans Sweet Home 3D, retirez le « # » final de son nom.",
+    "homePill": "Ma maison",
+    "homeBack": "Revenir à la vue d'ensemble",
+    "filter": "Filtrer les pastilles",
+    "colorWheel": "Roue des couleurs",
+    "filterKind": {
+      "light": "Lumières",
+      "sensor": "Capteurs",
+      "security": "Sécurité",
+      "device": "Appareils"
+    }
   },
   "shell": {
     "openLauncher": "Ouvrir les apps",
@@ -563,7 +589,8 @@
     "movePageDown": "Descendre",
     "deletePage": "Supprimer la page",
     "noPanels": "Aucun panneau pour l’instant",
-    "widgetGallery": "Galerie de widgets"
+    "widgetGallery": "Galerie de widgets",
+    "assist": "Assist"
   },
   "panel": {
     "untitled": "Panneau sans titre",
@@ -587,5 +614,34 @@
     "heightShare": "{value} % de la colonne",
     "shorter": "Moins haut",
     "taller": "Plus haut"
+  },
+  "assist": {
+    "title": "Assist",
+    "subtitle": "Assistant de la maison",
+    "close": "Fermer Assist",
+    "newConversation": "Nouvelle conversation",
+    "inputLabel": "Message pour Assist",
+    "placeholder": "Posez une question…",
+    "send": "Envoyer",
+    "micLabel": "Dictée vocale",
+    "micUnavailable": "La reconnaissance vocale n’est pas encore disponible",
+    "thinking": "Assist réfléchit…",
+    "you": "Vous",
+    "assist": "Assist",
+    "emptyTitle": "Que puis-je faire pour vous ?",
+    "emptyHint": "Écrivez une demande ou essayez une suggestion.",
+    "suggestionsLabel": "Suggestions",
+    "suggestions": {
+      "lights": "Allume les lumières du séjour",
+      "temperature": "Quelle est la température du séjour ?",
+      "lightsOff": "Éteins toutes les lumières"
+    },
+    "noAnswer": "Assist n’a rien répondu.",
+    "targets": "Concerné",
+    "errors": {
+      "unreachable": "Home Assistant est injoignable. Vérifiez la connexion puis réessayez.",
+      "noAgent": "Aucun agent de conversation n’est configuré dans Home Assistant. Activez l’intégration Assist dans Paramètres › Assistants vocaux.",
+      "unknown": "Assist n’a pas pu traiter la demande. Réessayez."
+    }
   }
 }

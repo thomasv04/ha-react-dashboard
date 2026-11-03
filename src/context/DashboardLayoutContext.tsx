@@ -304,11 +304,11 @@ export function DashboardLayoutProvider({ children, initialLayouts, initialAllWi
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isEditMode, undo, redo]);
 
-  const saveLayout = () => {
-    // Cette fonction ne fait plus d'appel réseau.
-    // Le vrai bouton "Sauvegarder" de EditButton lit les variables
-    // et les envoie via useDashboardConfig() !
-  };
+  // Ne fait plus d'appel réseau : « Terminer » (EditButton) lit `allLayouts`
+  // au moment du clic et l'envoie via useDashboardConfig(). Stable d'un rendu à
+  // l'autre — recréée à chaque fois, elle invalidait le `useMemo` de
+  // `layoutValue` et faisait re-rendre tous les consommateurs (#48).
+  const saveLayout = useCallback(() => {}, []);
 
   /** Applique une transformation à la page courante, en un point de retour. */
   const mutate = useCallback(
