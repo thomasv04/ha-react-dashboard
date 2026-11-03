@@ -5,6 +5,8 @@ import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useI18n } from '@/i18n';
+import { useFormats } from '@/hooks/useFormats';
+import { formatPower } from './format-power';
 import { cn, clamp } from '@/lib/utils';
 import type { EnergyFlowCardConfig } from '@/types/widget-configs';
 import { normalizePackState } from '@/lib/battery-state';
@@ -114,11 +116,6 @@ function reversePath(key: NodeKey): string {
   return `M ${elbowX} ${CENTER.y} V ${a.y} H ${a.x}`;
 }
 
-function fmt(w: number): { value: string; unit: string } {
-  if (Math.abs(w) >= 1000) return { value: (w / 1000).toFixed(1).replace('.', ','), unit: 'kW' };
-  return { value: String(Math.round(w)), unit: 'W' };
-}
-
 const num = (s: string | undefined): number => {
   const n = Number.parseFloat(s ?? '');
   return Number.isFinite(n) ? n : 0;
@@ -126,6 +123,7 @@ const num = (s: string | undefined): number => {
 
 export function EnergyFlowCard() {
   const { t } = useI18n();
+  const { locale } = useFormats();
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<EnergyFlowCardConfig>(widgetId || 'energy_flow');
@@ -162,9 +160,9 @@ export function EnergyFlowCard() {
   const COLORS = { solar: 'var(--ds-warm-light)', home: 'var(--ds-cool)', battery: 'var(--ds-good)', grid: 'var(--ds-tile-on)' };
   const INK = { solar: 'var(--ds-warm-light-ink)', home: '#0d1a33', battery: 'var(--ds-good-ink)', grid: '#ffffff' };
 
-  const solarF = fmt(solar);
-  const homeF = fmt(home);
-  const gridF = fmt(Math.abs(grid));
+  const solarF = formatPower(solar, locale);
+  const homeF = formatPower(home, locale);
+  const gridF = formatPower(Math.abs(grid), locale);
 
   // Une seule rangée : le schéma n'a pas la place, on garde les chiffres.
   if (size.squat) {
