@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { apiFetch } from '@/lib/api-base';
 import { templateEngine } from '@/lib/template-engine';
 
@@ -27,6 +27,7 @@ import frHelp from './locales/fr/help.json';
 import frReleaseNotes from './locales/fr/releaseNotes.json';
 
 import type { SupportedLanguage, TranslationKeys } from './types';
+import { I18nContext } from './context';
 import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES } from './types';
 
 export { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE } from './types';
@@ -81,18 +82,6 @@ function resolve(obj: Record<string, unknown>, path: string): string | string[] 
   if (Array.isArray(current)) return current as string[];
   return typeof current === 'string' ? current : path;
 }
-
-interface I18nContextValue {
-  language: SupportedLanguage;
-  setLanguage: (lang: SupportedLanguage) => void;
-  t: (key: string, params?: Record<string, string | number>) => string;
-  tArray: (key: string) => string[];
-  overrides: Record<string, string>;
-  setOverride: (key: string, value: string) => void;
-  removeOverride: (key: string) => void;
-}
-
-const I18nContext = createContext<I18nContextValue | null>(null);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<SupportedLanguage>(detectLanguage);
