@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@hakit/core';
-import { Compass, Layers, LayoutGrid, Pin, PinOff, Settings, Sparkles, type LucideIcon } from 'lucide-react';
+import { Compass, Layers, LayoutGrid, MessageCircle, Pin, PinOff, Settings, Sparkles, type LucideIcon } from 'lucide-react';
 import { usePages } from '@/context/PageContext';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { usePanel } from '@/context/PanelContext';
@@ -11,13 +11,14 @@ import { DURATION_FAST } from '@/lib/motion-tokens';
 import { START_TOUR_EVENT } from '@/components/onboarding/TourOverlay';
 import { SHOW_RELEASE_NOTES_EVENT } from '@/components/onboarding/ReleaseNotesModal';
 import { CustomPanelEditorModal } from '@/components/custom-panels';
+import { AssistSheet } from '@/components/assist/AssistSheet';
 import { AddWidgetModal } from '@/components/layout/AddWidgetModal';
 import { ThemeControlsModal } from '@/components/layout/ThemeControlsModal';
 import { cn } from '@/lib/utils';
 import { pageColor, pageIcon, sortPages } from './page-icon';
 import { useI18n } from '@/i18n';
 
-type Dialog = 'settings' | 'panels' | 'gallery' | null;
+type Dialog = 'settings' | 'panels' | 'gallery' | 'assist' | null;
 
 /**
  * Lanceur d'apps : une feuille qui recouvre l'écran, les pages en favoris à
@@ -119,6 +120,9 @@ export function Launcher({ open, onClose }: { open: boolean; onClose: () => void
                   })}
                   {panels.length === 0 && <p className='py-4 text-[var(--ds-ink-muted)]'>{t('layout.shell.noPanels')}</p>}
 
+                  <LauncherItem Icon={MessageCircle} color='var(--ds-app-photo)' onClick={run(() => setDialog('assist'))}>
+                    {t('layout.shell.assist')}
+                  </LauncherItem>
                   {isAdmin && (
                     <LauncherItem Icon={LayoutGrid} color='var(--ds-app-home)' onClick={run(() => setDialog('gallery'))}>
                       {t('layout.shell.widgetGallery')}
@@ -153,6 +157,7 @@ export function Launcher({ open, onClose }: { open: boolean; onClose: () => void
         )}
       </AnimatePresence>
 
+      <AssistSheet open={dialog === 'assist'} onClose={() => setDialog(null)} />
       <ThemeControlsModal open={dialog === 'settings'} onClose={() => setDialog(null)} />
       <AnimatePresence>{dialog === 'gallery' && <AddWidgetModal onClose={() => setDialog(null)} />}</AnimatePresence>
       <AnimatePresence>{dialog === 'panels' && <CustomPanelEditorModal onClose={() => setDialog(null)} />}</AnimatePresence>
