@@ -11,6 +11,8 @@ import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { cn } from '@/lib/utils';
 import { friendlyName } from '@/lib/ha-service';
 import { PillSlider } from '@/components/ds/PillSlider';
+import { useHaUrl } from '@/hooks/useHaUrl';
+import { isMediaOff } from '@/lib/media-player';
 
 interface PlayerProps {
   name: string;
@@ -51,7 +53,7 @@ function Controls({
   const { t } = useI18n();
   const side = cn('flex shrink-0 items-center justify-center rounded-full', big ? 'size-12' : 'size-10');
   return (
-    <div className='flex shrink-0 items-center gap-2'>
+    <div className='flex shrink-0 items-center gap-2' onClick={e => e.stopPropagation()}>
       <button onClick={onPrev} aria-label={t('widgets.media_player.previous')} title={t('widgets.media_player.previous')} className={side}>
         <SkipBack size={big ? 22 : 18} fill='currentColor' />
       </button>
@@ -91,14 +93,16 @@ function Volume({ volume, onVolume }: Pick<PlayerProps, 'volume' | 'onVolume'>) 
   const { t } = useI18n();
   const pct = Math.round(volume * 100);
   return (
-    <PillSlider
-      value={pct}
-      onChange={v => onVolume(v / 100)}
-      label={t('widgets.media_player.volume')}
-      valueText={`${pct} %`}
-      icon={Volume2}
-      className='h-11 shrink-0'
-    />
+    <div onClick={e => e.stopPropagation()} className='shrink-0'>
+      <PillSlider
+        value={pct}
+        onChange={v => onVolume(v / 100)}
+        label={t('widgets.media_player.volume')}
+        valueText={`${pct} %`}
+        icon={Volume2}
+        className='h-11'
+      />
+    </div>
   );
 }
 
@@ -170,6 +174,7 @@ export function MediaPlayerCard() {
   const entity = useSafeEntity(entityId);
   const helpers = useHass(s => s.helpers);
   const playFeedback = useSoundFeedback();
+  const resolveUrl = useHaUrl();
 
   const haVolume = (entity?.attributes.volume_level as number | undefined) ?? 0;
   const [localVolume, setLocalVolume] = useState<number | null>(null);
@@ -197,13 +202,12 @@ export function MediaPlayerCard() {
 
   const state = entity.state as string;
   const isPlaying = state === 'playing';
-  const isOff = state === 'off' || state === 'unavailable' || state === 'standby';
+  const isOff = isMediaOff(state);
 
   const attrs = entity.attributes as Record<string, unknown>;
   const title = attrs.media_title as string | undefined;
   const artist = attrs.media_artist as string | undefined;
-  const rawCover = attrs.entity_picture as string | undefined;
-  const cover = rawCover ? (rawCover.startsWith('http') ? rawCover : `http://homeassistant.local:8123${rawCover}`) : undefined;
+  const cover = resolveUrl(attrs.entity_picture as string | undefined);
   const position = (attrs.media_position as number | undefined) ?? 0;
   const duration = (attrs.media_duration as number | undefined) ?? 0;
   const volume = localVolume ?? haVolume;

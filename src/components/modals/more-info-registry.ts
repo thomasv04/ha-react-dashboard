@@ -15,6 +15,7 @@ export const MORE_INFO_COMPONENTS: Record<
   automation: lazy(() => import('./AutomationMoreInfo')),
   energy: lazy(() => import('./EnergyMoreInfo')),
   template: lazy(() => import('./TemplateMoreInfo')),
+  media_player: lazy(() => import('./MediaPlayerMoreInfo')),
 };
 
 export const MORE_INFO_WIDGET_TYPES = Object.keys(MORE_INFO_COMPONENTS);
@@ -28,7 +29,6 @@ const DOMAIN_TO_MODAL: Record<string, string> = {
   binary_sensor: 'sensor',
   input_boolean: 'sensor',
   switch: 'sensor',
-  media_player: 'sensor',
   sun: 'sensor',
 };
 

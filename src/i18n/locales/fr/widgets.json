@@ -277,7 +277,20 @@
     "next": "Morceau suivant",
     "play": "Lecture",
     "pause": "Pause",
-    "volume": "Volume"
+    "volume": "Volume",
+    "shuffle": "Lecture aléatoire",
+    "repeat": "Répétition",
+    "repeatOff": "Répétition désactivée",
+    "repeatAll": "Répéter tout",
+    "repeatOne": "Répéter ce titre",
+    "mute": "Couper le son",
+    "unmute": "Rétablir le son",
+    "source": "Sortie / source",
+    "playlist": "Liste de lecture",
+    "position": "Progression",
+    "nothingPlaying": "Aucune lecture en cours",
+    "album": "Album",
+    "unknownTitle": "Titre inconnu"
   },
   "person": {
     "label": "Personnes",
