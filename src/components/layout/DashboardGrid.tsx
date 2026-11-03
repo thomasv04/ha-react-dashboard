@@ -3,7 +3,7 @@ import { useState, useEffect, useLayoutEffect, useRef, createContext, useContext
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { GripVertical, Minus, Pencil, Plus, SlidersHorizontal, Trash2 } from 'lucide-react';
-import { useUser } from '@hakit/core';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { Sheet } from '@/components/ds/Sheet';
 import { SwitchTrack } from '@/components/ds/Switch';
 import { staggerGridContainer, staggerGridItem } from '@/lib/motion-variants';
@@ -16,6 +16,9 @@ import {
   GRID_ROW,
   PANEL_COLS_MAX,
   PANEL_COLS_MIN,
+  PANEL_SHARE_MIN,
+  PANEL_SHARE_MAX,
+  weightForShare,
   colsThatFit,
   colsWidth,
   findWidget,
@@ -34,6 +37,7 @@ import { useCardActions } from '@/hooks/useCardActions';
 import type { CardActionsConfig } from '@/types/card-actions';
 import { isVisible, visibilityEntityIds, type CardVisibilityConfig } from '@/types/card-visibility';
 import { matchStateStyle, stateStyleEntityIds, type CardStateStylesConfig } from '@/types/card-state-styles';
+import type { CardAppearanceConfig } from '@/types/card-appearance';
 import { useEntities } from '@/hooks/useEntities';
 import { useI18n } from '@/i18n';
 import { clamp, cn } from '@/lib/utils';
@@ -533,6 +537,8 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
                       cols={Math.min(head.cols, fit)}
                       // Part de la hauteur de la colonne, hors panneau seul.
                       share={column.length > 1 ? Math.round(((panel.weight ?? 1) / total) * 100) : undefined}
+                      // Poids des autres panneaux de la colonne : la part saisie à la main s'en déduit.
+                      others={column.length > 1 ? total - (panel.weight ?? 1) : undefined}
                       stacked={stacked}
                       readonly={!!readonly}
                       mode={map ? 'map' : isEditMode && editPanelId === panel.id ? 'edit' : 'view'}
@@ -607,6 +613,7 @@ function PanelSection({
   panel,
   cols,
   share,
+  others,
   stacked,
   readonly,
   mode,
@@ -617,6 +624,7 @@ function PanelSection({
   cols: number;
   /** Part de la hauteur de sa colonne, en % — absente d'un panneau seul. */
   share?: number;
+  others?: number;
   stacked: boolean;
   readonly: boolean;
   /** `map` : la carte des panneaux, tuiles en vignettes ; `edit` : ses tuiles en édition. */
@@ -626,7 +634,7 @@ function PanelSection({
   first: boolean;
 }) {
   const { t } = useI18n();
-  const isAdmin = !!useUser()?.is_admin;
+  const isAdmin = useIsAdmin();
   const { dropTarget, draggingId, panelDrag, startPanelDrag } = useGridCtx();
   const [adding, setAdding] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -770,7 +778,14 @@ function PanelSection({
           </div>
         </section>
         <AnimatePresence>{adding && <AddWidgetModal panelId={panel.id} onClose={() => setAdding(false)} />}</AnimatePresence>
-        <PanelSettings panel={panel} open={settingsOpen} onClose={() => setSettingsOpen(false)} first={first} share={share} />
+        <PanelSettings
+          panel={panel}
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          first={first}
+          share={share}
+          others={others}
+        />
       </PanelEditCtx.Provider>
     </PanelColsCtx.Provider>
   );
@@ -813,6 +828,59 @@ function Stepper({
   );
 }
 
+/** Hauteur d'un panneau : −/+ pour un cran, ou un pourcentage saisi à la main. */
+function HeightRow({
+  share,
+  onStep,
+  onType,
+  min,
+  max,
+}: {
+  share: number;
+  onStep: (delta: number) => void;
+  onType: (share: number) => void;
+  min: boolean;
+  max: boolean;
+}) {
+  const { t } = useI18n();
+  const commit = (input: HTMLInputElement) => {
+    const typed = Math.round(Number(input.value));
+    // Illisible ou vide : on garde la part actuelle plutôt que de la deviner.
+    const next = input.value === '' || !Number.isFinite(typed) ? share : Math.min(PANEL_SHARE_MAX, Math.max(PANEL_SHARE_MIN, typed));
+    input.value = String(next);
+    if (next !== share) onType(next);
+  };
+  return (
+    <div className={SETTING_ROW}>
+      <span className='text-[15px] font-bold'>{t('layout.panel.height')}</span>
+      <div className='flex items-center gap-2'>
+        <button onClick={() => onStep(-1)} disabled={min} aria-label={t('layout.panel.shorter')} className={ROUND}>
+          <Minus size={18} />
+        </button>
+        <span className='flex items-center gap-1 text-sm tabular-nums'>
+          {/* `key` : la valeur suit les boutons − et +, la saisie ne la réécrit qu'à la validation. */}
+          <input
+            key={share}
+            type='number'
+            inputMode='numeric'
+            min={PANEL_SHARE_MIN}
+            max={PANEL_SHARE_MAX}
+            defaultValue={share}
+            aria-label={t('layout.panel.heightInput')}
+            onBlur={e => commit(e.currentTarget)}
+            onKeyDown={e => e.key === 'Enter' && e.currentTarget.blur()}
+            className='h-9 w-14 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] text-center font-semibold outline-none'
+          />
+          {t('layout.panel.heightSuffix')}
+        </span>
+        <button onClick={() => onStep(1)} disabled={max} aria-label={t('layout.panel.taller')} className={ROUND}>
+          <Plus size={18} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /** Réglages d'un panneau, dans une feuille : titre, largeur, hauteur, colonne, suppression. */
 function PanelSettings({
   panel,
@@ -820,12 +888,14 @@ function PanelSettings({
   onClose,
   first,
   share,
+  others,
 }: {
   panel: LayoutPanel;
   open: boolean;
   onClose: () => void;
   first: boolean;
   share?: number;
+  others?: number;
 }) {
   const { t } = useI18n();
   const { updatePanel, removePanel } = useDashboardLayout();
@@ -858,15 +928,13 @@ function PanelSettings({
           />
         )}
 
-        {share !== undefined && (
-          <Stepper
-            label={t('layout.panel.height')}
-            value={t('layout.panel.heightShare', { value: share })}
-            onChange={d => updatePanel(panel.id, { weight: weight + d })}
+        {share !== undefined && others !== undefined && (
+          <HeightRow
+            share={share}
+            onStep={d => updatePanel(panel.id, { weight: weight + d })}
+            onType={value => updatePanel(panel.id, { weight: weightForShare(value, others) })}
             min={weight <= 1}
             max={weight >= 6}
-            less={t('layout.panel.shorter')}
-            more={t('layout.panel.taller')}
           />
         )}
 
@@ -1047,7 +1115,8 @@ export function GridItem({
   //
   // Un seul abonnement pour les deux : ce sont le plus souvent les mêmes
   // entités, et deux abonnements doubleraient les rendus sans rien apporter.
-  const conditionalConfig = getWidgetConfig(id) as (Record<string, unknown> & CardVisibilityConfig & CardStateStylesConfig) | undefined;
+  const conditionalConfig = getWidgetConfig(id) as
+    (Record<string, unknown> & CardVisibilityConfig & CardStateStylesConfig & CardAppearanceConfig) | undefined;
   const visibility = conditionalConfig?.visibility;
   const stateStyles = conditionalConfig?.stateStyles;
 
@@ -1095,6 +1164,8 @@ export function GridItem({
     opacity: isDragging ? 0.4 : visible ? 1 : 0.35,
     transition: 'opacity 0.2s ease, box-shadow 0.2s ease',
     boxShadow: isDropTarget ? '-6px 0 0 0 var(--ds-accent)' : isSelected ? '0 0 0 3px var(--ds-accent)' : 'none',
+    // Sans fond : le gris que les cards se partagent devient transparent sous cette tuile.
+    ...(conditionalConfig?.noBackground ? ({ '--ds-surface-2': 'transparent' } as React.CSSProperties) : {}),
   };
 
   return (

@@ -47,6 +47,9 @@
   "selectionHint": "Maj+clic pour sélectionner plusieurs cartes",
   "done": "Terminer",
   "doneTooltip": "Enregistrer et terminer",
+  "guestView": "Vue invité",
+  "guestViewEnter": "Voir comme un invité (sans les outils d'édition)",
+  "guestViewExit": "Quitter la vue invité",
   "discardTooltip": "Abandonner les modifications",
   "discardConfirm": "Abandonner ?",
   "backToLayout": "Disposition"

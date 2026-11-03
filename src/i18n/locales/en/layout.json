@@ -68,6 +68,7 @@
   },
   "livePreview": "Live preview",
   "noPreviewAvailable": "No preview available",
+  "noBackground": "No background (the card sits on the panel)",
   "cancel": "Cancel",
   "apply": "Apply",
   "chooseEntity": "Choose an entity",
@@ -611,7 +612,8 @@
     "width_label": "Width",
     "drag": "Move panel",
     "height": "Height",
-    "heightShare": "{value}% of the column",
+    "heightSuffix": "% of the column",
+    "heightInput": "Panel height as a percentage of the column",
     "shorter": "Shorter",
     "taller": "Taller"
   },

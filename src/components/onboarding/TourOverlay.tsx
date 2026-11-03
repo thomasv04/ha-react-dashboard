@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useI18n } from '@/i18n';
-import { useUser } from '@hakit/core';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useEditMode } from '@/context/DashboardLayoutContext';
 import { usePages } from '@/context/PageContext';
 
@@ -126,13 +126,12 @@ export function TourOverlay({ tourId, onClose }: { tourId: TourId; onClose: () =
   const { t } = useI18n();
   const { isEditMode, setEditMode } = useEditMode();
   const { pages, currentPage, setCurrentPage } = usePages();
-  const user = useUser();
   const [index, setIndex] = useState(0);
   const [box, setBox] = useState<Box | null>(null);
 
   // Un non-administrateur n'a pas de mode édition : les étapes qui en dépendent
   // sont retirées, sinon leur `setup` le lui ouvrirait.
-  const isAdmin = !!user?.is_admin;
+  const isAdmin = useIsAdmin();
   const steps = (TOURS[tourId] ?? TOURS.basics).filter(s => isAdmin || !s.adminOnly);
   const step = steps[index];
 

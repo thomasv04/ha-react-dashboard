@@ -15,6 +15,21 @@ export const PANEL_COLS_MIN = 2;
 export const PANEL_COLS_MAX = 12;
 export const PANEL_COLS_DEFAULT = 6;
 
+/** Part de la colonne qu'un panneau peut occuper, en pourcentage. */
+export const PANEL_SHARE_MIN = 10;
+export const PANEL_SHARE_MAX = 90;
+
+/**
+ * Poids d'un panneau pour qu'il occupe `share` % de sa colonne, les autres
+ * gardant les leurs (`others` en est la somme). Les poids sont relatifs et
+ * `flex-grow` accepte les décimales : une part saisie à la main est exacte,
+ * là où des poids entiers ne donneraient que quelques parts possibles.
+ */
+export function weightForShare(share: number, others: number): number {
+  const s = Math.min(PANEL_SHARE_MAX, Math.max(PANEL_SHARE_MIN, share));
+  return Math.round(((s * others) / (100 - s)) * 100) / 100;
+}
+
 /** Largeur en px de `cols` colonnes de la trame. */
 export const colsWidth = (cols: number) => cols * GRID_COL + (cols - 1) * GRID_GAP;
 

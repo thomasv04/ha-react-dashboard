@@ -47,6 +47,9 @@
   "selectionHint": "Shift+click to select multiple cards",
   "done": "Done",
   "doneTooltip": "Save and finish",
+  "guestView": "Guest view",
+  "guestViewEnter": "View as a guest (without the editing tools)",
+  "guestViewExit": "Leave guest view",
   "discardTooltip": "Discard changes",
   "discardConfirm": "Discard?",
   "backToLayout": "Layout"
