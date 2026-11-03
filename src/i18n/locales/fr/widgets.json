@@ -1030,6 +1030,8 @@
     "jammed": "Bloquée",
     "confirmUnlock": "Appuyer pour confirmer",
     "openAction": "OUVRIR",
+    "tapToUnlock": "Touchez pour déverrouiller",
+    "tapToLock": "Touchez pour verrouiller",
     "fields": {
       "entityId": {
         "label": "Serrure"
