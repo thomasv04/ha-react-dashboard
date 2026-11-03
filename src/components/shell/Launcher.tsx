@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUser } from '@hakit/core';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { Compass, Layers, LayoutGrid, MessageCircle, Pin, PinOff, Settings, Sparkles, type LucideIcon } from 'lucide-react';
 import { usePages } from '@/context/PageContext';
 import { useCustomPanels } from '@/context/CustomPanelContext';
@@ -28,7 +28,7 @@ type Dialog = 'settings' | 'panels' | 'gallery' | 'assist' | null;
 export function Launcher({ open, onClose }: { open: boolean; onClose: () => void }) {
   useIconCatalog();
   const { t } = useI18n();
-  const isAdmin = !!useUser()?.is_admin;
+  const isAdmin = useIsAdmin();
   const { pages, setCurrentPage } = usePages();
   const { panels, dock, setDock } = useCustomPanels();
   const { openPanel } = usePanel();

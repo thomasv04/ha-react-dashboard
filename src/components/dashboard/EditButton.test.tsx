@@ -1,13 +1,14 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+const editMock = vi.hoisted(() => ({ isEditMode: true }));
 const setEditMode = vi.fn();
 const saveConfig = vi.fn();
 
 vi.mock('@hakit/core', () => ({ useUser: () => ({ is_admin: true }) }));
 vi.mock('@/context/DashboardLayoutContext', () => ({
-  useEditMode: () => ({ isEditMode: true, setEditMode }),
+  useEditMode: () => ({ isEditMode: editMock.isEditMode, setEditMode, editPanelId: null, setEditPanelId: vi.fn() }),
   useDashboardLayout: () => ({
     saveLayout: vi.fn(),
     allLayouts: {},
@@ -31,6 +32,7 @@ vi.mock('@/hooks/useIsMobile', () => ({ useIsMobile: () => false }));
 vi.mock('@/hooks/useDashboardConfig', () => ({ useDashboardConfig: () => ({ saveConfig, isSaving: false }) }));
 
 import { EditButton } from './EditButton';
+import { setGuestPreview } from '@/hooks/useIsAdmin';
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -52,5 +54,38 @@ describe('EditButton — sauvegarde', () => {
     await userEvent.click(screen.getByTitle('dashboard.doneTooltip'));
 
     expect(setEditMode).toHaveBeenCalledWith(false);
+  });
+});
+
+describe('EditButton — vue invité', () => {
+  beforeEach(() => {
+    editMock.isEditMode = false;
+  });
+  afterEach(() => {
+    act(() => setGuestPreview(false));
+    editMock.isEditMode = true;
+  });
+
+  it('propose le crayon et l’œil à un administrateur', () => {
+    render(<EditButton />);
+    expect(screen.getByTitle('dashboard.editTooltipEnter')).toBeDefined();
+    expect(screen.getByTestId('guest-view-toggle').getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('en vue invité, le crayon disparaît et l’œil reste pour en sortir', async () => {
+    render(<EditButton />);
+    await userEvent.click(screen.getByTestId('guest-view-toggle'));
+
+    expect(screen.queryByTitle('dashboard.editTooltipEnter')).toBeNull();
+    expect(screen.getByTestId('guest-view-toggle').getAttribute('aria-pressed')).toBe('true');
+
+    await userEvent.click(screen.getByTestId('guest-view-toggle'));
+    expect(screen.getByTitle('dashboard.editTooltipEnter')).toBeDefined();
+  });
+
+  it('n’offre pas la vue invité pendant l’édition', () => {
+    editMock.isEditMode = true;
+    render(<EditButton />);
+    expect(screen.queryByTestId('guest-view-toggle')).toBeNull();
   });
 });

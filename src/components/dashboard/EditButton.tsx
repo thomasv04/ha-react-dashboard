@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION_FAST } from '@/lib/motion-tokens';
-import { PencilLine, Check, X, Plus, Loader2, HelpCircle, Undo2, Redo2, Trash2, ChevronLeft } from 'lucide-react';
-import { useUser } from '@hakit/core';
+import { PencilLine, Check, X, Plus, Loader2, HelpCircle, Undo2, Redo2, Trash2, ChevronLeft, Eye } from 'lucide-react';
+import { useRealAdmin, useIsAdmin, useGuestPreview, setGuestPreview } from '@/hooks/useIsAdmin';
 import { useDashboardLayout, useEditMode } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { usePages } from '@/context/PageContext';
@@ -17,9 +17,11 @@ import { useTheme } from '@/context/ThemeContext';
 import { EDIT_PANEL_EVENT } from '@/lib/panel-grid';
 import { cn } from '@/lib/utils';
 
+/** Barre d'actions, à droite du bouton du lanceur. */
+const EDIT_BAR = 'fixed top-[30px] left-[96px] sm:left-[116px] right-4 z-50 flex flex-wrap items-center gap-2 pointer-events-none';
+
 export function EditButton() {
   const { t } = useI18n();
-  const user = useUser();
   const { isEditMode, setEditMode, editPanelId, setEditPanelId } = useEditMode();
   const { saveLayout, allLayouts, undo, redo, canUndo, canRedo, removeWidgets, addPanel } = useDashboardLayout();
   const { allWidgetConfigsByPage } = useWidgetConfig();
@@ -53,7 +55,10 @@ export function EditButton() {
     return () => clearTimeout(id);
   }, [confirmingDiscard]);
 
-  const isAdmin = !!user?.is_admin;
+  // `realAdmin` : le compte. `isAdmin` : ce qu'on montre — faux en vue invité.
+  const realAdmin = useRealAdmin();
+  const isAdmin = useIsAdmin();
+  const guestView = useGuestPreview();
 
   /**
    * Entrée en édition, éventuellement derrière un code.
@@ -80,7 +85,27 @@ export function EditButton() {
     return () => window.removeEventListener(EDIT_PANEL_EVENT, onEditPanel);
   }, [isAdmin, isEditMode, enterEditMode, setEditPanelId]);
 
-  if (!isAdmin) return null;
+  if (!realAdmin) return null;
+
+  // Aperçu de ce que voit un non-administrateur. Le bouton reste le seul outil
+  // affiché, pour en sortir ; il n'existe pas en édition, où la vue ne changerait rien.
+  const guestToggle = (
+    <button
+      onClick={() => setGuestPreview(!guestView)}
+      data-testid='guest-view-toggle'
+      aria-pressed={guestView}
+      title={guestView ? t('dashboard.guestViewExit') : t('dashboard.guestViewEnter')}
+      aria-label={guestView ? t('dashboard.guestViewExit') : t('dashboard.guestViewEnter')}
+      className={cn(
+        'pointer-events-auto flex h-[52px] items-center justify-center gap-2 rounded-full text-[17px] font-semibold transition-colors',
+        guestView ? 'bg-[var(--ds-tile-on)] px-6 text-[var(--ds-tile-on-ink)]' : 'w-[52px] bg-[var(--ds-surface-3)] text-[var(--ds-ink)]'
+      )}
+    >
+      <Eye size={20} />
+      {guestView && <span className='hidden sm:inline'>{t('dashboard.guestView')}</span>}
+    </button>
+  );
+  if (guestView) return <div className={EDIT_BAR}>{guestToggle}</div>;
 
   const submitPin = () => {
     if (pinEntry !== behaviourSettings.editPin) return setPinWrong(true);
@@ -125,7 +150,7 @@ export function EditButton() {
           sur une fenêtre étroite les actions d'édition repassent à la ligne au
           lieu de recouvrir l'heure. Le conteneur laisse passer les clics, seuls
           les boutons les captent. */}
-      <div className='fixed top-[30px] left-[96px] sm:left-[116px] right-4 z-50 flex flex-wrap items-center gap-2 pointer-events-none'>
+      <div className={EDIT_BAR}>
         {/* Bouton toggle édition */}
         {/* Hors édition, le crayon ; en édition, « Terminer » : il enregistre et
             quitte, comme le « Terminé » d'Amazon — un seul geste évident. */}
@@ -151,6 +176,8 @@ export function EditButton() {
           {isEditMode ? isSaving ? <Loader2 size={20} className='animate-spin' /> : <Check size={20} /> : <PencilLine size={20} />}
           {isEditMode && <span className='hidden sm:inline'>{isSaving ? t('dashboard.saving') : t('dashboard.done')}</span>}
         </motion.button>
+
+        {!isEditMode && guestToggle}
 
         <AnimatePresence>
           {isEditMode && (

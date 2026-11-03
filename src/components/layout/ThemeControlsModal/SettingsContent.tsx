@@ -1,6 +1,6 @@
 import { useState, type MutableRefObject } from 'react';
 import { Palette, Zap, Languages, Server, LayoutGrid, Volume2, Globe, Monitor, X, type LucideIcon } from 'lucide-react';
-import { useUser } from '@hakit/core';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { WallPanelSettings } from '@/components/wallpanel/WallPanelSettings';
 import { AppearanceSection } from './AppearanceSection';
 import { PerformanceSection } from './PerformanceSection';
@@ -29,7 +29,7 @@ const SECTION_COLORS: Record<SettingsSection, string> = {
 
 export function SettingsContent({ onClose, guard }: { onClose: () => void; guard: MutableRefObject<(() => boolean) | null> }) {
   const { t } = useI18n();
-  const isAdmin = !!useUser()?.is_admin;
+  const isAdmin = useIsAdmin();
   const [section, setSection] = useState<SettingsSection>('appearance');
   // L'écran de veille garde son brouillon quand on change de section : il reste monté une fois ouvert.
   const [wallpanelSeen, setWallpanelSeen] = useState(false);
