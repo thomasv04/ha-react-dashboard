@@ -4,7 +4,8 @@ import { X, Loader2 } from 'lucide-react';
 import { useMoreInfo } from '@/context/MoreInfoContext';
 import { MoreInfoReadyContext } from '@/context/MoreInfoReadyContext';
 import { useI18n } from '@/i18n';
-import { MORE_INFO_COMPONENTS } from './more-info-registry';
+import { cn } from '@/lib/utils';
+import { MORE_INFO_COMPONENTS, MORE_INFO_FULLSCREEN } from './more-info-registry';
 
 /**
  * Le panneau d'appareil de l'Echo Show : une feuille qui glisse depuis la
@@ -38,7 +39,12 @@ export function MoreInfoModal() {
             data-testid='more-info-modal'
             role='dialog'
             aria-modal='true'
-            className='absolute bottom-4 right-4 top-4 flex w-[min(calc(100vw-2rem),560px)] flex-col overflow-hidden rounded-[var(--ds-radius-2xl)] bg-[var(--ds-sheet)] text-[var(--ds-ink)] shadow-[var(--ds-shadow-sheet)] sm:bottom-10 sm:right-12 sm:top-10'
+            className={cn(
+              'absolute flex flex-col overflow-hidden rounded-[var(--ds-radius-2xl)] bg-[var(--ds-sheet)] text-[var(--ds-ink)] shadow-[var(--ds-shadow-sheet)]',
+              MORE_INFO_FULLSCREEN.has(state.widgetType)
+                ? 'inset-4 sm:inset-8'
+                : 'bottom-4 right-4 top-4 w-[min(calc(100vw-2rem),560px)] sm:bottom-10 sm:right-12 sm:top-10'
+            )}
             onClick={e => e.stopPropagation()}
             initial={{ x: '110%' }}
             animate={{ x: 0 }}

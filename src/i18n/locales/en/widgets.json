@@ -1045,6 +1045,22 @@
       "max": {
         "label": "Number of events"
       }
+    },
+    "moreInfo": {
+      "title": "Calendar",
+      "today": "Today",
+      "changeView": "Change view",
+      "viewMonth": "Month view",
+      "viewDay": "Day view",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "prevDay": "Previous day",
+      "nextDay": "Next day",
+      "add": "Add event (coming soon)",
+      "noEvents": "No events this day",
+      "allDay": "All day",
+      "untitled": "Untitled",
+      "hasEvents": "{count} event(s)"
     }
   },
   "todo": {
