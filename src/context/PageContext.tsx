@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import type { FloorplanCable, FloorplanPart, FloorplanRoom, FloorplanSolar } from '@/lib/floorplan';
 import type { FloorplanOpenings } from '@/lib/floorplan-openings';
 
@@ -135,6 +135,21 @@ export function PageProvider({ children, initialPages }: PageProviderProps) {
   const [currentPageId, setCurrentPageId] = useState<string>(
     initialPages && initialPages.length > 0 ? (initialPages[0]?.id ?? 'home') : 'home'
   );
+
+  // `initialPages` change quand le serveur répond après un affichage depuis le
+  // cache (ou depuis les pages par défaut, si l'on a passé l'écran de chargement).
+  // Sans cette synchro, la barre d'onglets restait celle du cache — et un
+  // enregistrement renvoyait cette liste périmée au serveur, effaçant les pages
+  // ajoutées, supprimées ou renommées depuis un autre appareil.
+  // Comme les autres providers : sans effet si la prop est absente ou vide.
+  useEffect(() => {
+    if (!initialPages || initialPages.length === 0) return;
+    setPages(initialPages);
+    // La page courante disparue : on revient à la première, celle que vise déjà le
+    // retour automatique à l'accueil (`deletePage` vise `home`, qu'une config du
+    // serveur n'a pas forcément).
+    setCurrentPageId(prev => (initialPages.some(p => p.id === prev) ? prev : (initialPages[0]?.id ?? 'home')));
+  }, [initialPages]);
 
   const [shownPageId, showPage] = useState<string | null>(null);
   const visiblePageId = shownPageId && pages.some(p => p.id === shownPageId) ? shownPageId : currentPageId;
