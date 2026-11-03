@@ -41,14 +41,65 @@ export function useEntity(entityId: EntityName): EntityState {
   return ENTITIES[entityId] ?? DEFAULT_ENTITY;
 }
 
+// ─── Connexion simulée ──────────────────────────────────────────────────────
+// Seul `calendar.get_events` répond (des évènements autour d'aujourd'hui, pour
+// voir l'agenda et le tester). Tout le reste est rejeté : les hooks qui lisent
+// la connexion (historique, traductions d'états…) gèrent déjà ce refus.
+
+const pad2 = (n: number) => String(n).padStart(2, '0');
+const localIso = (d: Date, h: number, m = 0) =>
+  `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(h)}:${pad2(m)}:00`;
+const localDate = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+function mockCalendarEvents(entityId: string) {
+  const day = (offset: number) => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() + offset);
+  };
+  if (entityId === 'calendar.travail') {
+    return [
+      { summary: 'Réunion équipe', start: localIso(day(0), 14), end: localIso(day(0), 15) },
+      { summary: 'Point projet', start: localIso(day(2), 10, 30), end: localIso(day(2), 11, 30) },
+      { summary: 'Séminaire', start: localDate(day(5)), end: localDate(day(7)) },
+    ];
+  }
+  return [
+    { summary: 'Rendez-vous médecin', start: localIso(day(0), 8, 15), end: localIso(day(0), 9) },
+    { summary: 'Football', start: localIso(day(0), 16), end: localIso(day(0), 17) },
+    { summary: 'Anniversaire de Léa', start: localDate(day(1)), end: localDate(day(2)) },
+    { summary: 'Cinéma', start: localIso(day(3), 20, 30), end: localIso(day(3), 22, 30) },
+    { summary: 'Poubelles', start: localIso(day(-1), 19), end: localIso(day(-1), 19, 30) },
+  ];
+}
+
+const mockConnection = {
+  // Aucun évènement ne circule : on rend un désabonnement inerte.
+  subscribeEvents: async (_callback: unknown, _eventType?: string) => () => {},
+  sendMessagePromise: async (msg: { type?: string; service?: string; domain?: string; target?: { entity_id?: string[] } }) => {
+    if (msg.type === 'call_service' && msg.domain === 'calendar' && msg.service === 'get_events') {
+      const response: Record<string, { events: unknown[] }> = {};
+      for (const id of msg.target?.entity_id ?? []) response[id] = { events: mockCalendarEvents(id) };
+      return { response };
+    }
+    throw new Error('mock: message non pris en charge');
+  },
+};
+
 interface HassState {
   entities: typeof ENTITIES;
+  connection: typeof mockConnection;
   helpers: typeof mockHelpers;
   formatter: typeof mockFormatter;
   config: typeof mockConfig;
 }
 
-const STATE: HassState = { entities: ENTITIES, helpers: mockHelpers, formatter: mockFormatter, config: mockConfig };
+const STATE: HassState = {
+  entities: ENTITIES,
+  connection: mockConnection,
+  helpers: mockHelpers,
+  formatter: mockFormatter,
+  config: mockConfig,
+};
 
 export function useHass(): HassState;
 export function useHass<T>(selector: (s: HassState) => T): T;

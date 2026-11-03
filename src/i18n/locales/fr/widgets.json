@@ -1058,6 +1058,22 @@
       "max": {
         "label": "Nombre d'évènements"
       }
+    },
+    "moreInfo": {
+      "title": "Calendrier",
+      "today": "Aujourd'hui",
+      "changeView": "Changer de vue",
+      "viewMonth": "Vue mensuelle",
+      "viewDay": "Vue journée",
+      "prevMonth": "Mois précédent",
+      "nextMonth": "Mois suivant",
+      "prevDay": "Jour précédent",
+      "nextDay": "Jour suivant",
+      "add": "Ajouter un évènement (bientôt)",
+      "noEvents": "Aucun évènement ce jour",
+      "allDay": "Toute la journée",
+      "untitled": "Sans titre",
+      "hasEvents": "{count} évènement(s)"
     }
   },
   "todo": {
