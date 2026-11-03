@@ -20,6 +20,7 @@ export function DeviceTile({
   onToggle,
   onMore,
   moreLabel,
+  moreAt = 'top',
   layout = 'stack',
   children,
   className,
@@ -31,6 +32,8 @@ export function DeviceTile({
   onToggle: () => void;
   onMore?: () => void;
   moreLabel?: string;
+  /** Coin du menu ⋮ : en haut, ou en bas — la tuile compacte de l'Echo Show l'y place. */
+  moreAt?: 'top' | 'bottom';
   layout?: 'stack' | 'row';
   children?: ReactNode;
   className?: string;
@@ -68,7 +71,10 @@ export function DeviceTile({
           onClick={onMore}
           aria-label={moreLabel}
           title={moreLabel}
-          className='absolute right-1 top-1 flex size-11 items-center justify-center rounded-full'
+          className={cn(
+            'absolute right-1 flex size-11 items-center justify-center rounded-full',
+            moreAt === 'bottom' ? 'bottom-1' : 'top-1'
+          )}
         >
           <MoreVertical size={18} />
         </button>

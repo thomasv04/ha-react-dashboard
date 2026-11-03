@@ -11,6 +11,8 @@ import type { LockCardConfig } from '@/types/widget-configs';
 import { friendlyName } from '@/lib/ha-service';
 import { DeviceTile } from '@/components/ds/DeviceTile';
 import { Chip } from '@/components/ds/Chip';
+import { Sheet } from '@/components/ds/Sheet';
+import { BUTTON_PRIMARY, BUTTON_SECONDARY } from '@/components/layout/ThemeControlsModal/controls';
 import { cn } from '@/lib/utils';
 
 /** `LockEntityFeature.OPEN` — le pêne peut être escamoté (gâche électrique) */
@@ -32,6 +34,7 @@ export function LockCard() {
   const helpers = useHass(s => s.helpers);
   const playFeedback = useSoundFeedback();
   const [confirming, setConfirming] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   // La confirmation retombe seule : une card laissée « armée » sur un mur
   // finirait par déverrouiller sur un frôlement.
@@ -156,10 +159,42 @@ export function LockCard() {
 
   return (
     <div ref={cardRef} className='h-full'>
-      <DeviceTile name={name} state={label} icon={StateIcon} active={secured} onToggle={handleToggle} layout={size.squat ? 'row' : 'stack'}>
+      <DeviceTile
+        name={name}
+        state={label}
+        icon={StateIcon}
+        active={secured}
+        onToggle={handleToggle}
+        layout={size.squat ? 'row' : 'stack'}
+        // Comme la tuile de l'Echo Show : ⋮ en bas à droite. Une seule rangée n'a pas la place.
+        onMore={size.squat ? undefined : () => setSheetOpen(true)}
+        moreLabel={t('widgets.lock.more')}
+        moreAt='bottom'
+      >
         {/* Ouverture du pêne : action distincte, jamais fusionnée au bouton */}
         {supportsOpen && !size.compact && <Chip icon={DoorOpen} label={t('widgets.lock.openAction')} onClick={() => call('open')} />}
       </DeviceTile>
+      {/* Les actions de la serrure en grand, dont l'ouverture du pêne que la tuile compacte n'a pas la place d'afficher. */}
+      <Sheet open={sheetOpen} onClose={() => setSheetOpen(false)} title={name} subtitle={label} closeLabel={t('common.close')}>
+        <div className='flex flex-col gap-3'>
+          <button onClick={handleToggle} className={cn(BUTTON_PRIMARY, 'w-full justify-center')}>
+            {isLocked ? <LockOpen size={20} /> : <Lock size={20} />}
+            {confirming ? t('widgets.lock.confirmUnlock') : isLocked ? t('widgets.lock.unlockAction') : t('widgets.lock.lockAction')}
+          </button>
+          {supportsOpen && (
+            <button
+              onClick={() => {
+                call('open');
+                setSheetOpen(false);
+              }}
+              className={cn(BUTTON_SECONDARY, 'w-full justify-center')}
+            >
+              <DoorOpen size={20} />
+              {t('widgets.lock.openDoor')}
+            </button>
+          )}
+        </div>
+      </Sheet>
     </div>
   );
 }
