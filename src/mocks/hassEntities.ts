@@ -205,7 +205,7 @@ export const MOCK_ENTITIES: Record<string, MockEntityState> = {
     repeat: 'off',
     volume_level: 0.4,
     is_volume_muted: false,
-    supported_features: 152639,
+    supported_features: 154687,
   }),
 
   // Automations
