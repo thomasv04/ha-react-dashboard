@@ -20,8 +20,8 @@ import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 import { usePageRouting } from '@/hooks/usePageRouting';
 import { WallPanelProvider, useScreensaverPlan, useWallPanel } from '@/context/WallPanelContext';
 import { WallPanelOverlay } from '@/components/wallpanel/WallPanelOverlay';
+import { IdleWatcher, ScreensaverEntityWatcher } from '@/components/wallpanel/ScreensaverWatchers';
 import { useIdleDetector } from '@/hooks/useIdleDetector';
-import { useSafeEntity } from '@/hooks/useSafeEntity';
 
 import { EditButton } from '@/components/dashboard/EditButton';
 import { ActivePanel } from '@/components/dashboard/ActivePanel';
@@ -39,20 +39,6 @@ import { layoutWidgets } from '@/lib/panel-grid';
 
 // La page plan ne se télécharge qu'à sa première visite : sans plan, rien à payer.
 const FloorplanView = lazy(() => import('@/components/floorplan/FloorplanView').then(m => ({ default: m.FloorplanView })));
-
-/**
- * Watcher d'inactivité — doit être monté à l'intérieur du WallPanelProvider
- */
-function IdleWatcher() {
-  const { config, enabled, activate, isActive } = useWallPanel();
-  useIdleDetector({
-    idleTime: config.idle_time,
-    enabled: enabled && !isActive,
-    onIdle: activate,
-    onActive: () => {},
-  });
-  return null;
-}
 
 /**
  * Ramène à la première page après un temps d'inactivité.
@@ -97,24 +83,6 @@ function ScreensaverPlanWatcher() {
   const plan = useScreensaverPlan();
   const { showPage } = usePages();
   useEffect(() => showPage(isActive && plan ? plan : null), [isActive, plan, showPage]);
-  return null;
-}
-
-/**
- * Surveille l'entité HA `screensaver_entity` via WebSocket pour
- * activer/désactiver le WallPanel depuis Home Assistant.
- */
-function ScreensaverEntityWatcher() {
-  const { config, activate, deactivate, isActive } = useWallPanel();
-  const entityId = config.screensaver_entity ?? '';
-  const entity = useSafeEntity(entityId);
-
-  useEffect(() => {
-    if (!entityId || !entity) return;
-    if (entity.state === 'on' && !isActive) activate();
-    if (entity.state === 'off' && isActive) deactivate();
-  }, [entity?.state, entityId, isActive, activate, deactivate]);
-
   return null;
 }
 
