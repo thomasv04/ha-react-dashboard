@@ -438,6 +438,15 @@ export function WallPanelSettings({ onClose, guard }: WallPanelSettingsProps) {
                           <SwitchTrack on={draft.style.containBlurBackground ?? false} />
                         </button>
                       )}
+                      <button
+                        role='switch'
+                        aria-checked={draft.style.pairPortraits !== false}
+                        onClick={() => update({ style: { ...draft.style, pairPortraits: draft.style.pairPortraits === false } })}
+                        className='flex items-center justify-between gap-3 text-left'
+                      >
+                        <span className='text-[15px] text-[var(--ds-ink-muted)]'>{t('layout.wallPanel.pairPortraits')}</span>
+                        <SwitchTrack on={draft.style.pairPortraits !== false} />
+                      </button>
                     </div>
                     <div className={cn(CARD, 'flex flex-col gap-3')}>
                       <label htmlFor='wp-order' className='text-lg font-semibold'>

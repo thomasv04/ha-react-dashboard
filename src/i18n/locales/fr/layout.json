@@ -256,6 +256,7 @@
     "fitContain": "Contain (entier)",
     "fitFill": "Fill (étiré)",
     "blurBackground": "Fond flou (remplir les bandes)",
+    "pairPortraits": "Deux photos portrait côte à côte",
     "orderRandom": "Aléatoire",
     "orderSequential": "Séquentiel",
     "imageDuration": "Durée par image",

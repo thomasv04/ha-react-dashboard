@@ -256,6 +256,7 @@
     "fitContain": "Contain (full)",
     "fitFill": "Fill (stretched)",
     "blurBackground": "Blur background (fill letterbox)",
+    "pairPortraits": "Two portrait photos side by side",
     "orderRandom": "Random",
     "orderSequential": "Sequential",
     "imageDuration": "Duration per image",
