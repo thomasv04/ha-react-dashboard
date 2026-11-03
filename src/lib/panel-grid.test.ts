@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { colsThatFit, colsWidth, panelsFromLegacy, placePanel, toPanelLayout } from './panel-grid';
+import { colsThatFit, colsWidth, panelsFromLegacy, placePanel, toPanelLayout, weightForShare } from './panel-grid';
 
 describe('trame', () => {
   it('largeur de n colonnes, et combien tiennent', () => {
@@ -80,5 +80,26 @@ describe('placePanel', () => {
     expect(placePanel(l, 'B', 'A', 'above').panels[0].below).toBeUndefined();
     expect(placePanel(l, 'X', 'A', 'left')).toBe(l);
     expect(placePanel(l, 'A', 'A', 'left')).toBe(l);
+  });
+});
+
+describe('weightForShare', () => {
+  // Part obtenue pour un poids `w` face à des voisins de poids `others`.
+  const shareOf = (w: number, others: number) => Math.round((w / (w + others)) * 100);
+
+  it.each([
+    [50, 1],
+    [67, 1],
+    [67, 3],
+    [25, 2],
+    [10, 5],
+    [90, 4],
+  ])('une part de %i %% face à un poids de %i donne exactement cette part', (share, others) => {
+    expect(shareOf(weightForShare(share, others), others)).toBe(share);
+  });
+
+  it('borne la part à 10–90 %', () => {
+    expect(weightForShare(0, 2)).toBe(weightForShare(10, 2));
+    expect(weightForShare(100, 2)).toBe(weightForShare(90, 2));
   });
 });

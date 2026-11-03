@@ -68,6 +68,7 @@
   },
   "livePreview": "Aperçu en direct",
   "noPreviewAvailable": "Pas d'aperçu disponible",
+  "noBackground": "Sans fond (la card repose sur le panneau)",
   "cancel": "Annuler",
   "apply": "Appliquer",
   "chooseEntity": "Choisir une entité",
@@ -611,7 +612,8 @@
     "width_label": "Largeur",
     "drag": "Déplacer le panneau",
     "height": "Hauteur",
-    "heightShare": "{value} % de la colonne",
+    "heightSuffix": "% de la colonne",
+    "heightInput": "Hauteur du panneau, en pourcentage de la colonne",
     "shorter": "Moins haut",
     "taller": "Plus haut"
   },

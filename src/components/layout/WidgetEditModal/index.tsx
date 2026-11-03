@@ -29,6 +29,7 @@ import { ActionsTab } from './ActionsTab';
 import { VisibilityTab } from './VisibilityTab';
 import { SwitchTrack } from '@/components/ds/Switch';
 import { useI18n } from '@/i18n';
+import type { CardAppearanceConfig } from '@/types/card-appearance';
 
 /** Un champ de réglage : un bloc arrondi sur le fond de la feuille. */
 const FIELD_CARD = 'rounded-[var(--ds-radius-xl)] bg-[var(--ds-sheet-section)] p-4';
@@ -81,6 +82,8 @@ export function WidgetEditModal() {
   }, [editingWidgetId, draft, setPreviewConfig, clearPreviewConfig]);
 
   if (!editingWidgetId || !draft || !fields) return null;
+
+  const noBackground = (draft as CardAppearanceConfig).noBackground === true;
 
   // `config.type` couvre aussi `rooms`, qui n'a pas de widget enregistré :
   // l'accès est volontairement tolérant, le rendu gère déjà le cas absent.
@@ -348,6 +351,19 @@ export function WidgetEditModal() {
                   {renderField(field)}
                 </div>
               ))}
+          {activeTab === 'config' && (
+            <div className={FIELD_CARD}>
+              <button
+                role='switch'
+                aria-checked={noBackground}
+                onClick={() => updateField('noBackground', !noBackground)}
+                className='flex w-full items-center justify-between gap-4 text-left'
+              >
+                <span className='text-base font-semibold'>{t('layout.noBackground')}</span>
+                <SwitchTrack on={noBackground} />
+              </button>
+            </div>
+          )}
           {activeTab === 'widgets' && isGroup && <GroupWidgetsTab groupId={editingWidgetId} draft={draft} updateField={updateField} />}
           {activeTab === 'advanced' &&
             hasAdvanced &&
