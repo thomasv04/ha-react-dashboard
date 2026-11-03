@@ -239,3 +239,47 @@ describe('useEditMode', () => {
     expect(result.current.isEditMode).toBe(false);
   });
 });
+
+describe('saveLayout (#48)', () => {
+  it('garde la même identité d’un rendu à l’autre, même après une mutation', () => {
+    const { result, rerender } = renderHook(() => useDashboardLayout(), { wrapper: createWrapper() });
+    const first = result.current.saveLayout;
+
+    rerender();
+    expect(result.current.saveLayout).toBe(first);
+
+    step(result, c => c.addWidgetByType('sensor'));
+    expect(result.current.saveLayout).toBe(first);
+  });
+
+  it('enregistre la dernière disposition : « Terminer » lit allLayouts à jour au moment du clic', () => {
+    // `saveLayout` n'envoie rien elle-même : EditButton appelle saveLayout()
+    // puis saveConfig({ layouts: allLayouts }). On rejoue ce chemin en lisant
+    // les valeurs du contexte après plusieurs gestes, sans fermeture capturée.
+    const result = setup();
+    const saveLayout = result.current.saveLayout;
+    const a = step(result, c => c.addWidgetByType('sensor'));
+    const b = step(result, c => c.addWidgetByType('light'));
+    step(result, c => c.removeWidget(a));
+
+    const { saveLayout: atClick, allLayouts } = result.current;
+    expect(atClick).toBe(saveLayout);
+    expect(() => atClick()).not.toThrow();
+    expect(layoutWidgets(allLayouts.home).map(w => w.id)).toEqual([b]);
+  });
+
+  it('ne recrée pas la valeur du contexte de disposition quand seul le mode édition change', () => {
+    const { result } = renderHook(() => ({ layout: useDashboardLayout(), edit: useEditMode() }), { wrapper: createWrapper() });
+    const before = result.current.layout;
+
+    act(() => result.current.edit.setEditMode(true));
+
+    const after = result.current.layout;
+    expect(after.isEditMode).toBe(true);
+    // Toutes les entrées du LayoutContext gardent leur identité : son useMemo
+    // n'a donc pas été invalidé.
+    for (const key of ['layout', 'allLayouts', 'saveLayout', 'setLayout', 'undo', 'redo', 'moveWidget', 'addPanel'] as const) {
+      expect(after[key], key).toBe(before[key]);
+    }
+  });
+});

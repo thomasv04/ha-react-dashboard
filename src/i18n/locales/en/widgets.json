@@ -277,7 +277,20 @@
     "next": "Next track",
     "play": "Play",
     "pause": "Pause",
-    "volume": "Volume"
+    "volume": "Volume",
+    "shuffle": "Shuffle",
+    "repeat": "Repeat",
+    "repeatOff": "Repeat off",
+    "repeatAll": "Repeat all",
+    "repeatOne": "Repeat one",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "source": "Output / source",
+    "playlist": "Playlist",
+    "position": "Progress",
+    "nothingPlaying": "Nothing playing",
+    "album": "Album",
+    "unknownTitle": "Unknown title"
   },
   "person": {
     "label": "People",

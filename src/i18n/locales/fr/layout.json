@@ -303,7 +303,22 @@
     "clockLayout": "Heure",
     "clockLarge": "Grande horloge",
     "clockPhoto": "Cadre photo",
-    "editWidgetsAction": "Modifier les widgets"
+    "editWidgetsAction": "Modifier les widgets",
+    "autosave": {
+      "saved": "Enregistré",
+      "saving": "Enregistrement…",
+      "error": "Échec de l'enregistrement",
+      "retry": "Réessayer",
+      "closing": "Enregistrement en cours — les réglages se ferment dès qu'il aboutit.",
+      "closeError": "Les dernières modifications n'ont pas pu être enregistrées."
+    },
+    "preview": {
+      "title": "Aperçu",
+      "label": "Aperçu de l'écran de veille",
+      "show": "Voir la veille",
+      "hint": "L'aperçu suit chaque réglage. Les modifications sont enregistrées automatiquement.",
+      "plan": "Plan"
+    }
   },
   "panelNoneCreated": "Aucun panneau pour l'instant — créez-en un depuis le mode édition.",
   "duplicateWidget": "Dupliquer le widget",

@@ -1,4 +1,4 @@
-import { Meta, Canvas, Story, ArgsTable } from '@storybook/addon-docs/blocks';
+import { Meta, Canvas, Story, ArgTypes } from '@storybook/addon-docs/blocks';
 import React from 'react';
 import { FromHAEvent } from './Modal.stories';
 
@@ -40,4 +40,4 @@ L'exemple ci-dessus montre comment définir `title`, `content`, `width`, `dismis
 
 Les actions doivent fournir au minimum `label` et `onClick` côté storybook. Dans Home Assistant, l\'action peut déclencher un `service` (implémentation spécifique à HA dans le dashboard).
 
-<ArgsTable of={FromHAEvent} />
+<ArgTypes of={FromHAEvent} />

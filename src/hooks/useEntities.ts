@@ -66,8 +66,26 @@ export function useEntities<K extends string>(entityIds: K[]): PickedEntities<K>
 }
 
 /**
+ * Même entité, inchangée depuis le dernier passage ?
+ *
+ * Home Assistant fait avancer `last_updated` à chaque changement d'état **ou
+ * d'attribut** (`entity_picture`, `friendly_name`…), mais pas pour un simple
+ * relevé identique (c'est `last_reported` qui bouge alors) : le comparer suffit
+ * à suivre les attributs sans re-rendre à chaque message du WebSocket.
+ * Une entité sans `last_updated` (mock, entrée partiellement hydratée) retombe
+ * sur la comparaison superficielle des attributs.
+ */
+function sameDomainEntity(a: HassEntity, b: HassEntity): boolean {
+  if (a === b) return true;
+  if (a.entity_id !== b.entity_id || a.state !== b.state) return false;
+  if (a.last_updated && b.last_updated) return a.last_updated === b.last_updated;
+  return shallowEqualEntity(a, b);
+}
+
+/**
  * Subscribe to all entities whose entity_id matches a domain prefix.
- * Only re-renders when the set of entities or their states change.
+ * Re-renders when the set of entities, their states or their attributes change
+ * (cf. `sameDomainEntity`).
  */
 export function useEntitiesByDomain(domain: string): HassEntity[] {
   const cacheRef = useRef<HassEntity[] | null>(null);
@@ -85,11 +103,7 @@ export function useEntitiesByDomain(domain: string): HassEntity[] {
     }
 
     const prev = cacheRef.current;
-    if (
-      prev !== null &&
-      prev.length === next.length &&
-      prev.every((e, i) => e.state === next[i].state && e.entity_id === next[i].entity_id)
-    ) {
+    if (prev !== null && prev.length === next.length && prev.every((e, i) => sameDomainEntity(e, next[i]))) {
       return prev;
     }
     cacheRef.current = next;

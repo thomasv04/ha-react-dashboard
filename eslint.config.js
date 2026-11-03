@@ -18,6 +18,7 @@ export default defineConfig([
     'playwright-report-dashboard',
     'custom_components/ha_react_dashboard/www',
     '.venv-*',
+    '.claude',
   ]),
   {
     files: ['**/*.{ts,tsx}'],

@@ -19,3 +19,14 @@ type Story = StoryObj<typeof WeatherCard>;
 
 /** Carte météo avec température, vent et prévisions sur 4 jours. */
 export const Default: Story = {};
+
+/** Tuile étroite (≈ 154 px) : température et icône réduites, prévisions repliées. */
+export const Narrow: Story = {
+  decorators: [
+    Story => (
+      <div style={{ width: 154, height: 272 }}>
+        <Story />
+      </div>
+    ),
+  ],
+};

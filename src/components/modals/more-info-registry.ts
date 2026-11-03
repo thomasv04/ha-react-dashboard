@@ -16,6 +16,7 @@ export const MORE_INFO_COMPONENTS: Record<
   energy: lazy(() => import('./EnergyMoreInfo')),
   template: lazy(() => import('./TemplateMoreInfo')),
   calendar: lazy(() => import('./CalendarMoreInfo')),
+  media_player: lazy(() => import('./MediaPlayerMoreInfo')),
 };
 
 /** Fiches qui occupent tout l'écran au lieu de la feuille latérale. */
@@ -32,7 +33,6 @@ const DOMAIN_TO_MODAL: Record<string, string> = {
   binary_sensor: 'sensor',
   input_boolean: 'sensor',
   switch: 'sensor',
-  media_player: 'sensor',
   sun: 'sensor',
 };
 
