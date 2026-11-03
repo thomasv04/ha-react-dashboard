@@ -543,7 +543,17 @@
     "openingUnnamedTitle": "Objet sans nom valide",
     "openingUnnamedHelp": "Sweet Home 3D l'a exporté sans nom : le sien a un accent, ou un signe que le plugin refuse. Dans Sweet Home 3D, double-cliquez-le et changez son « Nom » : son type d'abord, sans accent ni « # » final — Fenetre_Chambre, Porte_Cuisine… —, un nom par ouverture. Puis exportez de nouveau la maquette : il se liera d'un clic.",
     "openingDrawAnyway": "Le dessiner",
-    "openingSingle": "D'un seul tenant : rien ne peut bouger. Dans Sweet Home 3D, retirez le « # » final de son nom."
+    "openingSingle": "D'un seul tenant : rien ne peut bouger. Dans Sweet Home 3D, retirez le « # » final de son nom.",
+    "homePill": "Ma maison",
+    "homeBack": "Revenir à la vue d'ensemble",
+    "filter": "Filtrer les pastilles",
+    "colorWheel": "Roue des couleurs",
+    "filterKind": {
+      "light": "Lumières",
+      "sensor": "Capteurs",
+      "security": "Sécurité",
+      "device": "Appareils"
+    }
   },
   "shell": {
     "openLauncher": "Ouvrir les apps",
