@@ -50,7 +50,8 @@ export function WeatherCard() {
   return <WeatherCardInner entityId={entityId} config={config ?? null} />;
 }
 
-const CHIP = 'inline-flex h-9 items-center rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)] px-3.5 text-sm font-semibold';
+const CHIP =
+  'inline-flex h-9 max-w-full items-center truncate whitespace-nowrap rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)] px-3.5 text-sm font-semibold';
 
 function WeatherCardInner({ entityId, config }: { entityId: string; config: WeatherCardConfig | null }) {
   const { t, tArray, language } = useI18n();
