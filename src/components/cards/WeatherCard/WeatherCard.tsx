@@ -96,11 +96,36 @@ function WeatherCardInner({ entityId, config }: { entityId: string; config: Weat
     );
   }
 
+  // Deux rangées : la ville, puis l'icône et la température à gauche, la
+  // condition et les extrêmes du jour à droite — la tuile météo de l'Echo Show.
+  if (size.h === 'short') {
+    const showSide = size.w !== 'xs' && size.w !== 'sm';
+    return (
+      <div
+        ref={cardRef}
+        className='flex h-full flex-col justify-center gap-1 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] px-[var(--ds-space-4)] text-[var(--ds-ink)]'
+      >
+        {config?.name && <div className='truncate text-[15px] font-semibold'>{config.name}</div>}
+        <div className='flex items-center gap-3'>
+          <ConditionIcon condition={weather.state} size={36} customIcons={config?.customIcons} />
+          <span className='shrink-0 text-5xl font-light leading-none tracking-[-2px]'>{tempText}</span>
+          {showSide && (
+            <div className='ml-auto min-w-0 text-right'>
+              <div className='truncate text-[15px] font-semibold capitalize'>{label}</div>
+              {range && <div className='truncate text-sm text-[var(--ds-ink-muted)]'>{range}</div>}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={cardRef}
       className='flex h-full flex-col gap-3 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] p-[var(--ds-space-4)] text-[var(--ds-ink)]'
     >
+      {config?.name && <div className='truncate text-[15px] font-semibold'>{config.name}</div>}
       <div className='flex items-start justify-between gap-3'>
         <div className='min-w-0'>
           <div className={`font-light leading-none ${tempClass}`}>{tempText}</div>

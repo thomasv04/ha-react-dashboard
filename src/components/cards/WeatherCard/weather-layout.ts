@@ -23,12 +23,11 @@ export interface WeatherLayout {
  */
 export function getWeatherLayout(size: Pick<WidgetSize, 'w' | 'h'>, forecastCount: number): WeatherLayout {
   const narrow = size.w === 'xs' || size.w === 'sm';
-  const short = size.h === 'short';
   return {
     showStats: size.h !== 'squat' && size.h !== 'short',
     showPressure: !narrow,
     showForecast: !narrow && (size.h === 'normal' || size.h === 'tall') && forecastCount > 0,
-    tempClass: narrow ? 'text-3xl tracking-[-1px]' : short ? 'text-5xl tracking-[-2px]' : 'text-[72px] tracking-[-2px]',
-    iconSize: narrow || short ? 40 : 56,
+    tempClass: narrow ? 'text-3xl tracking-[-1px]' : 'text-[72px] tracking-[-2px]',
+    iconSize: narrow ? 40 : 56,
   };
 }

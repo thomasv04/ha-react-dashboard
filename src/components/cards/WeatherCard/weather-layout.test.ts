@@ -28,12 +28,10 @@ describe('getWeatherLayout', () => {
     expect(layout.showForecast).toBe(true);
   });
 
-  test('case peu haute : ni chips ni prévisions, température intermédiaire', () => {
+  test('case peu haute : ni chips ni prévisions', () => {
     const layout = getWeatherLayout({ w: 'lg', h: 'short' }, 4);
     expect(layout.showStats).toBe(false);
     expect(layout.showForecast).toBe(false);
-    expect(layout.tempClass).toContain('text-5xl');
-    expect(layout.iconSize).toBe(40);
   });
 
   test('sans prévision à afficher, la grille de prévisions est absente', () => {

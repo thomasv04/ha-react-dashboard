@@ -30,3 +30,14 @@ export const Narrow: Story = {
     ),
   ],
 };
+
+/** Deux rangées : icône et température à gauche, condition et extrêmes du jour à droite. */
+export const TwoRows: Story = {
+  decorators: [
+    Story => (
+      <div style={{ width: 320, height: 176 }}>
+        <Story />
+      </div>
+    ),
+  ],
+};

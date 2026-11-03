@@ -47,6 +47,9 @@
       "entityId": {
         "label": "Entité météo"
       },
+      "name": {
+        "label": "Ville affichée"
+      },
       "customIcons": {
         "label": "Icônes personnalisées"
       }
@@ -394,6 +397,9 @@
           },
           "posterEntity": {
             "label": "Image d'attente (entité instantané)"
+          },
+          "eventEntity": {
+            "label": "Entité d'événement (« il y a X min »)"
           }
         }
       },

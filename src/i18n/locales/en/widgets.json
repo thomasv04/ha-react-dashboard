@@ -47,6 +47,9 @@
       "entityId": {
         "label": "Weather entity"
       },
+      "name": {
+        "label": "City shown"
+      },
       "customIcons": {
         "label": "Custom icons"
       }
@@ -394,6 +397,9 @@
           },
           "posterEntity": {
             "label": "Placeholder image (snapshot entity)"
+          },
+          "eventEntity": {
+            "label": "Event entity (X min ago)"
           }
         }
       },

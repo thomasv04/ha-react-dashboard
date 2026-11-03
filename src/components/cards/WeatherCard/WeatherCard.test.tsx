@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { vi, test, expect } from 'vitest';
 
+const configMock = vi.hoisted(() => ({ current: undefined as { name?: string } | undefined }));
 const sizeMock = vi.hoisted(() => ({ current: { w: 'lg', h: 'normal', compact: false, squat: false } }));
 vi.mock('@/hooks/useWidgetSize', () => ({ useWidgetSize: () => sizeMock.current }));
 
@@ -15,7 +16,7 @@ vi.mock('@/i18n', () => ({
 }));
 
 vi.mock('@/context/WidgetConfigContext', () => ({
-  useWidgetConfig: vi.fn(() => ({ getWidgetConfig: () => undefined })),
+  useWidgetConfig: vi.fn(() => ({ getWidgetConfig: () => configMock.current })),
 }));
 
 vi.mock('@/components/layout/DashboardGrid', () => ({
@@ -60,4 +61,17 @@ test('en case étroite, les prévisions sont repliées et la température rédui
   const temp = screen.getByText(/21.*°/);
   expect(temp.className).toContain('text-3xl');
   expect(temp.className).not.toContain('72px');
+});
+
+test('en deux rangées : la ville, la température, la condition et les extrêmes du jour', () => {
+  sizeMock.current = { w: 'lg', h: 'short', compact: false, squat: false };
+  configMock.current = { name: 'Seattle, WA' };
+  const { container } = render(<WeatherCard />);
+  expect(screen.getByText('Seattle, WA')).toBeDefined();
+  expect(screen.getByText(/21.*°/)).toBeDefined();
+  expect(screen.getByText(/Ensoleill/i)).toBeDefined();
+  expect(screen.getByText('widgets.weather.range')).toBeDefined();
+  // Pas de prévisions ni de chips : la disposition est celle de la tuile Echo.
+  expect(container.querySelector('.grid-cols-4')).toBeNull();
+  configMock.current = undefined;
 });
