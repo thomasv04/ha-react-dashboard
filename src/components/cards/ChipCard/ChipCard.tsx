@@ -30,6 +30,7 @@ import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useMoreInfoOptional } from '@/context/MoreInfoContext';
+import { useChipLightTap } from '@/context/ChipTapContext';
 import { modalTypeFor } from '@/components/modals/more-info-registry';
 import { useCardActions } from '@/hooks/useCardActions';
 import { useLongPress } from '@/hooks/useLongPress';
@@ -108,6 +109,7 @@ export function ChipCard() {
   const formatter = useHass(s => s.formatter);
   const runAction = useCardActions();
   const moreInfo = useMoreInfoOptional();
+  const lightTap = useChipLightTap();
   const ref = useRef<HTMLButtonElement>(null);
   const held = useRef(false);
 
@@ -138,6 +140,8 @@ export function ChipCard() {
     const tap = config?.tapAction;
     if (tap?.action === 'more-info') return openMoreInfo();
     if (runAction(tap, entityId)) return;
+    // Sur le plan 3D, la lampe ouvre son popover plutôt que de basculer.
+    if (domain === 'light' && lightTap && ref.current) return lightTap(entityId, ref.current.getBoundingClientRect());
     if (state && TOGGLE_DOMAINS.has(domain)) {
       const [serviceDomain, service] = toggleService(domain, isActiveState(state));
       callHAService(helpers, serviceDomain, service, { entity_id: entityId });

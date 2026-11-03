@@ -777,3 +777,65 @@ test('in edit mode, a click on a real window of the model opens its link window'
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Fenêtre', exact: true })).toHaveAttribute('aria-pressed', 'true');
 });
+
+test('the "Ma maison" pill brings the camera back to the overview', async ({ page }) => {
+  await openModel(page);
+  const home = await at(page, 'temp');
+  await orbit(page, 160);
+  await expect.poll(() => at(page, 'temp')).not.toBe(home);
+
+  await page.getByRole('button', { name: 'Ma maison' }).click();
+  await expect.poll(() => at(page, 'temp')).toBe(home);
+});
+
+test('the floor selector is a vertical pill at the bottom right, above the filter', async ({ page }) => {
+  await page.goto('/#etages');
+  const levels = page.getByRole('group', { name: 'Étages' });
+  await expect(levels).toBeVisible({ timeout: 60_000 });
+  const plan = (await page.locator('[data-floorplan-plan="3d"]').boundingBox())!;
+  const box = (await levels.boundingBox())!;
+  // En bas à droite du plan, et plus haut que large : une colonne.
+  expect(box.x + box.width / 2).toBeGreaterThan(plan.x + plan.width * 0.8);
+  expect(box.y + box.height / 2).toBeGreaterThan(plan.y + plan.height * 0.5);
+  expect(box.height).toBeGreaterThan(box.width * 2);
+  // Le filtre est juste au-dessus.
+  const filter = (await page.getByRole('button', { name: 'Filtrer les pastilles' }).boundingBox())!;
+  expect(filter.y + filter.height).toBeLessThanOrEqual(box.y);
+});
+
+test('the filter hides a family of chips, and shows it again', async ({ page }) => {
+  await openModel(page);
+  const lamp = page.locator('[data-floorplan-item="lamp-kitchen"]');
+  const temperature = page.locator('[data-floorplan-item="temp"]');
+  await expect(lamp).toHaveCount(1);
+
+  await page.getByRole('button', { name: 'Filtrer les pastilles' }).click();
+  // Seules les familles présentes sur la page sont proposées.
+  await expect(page.getByRole('switch', { name: 'Appareils' })).toHaveCount(0);
+  await page.getByRole('switch', { name: 'Lumières' }).click();
+  await expect(page.getByRole('switch', { name: 'Lumières' })).toHaveAttribute('aria-checked', 'false');
+  await expect(lamp).toHaveCount(0);
+  await expect(temperature).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Filtrer les pastilles' })).toHaveAttribute('aria-pressed', 'true');
+
+  await page.getByRole('switch', { name: 'Lumières' }).click();
+  await expect(lamp).toHaveCount(1);
+});
+
+test('a tap on a lamp opens its popover: switch, brightness, colours and wheel', async ({ page }) => {
+  await openModel(page);
+  await page.locator('[data-floorplan-item="lamp-living"] button').click();
+
+  const popover = page.getByRole('dialog', { name: 'Salon' });
+  await expect(popover).toBeVisible();
+  await expect(popover.getByRole('switch', { name: 'Salon' })).toHaveAttribute('aria-checked', 'true');
+  await expect(popover.getByRole('slider', { name: 'Luminosité' })).toBeVisible();
+  await expect(popover.getByRole('button', { name: /^Teinte \d+°$/ })).toHaveCount(8);
+  // La roue déplie le curseur de teinte.
+  await expect(popover.getByRole('slider', { name: 'Teinte' })).toHaveCount(0);
+  await popover.getByRole('button', { name: 'Roue des couleurs' }).click();
+  await expect(popover.getByRole('slider', { name: 'Teinte' })).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(popover).toBeHidden();
+});

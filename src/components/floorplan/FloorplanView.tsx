@@ -27,6 +27,7 @@ import { useDashboardLayout, useEditMode, type FloorplanPos, type GridWidget } f
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useMoreInfoOptional } from '@/context/MoreInfoContext';
 import { useScreensaverPlan, useWallPanel } from '@/context/WallPanelContext';
+import { ChipTapContext } from '@/context/ChipTapContext';
 import { FreeGridScope } from '@/components/layout/DashboardGrid';
 import { AlarmModeModal } from '@/components/cards/AlarmCard/AlarmCard';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
@@ -55,6 +56,9 @@ import {
   lightGlow,
   MODEL_SIZE,
   cableFlow,
+  chipKind,
+  CHIP_KINDS,
+  type ChipKind,
   normalizeAnchor,
   normalizeCables,
   normalizeParts,
@@ -102,6 +106,7 @@ import type { ChipCardConfig, WidgetConfig } from '@/types/widget-configs';
 import type { CableProp, FloorOverlay, Floorplan3DHandle, Lamp, OpeningProp, PartProp, Project, SolarProp } from './Floorplan3D';
 import { FloorplanColumn } from './FloorplanColumn';
 import { LockBadge, SkyWeather, StatusChips } from './FloorplanHud';
+import { ChipFilter, HomePill, LevelPicker, LightPopover } from './FloorplanControls';
 import { FloorplanItem } from './FloorplanItem';
 import { LampList } from './FloorplanLamps';
 import { DraftPopover, type Around } from './FloorplanDrawn';
@@ -300,6 +305,12 @@ export function FloorplanView() {
   const [alarmOpen, setAlarmOpen] = useState(false);
   /** Étage choisi — `undefined` : le rez-de-chaussée ; `null` : toute la maison. */
   const [levelChoice, setLevelChoice] = useState<string | null>();
+  /** Familles de pastilles que le filtre cache. */
+  const [hiddenKinds, setHiddenKinds] = useState<ReadonlySet<ChipKind>>(() => new Set());
+  /** Lampe dont le popover est ouvert : où se trouvait sa pastille, en px dans le plan, et la taille du plan. */
+  const [lightPop, setLightPop] = useState<{ entityId: string; at: { x: number; y: number }; bounds: { w: number; h: number } } | null>(
+    null
+  );
   /** Pièce vers laquelle la caméra a volé, hors édition. */
   const [focusId, setFocusId] = useState<string | null>(null);
   /** Boussole : la maison tourne avec le téléphone. */
@@ -453,6 +464,18 @@ export function FloorplanView() {
     return () => window.removeEventListener('keydown', onKey);
   }, [focusId, replaying, sheetOpen, closeReplay]);
 
+  // Échap referme le popover d'une lampe — avant tout, il est au premier plan.
+  useEffect(() => {
+    if (!lightPop) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopImmediatePropagation();
+      setLightPop(null);
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [lightPop]);
+
   // Pièces dessinées : leurs lampes n'éclairent qu'elles.
   const rooms = normalizeRooms(floorplan?.rooms);
   /** La pièce où tombe ce point (x, z) du sol. */
@@ -487,6 +510,29 @@ export function FloorplanView() {
     ...allCables.map(c => c.entityId),
     ...solarFields.map(f => f.entityId),
   ]);
+
+  /** La famille d'une pastille, d'après son entité et sa classe d'appareil. */
+  const kindOfChip = (entityId: string) => chipKind(entityId, entities[entityId]?.attributes?.device_class as string | undefined);
+  const chipKinds = new Map(chips.map(c => [c.id, kindOfChip(c.entityId)]));
+  /** Les familles présentes sur la page : le filtre n'en propose pas d'autres. */
+  const presentKinds = CHIP_KINDS.filter(kind => [...chipKinds.values()].includes(kind));
+  const toggleKind = (kind: ChipKind) =>
+    setHiddenKinds(prev => {
+      const next = new Set(prev);
+      if (!next.delete(kind)) next.add(kind);
+      return next;
+    });
+
+  /** Un toucher sur la pastille d'une lampe : son popover s'ouvre à côté d'elle. */
+  const openLightPopover = (entityId: string, rect: { top: number; left: number; width: number; height: number }) => {
+    const plan = planRef.current?.getBoundingClientRect();
+    if (!plan) return;
+    setLightPop({
+      entityId,
+      at: { x: rect.left + rect.width / 2 - plan.left, y: rect.top + rect.height / 2 - plan.top },
+      bounds: { w: plan.width, h: plan.height },
+    });
+  };
 
   // ── Lampes : halos du plan, lumières de la maquette ────────────────────────
   const sunEntity = entities['sun.sun'];
@@ -1010,48 +1056,52 @@ export function FloorplanView() {
 
   // En fond d'écran de veille, la maison seule : ni pastilles, ni cards.
   const items = !backdrop && (
-    <FreeGridScope>
-      {/* `pointer-events-none` : entre les éléments, le clic atteint le plan. */}
-      <motion.div
-        className='absolute inset-0 pointer-events-none'
-        variants={motionAllowed ? staggerGridContainer : undefined}
-        initial={motionAllowed ? 'hidden' : false}
-        animate='visible'
-      >
-        <Projected projector={projector}>
-          {toScreen =>
-            widgets.map(w => {
-              if (docked.has(w.id) || ((showThermal || showValues) && thermometers.has(w.id)) || (showValues && hygrometers.has(w.id)))
-                return null;
-              const anchor = model ? normalizeAnchor(w.pos?.anchor) : undefined;
-              const projected = anchor ? toScreen(anchor) : undefined;
-              // Accrochée à la maquette : rien à montrer tant qu'elle n'est pas
-              // chargée, ni quand le point est derrière la caméra.
-              if (projected === null) return null;
-              return (
-                <FloorplanItem
-                  key={w.id}
-                  widget={w}
-                  isEditMode={isEditMode}
-                  selected={selectedId === w.id}
-                  onSelect={setSelectedId}
-                  planRef={planRef}
-                  projected={projected}
-                  onCommit={model && w.type === 'chip' ? reanchor(w) : undefined}
-                  onDock={showColumn && w.type !== 'chip' ? () => setFloorplan({ column: [...(columnIds ?? []), w.id] }) : undefined}
-                  // Vol vers une pièce : les pastilles des autres pièces s'estompent.
-                  // Rejouée, tout s'estompe : pastilles et cards montrent le présent.
-                  faded={replaying || (!!anchor && !!focusRoom && !pointInPolygon(anchor[0], anchor[2], focusRoom.points))}
-                  hidden={(!isEditMode && occluded.has(w.id)) || (!!anchor && aboveLevel(anchor[1]))}
-                  breathing={present.has(w.id)}
-                  alert={alertChips.has(w.id)}
-                />
-              );
-            })
-          }
-        </Projected>
-      </motion.div>
-    </FreeGridScope>
+    <ChipTapContext.Provider value={model && !isEditMode ? openLightPopover : null}>
+      <FreeGridScope>
+        {/* `pointer-events-none` : entre les éléments, le clic atteint le plan. */}
+        <motion.div
+          className='absolute inset-0 pointer-events-none'
+          variants={motionAllowed ? staggerGridContainer : undefined}
+          initial={motionAllowed ? 'hidden' : false}
+          animate='visible'
+        >
+          <Projected projector={projector}>
+            {toScreen =>
+              widgets.map(w => {
+                // Le filtre ne joue qu'en lecture : en édition, toutes les pastilles restent atteignables.
+                if (!isEditMode && model && hiddenKinds.has(chipKinds.get(w.id) as ChipKind)) return null;
+                if (docked.has(w.id) || ((showThermal || showValues) && thermometers.has(w.id)) || (showValues && hygrometers.has(w.id)))
+                  return null;
+                const anchor = model ? normalizeAnchor(w.pos?.anchor) : undefined;
+                const projected = anchor ? toScreen(anchor) : undefined;
+                // Accrochée à la maquette : rien à montrer tant qu'elle n'est pas
+                // chargée, ni quand le point est derrière la caméra.
+                if (projected === null) return null;
+                return (
+                  <FloorplanItem
+                    key={w.id}
+                    widget={w}
+                    isEditMode={isEditMode}
+                    selected={selectedId === w.id}
+                    onSelect={setSelectedId}
+                    planRef={planRef}
+                    projected={projected}
+                    onCommit={model && w.type === 'chip' ? reanchor(w) : undefined}
+                    onDock={showColumn && w.type !== 'chip' ? () => setFloorplan({ column: [...(columnIds ?? []), w.id] }) : undefined}
+                    // Vol vers une pièce : les pastilles des autres pièces s'estompent.
+                    // Rejouée, tout s'estompe : pastilles et cards montrent le présent.
+                    faded={replaying || (!!anchor && !!focusRoom && !pointInPolygon(anchor[0], anchor[2], focusRoom.points))}
+                    hidden={(!isEditMode && occluded.has(w.id)) || (!!anchor && aboveLevel(anchor[1]))}
+                    breathing={present.has(w.id)}
+                    alert={alertChips.has(w.id)}
+                  />
+                );
+              })
+            }
+          </Projected>
+        </motion.div>
+      </FreeGridScope>
+    </ChipTapContext.Provider>
   );
 
   const addPopover = adding && (
@@ -1684,48 +1734,16 @@ export function FloorplanView() {
                 />
               </div>
             )}
-            {loaded && levels.length > 1 && !backdrop && (
-              <div
-                role='group'
-                aria-label={t('layout.floorplan.levels')}
-                className='absolute right-3 top-1/2 z-30 flex -translate-y-1/2 flex-col gap-1.5 rounded-[28px] bg-[var(--ds-surface-2)] p-1.5 text-[var(--ds-ink)] shadow-[var(--ds-shadow-pin)]'
-              >
-                {/* Comme un ascenseur : le plus haut en haut. */}
-                {levels
-                  .map((l, i) => ({
-                    id: l.id,
-                    short: i ? String(i) : t('layout.floorplan.levelGroundShort'),
-                    name: i ? t('layout.floorplan.levelN', { n: i }) : t('layout.floorplan.levelGround'),
-                  }))
-                  .reverse()
-                  .map(l => (
-                    <button
-                      key={l.id}
-                      onClick={() => setLevelChoice(l.id)}
-                      aria-pressed={level === l.id}
-                      aria-label={l.name}
-                      title={l.name}
-                      className={cn(
-                        'flex size-12 items-center justify-center rounded-full text-[15px] font-semibold tabular-nums transition-colors',
-                        level === l.id && 'bg-[var(--ds-ink)] text-[var(--ds-surface-1)]'
-                      )}
-                    >
-                      {l.short}
-                    </button>
-                  ))}
-                <button
-                  onClick={() => setLevelChoice(null)}
-                  aria-pressed={level === null}
-                  aria-label={t('layout.floorplan.levelAll')}
-                  title={t('layout.floorplan.levelAll')}
-                  className={cn(
-                    'flex size-12 items-center justify-center rounded-full transition-colors',
-                    level === null && 'bg-[var(--ds-ink)] text-[var(--ds-surface-1)]'
-                  )}
-                >
-                  <Layers size={20} />
-                </button>
+            {/* En bas à droite, comme sur l'Echo Show : le filtre, puis les étages. */}
+            {loaded && !isEditMode && !backdrop && (levels.length > 1 || presentKinds.length > 0) && (
+              <div className='absolute right-3 z-30 flex flex-col items-center gap-3' style={{ bottom: replay.span ? 88 : 12 }}>
+                {presentKinds.length > 0 && !replaying && <ChipFilter kinds={presentKinds} hidden={hiddenKinds} onToggle={toggleKind} />}
+                {levels.length > 1 && <LevelPicker levels={levels} level={level} onChange={setLevelChoice} />}
               </div>
+            )}
+            {/* Le popover de la lampe touchée. */}
+            {lightPop && !isEditMode && !backdrop && (
+              <LightPopover entityId={lightPop.entityId} at={lightPop.at} bounds={lightPop.bounds} onClose={() => setLightPop(null)} />
             )}
             {alarm && (
               <AlarmModeModal
@@ -1754,6 +1772,15 @@ export function FloorplanView() {
                 className='absolute z-30 flex flex-wrap items-start gap-2 max-w-[55%] pointer-events-none *:pointer-events-auto'
                 style={{ left: showColumn ? columnWidth + 24 : 12, top: narrow ? 64 : 12 }}
               >
+                {!focusRoom && (
+                  <HomePill
+                    onClick={() => {
+                      setFocusId(null);
+                      setCompass(false);
+                      three.current?.resetView();
+                    }}
+                  />
+                )}
                 {focusRoom && (
                   <motion.button
                     initial={motionAllowed ? { opacity: 0, x: -8 } : false}

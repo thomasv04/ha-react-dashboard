@@ -217,7 +217,13 @@ export const MOCK_ENTITIES: Record<string, MockEntityState> = {
   // These ensure every widget renders in the AddWidgetModal preview even when
   // the user's HA instance doesn't have the generic fallback entity IDs.
   'sensor.bedroom_temperature': entity('sensor.bedroom_temperature', '20.4', { unit_of_measurement: '°C', friendly_name: 'Chambre' }),
-  'light.living_room': entity('light.living_room', 'on', { brightness: 180, color_mode: 'brightness', friendly_name: 'Salon' }),
+  'light.living_room': entity('light.living_room', 'on', {
+    brightness: 180,
+    color_mode: 'hs',
+    supported_color_modes: ['hs', 'color_temp'],
+    hs_color: [35, 100],
+    friendly_name: 'Salon',
+  }),
   'cover.living_room': entity('cover.living_room', 'open', { current_position: 60, friendly_name: 'Volet Salon' }),
   'person.user_1': entity('person.user_1', 'home', { friendly_name: 'Utilisateur', entity_picture: '' }),
   'automation.example': entity('automation.example', 'on', { friendly_name: "Exemple d'automatisation" }),
