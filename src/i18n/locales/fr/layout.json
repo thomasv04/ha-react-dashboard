@@ -578,7 +578,8 @@
     "movePageDown": "Descendre",
     "deletePage": "Supprimer la page",
     "noPanels": "Aucun panneau pour l’instant",
-    "widgetGallery": "Galerie de widgets"
+    "widgetGallery": "Galerie de widgets",
+    "assist": "Assist"
   },
   "panel": {
     "untitled": "Panneau sans titre",
@@ -602,5 +603,34 @@
     "heightShare": "{value} % de la colonne",
     "shorter": "Moins haut",
     "taller": "Plus haut"
+  },
+  "assist": {
+    "title": "Assist",
+    "subtitle": "Assistant de la maison",
+    "close": "Fermer Assist",
+    "newConversation": "Nouvelle conversation",
+    "inputLabel": "Message pour Assist",
+    "placeholder": "Posez une question…",
+    "send": "Envoyer",
+    "micLabel": "Dictée vocale",
+    "micUnavailable": "La reconnaissance vocale n’est pas encore disponible",
+    "thinking": "Assist réfléchit…",
+    "you": "Vous",
+    "assist": "Assist",
+    "emptyTitle": "Que puis-je faire pour vous ?",
+    "emptyHint": "Écrivez une demande ou essayez une suggestion.",
+    "suggestionsLabel": "Suggestions",
+    "suggestions": {
+      "lights": "Allume les lumières du séjour",
+      "temperature": "Quelle est la température du séjour ?",
+      "lightsOff": "Éteins toutes les lumières"
+    },
+    "noAnswer": "Assist n’a rien répondu.",
+    "targets": "Concerné",
+    "errors": {
+      "unreachable": "Home Assistant est injoignable. Vérifiez la connexion puis réessayez.",
+      "noAgent": "Aucun agent de conversation n’est configuré dans Home Assistant. Activez l’intégration Assist dans Paramètres › Assistants vocaux.",
+      "unknown": "Assist n’a pas pu traiter la demande. Réessayez."
+    }
   }
 }

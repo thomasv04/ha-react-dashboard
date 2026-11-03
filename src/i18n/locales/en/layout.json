@@ -578,7 +578,8 @@
     "movePageDown": "Move down",
     "deletePage": "Delete page",
     "noPanels": "No panel yet",
-    "widgetGallery": "Widget gallery"
+    "widgetGallery": "Widget gallery",
+    "assist": "Assist"
   },
   "panel": {
     "untitled": "Untitled panel",
@@ -602,5 +603,34 @@
     "heightShare": "{value}% of the column",
     "shorter": "Shorter",
     "taller": "Taller"
+  },
+  "assist": {
+    "title": "Assist",
+    "subtitle": "Home assistant",
+    "close": "Close Assist",
+    "newConversation": "New conversation",
+    "inputLabel": "Message for Assist",
+    "placeholder": "Ask a question…",
+    "send": "Send",
+    "micLabel": "Voice input",
+    "micUnavailable": "Voice recognition is not available yet",
+    "thinking": "Assist is thinking…",
+    "you": "You",
+    "assist": "Assist",
+    "emptyTitle": "What can I do for you?",
+    "emptyHint": "Type a request or try a suggestion.",
+    "suggestionsLabel": "Suggestions",
+    "suggestions": {
+      "lights": "Turn on the living room lights",
+      "temperature": "What is the living room temperature?",
+      "lightsOff": "Turn off all the lights"
+    },
+    "noAnswer": "Assist gave no answer.",
+    "targets": "Affected",
+    "errors": {
+      "unreachable": "Home Assistant is unreachable. Check the connection and try again.",
+      "noAgent": "No conversation agent is set up in Home Assistant. Enable Assist under Settings › Voice assistants.",
+      "unknown": "Assist could not process the request. Try again."
+    }
   }
 }

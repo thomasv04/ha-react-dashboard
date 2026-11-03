@@ -299,3 +299,44 @@ test.describe('Settings', () => {
     }
   });
 });
+
+// ── Assist ────────────────────────────────────────────────────────────────────
+
+test.describe('Assist', () => {
+  /** Ouvre Assist depuis le lanceur ; l'agent de démonstration répond en mode simulé. */
+  async function openAssist(page: Page) {
+    await page.goto('/');
+    await waitForDashboard(page);
+    await page.getByRole('button', { name: 'Ouvrir les apps' }).click();
+    await page.getByRole('button', { name: 'Assist' }).click();
+    const assist = page.getByRole('dialog', { name: 'Assist' });
+    await expect(assist).toBeVisible();
+    return assist;
+  }
+
+  test('answers a question in a bubble, from the launcher', async ({ page }) => {
+    const assist = await openAssist(page);
+    // Micro présent, mais la reconnaissance vocale n'est pas disponible.
+    await expect(assist.getByRole('button', { name: 'Dictée vocale' })).toBeDisabled();
+
+    await assist.getByLabel('Message pour Assist').fill('Allume la lumière du séjour');
+    await assist.getByRole('button', { name: 'Envoyer' }).click();
+    await expect(assist.getByText('Allume la lumière du séjour')).toBeVisible();
+    await expect(assist.getByText('Lumières du séjour allumées')).toBeVisible();
+  });
+
+  test('a suggestion card asks the question, and the feed can be restarted', async ({ page }) => {
+    const assist = await openAssist(page);
+    await assist.getByRole('button', { name: 'Quelle est la température du séjour ?' }).click();
+    await expect(assist.getByText('Il fait 21,6 °C dans le séjour')).toBeVisible();
+    await assist.getByRole('button', { name: 'Nouvelle conversation' }).click();
+    await expect(assist.getByText('Que puis-je faire pour vous ?')).toBeVisible();
+  });
+
+  test('tells when Home Assistant cannot be reached', async ({ page }) => {
+    const assist = await openAssist(page);
+    await assist.getByLabel('Message pour Assist').fill('panne');
+    await assist.getByRole('button', { name: 'Envoyer' }).click();
+    await expect(assist.getByRole('alert')).toContainText('injoignable');
+  });
+});
