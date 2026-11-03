@@ -1,5 +1,5 @@
 import { createRef } from 'react';
-import { render, act } from '@testing-library/react';
+import { render, act, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BackgroundSlideshow, groupSlides, isVideoUrl, type SlideshowHandle } from './BackgroundSlideshow';
 import { DEFAULT_WALLPANEL_CONFIG } from '@/types/wallpanel';
@@ -8,7 +8,8 @@ const URLS = ['/a.jpg', '/b.jpg', '/c.jpg'];
 
 // Les URLs `media-source://` sont résolues par WebSocket : hors sujet ici, seul
 // le parcours de la liste est testé.
-vi.mock('@/hooks/useResolvedMediaUrls', () => ({ useResolvedMediaUrls: () => URLS }));
+const media = vi.hoisted(() => ({ urls: ['/a.jpg', '/b.jpg', '/c.jpg'] }));
+vi.mock('@/hooks/useResolvedMediaUrls', () => ({ useResolvedMediaUrls: () => media.urls }));
 
 // `image_duration: 0` coupe le défilement automatique — le test ne mesure que
 // les déplacements demandés.
@@ -105,6 +106,37 @@ describe('BackgroundSlideshow — portraits', () => {
     await vi.waitFor(() => expect(container.querySelector('div > div img + img')).not.toBeNull());
     const pair = container.querySelectorAll('div.flex img');
     expect([...pair].map(i => i.getAttribute('src'))).toEqual(['/a.jpg', '/b.jpg']);
+  });
+});
+
+describe('BackgroundSlideshow — vidéos', () => {
+  const videoConfig = { ...config, image_fit: 'cover' as const };
+  const dims = (video: HTMLVideoElement, width: number, height: number) => {
+    Object.defineProperty(video, 'videoWidth', { value: width, configurable: true });
+    Object.defineProperty(video, 'videoHeight', { value: height, configurable: true });
+    fireEvent.loadedMetadata(video);
+  };
+
+  beforeEach(() => {
+    media.urls = ['/clip.mp4'];
+  });
+  afterEach(() => {
+    media.urls = URLS;
+  });
+
+  it('montre en entier une vidéo portrait sur un écran en paysage', () => {
+    const { container } = render(<BackgroundSlideshow config={videoConfig} />);
+    const video = container.querySelector('video')!;
+    expect(video.style.objectFit).toBe('cover');
+    dims(video, 720, 1280);
+    expect(video.style.objectFit).toBe('contain');
+  });
+
+  it('garde le réglage de l’utilisateur pour une vidéo paysage', () => {
+    const { container } = render(<BackgroundSlideshow config={videoConfig} />);
+    const video = container.querySelector('video')!;
+    dims(video, 1920, 1080);
+    expect(video.style.objectFit).toBe('cover');
   });
 });
 

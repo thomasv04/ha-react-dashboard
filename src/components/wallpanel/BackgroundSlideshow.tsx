@@ -91,8 +91,32 @@ function Slide({ srcs, style }: { srcs: string[]; style: CSSProperties }) {
       </div>
     );
   }
-  if (isVideoUrl(srcs[0])) return <video src={srcs[0]} className={className} style={style} autoPlay muted loop playsInline />;
+  if (isVideoUrl(srcs[0])) return <VideoSlide src={srcs[0]} className={className} style={style} />;
   return <img src={srcs[0]} className={className} style={style} alt='' />;
+}
+
+/**
+ * Vidéo muette en boucle. Une vidéo portrait sur un écran en paysage est
+ * montrée en entier : `cover` la recadrait au tiers de sa hauteur pour remplir
+ * la tablette. Les photos portrait, elles, sont appariées (`groupSlides`) — une
+ * vidéo ne peut pas l'être. Les autres réglages d'ajustement restent ceux de
+ * l'utilisateur.
+ */
+function VideoSlide({ src, className, style }: { src: string; className: string; style: CSSProperties }) {
+  const [portrait, setPortrait] = useState(false);
+  const fit = portrait && style.objectFit === 'cover' && window.innerWidth > window.innerHeight ? 'contain' : style.objectFit;
+  return (
+    <video
+      src={src}
+      className={className}
+      style={{ ...style, objectFit: fit }}
+      onLoadedMetadata={e => setPortrait(e.currentTarget.videoHeight > e.currentTarget.videoWidth)}
+      autoPlay
+      muted
+      loop
+      playsInline
+    />
+  );
 }
 
 function BlurBg({ src, opacity }: { src: string; opacity: number }) {

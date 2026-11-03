@@ -1032,6 +1032,10 @@
     "openAction": "OPEN",
     "tapToUnlock": "Tap to unlock",
     "tapToLock": "Tap to lock",
+    "more": "More options",
+    "lockAction": "Lock",
+    "unlockAction": "Unlock",
+    "openDoor": "Open the door",
     "fields": {
       "entityId": {
         "label": "Lock"

@@ -6,6 +6,7 @@ vi.mock('@/hooks/useWidgetSize', () => ({ useWidgetSize: () => sizeMock.current 
 
 const lockState = vi.hoisted(() => ({ current: 'locked' }));
 const callServiceMock = vi.hoisted(() => vi.fn());
+const features = vi.hoisted(() => ({ current: 0 }));
 
 vi.mock('@/context/WidgetConfigContext', () => ({
   useWidgetConfig: () => ({ getWidgetConfig: () => ({ entityId: 'lock.front_door', confirmUnlock: false }) }),
@@ -13,7 +14,10 @@ vi.mock('@/context/WidgetConfigContext', () => ({
 vi.mock('@/components/layout/DashboardGrid', () => ({ useWidgetId: () => 'lock' }));
 vi.mock('@/hooks/useSoundFeedback', () => ({ useSoundFeedback: () => vi.fn() }));
 vi.mock('@/hooks/useSafeEntity', () => ({
-  useSafeEntity: () => ({ state: lockState.current, attributes: { friendly_name: "Porte d'entrée" } }),
+  useSafeEntity: () => ({
+    state: lockState.current,
+    attributes: { friendly_name: "Porte d'entrée", supported_features: features.current },
+  }),
 }));
 vi.mock('@hakit/core', () => ({
   useHass: (selector: (s: { helpers: { callService: typeof callServiceMock } }) => unknown) =>
@@ -25,6 +29,7 @@ import { LockCard } from './LockCard';
 beforeEach(() => {
   callServiceMock.mockClear();
   lockState.current = 'locked';
+  features.current = 0;
   sizeMock.current = { w: 'lg', h: 'tall', compact: false, squat: false };
 });
 
@@ -54,4 +59,22 @@ test('en case basse, la tuile compacte garde son appui et n’a pas de bouton ro
   expect(screen.queryByText('widgets.lock.tapToUnlock')).toBeNull();
   fireEvent.click(screen.getByRole('button', { pressed: true }));
   expect(callServiceMock).toHaveBeenCalledWith({ domain: 'lock', service: 'unlock', target: { entity_id: 'lock.front_door' } });
+});
+
+test('la tuile compacte a son menu ⋮ en bas à droite, qui ouvre les actions en grand', () => {
+  sizeMock.current = { w: 'lg', h: 'short', compact: true, squat: false };
+  features.current = 1; // OPEN : le pêne peut être escamoté
+  render(<LockCard />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'widgets.lock.more' }));
+  expect(screen.getByText('widgets.lock.unlockAction')).toBeDefined();
+
+  fireEvent.click(screen.getByText('widgets.lock.openDoor'));
+  expect(callServiceMock).toHaveBeenCalledWith({ domain: 'lock', service: 'open', target: { entity_id: 'lock.front_door' } });
+});
+
+test('sur une seule rangée, pas de menu ⋮ : la place manque', () => {
+  sizeMock.current = { w: 'lg', h: 'squat', compact: true, squat: true };
+  render(<LockCard />);
+  expect(screen.queryByRole('button', { name: 'widgets.lock.more' })).toBeNull();
 });

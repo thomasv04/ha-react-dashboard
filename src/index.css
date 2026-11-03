@@ -193,11 +193,22 @@ select {
     user-select: text;
   }
 
-  /* Le défilement interne d'une card ne doit pas entraîner la page derrière */
+  /* Le défilement interne d'une card ne doit pas entraîner la page derrière —
+     sur son axe seulement. Un conteneur qui défile en vertical doit laisser un
+     geste horizontal remonter au plateau : en bloquant les deux axes, glisser
+     le plateau en partant d'une card devenait impossible. */
+  [class*='overflow-y-auto'] {
+    overscroll-behavior-y: contain;
+  }
+  [class*='overflow-x-auto'] {
+    overscroll-behavior-x: contain;
+  }
+  [class*='overflow-auto'] {
+    overscroll-behavior: contain;
+  }
   [class*='overflow-y-auto'],
   [class*='overflow-x-auto'],
   [class*='overflow-auto'] {
-    overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
   }
 }

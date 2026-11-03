@@ -1032,6 +1032,10 @@
     "openAction": "OUVRIR",
     "tapToUnlock": "Touchez pour déverrouiller",
     "tapToLock": "Touchez pour verrouiller",
+    "more": "Plus d'options",
+    "lockAction": "Verrouiller",
+    "unlockAction": "Déverrouiller",
+    "openDoor": "Ouvrir la porte",
     "fields": {
       "entityId": {
         "label": "Serrure"
