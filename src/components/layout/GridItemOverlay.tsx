@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
+import { useDrag } from '@use-gesture/react';
 import { Copy, Lock, MoveDiagonal, Settings, Trash2 } from 'lucide-react';
 import { useDashboardLayout, useSizePresets, type GridWidget } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -18,7 +19,7 @@ const ROUND = 'flex size-10 items-center justify-center rounded-full';
 
 /** Appui prolongé, en ms, avant qu'une tuile se laisse saisir au doigt. */
 const TOUCH_HOLD = 220;
-/** Mouvement toléré, en px, pendant cet appui : au-delà, c'est un défilement. */
+/** Mouvement, en px, avant que le geste ne choisisse son axe pendant cet appui. */
 const TOUCH_SLOP = 8;
 
 /**
@@ -35,44 +36,19 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
   const { setEditingWidgetId } = useWidgetConfig();
   const hasDispositions = !!WIDGET_DISPOSITIONS[widget.type]?.length;
   const keep = (e: React.PointerEvent) => e.stopPropagation();
-  const holdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
    * À la souris, la tuile se saisit aussitôt. Au doigt, il faut la tenir un
-   * instant — ou la tirer franchement de côté : sans ça, poser le doigt pour
-   * faire défiler le panneau déplacerait une tuile à chaque fois.
+   * instant — ou la tirer de côté : sans ça, poser le doigt pour faire défiler
+   * le panneau déplacerait une tuile à chaque fois. `preventScroll` tranche :
+   * avant `TOUCH_HOLD`, un geste vertical rend la main au défilement, un geste
+   * horizontal saisit la tuile. Seul le départ compte ici, `dragSession` suit.
    */
-  const onGrab = (e: React.PointerEvent) => {
-    if (e.pointerType === 'mouse') {
-      if (e.button !== 0) return;
-      e.preventDefault();
-      return onDragStart(id, e);
-    }
-    const start = { clientX: e.clientX, clientY: e.clientY };
-    const cancel = () => {
-      if (holdRef.current) clearTimeout(holdRef.current);
-      holdRef.current = null;
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', cancel);
-      window.removeEventListener('pointercancel', cancel);
-    };
-    const onMove = (m: PointerEvent) => {
-      const dx = m.clientX - start.clientX;
-      const dy = m.clientY - start.clientY;
-      if (Math.hypot(dx, dy) <= TOUCH_SLOP) return;
-      cancel();
-      // Franchement horizontal : c'est un déplacement, sans attendre l'appui
-      // prolongé. Le vertical reste au défilement du panneau.
-      if (Math.abs(dx) > Math.abs(dy) * 1.5) onDragStart(id, { clientX: m.clientX, clientY: m.clientY });
-    };
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', cancel);
-    window.addEventListener('pointercancel', cancel);
-    holdRef.current = setTimeout(() => {
-      cancel();
-      onDragStart(id, start);
-    }, TOUCH_HOLD);
-  };
+  const bind = useDrag(({ first, xy: [clientX, clientY] }) => first && onDragStart(id, { clientX, clientY }), {
+    preventScroll: TOUCH_HOLD,
+    preventScrollAxis: 'y',
+    axisThreshold: { touch: TOUCH_SLOP },
+  });
 
   if (widget.static) {
     return (
@@ -98,7 +74,7 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
   // (il le fait en lecture) : il appartient au déplacement de la tuile.
   return (
     <div
-      onPointerDown={onGrab}
+      {...bind()}
       title={t('layout.panel.moveTile')}
       className='absolute inset-0 z-10 flex cursor-grab touch-pan-y select-none flex-col rounded-[var(--ds-radius-lg)] bg-[color-mix(in_srgb,var(--ds-surface-3)_94%,transparent)] text-[var(--ds-ink)] outline-2 outline-dashed outline-[var(--ds-ink-muted)] active:cursor-grabbing'
     >
