@@ -8,7 +8,7 @@
  *
  * Run with: npm run test:e2e:dashboard
  */
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 test.use({ viewport: { width: 800, height: 600 }, hasTouch: true });
 
@@ -16,9 +16,11 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('ha-dashboard-tour-done', 'true'));
 });
 
-test('un glissement horizontal parti d’une card fait défiler le plateau', async ({ page }) => {
-  // Un panneau est toujours ramené à la largeur de l'écran : le plateau ne
-  // déborde qu'avec une seconde colonne, que la graine n'a pas.
+/**
+ * Un panneau est toujours ramené à la largeur de l'écran : le plateau ne
+ * déborde qu'avec une seconde colonne, que la graine n'a pas.
+ */
+async function withSecondPanel(page: Page) {
   await page.route('**/api/config', async route => {
     if (route.request().method() !== 'GET') return route.continue();
     const res = await route.fetch();
@@ -26,6 +28,28 @@ test('un glissement horizontal parti d’une card fait défiler le plateau', asy
     body.layouts.home.panels.push({ id: 'touch-panel-2', cols: 9, widgets: [{ id: 'greeting-2', type: 'greeting', w: 3, h: 1 }] });
     await route.fulfill({ response: res, json: body });
   });
+}
+
+/** Un doigt qui se pose sur le premier point, attend `holdMs`, puis passe par les suivants. */
+async function touchDrag(page: Page, path: { x: number; y: number }[], holdMs = 0) {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [path[0]] });
+  if (holdMs) await page.waitForTimeout(holdMs);
+  for (let leg = 1; leg < path.length; leg++) {
+    const from = path[leg - 1];
+    const to = path[leg];
+    for (let step = 1; step <= 8; step++) {
+      const x = Math.round(from.x + ((to.x - from.x) * step) / 8);
+      const y = Math.round(from.y + ((to.y - from.y) * step) / 8);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y }] });
+      await page.waitForTimeout(16);
+    }
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+}
+
+test('un glissement horizontal parti d’une card fait défiler le plateau', async ({ page }) => {
+  await withSecondPanel(page);
 
   await page.goto('/');
   await page.waitForSelector('[data-widget-id]', { timeout: 15_000 });
@@ -44,13 +68,31 @@ test('un glissement horizontal parti d’une card fait défiler le plateau', asy
   // défiler aucun élément en mode sans écran.
   const x = Math.round(card!.x + card!.width / 2);
   const y = Math.round(card!.y + card!.height / 2);
-  const cdp = await page.context().newCDPSession(page);
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
-  for (let step = 1; step <= 12; step++) {
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x - step * 25, y }] });
-    await page.waitForTimeout(16);
-  }
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await touchDrag(page, [
+    { x, y },
+    { x: x - 300, y },
+  ]);
 
   await expect.poll(() => board.evaluate(el => el.scrollLeft)).toBeGreaterThan(50);
+});
+
+test('en édition, tirer une tuile de côté la déplace au lieu de faire glisser le plateau', async ({ page }) => {
+  await withSecondPanel(page);
+  await page.goto('/');
+  await page.waitForSelector('[data-widget-id]', { timeout: 15_000 });
+  await page.getByRole('button', { name: 'Modifier ce panneau' }).first().click();
+  await expect(page.getByRole('button', { name: 'Abandonner les modifications' })).toBeVisible();
+
+  const tiles = page.locator('[data-panel-id="seed-panel"] [data-panel-grid] > [data-widget-id]');
+  const order = () => tiles.evaluateAll(els => els.map(el => (el as HTMLElement).dataset.widgetId));
+  const [first, second, ...rest] = (await order()) as string[];
+  const a = (await tiles.nth(0).boundingBox())!;
+  const b = (await tiles.nth(1).boundingBox())!;
+
+  // Le doigt se pose au centre de la première tuile et la tire aussitôt de côté, sans la tenir,
+  // puis rejoint la moitié droite de la deuxième.
+  const from = { x: Math.round(a.x + a.width / 2), y: Math.round(a.y + a.height / 2) };
+  await touchDrag(page, [from, { x: from.x + 60, y: from.y }, { x: Math.round(b.x + b.width * 0.75), y: Math.round(b.y + b.height / 2) }]);
+
+  await expect.poll(order).toEqual([second, first, ...rest]);
 });

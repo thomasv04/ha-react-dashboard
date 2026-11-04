@@ -39,8 +39,8 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
 
   /**
    * À la souris, la tuile se saisit aussitôt. Au doigt, il faut la tenir un
-   * instant : sans ça, poser le doigt pour faire défiler le panneau déplacerait
-   * une tuile à chaque fois.
+   * instant — ou la tirer franchement de côté : sans ça, poser le doigt pour
+   * faire défiler le panneau déplacerait une tuile à chaque fois.
    */
   const onGrab = (e: React.PointerEvent) => {
     if (e.pointerType === 'mouse') {
@@ -57,7 +57,13 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
       window.removeEventListener('pointercancel', cancel);
     };
     const onMove = (m: PointerEvent) => {
-      if (Math.hypot(m.clientX - start.clientX, m.clientY - start.clientY) > TOUCH_SLOP) cancel();
+      const dx = m.clientX - start.clientX;
+      const dy = m.clientY - start.clientY;
+      if (Math.hypot(dx, dy) <= TOUCH_SLOP) return;
+      cancel();
+      // Franchement horizontal : c'est un déplacement, sans attendre l'appui
+      // prolongé. Le vertical reste au défilement du panneau.
+      if (Math.abs(dx) > Math.abs(dy) * 1.5) onDragStart(id, { clientX: m.clientX, clientY: m.clientY });
     };
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', cancel);
@@ -86,11 +92,15 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
     );
   }
 
+  // `touch-pan-y` : le navigateur tranche entre défilement et glisser-déposer au
+  // premier mouvement du doigt, avant que notre appui prolongé n'ait pu parler.
+  // Un geste horizontal sur une tuile ne doit donc pas faire glisser le plateau
+  // (il le fait en lecture) : il appartient au déplacement de la tuile.
   return (
     <div
       onPointerDown={onGrab}
       title={t('layout.panel.moveTile')}
-      className='absolute inset-0 z-10 flex cursor-grab select-none flex-col rounded-[var(--ds-radius-lg)] bg-[color-mix(in_srgb,var(--ds-surface-3)_94%,transparent)] text-[var(--ds-ink)] outline-2 outline-dashed outline-[var(--ds-ink-muted)] active:cursor-grabbing'
+      className='absolute inset-0 z-10 flex cursor-grab touch-pan-y select-none flex-col rounded-[var(--ds-radius-lg)] bg-[color-mix(in_srgb,var(--ds-surface-3)_94%,transparent)] text-[var(--ds-ink)] outline-2 outline-dashed outline-[var(--ds-ink-muted)] active:cursor-grabbing'
     >
       <div className='flex items-start justify-between gap-2 p-2'>
         <span className='truncate pl-1 pt-1.5 text-sm font-semibold'>{label}</span>
