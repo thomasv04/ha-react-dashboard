@@ -1035,6 +1035,9 @@ function StateStyled({
   return <WidgetConfigOverride configs={merged}>{children}</WidgetConfigOverride>;
 }
 
+/** Ce qui, dans une card, agit par lui-même : un appui dessus n'ouvre pas la fiche. */
+const CARD_CONTROLS = 'button, a, input, select, textarea, [role="slider"], [role="switch"]';
+
 // Memoized widget content
 const MemoChildren = memo(function MemoChildren({
   children,
@@ -1057,10 +1060,14 @@ const MemoChildren = memo(function MemoChildren({
     <div
       ref={ref}
       className={`h-full overflow-hidden${isEditMode ? ' pointer-events-none select-none' : ''}${onClick && !isEditMode ? ' cursor-pointer' : ''}`}
-      onClick={() => {
+      onClick={e => {
         // Un glissement (jauge de thermostat, curseur de luminosité) se termine
         // par un `click` sur la card : il ne doit pas ouvrir la fiche.
         if (moved.current) return;
+        // Un contrôle de la card (flèche de volet, bascule) a déjà agi : le clic
+        // qui en remonte n'est pas un appui sur la card.
+        const control = (e.target as Element).closest(CARD_CONTROLS);
+        if (control && ref.current?.contains(control)) return;
         if (onClick && ref.current) onClick(ref.current.getBoundingClientRect());
       }}
       {...(onLongPress && !isEditMode ? longPressHandlers : {})}
