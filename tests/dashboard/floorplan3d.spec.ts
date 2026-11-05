@@ -136,8 +136,10 @@ async function openModel(page: Page) {
   await expect(page.getByText('20.4 °C')).toBeVisible({ timeout: 60_000 });
   await expect
     .poll(async () => {
+      // 500 ms : sur un runner chargé, une image du rendu WebGL logiciel peut
+      // durer plus de 250 ms, et la pastille paraître immobile en pleine descente.
       const before = await at(page, 'temp');
-      await page.waitForTimeout(250);
+      await page.waitForTimeout(500);
       return before === (await at(page, 'temp'));
     })
     .toBe(true);
@@ -211,7 +213,8 @@ test('anchored chips follow the camera, and the reset button brings it back', as
   expect(await at(page, 'weather-3d')).toBe(card);
 
   await page.getByRole('button', { name: 'Recentrer' }).click();
-  await expect.poll(() => at(page, 'temp')).toBe(home);
+  // Le retour de la caméra est animé : plus long que 5 s sur un runner chargé.
+  await expect.poll(() => at(page, 'temp'), { timeout: 15_000 }).toBe(home);
 });
 
 test('the thermal view colours a room with the temperature measured in it', async ({ page }) => {
