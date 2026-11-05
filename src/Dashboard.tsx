@@ -160,7 +160,7 @@ function DashboardContent() {
         <ReturnHomeWatcher />
         <ScreensaverEntityWatcher />
         <ScreensaverPlanWatcher />
-        <WallPanelOverlay />
+        <WallPanelOverlay onOpenLauncher={() => setLauncherOpen(true)} />
 
         {/* More Info modal — une modale par domaine, chacune avec ses graphes
             et son historique : beaucoup de surface pour une exception. */}

@@ -59,6 +59,12 @@ export interface WallPanelConfig {
   floorplan_page?: string;
   /** Disposition de l'heure. Défaut `clock`. */
   clock_layout?: ClockLayout;
+  /**
+   * Le lanceur d'apps en haut à gauche, et — en cadre photo — la pastille de
+   * l'utilisateur près de l'heure, comme sur l'Echo Show. Actif sauf s'il vaut
+   * `false`.
+   */
+  show_top_bar?: boolean;
   /** Styles avancés */
   style: WallPanelStyle;
   /** Gestes tactiles. Absent dans les configs antérieures — lire via `gesturesOf`. */

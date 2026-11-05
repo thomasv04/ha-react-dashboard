@@ -319,7 +319,9 @@
       "show": "View screensaver",
       "hint": "The preview follows every setting. Changes are saved automatically.",
       "plan": "Floor plan"
-    }
+    },
+    "showTopBar": "Launcher and top bar",
+    "showTopBarDesc": "The apps button top left and, in photo frame, the user next to the time, as on the home screen."
   },
   "panelNoneCreated": "No panel yet — create one from the edit mode.",
   "duplicateWidget": "Duplicate widget",

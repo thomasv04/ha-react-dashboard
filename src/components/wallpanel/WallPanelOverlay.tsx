@@ -62,7 +62,8 @@ function WallPanelEditSession() {
   return <WallPanelEditShell onSave={persist} />;
 }
 
-export function WallPanelOverlay() {
+/** `onOpenLauncher` : le lanceur de l'accueil, que le bouton de la veille ouvre en la quittant. */
+export function WallPanelOverlay({ onOpenLauncher }: { onOpenLauncher?: () => void } = {}) {
   const { t } = useI18n();
   const user = useUser();
   const { isActive, deactivate, wallPanelLayout, config, isWallPanelEditMode, enterWallPanelEditMode } = useWallPanel();
@@ -241,6 +242,14 @@ export function WallPanelOverlay() {
                 onPrev={canSwipePhotos ? () => slideshowRef.current?.go(-1) : undefined}
                 onNext={canSwipePhotos ? () => slideshowRef.current?.go(1) : undefined}
                 onMore={user?.is_admin ? enterWallPanelEditMode : undefined}
+                onLauncher={
+                  config.show_top_bar !== false && onOpenLauncher
+                    ? () => {
+                        deactivate();
+                        onOpenLauncher();
+                      }
+                    : undefined
+                }
               />
             )}
           </motion.div>

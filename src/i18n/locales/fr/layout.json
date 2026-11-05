@@ -319,7 +319,9 @@
       "show": "Voir la veille",
       "hint": "L'aperçu suit chaque réglage. Les modifications sont enregistrées automatiquement.",
       "plan": "Plan"
-    }
+    },
+    "showTopBar": "Lanceur et barre du haut",
+    "showTopBarDesc": "Le bouton des apps en haut à gauche, et en cadre photo l’utilisateur à côté de l’heure, comme sur l’accueil."
   },
   "panelNoneCreated": "Aucun panneau pour l'instant — créez-en un depuis le mode édition.",
   "duplicateWidget": "Dupliquer le widget",

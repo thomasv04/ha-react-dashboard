@@ -598,6 +598,12 @@ export function WallPanelSettings({ onClose, guard }: WallPanelSettingsProps) {
                   ]}
                 />
               </div>
+              <ToggleRow
+                label={t('layout.wallPanel.showTopBar')}
+                description={t('layout.wallPanel.showTopBarDesc')}
+                checked={draft.show_top_bar !== false}
+                onChange={show_top_bar => update({ show_top_bar })}
+              />
             </>
           )}
 
