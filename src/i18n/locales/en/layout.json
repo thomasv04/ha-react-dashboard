@@ -646,5 +646,23 @@
     }
   },
   "decrease": "Decrease: {label}",
-  "increase": "Increase: {label}"
+  "increase": "Increase: {label}",
+  "gradientChoose": "Choose a gradient",
+  "gradientCustom": "Custom",
+  "gradientPreset": "Gradient {n}",
+  "gradientFrom": "Start colour",
+  "gradientTo": "End colour",
+  "templateEditor": {
+    "snippets": "Snippets",
+    "insertEntity": "Entity",
+    "searchEntity": "Search an entity…",
+    "currentEntity": "Current entity",
+    "snippet": {
+      "ifElse": "If / else",
+      "variable": "Variable",
+      "round": "Round",
+      "attribute": "Attribute",
+      "hasValue": "Has a value?"
+    }
+  }
 }

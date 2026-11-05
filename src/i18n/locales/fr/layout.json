@@ -646,5 +646,23 @@
     }
   },
   "decrease": "Diminuer : {label}",
-  "increase": "Augmenter : {label}"
+  "increase": "Augmenter : {label}",
+  "gradientChoose": "Choisir un dégradé",
+  "gradientCustom": "Sur mesure",
+  "gradientPreset": "Dégradé {n}",
+  "gradientFrom": "Couleur de départ",
+  "gradientTo": "Couleur d'arrivée",
+  "templateEditor": {
+    "snippets": "Exemples",
+    "insertEntity": "Entité",
+    "searchEntity": "Rechercher une entité…",
+    "currentEntity": "Entité courante",
+    "snippet": {
+      "ifElse": "Si / sinon",
+      "variable": "Variable",
+      "round": "Arrondi",
+      "attribute": "Attribut",
+      "hasValue": "A une valeur ?"
+    }
+  }
 }

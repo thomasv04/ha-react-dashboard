@@ -6,6 +6,8 @@ import { useAreas } from '@hakit/core';
 import { useI18n } from '@/i18n';
 import { useArea, areaDomains, isEntityToken } from '@/hooks/useAreaControls';
 import { friendlyName } from '@/lib/ha-service';
+import { cn } from '@/lib/utils';
+import { INPUT, LABEL } from './ui';
 
 /**
  * Choix d'une zone Home Assistant et des commandes qu'elle apporte : un domaine
@@ -64,13 +66,14 @@ export function AreaControlsField({
   };
 
   return (
-    <div className='space-y-2'>
-      <label className='text-sm text-[var(--ds-ink-muted)] block'>{label}</label>
+    <div className='space-y-3'>
+      <label className={cn(LABEL, 'mb-0')}>{label}</label>
 
       <select
         value={area}
         onChange={e => onChange({ area: e.target.value, controls: [] })}
-        className='w-full px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)] outline-none focus:outline-2 focus:outline-[var(--ds-accent)] cursor-pointer'
+        aria-label={label}
+        className={cn(INPUT, 'cursor-pointer px-3')}
         style={{ colorScheme: 'dark' }}
       >
         <option value='' className='bg-[#0c1028]'>
@@ -85,18 +88,19 @@ export function AreaControlsField({
 
       {area && (
         <>
-          <div className='flex flex-wrap items-center gap-1.5'>
+          <div className='flex flex-wrap items-center gap-2'>
             {controls.map(token => (
               <span
                 key={token}
-                className='flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full bg-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)]'
+                className='flex h-10 items-center gap-1 rounded-full bg-[var(--ds-surface-3)] pl-4 pr-1 text-[15px] font-semibold'
               >
                 {isEntityToken(token) ? entityLabel(token) : domainLabel(token)}
                 <button
                   onClick={() => onChange({ area, controls: controls.filter(c => c !== token) })}
-                  className='p-0.5 rounded-full text-[var(--ds-ink-muted)]'
+                  aria-label={t('common.delete')}
+                  className='flex size-8 items-center justify-center rounded-full text-[var(--ds-ink-muted)]'
                 >
-                  <X size={11} />
+                  <X size={16} />
                 </button>
               </span>
             ))}
@@ -105,10 +109,11 @@ export function AreaControlsField({
           <button
             ref={triggerRef}
             onClick={handleToggle}
-            className='flex items-center gap-1.5 px-2.5 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] text-sm transition-colors'
+            aria-expanded={open}
+            className='flex h-11 items-center gap-2 rounded-full bg-[var(--ds-tile-on)] px-5 text-[15px] font-semibold text-[var(--ds-tile-on-ink)]'
           >
-            <Plus size={11} /> {t('layout.areaControls.add')}
-            {open ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+            <Plus size={16} /> {t('layout.areaControls.add')}
+            {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>
         </>
       )}
@@ -122,52 +127,55 @@ export function AreaControlsField({
               ...dropStyle,
               zIndex: 9999,
               background: 'var(--ds-surface-1)',
-              borderRadius: 8,
-              border: '1px solid var(--ds-surface-3)',
+              borderRadius: 22,
               boxShadow: 'var(--ds-shadow-sheet)',
               overflow: 'hidden',
-              maxHeight: 300,
+              maxHeight: 340,
             }}
           >
-            <div className='p-2 border-b border-[var(--ds-surface-3)]'>
-              <div className='flex items-center gap-2 px-2 py-1.5 rounded-md bg-[var(--ds-surface-2)]'>
-                <Search size={13} className='text-[var(--ds-ink-muted)]' />
+            <div className='p-2'>
+              <div className='flex h-11 items-center gap-2 rounded-full bg-[var(--ds-surface-3)] px-4'>
+                <Search size={16} className='text-[var(--ds-ink-muted)]' />
                 <input
                   autoFocus
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className='bg-transparent text-sm text-[var(--ds-ink)] outline-none flex-1 placeholder:text-[var(--ds-ink-muted)]'
+                  className='flex-1 bg-transparent text-[15px] text-[var(--ds-ink)] outline-none placeholder:text-[var(--ds-ink-muted)]'
                   placeholder={t('layout.entitySearch')}
                 />
               </div>
             </div>
 
-            <div className='overflow-y-auto' style={{ maxHeight: 240 }}>
+            <div className='overflow-y-auto px-2 pb-2' style={{ maxHeight: 270 }}>
               {availableDomains.length > 0 && (
-                <p className='px-3 pt-2 pb-1 text-xs uppercase tracking-wider text-[var(--ds-ink-muted)]'>
-                  {t('layout.areaControls.domains')}
-                </p>
+                <p className='px-3 pb-1 pt-2 text-sm font-semibold text-[var(--ds-ink-muted)]'>{t('layout.areaControls.domains')}</p>
               )}
               {availableDomains.map(d => (
-                <button key={d} onClick={() => add(d)} className='w-full text-left px-3 py-1.5 text-sm text-[var(--ds-ink-muted)]'>
+                <button
+                  key={d}
+                  onClick={() => add(d)}
+                  className='flex min-h-11 w-full items-center rounded-[var(--ds-radius-sm)] px-3 text-left text-[15px]'
+                >
                   {domainLabel(d)}
                 </button>
               ))}
 
               {availableEntities.length > 0 && (
-                <p className='px-3 pt-2 pb-1 text-xs uppercase tracking-wider text-[var(--ds-ink-muted)]'>
-                  {t('layout.areaControls.entities')}
-                </p>
+                <p className='px-3 pb-1 pt-3 text-sm font-semibold text-[var(--ds-ink-muted)]'>{t('layout.areaControls.entities')}</p>
               )}
               {availableEntities.map(e => (
-                <button key={e.entity_id} onClick={() => add(e.entity_id)} className='w-full text-left px-3 py-1.5 group'>
-                  <span className='block text-sm text-[var(--ds-ink-muted)] truncate'>{friendlyName(e) ?? e.entity_id}</span>
-                  <span className='block text-xs text-[var(--ds-ink-muted)] font-mono truncate'>{e.entity_id}</span>
+                <button
+                  key={e.entity_id}
+                  onClick={() => add(e.entity_id)}
+                  className='w-full rounded-[var(--ds-radius-sm)] px-3 py-2 text-left'
+                >
+                  <span className='block truncate text-[15px]'>{friendlyName(e) ?? e.entity_id}</span>
+                  <span className='block truncate font-mono text-xs text-[var(--ds-ink-muted)]'>{e.entity_id}</span>
                 </button>
               ))}
 
               {!availableDomains.length && !availableEntities.length && (
-                <p className='px-3 py-2 text-[var(--ds-ink-muted)] text-xs'>{t('layout.entityNoResult')}</p>
+                <p className='px-3 py-2 text-sm text-[var(--ds-ink-muted)]'>{t('layout.entityNoResult')}</p>
               )}
             </div>
           </div>,

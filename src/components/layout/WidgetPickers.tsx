@@ -6,6 +6,7 @@ import { GRADIENT_PRESETS, gradientCss, gradientColors, customGradient, isCustom
 import { apiFetch, assetUrl } from '@/lib/api-base';
 import { useI18n } from '@/i18n';
 import { useDropdownPortal } from '@/hooks/useDropdownPortal';
+import { cn } from '@/lib/utils';
 
 interface UploadedIcon {
   filename: string;
@@ -318,107 +319,106 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
 
 // ── Gradient / Color Picker ──────────────────────────────────────────────────
 
-/** Pre-defined gradient palette used in the dashboard */
-
+/**
+ * Dégradé d'une card : une grille de pastilles, comme les couleurs d'une
+ * lumière sur l'Echo, et deux couleurs au choix pour un dégradé sur mesure.
+ */
 export function GradientPicker({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const { t } = useI18n();
+  // Portail : dans la fiche d'édition, le menu était rogné par son défilement.
+  const { open, toggle, close, triggerRef, dropRef, dropStyle } = useDropdownPortal<HTMLButtonElement>({ minWidth: 300 });
 
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  const current = GRADIENT_PRESETS.find(g => g.value === value);
+  const presetIndex = GRADIENT_PRESETS.findIndex(g => g.value === value);
   // Les deux sélecteurs de couleur partent du dégradé courant : on règle celui
   // qu'on a sous les yeux plutôt que de repartir d'un noir arbitraire.
   const custom = gradientColors(value) ?? { from: '#6366f1', to: '#60a5fa' };
+  const currentLabel =
+    presetIndex >= 0
+      ? t('layout.gradientPreset', { n: presetIndex + 1 })
+      : isCustomGradient(value)
+        ? t('layout.gradientCustom')
+        : value || t('layout.gradientChoose');
 
   return (
-    <div className='relative' ref={containerRef}>
-      <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>
-      <div
-        className='flex items-center gap-2 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] cursor-pointer transition-colors'
-        onClick={() => setOpen(!open)}
+    <div>
+      {label && <label className='mb-2 block text-sm font-semibold text-[var(--ds-ink-muted)]'>{label}</label>}
+      <button
+        ref={triggerRef}
+        type='button'
+        onClick={toggle}
+        aria-expanded={open}
+        className='flex h-12 w-full items-center gap-3 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] pl-2.5 pr-4 text-left'
       >
-        {/* Preview swatch */}
-        <div className='w-5 h-5 rounded-md shrink-0' style={{ background: gradientCss(value) ?? 'var(--ds-surface-3)' }} />
-        <span className={`text-sm flex-1 truncate ${value ? 'text-[var(--ds-ink)]' : 'text-[var(--ds-ink-muted)]'}`}>
-          {current?.label ?? (isCustomGradient(value) ? 'Sur mesure' : value || 'Choisir un dégradé...')}
+        <span
+          className='size-7 shrink-0 rounded-[var(--ds-radius-sm)]'
+          style={{ background: gradientCss(value) ?? 'var(--ds-surface-2)' }}
+        />
+        <span className={cn('flex-1 truncate text-base', value ? 'text-[var(--ds-ink)]' : 'text-[var(--ds-ink-muted)]')}>
+          {currentLabel}
         </span>
         {open ? (
-          <ChevronUp size={14} className='text-[var(--ds-ink-muted)]' />
+          <ChevronUp size={18} className='text-[var(--ds-ink-muted)]' />
         ) : (
-          <ChevronDown size={14} className='text-[var(--ds-ink-muted)]' />
+          <ChevronDown size={18} className='text-[var(--ds-ink-muted)]' />
         )}
-      </div>
+      </button>
 
-      {open && (
-        <div
-          className='absolute z-50 mt-1 w-full rounded-[var(--ds-radius-md)] border border-[var(--ds-surface-3)] shadow-[var(--ds-shadow-sheet)] overflow-hidden'
-          style={{ background: 'var(--ds-surface-1)' }}
-        >
-          <div className='overflow-y-auto p-2' style={{ maxHeight: 280 }}>
-            <div className='grid grid-cols-2 gap-1.5'>
-              {GRADIENT_PRESETS.map(preset => {
+      {open &&
+        createPortal(
+          <div
+            ref={dropRef}
+            className='fixed rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-1)] p-3 text-[var(--ds-ink)] shadow-[var(--ds-shadow-sheet)]'
+            style={{ ...dropStyle, zIndex: 9999 }}
+          >
+            <div className='grid grid-cols-[repeat(auto-fill,minmax(44px,1fr))] gap-2'>
+              {GRADIENT_PRESETS.map((preset, i) => {
                 const isActive = preset.value === value;
                 return (
                   <button
                     key={preset.value}
                     onClick={() => {
                       onChange(preset.value);
-                      setOpen(false);
+                      close();
                     }}
-                    className={`flex items-center gap-2 px-2.5 py-2 rounded-[var(--ds-radius-sm)] transition-colors text-left ${
-                      isActive
-                        ? 'bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
-                        : 'border border-transparent'
-                    }`}
-                  >
-                    <div
-                      className='w-8 h-8 rounded-[var(--ds-radius-sm)] shrink-0'
-                      style={{ background: `linear-gradient(135deg, ${preset.from}, ${preset.to})` }}
-                    />
-                    <span className={`text-xs leading-tight ${isActive ? 'text-[var(--ds-accent)]' : 'text-[var(--ds-ink-muted)]'}`}>
-                      {preset.label}
-                    </span>
-                  </button>
+                    aria-label={t('layout.gradientPreset', { n: i + 1 })}
+                    aria-pressed={isActive}
+                    className={cn(
+                      'aspect-square min-h-11 rounded-[var(--ds-radius-sm)]',
+                      isActive && 'ring-2 ring-[var(--ds-ink)] ring-offset-2 ring-offset-[var(--ds-surface-1)]'
+                    )}
+                    style={{ background: `linear-gradient(135deg, ${preset.from}, ${preset.to})` }}
+                  />
                 );
               })}
             </div>
-          </div>
 
-          {/* Sur mesure — deux sélecteurs de couleur natifs plutôt qu'un champ de
+            {/* Sur mesure — deux sélecteurs de couleur natifs plutôt qu'un champ de
               classes Tailwind : ces classes-là n'étaient jamais générées, et le
               dégradé saisi ne peignait rien. */}
-          <div className='border-t border-[var(--ds-surface-3)] p-2'>
-            <label className='text-xs text-[var(--ds-ink-muted)] mb-1.5 block'>Sur mesure</label>
+            <p className='mb-2 mt-4 text-sm font-semibold text-[var(--ds-ink-muted)]'>{t('layout.gradientCustom')}</p>
             <div className='flex items-center gap-2'>
               <input
                 type='color'
-                aria-label='Couleur de départ'
+                aria-label={t('layout.gradientFrom')}
                 value={custom.from}
                 onChange={e => onChange(customGradient(e.target.value, custom.to))}
-                className='w-8 h-8 rounded-md bg-transparent border border-[var(--ds-surface-3)] cursor-pointer'
+                className='size-11 shrink-0 cursor-pointer rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] p-1'
               />
-              <div className='flex-1 h-8 rounded-md' style={{ background: `linear-gradient(135deg, ${custom.from}, ${custom.to})` }} />
+              <div
+                className='h-11 flex-1 rounded-[var(--ds-radius-sm)]'
+                style={{ background: `linear-gradient(135deg, ${custom.from}, ${custom.to})` }}
+              />
               <input
                 type='color'
-                aria-label="Couleur d'arrivée"
+                aria-label={t('layout.gradientTo')}
                 value={custom.to}
                 onChange={e => onChange(customGradient(custom.from, e.target.value))}
-                className='w-8 h-8 rounded-md bg-transparent border border-[var(--ds-surface-3)] cursor-pointer'
+                className='size-11 shrink-0 cursor-pointer rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] p-1'
               />
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

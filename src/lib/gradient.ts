@@ -15,7 +15,6 @@
  */
 
 export interface GradientPreset {
-  label: string;
   /** Valeur stockée. Historiquement une paire de classes Tailwind. */
   value: string;
   from: string;
@@ -23,23 +22,23 @@ export interface GradientPreset {
 }
 
 export const GRADIENT_PRESETS: GradientPreset[] = [
-  { label: 'Rouge → Orange', value: 'from-red-500 to-orange-400', from: '#ef4444', to: '#fb923c' },
-  { label: 'Rose → Pink', value: 'from-pink-500 to-rose-400', from: '#ec4899', to: '#fb7185' },
-  { label: 'Orange → Amber', value: 'from-orange-500 to-amber-400', from: '#f97316', to: '#fbbf24' },
-  { label: 'Jaune → Amber', value: 'from-yellow-500 to-amber-400', from: '#eab308', to: '#fbbf24' },
-  { label: 'Lime → Vert', value: 'from-lime-500 to-green-400', from: '#84cc16', to: '#4ade80' },
-  { label: 'Vert → Émeraude', value: 'from-green-500 to-emerald-400', from: '#22c55e', to: '#34d399' },
-  { label: 'Émeraude → Teal', value: 'from-emerald-500 to-teal-400', from: '#10b981', to: '#2dd4bf' },
-  { label: 'Teal → Cyan', value: 'from-teal-500 to-cyan-400', from: '#14b8a6', to: '#22d3ee' },
-  { label: 'Cyan → Bleu clair', value: 'from-cyan-500 to-sky-400', from: '#06b6d4', to: '#38bdf8' },
-  { label: 'Bleu → Cyan', value: 'from-blue-500 to-cyan-400', from: '#3b82f6', to: '#22d3ee' },
-  { label: 'Bleu → Bleu clair', value: 'from-blue-500 to-sky-400', from: '#3b82f6', to: '#38bdf8' },
-  { label: 'Bleu ciel → Bleu', value: 'from-sky-500 to-blue-400', from: '#0ea5e9', to: '#60a5fa' },
-  { label: 'Indigo → Bleu', value: 'from-indigo-500 to-blue-400', from: '#6366f1', to: '#60a5fa' },
-  { label: 'Violet → Indigo', value: 'from-violet-500 to-indigo-400', from: '#8b5cf6', to: '#818cf8' },
-  { label: 'Purple → Violet', value: 'from-purple-500 to-violet-400', from: '#a855f7', to: '#a78bfa' },
-  { label: 'Fuchsia → Pink', value: 'from-fuchsia-500 to-pink-400', from: '#d946ef', to: '#f472b6' },
-  { label: 'Slate → Gris', value: 'from-slate-500 to-gray-400', from: '#64748b', to: '#9ca3af' },
+  { value: 'from-red-500 to-orange-400', from: '#ef4444', to: '#fb923c' },
+  { value: 'from-pink-500 to-rose-400', from: '#ec4899', to: '#fb7185' },
+  { value: 'from-orange-500 to-amber-400', from: '#f97316', to: '#fbbf24' },
+  { value: 'from-yellow-500 to-amber-400', from: '#eab308', to: '#fbbf24' },
+  { value: 'from-lime-500 to-green-400', from: '#84cc16', to: '#4ade80' },
+  { value: 'from-green-500 to-emerald-400', from: '#22c55e', to: '#34d399' },
+  { value: 'from-emerald-500 to-teal-400', from: '#10b981', to: '#2dd4bf' },
+  { value: 'from-teal-500 to-cyan-400', from: '#14b8a6', to: '#22d3ee' },
+  { value: 'from-cyan-500 to-sky-400', from: '#06b6d4', to: '#38bdf8' },
+  { value: 'from-blue-500 to-cyan-400', from: '#3b82f6', to: '#22d3ee' },
+  { value: 'from-blue-500 to-sky-400', from: '#3b82f6', to: '#38bdf8' },
+  { value: 'from-sky-500 to-blue-400', from: '#0ea5e9', to: '#60a5fa' },
+  { value: 'from-indigo-500 to-blue-400', from: '#6366f1', to: '#60a5fa' },
+  { value: 'from-violet-500 to-indigo-400', from: '#8b5cf6', to: '#818cf8' },
+  { value: 'from-purple-500 to-violet-400', from: '#a855f7', to: '#a78bfa' },
+  { value: 'from-fuchsia-500 to-pink-400', from: '#d946ef', to: '#f472b6' },
+  { value: 'from-slate-500 to-gray-400', from: '#64748b', to: '#9ca3af' },
 ];
 
 /** Format d'un dégradé composé à la main : deux couleurs séparées par une virgule. */
