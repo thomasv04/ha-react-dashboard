@@ -48,7 +48,10 @@ function BlockRenderer({ block, card }: { block: CustomBlock; card: boolean }) {
 const BLOCK_SPAN: Partial<Record<CustomBlock['type'], string>> = {
   'section-header': 'col-span-full',
   'button-row': 'contents',
-  widget: 'sm:col-span-2',
+  // Selon la largeur de la grille, pas de l'écran : sur une seule colonne
+  // (aperçu de l'éditeur, téléphone), s'étaler sur deux en créait une seconde,
+  // étroite, où les tuiles suivantes s'écrasaient.
+  widget: '@[464px]:col-span-2',
 };
 
 /**
@@ -63,7 +66,7 @@ export function CustomPanelBlocks({ panel }: { panel: CustomPanel }) {
   const { t } = useI18n();
 
   return (
-    <div className='grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3'>
+    <div className='@container grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3'>
       {panel.blocks.map(block => (
         <div key={block.id} className={BLOCK_SPAN[block.type]}>
           <SafeBlock block={block} card />

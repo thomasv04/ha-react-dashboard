@@ -228,7 +228,9 @@
     "headerButtonsDesc": "Restent visibles quand la modale défile, à côté de la fermeture.",
     "listTitle": "Mes modales",
     "showInRail": "Afficher dans le menu de gauche",
-    "showInRailDesc": "Un bouton du menu ouvre la modale d’un appui."
+    "showInRailDesc": "Un bouton du menu ouvre la modale d’un appui.",
+    "widgetRowsLess": "Moins haute",
+    "widgetRowsMore": "Plus haute"
   },
   "wallPanel": {
     "subtitle": "Écran de veille avec widgets",

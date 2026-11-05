@@ -228,7 +228,9 @@
     "headerButtonsDesc": "Stay visible while the modal scrolls, next to the close button.",
     "listTitle": "My modals",
     "showInRail": "Show in the left menu",
-    "showInRailDesc": "A menu button opens the modal in one tap."
+    "showInRailDesc": "A menu button opens the modal in one tap.",
+    "widgetRowsLess": "Shorter",
+    "widgetRowsMore": "Taller"
   },
   "wallPanel": {
     "subtitle": "Screensaver with widgets",

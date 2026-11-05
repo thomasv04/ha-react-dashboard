@@ -120,26 +120,27 @@ export function IconPicker({ value, onChange, label }: { value: string; onChange
 
   return (
     <div ref={triggerRef}>
-      <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{label}</label>
+      {/* Même gabarit que le sélecteur d'entité : les deux se côtoient dans les formulaires. */}
+      {label && <label className='mb-2 block text-sm font-semibold text-[var(--ds-ink-muted)]'>{label}</label>}
       <div
-        className='flex items-center gap-2 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] cursor-pointer transition-colors'
+        className='flex h-12 cursor-pointer items-center gap-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-4 transition-colors'
         onClick={handleToggle}
       >
         {SelectedIcon ? (
           // eslint-disable-next-line react-hooks/static-components
-          <SelectedIcon size={16} className='text-[var(--ds-ink)] shrink-0' />
+          <SelectedIcon size={18} className='text-[var(--ds-ink)] shrink-0' />
         ) : isCustom ? (
-          <img src={getCustomIconUrl(value)} alt='' className='w-4 h-4 object-contain shrink-0' />
+          <img src={getCustomIconUrl(value)} alt='' className='size-[18px] object-contain shrink-0' />
         ) : (
-          <div className='w-4 h-4 rounded bg-[var(--ds-surface-3)] shrink-0' />
+          <div className='size-[18px] rounded bg-[var(--ds-surface-2)] shrink-0' />
         )}
-        <span className={`text-sm flex-1 truncate ${value ? 'text-[var(--ds-ink)]' : 'text-[var(--ds-ink-muted)]'}`}>
+        <span className={`text-base flex-1 truncate ${value ? 'text-[var(--ds-ink)]' : 'text-[var(--ds-ink-muted)]'}`}>
           {isCustom ? t('layout.iconCustom') : value || t('layout.iconChoose')}
         </span>
         {open ? (
-          <ChevronUp size={14} className='text-[var(--ds-ink-muted)]' />
+          <ChevronUp size={18} className='text-[var(--ds-ink-muted)]' />
         ) : (
-          <ChevronDown size={14} className='text-[var(--ds-ink-muted)]' />
+          <ChevronDown size={18} className='text-[var(--ds-ink-muted)]' />
         )}
       </div>
 

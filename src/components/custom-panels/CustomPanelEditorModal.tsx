@@ -222,7 +222,7 @@ function PanelEditor({
           aria-label={t('layout.customPanel.panelPlaceholder')}
           className={cn(
             ROW,
-            'h-14 min-w-[240px] flex-1 px-4 text-xl font-semibold text-[var(--ds-ink)] outline-none placeholder:text-[var(--ds-ink-muted)] focus:ring-2 focus:ring-[var(--ds-accent)]'
+            'h-12 min-w-[240px] flex-1 px-4 text-xl font-semibold text-[var(--ds-ink)] outline-none placeholder:text-[var(--ds-ink-muted)] focus:ring-2 focus:ring-[var(--ds-accent)]'
           )}
         />
         <div className='w-48 shrink-0'>
