@@ -52,5 +52,10 @@
   "guestViewExit": "Quitter la vue invité",
   "discardTooltip": "Abandonner les modifications",
   "discardConfirm": "Abandonner ?",
-  "backToLayout": "Disposition"
+  "backToLayout": "Disposition",
+  "connection": {
+    "lost": "Connexion à Home Assistant perdue — reconnexion…",
+    "failed": "Home Assistant refuse la reconnexion",
+    "reload": "Recharger"
+  }
 }

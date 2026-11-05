@@ -52,5 +52,10 @@
   "guestViewExit": "Leave guest view",
   "discardTooltip": "Discard changes",
   "discardConfirm": "Discard?",
-  "backToLayout": "Layout"
+  "backToLayout": "Layout",
+  "connection": {
+    "lost": "Connection to Home Assistant lost — reconnecting…",
+    "failed": "Home Assistant refused to reconnect",
+    "reload": "Reload"
+  }
 }

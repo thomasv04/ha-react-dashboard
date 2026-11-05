@@ -10,8 +10,10 @@
  * d'être « défini par défaut » sur un appareil — un panneau d'add-on ou un panneau
  * custom ne peut pas l'être.
  */
+import { useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { HassConnect } from '@hakit/core';
+import { HassConnect, useHass } from '@hakit/core';
+import type { Connection } from 'home-assistant-js-websocket';
 import { ToastProvider } from '@/context/ToastContext';
 import { ModalProvider } from '@/context/ModalContext';
 import { NotificationProvider } from '@/context/NotificationContext';
@@ -23,6 +25,7 @@ import { useHANotification } from '@/hooks/useHANotification';
 import Dashboard from './Dashboard';
 import { ThemeContextProvider } from '@/context/ThemeContext';
 import { BackgroundLayer } from '@/components/layout/BackgroundLayer';
+import { ConnectionBanner } from '@/components/shell/ConnectionBanner';
 import { LoadingScreen } from '@/components/layout/LoadingScreen';
 import { I18nProvider } from '@/i18n';
 import { setPanelAuth } from '@/lib/api-base';
@@ -35,6 +38,27 @@ function HAToastBridge() {
   // n'apparaissait même pas dans les écouteurs actifs de Home Assistant.
   useHAModal();
   useHANotification();
+  return null;
+}
+
+/**
+ * Donne à la connexion de `HassConnect` l'objet `Auth` du frontend HA.
+ *
+ * `HassConnect` ne reçoit qu'un jeton, qu'il enveloppe dans un `Auth` « longue
+ * durée » qui ne se renouvelle jamais. Or c'est un jeton d'accès : il expire au
+ * bout de trente minutes. Passé ce délai, la moindre coupure (redémarrage de
+ * HA, Wi-Fi) se soldait par un refus du jeton à la reconnexion,
+ * `home-assistant-js-websocket` abandonnait, et la carte restait figée sur des
+ * états périmés jusqu'au rechargement de la page. L'`Auth` de HA, lui, se
+ * renouvelle : la reconnexion lit `options.auth` à chaque tentative.
+ */
+function adoptLiveAuth(connection: Connection | null) {
+  if (connection && hassAuth) connection.options.auth = hassAuth as unknown as Connection['options']['auth'];
+}
+
+function LiveAuth() {
+  const connection = useHass(s => s.connection);
+  useEffect(() => adoptLiveAuth(connection), [connection]);
   return null;
 }
 
@@ -63,7 +87,9 @@ function PanelApp({ hassUrl, hassToken }: PanelAppProps) {
             <ModalProvider>
               <NotificationProvider>
                 <HAToastBridge />
+                <LiveAuth />
                 <Dashboard />
+                <ConnectionBanner />
                 <ToastContainer />
                 <ModalContainer />
               </NotificationProvider>

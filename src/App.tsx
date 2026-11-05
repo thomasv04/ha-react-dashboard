@@ -18,6 +18,7 @@ import { useAutoTheme } from '@/hooks/useAutoTheme';
 import { apiFetch, isPanelMode } from '@/lib/api-base';
 import { HAThrottlePatch } from '@/components/HAThrottlePatch';
 import { LoadingScreen } from '@/components/layout/LoadingScreen';
+import { ConnectionBanner } from '@/components/shell/ConnectionBanner';
 
 function MotionConfigBridge({ children }: { children: ReactNode }) {
   const { perfSettings } = useTheme();
@@ -119,6 +120,7 @@ function App({ hassUrl: propHassUrl, hassToken: propHassToken }: AppProps = {}) 
                   <HAToastBridge />
                   <AutoThemeBridge />
                   <Dashboard />
+                  <ConnectionBanner />
                   <ToastContainer />
                   <ModalContainer />
                 </NotificationProvider>

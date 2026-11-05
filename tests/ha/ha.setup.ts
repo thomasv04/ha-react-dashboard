@@ -12,8 +12,11 @@ import { dirname } from 'node:path';
 import { AUTH_FILE, CONFIG_API, LIGHT, SEED, USER } from './seed';
 
 async function authCode(request: APIRequestContext, clientId: string): Promise<string> {
-  const steps: { step: string; done: boolean }[] = await (await request.get('/api/onboarding')).json();
-  if (!steps.find(s => s.step === 'user')?.done) {
+  // Un HA déjà configuré puis redémarré ne sert plus `/api/onboarding` (404) :
+  // le compte existe, on s'y connecte.
+  const onboarding = await request.get('/api/onboarding');
+  const steps: { step: string; done: boolean }[] = onboarding.ok() ? await onboarding.json() : [];
+  if (onboarding.ok() && !steps.find(s => s.step === 'user')?.done) {
     const res = await request.post('/api/onboarding/users', { data: { client_id: clientId, ...USER } });
     expect(res.ok(), await res.text()).toBeTruthy();
     return (await res.json()).auth_code;
