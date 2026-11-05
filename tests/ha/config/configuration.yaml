@@ -1,0 +1,12 @@
+# Home Assistant jetable des tests de bout en bout dans HA (`npm run test:ha`).
+# `demo` fournit de vraies entités (lampes, volets, thermostats…) avec leurs
+# services : la carte parle à un vrai WebSocket, pas à un mock.
+homeassistant:
+  name: E2E
+  unit_system: metric
+  time_zone: Europe/Paris
+  country: FR
+  currency: EUR
+
+default_config:
+demo:

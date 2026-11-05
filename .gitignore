@@ -52,6 +52,7 @@ coverage/
 # Playwright reports
 playwright-report/
 playwright-report-dashboard/
+playwright-report-ha/
 test-results/
 
 # Editor directories and files
