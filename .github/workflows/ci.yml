@@ -258,6 +258,11 @@ jobs:
   e2e-ha:
     name: E2E in Home Assistant
     runs-on: ubuntu-latest
+    # Écrire : les captures vont sur la branche `ci-screenshots`, puis en
+    # commentaire de la PR.
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
 
@@ -286,6 +291,17 @@ jobs:
 
       - name: Run e2e tests in Home Assistant
         run: npm run test:ha
+
+      # Pas depuis un fork : son jeton n'a pas le droit d'écrire.
+      - name: Publish screenshots on the PR
+        if: >-
+          !cancelled() && github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          hashFiles('test-results/ha-screenshots/*.png') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bash scripts/pr-screenshots.sh ${{ github.event.pull_request.number }} test-results/ha-screenshots
 
       - name: Upload report
         uses: actions/upload-artifact@v4
