@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { EASE_OUT } from '@/lib/motion-tokens';
 import { X, Search } from 'lucide-react';
@@ -49,6 +49,14 @@ export function AddWidgetModal({ onClose, onAdded, panelId }: AddWidgetModalProp
       return matchCat && matchSearch;
     });
   }, [search, category, t]);
+
+  // Échap ferme la galerie, comme les autres fenêtres. Une liste déroulante
+  // ouverte dedans qui consomme Échap le marque (`defaultPrevented`).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !e.defaultPrevented && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   const selectedMeta = selected ? (WIDGET_META.find(m => m.type === selected) ?? null) : null;
 

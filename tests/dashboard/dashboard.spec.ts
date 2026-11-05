@@ -143,6 +143,17 @@ test.describe('Add widget gallery', () => {
     await expect(gallery).toHaveCount(0);
   });
 
+  test('Escape closes the gallery, even from its search field (#82)', async ({ page }) => {
+    await page.getByRole('button', { name: 'Ajouter une tuile' }).first().click();
+    const gallery = page.getByRole('dialog', { name: 'Ajouter un widget' });
+    await gallery.getByPlaceholder('Rechercher un widget...').fill('météo');
+
+    await page.keyboard.press('Escape');
+    await expect(gallery).toHaveCount(0);
+    // Échap ne referme que la galerie : le mode édition reste ouvert.
+    await expect(page.getByRole('button', { name: 'Abandonner les modifications' })).toBeVisible();
+  });
+
   test('can search for a widget in the gallery', async ({ page }) => {
     await page.getByRole('button', { name: 'Ajouter une tuile' }).first().click();
     const gallery = page.getByRole('dialog', { name: 'Ajouter un widget' });
