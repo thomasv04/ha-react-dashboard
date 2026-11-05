@@ -222,6 +222,9 @@ describe('useDashboardConfig', () => {
             lg: [
               { id: 'ok', type: 'light', x: 0, y: 0, w: 2, h: 2 },
               { id: 'sans-type', x: 0, y: 2, w: 2, h: 2 }, // écarté : rien à rendre
+              // Écarté : un type d'une ancienne version, qu'aucun manifeste ne déclare.
+              // La grille le sautait, mais la carte des panneaux l'affichait.
+              { id: 'pieces-v1', type: 'rooms', x: 0, y: 4, w: 4, h: 4 },
               { id: 'position-cassée', type: 'light', x: null, y: 'trois' }, // réparé
               null,
             ],

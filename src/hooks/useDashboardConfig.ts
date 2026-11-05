@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { type DashboardConfigV2, type DashboardLayout, type GridWidget } from '@/context/DashboardLayoutContext';
 import type { WidgetConfigs } from '@/types/widget-configs';
-import { DEFAULT_WIDGET_CONFIGS } from '@/widgets';
+import { DEFAULT_WIDGET_CONFIGS, WIDGET_COMPONENTS } from '@/widgets';
 import { DEFAULT_PAGES, type Page } from '@/context/PageContext';
 import { DEFAULT_WALLPANEL_CONFIG, type WallPanelConfig } from '@/types/wallpanel';
 import type { CustomPanel, DockConfig } from '@/types/custom-panel';
@@ -90,7 +90,7 @@ const FALLBACK_BOX = { w: 2, h: 2 };
  *
  * Deux traitements, parce que les défauts n'ont pas la même gravité :
  *
- * - **`id` ou `type` manquant** → écarté. La grille indexe par `id` et le rendu
+ * - **`id` ou `type` manquant, ou type inconnu** → écarté. La grille indexe par `id` et le rendu
  *   choisit le composant par `type` : sans eux, il n'y a rien à afficher.
  * - **dimension illisible** → réparée. Une carte mal dimensionnée reste une carte
  *   que l'utilisateur a créée et configurée ; la supprimer pour un `w` corrompu
@@ -100,6 +100,11 @@ function sanitizeWidget(w: unknown): GridWidget | null {
   if (!w || typeof w !== 'object') return null;
   const g = w as Record<string, unknown>;
   if (typeof g.id !== 'string' || typeof g.type !== 'string') return null;
+  // Un type qu'aucun manifeste ne déclare (`rooms` de la 3.x…) : la grille ne
+  // sait pas le dessiner et le sautait, mais la carte des panneaux l'affichait
+  // sous son nom brut, sans moyen de le retirer. Écarté ici, il disparaît
+  // partout et quitte la configuration au prochain enregistrement.
+  if (!(g.type in WIDGET_COMPONENTS)) return null;
 
   const box: Record<string, number> = {};
   for (const k of ['w', 'h'] as const) {
