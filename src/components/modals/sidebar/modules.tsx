@@ -239,11 +239,14 @@ export function SelectModule({
   value,
   options,
   onChange,
+  format = v => v,
 }: {
   title: string;
   value: string;
   options: string[];
   onChange: (v: string) => void;
+  /** Libellé affiché d'une option ; `onChange` reçoit toujours la valeur brute. */
+  format?: (v: string) => string;
 }) {
   if (options.length === 0) return null;
   // Peu d'options : des pastilles, comme sur l'Echo Show, plutôt qu'une liste déroulante.
@@ -252,7 +255,7 @@ export function SelectModule({
       <div className='flex flex-wrap justify-center gap-2'>
         {options.map(m => (
           <button key={m} onClick={() => onChange(m)} aria-pressed={m === value} className={choice(m === value)}>
-            {m}
+            {format(m)}
           </button>
         ))}
       </div>
