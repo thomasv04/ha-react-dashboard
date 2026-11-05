@@ -227,7 +227,9 @@ async function main() {
     'export type WidgetConfig =',
     `export interface ${name}Config {\n  type: '${type}';\n  entityId?: string;\n  name?: string;\n}\n\n`
   );
-  insertBefore('src/types/widget-types.ts', '\n  | RoomsGridConfig;', `\n  | ${name}Config`);
+  // La fin de l'union plutôt que son dernier membre, qui change avec les
+  // widgets : `RoomsGridConfig` a disparu avec le type `rooms` de la 3.x.
+  insertBefore('src/types/widget-types.ts', ';\n\n/** Map of widget id → its config */', `\n  | ${name}Config`);
   insertBefore('src/types/widget-configs.ts', '\n  WidgetConfig,\n  WidgetConfigs,', `\n  ${name}Config,`);
 
   // 4. i18n (fr + en)
