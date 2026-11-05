@@ -91,7 +91,8 @@ test('en édition, tirer une tuile de côté la déplace au lieu de faire glisse
 
   // Le doigt se pose au centre de la première tuile et la tire aussitôt de côté, sans la tenir,
   // puis rejoint la moitié droite de la deuxième.
-  const from = { x: Math.round(a.x + a.width / 2), y: Math.round(a.y + a.height / 2) };
+  // Par le nom, à gauche : sur une tuile d'une rangée, le centre est un bouton.
+  const from = { x: Math.round(a.x + a.width * 0.1), y: Math.round(a.y + a.height / 2) };
   await touchDrag(page, [from, { x: from.x + 60, y: from.y }, { x: Math.round(b.x + b.width * 0.75), y: Math.round(b.y + b.height / 2) }]);
 
   await expect.poll(order).toEqual([second, first, ...rest]);
@@ -117,14 +118,15 @@ test.describe('en édition, au doigt', () => {
     const a = (await tiles(page).nth(0).boundingBox())!;
     const b = (await tiles(page).nth(1).boundingBox())!;
 
-    await touchDrag(page, [center(a), center(b, 0.75)], 400);
+    // Saisie par le nom, à gauche : sur une tuile d'une rangée, le centre est un bouton.
+    await touchDrag(page, [center(a, 0.1), center(b, 0.75)], 400);
 
     await expect.poll(() => order(page)).toEqual([second, first, ...rest]);
   });
 
   test('un balayage vertical sans tenir ne déplace pas la tuile', async ({ page }) => {
     const before = await order(page);
-    const a = center((await tiles(page).nth(0).boundingBox())!);
+    const a = center((await tiles(page).nth(0).boundingBox())!, 0.1);
 
     await touchDrag(page, [a, { x: a.x, y: a.y + 200 }]);
 

@@ -37,7 +37,8 @@ const order = (page: Page) => tiles(page).evaluateAll(els => els.map(el => (el a
 async function dragFirstOverSecond(page: Page) {
   const a = (await tiles(page).nth(0).boundingBox())!;
   const b = (await tiles(page).nth(1).boundingBox())!;
-  await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+  // Par le nom, à gauche : sur une tuile d'une rangée, le centre est un bouton.
+  await page.mouse.move(a.x + a.width * 0.1, a.y + a.height / 2);
   await page.mouse.down();
   await page.mouse.move(b.x + b.width * 0.75, b.y + b.height / 2, { steps: 10 });
   // La cible se relit à chaque image : en laisser passer quelques-unes.

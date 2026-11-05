@@ -72,14 +72,22 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
   // premier mouvement du doigt, avant que notre appui prolongé n'ait pu parler.
   // Un geste horizontal sur une tuile ne doit donc pas faire glisser le plateau
   // (il le fait en lecture) : il appartient au déplacement de la tuile.
+  // Une seule rangée (80 px) : deux lignes de boutons de 40 px n'y tiennent pas,
+  // celle du bas débordait de la case. Tout passe alors sur une ligne — les deux
+  // rangées du calque se fondent dans la sienne (`contents`).
+  const squat = widget.h === 1;
+
   return (
     <div
       {...bind()}
       title={t('layout.panel.moveTile')}
-      className='absolute inset-0 z-10 flex cursor-grab touch-pan-y select-none flex-col rounded-[var(--ds-radius-lg)] bg-[color-mix(in_srgb,var(--ds-surface-3)_94%,transparent)] text-[var(--ds-ink)] outline-2 outline-dashed outline-[var(--ds-ink-muted)] active:cursor-grabbing'
+      className={cn(
+        'absolute inset-0 z-10 flex cursor-grab touch-pan-y select-none rounded-[var(--ds-radius-lg)] bg-[color-mix(in_srgb,var(--ds-surface-3)_94%,transparent)] text-[var(--ds-ink)] outline-2 outline-dashed outline-[var(--ds-ink-muted)] active:cursor-grabbing',
+        squat ? 'flex-row items-center gap-1.5 p-2' : 'flex-col'
+      )}
     >
-      <div className='flex items-start justify-between gap-2 p-2'>
-        <span className='truncate pl-1 pt-1.5 text-sm font-semibold'>{label}</span>
+      <div className={squat ? 'contents' : 'flex items-start justify-between gap-2 p-2'}>
+        <span className={cn('truncate pl-1 text-sm font-semibold', squat ? 'min-w-0 flex-1' : 'pt-1.5')}>{label}</span>
         <div className='flex shrink-0 items-center gap-1.5' onPointerDown={keep}>
           <button
             onClick={() => setEditingWidgetId(id)}
@@ -94,7 +102,8 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
               fastidieux du mode édition. */}
           <button
             onClick={() => duplicateWidget(id)}
-            className={cn(ROUND, 'bg-[var(--ds-surface-1)]')}
+            // Sur une ligne étroite, chaque bouton mange la place où l'on saisit la tuile.
+            className={cn(ROUND, 'bg-[var(--ds-surface-1)]', squat && widget.w < 3 && 'hidden')}
             title={t('layout.duplicateWidget')}
             aria-label={t('layout.duplicateWidget')}
           >
@@ -136,12 +145,16 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
         </div>
       )}
 
-      <div className='mt-auto flex items-end justify-between gap-2 p-2'>
-        {/* Une disposition se choisit dans la fiche ; sinon, les trois tailles prédéfinies tournent. */}
+      <div className={squat ? 'contents' : 'mt-auto flex items-end justify-between gap-2 p-2'}>
+        {/* Une disposition se choisit dans la fiche ; sinon, les trois tailles prédéfinies tournent.
+            Sur une ligne, sous quatre colonnes, la place manque : reste la poignée. */}
         <button
           onPointerDown={keep}
           onClick={() => (hasDispositions ? setEditingWidgetId(id) : cycleSize(id))}
-          className='flex h-9 items-center gap-1.5 rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-1)] px-3 text-sm font-semibold'
+          className={cn(
+            'flex h-9 shrink-0 items-center gap-1.5 rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-1)] px-3 text-sm font-semibold',
+            squat && widget.w < 4 && 'hidden'
+          )}
           title={hasDispositions ? t('layout.layout') : t('layout.changeSize')}
         >
           <MoveDiagonal size={14} />
