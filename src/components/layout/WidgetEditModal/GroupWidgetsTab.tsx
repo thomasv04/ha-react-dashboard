@@ -14,6 +14,7 @@ import { PanelSelectField } from './PanelSelectField';
 import { AreaControlsField } from './AreaControlsField';
 import { MultiSelectField } from './MultiSelectField';
 import { TemplateEditor } from '@/components/layout/TemplateField';
+import { SwitchTrack } from '@/components/ds/Switch';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 
@@ -85,31 +86,31 @@ export function ChildFieldRenderer({
       />
     );
   }
+  // Interrupteur et liste : le gabarit de la fiche d'édition principale
+  // (`WidgetEditModal/index.tsx`), pour qu'un réglage ait la même allure partout.
   if (field.fieldType === 'boolean') {
+    const on = (draft[field.key] as boolean) ?? false;
     return (
-      <label key={field.key} className='flex items-center gap-3 cursor-pointer select-none py-1'>
-        <div className='relative'>
-          <input
-            type='checkbox'
-            checked={(draft[field.key] as boolean) ?? false}
-            onChange={e => onPatch({ [field.key]: e.target.checked })}
-            className='sr-only peer'
-          />
-          <div className='w-8 h-4 rounded-full bg-[var(--ds-surface-3)] peer-checked:bg-[var(--ds-tile-on)] transition-colors' />
-          <div className='absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-[var(--ds-surface-3)] shadow-md transition-transform peer-checked:translate-x-4' />
-        </div>
-        <span className='text-xs text-[var(--ds-ink-muted)]'>{t(field.label)}</span>
-      </label>
+      <button
+        key={field.key}
+        role='switch'
+        aria-checked={on}
+        onClick={() => onPatch({ [field.key]: !on })}
+        className='flex min-h-12 w-full items-center justify-between gap-3 text-left'
+      >
+        <span className='text-base font-semibold'>{t(field.label)}</span>
+        <SwitchTrack on={on} />
+      </button>
     );
   }
   if (field.fieldType === 'select' && field.options) {
     return (
       <div key={field.key}>
-        <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{t(field.label)}</label>
+        <label className='mb-2 block text-sm font-semibold text-[var(--ds-ink-muted)]'>{t(field.label)}</label>
         <select
           value={(draft[field.key] as string) ?? field.options[0].value}
           onChange={e => onPatch({ [field.key]: e.target.value })}
-          className='w-full px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)] outline-none focus:outline-2 focus:outline-[var(--ds-accent)] cursor-pointer'
+          className='h-12 w-full cursor-pointer rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-3 text-base text-[var(--ds-ink)] outline-none focus:outline-2 focus:outline-[var(--ds-accent)]'
           style={{ colorScheme: 'dark' }}
         >
           {field.options.map(opt => (
@@ -158,8 +159,8 @@ export function ChildFieldRenderer({
   }
   if (field.fieldType === 'template') {
     return (
-      <div key={field.key} className='space-y-1'>
-        <label className='block text-sm text-[var(--ds-ink-muted)]'>{t(field.label)}</label>
+      <div key={field.key}>
+        <label className='mb-2 block text-sm font-semibold text-[var(--ds-ink-muted)]'>{t(field.label)}</label>
         <TemplateEditor
           value={(draft[field.key] as string) ?? ''}
           onChange={v => onPatch({ [field.key]: v })}
