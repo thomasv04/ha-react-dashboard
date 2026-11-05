@@ -53,6 +53,18 @@ test('la tuile d’une lampe suit et pilote la vraie entité', async ({ page, re
   await expect.poll(state).toBe('off');
 });
 
+test('une tuile dont l’entité est indisponible le dit, puis revient', async ({ page, request }) => {
+  const tile = page.locator('ha-react-dashboard-panel [data-widget-id="light-bed"]');
+  const setState = (state: string) => request.post(`/api/states/${LIGHT}`, { headers: headers(), data: { state } });
+
+  await setState('unavailable');
+  await expect(tile.locator('[data-unavailable]')).toBeVisible();
+  await expect(tile).toContainText('Indisponible');
+
+  await setState('off');
+  await expect(tile.locator('[data-unavailable]')).toHaveCount(0);
+});
+
 test('une tuile déplacée en édition est enregistrée dans l’intégration', async ({ page, request }) => {
   await page.getByRole('button', { name: 'Modifier ce panneau' }).first().click();
   await expect(page.getByRole('button', { name: 'Abandonner les modifications' })).toBeVisible();

@@ -1035,6 +1035,25 @@ function StateStyled({
   return <WidgetConfigOverride configs={merged}>{children}</WidgetConfigOverride>;
 }
 
+/**
+ * Voile d'une tuile dont l'entité est `unavailable`. Une seule règle pour les
+ * trente types de card : la card reste dessous, atténuée, et le voile dit
+ * pourquoi. Il laisse passer les appuis — la fiche explique la panne.
+ */
+function UnavailableVeil() {
+  const { t } = useI18n();
+  return (
+    <div
+      data-unavailable
+      className='pointer-events-none absolute inset-0 z-[5] flex items-center justify-center rounded-[var(--ds-radius-lg)] bg-[color-mix(in_srgb,var(--ds-ground)_72%,transparent)]'
+    >
+      <span className='rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)] px-3 py-1.5 text-sm font-semibold text-[var(--ds-ink)]'>
+        {t('common.unavailable')}
+      </span>
+    </div>
+  );
+}
+
 /** Ce qui, dans une card, agit par lui-même : un appui dessus n'ouvre pas la fiche. */
 const CARD_CONTROLS = 'button, a, input, select, textarea, [role="slider"], [role="switch"]';
 
@@ -1160,12 +1179,16 @@ export function GridItem({
   const visibility = conditionalConfig?.visibility;
   const stateStyles = conditionalConfig?.stateStyles;
 
+  // L'entité principale aussi : quand Home Assistant la perd, la card
+  // affichait son dernier état comme si de rien n'était (« Éteint », « 0° »).
+  const mainEntityId = typeof conditionalConfig?.entityId === 'string' ? conditionalConfig.entityId : '';
   const watchedIds = useMemo(
-    () => [...new Set([...visibilityEntityIds(visibility), ...stateStyleEntityIds(stateStyles)])],
-    [visibility, stateStyles]
+    () => [...new Set([...visibilityEntityIds(visibility), ...stateStyleEntityIds(stateStyles), ...(mainEntityId ? [mainEntityId] : [])])],
+    [visibility, stateStyles, mainEntityId]
   );
   const watched = useEntities(watchedIds);
   const states = useMemo(() => Object.fromEntries(watchedIds.map(eid => [eid, watched[eid]?.state])), [watchedIds, watched]);
+  const unavailable = !!mainEntityId && states[mainEntityId] === 'unavailable';
 
   const visible = useMemo(() => isVisible(visibility, breakpoint, states), [visibility, breakpoint, states]);
   const styleOverride = useMemo(() => matchStateStyle(stateStyles, breakpoint, states), [stateStyles, breakpoint, states]);
@@ -1237,6 +1260,7 @@ export function GridItem({
               {children}
             </MemoChildren>
           </WidgetErrorBoundary>
+          {unavailable && !isEditMode && <UnavailableVeil />}
         </StateStyled>
       </WidgetIdCtx.Provider>
       {isEditMode && <GridItemOverlay label={label} widget={widget} onDragStart={startDrag} onResizeStart={startResize} />}
