@@ -48,8 +48,8 @@
       "body": "In the launcher, “Modals” builds a sheet from blocks: covers, action buttons, section titles. It can show in the left menu."
     },
     "panelsDock": {
-      "title": "Pin them to the rail",
-      "body": "In edit mode, a panel's pin in the launcher adds it to the rail: it opens in one tap."
+      "title": "Put them in the menu",
+      "body": "In a modal’s editor, “Show in the left menu” gives it a button in the menu. In edit mode, the “Menu modals” button does the same."
     },
     "appearanceOpen": {
       "title": "Settings",

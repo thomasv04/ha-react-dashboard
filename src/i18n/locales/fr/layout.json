@@ -579,8 +579,6 @@
     "customPanels": "Modales",
     "tour": "Visite guidée",
     "releaseNotes": "Nouveautés",
-    "pinToRail": "Épingler au rail",
-    "unpinFromRail": "Retirer du rail",
     "pages": "Pages",
     "home": "Accueil",
     "movePageUp": "Monter",
@@ -588,7 +586,9 @@
     "deletePage": "Supprimer la page",
     "noPanels": "Aucune modale pour l’instant",
     "widgetGallery": "Galerie de widgets",
-    "assist": "Assist"
+    "assist": "Assist",
+    "railModals": "Modales du menu",
+    "manageModals": "Gérer les modales"
   },
   "panel": {
     "untitled": "Panneau sans titre",

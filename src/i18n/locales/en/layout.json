@@ -579,8 +579,6 @@
     "customPanels": "Modals",
     "tour": "Guided tour",
     "releaseNotes": "What’s new",
-    "pinToRail": "Pin to the rail",
-    "unpinFromRail": "Unpin from the rail",
     "pages": "Pages",
     "home": "Home",
     "movePageUp": "Move up",
@@ -588,7 +586,9 @@
     "deletePage": "Delete page",
     "noPanels": "No modal yet",
     "widgetGallery": "Widget gallery",
-    "assist": "Assist"
+    "assist": "Assist",
+    "railModals": "Menu modals",
+    "manageModals": "Manage modals"
   },
   "panel": {
     "untitled": "Untitled panel",

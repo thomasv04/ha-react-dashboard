@@ -34,7 +34,10 @@ const ROUND = 'flex size-10 shrink-0 items-center justify-center rounded-full bg
 /** Pastille d'icône carrée, comme les apps du lanceur. */
 function AppIcon({ color, children }: { color: string; children: React.ReactNode }) {
   return (
-    <span className='flex size-11 shrink-0 items-center justify-center rounded-[var(--ds-radius-sm)] text-white' style={{ background: color }}>
+    <span
+      className='flex size-11 shrink-0 items-center justify-center rounded-[var(--ds-radius-sm)] text-white'
+      style={{ background: color }}
+    >
       {children}
     </span>
   );
@@ -227,7 +230,12 @@ function PanelEditor({
         </div>
       </div>
 
-      <button role='switch' aria-checked={pinned} onClick={onTogglePin} className={cn(ROW, 'flex min-h-[68px] items-center gap-4 px-4 text-left')}>
+      <button
+        role='switch'
+        aria-checked={pinned}
+        onClick={onTogglePin}
+        className={cn(ROW, 'flex min-h-[68px] items-center gap-4 px-4 text-left')}
+      >
         <span className='min-w-0 flex-1'>
           <span className='block text-[17px] font-semibold'>{t('layout.customPanel.showInRail')}</span>
           <span className='block text-sm text-[var(--ds-ink-muted)]'>{t('layout.customPanel.showInRailDesc')}</span>
@@ -456,7 +464,11 @@ export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
             {isSaving && <Loader2 size={16} className='animate-spin' />}
             {t('layout.customPanel.saveAndClose')}
           </button>
-          <button onClick={requestClose} aria-label={t('common.close')} className='flex size-11 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'>
+          <button
+            onClick={requestClose}
+            aria-label={t('common.close')}
+            className='flex size-11 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'
+          >
             <X size={18} strokeWidth={2.5} />
           </button>
         </div>
