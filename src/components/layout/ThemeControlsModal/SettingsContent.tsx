@@ -11,7 +11,6 @@ import { SoundSection } from './SoundSection';
 import { RegionalSection } from './RegionalSection';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
-import { isPanelMode } from '@/lib/api-base';
 
 type SettingsSection = 'appearance' | 'wallpanel' | 'layout' | 'performance' | 'sound' | 'regional' | 'language' | 'system';
 
@@ -41,8 +40,8 @@ export function SettingsContent({ onClose, guard }: { onClose: () => void; guard
   const NAV_ITEMS: { id: SettingsSection; label: string; Icon: LucideIcon }[] = [
     { id: 'appearance', label: t('settings.appearance'), Icon: Palette },
     ...(isAdmin ? [{ id: 'wallpanel' as const, label: t('settings.wallpanel'), Icon: Monitor }] : []),
-    // Il n'y reste que le plein écran, qui n'a de sens qu'en carte Lovelace.
-    ...(isPanelMode() ? [{ id: 'layout' as const, label: t('settings.layout'), Icon: LayoutGrid }] : []),
+    // Le plein écran n'y paraît qu'en carte Lovelace ; la pastille utilisateur, partout.
+    { id: 'layout' as const, label: t('settings.layout'), Icon: LayoutGrid },
     { id: 'performance', label: t('settings.performance'), Icon: Zap },
     { id: 'sound', label: t('settings.sound'), Icon: Volume2 },
     { id: 'regional', label: t('settings.regional'), Icon: Globe },

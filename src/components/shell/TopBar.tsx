@@ -4,6 +4,7 @@ import { useNow } from '@/hooks/useNow';
 import { useWeatherNow } from '@/hooks/useWeatherNow';
 import { useFormats } from '@/hooks/useFormats';
 import { useI18n } from '@/i18n';
+import { useTheme } from '@/context/ThemeContext';
 
 /**
  * Barre du haut : lanceur d'apps à gauche, météo, heure et utilisateur à droite.
@@ -14,6 +15,7 @@ export function TopBar({ launcherOpen, onToggleLauncher }: { launcherOpen: boole
   const { formatTime } = useFormats();
   const now = useNow();
   const user = useUser();
+  const { behaviourSettings } = useTheme();
   const { temperature, Icon: WeatherIcon } = useWeatherNow();
 
   return (
@@ -39,7 +41,7 @@ export function TopBar({ launcherOpen, onToggleLauncher }: { launcherOpen: boole
           </span>
         )}
         <time className='text-[56px] leading-none font-semibold tracking-[-1px] tabular-nums'>{formatTime(now)}</time>
-        {user?.name && (
+        {behaviourSettings.showUser && user?.name && (
           <span
             role='img'
             aria-label={user.name}

@@ -87,12 +87,15 @@ export interface BehaviourSettings {
    * murale. La sécurité réelle, c'est `adminWrites` côté serveur.
    */
   editPin: string;
+  /** Pastille de l'utilisateur connecté, en haut à droite. Une tablette partagée s'en passe. */
+  showUser: boolean;
 }
 
 const DEFAULT_BEHAVIOUR_SETTINGS: BehaviourSettings = {
   returnHomeAfter: 0,
   doNotDisturb: false,
   editPin: '',
+  showUser: true,
 };
 
 const DEFAULT_SOUND_SETTINGS: SoundSettings = {
