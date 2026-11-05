@@ -44,8 +44,8 @@
       "body": "Save once the layout suits you. The dashboard is stored on the server, so every device sees it."
     },
     "panelsCreate": {
-      "title": "Custom panels",
-      "body": "In the launcher, “Custom panels” builds a sheet from blocks: rows of covers, action buttons, section titles."
+      "title": "Modals",
+      "body": "In the launcher, “Modals” builds a sheet from blocks: covers, action buttons, section titles. It can show in the left menu."
     },
     "panelsDock": {
       "title": "Pin them to the rail",

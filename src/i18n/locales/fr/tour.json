@@ -44,8 +44,8 @@
       "body": "Enregistrez une fois la disposition à votre goût. Le dashboard est stocké sur le serveur : tous vos appareils le voient."
     },
     "panelsCreate": {
-      "title": "Panneaux personnalisés",
-      "body": "Dans le lanceur, « Panneaux personnalisés » compose une feuille par blocs : rangées de volets, boutons d'action, titres de section."
+      "title": "Modales",
+      "body": "Dans le lanceur, « Modales » compose une feuille par blocs : volets, boutons d’action, titres de section. Elle peut s’afficher dans le menu de gauche."
     },
     "panelsDock": {
       "title": "Les épingler au rail",

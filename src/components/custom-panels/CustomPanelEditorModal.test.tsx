@@ -3,11 +3,12 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const saveConfig = vi.fn().mockResolvedValue(true);
+const setDock = vi.fn();
 const onClose = vi.fn();
 const PANEL = { id: 'p1', name: 'Volets', blocks: [] };
 
 vi.mock('@/context/CustomPanelContext', () => ({
-  useCustomPanels: () => ({ panels: [PANEL], upsertPanel: vi.fn(), deletePanel: vi.fn(), dock: { panels: [], labels: true } }),
+  useCustomPanels: () => ({ panels: [PANEL], upsertPanel: vi.fn(), deletePanel: vi.fn(), dock: { panels: [], labels: true }, setDock }),
 }));
 vi.mock('@/context/PageContext', () => ({ usePages: () => ({ pages: [{ id: 'home', label: 'Accueil' }] }) }));
 vi.mock('@/context/DashboardLayoutContext', () => ({ useDashboardLayout: () => ({ allLayouts: {} }) }));
@@ -52,6 +53,21 @@ describe('CustomPanelEditorModal', () => {
     await userEvent.click(screen.getByText('layout.customPanel.discard'));
     expect(onClose).toHaveBeenCalled();
     expect(saveConfig).not.toHaveBeenCalled();
+  });
+
+  // Placer une modale dans le menu de gauche demandait d'ouvrir le lanceur en
+  // mode édition pour y trouver une punaise : personne ne la trouvait.
+  it('place la modale dans le menu de gauche depuis son éditeur', async () => {
+    render(<CustomPanelEditorModal onClose={onClose} />);
+
+    const toggle = screen.getByRole('switch', { name: /layout.customPanel.showInRail/ });
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-checked', 'true');
+    await userEvent.click(screen.getByText('layout.customPanel.saveAndClose'));
+
+    expect(saveConfig).toHaveBeenCalledWith(expect.objectContaining({ dock: { panels: ['p1'], labels: true } }));
+    expect(setDock).toHaveBeenCalledWith({ panels: ['p1'], labels: true });
   });
 
   it("ferme sans rien demander quand rien n'a bougé", async () => {
