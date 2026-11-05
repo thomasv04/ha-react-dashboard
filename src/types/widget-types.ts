@@ -484,6 +484,8 @@ export interface CalendarCardConfig {
   days?: number;
   /** Nombre maximum d'évènements listés */
   max?: number;
+  /** La grande date de l'Echo Show à gauche des évènements, sur une card large. */
+  showDate?: boolean;
 }
 
 export interface TodoCardConfig {
@@ -530,6 +532,12 @@ export interface ChipCardConfig {
   glowSize?: number;
 }
 
+export interface WelcomeCardConfig {
+  type: 'welcome';
+  /** Scripts ou scènes proposés sous la salutation, avec un bouton « Lancer ». */
+  routines?: string[];
+}
+
 export type WidgetConfig =
   | ActivityBarConfig
   | CameraCardConfig
@@ -561,7 +569,8 @@ export type WidgetConfig =
   | TodoCardConfig
   | FanCardConfig
   | ClockCardConfig
-  | ChipCardConfig;
+  | ChipCardConfig
+  | WelcomeCardConfig;
 
 /** Map of widget id → its config */
 export type WidgetConfigs = Record<string, WidgetConfig>;

@@ -43,6 +43,7 @@ export type {
   FanCardConfig,
   ClockCardConfig,
   ChipCardConfig,
+  WelcomeCardConfig,
   WidgetConfig,
   WidgetConfigs,
 } from './widget-types';

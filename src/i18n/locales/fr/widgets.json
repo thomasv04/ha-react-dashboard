@@ -1119,6 +1119,9 @@
       },
       "max": {
         "label": "Nombre d'évènements"
+      },
+      "showDate": {
+        "label": "Grande date à côté"
       }
     },
     "moreInfo": {
@@ -1237,6 +1240,23 @@
       },
       "glowSize": {
         "label": "Taille du halo (% de la largeur du plan)"
+      }
+    }
+  },
+  "welcome": {
+    "label": "Bienvenue",
+    "description": "Une salutation à votre nom et les routines à lancer d’un geste.",
+    "routine": "Routine",
+    "start": "Lancer",
+    "wish": {
+      "morning": "Belle journée !",
+      "afternoon": "Bel après-midi !",
+      "evening": "Bonne soirée !",
+      "night": "Douce nuit !"
+    },
+    "fields": {
+      "routines": {
+        "label": "Routines (scripts, scènes)"
       }
     }
   }

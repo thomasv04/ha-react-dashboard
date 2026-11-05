@@ -6,14 +6,7 @@ import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useI18n } from '@/i18n';
 import { useFormats } from '@/hooks/useFormats';
 import type { GreetingCardConfig } from '@/types/widget-configs';
-
-/** Clé i18n de la salutation correspondant à l'heure. */
-function greetingKey(h: number): string {
-  if (h >= 18) return 'widgets.greeting.goodEvening';
-  if (h >= 12) return 'widgets.greeting.goodAfternoon';
-  if (h >= 5) return 'widgets.greeting.goodMorning';
-  return 'widgets.greeting.goodNight';
-}
+import { greetingKey } from '@/lib/greeting';
 
 /** Full-width header bar: greeting on the left, big clock on the right. */
 export function GreetingCard() {

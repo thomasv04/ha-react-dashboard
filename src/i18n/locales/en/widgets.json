@@ -1119,6 +1119,9 @@
       },
       "max": {
         "label": "Number of events"
+      },
+      "showDate": {
+        "label": "Big date alongside"
       }
     },
     "moreInfo": {
@@ -1237,6 +1240,23 @@
       },
       "glowSize": {
         "label": "Glow size (% of floorplan width)"
+      }
+    }
+  },
+  "welcome": {
+    "label": "Welcome",
+    "description": "A greeting with your name and routines to start in one tap.",
+    "routine": "Routine",
+    "start": "Start",
+    "wish": {
+      "morning": "Have a great day!",
+      "afternoon": "Enjoy your afternoon!",
+      "evening": "Have a nice evening!",
+      "night": "Sleep well!"
+    },
+    "fields": {
+      "routines": {
+        "label": "Routines (scripts, scenes)"
       }
     }
   }

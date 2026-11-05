@@ -51,6 +51,7 @@ export default defineWidget({
     { key: 'name', label: 'widgets.calendar.fields.name.label', fieldType: 'text' },
     { key: 'days', label: 'widgets.calendar.fields.days.label', fieldType: 'number' },
     { key: 'max', label: 'widgets.calendar.fields.max.label', fieldType: 'number' },
+    { key: 'showDate', label: 'widgets.calendar.fields.showDate.label', fieldType: 'boolean' },
   ],
 
   defaults: {

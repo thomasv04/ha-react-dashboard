@@ -42,6 +42,7 @@ import light from '@/components/cards/LightCard/widget';
 import sensor from '@/components/cards/SensorCard/widget';
 import tempo from '@/components/cards/TempoCard/widget';
 import chip from '@/components/cards/ChipCard/widget';
+import welcome from '@/components/cards/WelcomeCard/widget';
 
 export const WIDGETS = [
   automation,
@@ -75,6 +76,7 @@ export const WIDGETS = [
   sensor,
   tempo,
   chip,
+  welcome,
 ] satisfies readonly WidgetDefinition[];
 
 /** Union des types de widgets déclarés par manifeste */

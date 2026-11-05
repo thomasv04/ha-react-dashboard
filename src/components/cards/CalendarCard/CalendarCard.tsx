@@ -79,6 +79,68 @@ export function CalendarCard() {
     return `${day} ${formats.formatTime(start)}`;
   };
 
+  const list = (
+    <div className='min-h-0 flex-1'>
+      {entityIds.length === 0 ? (
+        <CardPlaceholder
+          icon={CalendarDays}
+          text={t('widgets.calendar.noCalendar')}
+          hint={t('widgets.calendar.noCalendarHint')}
+          compact={size.compact}
+        />
+      ) : error ? (
+        <CardPlaceholder icon={CalendarX} text={t('widgets.calendar.error')} tone='error' compact={size.compact} />
+      ) : loading && events.length === 0 ? (
+        <CardPlaceholder icon={CalendarDays} text={t('common.loading')} tone='loading' compact={size.compact} />
+      ) : events.length === 0 ? (
+        <CardPlaceholder icon={CalendarCheck} text={t('widgets.calendar.empty')} compact={size.compact} />
+      ) : (
+        <ul className='flex h-full flex-col gap-2 overflow-y-auto' style={{ scrollbarWidth: 'none' }}>
+          {events.map((event, i) => (
+            <li
+              key={`${event.start}-${i}`}
+              className='flex shrink-0 gap-3 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-3 py-2.5'
+            >
+              <span aria-hidden='true' className='w-1.5 shrink-0 rounded-full bg-[var(--ds-accent)]' />
+              <div className='flex min-w-0 flex-1 flex-col'>
+                <span className='truncate text-sm font-bold'>
+                  {formatWhen(event)}
+                  {event.location && <span className='font-normal text-[var(--ds-ink-muted)]'> · {event.location}</span>}
+                </span>
+                <span className='truncate text-[17px] leading-tight'>{event.summary}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+
+  // La date de l'Echo Show à gauche, les évènements à droite : sur une card
+  // assez large seulement — en deçà, la date mangerait la liste.
+  if (config?.showDate && (size.w === 'lg' || size.w === 'xl') && !size.squat) {
+    const now = new Date();
+    const head = [now.toLocaleDateString(formats.locale, { weekday: 'short' }), now.toLocaleDateString(formats.locale, { month: 'short' })]
+      .join(' ')
+      .toUpperCase();
+    return (
+      <div
+        ref={cardRef}
+        className='flex h-full select-none items-center gap-6 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] p-[var(--ds-space-4)] text-[var(--ds-ink)]'
+      >
+        <div
+          data-testid='calendar-big-date'
+          aria-label={formats.formatDate(now, 'long')}
+          className='flex w-[38%] max-w-[300px] shrink-0 flex-col items-center font-[family-name:var(--ds-font-display)] font-extrabold leading-none text-[var(--ds-accent)] [font-stretch:125%]'
+        >
+          <span className='text-[28px] tracking-wide'>{head}</span>
+          <span className={size.h === 'short' ? 'text-[72px]' : 'text-[120px]'}>{now.getDate()}</span>
+        </div>
+        <div className='flex h-full min-w-0 flex-1 flex-col'>{list}</div>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={cardRef}
@@ -94,40 +156,7 @@ export function CalendarCard() {
       </div>
 
       {/* Liste */}
-      <div className='min-h-0 flex-1'>
-        {entityIds.length === 0 ? (
-          <CardPlaceholder
-            icon={CalendarDays}
-            text={t('widgets.calendar.noCalendar')}
-            hint={t('widgets.calendar.noCalendarHint')}
-            compact={size.compact}
-          />
-        ) : error ? (
-          <CardPlaceholder icon={CalendarX} text={t('widgets.calendar.error')} tone='error' compact={size.compact} />
-        ) : loading && events.length === 0 ? (
-          <CardPlaceholder icon={CalendarDays} text={t('common.loading')} tone='loading' compact={size.compact} />
-        ) : events.length === 0 ? (
-          <CardPlaceholder icon={CalendarCheck} text={t('widgets.calendar.empty')} compact={size.compact} />
-        ) : (
-          <ul className='flex h-full flex-col gap-2 overflow-y-auto' style={{ scrollbarWidth: 'none' }}>
-            {events.map((event, i) => (
-              <li
-                key={`${event.start}-${i}`}
-                className='flex shrink-0 gap-3 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-3 py-2.5'
-              >
-                <span aria-hidden='true' className='w-1.5 shrink-0 rounded-full bg-[var(--ds-accent)]' />
-                <div className='flex min-w-0 flex-1 flex-col'>
-                  <span className='truncate text-sm font-bold'>
-                    {formatWhen(event)}
-                    {event.location && <span className='font-normal text-[var(--ds-ink-muted)]'> · {event.location}</span>}
-                  </span>
-                  <span className='truncate text-[17px] leading-tight'>{event.summary}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      {list}
     </div>
   );
 }
