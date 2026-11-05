@@ -101,7 +101,8 @@
       "fanMode": "Fan",
       "swingMode": "Swing",
       "action": "Action",
-      "targetTemp": "Target temperature"
+      "targetTemp": "Target temperature",
+      "presetMode": "Preset"
     },
     "fanModes": {
       "on": "On",
@@ -131,6 +132,16 @@
       "fan": "Fan",
       "preheating": "Preheating",
       "defrosting": "Defrosting"
+    },
+    "presetModes": {
+      "none": "None",
+      "eco": "Eco",
+      "away": "Away",
+      "boost": "Boost",
+      "comfort": "Comfort",
+      "home": "Home",
+      "sleep": "Sleep",
+      "activity": "Activity"
     }
   },
   "light": {

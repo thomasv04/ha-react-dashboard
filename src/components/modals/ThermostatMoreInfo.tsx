@@ -65,6 +65,18 @@ export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: s
     [helpers, entityId]
   );
 
+  const setPresetMode = useCallback(
+    (mode: string) => {
+      helpers.callService({
+        domain: 'climate',
+        service: 'set_preset_mode',
+        target: { entity_id: entityId },
+        serviceData: { preset_mode: mode },
+      });
+    },
+    [helpers, entityId]
+  );
+
   if (!entity) return <div className='p-12 text-[var(--ds-ink-muted)] text-center'>{t('common.entityNotFound')}</div>;
 
   const name = friendlyName(entity) ?? entityId;
@@ -76,6 +88,9 @@ export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: s
   const swingModes = entity.attributes.swing_modes as string[] | undefined;
   const currentFanMode = entity.attributes.fan_mode as string | undefined;
   const currentSwingMode = entity.attributes.swing_mode as string | undefined;
+  // Home Assistant n'expose `preset_modes` que si le thermostat en a.
+  const presetModes = entity.attributes.preset_modes as string[] | undefined;
+  const currentPresetMode = entity.attributes.preset_mode as string | undefined;
   const hvacMode = entity.state;
   const actionColor = HVAC_COLORS[hvacAction] ?? '#6b7280';
   // Les valeurs standard de Home Assistant sont traduites ; une valeur propre à
@@ -102,6 +117,18 @@ export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: s
                       options: hvacModes,
                       onChange: setHvacMode,
                       format: label('modes'),
+                    },
+                  ]
+                : []),
+              ...(presetModes && presetModes.length > 0
+                ? [
+                    {
+                      type: 'select' as const,
+                      title: t('widgets.thermostat.moreInfo.presetMode'),
+                      value: currentPresetMode ?? '',
+                      options: presetModes,
+                      onChange: setPresetMode,
+                      format: label('presetModes'),
                     },
                   ]
                 : []),

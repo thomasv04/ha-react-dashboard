@@ -101,7 +101,8 @@
       "fanMode": "Ventilation",
       "swingMode": "Oscillation",
       "action": "Action",
-      "targetTemp": "Température cible"
+      "targetTemp": "Température cible",
+      "presetMode": "Préréglage"
     },
     "fanModes": {
       "on": "Marche",
@@ -131,6 +132,16 @@
       "fan": "Ventile",
       "preheating": "Préchauffe",
       "defrosting": "Dégivre"
+    },
+    "presetModes": {
+      "none": "Aucun",
+      "eco": "Éco",
+      "away": "Absent",
+      "boost": "Boost",
+      "comfort": "Confort",
+      "home": "Maison",
+      "sleep": "Nuit",
+      "activity": "Activité"
     }
   },
   "light": {
