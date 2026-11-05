@@ -32,15 +32,7 @@
       "windy": "Windy",
       "windy-variant": "Very windy"
     },
-    "days": [
-      "Sun",
-      "Mon",
-      "Tue",
-      "Wed",
-      "Thu",
-      "Fri",
-      "Sat"
-    ],
+    "days": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
     "dispositions": {
       "horizontal": {
         "label": "Horizontal",
@@ -1266,6 +1258,44 @@
     "fields": {
       "routines": {
         "label": "Routines (scripts, scenes)"
+      }
+    }
+  },
+  "camera_events": {
+    "label": "Camera events",
+    "description": "Latest Frigate events: counters, thumbnails, and the camera full screen.",
+    "title": "Camera events",
+    "empty": "No events in the last {hours} hours",
+    "error": "Frigate unreachable",
+    "errorHint": "Install the Frigate integration in Home Assistant, and check the instance id.",
+    "since": "{time} ago",
+    "justNow": "just now",
+    "all": "All",
+    "live": "Live",
+    "back": "Back",
+    "labels": {
+      "person": "Person",
+      "car": "Car",
+      "package": "Package",
+      "dog": "Dog",
+      "cat": "Cat",
+      "bird": "Bird",
+      "bicycle": "Bicycle",
+      "motorcycle": "Motorcycle",
+      "animal": "Animal"
+    },
+    "fields": {
+      "name": {
+        "label": "Display name"
+      },
+      "cameras": {
+        "label": "Frigate cameras (comma-separated names, empty = all)"
+      },
+      "instanceId": {
+        "label": "Frigate instance"
+      },
+      "hours": {
+        "label": "Window (hours)"
       }
     }
   }

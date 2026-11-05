@@ -32,15 +32,7 @@
       "windy": "Venteux",
       "windy-variant": "Très venteux"
     },
-    "days": [
-      "dim",
-      "lun",
-      "mar",
-      "mer",
-      "jeu",
-      "ven",
-      "sam"
-    ],
+    "days": ["dim", "lun", "mar", "mer", "jeu", "ven", "sam"],
     "dispositions": {
       "horizontal": {
         "label": "Horizontale",
@@ -1266,6 +1258,44 @@
     "fields": {
       "routines": {
         "label": "Routines (scripts, scènes)"
+      }
+    }
+  },
+  "camera_events": {
+    "label": "Événements caméra",
+    "description": "Les derniers événements Frigate : compteurs, vignettes, et la caméra en plein écran.",
+    "title": "Événements caméra",
+    "empty": "Aucun événement ces {hours} dernières heures",
+    "error": "Frigate injoignable",
+    "errorHint": "Installez l’intégration Frigate dans Home Assistant, et vérifiez l’identifiant d’instance.",
+    "since": "il y a {time}",
+    "justNow": "à l’instant",
+    "all": "Tous",
+    "live": "Direct",
+    "back": "Retour",
+    "labels": {
+      "person": "Personne",
+      "car": "Voiture",
+      "package": "Colis",
+      "dog": "Chien",
+      "cat": "Chat",
+      "bird": "Oiseau",
+      "bicycle": "Vélo",
+      "motorcycle": "Moto",
+      "animal": "Animal"
+    },
+    "fields": {
+      "name": {
+        "label": "Nom affiché"
+      },
+      "cameras": {
+        "label": "Caméras Frigate (noms séparés par des virgules, vide = toutes)"
+      },
+      "instanceId": {
+        "label": "Instance Frigate"
+      },
+      "hours": {
+        "label": "Fenêtre (heures)"
       }
     }
   }

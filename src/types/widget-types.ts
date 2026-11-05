@@ -538,6 +538,17 @@ export interface WelcomeCardConfig {
   routines?: string[];
 }
 
+export interface CameraEventsCardConfig {
+  type: 'camera_events';
+  name?: string;
+  /** Identifiant de l'instance dans l'intégration Frigate. Défaut `frigate`. */
+  instanceId?: string;
+  /** Caméras, par leur nom Frigate, séparées par des virgules. Vide : toutes. */
+  cameras?: string;
+  /** Fenêtre des événements, en heures. Défaut 12. */
+  hours?: number;
+}
+
 export type WidgetConfig =
   | ActivityBarConfig
   | CameraCardConfig
@@ -570,7 +581,8 @@ export type WidgetConfig =
   | FanCardConfig
   | ClockCardConfig
   | ChipCardConfig
-  | WelcomeCardConfig;
+  | WelcomeCardConfig
+  | CameraEventsCardConfig;
 
 /** Map of widget id → its config */
 export type WidgetConfigs = Record<string, WidgetConfig>;

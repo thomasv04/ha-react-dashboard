@@ -44,6 +44,7 @@ export type {
   ClockCardConfig,
   ChipCardConfig,
   WelcomeCardConfig,
+  CameraEventsCardConfig,
   WidgetConfig,
   WidgetConfigs,
 } from './widget-types';
