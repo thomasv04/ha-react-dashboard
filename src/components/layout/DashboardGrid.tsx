@@ -83,18 +83,32 @@ interface PanelDrag {
 
 /**
  * Suit le pointeur jusqu'au relâché : déplacement et redimensionnement
- * partagent le même trio d'écouteurs.
+ * partagent le même trio d'écouteurs. `cancelled` : le navigateur a repris le
+ * geste (`pointercancel`). Renvoie de quoi décrocher les écouteurs sans `onUp`.
  */
-function trackPointer(onMove: (e: PointerEvent) => void, onUp: () => void) {
-  const up = () => {
-    onUp();
+function trackPointer(onMove: (e: PointerEvent) => void, onUp: (cancelled: boolean) => void) {
+  const stop = () => {
     window.removeEventListener('pointermove', onMove);
     window.removeEventListener('pointerup', up);
     window.removeEventListener('pointercancel', up);
   };
+  const up = (e: PointerEvent) => {
+    stop();
+    onUp(e.type === 'pointercancel');
+  };
   window.addEventListener('pointermove', onMove);
   window.addEventListener('pointerup', up);
   window.addEventListener('pointercancel', up);
+  return stop;
+}
+
+/**
+ * L'élément sous un point. En mode carte HA, l'application vit dans une shadow
+ * root : `document.elementFromPoint` n'y voit que l'hôte, il faut demander à la
+ * racine qui contient `from`.
+ */
+function elementAt(from: Node | null, x: number, y: number) {
+  return ((from?.getRootNode() ?? document) as Document | ShadowRoot).elementFromPoint(x, y);
 }
 
 /** Marge, en px, où le pointeur fait défiler ce qu'il survole pendant un glisser. */
@@ -114,7 +128,7 @@ function scrollNearEdges(point: { x: number; y: number }, board: HTMLElement | n
     else el.scrollLeft += delta;
   };
   if (board) nudge(board, false);
-  const scroller = document.elementFromPoint(point.x, point.y)?.closest<HTMLElement>('[data-panel-scroll]');
+  const scroller = elementAt(board, point.x, point.y)?.closest<HTMLElement>('[data-panel-scroll]');
   if (scroller) nudge(scroller, true);
 }
 
@@ -123,11 +137,21 @@ type PointerStart = { clientX: number; clientY: number };
 /**
  * Un glisser de bout en bout : la cible est relue à chaque image — et non à
  * chaque mouvement —, car le défilement automatique la change sans que le
- * pointeur bouge. Au doigt, le défilement de la page est retenu pendant le geste.
+ * pointeur bouge. Au doigt, le défilement de la page est retenu pendant le geste :
+ * `touch-action` est figé dès que le doigt se pose, alors que la tuile doit
+ * encore laisser défiler tant que l'appui prolongé n'a pas abouti.
+ *
+ * Échap, `pointercancel` ou la fonction renvoyée (démontage) annulent : `onEnd(true)`.
  */
-function dragSession(start: PointerStart, board: HTMLElement | null, update: (x: number, y: number) => void, onUp: () => void) {
+function dragSession(
+  start: PointerStart,
+  board: HTMLElement | null,
+  update: (x: number, y: number) => void,
+  onEnd: (cancelled: boolean) => void
+) {
   const point = { x: start.clientX, y: start.clientY };
   let raf = 0;
+  let done = false;
   const tick = () => {
     scrollNearEdges(point, board);
     update(point.x, point.y);
@@ -135,18 +159,23 @@ function dragSession(start: PointerStart, board: HTMLElement | null, update: (x:
   };
   raf = requestAnimationFrame(tick);
   const hold = (e: TouchEvent) => e.cancelable && e.preventDefault();
+  const onKey = (e: KeyboardEvent) => e.key === 'Escape' && end(true);
+  const end = (cancelled: boolean) => {
+    if (done) return;
+    done = true;
+    stopPointer();
+    cancelAnimationFrame(raf);
+    window.removeEventListener('touchmove', hold);
+    window.removeEventListener('keydown', onKey);
+    onEnd(cancelled);
+  };
   window.addEventListener('touchmove', hold, { passive: false });
-  trackPointer(
-    e => {
-      point.x = e.clientX;
-      point.y = e.clientY;
-    },
-    () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('touchmove', hold);
-      onUp();
-    }
-  );
+  window.addEventListener('keydown', onKey);
+  const stopPointer = trackPointer(e => {
+    point.x = e.clientX;
+    point.y = e.clientY;
+  }, end);
+  return () => end(true);
 }
 
 /** Méta des widgets, par type — calculée une fois. */
@@ -299,13 +328,16 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
   const dropRef = useRef<DropTarget | null>(null);
+  // Le geste en cours, quel qu'il soit : un démontage en plein glisser le décroche.
+  const stopGesture = useRef<(() => void) | null>(null);
+  useEffect(() => () => stopGesture.current?.(), []);
 
   const startDrag = useCallback(
     (widgetId: string, start: PointerStart) => {
       setDraggingId(widgetId);
 
       const targetAt = (x: number, y: number): DropTarget | null => {
-        const el = document.elementFromPoint(x, y);
+        const el = elementAt(outerRef.current, x, y);
         const panel = el?.closest<HTMLElement>('[data-panel-id]');
         if (!panel?.dataset.panelId) return null;
         const tiles = [...panel.querySelectorAll<HTMLElement>('[data-panel-grid] > [data-widget-id]')];
@@ -318,7 +350,7 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
         return { panelId: panel.dataset.panelId, index, beforeId: tiles[index]?.dataset.widgetId };
       };
 
-      dragSession(
+      stopGesture.current = dragSession(
         start,
         outerRef.current,
         (x, y) => {
@@ -329,8 +361,8 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
           dropRef.current = next;
           setDropTarget(next);
         },
-        () => {
-          if (dropRef.current) moveWidget(widgetId, dropRef.current.panelId, dropRef.current.index);
+        cancelled => {
+          if (!cancelled && dropRef.current) moveWidget(widgetId, dropRef.current.panelId, dropRef.current.index);
           dropRef.current = null;
           setDraggingId(null);
           setDropTarget(null);
@@ -357,7 +389,7 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
       set({ id: panelId, target: null });
 
       const targetAt = (x: number, y: number): PanelDrag['target'] => {
-        const el = document.elementFromPoint(x, y);
+        const el = elementAt(outerRef.current, x, y);
         const panel = el?.closest<HTMLElement>('[data-panel-id]');
         if (!panel) {
           // Sur « Ajouter un panneau » : une nouvelle colonne en fin de page.
@@ -373,7 +405,7 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
         return { panelId: id, zone };
       };
 
-      dragSession(
+      stopGesture.current = dragSession(
         start,
         outerRef.current,
         (x, y) => {
@@ -382,9 +414,9 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
           if (prev?.panelId === next?.panelId && prev?.zone === next?.zone) return;
           set({ id: panelId, target: next });
         },
-        () => {
+        cancelled => {
           const target = panelDragRef.current?.target;
-          if (target) movePanelTo(panelId, target.panelId, target.zone);
+          if (!cancelled && target) movePanelTo(panelId, target.panelId, target.zone);
           set(null);
         }
       );
@@ -402,7 +434,7 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
       const maxW = Math.min(panel.cols, fit);
       let last = { w: widget.w, h: widget.h };
 
-      trackPointer(
+      stopGesture.current = trackPointer(
         ev => {
           const next = {
             w: clamp(widget.w + Math.round((ev.clientX - startX) / (GRID_COL + GRID_GAP)), Math.min(min.w, maxW), maxW),
@@ -484,7 +516,7 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
     const startX = e.clientX;
     const from = board.scrollLeft;
     let moved = false;
-    trackPointer(
+    stopGesture.current = trackPointer(
       ev => {
         if (!moved && Math.abs(ev.clientX - startX) < 6) return;
         moved = true;
@@ -1003,6 +1035,9 @@ function StateStyled({
   return <WidgetConfigOverride configs={merged}>{children}</WidgetConfigOverride>;
 }
 
+/** Ce qui, dans une card, agit par lui-même : un appui dessus n'ouvre pas la fiche. */
+const CARD_CONTROLS = 'button, a, input, select, textarea, [role="slider"], [role="switch"]';
+
 // Memoized widget content
 const MemoChildren = memo(function MemoChildren({
   children,
@@ -1025,10 +1060,14 @@ const MemoChildren = memo(function MemoChildren({
     <div
       ref={ref}
       className={`h-full overflow-hidden${isEditMode ? ' pointer-events-none select-none' : ''}${onClick && !isEditMode ? ' cursor-pointer' : ''}`}
-      onClick={() => {
+      onClick={e => {
         // Un glissement (jauge de thermostat, curseur de luminosité) se termine
         // par un `click` sur la card : il ne doit pas ouvrir la fiche.
         if (moved.current) return;
+        // Un contrôle de la card (flèche de volet, bascule) a déjà agi : le clic
+        // qui en remonte n'est pas un appui sur la card.
+        const control = (e.target as Element).closest(CARD_CONTROLS);
+        if (control && ref.current?.contains(control)) return;
         if (onClick && ref.current) onClick(ref.current.getBoundingClientRect());
       }}
       {...(onLongPress && !isEditMode ? longPressHandlers : {})}

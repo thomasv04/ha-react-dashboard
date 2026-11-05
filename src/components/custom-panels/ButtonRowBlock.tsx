@@ -2,8 +2,9 @@ import { motion } from 'framer-motion';
 import { useHass } from '@hakit/core';
 import { resolveIcon, useIconCatalog } from '@/lib/lucide-icon-map';
 import type { ButtonRowBlock, InlineButton } from '@/types/custom-panel';
+import { buttonTileClass } from './tile';
 
-export function InlineButtonRenderer({ btn, compact = false }: { btn: InlineButton; compact?: boolean }) {
+export function InlineButtonRenderer({ btn, compact = false, tile = false }: { btn: InlineButton; compact?: boolean; tile?: boolean }) {
   // Les icones hors du noyau arrivent avec le catalogue complet, charge a la
   // demande : sans cet abonnement elles resteraient sur leur icone de repli.
   useIconCatalog();
@@ -17,6 +18,16 @@ export function InlineButtonRenderer({ btn, compact = false }: { btn: InlineButt
   }
 
   const isPrimary = btn.variant === 'primary';
+
+  if (tile) {
+    return (
+      <motion.button whileTap={{ scale: 0.97 }} onClick={call} className={buttonTileClass(isPrimary)}>
+        <span className='line-clamp-2'>{btn.label}</span>
+        {/* eslint-disable-next-line react-hooks/static-components */}
+        {Icon && <Icon size={22} className='shrink-0' />}
+      </motion.button>
+    );
+  }
 
   return (
     <motion.button
@@ -35,8 +46,10 @@ export function InlineButtonRenderer({ btn, compact = false }: { btn: InlineButt
   );
 }
 
-export function ButtonRowBlockRenderer({ block }: { block: ButtonRowBlock }) {
+export function ButtonRowBlockRenderer({ block, card = false }: { block: ButtonRowBlock; card?: boolean }) {
   if (!block.buttons.length) return null;
+  // Dans la grille d'une modale, la rangée se dissout : chaque bouton y est une tuile.
+  if (card) return block.buttons.map(btn => <InlineButtonRenderer key={btn.id} btn={btn} tile />);
   return (
     <div className='flex gap-2'>
       {block.buttons.map(btn => (

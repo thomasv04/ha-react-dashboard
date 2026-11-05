@@ -1,11 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { Compass, Layers, LayoutGrid, MessageCircle, Pin, PinOff, Settings, Sparkles, type LucideIcon } from 'lucide-react';
+import { Compass, Layers, LayoutGrid, MessageCircle, Settings, Sparkles, type LucideIcon } from 'lucide-react';
 import { usePages } from '@/context/PageContext';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { usePanel } from '@/context/PanelContext';
-import { useEditMode } from '@/context/DashboardLayoutContext';
 import { resolveIcon, useIconCatalog } from '@/lib/lucide-icon-map';
 import { DURATION_FAST } from '@/lib/motion-tokens';
 import { START_TOUR_EVENT } from '@/components/onboarding/TourOverlay';
@@ -30,9 +29,8 @@ export function Launcher({ open, onClose }: { open: boolean; onClose: () => void
   const { t } = useI18n();
   const isAdmin = useIsAdmin();
   const { pages, setCurrentPage } = usePages();
-  const { panels, dock, setDock } = useCustomPanels();
+  const { panels } = useCustomPanels();
   const { openPanel } = usePanel();
-  const { isEditMode } = useEditMode();
   const [dialog, setDialog] = useState<Dialog>(null);
 
   useEffect(() => {
@@ -43,8 +41,6 @@ export function Launcher({ open, onClose }: { open: boolean; onClose: () => void
   }, [open, onClose]);
 
   const sorted = sortPages(pages);
-  const togglePin = (id: string) =>
-    setDock({ ...dock, panels: dock.panels.includes(id) ? dock.panels.filter(p => p !== id) : [...dock.panels, id] });
 
   /** Ferme la feuille avant d'agir : l'action ouvre un écran qui la remplace. */
   const run = (action: () => void) => () => {
@@ -92,32 +88,16 @@ export function Launcher({ open, onClose }: { open: boolean; onClose: () => void
               <section className='flex-1 overflow-y-auto p-7'>
                 <h2 className='sr-only'>{t('layout.shell.apps')}</h2>
                 <div className='grid gap-x-10 sm:grid-cols-2'>
-                  {panels.map(panel => {
-                    const pinned = dock.panels.includes(panel.id);
-                    return (
-                      <div key={panel.id} className='flex items-center gap-2'>
-                        <LauncherItem
-                          Icon={resolveIcon(panel.icon) ?? LayoutGrid}
-                          color='var(--ds-accent)'
-                          onClick={run(() => openPanel(`custom:${panel.id}`))}
-                        >
-                          {panel.name}
-                        </LauncherItem>
-                        {/* Épingler au rail : réglage de la disposition, comme le dock d'avant. */}
-                        {isEditMode && (
-                          <button
-                            onClick={() => togglePin(panel.id)}
-                            title={pinned ? t('layout.shell.unpinFromRail') : t('layout.shell.pinToRail')}
-                            aria-label={pinned ? t('layout.shell.unpinFromRail') : t('layout.shell.pinToRail')}
-                            aria-pressed={pinned}
-                            className='flex size-11 shrink-0 items-center justify-center rounded-full hover:bg-black/15'
-                          >
-                            {pinned ? <PinOff size={18} /> : <Pin size={18} />}
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {panels.map(panel => (
+                    <LauncherItem
+                      key={panel.id}
+                      Icon={resolveIcon(panel.icon) ?? LayoutGrid}
+                      color='var(--ds-accent)'
+                      onClick={run(() => openPanel(`custom:${panel.id}`))}
+                    >
+                      {panel.name}
+                    </LauncherItem>
+                  ))}
                   {panels.length === 0 && <p className='py-4 text-[var(--ds-ink-muted)]'>{t('layout.shell.noPanels')}</p>}
 
                   <LauncherItem Icon={MessageCircle} color='var(--ds-app-photo)' onClick={run(() => setDialog('assist'))}>

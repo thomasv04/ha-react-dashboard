@@ -78,6 +78,13 @@ export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: s
   const currentSwingMode = entity.attributes.swing_mode as string | undefined;
   const hvacMode = entity.state;
   const actionColor = HVAC_COLORS[hvacAction] ?? '#6b7280';
+  // Les valeurs standard de Home Assistant sont traduites ; une valeur propre à
+  // une intégration (`on_low`…) n'a pas de clé et s'affiche telle quelle.
+  const label = (group: string) => (value: string) => {
+    const key = `widgets.thermostat.${group}.${value}`;
+    const text = t(key);
+    return text === key ? value : text;
+  };
 
   return (
     <MoreInfoLayout
@@ -87,16 +94,26 @@ export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: s
           modules={
             [
               ...(hvacModes.length > 0
-                ? [{ type: 'select' as const, title: 'Mode HVAC', value: hvacMode, options: hvacModes, onChange: setHvacMode }]
+                ? [
+                    {
+                      type: 'select' as const,
+                      title: t('widgets.thermostat.moreInfo.hvacMode'),
+                      value: hvacMode,
+                      options: hvacModes,
+                      onChange: setHvacMode,
+                      format: label('modes'),
+                    },
+                  ]
                 : []),
               ...(fanModes && fanModes.length > 0
                 ? [
                     {
                       type: 'select' as const,
-                      title: 'Ventilation',
+                      title: t('widgets.thermostat.moreInfo.fanMode'),
                       value: currentFanMode ?? '',
                       options: fanModes,
                       onChange: setFanMode,
+                      format: label('fanModes'),
                     },
                   ]
                 : []),
@@ -104,20 +121,25 @@ export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: s
                 ? [
                     {
                       type: 'select' as const,
-                      title: 'Oscillation',
+                      title: t('widgets.thermostat.moreInfo.swingMode'),
                       value: currentSwingMode ?? '',
                       options: swingModes,
                       onChange: setSwingMode,
+                      format: label('swingModes'),
                     },
                   ]
                 : []),
               {
                 type: 'details' as const,
-                title: 'Informations',
+                title: t('common.moreInfo.info'),
                 entries: [
-                  { label: 'Action', value: hvacAction, color: `text-[${actionColor}]` },
-                  ...(currentTemp != null ? [{ label: 'Temp. actuelle', value: `${currentTemp}°C` }] : []),
-                  ...(targetTemp != null ? [{ label: 'Temp. cible', value: `${targetTemp}°C` }] : []),
+                  {
+                    label: t('widgets.thermostat.moreInfo.action'),
+                    value: label('hvacActions')(hvacAction),
+                    color: `text-[${actionColor}]`,
+                  },
+                  ...(currentTemp != null ? [{ label: t('widgets.thermostat.currentTemp'), value: `${currentTemp}°C` }] : []),
+                  ...(targetTemp != null ? [{ label: t('widgets.thermostat.moreInfo.targetTemp'), value: `${targetTemp}°C` }] : []),
                 ],
               },
               { type: 'timeline' as const, entityId },
@@ -129,7 +151,7 @@ export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: s
         />
       }
     >
-      <MoreInfoHeader icon={Thermometer} name={name} state={hvacMode.toUpperCase()} stateColor={actionColor} />
+      <MoreInfoHeader icon={Thermometer} name={name} state={label('modes')(hvacMode)} stateColor={actionColor} />
 
       {/* Gauge — même cadran que la card, en grand */}
       <div className='mx-auto mt-2 w-full max-w-[380px] aspect-[1/1.18]'>

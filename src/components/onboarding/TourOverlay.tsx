@@ -75,8 +75,10 @@ export const TOURS: Record<string, TourStep[]> = {
 export type TourId = keyof typeof TOURS;
 
 const PAD = 8;
-const CARD_W = 300;
-const CARD_H = 176;
+// Taille de la bulle, pour la placer sans qu'elle sorte de l'écran : à revoir
+// si son texte ou ses boutons grandissent.
+const CARD_W = 360;
+const CARD_H = 240;
 /** Nombre de frames d'attente avant de déclarer une ancre absente. */
 const MAX_FRAMES = 40;
 
@@ -239,7 +241,7 @@ export function TourOverlay({ tourId, onClose }: { tourId: TourId; onClose: () =
         <div className='absolute inset-0' onClick={next} />
 
         <motion.div
-          className='bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-sheet)] absolute rounded-[var(--ds-radius-lg)] p-5'
+          className='absolute rounded-[var(--ds-radius-xl)] bg-[var(--ds-sheet)] p-6 text-[var(--ds-ink)] shadow-[var(--ds-shadow-sheet)]'
           data-testid='tour-card'
           animate={{ top: card.top, left: card.left }}
           transition={{ type: 'spring', stiffness: 320, damping: 32 }}
@@ -248,27 +250,27 @@ export function TourOverlay({ tourId, onClose }: { tourId: TourId; onClose: () =
         >
           <button
             onClick={finish}
-            className='absolute top-3 right-3 p-1 rounded-[var(--ds-radius-sm)] text-[var(--ds-ink-muted)] transition-colors'
+            className='absolute right-4 top-4 flex size-10 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'
             aria-label={t('common.close')}
           >
-            <X size={14} />
+            <X size={16} />
           </button>
 
-          <p className='text-[10px] font-semibold uppercase tracking-widest text-[var(--ds-accent)]' data-testid='tour-progress'>
+          <p className='text-sm font-semibold text-[var(--ds-tile-on-muted)]' data-testid='tour-progress'>
             {index + 1}/{steps.length}
           </p>
-          <h3 className='mt-2 text-[var(--ds-ink)] font-semibold text-sm'>{t(`tour.steps.${step.key}.title`)}</h3>
-          <p className='mt-1.5 text-[var(--ds-ink-muted)] text-xs leading-relaxed'>{t(`tour.steps.${step.key}.body`)}</p>
+          <h3 className='mt-1 pr-10 text-lg font-bold leading-tight'>{t(`tour.steps.${step.key}.title`)}</h3>
+          <p className='mt-2 text-base leading-relaxed text-[var(--ds-ink-muted)]'>{t(`tour.steps.${step.key}.body`)}</p>
 
-          <div className='mt-4 flex items-center gap-2'>
-            <button onClick={finish} className='text-[var(--ds-ink-muted)] text-xs transition-colors'>
+          <div className='mt-5 flex items-center gap-2'>
+            <button onClick={finish} className='h-11 px-2 text-[15px] font-semibold text-[var(--ds-ink-muted)]'>
               {t('tour.skip')}
             </button>
             <div className='flex-1' />
             {index > 0 && (
               <button
                 onClick={() => setIndex(i => i - 1)}
-                className='px-3 py-1.5 rounded-[var(--ds-radius-sm)] text-xs font-medium text-[var(--ds-ink-muted)] transition-colors'
+                className='h-11 rounded-full bg-[var(--ds-surface-3)] px-4 text-[15px] font-semibold'
               >
                 {t('tour.previous')}
               </button>
@@ -276,7 +278,7 @@ export function TourOverlay({ tourId, onClose }: { tourId: TourId; onClose: () =
             <button
               onClick={next}
               data-testid='tour-next'
-              className='px-3.5 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-accent)] text-white text-xs font-semibold transition-colors'
+              className='h-11 rounded-full bg-[var(--ds-tile-on)] px-5 text-[15px] font-semibold text-[var(--ds-tile-on-ink)]'
             >
               {isLast ? t('tour.done') : t('tour.next')}
             </button>

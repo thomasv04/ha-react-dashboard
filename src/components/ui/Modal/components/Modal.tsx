@@ -8,8 +8,8 @@ import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { RichText } from '@/components/ui/RichText';
 
-const TEXT_CLASS = 'text-[var(--ds-ink)] text-sm leading-relaxed whitespace-pre-wrap';
-const HTML_CLASS = 'text-[var(--ds-ink)] text-sm leading-relaxed prose prose-invert prose-sm max-w-none';
+const TEXT_CLASS = 'text-[var(--ds-ink)] text-base leading-relaxed whitespace-pre-wrap';
+const HTML_CLASS = 'text-[var(--ds-ink)] text-base leading-relaxed prose prose-invert max-w-none';
 
 // Safe content renderer — l'assainissement du HTML vit dans `RichText`.
 function ModalContentRenderer({ content }: { content: Modal['content'] }) {
@@ -27,7 +27,7 @@ function ModalContentRenderer({ content }: { content: Modal['content'] }) {
   }
 
   // ReactNode
-  return <div className='text-[var(--ds-ink)] text-sm'>{content as React.ReactNode}</div>;
+  return <div className='text-[var(--ds-ink)] text-base'>{content as React.ReactNode}</div>;
 }
 
 // Single modal card
@@ -50,7 +50,7 @@ function ModalCard({ modal, onClose }: ModalCardProps) {
 
   const variantClass: Record<NonNullable<ModalAction['variant']>, string> = {
     default: 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)]',
-    primary: 'bg-[var(--ds-accent)] text-white',
+    primary: 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]',
     danger: 'bg-[var(--ds-alert)] text-white',
   };
 
@@ -120,15 +120,19 @@ function ModalCard({ modal, onClose }: ModalCardProps) {
         animate='visible'
         exit='exit'
         onClick={e => e.stopPropagation()}
-        className={cn('bg-[var(--ds-surface-2)] rounded-[var(--ds-radius-xl)] p-6 w-full shadow-[var(--ds-shadow-sheet)]', widthClass)}
+        // Le gabarit des feuilles Echo : fond bleu de feuille, grands coins, cibles au doigt.
+        className={cn(
+          'w-full rounded-[var(--ds-radius-2xl)] bg-[var(--ds-sheet)] p-[26px] text-[var(--ds-ink)] shadow-[var(--ds-shadow-sheet)]',
+          widthClass
+        )}
         role='dialog'
         aria-modal='true'
         aria-labelledby={modal.title ? 'modal-title' : undefined}
       >
         {/* Header */}
-        <div className='flex items-start justify-between mb-4'>
+        <div className='mb-4 flex items-start justify-between gap-3'>
           {modal.title && (
-            <h2 id='modal-title' className='text-[var(--ds-ink)] font-bold text-lg pr-8'>
+            <h2 id='modal-title' className='text-[22px] font-bold leading-tight'>
               {modal.title}
             </h2>
           )}
@@ -136,10 +140,10 @@ function ModalCard({ modal, onClose }: ModalCardProps) {
             <button
               ref={firstFocusableRef}
               onClick={onClose}
-              className='flex-shrink-0 w-8 h-8 rounded-full bg-[var(--ds-surface-3)] flex items-center justify-center text-[var(--ds-ink-muted)] transition-colors ml-auto'
+              className='ml-auto flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'
               aria-label={t('common.close')}
             >
-              <X size={16} />
+              <X size={18} />
             </button>
           )}
         </div>
@@ -163,10 +167,7 @@ function ModalCard({ modal, onClose }: ModalCardProps) {
                   // la garde ouverte jusque-là, rien d'autre.
                   onClose();
                 }}
-                className={cn(
-                  'px-4 py-2 rounded-[var(--ds-radius-md)] text-sm font-medium transition-all',
-                  variantClass[action.variant ?? 'default']
-                )}
+                className={cn('h-12 rounded-full px-6 text-base font-semibold', variantClass[action.variant ?? 'default'])}
               >
                 {action.label}
               </button>

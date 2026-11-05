@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react';
-import { motion } from 'framer-motion';
-import { X, Compass, Hand, LayoutGrid, Layers, Map as MapIcon, Palette, Play, Radio, Sparkles, ChevronRight } from 'lucide-react';
-import { DURATION_FAST } from '@/lib/motion-tokens';
+import { Compass, Hand, LayoutGrid, Layers, Map as MapIcon, Palette, Play, Radio, Sparkles, ChevronRight } from 'lucide-react';
+import { Sheet } from '@/components/ds/Sheet';
 import { useI18n } from '@/i18n';
+import { cn } from '@/lib/utils';
 import { startTour, type TourId } from './TourOverlay';
 import { showReleaseNotes } from './ReleaseNotesModal';
 import { EventsDoc } from './EventsDoc';
@@ -16,6 +16,31 @@ const TOUR_SECTIONS: { id: TourId; Icon: typeof Compass }[] = [
   { id: 'floorplan', Icon: MapIcon },
 ];
 
+/** Une rangée de l'aide, au gabarit des sections des Paramètres. */
+const ROW = 'rounded-[var(--ds-radius-lg)] bg-[var(--ds-sheet-section)] p-4';
+
+/** Pastille d'icône carrée, comme les apps du lanceur. */
+function AppIcon({ Icon, color }: { Icon: typeof Compass; color: string }) {
+  return (
+    <span
+      className='flex size-11 shrink-0 items-center justify-center rounded-[var(--ds-radius-sm)] text-white'
+      style={{ background: color }}
+    >
+      <Icon size={20} />
+    </span>
+  );
+}
+
+function RowText({ id }: { id: string }) {
+  const { t } = useI18n();
+  return (
+    <span className='min-w-0 flex-1'>
+      <span className='block text-[17px] font-semibold'>{t(`help.sections.${id}.title`)}</span>
+      <span className='mt-0.5 block text-sm leading-relaxed text-[var(--ds-ink-muted)]'>{t(`help.sections.${id}.body`)}</span>
+    </span>
+  );
+}
+
 /**
  * Rubrique documentaire, dépliable sur place.
  *
@@ -23,135 +48,82 @@ const TOUR_SECTIONS: { id: TourId; Icon: typeof Compass }[] = [
  * de Home Assistant, un geste n'existe que dans l'écran de veille. Une visite
  * guidée n'aurait rien à éclairer : c'est une doc, pas un parcours.
  */
-function DocSection({ id, Icon, tint, children }: { id: string; Icon: typeof Radio; tint: string; children: ReactNode }) {
-  const { t } = useI18n();
+function DocSection({ id, Icon, color, children }: { id: string; Icon: typeof Radio; color: string; children: ReactNode }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className='rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] p-4'>
+    <div className={ROW}>
       <button
         onClick={() => setOpen(v => !v)}
         data-testid={`help-${id}-toggle`}
         aria-expanded={open}
-        className='flex items-start gap-3 w-full text-left'
+        className='flex w-full items-center gap-4 text-left'
       >
-        <div className={`p-2 rounded-[var(--ds-radius-sm)] flex-shrink-0 ${tint}`}>
-          <Icon size={15} />
-        </div>
-        <div className='min-w-0 flex-1'>
-          <h3 className='text-[var(--ds-ink)] text-sm font-semibold'>{t(`help.sections.${id}.title`)}</h3>
-          <p className='text-[var(--ds-ink-muted)] text-xs mt-1 leading-relaxed'>{t(`help.sections.${id}.body`)}</p>
-        </div>
-        <ChevronRight
-          size={15}
-          className={`text-[var(--ds-ink-muted)] flex-shrink-0 mt-2 transition-transform ${open ? 'rotate-90' : ''}`}
-        />
+        <AppIcon Icon={Icon} color={color} />
+        <RowText id={id} />
+        <ChevronRight size={20} className={cn('shrink-0 text-[var(--ds-ink-muted)] transition-transform', open && 'rotate-90')} />
       </button>
       {open && <div className='mt-4'>{children}</div>}
     </div>
   );
 }
 
+/** Aide : une feuille sur le côté, comme Assist — les visites guidées et la doc. */
 export function HelpModal({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
 
   const launch = (id: TourId) => {
     // Fermer d'abord : le projecteur de la visite éclairerait sinon le dos de
-    // cette modale au lieu de l'élément visé.
+    // cette feuille au lieu de l'élément visé.
     onClose();
     startTour(id);
   };
 
   return (
-    <>
-      <motion.div
-        data-overlay
-        className='fixed inset-0 z-[60] bg-black/60'
-        style={{ backdropFilter: 'blur(4px)' }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-      />
-      <motion.div
-        className='fixed inset-0 z-[61] flex items-center justify-center pointer-events-none p-4'
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        transition={{ duration: DURATION_FAST }}
-      >
-        <div
-          data-testid='help-modal'
-          className='bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-sheet)] pointer-events-auto w-full max-w-lg rounded-[var(--ds-radius-lg)] overflow-hidden flex flex-col'
-          style={{ maxHeight: 'min(85vh, 660px)' }}
-        >
-          <div className='flex items-center justify-between px-6 pt-5 pb-4 border-b border-[var(--ds-surface-3)] flex-shrink-0'>
-            <div>
-              <h2 className='text-[var(--ds-ink)] font-semibold text-base'>{t('help.title')}</h2>
-              <p className='text-[var(--ds-ink-muted)] text-xs mt-0.5'>{t('help.subtitle')}</p>
-            </div>
-            <button
-              onClick={onClose}
-              aria-label={t('common.close')}
-              className='p-1.5 rounded-[var(--ds-radius-sm)] text-[var(--ds-ink-muted)] transition-colors'
-            >
-              <X size={16} />
-            </button>
-          </div>
-
-          <div className='flex-1 overflow-y-auto p-4 flex flex-col gap-2'>
-            {TOUR_SECTIONS.map(({ id, Icon }) => (
-              <div key={id} className='rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] p-4'>
-                <div className='flex items-start gap-3'>
-                  <div className='p-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] flex-shrink-0'>
-                    <Icon size={15} />
-                  </div>
-                  <div className='min-w-0 flex-1'>
-                    <h3 className='text-[var(--ds-ink)] text-sm font-semibold'>{t(`help.sections.${id}.title`)}</h3>
-                    <p className='text-[var(--ds-ink-muted)] text-xs mt-1 leading-relaxed'>{t(`help.sections.${id}.body`)}</p>
-                    <button
-                      onClick={() => launch(id)}
-                      data-testid={`help-launch-${id}`}
-                      className='mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)] transition-colors text-xs font-semibold'
-                    >
-                      <Play size={11} /> {t('help.launch')}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {/* ── Gestes de l'écran de veille ── */}
-            <DocSection id='gestures' Icon={Hand} tint='bg-teal-500/15 text-teal-300'>
-              <GesturesDoc />
-            </DocSection>
-
-            {/* ── Événements Home Assistant ── */}
-            <DocSection id='events' Icon={Radio} tint='bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'>
-              <EventsDoc />
-            </DocSection>
-
-            {/* ── Nouveautés ── */}
-            <button
-              onClick={() => {
-                onClose();
-                showReleaseNotes();
-              }}
-              data-testid='help-release-notes'
-              className='rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] p-4 flex items-start gap-3 text-left transition-colors'
-            >
-              <div className='p-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] text-[var(--ds-warm-light)] flex-shrink-0'>
-                <Sparkles size={15} />
-              </div>
+    <Sheet open onClose={onClose} title={t('help.title')} subtitle={t('help.subtitle')} closeLabel={t('common.close')}>
+      <div data-testid='help-modal' className='flex flex-col gap-3'>
+        {TOUR_SECTIONS.map(({ id, Icon }) => (
+          <div key={id} className={ROW}>
+            <div className='flex items-start gap-4'>
+              <AppIcon Icon={Icon} color='var(--ds-tile-on)' />
               <div className='min-w-0 flex-1'>
-                <h3 className='text-[var(--ds-ink)] text-sm font-semibold'>{t('help.sections.releaseNotes.title')}</h3>
-                <p className='text-[var(--ds-ink-muted)] text-xs mt-1 leading-relaxed'>{t('help.sections.releaseNotes.body')}</p>
+                <RowText id={id} />
+                <button
+                  onClick={() => launch(id)}
+                  data-testid={`help-launch-${id}`}
+                  className='mt-3 flex h-11 items-center gap-2 rounded-full bg-[var(--ds-tile-on)] px-5 text-[15px] font-semibold text-[var(--ds-tile-on-ink)]'
+                >
+                  <Play size={16} /> {t('help.launch')}
+                </button>
               </div>
-              <ChevronRight size={15} className='text-[var(--ds-ink-muted)] flex-shrink-0 mt-2' />
-            </button>
+            </div>
           </div>
-        </div>
-      </motion.div>
-    </>
+        ))}
+
+        {/* ── Gestes de l'écran de veille ── */}
+        <DocSection id='gestures' Icon={Hand} color='var(--ds-good)'>
+          <GesturesDoc />
+        </DocSection>
+
+        {/* ── Événements Home Assistant ── */}
+        <DocSection id='events' Icon={Radio} color='var(--ds-app-music)'>
+          <EventsDoc />
+        </DocSection>
+
+        {/* ── Nouveautés ── */}
+        <button
+          onClick={() => {
+            onClose();
+            showReleaseNotes();
+          }}
+          data-testid='help-release-notes'
+          className={cn(ROW, 'flex items-center gap-4 text-left')}
+        >
+          <AppIcon Icon={Sparkles} color='var(--ds-app-calendar)' />
+          <RowText id='releaseNotes' />
+          <ChevronRight size={20} className='shrink-0 text-[var(--ds-ink-muted)]' />
+        </button>
+      </div>
+    </Sheet>
   );
 }

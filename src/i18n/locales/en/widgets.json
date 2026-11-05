@@ -95,6 +95,42 @@
       "dry": "Dry",
       "fan_only": "Fan",
       "off": "Off"
+    },
+    "moreInfo": {
+      "hvacMode": "Mode",
+      "fanMode": "Fan",
+      "swingMode": "Swing",
+      "action": "Action",
+      "targetTemp": "Target temperature"
+    },
+    "fanModes": {
+      "on": "On",
+      "off": "Off",
+      "auto": "Auto",
+      "low": "Low",
+      "medium": "Medium",
+      "middle": "Middle",
+      "high": "High",
+      "top": "Top",
+      "focus": "Focus",
+      "diffuse": "Diffuse"
+    },
+    "swingModes": {
+      "on": "On",
+      "off": "Off",
+      "both": "Both",
+      "vertical": "Vertical",
+      "horizontal": "Horizontal"
+    },
+    "hvacActions": {
+      "off": "Off",
+      "idle": "Idle",
+      "heating": "Heating",
+      "cooling": "Cooling",
+      "drying": "Drying",
+      "fan": "Fan",
+      "preheating": "Preheating",
+      "defrosting": "Defrosting"
     }
   },
   "light": {

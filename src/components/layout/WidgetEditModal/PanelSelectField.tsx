@@ -47,10 +47,7 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
           {/* Custom panels */}
           {panels.length > 0 ? (
             <>
-              <div className='flex items-center gap-2 px-3 pt-2 pb-1'>
-                <Layers size={11} className='text-[var(--ds-ink-muted)]' />
-                <span className='text-xs font-semibold text-[var(--ds-ink-muted)] uppercase tracking-wider'>{t('layout.panelCustom')}</span>
-              </div>
+              <p className='px-3 pb-1 pt-3 text-sm font-semibold text-[var(--ds-ink-muted)]'>{t('layout.panelCustom')}</p>
               {panels.map(p => {
                 const ref = `custom:${p.id}`;
                 return (
@@ -59,19 +56,17 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
                     onClick={() => select(ref)}
                     className={cn(
                       'flex h-11 w-full items-center gap-2.5 rounded-[var(--ds-radius-md)] px-3 text-left text-base',
-                      value === ref
-                        ? 'bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
-                        : 'border border-transparent text-[var(--ds-ink)]'
+                      value === ref ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'text-[var(--ds-ink)]'
                     )}
                   >
-                    <Layers size={14} className='text-[var(--ds-accent)] flex-shrink-0' />
+                    <Layers size={18} className='flex-shrink-0' />
                     <span className='flex-1'>{p.name}</span>
                   </button>
                 );
               })}
             </>
           ) : (
-            <p className='px-3 py-2 text-xs text-[var(--ds-ink-muted)] leading-relaxed'>{t('layout.panelNoneCreated')}</p>
+            <p className='px-3 py-2 text-sm leading-relaxed text-[var(--ds-ink-muted)]'>{t('layout.panelNoneCreated')}</p>
           )}
         </div>
       </div>,
@@ -89,7 +84,7 @@ export function PanelSelectField({ value, onChange, label }: { value: string; on
           open && 'outline-2 outline-[var(--ds-accent)]'
         )}
       >
-        {value ? <Layers size={14} className='text-[var(--ds-accent)] flex-shrink-0' /> : null}
+        {value ? <Layers size={18} className='flex-shrink-0 text-[var(--ds-ink-muted)]' /> : null}
         <span className={cn('flex-1 truncate text-base', value ? 'text-[var(--ds-ink)]' : 'text-[var(--ds-ink-muted)]')}>
           {displayLabel || t('layout.panelNoneDisplay')}
         </span>

@@ -1,6 +1,5 @@
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { Panel } from '@/components/layout/Panel';
-import { resolveIcon } from '@/lib/lucide-icon-map';
 import { CoverRowBlockRenderer } from './CoverRowBlock';
 import { ButtonBlockRenderer } from './ButtonBlock';
 import { ButtonRowBlockRenderer, InlineButtonRenderer } from './ButtonRowBlock';
@@ -29,9 +28,9 @@ function BlockRenderer({ block, card }: { block: CustomBlock; card: boolean }) {
     case 'cover-row':
       return <CoverRowBlockRenderer block={block} card={card} />;
     case 'button':
-      return <ButtonBlockRenderer block={block} />;
+      return <ButtonBlockRenderer block={block} card={card} />;
     case 'button-row':
-      return <ButtonRowBlockRenderer block={block} />;
+      return <ButtonRowBlockRenderer block={block} card={card} />;
     case 'section-header':
       return <SectionHeaderBlockRenderer block={block} />;
     case 'widget':
@@ -41,34 +40,40 @@ function BlockRenderer({ block, card }: { block: CustomBlock; card: boolean }) {
   }
 }
 
-/** Blocs qui gardent la pleine largeur même sur deux colonnes. */
-const FULL_WIDTH_BLOCKS: CustomBlock['type'][] = ['section-header', 'button-row'];
+/**
+ * Place d'un bloc dans la grille de tuiles. Un titre de section ouvre une
+ * nouvelle rangée ; une rangée de boutons se dissout, ses boutons deviennent
+ * des tuiles ; une card embarquée prend deux colonnes.
+ */
+const BLOCK_SPAN: Partial<Record<CustomBlock['type'], string>> = {
+  'section-header': 'col-span-full',
+  'button-row': 'contents',
+  // Selon la largeur de la grille, pas de l'écran : sur une seule colonne
+  // (aperçu de l'éditeur, téléphone), s'étaler sur deux en créait une seconde,
+  // étroite, où les tuiles suivantes s'écrasaient.
+  widget: '@[464px]:col-span-2',
+};
 
 /**
- * Le contenu d'un panneau, sans sa feuille.
+ * Le contenu d'une modale, sans sa feuille : des tuiles Echo dans une grille
+ * qui remplit la largeur.
  *
- * Sorti de `CustomPanelRenderer` pour que l'aperçu de l'éditeur montre le
- * panneau **en cours d'édition** : le rendu normal lit le panneau dans le
+ * Sorti de `CustomPanelRenderer` pour que l'aperçu de l'éditeur montre la
+ * modale **en cours d'édition** : le rendu normal lit la modale dans le
  * contexte, or l'éditeur travaille sur un brouillon qui n'y est pas encore.
  */
 export function CustomPanelBlocks({ panel }: { panel: CustomPanel }) {
   const { t } = useI18n();
 
-  // Deux colonnes : la feuille s'élargit, sinon chaque colonne serait deux fois
-  // plus étroite qu'avant et on aurait échangé un scroll vertical contre des
-  // cartes illisibles. Titres et rangées de boutons gardent la pleine largeur —
-  // un intitulé de section au milieu d'une grille ne titre plus rien.
-  const twoCols = panel.columns === 2;
-
   return (
-    <div className={twoCols ? 'grid grid-cols-1 sm:grid-cols-2 gap-2 items-start' : 'flex flex-col gap-2'}>
+    <div className='@container grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3'>
       {panel.blocks.map(block => (
-        <div key={block.id} className={twoCols && FULL_WIDTH_BLOCKS.includes(block.type) ? 'sm:col-span-2' : undefined}>
-          <SafeBlock block={block} card={twoCols} />
+        <div key={block.id} className={BLOCK_SPAN[block.type]}>
+          <SafeBlock block={block} card />
         </div>
       ))}
       {panel.blocks.length === 0 && (
-        <div className='py-6 text-center text-sm text-[var(--ds-ink-muted)]'>{t('layout.customPanel.emptyPanel')}</div>
+        <div className='col-span-full py-6 text-center text-sm text-[var(--ds-ink-muted)]'>{t('layout.customPanel.emptyPanel')}</div>
       )}
     </div>
   );
@@ -80,13 +85,6 @@ export function CustomPanelRenderer({ panelId }: { panelId: string }) {
 
   if (!panel) return null;
 
-  const IconComponent = panel.icon ? resolveIcon(panel.icon) : null;
-
-  // eslint-disable-next-line react-hooks/static-components
-  const panelIcon = IconComponent ? <IconComponent size={18} /> : undefined;
-
-  const twoCols = panel.columns === 2;
-
   const headerButtons = panel.headerButtons?.length ? (
     <div className='flex items-center gap-1.5'>
       {panel.headerButtons.map(button => (
@@ -96,7 +94,7 @@ export function CustomPanelRenderer({ panelId }: { panelId: string }) {
   ) : undefined;
 
   return (
-    <Panel title={panel.name} icon={panelIcon} wide={twoCols} actions={headerButtons}>
+    <Panel title={panel.name} actions={headerButtons}>
       <CustomPanelBlocks panel={panel} />
     </Panel>
   );

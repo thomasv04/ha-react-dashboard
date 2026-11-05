@@ -10,7 +10,7 @@
  * Ignoré par défaut : ce n'est pas un test, il ne vérifie rien. On le lance
  * quand l'interface a changé.
  */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 import path from 'path';
 
 const OUT = path.join('docs', 'images');

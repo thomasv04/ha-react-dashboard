@@ -95,6 +95,42 @@
       "dry": "Déshumidif.",
       "fan_only": "Ventilation",
       "off": "Arrêt"
+    },
+    "moreInfo": {
+      "hvacMode": "Mode",
+      "fanMode": "Ventilation",
+      "swingMode": "Oscillation",
+      "action": "Action",
+      "targetTemp": "Température cible"
+    },
+    "fanModes": {
+      "on": "Marche",
+      "off": "Arrêt",
+      "auto": "Auto",
+      "low": "Faible",
+      "medium": "Moyenne",
+      "middle": "Moyenne",
+      "high": "Forte",
+      "top": "Maximale",
+      "focus": "Concentrée",
+      "diffuse": "Diffuse"
+    },
+    "swingModes": {
+      "on": "Marche",
+      "off": "Arrêt",
+      "both": "Les deux",
+      "vertical": "Verticale",
+      "horizontal": "Horizontale"
+    },
+    "hvacActions": {
+      "off": "Arrêt",
+      "idle": "Au repos",
+      "heating": "Chauffe",
+      "cooling": "Refroidit",
+      "drying": "Déshumidifie",
+      "fan": "Ventile",
+      "preheating": "Préchauffe",
+      "defrosting": "Dégivre"
     }
   },
   "light": {

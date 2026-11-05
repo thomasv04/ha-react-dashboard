@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
+import { useDrag } from '@use-gesture/react';
 import { Copy, Lock, MoveDiagonal, Settings, Trash2 } from 'lucide-react';
 import { useDashboardLayout, useSizePresets, type GridWidget } from '@/context/DashboardLayoutContext';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -18,7 +19,7 @@ const ROUND = 'flex size-10 items-center justify-center rounded-full';
 
 /** Appui prolongé, en ms, avant qu'une tuile se laisse saisir au doigt. */
 const TOUCH_HOLD = 220;
-/** Mouvement toléré, en px, pendant cet appui : au-delà, c'est un défilement. */
+/** Mouvement, en px, avant que le geste ne choisisse son axe pendant cet appui. */
 const TOUCH_SLOP = 8;
 
 /**
@@ -35,44 +36,19 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
   const { setEditingWidgetId } = useWidgetConfig();
   const hasDispositions = !!WIDGET_DISPOSITIONS[widget.type]?.length;
   const keep = (e: React.PointerEvent) => e.stopPropagation();
-  const holdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
    * À la souris, la tuile se saisit aussitôt. Au doigt, il faut la tenir un
-   * instant — ou la tirer franchement de côté : sans ça, poser le doigt pour
-   * faire défiler le panneau déplacerait une tuile à chaque fois.
+   * instant — ou la tirer de côté : sans ça, poser le doigt pour faire défiler
+   * le panneau déplacerait une tuile à chaque fois. `preventScroll` tranche :
+   * avant `TOUCH_HOLD`, un geste vertical rend la main au défilement, un geste
+   * horizontal saisit la tuile. Seul le départ compte ici, `dragSession` suit.
    */
-  const onGrab = (e: React.PointerEvent) => {
-    if (e.pointerType === 'mouse') {
-      if (e.button !== 0) return;
-      e.preventDefault();
-      return onDragStart(id, e);
-    }
-    const start = { clientX: e.clientX, clientY: e.clientY };
-    const cancel = () => {
-      if (holdRef.current) clearTimeout(holdRef.current);
-      holdRef.current = null;
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', cancel);
-      window.removeEventListener('pointercancel', cancel);
-    };
-    const onMove = (m: PointerEvent) => {
-      const dx = m.clientX - start.clientX;
-      const dy = m.clientY - start.clientY;
-      if (Math.hypot(dx, dy) <= TOUCH_SLOP) return;
-      cancel();
-      // Franchement horizontal : c'est un déplacement, sans attendre l'appui
-      // prolongé. Le vertical reste au défilement du panneau.
-      if (Math.abs(dx) > Math.abs(dy) * 1.5) onDragStart(id, { clientX: m.clientX, clientY: m.clientY });
-    };
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', cancel);
-    window.addEventListener('pointercancel', cancel);
-    holdRef.current = setTimeout(() => {
-      cancel();
-      onDragStart(id, start);
-    }, TOUCH_HOLD);
-  };
+  const bind = useDrag(({ first, xy: [clientX, clientY] }) => first && onDragStart(id, { clientX, clientY }), {
+    preventScroll: TOUCH_HOLD,
+    preventScrollAxis: 'y',
+    axisThreshold: { touch: TOUCH_SLOP },
+  });
 
   if (widget.static) {
     return (
@@ -96,14 +72,22 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
   // premier mouvement du doigt, avant que notre appui prolongé n'ait pu parler.
   // Un geste horizontal sur une tuile ne doit donc pas faire glisser le plateau
   // (il le fait en lecture) : il appartient au déplacement de la tuile.
+  // Une seule rangée (80 px) : deux lignes de boutons de 40 px n'y tiennent pas,
+  // celle du bas débordait de la case. Tout passe alors sur une ligne — les deux
+  // rangées du calque se fondent dans la sienne (`contents`).
+  const squat = widget.h === 1;
+
   return (
     <div
-      onPointerDown={onGrab}
+      {...bind()}
       title={t('layout.panel.moveTile')}
-      className='absolute inset-0 z-10 flex cursor-grab touch-pan-y select-none flex-col rounded-[var(--ds-radius-lg)] bg-[color-mix(in_srgb,var(--ds-surface-3)_94%,transparent)] text-[var(--ds-ink)] outline-2 outline-dashed outline-[var(--ds-ink-muted)] active:cursor-grabbing'
+      className={cn(
+        'absolute inset-0 z-10 flex cursor-grab touch-pan-y select-none rounded-[var(--ds-radius-lg)] bg-[color-mix(in_srgb,var(--ds-surface-3)_94%,transparent)] text-[var(--ds-ink)] outline-2 outline-dashed outline-[var(--ds-ink-muted)] active:cursor-grabbing',
+        squat ? 'flex-row items-center gap-1.5 p-2' : 'flex-col'
+      )}
     >
-      <div className='flex items-start justify-between gap-2 p-2'>
-        <span className='truncate pl-1 pt-1.5 text-sm font-semibold'>{label}</span>
+      <div className={squat ? 'contents' : 'flex items-start justify-between gap-2 p-2'}>
+        <span className={cn('truncate pl-1 text-sm font-semibold', squat ? 'min-w-0 flex-1' : 'pt-1.5')}>{label}</span>
         <div className='flex shrink-0 items-center gap-1.5' onPointerDown={keep}>
           <button
             onClick={() => setEditingWidgetId(id)}
@@ -118,7 +102,8 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
               fastidieux du mode édition. */}
           <button
             onClick={() => duplicateWidget(id)}
-            className={cn(ROUND, 'bg-[var(--ds-surface-1)]')}
+            // Sur une ligne étroite, chaque bouton mange la place où l'on saisit la tuile.
+            className={cn(ROUND, 'bg-[var(--ds-surface-1)]', squat && widget.w < 3 && 'hidden')}
             title={t('layout.duplicateWidget')}
             aria-label={t('layout.duplicateWidget')}
           >
@@ -160,12 +145,16 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
         </div>
       )}
 
-      <div className='mt-auto flex items-end justify-between gap-2 p-2'>
-        {/* Une disposition se choisit dans la fiche ; sinon, les trois tailles prédéfinies tournent. */}
+      <div className={squat ? 'contents' : 'mt-auto flex items-end justify-between gap-2 p-2'}>
+        {/* Une disposition se choisit dans la fiche ; sinon, les trois tailles prédéfinies tournent.
+            Sur une ligne, sous quatre colonnes, la place manque : reste la poignée. */}
         <button
           onPointerDown={keep}
           onClick={() => (hasDispositions ? setEditingWidgetId(id) : cycleSize(id))}
-          className='flex h-9 items-center gap-1.5 rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-1)] px-3 text-sm font-semibold'
+          className={cn(
+            'flex h-9 shrink-0 items-center gap-1.5 rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-1)] px-3 text-sm font-semibold',
+            squat && widget.w < 4 && 'hidden'
+          )}
           title={hasDispositions ? t('layout.layout') : t('layout.changeSize')}
         >
           <MoveDiagonal size={14} />

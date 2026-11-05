@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
-import { Plus, Trash2, GripVertical, ChevronDown, ChevronUp, Settings2, Pencil } from 'lucide-react';
+import { Plus, Trash2, GripVertical, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { DEFAULT_WIDGET_CONFIGS, WIDGET_FIELD_DEFS } from '@/widgets';
 import type { GroupChild, WidgetConfig, WidgetFieldDef } from '@/types/widget-configs';
@@ -14,6 +14,8 @@ import { PanelSelectField } from './PanelSelectField';
 import { AreaControlsField } from './AreaControlsField';
 import { MultiSelectField } from './MultiSelectField';
 import { TemplateEditor } from '@/components/layout/TemplateField';
+import { SwitchTrack } from '@/components/ds/Switch';
+import { FIELD_CARD, INTRO, ROUND, SECTION_TITLE } from './ui';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 
@@ -85,31 +87,31 @@ export function ChildFieldRenderer({
       />
     );
   }
+  // Interrupteur et liste : le gabarit de la fiche d'édition principale
+  // (`WidgetEditModal/index.tsx`), pour qu'un réglage ait la même allure partout.
   if (field.fieldType === 'boolean') {
+    const on = (draft[field.key] as boolean) ?? false;
     return (
-      <label key={field.key} className='flex items-center gap-3 cursor-pointer select-none py-1'>
-        <div className='relative'>
-          <input
-            type='checkbox'
-            checked={(draft[field.key] as boolean) ?? false}
-            onChange={e => onPatch({ [field.key]: e.target.checked })}
-            className='sr-only peer'
-          />
-          <div className='w-8 h-4 rounded-full bg-[var(--ds-surface-3)] peer-checked:bg-[var(--ds-tile-on)] transition-colors' />
-          <div className='absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-[var(--ds-surface-3)] shadow-md transition-transform peer-checked:translate-x-4' />
-        </div>
-        <span className='text-xs text-[var(--ds-ink-muted)]'>{t(field.label)}</span>
-      </label>
+      <button
+        key={field.key}
+        role='switch'
+        aria-checked={on}
+        onClick={() => onPatch({ [field.key]: !on })}
+        className='flex min-h-12 w-full items-center justify-between gap-3 text-left'
+      >
+        <span className='text-base font-semibold'>{t(field.label)}</span>
+        <SwitchTrack on={on} />
+      </button>
     );
   }
   if (field.fieldType === 'select' && field.options) {
     return (
       <div key={field.key}>
-        <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{t(field.label)}</label>
+        <label className='mb-2 block text-sm font-semibold text-[var(--ds-ink-muted)]'>{t(field.label)}</label>
         <select
           value={(draft[field.key] as string) ?? field.options[0].value}
           onChange={e => onPatch({ [field.key]: e.target.value })}
-          className='w-full px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)] outline-none focus:outline-2 focus:outline-[var(--ds-accent)] cursor-pointer'
+          className='h-12 w-full cursor-pointer rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-3 text-base text-[var(--ds-ink)] outline-none focus:outline-2 focus:outline-[var(--ds-accent)]'
           style={{ colorScheme: 'dark' }}
         >
           {field.options.map(opt => (
@@ -158,8 +160,8 @@ export function ChildFieldRenderer({
   }
   if (field.fieldType === 'template') {
     return (
-      <div key={field.key} className='space-y-1'>
-        <label className='block text-sm text-[var(--ds-ink-muted)]'>{t(field.label)}</label>
+      <div key={field.key}>
+        <label className='mb-2 block text-sm font-semibold text-[var(--ds-ink-muted)]'>{t(field.label)}</label>
         <TemplateEditor
           value={(draft[field.key] as string) ?? ''}
           onChange={v => onPatch({ [field.key]: v })}
@@ -214,37 +216,25 @@ function ChildRow({ child, onRemove }: { child: GroupChild; onRemove: () => void
   };
 
   return (
-    <Reorder.Item
-      value={child}
-      className={cn(
-        'rounded-[var(--ds-radius-md)] border transition-colors overflow-hidden',
-        expanded
-          ? 'border-[var(--ds-accent)] bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'
-          : 'border-[var(--ds-surface-3)] bg-[var(--ds-surface-2)]'
-      )}
-    >
+    <Reorder.Item value={child} className={cn(FIELD_CARD, 'overflow-hidden p-0', expanded && 'ring-2 ring-[var(--ds-tile-on)]')}>
       {/* Row header */}
-      <div className='flex items-center gap-2.5 px-3 py-2.5'>
+      <div className='flex min-h-16 items-center gap-3 px-3 py-2'>
         {/* Drag handle — only this part is draggable */}
-        <GripVertical size={14} className='text-[var(--ds-ink-muted)] shrink-0 cursor-grab active:cursor-grabbing' />
+        <GripVertical size={18} className='shrink-0 cursor-grab text-[var(--ds-ink-muted)] active:cursor-grabbing' />
 
-        {/* Type icon */}
-        {meta ? (
-          <div
-            className='w-7 h-7 rounded-[var(--ds-radius-md)] flex items-center justify-center shrink-0'
-            style={{ background: `${meta.color}20`, border: `1px solid ${meta.color}35` }}
-          >
-            <meta.icon size={14} style={{ color: meta.color }} />
-          </div>
-        ) : (
-          <div className='w-7 h-7 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] shrink-0' />
-        )}
+        {/* Type icon — la pastille des apps du lanceur */}
+        <span
+          className='flex size-10 shrink-0 items-center justify-center rounded-[var(--ds-radius-sm)] text-white'
+          style={{ background: meta?.color ?? 'var(--ds-surface-3)' }}
+        >
+          {meta && <meta.icon size={20} />}
+        </span>
 
         {/* Name */}
-        <div className='flex flex-col min-w-0 flex-1'>
-          <span className='text-[var(--ds-ink)] text-sm font-medium leading-tight'>{meta ? t(meta.label) : child.type}</span>
+        <div className='flex min-w-0 flex-1 flex-col'>
+          <span className='truncate text-base font-semibold'>{meta ? t(meta.label) : child.type}</span>
           {(draft.name as string) || (draft.label as string) ? (
-            <span className='text-[var(--ds-ink-muted)] text-xs truncate'>{(draft.name as string) || (draft.label as string)}</span>
+            <span className='truncate text-sm text-[var(--ds-ink-muted)]'>{(draft.name as string) || (draft.label as string)}</span>
           ) : null}
         </div>
 
@@ -252,16 +242,21 @@ function ChildRow({ child, onRemove }: { child: GroupChild; onRemove: () => void
         {fields.length > 0 && (
           <button
             onClick={() => setExpanded(v => !v)}
-            className={cn(
-              'p-1.5 rounded-[var(--ds-radius-sm)] transition-colors shrink-0',
-              expanded ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'text-[var(--ds-ink-muted)]'
-            )}
+            aria-expanded={expanded}
+            aria-label={t('common.edit')}
+            title={t('common.edit')}
+            className={cn(ROUND, expanded && 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]')}
           >
-            {expanded ? <ChevronUp size={13} /> : <Pencil size={13} />}
+            {expanded ? <ChevronUp size={18} /> : <Pencil size={16} />}
           </button>
         )}
-        <button onClick={onRemove} className='p-1.5 rounded-[var(--ds-radius-sm)] text-[var(--ds-ink-muted)] transition-colors shrink-0'>
-          <Trash2 size={13} />
+        <button
+          onClick={onRemove}
+          aria-label={t('common.delete')}
+          title={t('common.delete')}
+          className={cn(ROUND, 'text-[var(--ds-alert)]')}
+        >
+          <Trash2 size={16} />
         </button>
       </div>
 
@@ -275,9 +270,9 @@ function ChildRow({ child, onRemove }: { child: GroupChild; onRemove: () => void
             transition={{ duration: 0.18 }}
             className='overflow-hidden'
           >
-            <div className='px-3 pb-3 pt-2 border-t border-[var(--ds-surface-3)]'>
+            <div className='px-4 pb-4 pt-1'>
               {/* Simple fields in 2-col grid, complex ones full width */}
-              <div className='grid grid-cols-2 gap-x-3 gap-y-3'>
+              <div className='grid grid-cols-2 gap-x-3 gap-y-4'>
                 {fields.map(field => {
                   const isWide = WIDE_FIELD_TYPES.includes(field.fieldType);
                   return (
@@ -333,46 +328,44 @@ export function GroupWidgetsTab({ groupId: _groupId, draft, updateField }: Group
 
   return (
     <div className='space-y-3'>
-      {/* Header */}
-      <div className='flex items-center gap-2 pb-2 border-b border-[var(--ds-surface-3)]'>
-        <Settings2 size={14} className='text-[var(--ds-accent)]' />
-        <span className='text-sm font-semibold text-[var(--ds-ink)]'>
-          {t('widgets.group.widgets')} ({children.length})
-        </span>
-      </div>
+      <h3 className={SECTION_TITLE}>
+        {t('widgets.group.widgets')}
+        <span className='ml-2 font-normal text-[var(--ds-ink-muted)]'>{children.length}</span>
+      </h3>
 
       {/* Empty state */}
       {children.length === 0 && !pickerOpen && (
-        <div className='text-center py-4'>
-          <p className='text-[var(--ds-ink-muted)] text-sm'>{t('widgets.group.noWidgets')}</p>
-          <p className='text-[var(--ds-ink-muted)] text-xs mt-1'>{t('widgets.group.addHint')}</p>
+        <div className={cn(FIELD_CARD, 'text-center')}>
+          <p className='text-base font-semibold'>{t('widgets.group.noWidgets')}</p>
+          <p className={cn(INTRO, 'mt-1')}>{t('widgets.group.addHint')}</p>
         </div>
       )}
 
       {/* Children — drag to reorder, click ✏ to edit */}
       {children.length > 0 && (
-        <Reorder.Group axis='y' values={children} onReorder={reorder} className='flex flex-col gap-1.5'>
+        <Reorder.Group axis='y' values={children} onReorder={reorder} className='flex flex-col gap-2'>
           {children.map(child => (
             <ChildRow key={child.id} child={child} onRemove={() => removeChild(child.id)} />
           ))}
         </Reorder.Group>
       )}
 
-      {children.length > 0 && <p className='text-[var(--ds-ink-muted)] text-sm text-center'>{t('widgets.group.dragToReorder')}</p>}
+      {children.length > 0 && <p className={cn(INTRO, 'text-center')}>{t('widgets.group.dragToReorder')}</p>}
 
       {/* Add toggle */}
       <button
         onClick={() => setPickerOpen(v => !v)}
+        aria-expanded={pickerOpen}
         className={cn(
-          'w-full flex items-center justify-center gap-2 py-2.5 rounded-[var(--ds-radius-md)] border text-sm font-medium transition-all',
+          'flex min-h-14 w-full items-center justify-center gap-2 rounded-[var(--ds-radius-lg)] px-4 text-base font-semibold',
           pickerOpen
-            ? 'border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)] bg-[var(--ds-tile-on)]'
-            : 'border-dashed border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
+            ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'
+            : 'border-2 border-dashed border-[var(--ds-sheet-section)] text-[var(--ds-ink-muted)]'
         )}
       >
-        <Plus size={15} />
+        <Plus size={18} />
         {t('widgets.group.addWidget')}
-        <ChevronDown size={13} className={cn('ml-auto transition-transform', pickerOpen && 'rotate-180')} />
+        <ChevronDown size={18} className={cn('ml-auto transition-transform', pickerOpen && 'rotate-180')} />
       </button>
 
       {/* Inline type grid */}
@@ -385,20 +378,20 @@ export function GroupWidgetsTab({ groupId: _groupId, draft, updateField }: Group
             transition={{ duration: 0.18 }}
             className='overflow-hidden'
           >
-            <div className='grid grid-cols-2 gap-1.5 pt-1'>
+            <div className='grid grid-cols-2 gap-2 pt-1'>
               {available.map(meta => (
                 <button
                   key={meta.type}
                   onClick={() => addChild(meta.type)}
-                  className='flex items-center gap-2.5 px-3 py-2.5 rounded-[var(--ds-radius-md)] border border-[var(--ds-surface-3)] bg-[var(--ds-surface-2)] transition-all text-left'
+                  className='flex min-h-14 items-center gap-3 rounded-[var(--ds-radius-md)] bg-[var(--ds-sheet-section)] px-2.5 text-left'
                 >
-                  <div
-                    className='w-7 h-7 rounded-[var(--ds-radius-md)] flex items-center justify-center shrink-0'
-                    style={{ background: `${meta.color}20`, border: `1px solid ${meta.color}35` }}
+                  <span
+                    className='flex size-9 shrink-0 items-center justify-center rounded-[var(--ds-radius-sm)] text-white'
+                    style={{ background: meta.color }}
                   >
-                    <meta.icon size={14} style={{ color: meta.color }} />
-                  </div>
-                  <span className='text-[var(--ds-ink-muted)] text-xs font-medium leading-tight'>{t(meta.label)}</span>
+                    <meta.icon size={18} />
+                  </span>
+                  <span className='text-sm font-semibold leading-tight'>{t(meta.label)}</span>
                 </button>
               ))}
             </div>

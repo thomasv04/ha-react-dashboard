@@ -8,8 +8,8 @@
   "done": "Got it",
   "steps": {
     "pages": {
-      "title": "The rail",
-      "body": "On the left: home in green, then your pages and pinned panels. One page per room or per floor, whatever fits."
+      "title": "The left menu",
+      "body": "On the left: home in green, then your pages and your modals. One page per room or per floor, whatever fits."
     },
     "edit": {
       "title": "Edit mode",
@@ -44,12 +44,12 @@
       "body": "Save once the layout suits you. The dashboard is stored on the server, so every device sees it."
     },
     "panelsCreate": {
-      "title": "Custom panels",
-      "body": "In the launcher, “Custom panels” builds a sheet from blocks: rows of covers, action buttons, section titles."
+      "title": "Modals",
+      "body": "In the launcher, “Modals” builds a sheet from blocks: covers, action buttons, section titles. It can show in the left menu."
     },
     "panelsDock": {
-      "title": "Pin them to the rail",
-      "body": "In edit mode, a panel's pin in the launcher adds it to the rail: it opens in one tap."
+      "title": "Put them in the menu",
+      "body": "In a modal’s editor, “Show in the left menu” gives it a button in the menu. In edit mode, the “Menu modals” button does the same."
     },
     "appearanceOpen": {
       "title": "Settings",

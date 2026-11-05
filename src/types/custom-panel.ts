@@ -71,15 +71,6 @@ export interface CustomPanel {
   icon?: string;
   blocks: CustomBlock[];
   /**
-   * Blocs sur deux colonnes plutôt qu'empilés.
-   *
-   * Une liste de dix volets tenait sur un seul rang et se lisait au scroll ;
-   * sur deux colonnes elle tient dans la feuille. Les volets passent alors en
-   * carte — nom au-dessus, trois boutons pleine largeur en dessous — parce
-   * qu'une colonne moitié moins large ne laisse plus la place à une ligne.
-   */
-  columns?: 1 | 2;
-  /**
    * Boutons posés dans l'en-tête de la feuille, à côté de la fermeture.
    *
    * Ce qu'un bloc `button-row` ne fait pas : rester visible quand la liste

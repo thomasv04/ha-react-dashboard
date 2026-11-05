@@ -6,9 +6,8 @@
  * Même principe que `floorplan.spec.ts` : la page est ajoutée à la
  * configuration amorcée, puis retirée.
  */
-import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
+import { test, expect, API, type APIRequestContext, type Page } from './fixtures';
 
-const API = 'http://localhost:8098';
 // Adresse relative : le serveur de dev sert tout sous sa `base` (`/local/…/`).
 const MODEL = 'tests/dashboard/fixtures/smart-home-floor-plan.glb';
 /** Une maquette façon ExportToHASS, aux portes et fenêtres séparées (`scripts/make-openings-glb.ts`). */
@@ -137,8 +136,10 @@ async function openModel(page: Page) {
   await expect(page.getByText('20.4 °C')).toBeVisible({ timeout: 60_000 });
   await expect
     .poll(async () => {
+      // 500 ms : sur un runner chargé, une image du rendu WebGL logiciel peut
+      // durer plus de 250 ms, et la pastille paraître immobile en pleine descente.
       const before = await at(page, 'temp');
-      await page.waitForTimeout(250);
+      await page.waitForTimeout(500);
       return before === (await at(page, 'temp'));
     })
     .toBe(true);
@@ -212,7 +213,8 @@ test('anchored chips follow the camera, and the reset button brings it back', as
   expect(await at(page, 'weather-3d')).toBe(card);
 
   await page.getByRole('button', { name: 'Recentrer' }).click();
-  await expect.poll(() => at(page, 'temp')).toBe(home);
+  // Le retour de la caméra est animé : plus long que 5 s sur un runner chargé.
+  await expect.poll(() => at(page, 'temp'), { timeout: 15_000 }).toBe(home);
 });
 
 test('the thermal view colours a room with the temperature measured in it', async ({ page }) => {
@@ -495,7 +497,15 @@ test('in edit mode, a card goes into the widget column, which stays put when the
   await expect(page.locator('[data-floorplan-item="weather-3d"]')).toHaveCount(0);
 
   await expectSaved(page, request, 'column', (id: string) => id, ['weather-3d']);
-  const box = await column.boundingBox();
+  // La page se met encore en place (barre d'édition, recadrage) : mesurer une fois immobile.
+  let box: Awaited<ReturnType<typeof column.boundingBox>> = null;
+  await expect
+    .poll(async () => {
+      const previous = box;
+      box = await column.boundingBox();
+      return JSON.stringify(previous) === JSON.stringify(box);
+    })
+    .toBe(true);
   await orbit(page, 160);
   expect(await column.boundingBox()).toEqual(box);
 

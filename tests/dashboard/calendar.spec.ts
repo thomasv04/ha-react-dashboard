@@ -6,7 +6,7 @@
  *
  * Run with: npm run test:e2e:dashboard
  */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 
 async function openCalendar(page: Page) {
   await page.addInitScript(() => localStorage.setItem('ha-dashboard-tour-done', 'true'));

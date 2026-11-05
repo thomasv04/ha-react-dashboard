@@ -12,8 +12,8 @@
       "body": "Parcourir le catalogue, associer une entité, ranger les tuiles dans les panneaux et les redimensionner."
     },
     "panels": {
-      "title": "Configurer un panneau",
-      "body": "Composer un panneau par blocs depuis le lanceur, puis l'épingler au rail."
+      "title": "Composer une modale",
+      "body": "Depuis le lanceur, « Modales » compose une feuille par blocs ; un interrupteur la place dans le menu de gauche."
     },
     "appearance": {
       "title": "Apparence et mode mural",

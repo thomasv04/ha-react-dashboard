@@ -3,6 +3,8 @@ import { findWidget } from '@/lib/panel-grid';
 import { WIDGET_DISPOSITIONS, getMinSize } from '@/widgets';
 import { cn, clamp } from '@/lib/utils';
 import { useI18n } from '@/i18n';
+import { Minus, Plus } from 'lucide-react';
+import { FIELD_CARD, INTRO, ROUND, SECTION_TITLE } from './WidgetEditModal/ui';
 
 interface CardLayoutTabProps {
   widgetId: string;
@@ -47,21 +49,23 @@ export function CardLayoutTab({ widgetId }: CardLayoutTabProps) {
   };
 
   return (
-    <div className='flex flex-col gap-6'>
+    <div className='flex flex-col gap-3'>
       {/* ── Disposition du contenu ──────────────────────────── */}
       {dispositions.length > 1 && (
-        <div>
-          <h4 className='text-[var(--ds-ink-muted)] text-sm mb-3'>{t('layout.contentLayout')}</h4>
+        <section className={FIELD_CARD}>
+          <h3 className={cn(SECTION_TITLE, 'mb-3')}>{t('layout.contentLayout')}</h3>
           <div className='grid grid-cols-2 gap-3'>
             {dispositions.map(disp => (
               <button
                 key={disp.id}
+                aria-pressed={widget.disposition === disp.id || (!widget.disposition && disp === dispositions[0])}
                 onClick={() => setDisposition(disp.id)}
                 className={cn(
-                  'p-4 rounded-[var(--ds-radius-lg)] border text-left transition-all cursor-pointer',
+                  'rounded-[var(--ds-radius-lg)] p-4 text-left transition-colors',
                   widget.disposition === disp.id || (!widget.disposition && disp === dispositions[0])
-                    ? 'border-[var(--ds-accent)] bg-[var(--ds-tile-on)] ring-1 ring-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
-                    : 'border-[var(--ds-surface-3)] bg-[var(--ds-surface-2)]'
+                    ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'
+                    : // Plus sombre que la vignette `surface-3` qu'elle porte : sinon la vignette disparaît.
+                      'bg-[var(--ds-sheet)]'
                 )}
               >
                 <div className='flex items-center justify-center mb-3 h-12'>
@@ -80,69 +84,67 @@ export function CardLayoutTab({ widgetId }: CardLayoutTabProps) {
                     </div>
                   )}
                 </div>
-                <div className='text-sm font-medium text-[var(--ds-ink)]'>{t(disp.label)}</div>
-                {disp.description && <div className='text-sm text-[var(--ds-ink-muted)] mt-1'>{t(disp.description)}</div>}
+                <div className='text-base font-semibold'>{t(disp.label)}</div>
+                {disp.description && <div className='mt-1 text-sm opacity-80'>{t(disp.description)}</div>}
               </button>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* ── Prévisualisation grille + sliders ────────────────── */}
-      <div>
-        <h4 className='text-[var(--ds-ink-muted)] text-sm mb-3'>{t('layout.gridSize')}</h4>
+      {/* ── Taille sur la grille : un pas au doigt par axe, et la mini-grille ── */}
+      <section className={cn(FIELD_CARD, 'flex flex-col gap-3')}>
+        <h3 className={SECTION_TITLE}>{t('layout.gridSize')}</h3>
+        <SizeStepper label={t('layout.panel.width_label')} value={widget.w} min={minSize.w} max={maxW} onChange={setWidth} />
+        <SizeStepper label={t('layout.panel.height')} value={widget.h} min={minSize.h} max={maxH} onChange={setHeight} />
+        <GridPreview cols={cols} widgetW={widget.w} widgetH={widget.h} />
+        <p className={INTRO}>{t('layout.minSize', { w: minSize.w, h: minSize.h })}</p>
+      </section>
+    </div>
+  );
+}
 
-        <div className='flex gap-3'>
-          {/* Slider vertical (hauteur) à gauche */}
-          <div className='flex flex-col items-center gap-1'>
-            <span className='text-xs text-[var(--ds-ink-muted)]'>{widget.h}</span>
-            <input
-              type='range'
-              min={minSize.h}
-              max={maxH}
-              value={widget.h}
-              onChange={e => setHeight(parseInt(e.target.value))}
-              className='h-32 appearance-none cursor-pointer
-                [writing-mode:vertical-lr] [direction:rtl]
-                [&::-webkit-slider-track]:rounded-full
-                [&::-webkit-slider-track]:bg-[var(--ds-surface-3)]
-                [&::-webkit-slider-track]:w-2
-                [&::-webkit-slider-thumb]:appearance-none
-                [&::-webkit-slider-thumb]:w-4
-                [&::-webkit-slider-thumb]:h-4
-                [&::-webkit-slider-thumb]:rounded-full
-                [&::-webkit-slider-thumb]:bg-[var(--ds-accent)]'
-            />
-          </div>
-
-          {/* Grille de preview */}
-          <div className='flex flex-col gap-1 flex-1'>
-            {/* Slider horizontal (largeur) au-dessus */}
-            <div className='flex items-center gap-2 mb-1'>
-              <input
-                type='range'
-                min={minSize.w}
-                max={maxW}
-                value={widget.w}
-                onChange={e => setWidth(parseInt(e.target.value))}
-                className='flex-1 h-2 rounded-full appearance-none cursor-pointer bg-[var(--ds-surface-3)]
-                  [&::-webkit-slider-thumb]:appearance-none
-                  [&::-webkit-slider-thumb]:w-4
-                  [&::-webkit-slider-thumb]:h-4
-                  [&::-webkit-slider-thumb]:rounded-full
-                  [&::-webkit-slider-thumb]:bg-[var(--ds-accent)]'
-              />
-              <span className='text-xs text-[var(--ds-ink-muted)] min-w-[2ch]'>{widget.w}</span>
-            </div>
-
-            {/* Grille miniature */}
-            <GridPreview cols={cols} widgetW={widget.w} widgetH={widget.h} />
-          </div>
-        </div>
-      </div>
-
-      {/* ── Info taille min ──────────────────────────────────── */}
-      <div className='text-sm text-[var(--ds-ink-muted)]'>{t('layout.minSize', { w: minSize.w, h: minSize.h })}</div>
+/**
+ * Un pas « − n + » : la taille d'une tuile se compte en colonnes et en rangées,
+ * douze au plus. Plus sûr au doigt qu'un curseur — et le vertical, à l'écran
+ * tactile, se confondait avec le défilement de la feuille.
+ */
+function SizeStepper({
+  label,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (v: number) => void;
+}) {
+  const { t } = useI18n();
+  return (
+    <div className='flex items-center gap-3'>
+      <span className='flex-1 text-base font-semibold'>{label}</span>
+      <button
+        onClick={() => onChange(value - 1)}
+        disabled={value <= min}
+        aria-label={t('layout.decrease', { label })}
+        className={cn(ROUND, 'size-11 disabled:opacity-30')}
+      >
+        <Minus size={18} />
+      </button>
+      <output aria-live='polite' className='min-w-8 text-center text-xl font-semibold tabular-nums'>
+        {value}
+      </output>
+      <button
+        onClick={() => onChange(value + 1)}
+        disabled={value >= max}
+        aria-label={t('layout.increase', { label })}
+        className={cn(ROUND, 'size-11 disabled:opacity-30')}
+      >
+        <Plus size={18} />
+      </button>
     </div>
   );
 }
@@ -153,7 +155,8 @@ function GridPreview({ cols, widgetW, widgetH }: { cols: number; widgetW: number
 
   return (
     <div
-      className='grid gap-1 p-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)]'
+      // Fond plus sombre que les cases : sur `surface-3` comme elles, la grille vide ne se lisait pas.
+      className='grid gap-1 rounded-[var(--ds-radius-md)] bg-[var(--ds-sheet)] p-2'
       style={{
         gridTemplateColumns: `repeat(${cols}, 1fr)`,
         gridAutoRows: '12px',
@@ -165,13 +168,7 @@ function GridPreview({ cols, widgetW, widgetH }: { cols: number; widgetW: number
         const isWidget = col < widgetW && row < widgetH;
 
         return (
-          <div
-            key={i}
-            className={cn(
-              'rounded-sm transition-colors',
-              isWidget ? 'bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]' : 'bg-[var(--ds-surface-3)]'
-            )}
-          />
+          <div key={i} className={cn('rounded-sm transition-colors', isWidget ? 'bg-[var(--ds-tile-on)]' : 'bg-[var(--ds-surface-3)]')} />
         );
       })}
     </div>

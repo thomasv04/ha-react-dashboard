@@ -40,7 +40,7 @@
     "fpsDescription": "Measures browser rendering FPS in real time to diagnose slowdowns.",
     "intro": "Disable costly visual effects to improve performance on tablets and small devices.",
     "reduceAnimations": "Disable animations",
-    "reduceAnimationsDesc": "Removes transitions and stops animated effects (weather, Aurora and Lava lamp backgrounds).",
+    "reduceAnimationsDesc": "Removes transitions and stops animated effects, such as the weather ones.",
     "disableShadows": "Disable shadows",
     "disableShadowsDesc": "Removes drop shadows from cards and elements.",
     "lowQualityCamera": "Light cameras",

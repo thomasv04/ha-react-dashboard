@@ -9,12 +9,19 @@ import { useI18n } from '@/i18n';
 // ── Snippets rapides ──────────────────────────────────────────────────────────
 
 const SNIPPETS = [
-  { label: 'Si/Sinon', code: "{% if states('entity.id') == 'on' %}\n  valeur_si_vrai\n{% else %}\n  valeur_si_faux\n{% endif %}" },
-  { label: 'Variable', code: "{% set etat = states('entity.id') %}\n{{ etat }}" },
-  { label: 'Arrondi', code: "{{ states('sensor.xxx') | float | round(1) }} °C" },
-  { label: 'Attribut', code: "{{ state_attr('entity.id', 'attribut') }}" },
-  { label: 'A valeur ?', code: "{% if has_value('entity.id') %}ok{% else %}N/A{% endif %}" },
+  { key: 'ifElse', code: "{% if states('entity.id') == 'on' %}\n  valeur_si_vrai\n{% else %}\n  valeur_si_faux\n{% endif %}" },
+  { key: 'variable', code: "{% set etat = states('entity.id') %}\n{{ etat }}" },
+  { key: 'round', code: "{{ states('sensor.xxx') | float | round(1) }} °C" },
+  { key: 'attribute', code: "{{ state_attr('entity.id', 'attribut') }}" },
+  { key: 'hasValue', code: "{% if has_value('entity.id') %}ok{% else %}N/A{% endif %}" },
 ];
+
+/** Pastille de la barre d'outils, au gabarit de la fiche d'édition. */
+const TOOL = 'flex h-10 items-center gap-1.5 rounded-full bg-[var(--ds-surface-3)] px-4 text-sm font-semibold';
+/** Menu déroulant de la barre d'outils. */
+const MENU =
+  'absolute left-0 top-full z-50 mt-2 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-sheet)]';
+const MENU_ITEM = 'flex min-h-11 w-full items-center px-4 text-left text-[15px]';
 
 // ── Éditeur de template ───────────────────────────────────────────────────────
 
@@ -64,32 +71,26 @@ export function TemplateEditor({ value, onChange, entityId }: { value: string; o
     .slice(0, 30);
 
   return (
-    <div className='space-y-2'>
+    <div className='space-y-3'>
       {/* Barre d'outils */}
-      <div className='flex items-center gap-1 flex-wrap'>
+      <div className='flex flex-wrap items-center gap-2'>
         {/* Snippets */}
         <div className='relative'>
-          <button
-            onClick={() => setShowSnippets(!showSnippets)}
-            className='flex items-center gap-1 px-2 py-1 rounded-md bg-[var(--ds-surface-2)] text-[var(--ds-ink-muted)] text-[11px] transition-colors'
-          >
-            Snippets <ChevronDown size={10} />
+          <button onClick={() => setShowSnippets(!showSnippets)} aria-expanded={showSnippets} className={TOOL}>
+            {t('layout.templateEditor.snippets')} <ChevronDown size={16} />
           </button>
           {showSnippets && (
-            <div
-              className='absolute z-50 top-full left-0 mt-1 w-56 rounded-[var(--ds-radius-sm)] border border-[var(--ds-surface-3)] shadow-[var(--ds-shadow-sheet)] overflow-hidden'
-              style={{ background: 'var(--ds-surface-1)' }}
-            >
+            <div className={cn(MENU, 'w-60')}>
               {SNIPPETS.map(s => (
                 <button
-                  key={s.label}
+                  key={s.key}
                   onClick={() => {
                     insertAtCursor(s.code);
                     setShowSnippets(false);
                   }}
-                  className='w-full text-left px-3 py-1.5 text-[11px] text-[var(--ds-ink-muted)]'
+                  className={MENU_ITEM}
                 >
-                  {s.label}
+                  {t(`layout.templateEditor.snippet.${s.key}`)}
                 </button>
               ))}
             </div>
@@ -98,30 +99,24 @@ export function TemplateEditor({ value, onChange, entityId }: { value: string; o
 
         {/* Insérer entité */}
         <div className='relative'>
-          <button
-            onClick={() => setShowEntityPicker(!showEntityPicker)}
-            className='flex items-center gap-1 px-2 py-1 rounded-md bg-[var(--ds-surface-2)] text-[var(--ds-ink-muted)] text-[11px] transition-colors'
-          >
-            <Plus size={10} /> Entité
+          <button onClick={() => setShowEntityPicker(!showEntityPicker)} aria-expanded={showEntityPicker} className={TOOL}>
+            <Plus size={16} /> {t('layout.templateEditor.insertEntity')}
           </button>
           {showEntityPicker && (
-            <div
-              className='absolute z-50 top-full left-0 mt-1 w-64 rounded-[var(--ds-radius-sm)] border border-[var(--ds-surface-3)] shadow-[var(--ds-shadow-sheet)] overflow-hidden'
-              style={{ background: 'var(--ds-surface-1)' }}
-            >
-              <div className='p-2 border-b border-[var(--ds-surface-3)]'>
-                <div className='flex items-center gap-2 px-2 py-1 rounded bg-[var(--ds-surface-2)]'>
-                  <Search size={11} className='text-[var(--ds-ink-muted)]' />
+            <div className={cn(MENU, 'w-72')}>
+              <div className='p-2'>
+                <div className='flex h-11 items-center gap-2 rounded-full bg-[var(--ds-surface-3)] px-4'>
+                  <Search size={16} className='text-[var(--ds-ink-muted)]' />
                   <input
                     autoFocus
                     value={entitySearch}
                     onChange={e => setEntitySearch(e.target.value)}
-                    className='bg-transparent text-[11px] text-[var(--ds-ink)] outline-none flex-1 placeholder:text-[var(--ds-ink-muted)]'
-                    placeholder='Rechercher une entité...'
+                    className='flex-1 bg-transparent text-[15px] text-[var(--ds-ink)] outline-none placeholder:text-[var(--ds-ink-muted)]'
+                    placeholder={t('layout.templateEditor.searchEntity')}
                   />
                 </div>
               </div>
-              <div className='overflow-y-auto' style={{ maxHeight: 180 }}>
+              <div className='overflow-y-auto pb-2' style={{ maxHeight: 220 }}>
                 {filteredEntities.map(id => (
                   <button
                     key={id}
@@ -130,7 +125,7 @@ export function TemplateEditor({ value, onChange, entityId }: { value: string; o
                       setShowEntityPicker(false);
                       setEntitySearch('');
                     }}
-                    className='w-full text-left px-3 py-1.5 text-[11px] text-[var(--ds-ink-muted)] truncate'
+                    className={cn(MENU_ITEM, 'truncate font-mono text-sm')}
                   >
                     {id}
                   </button>
@@ -144,9 +139,9 @@ export function TemplateEditor({ value, onChange, entityId }: { value: string; o
         {entityId && (
           <button
             onClick={() => insertAtCursor(`states('${entityId}')`)}
-            className='px-2 py-1 rounded-md bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] text-[11px] transition-colors'
+            className={cn(TOOL, 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]')}
           >
-            + entité courante
+            <Plus size={16} /> {t('layout.templateEditor.currentEntity')}
           </button>
         )}
       </div>
@@ -158,12 +153,9 @@ export function TemplateEditor({ value, onChange, entityId }: { value: string; o
         onChange={e => onChange(e.target.value)}
         rows={4}
         className={cn(
-          'w-full px-3 py-2 rounded-[var(--ds-radius-sm)] border text-xs text-[var(--ds-ink)] outline-none resize-y',
-          'font-mono leading-relaxed bg-black/20',
+          'w-full resize-y rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-4 py-3 font-mono text-sm leading-relaxed text-[var(--ds-ink)] outline-none',
           'placeholder:text-[var(--ds-ink-muted)]',
-          error
-            ? 'border-[var(--ds-alert)] focus:border-[var(--ds-accent)]'
-            : 'border-[var(--ds-surface-3)] focus:border-[var(--ds-accent)]'
+          error ? 'ring-2 ring-[var(--ds-alert)]' : 'focus:ring-2 focus:ring-[var(--ds-accent)]'
         )}
         placeholder={"{% set v = states('sensor.xxx') %}\n{{ v }}"}
         spellCheck={false}
@@ -171,15 +163,15 @@ export function TemplateEditor({ value, onChange, entityId }: { value: string; o
 
       {/* Preview / Error */}
       {error ? (
-        <div className='flex items-start gap-2 px-2 py-1.5 rounded-md bg-[var(--ds-surface-3)] border border-[var(--ds-alert)]'>
-          <AlertTriangle size={12} className='text-[var(--ds-alert)] mt-0.5 shrink-0' />
-          <span className='text-[10px] text-[var(--ds-alert)] font-mono leading-relaxed'>{error}</span>
+        <div className='flex items-start gap-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-3 py-2.5'>
+          <AlertTriangle size={16} className='mt-0.5 shrink-0 text-[var(--ds-alert)]' />
+          <span className='font-mono text-sm leading-relaxed text-[var(--ds-alert)]'>{error}</span>
         </div>
       ) : preview ? (
-        <div className='flex items-center gap-2 px-2 py-1.5 rounded-md bg-[var(--ds-surface-3)] border border-[var(--ds-good)]'>
-          <Check size={11} className='text-[var(--ds-good)] shrink-0' />
-          <span className='text-[11px] text-[var(--ds-good)]'>{t('layout.previewLabel')} </span>
-          <span className='text-[11px] text-[var(--ds-good)] font-mono truncate'>{preview}</span>
+        <div className='flex items-center gap-2 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-3 py-2.5 text-sm'>
+          <Check size={16} className='shrink-0 text-[var(--ds-good)]' />
+          <span className='shrink-0 font-semibold text-[var(--ds-good)]'>{t('layout.previewLabel')}</span>
+          <span className='truncate font-mono'>{preview}</span>
         </div>
       ) : null}
     </div>

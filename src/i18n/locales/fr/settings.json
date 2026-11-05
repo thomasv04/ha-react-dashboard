@@ -40,7 +40,7 @@
     "fpsDescription": "Mesure les FPS du rendu navigateur en temps réel pour diagnostiquer les ralentissements.",
     "intro": "Désactive les effets visuels coûteux pour améliorer les performances sur tablettes et petits appareils.",
     "reduceAnimations": "Désactiver les animations",
-    "reduceAnimationsDesc": "Supprime les transitions et arrête les effets animés (météo, fonds Aurora et Lava lamp).",
+    "reduceAnimationsDesc": "Supprime les transitions et arrête les effets animés, comme ceux de la météo.",
     "disableShadows": "Désactiver les ombres",
     "disableShadowsDesc": "Supprime les ombres portées des cards et des éléments.",
     "lowQualityCamera": "Caméras légères",

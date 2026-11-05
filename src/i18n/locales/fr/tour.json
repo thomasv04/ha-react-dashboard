@@ -8,8 +8,8 @@
   "done": "Compris",
   "steps": {
     "pages": {
-      "title": "Le rail",
-      "body": "À gauche, l'accueil en vert, puis vos pages et les panneaux épinglés. Une page par pièce, par étage, comme vous voulez."
+      "title": "Le menu de gauche",
+      "body": "À gauche, l'accueil en vert, puis vos pages et vos modales. Une page par pièce, par étage, comme vous voulez."
     },
     "edit": {
       "title": "Mode édition",
@@ -44,12 +44,12 @@
       "body": "Enregistrez une fois la disposition à votre goût. Le dashboard est stocké sur le serveur : tous vos appareils le voient."
     },
     "panelsCreate": {
-      "title": "Panneaux personnalisés",
-      "body": "Dans le lanceur, « Panneaux personnalisés » compose une feuille par blocs : rangées de volets, boutons d'action, titres de section."
+      "title": "Modales",
+      "body": "Dans le lanceur, « Modales » compose une feuille par blocs : volets, boutons d’action, titres de section. Elle peut s’afficher dans le menu de gauche."
     },
     "panelsDock": {
-      "title": "Les épingler au rail",
-      "body": "En mode édition, la punaise d’un panneau dans le lanceur l’épingle au rail : il s’ouvre en un geste."
+      "title": "Les placer dans le menu",
+      "body": "Dans l’éditeur d’une modale, « Afficher dans le menu de gauche » lui donne un bouton dans le menu. En mode édition, le bouton « Modales du menu » fait de même."
     },
     "appearanceOpen": {
       "title": "Les réglages",

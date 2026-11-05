@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, Play } from 'lucide-react';
-import { DURATION_FAST } from '@/lib/motion-tokens';
+import { AnimatePresence } from 'framer-motion';
+import { Play } from 'lucide-react';
+import { Sheet } from '@/components/ds/Sheet';
 import { useI18n } from '@/i18n';
 import { RELEASE_NOTES } from '@/data/release-notes';
 import { startTour, type TourId } from './TourOverlay';
@@ -51,85 +51,41 @@ export function ReleaseNotesModal({ onClose }: { onClose: () => void }) {
     startTour(tour);
   };
 
+  // Une feuille sur le côté, comme l'aide et Assist.
   return (
-    <>
-      <motion.div
-        data-overlay
-        className='fixed inset-0 z-[60] bg-black/60'
-        style={{ backdropFilter: 'blur(4px)' }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={close}
-      />
-      <motion.div
-        className='fixed inset-0 z-[61] flex items-center justify-center pointer-events-none p-4'
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        transition={{ duration: DURATION_FAST }}
-      >
-        <div
-          data-testid='release-notes-modal'
-          className='bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-sheet)] pointer-events-auto w-full max-w-lg rounded-[var(--ds-radius-lg)] overflow-hidden flex flex-col'
-          style={{ maxHeight: 'min(85vh, 640px)' }}
+    <Sheet
+      open
+      onClose={close}
+      title={note.title}
+      subtitle={`${t('releaseNotes.version', { version: note.version })} · ${note.date}`}
+      closeLabel={t('common.close')}
+    >
+      <div data-testid='release-notes-modal' className='flex flex-col gap-3'>
+        {note.items.map((item, i) => (
+          <div key={i} className='rounded-[var(--ds-radius-lg)] bg-[var(--ds-sheet-section)] p-4'>
+            <p className='text-base leading-relaxed'>{item.text}</p>
+            {item.image && <img src={item.image} alt='' className='mt-3 w-full rounded-[var(--ds-radius-md)]' loading='lazy' />}
+            {item.tour && (
+              <button
+                onClick={() => launch(item.tour!)}
+                data-testid={`release-tour-${item.tour}`}
+                className='mt-3 flex h-11 items-center gap-2 rounded-full bg-[var(--ds-tile-on)] px-5 text-[15px] font-semibold text-[var(--ds-tile-on-ink)]'
+              >
+                <Play size={16} /> {t('help.launch')}
+              </button>
+            )}
+          </div>
+        ))}
+
+        <button
+          onClick={close}
+          data-testid='release-notes-done'
+          className='mt-1 h-12 rounded-full bg-[var(--ds-tile-on)] text-base font-bold text-[var(--ds-tile-on-ink)]'
         >
-          <div className='flex items-start justify-between px-6 pt-5 pb-4 border-b border-[var(--ds-surface-3)] flex-shrink-0'>
-            <div className='min-w-0'>
-              <div className='flex items-center gap-2'>
-                <Sparkles size={15} className='text-[var(--ds-accent)] flex-shrink-0' />
-                <h2 className='text-[var(--ds-ink)] font-semibold text-base truncate'>{note.title}</h2>
-              </div>
-              <p className='text-[var(--ds-ink-muted)] text-xs mt-1'>
-                {t('releaseNotes.version', { version: note.version })} · {note.date}
-              </p>
-            </div>
-            <button
-              onClick={close}
-              aria-label={t('common.close')}
-              className='p-1.5 rounded-[var(--ds-radius-sm)] text-[var(--ds-ink-muted)] transition-colors flex-shrink-0'
-            >
-              <X size={16} />
-            </button>
-          </div>
-
-          <div className='flex-1 overflow-y-auto p-5 flex flex-col gap-3'>
-            {note.items.map((item, i) => (
-              <div key={i} className='rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] p-4'>
-                <p className='text-[var(--ds-ink)] text-sm leading-relaxed'>{item.text}</p>
-                {item.image && (
-                  <img
-                    src={item.image}
-                    alt=''
-                    className='mt-3 w-full rounded-[var(--ds-radius-sm)] border border-[var(--ds-surface-3)]'
-                    loading='lazy'
-                  />
-                )}
-                {item.tour && (
-                  <button
-                    onClick={() => launch(item.tour!)}
-                    data-testid={`release-tour-${item.tour}`}
-                    className='mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-tile-on)] border border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)] transition-colors text-xs font-semibold'
-                  >
-                    <Play size={11} /> {t('help.launch')}
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <div className='px-5 py-4 border-t border-[var(--ds-surface-3)] flex justify-end flex-shrink-0'>
-            <button
-              onClick={close}
-              data-testid='release-notes-done'
-              className='px-4 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-accent)] text-white text-xs font-semibold transition-colors'
-            >
-              {t('releaseNotes.done')}
-            </button>
-          </div>
-        </div>
-      </motion.div>
-    </>
+          {t('releaseNotes.done')}
+        </button>
+      </div>
+    </Sheet>
   );
 }
 

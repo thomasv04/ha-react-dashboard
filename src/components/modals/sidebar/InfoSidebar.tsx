@@ -37,7 +37,7 @@ export type SidebarModule =
   | { type: 'powerBalance'; production: number; consumption: number }
   | { type: 'powerBars'; entries: PowerBarEntry[] }
   | { type: 'presets'; title: string; presets: PresetEntry[]; onSelect: (value: number | string) => void }
-  | { type: 'select'; title: string; value: string; options: string[]; onChange: (v: string) => void }
+  | { type: 'select'; title: string; value: string; options: string[]; onChange: (v: string) => void; format?: (v: string) => string }
   | { type: 'entityId'; entityIds: string[] }
   | { type: 'custom'; content: ReactNode };
 
@@ -63,7 +63,9 @@ export function InfoSidebar({ modules }: { modules: SidebarModule[] }) {
           case 'presets':
             return <PresetsModule key={i} title={mod.title} presets={mod.presets} onSelect={mod.onSelect} />;
           case 'select':
-            return <SelectModule key={i} title={mod.title} value={mod.value} options={mod.options} onChange={mod.onChange} />;
+            return (
+              <SelectModule key={i} title={mod.title} value={mod.value} options={mod.options} onChange={mod.onChange} format={mod.format} />
+            );
           case 'entityId':
             return <EntityIdModule key={i} entityIds={mod.entityIds} />;
           case 'custom':

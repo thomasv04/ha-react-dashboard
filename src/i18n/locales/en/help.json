@@ -12,8 +12,8 @@
       "body": "Browse the catalog, link an entity, arrange tiles in panels and resize them."
     },
     "panels": {
-      "title": "Set up a panel",
-      "body": "Build a panel from blocks in the launcher, then pin it to the rail."
+      "title": "Build a modal",
+      "body": "In the launcher, “Modals” builds a sheet from blocks; a switch puts it in the left menu."
     },
     "appearance": {
       "title": "Look and wall panel",

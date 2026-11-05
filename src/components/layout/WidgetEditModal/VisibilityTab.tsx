@@ -1,6 +1,8 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { useI18n } from '@/i18n';
+import { cn } from '@/lib/utils';
 import { EntityPicker } from './EntityPicker';
+import { ADD_BUTTON, FIELD_CARD, INPUT, INTRO, LABEL, NESTED_CARD, ROUND, SECTION_TITLE, chip } from './ui';
 import type { VisibilityCondition } from '@/types/card-visibility';
 import type { CardStateStyle } from '@/types/card-state-styles';
 import { WIDGET_FIELD_DEFS } from '@/widgets';
@@ -8,35 +10,32 @@ import type { Breakpoint } from '@/components/layout/DashboardGrid';
 
 const BREAKPOINTS: Breakpoint[] = ['lg', 'md', 'sm'];
 
-const inputClass =
-  'w-full bg-[var(--ds-surface-3)] rounded-[var(--ds-radius-sm)] px-3 py-2 text-[var(--ds-ink)] text-sm focus:outline-none focus:outline-2 focus:outline-[var(--ds-accent)] placeholder:text-[var(--ds-ink-muted)]';
-
 function ConditionEditor({
   condition,
   onChange,
   onRemove,
+  nested = false,
 }: {
   condition: VisibilityCondition;
   onChange: (c: VisibilityCondition) => void;
   onRemove: () => void;
+  /** Dans une règle de style : un bloc dans la section, plutôt qu'une section. */
+  nested?: boolean;
 }) {
   const { t } = useI18n();
 
   return (
-    <div className='rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] p-3 space-y-3'>
+    <div className={cn(nested ? NESTED_CARD : FIELD_CARD, 'space-y-4')}>
       <div className='flex items-center gap-2'>
-        <div className='flex-1 flex gap-1.5'>
+        <div className='flex flex-1 gap-2'>
           {(['state', 'screen'] as const).map(kind => (
             <button
               key={kind}
+              aria-pressed={condition.condition === kind}
               onClick={() =>
                 onChange(kind === 'state' ? { condition: 'state', entityId: '', state: '' } : { condition: 'screen', breakpoints: [] })
               }
-              className={`px-2.5 py-1.5 rounded-[var(--ds-radius-sm)] border text-xs font-medium transition-colors cursor-pointer ${
-                condition.condition === kind
-                  ? 'bg-[var(--ds-tile-on)] border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
-                  : 'bg-[var(--ds-surface-3)] border-transparent text-[var(--ds-ink-muted)]'
-              }`}
+              className={chip(condition.condition === kind)}
             >
               {t(`layout.visibility.kind.${kind}`)}
             </button>
@@ -45,9 +44,10 @@ function ConditionEditor({
         <button
           onClick={onRemove}
           title={t('common.delete')}
-          className='p-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] text-[var(--ds-alert)] transition-colors cursor-pointer'
+          aria-label={t('common.delete')}
+          className={cn(ROUND, 'text-[var(--ds-alert)]')}
         >
-          <Trash2 size={12} />
+          <Trash2 size={16} />
         </button>
       </div>
 
@@ -58,9 +58,9 @@ function ConditionEditor({
             value={condition.entityId}
             onChange={v => onChange({ ...condition, entityId: v })}
           />
-          <div className='grid grid-cols-2 gap-2'>
+          <div className='grid grid-cols-2 gap-3'>
             <label className='block'>
-              <span className='block text-[var(--ds-ink-muted)] text-xs mb-1.5'>{t('layout.visibility.stateIs')}</span>
+              <span className={LABEL}>{t('layout.visibility.stateIs')}</span>
               <input
                 value={condition.state ?? ''}
                 // Les deux champs s'excluent : renseigner l'un vide l'autre,
@@ -68,16 +68,16 @@ function ConditionEditor({
                 // la card ne s'afficherait jamais.
                 onChange={e => onChange({ ...condition, state: e.target.value, stateNot: '' })}
                 placeholder='on'
-                className={inputClass}
+                className={INPUT}
               />
             </label>
             <label className='block'>
-              <span className='block text-[var(--ds-ink-muted)] text-xs mb-1.5'>{t('layout.visibility.stateIsNot')}</span>
+              <span className={LABEL}>{t('layout.visibility.stateIsNot')}</span>
               <input
                 value={condition.stateNot ?? ''}
                 onChange={e => onChange({ ...condition, stateNot: e.target.value, state: '' })}
                 placeholder='unavailable'
-                className={inputClass}
+                className={INPUT}
               />
             </label>
           </div>
@@ -85,23 +85,20 @@ function ConditionEditor({
       )}
 
       {condition.condition === 'screen' && (
-        <div className='flex gap-1.5'>
+        <div className='flex gap-2'>
           {BREAKPOINTS.map(bp => {
             const active = condition.breakpoints.includes(bp);
             return (
               <button
                 key={bp}
+                aria-pressed={active}
                 onClick={() =>
                   onChange({
                     ...condition,
                     breakpoints: active ? condition.breakpoints.filter(b => b !== bp) : [...condition.breakpoints, bp],
                   })
                 }
-                className={`flex-1 px-2 py-1.5 rounded-[var(--ds-radius-sm)] border text-xs font-medium transition-colors cursor-pointer ${
-                  active
-                    ? 'bg-[var(--ds-tile-on)] border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
-                    : 'bg-[var(--ds-surface-3)] border-transparent text-[var(--ds-ink-muted)]'
-                }`}
+                className={cn(chip(active), 'flex-1')}
               >
                 {t(`layout.visibility.screen.${bp}`)}
               </button>
@@ -139,8 +136,8 @@ export function VisibilityTab({
   const set = (next: VisibilityCondition[]) => updateField('visibility', next.length ? next : undefined);
 
   return (
-    <div className='space-y-4'>
-      <p className='text-[var(--ds-ink-muted)] text-xs leading-relaxed'>{t('layout.visibility.intro')}</p>
+    <div className='flex flex-col gap-3'>
+      <p className={INTRO}>{t('layout.visibility.intro')}</p>
 
       {conditions.map((condition, i) => (
         <ConditionEditor
@@ -151,13 +148,10 @@ export function VisibilityTab({
         />
       ))}
 
-      {conditions.length === 0 && <p className='text-[var(--ds-ink-muted)] text-xs italic'>{t('layout.visibility.empty')}</p>}
+      {conditions.length === 0 && <p className={INTRO}>{t('layout.visibility.empty')}</p>}
 
-      <button
-        onClick={() => set([...conditions, { condition: 'state', entityId: '', state: '' }])}
-        className='flex items-center gap-1.5 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)] transition-colors text-xs font-semibold cursor-pointer'
-      >
-        <Plus size={12} /> {t('layout.visibility.add')}
+      <button onClick={() => set([...conditions, { condition: 'state', entityId: '', state: '' }])} className={ADD_BUTTON}>
+        <Plus size={18} /> {t('layout.visibility.add')}
       </button>
 
       {supportsIcon && <StateStylesEditor draft={draft} updateField={updateField} />}
@@ -180,31 +174,31 @@ function StateStylesEditor({ draft, updateField }: { draft: Record<string, unkno
   const patch = (i: number, changes: Partial<CardStateStyle>) => set(styles.map((s, j) => (j === i ? { ...s, ...changes } : s)));
 
   return (
-    <div className='pt-5 mt-2 border-t border-[var(--ds-surface-3)] space-y-4'>
+    <div className='mt-4 flex flex-col gap-3'>
       <div>
-        <h4 className='text-[var(--ds-ink-muted)] text-sm font-semibold tracking-widest uppercase mb-1.5'>
-          {t('layout.stateStyles.title')}
-        </h4>
-        <p className='text-[var(--ds-ink-muted)] text-xs leading-relaxed'>{t('layout.stateStyles.intro')}</p>
+        <h3 className={cn(SECTION_TITLE, 'mb-1')}>{t('layout.stateStyles.title')}</h3>
+        <p className={INTRO}>{t('layout.stateStyles.intro')}</p>
       </div>
 
       {styles.map((style, i) => (
-        <div key={i} className='rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] p-3 space-y-3'>
+        <section key={i} className={cn(FIELD_CARD, 'flex flex-col gap-3')}>
           <div className='flex items-center justify-between'>
             {/* L'ordre affiché est l'ordre de priorité, comme une suite de `if`. */}
-            <span className='text-[var(--ds-ink-muted)] text-sm font-medium'>{t('layout.stateStyles.rule', { value: i + 1 })}</span>
+            <h4 className={SECTION_TITLE}>{t('layout.stateStyles.rule', { value: i + 1 })}</h4>
             <button
               onClick={() => set(styles.filter((_, j) => j !== i))}
               title={t('common.delete')}
-              className='p-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] text-[var(--ds-alert)] transition-colors cursor-pointer'
+              aria-label={t('common.delete')}
+              className={cn(ROUND, 'text-[var(--ds-alert)]')}
             >
-              <Trash2 size={12} />
+              <Trash2 size={16} />
             </button>
           </div>
 
           {style.when.map((condition, ci) => (
             <ConditionEditor
               key={ci}
+              nested
               condition={condition}
               onChange={c => patch(i, { when: style.when.map((old, cj) => (cj === ci ? c : old)) })}
               onRemove={() => patch(i, { when: style.when.filter((_, cj) => cj !== ci) })}
@@ -213,47 +207,45 @@ function StateStylesEditor({ draft, updateField }: { draft: Record<string, unkno
 
           <button
             onClick={() => patch(i, { when: [...style.when, { condition: 'state', entityId: '', state: '' }] })}
-            className='flex items-center gap-1.5 px-2.5 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] text-[var(--ds-ink-muted)] transition-colors text-xs cursor-pointer'
+            className={ADD_BUTTON}
           >
-            <Plus size={11} /> {t('layout.visibility.add')}
+            <Plus size={18} /> {t('layout.visibility.add')}
           </button>
 
-          <div className='grid grid-cols-2 gap-2'>
+          <div className='grid grid-cols-2 gap-3'>
             <label className='block'>
-              <span className='block text-[var(--ds-ink-muted)] text-xs mb-1.5'>{t('layout.stateStyles.icon')}</span>
+              <span className={LABEL}>{t('layout.stateStyles.icon')}</span>
               <input
                 value={style.icon ?? ''}
                 onChange={e => patch(i, { icon: e.target.value })}
                 placeholder='Lightbulb'
-                className={inputClass}
+                className={INPUT}
               />
             </label>
             <label className='block'>
-              <span className='block text-[var(--ds-ink-muted)] text-xs mb-1.5'>{t('layout.stateStyles.color')}</span>
-              <div className='flex gap-1.5'>
+              <span className={LABEL}>{t('layout.stateStyles.color')}</span>
+              <div className='flex gap-2'>
                 <input
                   type='color'
                   value={style.color ?? '#3b82f6'}
                   onChange={e => patch(i, { color: e.target.value })}
-                  className='w-9 h-9 rounded-[var(--ds-radius-sm)] bg-transparent border border-[var(--ds-surface-3)] cursor-pointer flex-shrink-0'
+                  aria-label={t('layout.stateStyles.color')}
+                  className='size-12 shrink-0 cursor-pointer rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] p-1.5'
                 />
                 <input
                   value={style.color ?? ''}
                   onChange={e => patch(i, { color: e.target.value })}
                   placeholder='#f97316'
-                  className={inputClass}
+                  className={INPUT}
                 />
               </div>
             </label>
           </div>
-        </div>
+        </section>
       ))}
 
-      <button
-        onClick={() => set([...styles, { when: [{ condition: 'state', entityId: '', state: 'on' }] }])}
-        className='flex items-center gap-1.5 px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] text-[var(--ds-ink)] transition-colors text-xs font-semibold cursor-pointer'
-      >
-        <Plus size={12} /> {t('layout.stateStyles.add')}
+      <button onClick={() => set([...styles, { when: [{ condition: 'state', entityId: '', state: 'on' }] }])} className={ADD_BUTTON}>
+        <Plus size={18} /> {t('layout.stateStyles.add')}
       </button>
     </div>
   );
