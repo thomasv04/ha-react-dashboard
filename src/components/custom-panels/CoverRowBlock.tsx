@@ -81,7 +81,7 @@ export function CoverRowBlockRenderer({ block, card = false }: { block: CoverRow
     ];
 
     return (
-      <div {...openProps} className='cursor-pointer rounded-[var(--ds-radius-xl)] bg-[var(--ds-sheet-section)] p-4'>
+      <div {...openProps} className='cursor-pointer rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] p-4'>
         <div className='flex items-center gap-3'>
           <div
             className={cn(

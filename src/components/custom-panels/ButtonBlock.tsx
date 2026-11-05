@@ -2,8 +2,9 @@ import { motion } from 'framer-motion';
 import { useHass } from '@hakit/core';
 import { resolveIcon, useIconCatalog } from '@/lib/lucide-icon-map';
 import type { ButtonBlock } from '@/types/custom-panel';
+import { buttonTileClass } from './tile';
 
-export function ButtonBlockRenderer({ block }: { block: ButtonBlock }) {
+export function ButtonBlockRenderer({ block, card = false }: { block: ButtonBlock; card?: boolean }) {
   // Les icones hors du noyau arrivent avec le catalogue complet, charge a la
   // demande : sans cet abonnement elles resteraient sur leur icone de repli.
   useIconCatalog();
@@ -17,6 +18,16 @@ export function ButtonBlockRenderer({ block }: { block: ButtonBlock }) {
   }
 
   const isPrimary = block.variant === 'primary';
+
+  if (card) {
+    return (
+      <motion.button whileTap={{ scale: 0.97 }} onClick={call} className={buttonTileClass(isPrimary)}>
+        <span className='line-clamp-2'>{block.label}</span>
+        {/* eslint-disable-next-line react-hooks/static-components */}
+        {Icon && <Icon size={22} className='shrink-0' />}
+      </motion.button>
+    );
+  }
 
   return (
     <motion.button
