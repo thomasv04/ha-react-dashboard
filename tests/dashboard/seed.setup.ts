@@ -1,71 +1,6 @@
 /**
- * Amorçage de la base de test avant la suite E2E.
- *
- * Les tests attendent un dashboard **peuplé** (au moins cinq widgets, dont une
- * horloge d'identifiant `greeting`). Or la base de test démarre vide : le
- * serveur répond `{ message: 'No config yet' }`, le dashboard affiche son état
- * vide, aucun `[data-widget-id]` n'apparaît et les treize tests expirent.
- *
- * Ce projet `setup` s'exécute avant le projet `chromium` (via `dependencies`),
- * donc après le démarrage des serveurs : la configuration est posée par l'API,
- * ce qui rend la suite indépendante de tout état résiduel de la base.
- */
-import { test as setup, expect } from '@playwright/test';
-
-const API = 'http://localhost:8098';
-
-/**
- * Disposition minimale couvrant ce que les tests observent : un seul panneau,
- * ses tuiles dans l'ordre (le modèle de la v2 n'a plus de coordonnées).
- */
-const tile = (id: string, type: string, w: number, h: number) => ({ id, type, w, h });
-
-const LAYOUT = {
-  panels: [
-    {
-      id: 'seed-panel',
-      cols: 9,
-      widgets: [
-        tile('greeting', 'greeting', 3, 1),
-        tile('weather-seed', 'weather', 3, 3),
-        tile('sensor-seed', 'sensor', 3, 2),
-        tile('light-seed', 'light', 3, 2),
-        tile('thermostat-seed', 'thermostat', 3, 3),
-        tile('camera-seed', 'camera', 6, 3),
-        tile('calendar-seed', 'calendar', 3, 3),
-      ],
-    },
-  ],
-};
-
-setup('amorce la configuration du dashboard de test', async ({ request }) => {
-  const res = await request.put(`${API}/api/config`, {
-    data: {
-      version: 2,
-      pages: [{ id: 'home', label: 'Accueil', icon: 'LayoutGrid', type: 'grid', order: 0 }],
-      layouts: { home: LAYOUT },
-      widgetConfigs: {
-        home: {
-          'weather-seed': { type: 'weather', entityId: 'weather.home' },
-          'sensor-seed': { type: 'sensor', entityId: 'sensor.bedroom_temperature' },
-          'light-seed': { type: 'light', entityId: 'light.salon' },
-          'thermostat-seed': { type: 'thermostat', entityId: 'climate.living_room' },
-          'calendar-seed': { type: 'calendar', entityIds: ['calendar.famille', 'calendar.travail'] },
-          'camera-seed': { type: 'camera', cameras: [{ entityId: 'camera.front_door', name: 'Entrée' }] },
-        },
-      },
-    },
-  });
-  expect(res.ok()).toBeTruthy();
-
-  // Relecture : la suite entière dépend de cette configuration.
-  const check = await request.get(`${API}/api/config`);
-  const body = await check.json();
-  expect(body.layouts.home.panels[0].widgets.length).toBeGreaterThanOrEqual(5);
-});
-
-/**
- * Préchauffage du serveur de dev.
+ * Préchauffage du serveur de dev, avant la suite E2E. La configuration de test,
+ * elle, est posée par la fixture de chaque worker (`fixtures.ts`).
  *
  * Playwright considère le serveur prêt dès que le port répond, mais Vite ouvre
  * son port **avant** d'avoir fini de pré-bundler ses dépendances : il annonce
@@ -85,6 +20,8 @@ setup('amorce la configuration du dashboard de test', async ({ request }) => {
  * script de module diffère `DOMContentLoaded` jusqu'à ce que tout son graphe
  * soit chargé. C'est donc bien `goto` qui encaisse l'attente.
  */
+import { test as setup } from './fixtures';
+
 const WARMUP_TIMEOUT = 3 * 60_000;
 
 setup('préchauffe le serveur de développement', async ({ page }) => {

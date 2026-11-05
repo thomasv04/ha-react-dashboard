@@ -2,12 +2,12 @@
  * Dashboard E2E tests — tests the full dashboard in mock-HA mode.
  *
  * Runs against Vite dev server (port 5174) with VITE_MOCK_HA=true
- * and Express API server (port 8098) with isolated test DB.
+ * and one Express API server per worker, each on its own temp DB (fixtures.ts).
  * → Zero interaction with a real Home Assistant instance.
  *
  * Run with: npm run test:e2e:dashboard
  */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, API, type Page } from './fixtures';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -267,7 +267,6 @@ test.describe('Settings', () => {
   });
 
   test('screensaver settings save on their own, with a live preview', async ({ page, request }) => {
-    const API = 'http://localhost:8098';
     const before = await (await request.get(`${API}/api/config`)).json();
     try {
       await page.goto('/');

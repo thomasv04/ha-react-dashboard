@@ -1,4 +1,5 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type ProxyOptions } from 'vite';
+import type { IncomingMessage } from 'http';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
@@ -27,6 +28,18 @@ const basePath = isAddon ? './' : useRelativePaths ? './' : `/local/${VITE_FOLDE
 // `vite --mode mock` en plus de la variable d'environnement, même raison que
 // `panel` plus haut : travailler l'interface sans Home Assistant sous la main.
 const isMockHA = process.env.VITE_MOCK_HA === 'true' || process.argv.includes('mock');
+
+// E2E en parallèle (`tests/dashboard/fixtures.ts`) : chaque worker Playwright a
+// son serveur d'API, que désigne l'en-tête `x-test-api-port`. Mode mock seulement.
+const routeToWorkerApi: ProxyOptions['configure'] = proxy => {
+  if (!isMockHA) return;
+  const web = proxy.web.bind(proxy) as (...args: unknown[]) => void;
+  (proxy as { web: unknown }).web = (req: IncomingMessage, res: unknown, options?: object, ...rest: unknown[]) => {
+    const port = req.headers['x-test-api-port'];
+    const target = typeof port === 'string' && /^\d+$/.test(port) ? { target: `http://localhost:${port}` } : {};
+    return web(req, res, { ...options, ...target }, ...rest);
+  };
+};
 
 // Version gravée dans le bundle. Lue depuis `config.yaml` — c'est ce fichier que
 // `create-tag` bump, donc le seul qui suive le tag publié. `release-notes.ts`,
@@ -73,10 +86,12 @@ export default defineConfig({
       '/api': {
         target: `http://localhost:${process.env.VITE_API_PORT || '8099'}`,
         changeOrigin: true,
+        configure: routeToWorkerApi,
       },
       '/uploads': {
         target: `http://localhost:${process.env.VITE_API_PORT || '8099'}`,
         changeOrigin: true,
+        configure: routeToWorkerApi,
       },
     },
   },

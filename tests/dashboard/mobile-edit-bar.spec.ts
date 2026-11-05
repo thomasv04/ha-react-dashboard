@@ -7,7 +7,7 @@
  *
  * Run with: npm run test:e2e:dashboard
  */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 
 test.use({ viewport: { width: 375, height: 812 } });
 

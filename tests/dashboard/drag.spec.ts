@@ -4,7 +4,7 @@
  *
  * Run with: npm run test:e2e:dashboard
  */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('ha-dashboard-tour-done', 'true'));

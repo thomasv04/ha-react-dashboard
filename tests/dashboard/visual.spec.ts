@@ -10,7 +10,7 @@
  *   npm run test:visual           compare aux références
  *   npm run test:visual:update    régénère les références, à relire avant commit
  */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 
 test.skip(!process.env.VISUAL, 'Dans le conteneur Playwright seulement : `npm run test:visual`');
 

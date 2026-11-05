@@ -9,9 +9,7 @@
  * `data/uploads`, partagé avec le serveur de développement. Le téléversement
  * lui-même est couvert par les tests du serveur.
  */
-import { test, expect, type Page } from '@playwright/test';
-
-const API = 'http://localhost:8098';
+import { test, expect, API, type Page } from './fixtures';
 
 /** Un plan d'appartement : six pièces, quelques meubles, la droite laissée libre pour les cards. */
 const PLAN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
