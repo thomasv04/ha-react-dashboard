@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Check, ChevronDown, ChevronUp, Home, Layers, LayoutGrid, Map as MapIcon, Plus, Settings, X, type LucideIcon } from 'lucide-react';
 import { usePages } from '@/context/PageContext';
@@ -10,6 +10,9 @@ import { resolveIcon, useIconCatalog } from '@/lib/lucide-icon-map';
 import { cn } from '@/lib/utils';
 import { pageColor, pageIcon, sortPages } from './page-icon';
 import { useI18n } from '@/i18n';
+import { useHass } from '@hakit/core';
+import type { CustomPanel } from '@/types/custom-panel';
+import { railStatus } from './rail-status';
 
 // 48 px + 6 px de marge de chaque côté : la pilule fait 60 px, la largeur du
 // bouton des apps, et le rail tombe pile sous lui.
@@ -32,6 +35,29 @@ export function NavRail() {
   const [modalsMenu, setModalsMenu] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const menuOpen = modalsMenu && isEditMode;
+
+  // Hauteur du milieu de l'entrée ouverte, mesurée dans le `<nav>` : suit le
+  // défilement de la pilule et l'ajout de pages.
+  const navRef = useRef<HTMLElement>(null);
+  const [barTop, setBarTop] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const measure = () => {
+      const active = nav.querySelector<HTMLElement>('[aria-current="page"]');
+      if (!active) return setBarTop(null);
+      const a = active.getBoundingClientRect();
+      setBarTop(a.top - nav.getBoundingClientRect().top + a.height / 2);
+    };
+    measure();
+    const pill = nav.querySelector('[data-tour="pages"]');
+    pill?.addEventListener('scroll', measure);
+    window.addEventListener('resize', measure);
+    return () => {
+      pill?.removeEventListener('scroll', measure);
+      window.removeEventListener('resize', measure);
+    };
+  }, [currentPageId, pages.length, isEditMode]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -70,7 +96,19 @@ export function NavRail() {
           'left-6 sm:left-10 top-[112px] flex-col',
           'max-sm:top-auto max-sm:bottom-3 max-sm:left-1/2 max-sm:-translate-x-1/2 max-sm:flex-row'
         )}
+        ref={navRef}
       >
+        {/* Le trait de la page ouverte, à gauche du rail, comme sur l'Echo Show.
+            Posé sur le `<nav>` et non dans la pilule : celle-ci défile, et
+            rognait tout ce qui dépassait d'elle — le trait n'apparaissait jamais. */}
+        {barTop !== null && (
+          <span
+            aria-hidden='true'
+            data-rail-bar
+            className='absolute -left-[18px] h-12 w-1.5 rounded-full bg-[var(--ds-accent)] transition-[top] duration-300 max-sm:hidden'
+            style={{ top: barTop - 24 }}
+          />
+        )}
         <button
           onClick={() => setCurrentPage(home.id)}
           title={home.label || t('layout.shell.home')}
@@ -90,13 +128,6 @@ export function NavRail() {
             const Icon = pageIcon(page);
             return (
               <div key={page.id} className='relative'>
-                {/* Le trait de la page ouverte, à gauche du rail, comme sur l'Echo Show. */}
-                {isActive && (
-                  <span
-                    aria-hidden='true'
-                    className='absolute -left-5 top-1/2 h-12 w-1.5 -translate-y-1/2 rounded-full bg-[var(--ds-accent)] max-sm:hidden'
-                  />
-                )}
                 <button
                   onClick={() => setCurrentPage(page.id)}
                   title={page.label}
@@ -134,20 +165,9 @@ export function NavRail() {
           {pinned.map(panel => {
             const target: PanelId = `custom:${panel.id}`;
             const isActive = target === activePanel;
-            const Icon = resolveIcon(panel.icon) ?? LayoutGrid;
             return (
-              <button
-                key={panel.id}
-                // Retaper le panneau ouvert le referme.
-                onClick={() => (isActive ? closePanel() : openPanel(target))}
-                title={panel.name}
-                aria-label={panel.name}
-                aria-pressed={isActive}
-                style={{ background: 'var(--ds-app-music)' }}
-                className={cn(RAIL_BUTTON, 'text-white', isActive && 'outline-[3px] outline-offset-2 outline-[var(--ds-ink)]')}
-              >
-                <Icon size={22} />
-              </button>
+              // Retaper le panneau ouvert le referme.
+              <PinnedModal key={panel.id} panel={panel} active={isActive} onClick={() => (isActive ? closePanel() : openPanel(target))} />
             );
           })}
 
@@ -245,6 +265,35 @@ export function NavRail() {
       {/* Hors du `<nav>` : son `z-40` plafonnerait l'éditeur sous la barre d'édition. */}
       <AnimatePresence>{editorOpen && <CustomPanelEditorModal onClose={() => setEditorOpen(false)} />}</AnimatePresence>
     </>
+  );
+}
+
+/**
+ * Une modale épinglée. Avec une entité d'état, elle devient une pastille de
+ * l'Echo Show : la température à la place de l'icône, ou l'icône allumée.
+ */
+function PinnedModal({ panel, active, onClick }: { panel: CustomPanel; active: boolean; onClick: () => void }) {
+  const entity = useHass(s => (panel.railEntity ? s.entities?.[panel.railEntity] : undefined));
+  const status = panel.railEntity ? railStatus(panel.railEntity, entity) : { on: false };
+  const Icon = resolveIcon(panel.icon) ?? LayoutGrid;
+  return (
+    <button
+      onClick={onClick}
+      title={panel.name}
+      aria-label={status.text ? `${panel.name} · ${status.text}` : panel.name}
+      aria-pressed={active}
+      data-rail-on={status.on || undefined}
+      style={{ background: status.on ? 'var(--ds-tile-on)' : 'var(--ds-app-music)' }}
+      className={cn(RAIL_BUTTON, 'text-white', active && 'outline-[3px] outline-offset-2 outline-[var(--ds-ink)]')}
+    >
+      {status.text ? (
+        <span className='text-[15px] font-bold tabular-nums'>{status.text}</span>
+      ) : (
+        // `resolveIcon` rend une référence stable du catalogue, pas un composant neuf.
+        // eslint-disable-next-line react-hooks/static-components
+        <Icon size={22} />
+      )}
+    </button>
   );
 }
 

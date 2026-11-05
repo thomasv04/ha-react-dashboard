@@ -9,6 +9,7 @@ import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWallPanel } from '@/context/WallPanelContext';
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 import { IconPicker } from '@/components/layout/WidgetPickers';
+import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { SwitchTrack } from '@/components/ds/Switch';
 import { resolveIcon } from '@/lib/lucide-icon-map';
 import { CustomPanelBlocks } from './CustomPanelRenderer';
@@ -242,6 +243,17 @@ function PanelEditor({
         </span>
         <SwitchTrack on={pinned} />
       </button>
+
+      {pinned && (
+        <div className={cn(ROW, 'flex flex-col gap-2 p-4')}>
+          <EntityPicker
+            value={panel.railEntity ?? ''}
+            onChange={v => onChange({ ...panel, railEntity: v || undefined })}
+            label={t('layout.customPanel.railEntity')}
+          />
+          <span className='text-sm text-[var(--ds-ink-muted)]'>{t('layout.customPanel.railEntityDesc')}</span>
+        </div>
+      )}
 
       {/* Boutons d'en-tête — repliés : la plupart des modales n'en ont pas. */}
       <div className={cn(ROW, 'px-4')}>

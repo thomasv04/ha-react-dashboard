@@ -230,7 +230,9 @@
     "showInRail": "Afficher dans le menu de gauche",
     "showInRailDesc": "Un bouton du menu ouvre la modale d’un appui.",
     "widgetRowsLess": "Moins haute",
-    "widgetRowsMore": "Plus haute"
+    "widgetRowsMore": "Plus haute",
+    "railEntity": "Pastille d’état",
+    "railEntityDesc": "Une température s’affiche dans le menu à la place de l’icône ; un appareil allumé allume l’icône."
   },
   "wallPanel": {
     "subtitle": "Écran de veille avec widgets",
@@ -273,7 +275,7 @@
       "photos": "Balayer pour changer de photo",
       "photosDesc": "Vers la gauche ou la droite",
       "quickPanel": "Panneau du menu rapide",
-      "quickPanelDesc": "Ouvert par un balayage vers le haut. Vide = geste désactivé",
+      "quickPanelDesc": "Ouvert par un balayage vers le haut sur la veille, et par la poignée en haut de l’accueil. Vide = désactivé",
       "notifications": "Notifications Home Assistant",
       "notificationsDesc": "Ouvertes par un balayage vers le bas — événement ha_dashboard_notification",
       "hints": "Afficher les poignées au démarrage",

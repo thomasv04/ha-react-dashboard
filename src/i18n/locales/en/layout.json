@@ -230,7 +230,9 @@
     "showInRail": "Show in the left menu",
     "showInRailDesc": "A menu button opens the modal in one tap.",
     "widgetRowsLess": "Shorter",
-    "widgetRowsMore": "Taller"
+    "widgetRowsMore": "Taller",
+    "railEntity": "Status badge",
+    "railEntityDesc": "A temperature shows in the menu instead of the icon; a device that is on lights the icon up."
   },
   "wallPanel": {
     "subtitle": "Screensaver with widgets",
@@ -273,7 +275,7 @@
       "photos": "Swipe to change photo",
       "photosDesc": "Left or right",
       "quickPanel": "Quick menu panel",
-      "quickPanelDesc": "Opened by swiping up. Empty = gesture disabled",
+      "quickPanelDesc": "Opened by swiping up on the screensaver, and by the handle at the top of the home screen. Empty = off",
       "notifications": "Home Assistant notifications",
       "notificationsDesc": "Opened by swiping down — ha_dashboard_notification event",
       "hints": "Show edge hints on start",
