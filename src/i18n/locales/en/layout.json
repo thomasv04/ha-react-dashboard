@@ -644,5 +644,7 @@
       "noAgent": "No conversation agent is set up in Home Assistant. Enable Assist under Settings › Voice assistants.",
       "unknown": "Assist could not process the request. Try again."
     }
-  }
+  },
+  "decrease": "Decrease: {label}",
+  "increase": "Increase: {label}"
 }

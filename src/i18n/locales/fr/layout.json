@@ -644,5 +644,7 @@
       "noAgent": "Aucun agent de conversation n’est configuré dans Home Assistant. Activez l’intégration Assist dans Paramètres › Assistants vocaux.",
       "unknown": "Assist n’a pas pu traiter la demande. Réessayez."
     }
-  }
+  },
+  "decrease": "Diminuer : {label}",
+  "increase": "Augmenter : {label}"
 }

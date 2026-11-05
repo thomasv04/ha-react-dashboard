@@ -29,7 +29,7 @@ function ActionEditor({
 
   return (
     <div className='space-y-4'>
-      <div role='radiogroup' aria-label={label} className='grid grid-cols-2 gap-2 sm:grid-cols-3'>
+      <div role='radiogroup' aria-label={label} className='grid grid-cols-2 gap-2'>
         {ACTION_TYPES.map(type => (
           <button
             key={type}
