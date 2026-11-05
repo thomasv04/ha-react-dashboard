@@ -2,13 +2,18 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 
 const callService = vi.fn();
+// Stable : la fiche relit la bibliothèque quand la connexion change.
+const connection = vi.hoisted(() => ({
+  socket: { url: 'wss://ha.example.org/api/websocket' },
+  sendMessagePromise: (() => {}) as unknown as (msg: Record<string, unknown>) => Promise<unknown>,
+}));
 let entity: { state: string; attributes: Record<string, unknown> } | null;
 
 vi.mock('@hakit/core', () => ({
   useHass: (selector?: (s: unknown) => unknown) => {
     const state = {
       helpers: { callService },
-      connection: { socket: { url: 'wss://ha.example.org/api/websocket' } },
+      connection,
     };
     return selector ? selector(state) : state;
   },
@@ -24,6 +29,7 @@ const lastCall = () => callService.mock.calls.at(-1)?.[0];
 
 beforeEach(() => {
   callService.mockClear();
+  connection.sendMessagePromise = vi.fn().mockResolvedValue({ children: [] });
   entity = {
     state: 'playing',
     attributes: {
@@ -119,5 +125,33 @@ describe('MediaPlayerMoreInfo', () => {
     entity = null;
     render_();
     expect(screen.getByText('common.entityNotFound')).toBeInTheDocument();
+  });
+
+  it('propose la bibliothèque du lecteur, et lance l’élément touché', async () => {
+    // La racine ne liste que des catégories : la fiche descend dans la première.
+    connection.sendMessagePromise = vi.fn(async (msg: Record<string, unknown>) =>
+      msg.media_content_id
+        ? {
+            children: [
+              { title: 'Best of 1978', media_content_id: 'album:1', media_content_type: 'album', can_play: true, can_expand: true },
+            ],
+          }
+        : {
+            children: [
+              {
+                title: 'Playlists',
+                media_content_id: 'root:playlists',
+                media_content_type: 'directory',
+                can_play: false,
+                can_expand: true,
+              },
+            ],
+          }
+    );
+    render_();
+    const item = await screen.findByText('Best of 1978');
+    expect(screen.getByText('widgets.media_player.library')).toBeInTheDocument();
+    fireEvent.click(item);
+    expect(lastCall()).toMatchObject({ service: 'play_media', serviceData: { media_content_id: 'album:1', media_content_type: 'album' } });
   });
 });

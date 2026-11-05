@@ -32,7 +32,15 @@
       "windy": "Windy",
       "windy-variant": "Very windy"
     },
-    "days": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "days": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ],
     "dispositions": {
       "horizontal": {
         "label": "Horizontal",
@@ -340,7 +348,8 @@
     "position": "Progress",
     "nothingPlaying": "Nothing playing",
     "album": "Album",
-    "unknownTitle": "Unknown title"
+    "unknownTitle": "Unknown title",
+    "library": "Listen next"
   },
   "person": {
     "label": "People",

@@ -32,7 +32,15 @@
       "windy": "Venteux",
       "windy-variant": "Très venteux"
     },
-    "days": ["dim", "lun", "mar", "mer", "jeu", "ven", "sam"],
+    "days": [
+      "dim",
+      "lun",
+      "mar",
+      "mer",
+      "jeu",
+      "ven",
+      "sam"
+    ],
     "dispositions": {
       "horizontal": {
         "label": "Horizontale",
@@ -340,7 +348,8 @@
     "position": "Progression",
     "nothingPlaying": "Aucune lecture en cours",
     "album": "Album",
-    "unknownTitle": "Titre inconnu"
+    "unknownTitle": "Titre inconnu",
+    "library": "À écouter"
   },
   "person": {
     "label": "Personnes",
