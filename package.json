@@ -30,6 +30,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:dashboard": "playwright test --config playwright.dashboard.config.ts",
     "test:e2e:dashboard:ui": "playwright test --config playwright.dashboard.config.ts --ui",
+    "test:visual": "node scripts/visual-docker.mjs",
+    "test:visual:update": "node scripts/visual-docker.mjs --update",
     "build:panel": "tsc -b && vite build --mode panel",
     "check:widgets": "tsx scripts/check-widget-registry.ts",
     "new:widget": "tsx scripts/new-widget.ts"

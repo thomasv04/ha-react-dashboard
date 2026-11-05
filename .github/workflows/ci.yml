@@ -250,11 +250,47 @@ jobs:
           path: playwright-report-dashboard/
           retention-days: 7
 
+  # ── Régression visuelle ───────────────────────────────────────────────────
+  # Dans le conteneur Playwright, celui de `npm run test:visual` : les
+  # références y sont prises, et le rendu des polices du runner Ubuntu n'est pas
+  # tout à fait le même. Version de l'image = celle de @playwright/test.
+  visual:
+    name: Visual Regression
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --ipc=host
+    env:
+      VISUAL: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      # Le Node de l'image est plus récent que les binaires précompilés de
+      # better-sqlite3 : il se compile, et l'image n'a pas d'outils pour ça.
+      - name: Install build tools
+        run: apt-get update -qq && apt-get install -y -qq --no-install-recommends build-essential python3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run visual regression
+        run: npx playwright test -c playwright.dashboard.config.ts visual
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-visual-report
+          path: |
+            playwright-report-dashboard/
+            test-results/
+          retention-days: 7
+
   # ── Job 6: Build ──────────────────────────────────────────────────────────
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [quality, typecheck, test, e2e-tests, e2e-dashboard]
+    needs: [quality, typecheck, test, e2e-tests, e2e-dashboard, visual]
     steps:
       - uses: actions/checkout@v4
 

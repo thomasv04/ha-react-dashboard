@@ -23,6 +23,9 @@ export default defineConfig({
   // tournent en moins d'une seconde.
   timeout: 90_000,
   reporter: [['html', { outputFolder: 'playwright-report-dashboard', open: 'never' }], ['list']],
+  // Régression visuelle (`visual.spec.ts`) : un pour cent de pixels d'écart
+  // couvre l'anticrénelage, pas un élément déplacé ou recoloré.
+  expect: { toHaveScreenshot: { maxDiffPixelRatio: 0.01 } },
   use: {
     baseURL: 'http://localhost:5174',
     trace: 'on-first-retry',
