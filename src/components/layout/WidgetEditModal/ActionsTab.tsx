@@ -1,6 +1,8 @@
 import { useI18n } from '@/i18n';
+import { cn } from '@/lib/utils';
 import { PanelSelectField } from './PanelSelectField';
 import { EntityPicker } from './EntityPicker';
+import { FIELD_CARD, INPUT, INTRO, LABEL, SECTION_TITLE, chip } from './ui';
 import type { CardAction, CardActionType } from '@/types/card-actions';
 
 const ACTION_TYPES: CardActionType[] = ['default', 'more-info', 'navigate', 'call-service', 'url', 'none'];
@@ -11,32 +13,35 @@ const GESTURES = [
   { key: 'holdAction', label: 'layout.actions.hold' },
 ] as const;
 
-const inputClass =
-  'w-full bg-[var(--ds-surface-3)] rounded-[var(--ds-radius-sm)] px-3 py-2 text-[var(--ds-ink)] text-sm focus:outline-none focus:outline-2 focus:outline-[var(--ds-accent)] placeholder:text-[var(--ds-ink-muted)]';
-
-function ActionEditor({ value, onChange }: { value: CardAction | undefined; onChange: (v: CardAction | undefined) => void }) {
+function ActionEditor({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: CardAction | undefined;
+  onChange: (v: CardAction | undefined) => void;
+}) {
   const { t } = useI18n();
   const action = value?.action ?? 'default';
 
   const patch = (updates: Partial<CardAction>) => onChange({ ...(value ?? { action: 'default' }), ...updates });
 
   return (
-    <div className='space-y-3'>
-      <div className='grid grid-cols-3 gap-1.5'>
+    <div className='space-y-4'>
+      <div role='radiogroup' aria-label={label} className='grid grid-cols-2 gap-2 sm:grid-cols-3'>
         {ACTION_TYPES.map(type => (
           <button
             key={type}
+            role='radio'
+            aria-checked={action === type}
             onClick={() =>
               // `default` est l'absence de configuration, pas une valeur à
               // stocker : le remettre nettoie l'entrée au lieu de figer le
               // comportement actuel dans la config.
               type === 'default' ? onChange(undefined) : patch({ action: type })
             }
-            className={`px-2 py-1.5 rounded-[var(--ds-radius-sm)] border text-xs font-medium transition-colors cursor-pointer ${
-              action === type
-                ? 'bg-[var(--ds-tile-on)] border-[var(--ds-accent)] text-[var(--ds-tile-on-ink)]'
-                : 'bg-[var(--ds-surface-3)] border-transparent text-[var(--ds-ink-muted)]'
-            }`}
+            className={cn(chip(action === type), 'px-3')}
           >
             {t(`layout.actions.type.${type}`)}
           </button>
@@ -50,26 +55,26 @@ function ActionEditor({ value, onChange }: { value: CardAction | undefined; onCh
       {action === 'call-service' && (
         <>
           <label className='block'>
-            <span className='block text-[var(--ds-ink-muted)] text-xs mb-1.5'>{t('layout.actions.service')}</span>
+            <span className={LABEL}>{t('layout.actions.service')}</span>
             <input
               value={value?.service ?? ''}
               onChange={e => patch({ service: e.target.value })}
               placeholder='light.turn_on'
-              className={inputClass}
+              className={INPUT}
             />
           </label>
           <div>
             <EntityPicker label={t('layout.actions.entity')} value={value?.entityId ?? ''} onChange={v => patch({ entityId: v })} />
-            <p className='text-[var(--ds-ink-muted)] text-sm mt-1'>{t('layout.actions.entityHint')}</p>
+            <p className='mt-2 text-sm text-[var(--ds-ink-muted)]'>{t('layout.actions.entityHint')}</p>
           </div>
           <label className='block'>
-            <span className='block text-[var(--ds-ink-muted)] text-xs mb-1.5'>{t('layout.actions.serviceData')}</span>
+            <span className={LABEL}>{t('layout.actions.serviceData')}</span>
             <textarea
               value={value?.serviceData ?? ''}
               onChange={e => patch({ serviceData: e.target.value })}
               rows={2}
               placeholder='{"brightness": 180}'
-              className={`${inputClass} font-mono resize-none`}
+              className={cn(INPUT, 'h-auto resize-none py-3 font-mono')}
             />
           </label>
         </>
@@ -77,8 +82,8 @@ function ActionEditor({ value, onChange }: { value: CardAction | undefined; onCh
 
       {action === 'url' && (
         <label className='block'>
-          <span className='block text-[var(--ds-ink-muted)] text-xs mb-1.5'>{t('layout.actions.url')}</span>
-          <input value={value?.url ?? ''} onChange={e => patch({ url: e.target.value })} placeholder='https://…' className={inputClass} />
+          <span className={LABEL}>{t('layout.actions.url')}</span>
+          <input value={value?.url ?? ''} onChange={e => patch({ url: e.target.value })} placeholder='https://…' className={INPUT} />
         </label>
       )}
     </div>
@@ -96,13 +101,13 @@ export function ActionsTab({ draft, updateField }: { draft: Record<string, unkno
   const { t } = useI18n();
 
   return (
-    <div className='space-y-6'>
-      <p className='text-[var(--ds-ink-muted)] text-xs leading-relaxed'>{t('layout.actions.intro')}</p>
+    <div className='space-y-3'>
+      <p className={INTRO}>{t('layout.actions.intro')}</p>
       {GESTURES.map(({ key, label }) => (
-        <div key={key}>
-          <h4 className='text-[var(--ds-ink-muted)] text-sm font-semibold tracking-widest uppercase mb-2.5'>{t(label)}</h4>
-          <ActionEditor value={draft[key] as CardAction | undefined} onChange={v => updateField(key, v)} />
-        </div>
+        <section key={key} className={FIELD_CARD}>
+          <h3 className={cn(SECTION_TITLE, 'mb-3')}>{t(label)}</h3>
+          <ActionEditor label={t(label)} value={draft[key] as CardAction | undefined} onChange={v => updateField(key, v)} />
+        </section>
       ))}
     </div>
   );

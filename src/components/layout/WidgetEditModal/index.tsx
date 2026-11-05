@@ -30,9 +30,7 @@ import { VisibilityTab } from './VisibilityTab';
 import { SwitchTrack } from '@/components/ds/Switch';
 import { useI18n } from '@/i18n';
 import type { CardAppearanceConfig } from '@/types/card-appearance';
-
-/** Un champ de réglage : un bloc arrondi sur le fond de la feuille. */
-const FIELD_CARD = 'rounded-[var(--ds-radius-xl)] bg-[var(--ds-sheet-section)] p-4';
+import { FIELD_CARD } from './ui';
 
 type Tab = 'config' | 'widgets' | 'advanced' | 'layout' | 'sound' | 'actions' | 'visibility';
 

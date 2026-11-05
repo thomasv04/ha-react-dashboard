@@ -4,6 +4,7 @@ import { playSound, PRESETS, type SoundPreset } from '@/lib/sounds';
 import { WIDGET_SOUND_ACTIONS, type WidgetSoundAction } from '@/config/widget-sound-actions';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
+import { FIELD_CARD, INTRO, ROUND } from './ui';
 
 /** All available presets for the selector */
 const ALL_PRESETS: SoundPreset[] = [
@@ -59,8 +60,8 @@ export function SoundTab({ widgetType, soundOverrides, onChange }: SoundTabProps
   }
 
   return (
-    <div className='space-y-1'>
-      <p className='text-[var(--ds-ink-muted)] text-xs mb-4'>{t('layout.soundTab.intro')}</p>
+    <div className='space-y-3'>
+      <p className={INTRO}>{t('layout.soundTab.intro')}</p>
       {actions.map(action => (
         <SoundActionRow
           key={action.action}
@@ -105,18 +106,19 @@ function SoundActionRow({
   }, [resolved]);
 
   return (
-    <div className='flex items-center gap-3 px-3 py-2.5 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] transition-colors'>
+    <div className={cn(FIELD_CARD, 'flex items-center gap-3')}>
       {/* Action label */}
       <div className='flex-1 min-w-0'>
-        <span className='text-xs text-[var(--ds-ink)] font-medium'>{t(`layout.soundTab.actions.${action.action}`)}</span>
-        {isDefault && <span className='ml-1.5 text-xs text-[var(--ds-ink-muted)]'>({t('layout.soundTab.default')})</span>}
+        <span className='block text-base font-semibold'>{t(`layout.soundTab.actions.${action.action}`)}</span>
+        {isDefault && <span className='block text-sm text-[var(--ds-ink-muted)]'>{t('layout.soundTab.default')}</span>}
       </div>
 
       {/* Sound selector */}
       <select
         value={resolved}
         onChange={e => onChange(e.target.value as SoundPreset)}
-        className='px-2 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)] outline-none focus:outline-2 focus:outline-[var(--ds-accent)] cursor-pointer max-w-[140px]'
+        aria-label={t(`layout.soundTab.actions.${action.action}`)}
+        className='h-11 max-w-[160px] cursor-pointer rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-3 text-base text-[var(--ds-ink)] outline-none focus:outline-2 focus:outline-[var(--ds-accent)]'
         style={{ colorScheme: 'dark' }}
       >
         {ALL_PRESETS.map(p => (
@@ -131,16 +133,18 @@ function SoundActionRow({
         onClick={handlePreview}
         disabled={resolved === 'none'}
         className={cn(
-          'p-1.5 rounded-[var(--ds-radius-sm)] transition-all',
+          ROUND,
+          'size-11 transition-all',
           resolved === 'none'
-            ? 'text-[var(--ds-ink-muted)] cursor-not-allowed'
+            ? 'cursor-not-allowed text-[var(--ds-ink-muted)] opacity-40'
             : playing
-              ? 'text-[var(--ds-tile-on-ink)] bg-[var(--ds-tile-on)] scale-95'
-              : 'text-[var(--ds-ink-muted)] cursor-pointer'
+              ? 'scale-95 bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'
+              : 'text-[var(--ds-ink)]'
         )}
         title={t('layout.soundTab.preview')}
+        aria-label={t('layout.soundTab.preview')}
       >
-        {playing ? <Volume2 size={14} /> : <Play size={14} />}
+        {playing ? <Volume2 size={18} /> : <Play size={18} />}
       </button>
     </div>
   );
