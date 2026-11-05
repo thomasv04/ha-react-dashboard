@@ -26,16 +26,27 @@ interface State {
  */
 function ErrorFallback({ label, messageKey, onRetry }: { label?: string; messageKey: string; onRetry: () => void }) {
   const { t } = useI18n();
+  // Une seule ligne, comme une tuile d'appareil : elle tient dans une case
+  // d'une rangée (80 px), là où l'ancienne colonne icône / texte / bouton débordait.
   return (
-    <div className='h-full flex flex-col items-center justify-center gap-2 rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] border border-[var(--ds-surface-3)] p-4 text-center'>
-      <AlertTriangle size={24} className='text-[var(--ds-alert)]' />
-      <p className='text-[var(--ds-ink-muted)] text-xs font-medium'>{t(messageKey)}</p>
-      {label && <p className='text-[var(--ds-ink-muted)] text-[10px]'>{label}</p>}
+    <div
+      role='alert'
+      className='flex h-full min-h-0 items-center gap-3 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-1)] p-3 text-[var(--ds-ink)]'
+    >
+      <span className='flex size-10 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--ds-alert)_18%,transparent)] text-[var(--ds-alert)]'>
+        <AlertTriangle size={18} aria-hidden='true' />
+      </span>
+      <div className='min-w-0 flex-1'>
+        <p className='truncate text-sm font-semibold'>{t(messageKey)}</p>
+        {label && <p className='truncate text-xs text-[var(--ds-ink-muted)]'>{label}</p>}
+      </div>
       <button
         onClick={onRetry}
-        className='mt-1 flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] text-[var(--ds-ink-muted)] transition-colors text-[11px] font-semibold'
+        title={t('common.retry')}
+        aria-label={t('common.retry')}
+        className='flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'
       >
-        <RotateCcw size={11} /> {t('common.retry')}
+        <RotateCcw size={16} />
       </button>
     </div>
   );
