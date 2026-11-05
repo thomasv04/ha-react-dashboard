@@ -415,7 +415,10 @@
           "vacation": "Vacances"
         }
       }
-    }
+    },
+    "intrusion": "Intrusion",
+    "since": "il y a {time}",
+    "justNow": "à l’instant"
   },
   "camera": {
     "label": "Caméra",

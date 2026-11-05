@@ -415,7 +415,10 @@
           "vacation": "Holiday"
         }
       }
-    }
+    },
+    "intrusion": "Intrusion",
+    "since": "{time} ago",
+    "justNow": "just now"
   },
   "camera": {
     "label": "Camera",

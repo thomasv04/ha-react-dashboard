@@ -10,6 +10,8 @@ export const USER = { name: 'E2E', username: 'e2e', password: 'e2e-password-not-
 
 /** Entités de l'intégration `demo`. */
 export const LIGHT = 'light.bed_light';
+/** Alarme manuelle de `demo`, code 1234. */
+export const ALARM = 'alarm_control_panel.security';
 
 const tile = (id: string, type: string, w: number, h: number) => ({ id, type, w, h });
 
@@ -28,6 +30,7 @@ export const SEED = {
             tile('cover-kitchen', 'cover', 3, 2),
             tile('thermostat-hvac', 'thermostat', 3, 3),
             tile('sensor-outside', 'sensor', 3, 2),
+            tile('alarm-security', 'alarm', 3, 5),
           ],
         },
       ],
@@ -40,6 +43,7 @@ export const SEED = {
       'cover-kitchen': { type: 'cover', entityId: 'cover.kitchen_window', name: 'Fenêtre cuisine' },
       'thermostat-hvac': { type: 'thermostat', entityId: 'climate.hvac', minTemp: 7, maxTemp: 35 },
       'sensor-outside': { type: 'sensor', entityId: 'sensor.outside_temperature', name: 'Dehors' },
+      'alarm-security': { type: 'alarm', entityId: ALARM, name: 'Alarme' },
     },
   },
 };

@@ -119,3 +119,27 @@ test('the mode window of an alarm offers only the modes the alarm supports', () 
   expect(screen.getByRole('button', { name: 'widgets.alarm.modeNight' })).toBeDefined();
   expect(screen.queryByText('widgets.alarm.modeAway')).toBeNull();
 });
+
+test('déclenchée, la card dit ce qui l’a déclenchée et offre le pavé complet', () => {
+  vi.mocked(useSafeEntity).mockImplementation(
+    (id: string) =>
+      (id === 'binary_sensor.porte_fenetre'
+        ? { state: 'on', attributes: { friendly_name: 'Porte-fenêtre salon' } }
+        : {
+            state: 'triggered',
+            last_changed: new Date().toISOString(),
+            attributes: { open_sensors: { 'binary_sensor.porte_fenetre': 'on' } },
+          }) as never
+  );
+  mockCallService.mockClear();
+  render(<AlarmCard />);
+
+  expect(screen.getByText('widgets.alarm.intrusion')).toBeDefined();
+  expect(screen.getByText('Porte-fenêtre salon · widgets.alarm.justNow')).toBeDefined();
+  // Le pavé est dans la card, et complet : le 0 et la validation n'y manquent pas.
+  for (const k of ['1', '2', '3', '4']) fireEvent.click(screen.getByRole('button', { name: k }));
+  expect(screen.getByRole('button', { name: '0' })).toBeDefined();
+  fireEvent.click(screen.getByRole('button', { name: 'Désarmer' }));
+  expect(mockCallService).toHaveBeenCalledWith(expect.objectContaining({ service: 'alarm_disarm', serviceData: { code: '1234' } }));
+  vi.mocked(useSafeEntity).mockReset();
+});

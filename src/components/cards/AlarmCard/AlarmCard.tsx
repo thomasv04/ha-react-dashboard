@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, ShieldAlert, ShieldOff, ShieldQuestion, Delete, X, Home, Plane, Moon, LogOut } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, ShieldOff, ShieldQuestion, Delete, X, Home, Plane, Moon, LogOut, Check } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { callHAService, friendlyName } from '@/lib/ha-service';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useElementBox } from '@/hooks/useWidgetSize';
+import { JUST_NOW, useRelativeTime } from '@/hooks/useRelativeTime';
 
 type AlarmState =
   | 'disarmed'
@@ -276,6 +277,48 @@ function AlarmKeypadModal({
 }
 
 /**
+ * Pavé du code posé dans la card : points, chiffres, effacer, valider. La
+ * maquette n'en montrait que 1 à 9 ; sans 0 ni validation, on ne désarme pas.
+ */
+function InlineKeypad({ t, onSubmit }: { t: (key: string) => string; onSubmit: (code: string) => void }) {
+  const [code, setCode] = useState('');
+  const key =
+    'flex min-h-0 items-center justify-center rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] text-xl font-semibold active:scale-95 transition-transform';
+  return (
+    <>
+      <div aria-hidden='true' className='flex justify-center gap-3.5 py-1'>
+        {Array.from({ length: Math.max(4, code.length) }, (_, i) => (
+          <span key={i} className={cn('size-3.5 rounded-full', i < code.length ? 'bg-[var(--ds-ink)]' : 'bg-[var(--ds-surface-3)]')} />
+        ))}
+      </div>
+      <div className='grid min-h-0 flex-1 grid-cols-3 grid-rows-4 gap-2'>
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+          <button key={n} onClick={() => setCode(c => (c.length < 8 ? c + n : c))} aria-label={String(n)} className={key}>
+            {n}
+          </button>
+        ))}
+        <button onClick={() => setCode(c => c.slice(0, -1))} aria-label={t('widgets.alarm.backspace')} className={key}>
+          <Delete size={20} />
+        </button>
+        <button onClick={() => setCode(c => (c.length < 8 ? c + '0' : c))} aria-label='0' className={key}>
+          0
+        </button>
+        <button
+          onClick={() => {
+            onSubmit(code);
+            setCode('');
+          }}
+          aria-label={t('widgets.alarm.disarm')}
+          className={cn(key, 'bg-[var(--ds-alert)] text-white')}
+        >
+          <Check size={22} />
+        </button>
+      </div>
+    </>
+  );
+}
+
+/**
  * Le choix du mode d'une alarme, hors de sa card — le bouclier du plan : ses
  * modes, son code et son état viennent de l'entité elle-même.
  */
@@ -322,6 +365,14 @@ export function AlarmCard() {
   const alarm = useSafeEntity(entityId);
   const [modalOpen, setModalOpen] = useState(false);
   const [pendingMode, setPendingMode] = useState<ArmMode | null>(null);
+  // Déclenchée : ce qui l'a fait, et depuis quand. Alarmo expose les capteurs
+  // ouverts (`open_sensors`) ; HA n'a pas d'attribut standard pour ça.
+  const openSensors = alarm?.attributes.open_sensors;
+  const cause = openSensors && typeof openSensors === 'object' ? Object.keys(openSensors)[0] : '';
+  const causeEntity = useSafeEntity(cause);
+  const helpers = useHass(s => s.helpers);
+  const playFeedback = useSoundFeedback();
+  const since = useRelativeTime(alarm?.state === 'triggered' ? alarm.last_changed : undefined);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [cardW, setCardW] = useState(300);
@@ -354,6 +405,37 @@ export function AlarmCard() {
   function openModal(mode: ArmMode) {
     setPendingMode(mode);
     setModalOpen(true);
+  }
+
+  // Déclenchée, sur une card assez grande : le pavé du code y est posé, comme
+  // sur la maquette — pas de fenêtre à ouvrir quand la sirène hurle. Plus
+  // petite, la fenêtre prend le relais.
+  if (visual.tone === 'alert' && requireCode && cardW >= 240 && cardH >= 300) {
+    const causeName = cause ? (friendlyName(causeEntity) ?? cause) : '';
+    const when = since === JUST_NOW ? t('widgets.alarm.justNow') : since ? t('widgets.alarm.since', { time: since }) : '';
+    return (
+      <div
+        ref={containerRef}
+        className='flex h-full select-none flex-col gap-3 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] p-[var(--ds-space-4)] text-[var(--ds-ink)] shadow-[inset_0_0_0_3px_var(--ds-alert)]'
+      >
+        <div className='flex items-center gap-3'>
+          <span className={cn('flex size-11 shrink-0 items-center justify-center rounded-full', PEBBLE.alert)}>
+            <visual.Icon size={20} />
+          </span>
+          <div className='min-w-0'>
+            <div className='truncate text-[17px] font-semibold leading-tight'>{t('widgets.alarm.intrusion')}</div>
+            <div className='truncate text-sm text-[var(--ds-alert)]'>{[causeName, when].filter(Boolean).join(' · ') || name}</div>
+          </div>
+        </div>
+        <InlineKeypad
+          t={t}
+          onSubmit={code => {
+            callHAService(helpers, 'alarm_control_panel', 'alarm_disarm', { entity_id: entityId }, code ? { code } : undefined);
+            playFeedback('disarm');
+          }}
+        />
+      </div>
+    );
   }
 
   return (

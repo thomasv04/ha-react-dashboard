@@ -5,7 +5,7 @@
  * Run with: npm run test:ha
  */
 import { test, expect, type Page } from '@playwright/test';
-import { accessToken, CONFIG_API, DASHBOARD, LIGHT, SEED } from './seed';
+import { accessToken, ALARM, CONFIG_API, DASHBOARD, LIGHT, SEED } from './seed';
 
 const headers = () => ({ Authorization: `Bearer ${accessToken()}` });
 
@@ -63,6 +63,25 @@ test('une tuile dont l’entité est indisponible le dit, puis revient', async (
 
   await setState('off');
   await expect(tile.locator('[data-unavailable]')).toHaveCount(0);
+});
+
+test('une alarme déclenchée se désarme au pavé de la card', async ({ page, request }) => {
+  const state = async () => (await (await request.get(`/api/states/${ALARM}`, { headers: headers() })).json()).state;
+  const tile = page.locator('ha-react-dashboard-panel [data-widget-id="alarm-security"]');
+
+  // L'état seul est forcé : l'alarme de `demo`, elle, reste désarmée et
+  // réécrira le sien en traitant le code.
+  await request.post(`/api/states/${ALARM}`, {
+    headers: headers(),
+    data: { state: 'triggered', attributes: { friendly_name: 'Security' } },
+  });
+  await expect(tile.getByText('Intrusion')).toBeVisible();
+  await expect(tile).toContainText('à l’instant');
+  await page.screenshot({ path: 'test-results/alarm-triggered.png' });
+
+  for (const k of ['1', '2', '3', '4']) await tile.getByRole('button', { name: k, exact: true }).click();
+  await tile.getByRole('button', { name: 'Désarmer' }).click();
+  await expect.poll(state).toBe('disarmed');
 });
 
 test('une tuile déplacée en édition est enregistrée dans l’intégration', async ({ page, request }) => {

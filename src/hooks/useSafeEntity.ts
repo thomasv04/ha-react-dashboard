@@ -4,6 +4,8 @@ import { useRef } from 'react';
 export interface SafeEntityState {
   state: string;
   attributes: Record<string, unknown>;
+  /** Dernier changement d'état. Ne bouge qu'avec `state` : la comparaison l'ignore. */
+  last_changed?: string;
 }
 
 function shallowEqualEntity(a: SafeEntityState | null, b: SafeEntityState | null): boolean {
@@ -36,6 +38,7 @@ export function useSafeEntity(entityId: string): SafeEntityState | null {
   const next: SafeEntityState = {
     state: raw.state,
     attributes: (raw.attributes as Record<string, unknown>) ?? {},
+    last_changed: raw.last_changed,
   };
 
   // eslint-disable-next-line react-hooks/refs
