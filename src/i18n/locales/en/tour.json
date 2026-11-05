@@ -8,8 +8,8 @@
   "done": "Got it",
   "steps": {
     "pages": {
-      "title": "The rail",
-      "body": "On the left: home in green, then your pages and pinned panels. One page per room or per floor, whatever fits."
+      "title": "The left menu",
+      "body": "On the left: home in green, then your pages and your modals. One page per room or per floor, whatever fits."
     },
     "edit": {
       "title": "Edit mode",
