@@ -78,7 +78,7 @@ function Screen({
       <div
         className={cn('flex flex-1 flex-col justify-center gap-8 py-8', wide && 'lg:flex-row lg:items-center lg:justify-between lg:gap-12')}
       >
-        <div className='flex min-w-0 flex-1 flex-col gap-3'>
+        <div className={cn('flex min-w-0 flex-col gap-3', wide && 'lg:flex-1')}>
           <h1 className='font-[family-name:var(--ds-font-display)] text-[40px] font-extrabold leading-[1.05] sm:text-[56px]'>{title}</h1>
           {body && <p className='max-w-2xl text-lg leading-relaxed text-[var(--ds-ink-muted)] sm:text-xl'>{body}</p>}
         </div>

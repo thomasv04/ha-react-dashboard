@@ -1,5 +1,6 @@
 /** Données partagées par l'amorçage et les tests dans HA. */
 import { readFileSync } from 'node:fs';
+import type { Page } from '@playwright/test';
 
 export const AUTH_FILE = 'test-results/ha-auth.json';
 export const DASHBOARD = '/react-dashboard';
@@ -53,4 +54,18 @@ export function accessToken(): string {
   const state = JSON.parse(readFileSync(AUTH_FILE, 'utf8'));
   const tokens = state.origins[0].localStorage.find((e: { name: string }) => e.name === 'hassTokens');
   return JSON.parse(tokens.value).access_token;
+}
+
+/**
+ * Installation neuve : la lecture de la configuration répond ce que répond
+ * l'intégration tant que rien n'est enregistré. L'écriture, elle, passe.
+ */
+export async function freshInstall(page: Page) {
+  await page.route(`**${CONFIG_API}`, async route => {
+    if (route.request().method() !== 'GET') return route.fallback();
+    // La vraie réponse, pour son `X-Config-Revision` : sans elle, l'écriture
+    // partirait d'une révision 0 et le serveur la refuserait (409).
+    const response = await route.fetch();
+    await route.fulfill({ response, json: { message: 'No config yet', layout: [] } });
+  });
 }

@@ -38,10 +38,11 @@ export function buildStarterLayout(
   const widgetConfigs: WidgetConfigs = {};
   let n = 0;
 
-  const tile = (type: GridWidget['type'], cols: number, config: Record<string, unknown>): GridWidget => {
+  /** `size` : à défaut, celle du manifeste. */
+  const tile = (type: GridWidget['type'], cols: number, config: Record<string, unknown>, size?: { w: number; h: number }): GridWidget => {
     const id = `${type}-${++n}`;
     const disposition = WIDGET_DISPOSITIONS[type]?.[0];
-    const size = disposition?.defaultSize.lg ?? { w: 2, h: 2 };
+    size ??= disposition?.defaultSize.lg ?? { w: 2, h: 2 };
     widgetConfigs[id] = { type, ...config } as WidgetConfig;
     return { id, type, w: Math.min(size.w, cols), h: size.h, ...(disposition && { disposition: disposition.id }) };
   };
@@ -50,7 +51,12 @@ export function buildStarterLayout(
     {
       id: 'panel-home',
       cols: 5,
-      widgets: [tile('welcome', 5, { routines: [] }), ...(weatherId ? [tile('weather', 5, { entityId: weatherId })] : [])],
+      // La page doit tenir sur une tablette en paysage, environ sept rangées :
+      // l'accueil en 5×5 du manifeste, plus la météo, débordait.
+      widgets: [
+        tile('welcome', 5, { routines: [] }, { w: 5, h: 4 }),
+        ...(weatherId ? [tile('weather', 5, { entityId: weatherId }, { w: 5, h: 2 })] : []),
+      ],
     },
   ];
 
@@ -58,14 +64,11 @@ export function buildStarterLayout(
     panels.push({
       id: 'panel-rooms',
       title: roomsTitle,
-      cols: 4,
+      cols: 6,
+      // 3×2, la taille « Large » du manifeste : en 2×2, une pièce à trois
+      // boutons (lumières, volets, chauffage) n'a pas la place de les montrer.
       widgets: areas.map(area =>
-        tile('room', 4, {
-          label: area.name,
-          icon: 'Home',
-          area: area.area_id,
-          areaControls: areaDomains(area),
-        })
+        tile('room', 6, { label: area.name, icon: 'Home', area: area.area_id, areaControls: areaDomains(area) }, { w: 3, h: 2 })
       ),
     });
   }
