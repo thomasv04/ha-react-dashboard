@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Copy, Check, Eye } from 'lucide-react';
 import { useI18n } from '@/i18n';
+import { copyText } from '@/lib/clipboard';
 import { useModal } from '@/context/ModalContext';
 import { useToast } from '@/context/ToastContext';
 import { useNotifications } from '@/context/NotificationContext';
@@ -87,15 +88,19 @@ export function Snippet({ automation, eventType }: { automation: string; eventTy
 
   const yaml = devTools ? toDevTools(automation, eventType) : automation;
 
+  const code = useRef<HTMLElement>(null);
+  const [failed, setFailed] = useState(false);
+
   const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(yaml);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      // Presse-papiers refusé (contexte non sécurisé) : le YAML reste
-      // sélectionnable à la main, inutile d'alerter.
-    }
+    const ok = await copyText(yaml);
+    setCopied(ok);
+    setFailed(!ok);
+    // Refusé même en repli : on sélectionne le YAML, il ne reste qu'à le copier à la main.
+    if (!ok && code.current) window.getSelection()?.selectAllChildren(code.current);
+    setTimeout(() => {
+      setCopied(false);
+      setFailed(false);
+    }, 2400);
   };
 
   return (
@@ -123,11 +128,11 @@ export function Snippet({ automation, eventType }: { automation: string; eventTy
           className='flex items-center gap-1.5 h-9 px-3 rounded-full bg-[var(--ds-surface-3)] text-[var(--ds-ink-muted)] text-[13px] font-semibold transition-colors'
         >
           {copied ? <Check size={14} /> : <Copy size={14} />}
-          {copied ? t('help.events.copied') : t('common.copy')}
+          {copied ? t('help.events.copied') : failed ? t('help.events.copyFailed') : t('common.copy')}
         </button>
       </div>
       <pre className='overflow-x-auto rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] p-3 text-[13px] leading-relaxed text-[var(--ds-ink)]'>
-        <code>{yaml}</code>
+        <code ref={code}>{yaml}</code>
       </pre>
     </div>
   );

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Copy, Check, Download, Upload, AlertTriangle, Compass, FileDown, FileUp } from 'lucide-react';
 import { startTour } from '@/components/onboarding/TourOverlay';
 import { useI18n } from '@/i18n';
+import { copyText } from '@/lib/clipboard';
 import { apiFetch, isPanelMode } from '@/lib/api-base';
 import { useTheme } from '@/context/ThemeContext';
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
@@ -47,7 +48,8 @@ export function SystemSection() {
 
   const copy = () => {
     if (!fullUrl) return;
-    navigator.clipboard.writeText(fullUrl).then(() => {
+    void copyText(fullUrl).then(ok => {
+      if (!ok) return;
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     });
@@ -74,7 +76,8 @@ export function SystemSection() {
   };
 
   const copyExport = () => {
-    navigator.clipboard.writeText(exportString).then(() => {
+    void copyText(exportString).then(ok => {
+      if (!ok) return;
       setExportCopied(true);
       setTimeout(() => setExportCopied(false), 1800);
     });
