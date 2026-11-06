@@ -222,8 +222,8 @@ describe('useDashboardConfig', () => {
             lg: [
               { id: 'ok', type: 'light', x: 0, y: 0, w: 2, h: 2 },
               { id: 'sans-type', x: 0, y: 2, w: 2, h: 2 }, // écarté : rien à rendre
-              // Écarté : un type d'une ancienne version, qu'aucun manifeste ne déclare.
-              // La grille le sautait, mais la carte des panneaux l'affichait.
+              // Gardé : un type que ce bundle ne connaît pas peut venir d'une version
+              // plus récente ; l'écarter l'effacerait au prochain enregistrement.
               { id: 'pieces-v1', type: 'rooms', x: 0, y: 4, w: 4, h: 4 },
               { id: 'position-cassée', type: 'light', x: null, y: 'trois' }, // réparé
               null,
@@ -242,7 +242,7 @@ describe('useDashboardConfig', () => {
     // La carte sans type disparaît, celle dont la position est cassée survit
     // avec des coordonnées de repli — supprimer le travail de l'utilisateur
     // pour un `x` corrompu serait pire que le défaut lui-même.
-    expect(result.current.allLayouts.home.panels[0].widgets.map(w => w.id)).toEqual(['ok', 'position-cassée']);
+    expect(result.current.allLayouts.home.panels[0].widgets.map(w => w.id)).toEqual(['ok', 'position-cassée', 'pieces-v1']);
     expect(result.current.allLayouts.home.panels[0].widgets[1]).toMatchObject({ w: 2, h: 2 });
     expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'dashboard.repairedTitle' }));
   });

@@ -786,9 +786,12 @@ function PanelSection({
                 }}
               >
                 {panel.widgets.map(widget => {
-                  if (map) return <MiniTile key={widget.id} widget={widget} cols={cols} />;
                   const Component = WIDGET_COMPONENTS[widget.type];
+                  // Un type que ce bundle ne connaît pas (`rooms` de la 3.x, ou un
+                  // widget plus récent) : gardé dans la configuration, mais tu,
+                  // ici comme dans la carte — elle l'affichait sous son nom brut.
                   if (!Component) return null;
+                  if (map) return <MiniTile key={widget.id} widget={widget} cols={cols} />;
                   return (
                     <GridItem key={widget.id} id={widget.id} widget={widget}>
                       <Component />

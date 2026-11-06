@@ -12,34 +12,12 @@
  */
 import { useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { HassConnect, useHass } from '@hakit/core';
+import { useHass } from '@hakit/core';
 import type { Connection } from 'home-assistant-js-websocket';
-import { ToastProvider } from '@/context/ToastContext';
-import { ModalProvider } from '@/context/ModalContext';
-import { NotificationProvider } from '@/context/NotificationContext';
-import { ToastContainer } from '@/components/ui/Toast/components/Toast';
-import { ModalContainer } from '@/components/ui/Modal/components/Modal';
-import { useHAToast } from '@/hooks/useHAToast';
-import { useHAModal } from '@/hooks/useHAModal';
-import { useHANotification } from '@/hooks/useHANotification';
-import Dashboard from './Dashboard';
-import { ThemeContextProvider } from '@/context/ThemeContext';
-import { BackgroundLayer } from '@/components/layout/BackgroundLayer';
-import { ConnectionBanner } from '@/components/shell/ConnectionBanner';
-import { LoadingScreen } from '@/components/layout/LoadingScreen';
-import { I18nProvider } from '@/i18n';
+import { DashboardShell } from './DashboardShell';
 import { setPanelAuth } from '@/lib/api-base';
 import { mirrorThemeClasses } from '@/lib/theme-classes';
 import './index.css';
-
-function HAToastBridge() {
-  useHAToast();
-  // `ha_dashboard_modal` était implémenté mais jamais abonné : l'événement
-  // n'apparaissait même pas dans les écouteurs actifs de Home Assistant.
-  useHAModal();
-  useHANotification();
-  return null;
-}
 
 /**
  * Donne à la connexion de `HassConnect` l'objet `Auth` du frontend HA.
@@ -60,45 +38,6 @@ function LiveAuth() {
   const connection = useHass(s => s.connection);
   useEffect(() => adoptLiveAuth(connection), [connection]);
   return null;
-}
-
-interface PanelAppProps {
-  hassUrl: string;
-  hassToken?: string;
-}
-
-function PanelApp({ hassUrl, hassToken }: PanelAppProps) {
-  return (
-    // `I18nProvider` manquait entièrement dans la build panneau : `useI18n`
-    // lève hors provider, donc le premier composant traduit faisait planter le
-    // panneau. Même arbre que `App.tsx` : i18n et thème au-dessus de HassConnect.
-    <I18nProvider>
-      <ThemeContextProvider>
-        <BackgroundLayer />
-        <HassConnect
-          hassUrl={hassUrl}
-          hassToken={hassToken}
-          loading={<LoadingScreen stage='connect' onRetry={() => window.location.reload()} />}
-        >
-          <ToastProvider>
-            {/* `ModalProvider` manquait dans la build panneau : `HAToastBridge`
-                s'abonne à `ha_dashboard_modal` via `useModal`, qui lève hors
-                provider — le panneau plantait au montage. Même arbre qu'App.tsx. */}
-            <ModalProvider>
-              <NotificationProvider>
-                <HAToastBridge />
-                <LiveAuth />
-                <Dashboard />
-                <ConnectionBanner />
-                <ToastContainer />
-                <ModalContainer />
-              </NotificationProvider>
-            </ModalProvider>
-          </ToastProvider>
-        </HassConnect>
-      </ThemeContextProvider>
-    </I18nProvider>
-  );
 }
 
 /**
@@ -146,7 +85,12 @@ let hassToken: string | undefined;
 /** Objet `Auth` de Home Assistant — vivant, contrairement au jeton. */
 let hassAuth: HassAuth | undefined;
 
-const render = () => root?.render(<PanelApp hassUrl={hassUrl} hassToken={hassToken} />);
+const render = () =>
+  root?.render(
+    <DashboardShell hassUrl={hassUrl} hassToken={hassToken}>
+      <LiveAuth />
+    </DashboardShell>
+  );
 
 /**
  * Monte le dashboard dans un élément hôte.
