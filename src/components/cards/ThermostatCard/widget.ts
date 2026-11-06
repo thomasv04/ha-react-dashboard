@@ -54,6 +54,7 @@ export default defineWidget({
 
   fields: [
     { key: 'entityId', label: 'widgets.thermostat.fields.entityId.label', fieldType: 'entity', domain: 'climate' },
+    { key: 'name', label: 'widgets.thermostat.fields.name.label', fieldType: 'text' },
     { key: 'minTemp', label: 'widgets.thermostat.fields.minTemp.label', fieldType: 'number' },
     { key: 'maxTemp', label: 'widgets.thermostat.fields.maxTemp.label', fieldType: 'number' },
     { key: 'showInfoPanel', label: 'widgets.thermostat.fields.showInfoPanel.label', fieldType: 'boolean' },

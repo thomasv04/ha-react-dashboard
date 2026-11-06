@@ -5,8 +5,10 @@ vi.mock('@/i18n', () => ({
   useI18n: () => ({ t: (k: string) => k, tArray: () => [], language: 'fr' }),
 }));
 
+const config = vi.hoisted(() => ({ current: undefined as { name?: string } | undefined }));
+
 vi.mock('@/context/WidgetConfigContext', () => ({
-  useWidgetConfig: vi.fn(() => ({ getWidgetConfig: () => undefined })),
+  useWidgetConfig: vi.fn(() => ({ getWidgetConfig: () => config.current })),
 }));
 
 const callServiceMock = vi.fn();
@@ -30,7 +32,10 @@ vi.mock('@/hooks/useSafeEntity', () => ({
 
 import { ThermostatCard } from './ThermostatCard';
 
-beforeEach(() => callServiceMock.mockClear());
+beforeEach(() => {
+  callServiceMock.mockClear();
+  config.current = undefined;
+});
 
 test('les flèches ajustent la consigne et les modes changent le mode', () => {
   render(<ThermostatCard />);
@@ -73,4 +78,15 @@ test("un réglage sur l'anneau ne remonte pas jusqu'à la case", () => {
   expect(parentDown).toHaveBeenCalled();
   expect(parentClick).toHaveBeenCalled();
   expect(callServiceMock).not.toHaveBeenCalled();
+});
+
+test("le nom choisi remplace celui de l'entité, qui reste le repli", () => {
+  const { unmount } = render(<ThermostatCard />);
+  // Ni nom choisi ni friendly_name dans ce bouchon : le libellé du widget.
+  expect(screen.getByText('widgets.thermostat.label')).toBeInTheDocument();
+  unmount();
+
+  config.current = { name: 'Poêle salon' };
+  render(<ThermostatCard />);
+  expect(screen.getByText('Poêle salon')).toBeInTheDocument();
 });

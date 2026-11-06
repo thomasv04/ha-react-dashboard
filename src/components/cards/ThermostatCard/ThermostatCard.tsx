@@ -52,7 +52,7 @@ export function ThermostatCard() {
     label: t(`widgets.thermostat.modes.${m}`),
   }));
   const isCooling = hvacMode === 'cool';
-  const name = friendlyName(thermostat) ?? t('widgets.thermostat.label');
+  const name = config?.name || friendlyName(thermostat) || t('widgets.thermostat.label');
 
   const setTemperature = (value: number) => {
     const snapped = snapTemp(value, range);
