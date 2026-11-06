@@ -80,7 +80,7 @@ export function toDevTools(automation: string, eventType: string): string {
   return [`# Type d'événement : ${eventType}`, "# Données d'événement :", ...body].join('\n').trimEnd();
 }
 
-function Snippet({ automation, eventType }: { automation: string; eventType: string }) {
+export function Snippet({ automation, eventType }: { automation: string; eventType: string }) {
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const [devTools, setDevTools] = useState(false);
@@ -109,7 +109,7 @@ function Snippet({ automation, eventType }: { automation: string; eventType: str
             <button
               key={label}
               onClick={() => setDevTools(on)}
-              className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-colors ${
+              className={`h-9 px-3 rounded-full text-[13px] font-semibold transition-colors ${
                 devTools === on ? 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)]' : 'text-[var(--ds-ink-muted)]'
               }`}
             >
@@ -120,13 +120,13 @@ function Snippet({ automation, eventType }: { automation: string; eventType: str
         <button
           onClick={copy}
           aria-label={t('common.copy')}
-          className='flex items-center gap-1 px-2 py-1 rounded-md bg-[var(--ds-surface-3)] text-[var(--ds-ink-muted)] text-[10px] font-semibold transition-colors'
+          className='flex items-center gap-1.5 h-9 px-3 rounded-full bg-[var(--ds-surface-3)] text-[var(--ds-ink-muted)] text-[13px] font-semibold transition-colors'
         >
-          {copied ? <Check size={11} /> : <Copy size={11} />}
+          {copied ? <Check size={14} /> : <Copy size={14} />}
           {copied ? t('help.events.copied') : t('common.copy')}
         </button>
       </div>
-      <pre className='overflow-x-auto rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] p-3 text-[11px] leading-relaxed text-[var(--ds-ink)]'>
+      <pre className='overflow-x-auto rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] border border-[var(--ds-surface-3)] p-3 text-[13px] leading-relaxed text-[var(--ds-ink)]'>
         <code>{yaml}</code>
       </pre>
     </div>

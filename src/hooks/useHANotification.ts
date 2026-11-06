@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useHass } from '@hakit/core';
-import { useNotifications, type NotificationAction } from '@/context/NotificationContext';
+import { useNotifications } from '@/context/NotificationContext';
+import { HA_EVENT_TYPES, applyNotificationEvent, type HANotificationEvent } from '@/lib/ha-events';
 
 /**
  * Subscribes to the custom HA event `ha_dashboard_notification` over the
@@ -33,18 +34,6 @@ import { useNotifications, type NotificationAction } from '@/context/Notificatio
  *         dismiss: true
  */
 
-interface HANotificationEvent {
-  id?: string;
-  title?: string;
-  message?: string;
-  content_type?: 'plain' | 'html' | 'markdown';
-  level?: 'info' | 'success' | 'warning' | 'error';
-  icon?: string;
-  actions?: NotificationAction[];
-  /** Retire la notification `id`, ou vide la liste si `id` est absent. */
-  dismiss?: boolean;
-}
-
 export function useHANotification() {
   const connection = useHass(s => s.connection);
   const { notify, dismiss, dismissAll } = useNotifications();
@@ -66,20 +55,8 @@ export function useHANotification() {
 
     connection
       .subscribeEvents((event: { data: HANotificationEvent }) => {
-        const { id, title, message, content_type, level, icon, actions, dismiss: shouldDismiss } = event.data ?? {};
-
-        if (shouldDismiss) {
-          if (id) storeRef.current.dismiss(id);
-          else storeRef.current.dismissAll();
-          return;
-        }
-
-        // Une notification sans texte n'a rien à montrer : l'ignorer vaut mieux
-        // qu'une ligne vide impossible à interpréter dans le tiroir.
-        if (!message && !title) return;
-
-        storeRef.current.notify({ id, title, message: message ?? '', content_type, level, icon, actions });
-      }, 'ha_dashboard_notification')
+        applyNotificationEvent(event.data, storeRef.current);
+      }, HA_EVENT_TYPES.notification)
       .then(unsub => {
         const unsubscribe = unsub as unknown as () => void;
         if (cancelled) unsubscribe();

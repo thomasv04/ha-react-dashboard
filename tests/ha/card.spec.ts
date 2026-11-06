@@ -119,3 +119,24 @@ test('une configuration changée ailleurs s’affiche au rechargement', async ({
   await page.reload();
   await expect.poll(() => order(page), { timeout: 30_000 }).toEqual([...seedOrder].reverse());
 });
+
+test('un événement émis par Home Assistant ouvre la modale dans la carte', async ({ page, request }) => {
+  const fired = await request.post('/api/events/ha_dashboard_modal', {
+    headers: headers(),
+    data: { title: 'Venu de HA', content: 'Par l’API REST' },
+  });
+  expect(fired.ok()).toBeTruthy();
+  await expect(page.getByRole('dialog', { name: 'Venu de HA' })).toBeVisible();
+});
+
+test('le bac à sable envoie un vrai événement, reçu par la carte', async ({ page }) => {
+  await page.getByRole('button', { name: 'Ouvrir les apps' }).click();
+  await page.getByRole('button', { name: 'Outils de développement' }).click();
+  const sheet = page.getByTestId('devtools-sheet');
+  await sheet.getByRole('radio', { name: 'Toast' }).click();
+  await sheet.getByRole('textbox', { name: 'Titre' }).fill('Aller-retour par HA');
+  await sheet.getByTestId('devtools-send').click();
+
+  await expect(sheet.getByRole('status')).toContainText('Envoyé');
+  await expect(page.getByRole('status').filter({ hasText: 'Aller-retour par HA' })).toBeVisible();
+});

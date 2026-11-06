@@ -597,7 +597,8 @@
     "widgetGallery": "Widget gallery",
     "assist": "Assist",
     "railModals": "Menu modals",
-    "manageModals": "Manage modals"
+    "manageModals": "Manage modals",
+    "devTools": "Developer tools"
   },
   "panel": {
     "untitled": "Untitled panel",

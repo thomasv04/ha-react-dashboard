@@ -37,13 +37,13 @@
     }
   },
   "events": {
-    "intro": "Le dashboard écoute trois événements personnalisés sur le WebSocket de Home Assistant. N'importe quelle automatisation, script ou l'onglet Outils de développement > Événements peut les émettre — tous les dashboards ouverts réagissent en même temps.",
-    "modalDesc": "Une modale centrée : titre, contenu markdown, et des boutons qui appellent un service.",
+    "intro": "Le dashboard écoute trois événements personnalisés sur le WebSocket de Home Assistant. N'importe quelle automatisation, script ou l'onglet Outils de développement > Événements peut les émettre — tous les dashboards ouverts réagissent en même temps. Pour essayer vos propres valeurs : lanceur > Outils de développement.",
+    "modalDesc": "Une modale centrée : titre, contenu texte ou HTML, et des boutons qui appellent un service.",
     "toastDesc": "Une notification discrète dans le coin, qui s'efface seule sauf si on la rend persistante.",
     "preview": "Aperçu",
     "copied": "Copié",
     "demoModalTitle": "Aperçu de la modale",
-    "demoModalBody": "Voilà ce qu'afficherait une automatisation émettant `ha_dashboard_modal`.",
+    "demoModalBody": "Voilà ce qu'afficherait une automatisation émettant l'événement ha_dashboard_modal.",
     "demoToastTitle": "Aperçu du toast",
     "demoToastBody": "Déclenché localement — aucun événement Home Assistant impliqué.",
     "tip": "Dans Outils de développement > Événements, le type et les données sont deux champs séparés : bascule sur « Outils de dév. » ci-dessus pour obtenir la bonne forme. Coller le bloc « action: » entier ne déclenche rien.",
@@ -72,5 +72,50 @@
       "body": "Quitte l'écran de veille. Un balayage ne le quitte jamais, même s'il se termine par un appui."
     },
     "config": "Chaque geste s'active ou se coupe séparément dans WallPanel > Gestes, avec le panneau à ouvrir vers le haut."
+  },
+  "devtools": {
+    "title": "Outils de développement",
+    "subtitle": "Essayez les événements que le dashboard écoute.",
+    "kind": "Événement",
+    "kinds": {
+      "modal": "Modale",
+      "toast": "Toast",
+      "notification": "Notification"
+    },
+    "sampleTitle": "Le courrier est arrivé",
+    "sampleText": "La boîte aux lettres vient de s'ouvrir.",
+    "id": "Identifiant (même id = remplace)",
+    "fieldTitle": "Titre",
+    "text": "Texte",
+    "width": "Largeur",
+    "widths": {
+      "sm": "Étroite",
+      "md": "Moyenne",
+      "lg": "Large",
+      "full": "Pleine"
+    },
+    "level": "Niveau",
+    "levels": {
+      "info": "Info",
+      "success": "Succès",
+      "warning": "Alerte",
+      "error": "Erreur"
+    },
+    "duration": "Durée : {value} s",
+    "html": "Contenu HTML",
+    "htmlDesc": "Le texte est lu comme du HTML, assaini avant affichage.",
+    "locked": "Bloquante",
+    "lockedDesc": "Ni Échap ni un appui à côté ne la ferment : il faut choisir un bouton.",
+    "persistent": "Persistant",
+    "persistentDesc": "Reste affiché jusqu'à ce qu'on le ferme.",
+    "action": "Bouton (facultatif)",
+    "actionLabel": "Libellé",
+    "actionService": "Service appelé",
+    "actionEntity": "Entité visée",
+    "preview": "Aperçu ici",
+    "send": "Envoyer partout",
+    "sent": "Envoyé : tous les dashboards ouverts l'ont reçu.",
+    "failed": "Envoi refusé par Home Assistant : {value}",
+    "notificationHint": "La notification arrive dans le tiroir : balayez l'écran de veille vers le bas pour la voir."
   }
 }

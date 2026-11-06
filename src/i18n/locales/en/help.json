@@ -37,13 +37,13 @@
     }
   },
   "events": {
-    "intro": "The dashboard listens for three custom events on the Home Assistant WebSocket. Any automation, script, or the Developer tools > Events tab can fire them — every open dashboard reacts at the same time.",
-    "modalDesc": "A centred modal: title, markdown content, and action buttons that call a service.",
+    "intro": "The dashboard listens for three custom events on the Home Assistant WebSocket. Any automation, script, or the Developer tools > Events tab can fire them — every open dashboard reacts at the same time. To try your own values: launcher > Developer tools.",
+    "modalDesc": "A centred modal: title, text or HTML content, and action buttons that call a service.",
     "toastDesc": "A discreet notification in the corner, auto-dismissed unless made persistent.",
     "preview": "Preview",
     "copied": "Copied",
     "demoModalTitle": "Modal preview",
-    "demoModalBody": "This is what an automation firing `ha_dashboard_modal` would display.",
+    "demoModalBody": "This is what an automation firing the ha_dashboard_modal event would display.",
     "demoToastTitle": "Toast preview",
     "demoToastBody": "Fired locally — no Home Assistant event involved.",
     "tip": "In Developer tools > Events, the type and the data are two separate fields: switch to \"Dev tools\" above to get the right shape. Pasting the whole \"action:\" block fires nothing.",
@@ -72,5 +72,50 @@
       "body": "Leaves the screensaver. A swipe never leaves it, even though it ends with a tap."
     },
     "config": "Each gesture can be turned on or off separately in WallPanel > Gestures, along with the panel to open upwards."
+  },
+  "devtools": {
+    "title": "Developer tools",
+    "subtitle": "Try the events the dashboard listens to.",
+    "kind": "Event",
+    "kinds": {
+      "modal": "Modal",
+      "toast": "Toast",
+      "notification": "Notification"
+    },
+    "sampleTitle": "The mail has arrived",
+    "sampleText": "The letterbox was just opened.",
+    "id": "Identifier (same id = replaces)",
+    "fieldTitle": "Title",
+    "text": "Text",
+    "width": "Width",
+    "widths": {
+      "sm": "Narrow",
+      "md": "Medium",
+      "lg": "Wide",
+      "full": "Full"
+    },
+    "level": "Level",
+    "levels": {
+      "info": "Info",
+      "success": "Success",
+      "warning": "Warning",
+      "error": "Error"
+    },
+    "duration": "Duration: {value} s",
+    "html": "HTML content",
+    "htmlDesc": "The text is read as HTML, sanitised before display.",
+    "locked": "Blocking",
+    "lockedDesc": "Neither Escape nor a tap outside closes it: a button must be chosen.",
+    "persistent": "Persistent",
+    "persistentDesc": "Stays on screen until closed.",
+    "action": "Button (optional)",
+    "actionLabel": "Label",
+    "actionService": "Service called",
+    "actionEntity": "Target entity",
+    "preview": "Preview here",
+    "send": "Send everywhere",
+    "sent": "Sent: every open dashboard received it.",
+    "failed": "Home Assistant refused the event: {value}",
+    "notificationHint": "The notification lands in the drawer: swipe the screensaver down to see it."
   }
 }
