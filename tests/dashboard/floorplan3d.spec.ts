@@ -251,15 +251,16 @@ test('a tap on a room flies the camera to it, and Escape brings it back', async 
 
   const back = page.getByRole('button', { name: 'Chambre', exact: true });
   await expect(back).toBeVisible();
-  // La caméra vise la pièce : son centre arrive au milieu de l'écran.
-  await expect.poll(centre).toEqual([50, 50]);
+  // La caméra vise la pièce : son centre arrive au milieu de l'écran. Le vol est
+  // animé : plus long que 5 s sur un runner chargé.
+  await expect.poll(centre, { timeout: 15_000 }).toEqual([50, 50]);
   // Les pastilles des autres pièces s'estompent ; la card, posée sur l'écran, reste.
   await expect(page.locator('[data-floorplan-item="lamp-kitchen"]')).toHaveCSS('opacity', '0.2');
   await expect(page.locator('[data-floorplan-item="weather-3d"]')).toHaveCSS('opacity', '1');
 
   await page.keyboard.press('Escape');
   await expect(back).toBeHidden();
-  await expect.poll(centre).toEqual(home);
+  await expect.poll(centre, { timeout: 15_000 }).toEqual(home);
   await expect(page.locator('[data-floorplan-item="lamp-kitchen"]')).toHaveCSS('opacity', '1');
 });
 
