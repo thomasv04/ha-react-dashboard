@@ -230,7 +230,7 @@ async function main() {
   // La fin de l'union plutôt que son dernier membre, qui change avec les
   // widgets : `RoomsGridConfig` a disparu avec le type `rooms` de la 3.x.
   insertBefore('src/types/widget-types.ts', ';\n\n/** Map of widget id → its config */', `\n  | ${name}Config`);
-  insertBefore('src/types/widget-configs.ts', '\n  WidgetConfig,\n  WidgetConfigs,', `\n  ${name}Config,`);
+  // `widget-configs.ts` réexporte tout `widget-types.ts` : rien à y ajouter.
 
   // 4. i18n (fr + en)
   addI18n(type, label, description);

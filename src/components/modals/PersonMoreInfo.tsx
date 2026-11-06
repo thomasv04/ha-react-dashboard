@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { User, MapPin } from 'lucide-react';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -14,7 +13,6 @@ export default function PersonMoreInfo({ entityId, widgetId }: { entityId: strin
   const { getWidgetConfig } = useWidgetConfig();
   const config = getWidgetConfig<PersonStatusConfig>(widgetId);
   const showInfoPanel = config?.showInfoPanel !== false;
-  const [historyHours, setHistoryHours] = useState(24);
 
   // Use first person entity from config or fallback to entityId
   const personEntityId = entityId || config?.persons?.[0]?.entityId || '';
@@ -61,7 +59,6 @@ export default function PersonMoreInfo({ entityId, widgetId }: { entityId: strin
                 ],
               },
               { type: 'timeline', entityId: personEntityId },
-              { type: 'history', historyHours, onHistoryHoursChange: setHistoryHours },
               { type: 'attributes', entityId: personEntityId },
               { type: 'entityId', entityIds: [personEntityId] },
             ] as SidebarModule[]

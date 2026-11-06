@@ -6,7 +6,7 @@ import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useNow } from '@/hooks/useNow';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
-import { callHAService, friendlyName } from '@/lib/ha-service';
+import { callHAService } from '@/lib/ha-service';
 import { dayPart, greetingKey } from '@/lib/greeting';
 import type { WelcomeCardConfig } from '@/types/widget-configs';
 
@@ -17,13 +17,14 @@ const TINTS = ['bg-[var(--ds-mint)] text-[#06271c]', 'bg-[var(--ds-cool)] text-[
 function Routine({ entityId, tint }: { entityId: string; tint: string }) {
   const { t } = useI18n();
   const helpers = useHass(s => s.helpers);
-  const entity = useHass(s => s.entities?.[entityId]);
+  // Le nom seul : la routine ne se re-rend pas à chaque `last_triggered`.
+  const title = useHass(s => s.entities?.[entityId]?.attributes?.friendly_name as string | undefined);
   const domain = entityId.split('.')[0];
   return (
     <div className={cn('flex min-h-[64px] shrink-0 items-center gap-3 rounded-[var(--ds-radius-xl)] py-2 pl-5 pr-2', tint)}>
       <div className='min-w-0 flex-1'>
         <div className='text-xs font-semibold opacity-80'>{t('widgets.welcome.routine')}</div>
-        <div className='truncate text-lg font-bold leading-tight'>{(entity && friendlyName(entity)) ?? entityId}</div>
+        <div className='truncate text-lg font-bold leading-tight'>{title ?? entityId}</div>
       </div>
       <button
         onClick={() => callHAService(helpers, domain, 'turn_on', { entity_id: entityId })}
@@ -52,7 +53,7 @@ export function WelcomeCard() {
   const hour = useNow().getHours();
 
   const firstName = user?.name?.split(' ')[0];
-  const headline = firstName ? `${t(greetingKey(hour))} ${firstName}.` : `${t(greetingKey(hour))}.`;
+  const headline = `${t(greetingKey(hour))}${firstName ? ` ${firstName}` : ''}.`;
   const routines = config?.routines ?? [];
   const showRoutines = routines.length > 0 && !size.squat && size.h !== 'short';
 

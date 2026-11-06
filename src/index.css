@@ -25,6 +25,12 @@ select {
   color-scheme: dark;
 }
 
+/* Le fond des options du menu, pour les mêmes raisons : une seule règle plutôt
+   qu'une classe sur chaque `<option>`. */
+select option {
+  background: #0c1028;
+}
+
 #root {
   width: 100%;
   height: 100%;

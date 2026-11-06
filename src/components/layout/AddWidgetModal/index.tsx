@@ -30,10 +30,6 @@ export function AddWidgetModal({ onClose, onAdded, panelId }: AddWidgetModalProp
   const [selected, setSelected] = useState<GridWidget['type'] | null>(null);
 
   const filtered = useMemo(() => {
-    const q = search
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/\p{Diacritic}/gu, '');
     // La recherche portait sur `meta.label` / `meta.description`, qui sont des
     // **clés i18n** (`widgets.weather.label`) : taper « météo » ne renvoyait
     // rien, seul « weather » fonctionnait. On filtre sur le texte traduit, et
@@ -43,6 +39,7 @@ export function AddWidgetModal({ onClose, onAdded, panelId }: AddWidgetModalProp
         .toLowerCase()
         .normalize('NFD')
         .replace(/\p{Diacritic}/gu, '');
+    const q = norm(search);
     return WIDGET_META.filter(meta => {
       const matchCat = category === 'all' || meta.category === category;
       const matchSearch = !q || norm(t(meta.label)).includes(q) || norm(t(meta.description)).includes(q);

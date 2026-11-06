@@ -119,10 +119,9 @@ function SoundActionRow({
         onChange={e => onChange(e.target.value as SoundPreset)}
         aria-label={t(`layout.soundTab.actions.${action.action}`)}
         className='h-11 max-w-[160px] cursor-pointer rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-3 text-base text-[var(--ds-ink)] outline-none focus:outline-2 focus:outline-[var(--ds-accent)]'
-        style={{ colorScheme: 'dark' }}
       >
         {ALL_PRESETS.map(p => (
-          <option key={p} value={p} className='bg-[#0c1028]'>
+          <option key={p} value={p}>
             {p === 'none' ? t('layout.soundTab.none') : p.replace(/_/g, ' ')}
           </option>
         ))}

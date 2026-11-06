@@ -4,7 +4,11 @@ import type { HassEntity } from 'home-assistant-js-websocket';
 
 type PickedEntities<K extends string> = Record<K, HassEntity | undefined>;
 
-function shallowEqualEntity(a: HassEntity | undefined, b: HassEntity | undefined): boolean {
+/** Même état, mêmes attributs (comparaison superficielle) : de quoi éviter un rendu. */
+export function shallowEqualEntity<E extends { state: string; attributes?: unknown }>(
+  a: E | null | undefined,
+  b: E | null | undefined
+): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
   if (a.state !== b.state) return false;

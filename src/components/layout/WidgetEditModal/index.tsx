@@ -232,10 +232,9 @@ export function WidgetEditModal() {
             value={(draft[field.key] as string) ?? field.options[0].value}
             onChange={e => updateField(field.key, e.target.value)}
             className='h-12 w-full cursor-pointer rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] px-3 text-base text-[var(--ds-ink)] outline-none focus:outline-2 focus:outline-[var(--ds-accent)]'
-            style={{ colorScheme: 'dark' }}
           >
             {field.options.map(opt => (
-              <option key={opt.value} value={opt.value} className='bg-[#0c1028]'>
+              <option key={opt.value} value={opt.value}>
                 {t(opt.label)}
               </option>
             ))}

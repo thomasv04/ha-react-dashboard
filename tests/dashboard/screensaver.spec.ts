@@ -53,8 +53,8 @@ test('sur la veille, le bouton des apps la quitte et ouvre le lanceur', async ({
 test('le réglage « Lanceur et barre du haut » le retire de la veille', async ({ page }) => {
   await withScreensaver(page, false);
   await page.goto('/?hrd_screensaver=true');
-  await page.waitForSelector('[data-widget-id]', { timeout: 15_000, state: 'attached' });
-  await page.waitForTimeout(1500);
+  // La veille d'abord, et son heure : sans elle, compter les boutons ne prouverait rien.
+  await expect(page.getByRole('button', { name: "Fermer l'écran de veille" })).toBeVisible({ timeout: 15_000 });
 
   // Seul reste celui de l'accueil, sous la veille.
   await expect(openApps(page)).toHaveCount(1);

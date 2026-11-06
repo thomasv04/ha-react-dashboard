@@ -8,6 +8,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useWallPanel } from '@/context/WallPanelContext';
 import { usePanel, type PanelId } from '@/context/PanelContext';
 import { gesturesOf } from '@/types/wallpanel';
+import { cn } from '@/lib/utils';
 
 /** Glissé vers le bas, en px, qui vaut un appui sur la poignée. */
 const PULL = 24;
@@ -50,16 +51,60 @@ function QuickHandle() {
   );
 }
 
+/** Le bouton des apps, en haut à gauche — sur l'accueil comme sur la veille. */
+export function LauncherButton({
+  open = false,
+  onClick,
+  className,
+  tour,
+}: {
+  open?: boolean;
+  onClick: (e: React.MouseEvent) => void;
+  className?: string;
+  /** Repère de la visite guidée (`data-tour`). */
+  tour?: string;
+}) {
+  const { t } = useI18n();
+  const label = open ? t('layout.shell.closeLauncher') : t('layout.shell.openLauncher');
+  return (
+    <button
+      onClick={onClick}
+      data-tour={tour}
+      title={label}
+      aria-label={label}
+      className={cn(
+        'pointer-events-auto flex size-[60px] items-center justify-center rounded-[var(--ds-radius-md)] bg-[var(--ds-accent)] text-white active:scale-95 transition-transform',
+        className
+      )}
+    >
+      {open ? <X size={28} /> : <Grip size={28} />}
+    </button>
+  );
+}
+
+/** L'initiale de l'utilisateur connecté, si l'appareil l'affiche (Paramètres → Disposition). */
+export function UserBadge({ className }: { className?: string }) {
+  const user = useUser();
+  const { behaviourSettings } = useTheme();
+  if (!behaviourSettings.showUser || !user?.name) return null;
+  return (
+    <span
+      role='img'
+      aria-label={user.name}
+      className={cn('flex size-14 items-center justify-center rounded-full bg-[var(--ds-surface-3)] text-[22px] font-bold', className)}
+    >
+      {user.name.charAt(0).toUpperCase()}
+    </span>
+  );
+}
+
 /**
  * Barre du haut : lanceur d'apps à gauche, météo, heure et utilisateur à droite.
  * Lisible de loin — c'est ce qu'on regarde en passant devant la tablette.
  */
 export function TopBar({ launcherOpen, onToggleLauncher }: { launcherOpen: boolean; onToggleLauncher: () => void }) {
-  const { t } = useI18n();
   const { formatTime } = useFormats();
   const now = useNow();
-  const user = useUser();
-  const { behaviourSettings } = useTheme();
   const { temperature, Icon: WeatherIcon } = useWeatherNow();
 
   return (
@@ -68,15 +113,7 @@ export function TopBar({ launcherOpen, onToggleLauncher }: { launcherOpen: boole
       className={`fixed inset-x-0 top-0 ${launcherOpen ? 'z-[62]' : 'z-40'} flex items-center justify-between px-6 sm:px-10 pt-6 pointer-events-none`}
     >
       <QuickHandle />
-      <button
-        onClick={onToggleLauncher}
-        data-tour='settings'
-        title={launcherOpen ? t('layout.shell.closeLauncher') : t('layout.shell.openLauncher')}
-        aria-label={launcherOpen ? t('layout.shell.closeLauncher') : t('layout.shell.openLauncher')}
-        className='pointer-events-auto flex size-[60px] items-center justify-center rounded-[var(--ds-radius-md)] bg-[var(--ds-accent)] text-white active:scale-95 transition-transform'
-      >
-        {launcherOpen ? <X size={28} /> : <Grip size={28} />}
-      </button>
+      <LauncherButton open={launcherOpen} onClick={onToggleLauncher} tour='settings' />
 
       <div className='flex items-center gap-6 text-[var(--ds-ink)]'>
         {temperature != null && (
@@ -86,15 +123,7 @@ export function TopBar({ launcherOpen, onToggleLauncher }: { launcherOpen: boole
           </span>
         )}
         <time className='text-[56px] leading-none font-semibold tracking-[-1px] tabular-nums'>{formatTime(now)}</time>
-        {behaviourSettings.showUser && user?.name && (
-          <span
-            role='img'
-            aria-label={user.name}
-            className='flex size-14 items-center justify-center rounded-full bg-[var(--ds-surface-3)] text-[22px] font-bold'
-          >
-            {user.name.charAt(0).toUpperCase()}
-          </span>
-        )}
+        <UserBadge />
       </div>
     </header>
   );

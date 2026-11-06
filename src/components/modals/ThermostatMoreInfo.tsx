@@ -1,4 +1,3 @@
-import { useState, useCallback } from 'react';
 import { Thermometer } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
@@ -10,7 +9,8 @@ import { WidgetIdProvider } from '@/components/layout/DashboardGrid';
 import { InfoSidebar, type SidebarModule } from './sidebar';
 import type { ThermostatCardConfig } from '@/types/widget-types';
 import { useI18n } from '@/i18n';
-import { friendlyName } from '@/lib/ha-service';
+import { callHAService, friendlyName } from '@/lib/ha-service';
+import { translateOr } from '@/i18n/translate-or';
 
 const HVAC_COLORS: Record<string, string> = {
   heating: '#f97316',
@@ -25,57 +25,8 @@ export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: s
   const { getWidgetConfig } = useWidgetConfig();
   const config = getWidgetConfig<ThermostatCardConfig>(widgetId);
   const showInfoPanel = config?.showInfoPanel !== false;
-  const [historyHours, setHistoryHours] = useState(24);
   const entity = useSafeEntity(entityId);
   const helpers = useHass(s => s.helpers);
-
-  const setHvacMode = useCallback(
-    (mode: string) => {
-      helpers.callService({
-        domain: 'climate',
-        service: 'set_hvac_mode',
-        target: { entity_id: entityId },
-        serviceData: { hvac_mode: mode },
-      });
-    },
-    [helpers, entityId]
-  );
-
-  const setFanMode = useCallback(
-    (mode: string) => {
-      helpers.callService({
-        domain: 'climate',
-        service: 'set_fan_mode',
-        target: { entity_id: entityId },
-        serviceData: { fan_mode: mode },
-      });
-    },
-    [helpers, entityId]
-  );
-
-  const setSwingMode = useCallback(
-    (mode: string) => {
-      helpers.callService({
-        domain: 'climate',
-        service: 'set_swing_mode',
-        target: { entity_id: entityId },
-        serviceData: { swing_mode: mode },
-      });
-    },
-    [helpers, entityId]
-  );
-
-  const setPresetMode = useCallback(
-    (mode: string) => {
-      helpers.callService({
-        domain: 'climate',
-        service: 'set_preset_mode',
-        target: { entity_id: entityId },
-        serviceData: { preset_mode: mode },
-      });
-    },
-    [helpers, entityId]
-  );
 
   if (!entity) return <div className='p-12 text-[var(--ds-ink-muted)] text-center'>{t('common.entityNotFound')}</div>;
 
@@ -95,11 +46,17 @@ export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: s
   const actionColor = HVAC_COLORS[hvacAction] ?? '#6b7280';
   // Les valeurs standard de Home Assistant sont traduites ; une valeur propre à
   // une intégration (`on_low`…) n'a pas de clé et s'affiche telle quelle.
-  const label = (group: string) => (value: string) => {
-    const key = `widgets.thermostat.${group}.${value}`;
-    const text = t(key);
-    return text === key ? value : text;
-  };
+  const label = (group: string) => (value: string) => translateOr(t, `widgets.thermostat.${group}.${value}`, value);
+  // Chaque réglage passe par `climate.set_<kind>_mode`, avec la valeur brute de HA.
+  const setMode = (kind: string) => (mode: string) =>
+    callHAService(helpers, 'climate', `set_${kind}_mode`, { entity_id: entityId }, { [`${kind}_mode`]: mode });
+  // [service, titre, options, valeur, traductions] — une rangée de pastilles par réglage que l'entité expose.
+  const selects: [string, string, string[] | undefined, string | undefined, string][] = [
+    ['hvac', 'hvacMode', hvacModes, hvacMode, 'modes'],
+    ['preset', 'presetMode', presetModes, currentPresetMode, 'presetModes'],
+    ['fan', 'fanMode', fanModes, currentFanMode, 'fanModes'],
+    ['swing', 'swingMode', swingModes, currentSwingMode, 'swingModes'],
+  ];
 
   return (
     <MoreInfoLayout
@@ -108,54 +65,16 @@ export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: s
         <InfoSidebar
           modules={
             [
-              ...(hvacModes.length > 0
-                ? [
-                    {
-                      type: 'select' as const,
-                      title: t('widgets.thermostat.moreInfo.hvacMode'),
-                      value: hvacMode,
-                      options: hvacModes,
-                      onChange: setHvacMode,
-                      format: label('modes'),
-                    },
-                  ]
-                : []),
-              ...(presetModes && presetModes.length > 0
-                ? [
-                    {
-                      type: 'select' as const,
-                      title: t('widgets.thermostat.moreInfo.presetMode'),
-                      value: currentPresetMode ?? '',
-                      options: presetModes,
-                      onChange: setPresetMode,
-                      format: label('presetModes'),
-                    },
-                  ]
-                : []),
-              ...(fanModes && fanModes.length > 0
-                ? [
-                    {
-                      type: 'select' as const,
-                      title: t('widgets.thermostat.moreInfo.fanMode'),
-                      value: currentFanMode ?? '',
-                      options: fanModes,
-                      onChange: setFanMode,
-                      format: label('fanModes'),
-                    },
-                  ]
-                : []),
-              ...(swingModes && swingModes.length > 0
-                ? [
-                    {
-                      type: 'select' as const,
-                      title: t('widgets.thermostat.moreInfo.swingMode'),
-                      value: currentSwingMode ?? '',
-                      options: swingModes,
-                      onChange: setSwingMode,
-                      format: label('swingModes'),
-                    },
-                  ]
-                : []),
+              ...selects
+                .filter(([, , options]) => options && options.length > 0)
+                .map(([kind, title, options, value, group]) => ({
+                  type: 'select' as const,
+                  title: t(`widgets.thermostat.moreInfo.${title}`),
+                  value: value ?? '',
+                  options: options ?? [],
+                  onChange: setMode(kind),
+                  format: label(group),
+                })),
               {
                 type: 'details' as const,
                 title: t('common.moreInfo.info'),
@@ -170,7 +89,6 @@ export default function ThermostatMoreInfo({ entityId, widgetId }: { entityId: s
                 ],
               },
               { type: 'timeline' as const, entityId },
-              { type: 'history' as const, historyHours, onHistoryHoursChange: setHistoryHours },
               { type: 'attributes' as const, entityId },
               { type: 'entityId' as const, entityIds: [entityId] },
             ] satisfies SidebarModule[]

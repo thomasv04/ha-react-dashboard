@@ -3,6 +3,7 @@ import { useHass } from '@hakit/core';
 import { useEffect, useState, useRef, createElement } from 'react';
 import { useEntities, useEntitiesByDomain } from '@/hooks/useEntities';
 import { useI18n } from '@/i18n';
+import { useHaUrl } from '@/hooks/useHaUrl';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useMoreInfoOptional } from '@/context/MoreInfoContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
@@ -96,7 +97,7 @@ function renderTemplate(template: string, state: string, attributes: Record<stri
 
 export function ActivityBar() {
   const { t } = useI18n();
-  const hassUrl = useHass(s => s.connection?.socket?.url);
+  const resolveUrl = useHaUrl();
   const helpers = useHass(s => s.helpers);
   const moreInfo = useMoreInfoOptional();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -176,27 +177,6 @@ export function ActivityBar() {
     } as never);
   };
 
-  // Helper to convert relative avatar paths to absolute URLs
-  const getAvatarUrl = (avatarPath?: string) => {
-    if (!avatarPath) return undefined;
-
-    // If already absolute URL, return as-is
-    if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://')) {
-      return avatarPath;
-    }
-
-    // If relative path, prepend Home Assistant URL
-    if (hassUrl) {
-      // Extract base URL from WebSocket URL (ws://localhost:8123 -> http://localhost:8123)
-      const baseUrl = hassUrl
-        .replace(/^wss?:\/\//, 'http' + (hassUrl.startsWith('wss') ? 's' : '') + '://')
-        .replace(/\/api\/websocket$/, '');
-      return `${baseUrl}${avatarPath}`;
-    }
-
-    return avatarPath;
-  };
-
   // Persons (avatars) — filtered by config.persons when configured, else show all
   const configPersons = config?.persons;
   const persons: Person[] = [];
@@ -208,7 +188,7 @@ export function ActivityBar() {
       persons.push({
         id: entityId,
         name: name || entity.attributes?.friendly_name || entityId.replace('person.', ''),
-        avatar: getAvatarUrl(avatarPath),
+        avatar: resolveUrl(avatarPath),
         state: entity.state,
       });
     });
@@ -218,7 +198,7 @@ export function ActivityBar() {
       persons.push({
         id: entity.entity_id,
         name: entity.attributes?.friendly_name ?? entity.entity_id.replace('person.', ''),
-        avatar: getAvatarUrl(avatarPath),
+        avatar: resolveUrl(avatarPath),
         state: entity.state,
       });
     });

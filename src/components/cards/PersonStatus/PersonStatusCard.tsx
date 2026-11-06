@@ -1,5 +1,5 @@
 import { User } from 'lucide-react';
-import { useHass } from '@hakit/core';
+import { useHaUrl } from '@/hooks/useHaUrl';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
@@ -26,8 +26,9 @@ function getZoneLabel(zone: string, t: (key: string) => string): string {
 }
 
 // ── Single person pill ────────────────────────────────────────────────────────
-function PersonPill({ entry, haBaseUrl }: { entry: PersonEntry; haBaseUrl: string | undefined }) {
+function PersonPill({ entry }: { entry: PersonEntry }) {
   const { t } = useI18n();
+  const resolve = useHaUrl();
   const entity = useSafeEntity(entry.entityId);
 
   if (!entity) return null;
@@ -38,14 +39,8 @@ function PersonPill({ entry, haBaseUrl }: { entry: PersonEntry; haBaseUrl: strin
   const rawPicture = entity.attributes.entity_picture as string | undefined;
   const zoneLabel = getZoneLabel(zone, t);
 
-  // Resolve relative HA picture URLs to absolute (e.g. /api/image/person.xxx/...)
-  const picture = rawPicture
-    ? rawPicture.startsWith('http')
-      ? rawPicture
-      : haBaseUrl
-        ? `${haBaseUrl}${rawPicture}`
-        : rawPicture
-    : undefined;
+  // Chemin relatif de HA (`/api/image/person.xxx/…`) : résolu sur l'instance connectée.
+  const picture = resolve(rawPicture);
 
   return (
     <div
@@ -89,11 +84,6 @@ export function PersonStatusCard() {
   const config = getWidgetConfig<PersonStatusConfig>(widgetId || 'person');
   const persons = config?.persons ?? [];
 
-  const wsUrl = useHass(s => s.connection?.socket?.url as string | undefined);
-  const haBaseUrl = wsUrl
-    ? wsUrl.replace(/^wss?:\/\//, 'http' + (wsUrl.startsWith('wss') ? 's' : '') + '://').replace(/\/api\/websocket$/, '')
-    : undefined;
-
   if (persons.length === 0) {
     return <div className='flex h-full items-center justify-center text-sm text-[var(--ds-ink-muted)]'>{t('widgets.person.noPeople')}</div>;
   }
@@ -101,7 +91,7 @@ export function PersonStatusCard() {
   return (
     <div className='flex h-full items-center gap-3 overflow-x-auto px-1 scrollbar-none'>
       {persons.map(entry => (
-        <PersonPill key={entry.entityId} entry={entry} haBaseUrl={haBaseUrl} />
+        <PersonPill key={entry.entityId} entry={entry} />
       ))}
     </div>
   );

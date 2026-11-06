@@ -1,7 +1,5 @@
-import { useUser } from '@hakit/core';
-import { Grip } from 'lucide-react';
 import { useNow } from '@/hooks/useNow';
-import { useTheme } from '@/context/ThemeContext';
+import { LauncherButton, UserBadge } from '@/components/shell/TopBar';
 import { useWeatherNow } from '@/hooks/useWeatherNow';
 import { PagerArrows } from '@/components/ds/PagerArrows';
 import { useFormats } from '@/hooks/useFormats';
@@ -37,31 +35,17 @@ export function ScreensaverClock({
   const { formatTime, formatDate } = useFormats();
   const now = useNow();
   const { temperature, Icon } = useWeatherNow();
-  const user = useUser();
-  const { behaviourSettings } = useTheme();
 
   const launcher = onLauncher && (
-    <button
+    <LauncherButton
       onClick={e => {
         e.stopPropagation();
         onLauncher();
       }}
-      title={t('layout.shell.openLauncher')}
-      aria-label={t('layout.shell.openLauncher')}
-      className='pointer-events-auto absolute left-6 top-6 z-[201] flex size-[60px] items-center justify-center rounded-[var(--ds-radius-md)] bg-[var(--ds-accent)] text-white active:scale-95 transition-transform sm:left-10'
-    >
-      <Grip size={28} />
-    </button>
+      className='absolute left-6 top-6 z-[201] sm:left-10'
+    />
   );
-  const badge = onLauncher && behaviourSettings.showUser && user?.name && (
-    <span
-      role='img'
-      aria-label={user.name}
-      className='flex size-14 items-center justify-center rounded-full bg-[var(--ds-surface-3)] text-[22px] font-bold text-[var(--ds-ink)] [text-shadow:none]'
-    >
-      {user.name.charAt(0).toUpperCase()}
-    </span>
-  );
+  const badge = onLauncher && <UserBadge className='text-[var(--ds-ink)] [text-shadow:none]' />;
 
   const arrows = (onPrev || onMore) && (
     // Les gestes de la veille s'arrêtent aux boutons : un appui ne la quitte pas.

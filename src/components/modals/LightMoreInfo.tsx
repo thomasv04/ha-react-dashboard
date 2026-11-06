@@ -19,7 +19,6 @@ export default function LightMoreInfo({ entityId, widgetId }: { entityId: string
   const { getWidgetConfig } = useWidgetConfig();
   const config = getWidgetConfig<LightCardConfig>(widgetId);
   const showInfoPanel = config?.showInfoPanel !== false;
-  const [historyHours, setHistoryHours] = useState(24);
   const [colorTab, setColorTab] = useState<ColorTab>('color');
   const entity = useSafeEntity(entityId);
   const actions = useLightActions(entityId);
@@ -164,7 +163,6 @@ export default function LightMoreInfo({ entityId, widgetId }: { entityId: string
                 ],
               },
               { type: 'timeline', entityId },
-              { type: 'history', historyHours, onHistoryHoursChange: setHistoryHours },
               { type: 'attributes', entityId },
               { type: 'entityId', entityIds: [entityId] },
             ] as SidebarModule[]

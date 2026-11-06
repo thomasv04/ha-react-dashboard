@@ -232,7 +232,10 @@
     "widgetRowsLess": "Shorter",
     "widgetRowsMore": "Taller",
     "railEntity": "Status badge",
-    "railEntityDesc": "A temperature shows in the menu instead of the icon; a device that is on lights the icon up."
+    "railEntityDesc": "A temperature shows in the menu instead of the icon; a device that is on lights the icon up.",
+    "domainPlaceholder": "domain",
+    "servicePlaceholder": "service",
+    "buttonLabelPlaceholder": "e.g. Open all"
   },
   "wallPanel": {
     "subtitle": "Screensaver with widgets",

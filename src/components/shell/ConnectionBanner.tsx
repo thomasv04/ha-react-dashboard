@@ -30,14 +30,12 @@ export function ConnectionBanner() {
       clearTimeout(timer);
       timer = setTimeout(() => setStatus(s => (s === 'failed' ? s : 'lost')), GRACE_MS);
     };
-    const up = () => {
+    const settle = (s: Status) => () => {
       clearTimeout(timer);
-      setStatus('up');
+      setStatus(s);
     };
-    const failed = () => {
-      clearTimeout(timer);
-      setStatus('failed');
-    };
+    const up = settle('up');
+    const failed = settle('failed');
     connection.addEventListener('disconnected', down);
     connection.addEventListener('ready', up);
     connection.addEventListener('reconnect-error', failed);

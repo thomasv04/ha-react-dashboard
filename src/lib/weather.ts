@@ -1,7 +1,8 @@
+import { translateOr } from '@/i18n/translate-or';
 import { Cloud, Sun, CloudRain, CloudSnow, Cloudy, CloudDrizzle, Moon, Zap, type LucideIcon } from 'lucide-react';
 
 /**
- * Clé i18n d'une condition météo. Quelques intégrations (et le mode démo)
+ * Clé i18n d'une condition météo. Quelques intégrations
  * écrivent `partly-cloudy` pour le `partlycloudy` de Home Assistant : la card
  * affichait alors « Partly-Cloudy » en anglais brut (#80). Les autres tirets
  * sont de vraies clés HA (`clear-night`, `lightning-rainy`) et restent.
@@ -24,3 +25,6 @@ export function conditionIcon(condition: string): { Icon: LucideIcon; color: str
     return { Icon: Cloud, color: 'var(--ds-ink-muted)' };
   return { Icon: Sun, color: 'var(--ds-warm-light)' };
 }
+
+/** Libellé d'une condition : traduit, ou l'état brut (`_` en espaces) s'il est inconnu. */
+export const conditionLabel = (t: (key: string) => string, state: string) => translateOr(t, conditionKey(state), state.replace(/_/g, ' '));

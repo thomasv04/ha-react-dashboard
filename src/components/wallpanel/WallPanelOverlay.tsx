@@ -63,7 +63,7 @@ function WallPanelEditSession() {
 }
 
 /** `onOpenLauncher` : le lanceur de l'accueil, que le bouton de la veille ouvre en la quittant. */
-export function WallPanelOverlay({ onOpenLauncher }: { onOpenLauncher?: () => void } = {}) {
+export function WallPanelOverlay({ onOpenLauncher }: { onOpenLauncher: () => void }) {
   const { t } = useI18n();
   const user = useUser();
   const { isActive, deactivate, wallPanelLayout, config, isWallPanelEditMode, enterWallPanelEditMode } = useWallPanel();
@@ -243,7 +243,7 @@ export function WallPanelOverlay({ onOpenLauncher }: { onOpenLauncher?: () => vo
                 onNext={canSwipePhotos ? () => slideshowRef.current?.go(1) : undefined}
                 onMore={user?.is_admin ? enterWallPanelEditMode : undefined}
                 onLauncher={
-                  config.show_top_bar !== false && onOpenLauncher
+                  config.show_top_bar !== false
                     ? () => {
                         deactivate();
                         onOpenLauncher();

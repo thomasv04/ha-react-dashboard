@@ -197,13 +197,34 @@ export default function EnergyMoreInfo({ entityId, widgetId }: { entityId: strin
         {/* Flow cards */}
         <div className='grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4'>
           {solarEntity && (
-            <FlowCard icon={Sun} label='Solaire' value={solarVal} unit={solarUnit} color='#22c55e' active={Number(solarVal) > 0} />
+            <FlowCard
+              icon={Sun}
+              label={t('widgets.energy.solar')}
+              value={solarVal}
+              unit={solarUnit}
+              color='#22c55e'
+              active={Number(solarVal) > 0}
+            />
           )}
           {gridEntity && (
-            <FlowCard icon={PlugZap} label='Réseau' value={gridVal} unit={gridUnit} color='#60a5fa' active={Number(gridVal) > 0} />
+            <FlowCard
+              icon={PlugZap}
+              label={t('widgets.energy.grid')}
+              value={gridVal}
+              unit={gridUnit}
+              color='#60a5fa'
+              active={Number(gridVal) > 0}
+            />
           )}
           {homeEntity && (
-            <FlowCard icon={Home} label='Maison' value={homeVal} unit={homeUnit} color='#f97316' active={Number(homeVal) > 0} />
+            <FlowCard
+              icon={Home}
+              label={t('widgets.energy.home')}
+              value={homeVal}
+              unit={homeUnit}
+              color='#f97316'
+              active={Number(homeVal) > 0}
+            />
           )}
         </div>
 

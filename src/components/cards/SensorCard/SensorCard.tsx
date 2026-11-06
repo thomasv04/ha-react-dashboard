@@ -197,7 +197,7 @@ export function SensorCard() {
                 </div>
 
                 {(variant === 'sparkline' || variant === 'bar') &&
-                  (historyLoading ? (
+                  (historyLoading && historyData.length === 0 ? (
                     <div className='h-10 w-full animate-pulse rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)]' />
                   ) : historyData.length > 1 ? (
                     variant === 'sparkline' ? (

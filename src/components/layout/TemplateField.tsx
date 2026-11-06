@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Code2, Check, AlertTriangle, ChevronDown, Plus, Search } from 'lucide-react';
+import { Check, AlertTriangle, ChevronDown, Plus, Search } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { templateEngine } from '@/lib/template-engine';
-import { isTemplateValue, tv, type TV, type TemplateValue } from '@/types/template';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 
@@ -27,7 +26,6 @@ const MENU_ITEM = 'flex min-h-11 w-full items-center px-4 text-left text-[15px]'
 
 export function TemplateEditor({ value, onChange, entityId }: { value: string; onChange: (v: string) => void; entityId?: string }) {
   const { t } = useI18n();
-  const allEntities = useHass(s => s.entities);
   const entities = useHass(s => s.entities);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [preview, setPreview] = useState('');
@@ -66,7 +64,7 @@ export function TemplateEditor({ value, onChange, entityId }: { value: string; o
     [value, onChange]
   );
 
-  const filteredEntities = Object.keys(allEntities ?? {})
+  const filteredEntities = Object.keys(entities ?? {})
     .filter(id => id.toLowerCase().includes(entitySearch.toLowerCase()))
     .slice(0, 30);
 
@@ -174,64 +172,6 @@ export function TemplateEditor({ value, onChange, entityId }: { value: string; o
           <span className='truncate font-mono'>{preview}</span>
         </div>
       ) : null}
-    </div>
-  );
-}
-
-// ── Composant principal : TemplateField ───────────────────────────────────────
-
-export function TemplateField<T extends string | number>({
-  label,
-  value,
-  onChange,
-  entityId,
-  renderValueInput,
-}: {
-  label: string;
-  value: TV<T> | undefined;
-  onChange: (v: TV<T>) => void;
-  entityId?: string;
-  renderValueInput: (value: T, onChange: (v: T) => void) => React.ReactNode;
-  placeholder?: string;
-}) {
-  const isTemplate = isTemplateValue(value);
-  const plainValue = (isTemplate ? '' : (value ?? '')) as T;
-  const templateStr = isTemplate ? (value as TemplateValue).template : '';
-
-  return (
-    <div className='space-y-1'>
-      <div className='flex items-center justify-between mb-1'>
-        <label className='text-[11px] text-[var(--ds-ink-muted)]'>{label}</label>
-        {/* Toggle value ↔ template */}
-        <button
-          onClick={() => {
-            if (isTemplate) {
-              // Retour en valeur fixe
-              onChange(plainValue || ('' as T));
-            } else {
-              // Passe en template
-              const initial = plainValue ? `{{ '${plainValue}' }}` : '';
-              onChange(tv(initial) as TV<T>);
-            }
-          }}
-          className={cn(
-            'flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono transition-colors',
-            isTemplate
-              ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)] border border-[var(--ds-accent)]'
-              : 'bg-[var(--ds-surface-2)] text-[var(--ds-ink-muted)]'
-          )}
-          title={isTemplate ? 'Revenir à valeur fixe' : 'Activer le mode template (Jinja2)'}
-        >
-          <Code2 size={10} />
-          {isTemplate ? 'Template' : '{ }'}
-        </button>
-      </div>
-
-      {isTemplate ? (
-        <TemplateEditor value={templateStr} onChange={str => onChange(tv(str) as TV<T>)} entityId={entityId} />
-      ) : (
-        renderValueInput(plainValue, v => onChange(v))
-      )}
     </div>
   );
 }

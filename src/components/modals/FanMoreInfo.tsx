@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Fan, RefreshCw, RotateCcw, RotateCw } from 'lucide-react';
 import { useHass } from '@hakit/core';
@@ -24,7 +23,6 @@ export default function FanMoreInfo({ entityId, widgetId }: { entityId: string; 
   const { getWidgetConfig } = useWidgetConfig();
   const config = getWidgetConfig<FanCardConfig>(widgetId);
   const showInfoPanel = config?.showInfoPanel !== false;
-  const [historyHours, setHistoryHours] = useState(24);
   const entity = useSafeEntity(entityId);
   const helpers = useHass(s => s.helpers);
   const { percentage, setPercentage } = useFanSpeed(entityId, entity?.attributes.percentage as number | undefined);
@@ -77,7 +75,6 @@ export default function FanMoreInfo({ entityId, widgetId }: { entityId: string; 
                 ],
               },
               { type: 'timeline', entityId },
-              { type: 'history', historyHours, onHistoryHoursChange: setHistoryHours },
               { type: 'attributes', entityId },
               { type: 'entityId', entityIds: [entityId] },
             ] as SidebarModule[]
