@@ -127,6 +127,8 @@ export interface TempoCardConfig {
 export interface ThermostatCardConfig extends WidgetSoundOverrides {
   type: 'thermostat';
   entityId: string; // climate.xxx
+  /** Nom affiché (sinon friendly_name) */
+  name?: string;
   minTemp?: number;
   maxTemp?: number;
   showInfoPanel?: boolean;

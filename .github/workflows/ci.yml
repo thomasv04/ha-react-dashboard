@@ -318,6 +318,9 @@ jobs:
   visual:
     name: Visual Regression
     runs-on: ubuntu-latest
+    # Un run normal dure deux minutes. Sans plafond, un apt-get sans réponse a déjà
+    # tenu le job plus de trente minutes, puis quatorze avant qu'on l'annule.
+    timeout-minutes: 15
     container:
       image: mcr.microsoft.com/playwright:v1.64.1-noble
       options: --ipc=host
@@ -328,8 +331,13 @@ jobs:
 
       # Le Node de l'image est plus récent que les binaires précompilés de
       # better-sqlite3 : il se compile, et l'image n'a pas d'outils pour ça.
+      # Réessais et délai réseau : un miroir qui ne répond pas fait échouer l'étape
+      # en une minute ou deux au lieu de la laisser pendre.
       - name: Install build tools
-        run: apt-get update -qq && apt-get install -y -qq --no-install-recommends build-essential python3
+        timeout-minutes: 5
+        run: |
+          APT='-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30'
+          apt-get $APT update -qq && apt-get $APT install -y -qq --no-install-recommends build-essential python3
 
       - name: Install dependencies
         run: npm ci

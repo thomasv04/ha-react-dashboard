@@ -1,3 +1,5 @@
+import { useId } from 'react';
+
 export function FieldInput({
   value,
   onChange,
@@ -9,10 +11,15 @@ export function FieldInput({
   label: string;
   type?: 'text' | 'number';
 }) {
+  // `htmlFor` : sans lui, le champ n'avait aucun nom pour un lecteur d'écran.
+  const id = useId();
   return (
     <div>
-      <label className='mb-2 block text-sm font-semibold text-[var(--ds-ink-muted)]'>{label}</label>
+      <label htmlFor={id} className='mb-2 block text-sm font-semibold text-[var(--ds-ink-muted)]'>
+        {label}
+      </label>
       <input
+        id={id}
         type={type}
         value={value ?? ''}
         onChange={e => onChange(type === 'number' ? Number(e.target.value) : e.target.value)}

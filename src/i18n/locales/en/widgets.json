@@ -73,6 +73,9 @@
       "entityId": {
         "label": "Climate entity"
       },
+      "name": {
+        "label": "Display name"
+      },
       "minTemp": {
         "label": "Min temperature"
       },

@@ -219,6 +219,10 @@ export function playSound(sound: SoundPreset | string): void {
 
     const ac = getContext();
     if (ac.state === 'suspended') {
+      // Aucun geste depuis le chargement : le navigateur refuse de démarrer l'audio
+      // (tablette murale que personne n'a touchée). `resume()` resterait en attente
+      // jusqu'au prochain toucher et jouerait alors un son périmé : mieux vaut se taire.
+      if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return;
       ac.resume().then(() => scheduleNotes(ac, notes));
     } else {
       scheduleNotes(ac, notes);

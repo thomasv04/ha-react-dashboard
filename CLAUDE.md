@@ -241,6 +241,112 @@ Règles :
   HA, `document.documentElement.className` doit se retrouver sur le `div` enfant
   de `ha-react-dashboard-panel`.
 
+## Événements Home Assistant — toast, notification, modale (depuis une automatisation)
+
+Le dashboard écoute trois événements sur le WebSocket de HA. N'importe quelle
+automatisation, script ou l'outil *Outils de développement > Événements* de HA
+peut les émettre : **tous les écrans ouverts réagissent en même temps**.
+
+| Événement                   | Affiche                                                        |
+| --------------------------- | -------------------------------------------------------------- |
+| `ha_dashboard_toast`        | une alerte discrète dans le coin, qui s'efface seule           |
+| `ha_dashboard_notification` | une entrée dans le tiroir de l'écran de veille (balayage bas) |
+| `ha_dashboard_modal`        | une fenêtre centrée, avec boutons                              |
+
+Dans une automatisation, le bloc est `event:` + `event_data:` :
+
+```yaml
+action:
+  - event: ha_dashboard_toast
+    event_data:
+      title: "Le courrier est arrivé !" # obligatoire
+      description: "Boîte aux lettres ouverte"
+      duration_ms: 8000 # défaut 5000
+      persistent: false # true : reste jusqu'à la fermeture
+      sound: notification # notification | alert | success | warning | error | click | pop… | une URL | false pour couper
+      actions:
+        - label: "Voir la sonnette"
+          variant: primary # default | primary | danger
+          service: input_boolean.turn_on # « domaine.service » complet
+          service_data:
+            entity_id: input_boolean.show_camera_sonnette
+        - label: "Ignorer"
+```
+
+```yaml
+action:
+  - event: ha_dashboard_notification
+    event_data:
+      id: update-2.3.0 # même id = remplace ; absent = nouvelle entrée
+      title: "Mise à jour disponible"
+      message: "Une nouvelle version est prête." # title ou message, au moins un
+      content_type: plain # plain | html (assaini) | markdown (affiché brut)
+      level: info # info | success | warning | error
+      icon: Download # nom d'icône lucide
+      actions:
+        - label: "Installer"
+          variant: primary
+          service: hassio.addon_update
+          service_data: { addon: ha-react-dashboard }
+          keep: false # true : la notification reste après l'action
+# La retirer : event_data: { id: update-2.3.0, dismiss: true }
+# Sans id, `dismiss: true` vide tout le tiroir.
+```
+
+```yaml
+action:
+  - event: ha_dashboard_modal
+    event_data:
+      title: "Mise à jour disponible"
+      content: "Une nouvelle version est prête."
+      content_type: plain # plain | html (assaini) | markdown (affiché brut)
+      width: md # sm | md | lg | full
+      dismissible: false # pas d'Échap ni de clic extérieur : il faut choisir un bouton
+      sound: notification # ou false
+      actions:
+        - label: "Installer"
+          variant: primary
+          service: hassio.addon_update
+          service_data: { addon: ha-react-dashboard }
+        - label: "Plus tard"
+```
+
+Points à savoir :
+
+- **Modèles `{{ … }}`** : c'est Home Assistant qui les rend, avant d'émettre
+  l'événement. Le résultat arrive en **valeur native** (objet, liste, nombre) :
+  le dashboard l'écrit en texte (un objet en JSON indenté, `asText` dans
+  `ha-events.ts`). Pour un seul champ, viser le champ :
+  `content: "{{ courrier_message.data.message }}"`. Si **rien** n'apparaît, le
+  problème est côté HA : une variable non définie fait échouer l'action et
+  **aucun événement n'est émis** — lire la trace de l'automatisation
+  (Paramètres > Automatisations > la trace), pas le dashboard.
+- **Son** : `sound:` est joué seulement si **Paramètres > Sons est activé sur cet
+  appareil** (désactivé par défaut, propre à chaque tablette). « Ne pas déranger »
+  masque en plus les toasts non persistants. Et un navigateur n'ouvre pas l'audio
+  tant que personne n'a touché l'écran depuis le chargement de la page : une
+  tablette murale intacte reste muette jusqu'au premier toucher.
+- Un bouton appelle un service **sans cible** : l'entité va dans `service_data`
+  (`entity_id`), pas dans un champ `target`. `service` doit être `domaine.service`.
+- Un bouton de modale ou de toast ferme toujours sa fenêtre ; `dismissible: false`
+  la garde ouverte jusque-là, rien d'autre.
+- Le HTML est assaini (`RichText`), le markdown **n'est pas rendu** : il s'affiche
+  tel quel. Ne pas promettre de mise en forme markdown.
+- Dans *Outils de développement > Événements* de HA, le **type** et les
+  **données** sont deux champs : ne coller que le contenu de `event_data`, pas le
+  bloc `action:`. L'interrupteur « Outils de dév. » de l'aide donne cette forme.
+- Pour essayer sans automatisation : lanceur > **Outils de développement** du
+  dashboard (administrateurs) — formulaire, aperçu local, envoi réel à tous les
+  écrans, et YAML prêt à copier. Émettre un événement demande un compte admin.
+
+Où ça vit : `src/lib/ha-events.ts` (types + traduction événement → affichage,
+partagée par les abonnements `useHAToast` / `useHANotification` / `useHAModal` et
+par l'aperçu), `src/components/devtools/` (le bac à sable),
+`src/components/onboarding/EventsDoc.tsx` (la doc de l'Aide). **Ajouter un champ à
+un événement** : le typer dans `ha-events.ts`, le gérer dans `modalFromEvent` /
+`toastFromEvent` / `applyNotificationEvent`, l'ajouter au formulaire
+(`event-data.ts`, `DevToolsSheet.tsx`), à `EventsDoc.tsx` et à cette section.
+
 ## Server API
 
 - `GET/PUT /api/config` — dashboard layout (2 MB limit)

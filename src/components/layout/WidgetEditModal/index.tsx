@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { DURATION_FAST } from '@/lib/motion-tokens';
 import { X } from 'lucide-react';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useDashboardLayout } from '@/context/DashboardLayoutContext';
+import { findWidget } from '@/lib/panel-grid';
 import type { WidgetConfig } from '@/types/widget-configs';
 import { WIDGET_FIELD_DEFS, WIDGET_META } from '@/widgets';
 import { EntityListField } from './EntityListField';
@@ -28,6 +30,7 @@ import { GroupWidgetsTab } from './GroupWidgetsTab';
 import { ActionsTab } from './ActionsTab';
 import { VisibilityTab } from './VisibilityTab';
 import { SwitchTrack } from '@/components/ds/Switch';
+import { TilePreview } from './TilePreview';
 import { useI18n } from '@/i18n';
 import type { CardAppearanceConfig } from '@/types/card-appearance';
 import { FIELD_CARD } from './ui';
@@ -38,6 +41,7 @@ export function WidgetEditModal() {
   const { t } = useI18n();
   const { editingWidgetId, setEditingWidgetId, widgetConfigs, updateWidgetConfig, setPreviewConfig, clearPreviewConfig } =
     useWidgetConfig();
+  const { layout } = useDashboardLayout();
 
   const config = editingWidgetId ? widgetConfigs[editingWidgetId] : null;
   const fields = config ? WIDGET_FIELD_DEFS[config.type] : null;
@@ -86,6 +90,9 @@ export function WidgetEditModal() {
   // `config.type` couvre aussi `rooms`, qui n'a pas de widget enregistré :
   // l'accès est volontairement tolérant, le rendu gère déjà le cas absent.
   const PreviewComponent = config ? (WIDGET_COMPONENTS as Record<string, React.ComponentType | undefined>)[config.type] : null;
+
+  // La case de la tuile : l'aperçu la reprend, et suit l'onglet Mise en page.
+  const tile = findWidget(layout, editingWidgetId)?.widget;
 
   const handleSave = () => {
     if (draft) {
@@ -308,11 +315,13 @@ export function WidgetEditModal() {
         </header>
 
         {/* Aperçu : la card telle qu'elle sera, qui suit chaque réglage. */}
-        <div className='mx-6 mb-3 max-h-[210px] shrink-0 overflow-auto rounded-[var(--ds-radius-xl)] bg-[var(--ds-surface-1)] p-3'>
+        <div className='mx-6 mb-3 shrink-0 rounded-[var(--ds-radius-xl)] bg-[var(--ds-surface-1)] p-3'>
           {PreviewComponent && editingWidgetId ? (
-            <WidgetIdProvider id={editingWidgetId}>
-              <PreviewComponent />
-            </WidgetIdProvider>
+            <TilePreview w={tile?.w ?? 3} h={tile?.h ?? 2}>
+              <WidgetIdProvider id={editingWidgetId}>
+                <PreviewComponent />
+              </WidgetIdProvider>
+            </TilePreview>
           ) : (
             <p className='py-6 text-center text-sm text-[var(--ds-ink-muted)]'>{t('layout.noPreviewAvailable')}</p>
           )}

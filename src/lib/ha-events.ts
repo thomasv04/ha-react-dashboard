@@ -55,12 +55,29 @@ export interface HANotificationEvent {
   dismiss?: boolean;
 }
 
+/**
+ * Un champ texte venu d'une automatisation.
+ *
+ * Home Assistant rend `{{ … }}` en **valeur native** : `{{ trigger.payload_json }}`
+ * arrive comme objet, `{{ states('sensor.x') | float }}` comme nombre. Passé tel
+ * quel à React, un objet est une erreur de rendu (« Objects are not valid as a
+ * React child ») et la modale n'apparaissait jamais. On l'écrit en texte : un
+ * objet ou une liste en JSON indenté, le reste par `String`. Vide, absent ou
+ * `null` (variable sans valeur) : rien.
+ */
+export function asText(value: unknown): string | undefined {
+  if (value === null || value === undefined || value === '') return undefined;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') return JSON.stringify(value, null, 2);
+  return String(value);
+}
+
 type Helpers = { callService: unknown };
 type NotificationStore = Pick<ReturnType<typeof useNotifications>, 'notify' | 'dismiss' | 'dismissAll'>;
 
 function eventActions(actions: HAEventAction[] | undefined, helpers: Helpers): ModalAction[] | undefined {
   return actions?.map(a => ({
-    label: a.label,
+    label: asText(a.label) ?? '',
     variant: a.variant ?? 'default',
     onClick: () => {
       const [domain, service, ...rest] = a.service?.split('.') ?? [];
@@ -70,9 +87,10 @@ function eventActions(actions: HAEventAction[] | undefined, helpers: Helpers): M
 }
 
 export function modalFromEvent(data: HAModalEvent, helpers: Helpers): Omit<Modal, 'id'> {
-  const { title, content, content_type, width, sound, dismissible, actions } = data;
+  const { content_type, width, sound, dismissible, actions } = data;
+  const content = asText(data.content);
   return {
-    title,
+    title: asText(data.title),
     content: content && content_type && content_type !== 'plain' ? { type: content_type, value: content } : content,
     width: width ?? 'md',
     sound: sound === undefined ? 'notification' : sound,
@@ -82,10 +100,10 @@ export function modalFromEvent(data: HAModalEvent, helpers: Helpers): Omit<Modal
 }
 
 export function toastFromEvent(data: HAToastEvent, helpers: Helpers): Omit<Toast, 'id'> {
-  const { title, description, persistent, duration_ms, sound, actions } = data;
+  const { persistent, duration_ms, sound, actions } = data;
   return {
-    title,
-    description,
+    title: asText(data.title) ?? '',
+    description: asText(data.description),
     persistent: persistent ?? false,
     durationMs: duration_ms ?? 5000,
     sound: sound === undefined ? 'notification' : sound,
@@ -94,7 +112,10 @@ export function toastFromEvent(data: HAToastEvent, helpers: Helpers): Omit<Toast
 }
 
 export function applyNotificationEvent(data: HANotificationEvent | undefined, store: NotificationStore) {
-  const { id, title, message, content_type, level, icon, actions, dismiss } = data ?? {};
+  const { content_type, level, icon, actions, dismiss } = data ?? {};
+  const id = asText(data?.id);
+  const title = asText(data?.title);
+  const message = asText(data?.message);
 
   if (dismiss) {
     if (id) store.dismiss(id);

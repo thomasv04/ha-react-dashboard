@@ -55,7 +55,8 @@
     "demoNotificationTitle": "Notification preview",
     "demoNotificationBody": "Filed in the drawer: swipe the screensaver down to find it.",
     "formAutomation": "Automation",
-    "formDevTools": "Dev tools"
+    "formDevTools": "Dev tools",
+    "copyFailed": "Copy blocked: selected, press Ctrl+C"
   },
   "gestures": {
     "intro": "The screensaver is driven by touch. All four gestures below also work from the keyboard, with the arrow keys.",
@@ -106,21 +107,60 @@
       "error": "Error"
     },
     "duration": "Duration: {value} s",
-    "html": "HTML content",
-    "htmlDesc": "The text is read as HTML, sanitised before display.",
     "locked": "Blocking",
     "lockedDesc": "Neither Escape nor a tap outside closes it: a button must be chosen.",
     "persistent": "Persistent",
     "persistentDesc": "Stays on screen until closed.",
-    "action": "Button (optional)",
     "actionLabel": "Label",
-    "actionService": "Service called",
-    "actionEntity": "Target entity",
+    "actionService": "Service called (domain.service)",
+    "actionEntity": "Target entity (entity_id)",
     "preview": "Preview here",
     "send": "Send everywhere",
     "sent": "Sent: every open dashboard received it.",
     "failed": "Home Assistant refused the event: {value}",
-    "notificationHint": "The notification lands in the drawer: swipe the screensaver down to see it."
+    "drawer": "Notification drawer",
+    "drawerHint": "A notification doesn't pop up on screen: it lands in the screensaver's drawer (swipe down). Here is that drawer, as it stands.",
+    "sound": "Sound",
+    "sounds": {
+      "default": "Default",
+      "muted": "None (sound: false)",
+      "url": "An address (URL)"
+    },
+    "soundOff": "Sounds are turned off on this device: this event will stay silent here. Turn them on in Settings > Sound.",
+    "description": "Description",
+    "contentType": "Text format",
+    "contentTypes": {
+      "plain": "Text",
+      "html": "HTML",
+      "markdown": "Markdown"
+    },
+    "contentTypesDesc": {
+      "plain": "Shown as is, line breaks included.",
+      "html": "Read as HTML, sanitised before display.",
+      "markdown": "Shown as is: the dashboard doesn't format markdown."
+    },
+    "icon": "Icon",
+    "durationMs": "Duration (ms)",
+    "soundUrl": "Sound address",
+    "dismiss": "Remove instead of add",
+    "dismissDesc": "dismiss: true — removes a notification from the drawer.",
+    "dismissHint": "With an identifier: removes that notification. Without one: clears the whole drawer.",
+    "lockedNoAction": "With no button, nothing will close it: not Escape, not a tap outside. You will have to reload the page.",
+    "actions": "Buttons",
+    "actionsDesc": "As many as you like. A button with no label is ignored.",
+    "actionN": "Button {value}",
+    "removeAction": "Remove button {value}",
+    "addAction": "Add a button",
+    "actionVariant": "Style",
+    "variants": {
+      "default": "Normal",
+      "primary": "Primary",
+      "danger": "Danger"
+    },
+    "actionData": "Other service data (JSON)",
+    "jsonInvalid": "Invalid JSON: an object is expected, for example {\"brightness_pct\": 40}.",
+    "keep": "Keep after the action",
+    "keepDesc": "keep: true — the notification stays in the drawer once the button is pressed."
   },
   "onboarding": {
     "label": "Welcome",

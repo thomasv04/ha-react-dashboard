@@ -129,7 +129,7 @@ test('un événement émis par Home Assistant ouvre la modale dans la carte', as
   await expect(page.getByRole('dialog', { name: 'Venu de HA' })).toBeVisible();
 });
 
-test('le bac à sable envoie un vrai événement, reçu par la carte', async ({ page }) => {
+test('le bac à sable envoie un vrai événement, et le toast reste visible à côté de la feuille', async ({ page }) => {
   await page.getByRole('button', { name: 'Ouvrir les apps' }).click();
   await page.getByRole('button', { name: 'Outils de développement' }).click();
   const sheet = page.getByTestId('devtools-sheet');
@@ -137,6 +137,34 @@ test('le bac à sable envoie un vrai événement, reçu par la carte', async ({ 
   await sheet.getByRole('textbox', { name: 'Titre' }).fill('Aller-retour par HA');
   await sheet.getByTestId('devtools-send').click();
 
-  await expect(sheet.getByRole('status')).toContainText('Envoyé');
-  await expect(page.getByRole('status').filter({ hasText: 'Aller-retour par HA' })).toBeVisible();
+  await expect(sheet.getByRole('status').filter({ hasText: 'Envoyé' })).toBeVisible();
+  const toast = page.getByRole('status').filter({ hasText: 'Aller-retour par HA' });
+  await expect(toast).toBeVisible();
+  await page.waitForTimeout(500);
+
+  // En mode carte, l'arbre vit dans une shadow root isolée : le toast passait
+  // derrière la feuille portée dans le `body`. Le point central du toast doit
+  // lui appartenir — et la feuille ne doit pas le recouvrir.
+  const box = (await toast.boundingBox())!;
+  const sheetBox = (await page.getByRole('dialog', { name: 'Outils de développement' }).boundingBox())!;
+  expect(box.x + box.width).toBeLessThanOrEqual(sheetBox.x);
+  const onTop = await page.evaluate(
+    ([x, y]) => {
+      const hit = document.elementFromPoint(x, y);
+      return !!hit?.closest('[role="status"]');
+    },
+    [box.x + box.width / 2, box.y + box.height / 2]
+  );
+  expect(onTop).toBe(true);
+});
+
+test('une notification envoyée par le bac à sable entre dans le tiroir', async ({ page }) => {
+  await page.getByRole('button', { name: 'Ouvrir les apps' }).click();
+  await page.getByRole('button', { name: 'Outils de développement' }).click();
+  const sheet = page.getByTestId('devtools-sheet');
+  await sheet.getByRole('radio', { name: 'Notification' }).click();
+  await sheet.getByRole('textbox', { name: 'Titre' }).fill('Reçue par HA');
+  await sheet.getByTestId('devtools-send').click();
+
+  await expect(sheet.getByTestId('devtools-drawer').getByText('Reçue par HA')).toBeVisible();
 });

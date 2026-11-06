@@ -9,6 +9,7 @@ import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { IconPicker } from '@/components/layout/WidgetPickers';
 import { cn, clamp } from '@/lib/utils';
 import { useI18n } from '@/i18n';
+import { copyText } from '@/lib/clipboard';
 import { genId } from './block-meta';
 import type { ButtonBlock, ButtonRowBlock, InlineButton, CoverRowBlock, SectionHeaderBlock, WidgetBlock } from '@/types/custom-panel';
 
@@ -194,7 +195,8 @@ export function PanelRefBadge({ panelId }: { panelId: string }) {
   const ref = `custom:${panelId}`;
 
   const copy = () => {
-    navigator.clipboard.writeText(ref).then(() => {
+    void copyText(ref).then(ok => {
+      if (!ok) return;
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     });

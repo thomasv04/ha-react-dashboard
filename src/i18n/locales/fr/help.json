@@ -55,7 +55,8 @@
     "demoNotificationTitle": "Aperçu de la notification",
     "demoNotificationBody": "Déposée dans le tiroir : balayez l'écran de veille vers le bas pour la retrouver.",
     "formAutomation": "Automatisation",
-    "formDevTools": "Outils de dév."
+    "formDevTools": "Outils de dév.",
+    "copyFailed": "Copie refusée : sélectionné, Ctrl+C"
   },
   "gestures": {
     "intro": "L'écran de veille se pilote au doigt. Les quatre gestes ci-dessous fonctionnent aussi au clavier, avec les flèches.",
@@ -106,21 +107,60 @@
       "error": "Erreur"
     },
     "duration": "Durée : {value} s",
-    "html": "Contenu HTML",
-    "htmlDesc": "Le texte est lu comme du HTML, assaini avant affichage.",
     "locked": "Bloquante",
     "lockedDesc": "Ni Échap ni un appui à côté ne la ferment : il faut choisir un bouton.",
     "persistent": "Persistant",
     "persistentDesc": "Reste affiché jusqu'à ce qu'on le ferme.",
-    "action": "Bouton (facultatif)",
     "actionLabel": "Libellé",
-    "actionService": "Service appelé",
-    "actionEntity": "Entité visée",
+    "actionService": "Service appelé (domaine.service)",
+    "actionEntity": "Entité visée (entity_id)",
     "preview": "Aperçu ici",
     "send": "Envoyer partout",
     "sent": "Envoyé : tous les dashboards ouverts l'ont reçu.",
     "failed": "Envoi refusé par Home Assistant : {value}",
-    "notificationHint": "La notification arrive dans le tiroir : balayez l'écran de veille vers le bas pour la voir."
+    "drawer": "Tiroir de notifications",
+    "drawerHint": "Une notification n'apparaît pas à l'écran : elle entre dans le tiroir de l'écran de veille (balayage vers le bas). Voici ce tiroir, tel qu'il est.",
+    "sound": "Son",
+    "sounds": {
+      "default": "Par défaut",
+      "muted": "Aucun (sound: false)",
+      "url": "Une adresse (URL)"
+    },
+    "soundOff": "Les sons sont désactivés sur cet appareil : cet événement restera silencieux ici. Activez-les dans Paramètres > Sons.",
+    "description": "Description",
+    "contentType": "Format du texte",
+    "contentTypes": {
+      "plain": "Texte",
+      "html": "HTML",
+      "markdown": "Markdown"
+    },
+    "contentTypesDesc": {
+      "plain": "Affiché tel quel, retours à la ligne compris.",
+      "html": "Lu comme du HTML, assaini avant affichage.",
+      "markdown": "Affiché tel quel : le dashboard ne met pas le markdown en forme."
+    },
+    "icon": "Icône",
+    "durationMs": "Durée (ms)",
+    "soundUrl": "Adresse du son",
+    "dismiss": "Retirer au lieu d’ajouter",
+    "dismissDesc": "dismiss: true — retire une notification du tiroir.",
+    "dismissHint": "Avec un identifiant : retire cette notification. Sans identifiant : vide tout le tiroir.",
+    "lockedNoAction": "Sans bouton, rien ne la fermera : ni Échap ni un appui à côté. Il faudra recharger la page.",
+    "actions": "Boutons",
+    "actionsDesc": "Autant que vous voulez. Un bouton sans libellé est ignoré.",
+    "actionN": "Bouton {value}",
+    "removeAction": "Retirer le bouton {value}",
+    "addAction": "Ajouter un bouton",
+    "actionVariant": "Style",
+    "variants": {
+      "default": "Normal",
+      "primary": "Principal",
+      "danger": "Danger"
+    },
+    "actionData": "Autres données du service (JSON)",
+    "jsonInvalid": "JSON invalide : un objet est attendu, par exemple {\"brightness_pct\": 40}.",
+    "keep": "Garder après l’action",
+    "keepDesc": "keep: true — la notification reste dans le tiroir une fois le bouton pressé."
   },
   "onboarding": {
     "label": "Accueil",
