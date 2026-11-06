@@ -408,10 +408,11 @@ test.describe('on a phone', () => {
     const top = (id: string) => page.locator(`[data-floorplan-item="${id}"]`).evaluate(el => parseFloat((el as HTMLElement).style.top));
     // Face au sud (alpha tourne à l'envers : 180°) : le séjour, au sud, passe devant la chambre.
     await face(180);
-    await expect.poll(async () => (await top('lamp-living')) < (await top('lamp-bedroom'))).toBe(true);
+    // La maison tourne en s'animant : plus long que 5 s sur un runner chargé.
+    await expect.poll(async () => (await top('lamp-living')) < (await top('lamp-bedroom')), { timeout: 15_000 }).toBe(true);
     // Face à l'est (alpha 270°) : le séjour, à l'est, passe devant la cuisine.
     await face(270);
-    await expect.poll(async () => (await top('lamp-living')) < (await top('lamp-kitchen'))).toBe(true);
+    await expect.poll(async () => (await top('lamp-living')) < (await top('lamp-kitchen')), { timeout: 15_000 }).toBe(true);
 
     // Tourner la maison au doigt coupe la boussole.
     await orbit(page, 60);
@@ -795,7 +796,8 @@ test('the "Ma maison" pill brings the camera back to the overview', async ({ pag
   await expect.poll(() => at(page, 'temp')).not.toBe(home);
 
   await page.getByRole('button', { name: 'Ma maison' }).click();
-  await expect.poll(() => at(page, 'temp')).toBe(home);
+  // Le retour de la caméra est animé : plus long que 5 s sur un runner chargé.
+  await expect.poll(() => at(page, 'temp'), { timeout: 15_000 }).toBe(home);
 });
 
 test('the floor selector is a vertical pill at the bottom right, above the filter', async ({ page }) => {
