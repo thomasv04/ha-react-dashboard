@@ -89,7 +89,10 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    apiFetch('/api/translations/overrides')
+    // Tout le dashboard attend cette réponse (`ready`) : sans délai maximal, un
+    // serveur qui ne répond pas laissait l'écran blanc. Six secondes, comme
+    // `ha-config` (App.tsx) ; passé ce délai, les textes d'origine.
+    apiFetch('/api/translations/overrides', { signal: AbortSignal.timeout(6_000) })
       .then(r => r.json())
       .then((data: { overrides?: Record<string, string> }) => {
         if (data.overrides && typeof data.overrides === 'object') {

@@ -6,8 +6,14 @@
  * alias remplace le paquet entier, et un export manquant fait échouer le
  * module — donc la page entière, sans le moindre widget.
  */
-export { useEntity, useHass, useWeather, HassConnect, useAreas } from '../../.storybook/mocks/hakit-core';
+import type { Area } from '../../.storybook/mocks/hakit-core';
+export { useEntity, useHass, useWeather, HassConnect } from '../../.storybook/mocks/hakit-core';
 export type { EntityName, Area } from '../../.storybook/mocks/hakit-core';
+
+// ─── useAreas : vide, sauf si un test pose `window.__mockAreas` (accueil) ─────
+export function useAreas(): Area[] {
+  return (window as unknown as { __mockAreas?: Area[] }).__mockAreas ?? [];
+}
 
 // ─── Types used by CameraFeed ───────────────────────────────────────────────
 export type FilterByDomain<T, _D extends string> = T;

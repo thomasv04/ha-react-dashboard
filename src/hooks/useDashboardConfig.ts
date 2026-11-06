@@ -100,6 +100,9 @@ function sanitizeWidget(w: unknown): GridWidget | null {
   if (!w || typeof w !== 'object') return null;
   const g = w as Record<string, unknown>;
   if (typeof g.id !== 'string' || typeof g.type !== 'string') return null;
+  // Un type qu'aucun manifeste ne déclare est gardé : c'est souvent un widget
+  // plus récent que ce bundle (cache, retour arrière), et l'écarter ici
+  // l'effacerait au prochain enregistrement. La grille et la carte le taisent.
 
   const box: Record<string, number> = {};
   for (const k of ['w', 'h'] as const) {

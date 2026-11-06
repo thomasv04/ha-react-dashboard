@@ -139,13 +139,13 @@ export function ServicePicker({
             <input
               value={domain}
               onChange={e => onChange(e.target.value, service)}
-              placeholder='domaine'
+              placeholder={t('layout.customPanel.domainPlaceholder')}
               className={cn(INPUT, 'h-10 font-mono text-sm')}
             />
             <input
               value={service}
               onChange={e => onChange(domain, e.target.value)}
-              placeholder='service'
+              placeholder={t('layout.customPanel.servicePlaceholder')}
               className={cn(INPUT, 'h-10 font-mono text-sm')}
             />
           </div>
@@ -247,7 +247,12 @@ export function ButtonFields({
       <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
         <div>
           <label className={LABEL}>{t('layout.customPanel.blockLabel')}</label>
-          <input value={label} onChange={e => onChange({ label: e.target.value })} placeholder='ex: Tout ouvrir' className={INPUT} />
+          <input
+            value={label}
+            onChange={e => onChange({ label: e.target.value })}
+            placeholder={t('layout.customPanel.buttonLabelPlaceholder')}
+            className={INPUT}
+          />
         </div>
         <IconPicker value={icon ?? ''} onChange={v => onChange({ icon: v || undefined })} label={t('layout.customPanel.blockIcon')} />
       </div>

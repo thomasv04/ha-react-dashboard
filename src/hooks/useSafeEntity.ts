@@ -1,22 +1,12 @@
 import { useHass } from '@hakit/core';
 import { useRef } from 'react';
+import { shallowEqualEntity } from './useEntities';
 
 export interface SafeEntityState {
   state: string;
   attributes: Record<string, unknown>;
-}
-
-function shallowEqualEntity(a: SafeEntityState | null, b: SafeEntityState | null): boolean {
-  if (a === b) return true;
-  if (!a || !b) return false;
-  if (a.state !== b.state) return false;
-  const ak = Object.keys(a.attributes);
-  const bk = Object.keys(b.attributes);
-  if (ak.length !== bk.length) return false;
-  for (const k of ak) {
-    if (a.attributes[k] !== b.attributes[k]) return false;
-  }
-  return true;
+  /** Dernier changement d'état. Ne bouge qu'avec `state` : la comparaison l'ignore. */
+  last_changed?: string;
 }
 
 /**
@@ -36,6 +26,7 @@ export function useSafeEntity(entityId: string): SafeEntityState | null {
   const next: SafeEntityState = {
     state: raw.state,
     attributes: (raw.attributes as Record<string, unknown>) ?? {},
+    last_changed: raw.last_changed,
   };
 
   // eslint-disable-next-line react-hooks/refs

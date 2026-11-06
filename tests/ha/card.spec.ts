@@ -5,7 +5,7 @@
  * Run with: npm run test:ha
  */
 import { test, expect, type Page } from '@playwright/test';
-import { accessToken, CONFIG_API, DASHBOARD, LIGHT, SEED } from './seed';
+import { accessToken, ALARM, CONFIG_API, DASHBOARD, LIGHT, SEED } from './seed';
 
 const headers = () => ({ Authorization: `Bearer ${accessToken()}` });
 
@@ -53,6 +53,37 @@ test('la tuile d’une lampe suit et pilote la vraie entité', async ({ page, re
   await expect.poll(state).toBe('off');
 });
 
+test('une tuile dont l’entité est indisponible le dit, puis revient', async ({ page, request }) => {
+  const tile = page.locator('ha-react-dashboard-panel [data-widget-id="light-bed"]');
+  const setState = (state: string) => request.post(`/api/states/${LIGHT}`, { headers: headers(), data: { state } });
+
+  await setState('unavailable');
+  await expect(tile.locator('[data-unavailable]')).toBeVisible();
+  await expect(tile).toContainText('Indisponible');
+
+  await setState('off');
+  await expect(tile.locator('[data-unavailable]')).toHaveCount(0);
+});
+
+test('une alarme déclenchée se désarme au pavé de la card', async ({ page, request }) => {
+  const state = async () => (await (await request.get(`/api/states/${ALARM}`, { headers: headers() })).json()).state;
+  const tile = page.locator('ha-react-dashboard-panel [data-widget-id="alarm-security"]');
+
+  // L'état seul est forcé : l'alarme de `demo`, elle, reste désarmée et
+  // réécrira le sien en traitant le code.
+  await request.post(`/api/states/${ALARM}`, {
+    headers: headers(),
+    data: { state: 'triggered', attributes: { friendly_name: 'Security' } },
+  });
+  await expect(tile.getByText('Intrusion')).toBeVisible();
+  await expect(tile).toContainText("à l'instant");
+  await page.screenshot({ path: 'test-results/alarm-triggered.png' });
+
+  for (const k of ['1', '2', '3', '4']) await tile.getByRole('button', { name: k, exact: true }).click();
+  await tile.getByRole('button', { name: 'Désarmer' }).click();
+  await expect.poll(state).toBe('disarmed');
+});
+
 test('une tuile déplacée en édition est enregistrée dans l’intégration', async ({ page, request }) => {
   await page.getByRole('button', { name: 'Modifier ce panneau' }).first().click();
   await expect(page.getByRole('button', { name: 'Abandonner les modifications' })).toBeVisible();
@@ -87,4 +118,25 @@ test('une configuration changée ailleurs s’affiche au rechargement', async ({
 
   await page.reload();
   await expect.poll(() => order(page), { timeout: 30_000 }).toEqual([...seedOrder].reverse());
+});
+
+test('un événement émis par Home Assistant ouvre la modale dans la carte', async ({ page, request }) => {
+  const fired = await request.post('/api/events/ha_dashboard_modal', {
+    headers: headers(),
+    data: { title: 'Venu de HA', content: 'Par l’API REST' },
+  });
+  expect(fired.ok()).toBeTruthy();
+  await expect(page.getByRole('dialog', { name: 'Venu de HA' })).toBeVisible();
+});
+
+test('le bac à sable envoie un vrai événement, reçu par la carte', async ({ page }) => {
+  await page.getByRole('button', { name: 'Ouvrir les apps' }).click();
+  await page.getByRole('button', { name: 'Outils de développement' }).click();
+  const sheet = page.getByTestId('devtools-sheet');
+  await sheet.getByRole('radio', { name: 'Toast' }).click();
+  await sheet.getByRole('textbox', { name: 'Titre' }).fill('Aller-retour par HA');
+  await sheet.getByTestId('devtools-send').click();
+
+  await expect(sheet.getByRole('status')).toContainText('Envoyé');
+  await expect(page.getByRole('status').filter({ hasText: 'Aller-retour par HA' })).toBeVisible();
 });

@@ -1,0 +1,1 @@
+export { WelcomeCard } from './WelcomeCard';

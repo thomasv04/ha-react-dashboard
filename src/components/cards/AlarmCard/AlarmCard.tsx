@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect, type ReactNode } from 'react';
+import { useState, useRef, useEffect, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, ShieldAlert, ShieldOff, ShieldQuestion, Delete, X, Home, Plane, Moon, LogOut } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, ShieldOff, ShieldQuestion, Delete, X, Home, Plane, Moon, LogOut, Check } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { callHAService, friendlyName } from '@/lib/ha-service';
-import { useSafeEntity } from '@/hooks/useSafeEntity';
+import { useSafeEntity, type SafeEntityState } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { AlarmCardConfig, ArmMode } from '@/types/widget-types';
@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useElementBox } from '@/hooks/useWidgetSize';
+import { JUST_NOW, useRelativeTime } from '@/hooks/useRelativeTime';
 
 type AlarmState =
   | 'disarmed'
@@ -238,23 +239,11 @@ function AlarmKeypadModal({
               {/* ── Numpad ── */}
               {requireCode && (
                 <div className='grid grid-cols-3 gap-2'>
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, null, 0, 'del'].map((k, i) => {
-                    if (k === null) return <div key={i} />;
-                    const isDel = k === 'del';
-                    return (
-                      <button
-                        key={i}
-                        onClick={() => {
-                          if (isDel) setCode(c => c.slice(0, -1));
-                          else setCode(c => (c.length < 8 ? c + String(k) : c));
-                        }}
-                        aria-label={isDel ? t('widgets.alarm.backspace') : String(k)}
-                        className='flex h-14 items-center justify-center rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] text-xl font-semibold active:scale-95 transition-transform'
-                      >
-                        {isDel ? <Delete size={20} /> : k}
-                      </button>
-                    );
-                  })}
+                  <Numpad
+                    t={t}
+                    onCode={setCode}
+                    keyClass='flex h-14 items-center justify-center rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] text-xl font-semibold active:scale-95 transition-transform'
+                  />
                 </div>
               )}
 
@@ -272,6 +261,123 @@ function AlarmKeypadModal({
       )}
     </AnimatePresence>,
     document.body
+  );
+}
+
+/** Longueur maximale d'un code d'alarme. */
+const MAX_CODE = 8;
+
+/**
+ * Les touches du code : 1 à 9, puis effacer, 0 et `submit` ; sans `submit`,
+ * une case vide, 0 et effacer. Partagé par la fenêtre et la card déclenchée,
+ * qui posent la grille autour.
+ */
+function Numpad({
+  t,
+  onCode,
+  keyClass,
+  submit,
+}: {
+  t: (key: string) => string;
+  onCode: (update: (code: string) => string) => void;
+  keyClass: string;
+  submit?: ReactNode;
+}) {
+  const press = (digit: string) => onCode(c => (c.length < MAX_CODE ? c + digit : c));
+  const erase = (
+    <button onClick={() => onCode(c => c.slice(0, -1))} aria-label={t('widgets.alarm.backspace')} className={keyClass}>
+      <Delete size={20} />
+    </button>
+  );
+  return (
+    <>
+      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+        <button key={n} onClick={() => press(String(n))} aria-label={String(n)} className={keyClass}>
+          {n}
+        </button>
+      ))}
+      {submit ? erase : <div />}
+      <button onClick={() => press('0')} aria-label='0' className={keyClass}>
+        0
+      </button>
+      {submit ?? erase}
+    </>
+  );
+}
+
+/**
+ * La card d'une alarme déclenchée, comme sur la maquette : « Intrusion », ce
+ * qui l'a déclenchée et depuis quand, et le pavé du code posé dans la card —
+ * pas de fenêtre à ouvrir quand la sirène hurle. Montée seulement pendant
+ * l'alarme : son minuteur et son abonnement au capteur n'existent qu'alors.
+ */
+function TriggeredAlarm({
+  boxRef,
+  entityId,
+  alarm,
+  name,
+  Icon,
+}: {
+  boxRef: RefObject<HTMLDivElement | null>;
+  entityId: string;
+  alarm: SafeEntityState;
+  name: string;
+  Icon: typeof ShieldCheck;
+}) {
+  const { t } = useI18n();
+  const helpers = useHass(s => s.helpers);
+  const playFeedback = useSoundFeedback();
+  const [code, setCode] = useState('');
+  // Alarmo expose les capteurs ouverts (`open_sensors`) ; HA n'a pas d'attribut standard pour ça.
+  const openSensors = alarm.attributes.open_sensors;
+  const cause = openSensors && typeof openSensors === 'object' ? Object.keys(openSensors)[0] : '';
+  const causeEntity = useSafeEntity(cause);
+  const since = useRelativeTime(alarm.last_changed);
+
+  const causeName = cause ? (friendlyName(causeEntity) ?? cause) : '';
+  const when = since === JUST_NOW ? t('widgets.sensor.justNow') : since ? t('widgets.sensor.updatedAgo', { value: since }) : '';
+  const key =
+    'flex min-h-0 items-center justify-center rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)] text-xl font-semibold active:scale-95 transition-transform';
+  return (
+    <div
+      ref={boxRef}
+      className='flex h-full select-none flex-col gap-3 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] p-[var(--ds-space-4)] text-[var(--ds-ink)] shadow-[inset_0_0_0_3px_var(--ds-alert)]'
+    >
+      <div className='flex items-center gap-3'>
+        <span className={cn('flex size-11 shrink-0 items-center justify-center rounded-full', PEBBLE.alert)}>
+          <Icon size={20} />
+        </span>
+        <div className='min-w-0'>
+          <div className='truncate text-[17px] font-semibold leading-tight'>{t('widgets.alarm.intrusion')}</div>
+          <div className='truncate text-sm text-[var(--ds-alert)]'>{[causeName, when].filter(Boolean).join(' · ') || name}</div>
+        </div>
+      </div>
+      <div aria-hidden='true' className='flex justify-center gap-3.5 py-1'>
+        {Array.from({ length: Math.max(4, code.length) }, (_, i) => (
+          <span key={i} className={cn('size-3.5 rounded-full', i < code.length ? 'bg-[var(--ds-ink)]' : 'bg-[var(--ds-surface-3)]')} />
+        ))}
+      </div>
+      <div className='grid min-h-0 flex-1 grid-cols-3 grid-rows-4 gap-2'>
+        <Numpad
+          t={t}
+          onCode={setCode}
+          keyClass={key}
+          submit={
+            <button
+              onClick={() => {
+                callHAService(helpers, 'alarm_control_panel', 'alarm_disarm', { entity_id: entityId }, code ? { code } : undefined);
+                playFeedback('disarm');
+                setCode('');
+              }}
+              aria-label={t('widgets.alarm.disarm')}
+              className={cn(key, 'bg-[var(--ds-alert)] text-white')}
+            >
+              <Check size={22} />
+            </button>
+          }
+        />
+      </div>
+    </div>
   );
 }
 
@@ -354,6 +460,12 @@ export function AlarmCard() {
   function openModal(mode: ArmMode) {
     setPendingMode(mode);
     setModalOpen(true);
+  }
+
+  // Déclenchée, sur une card assez grande : le pavé dans la card. Plus petite,
+  // la fenêtre prend le relais.
+  if (visual.tone === 'alert' && requireCode && cardW >= 240 && cardH >= 300) {
+    return <TriggeredAlarm boxRef={containerRef} entityId={entityId} alarm={alarm} name={name} Icon={visual.Icon} />;
   }
 
   return (

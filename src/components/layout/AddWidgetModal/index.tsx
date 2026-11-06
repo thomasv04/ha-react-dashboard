@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { EASE_OUT } from '@/lib/motion-tokens';
 import { X, Search } from 'lucide-react';
@@ -30,10 +30,6 @@ export function AddWidgetModal({ onClose, onAdded, panelId }: AddWidgetModalProp
   const [selected, setSelected] = useState<GridWidget['type'] | null>(null);
 
   const filtered = useMemo(() => {
-    const q = search
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/\p{Diacritic}/gu, '');
     // La recherche portait sur `meta.label` / `meta.description`, qui sont des
     // **clés i18n** (`widgets.weather.label`) : taper « météo » ne renvoyait
     // rien, seul « weather » fonctionnait. On filtre sur le texte traduit, et
@@ -43,12 +39,21 @@ export function AddWidgetModal({ onClose, onAdded, panelId }: AddWidgetModalProp
         .toLowerCase()
         .normalize('NFD')
         .replace(/\p{Diacritic}/gu, '');
+    const q = norm(search);
     return WIDGET_META.filter(meta => {
       const matchCat = category === 'all' || meta.category === category;
       const matchSearch = !q || norm(t(meta.label)).includes(q) || norm(t(meta.description)).includes(q);
       return matchCat && matchSearch;
     });
   }, [search, category, t]);
+
+  // Échap ferme la galerie, comme les autres fenêtres. Une liste déroulante
+  // ouverte dedans qui consomme Échap le marque (`defaultPrevented`).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !e.defaultPrevented && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   const selectedMeta = selected ? (WIDGET_META.find(m => m.type === selected) ?? null) : null;
 

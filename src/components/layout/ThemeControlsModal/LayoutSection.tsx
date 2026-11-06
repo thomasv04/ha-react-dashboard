@@ -5,6 +5,7 @@ import { isKioskEnabled, setKiosk } from '@/lib/kiosk';
 import { PerfToggle } from './PerfToggle';
 import { SECTION_HEADING } from './typography';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/context/ThemeContext';
 
 /**
  * Plein écran — réglage **par appareil**, donc hors du thème partagé : la
@@ -19,25 +20,31 @@ function KioskToggle() {
   if (!isPanelMode()) return null;
 
   return (
-    <div className='flex flex-col gap-3'>
-      <h3 className={cn(SECTION_HEADING, 'px-1')}>{t('settings.layout_section.display')}</h3>
-      <PerfToggle
-        checked={enabled}
-        onChange={value => {
-          setKiosk(value);
-          setEnabled(value);
-        }}
-        label={t('settings.layout_section.kiosk')}
-        description={t('settings.layout_section.kioskDesc')}
-      />
-    </div>
+    <PerfToggle
+      checked={enabled}
+      onChange={value => {
+        setKiosk(value);
+        setEnabled(value);
+      }}
+      label={t('settings.layout_section.kiosk')}
+      description={t('settings.layout_section.kioskDesc')}
+    />
   );
 }
 
 export function LayoutSection() {
+  const { t } = useI18n();
+  const { behaviourSettings, setBehaviourSettings } = useTheme();
   return (
     <div className='flex flex-col gap-3'>
+      <h3 className={cn(SECTION_HEADING, 'px-1')}>{t('settings.layout_section.display')}</h3>
       <KioskToggle />
+      <PerfToggle
+        checked={behaviourSettings.showUser}
+        onChange={showUser => setBehaviourSettings({ ...behaviourSettings, showUser })}
+        label={t('settings.layout_section.showUser')}
+        description={t('settings.layout_section.showUserDesc')}
+      />
     </div>
   );
 }

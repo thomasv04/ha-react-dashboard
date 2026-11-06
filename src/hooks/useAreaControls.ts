@@ -32,7 +32,7 @@ export function useArea(areaId?: string): Area | undefined {
 }
 
 /** Domaines effectivement présents dans la zone, dans l'ordre de CONTROL_DOMAINS. */
-export function areaDomains(area: Area | undefined): string[] {
+export function areaDomains(area: { entities: { entity_id: string }[] } | undefined): string[] {
   const present = new Set((area?.entities ?? []).map(e => e.entity_id.split('.')[0]));
   return Object.keys(CONTROL_DOMAINS).filter(d => present.has(d));
 }

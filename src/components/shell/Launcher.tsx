@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { Compass, Layers, LayoutGrid, MessageCircle, Settings, Sparkles, type LucideIcon } from 'lucide-react';
+import { Compass, Layers, LayoutGrid, MessageCircle, Settings, Sparkles, Wrench, type LucideIcon } from 'lucide-react';
 import { usePages } from '@/context/PageContext';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { usePanel } from '@/context/PanelContext';
@@ -11,13 +11,14 @@ import { START_TOUR_EVENT } from '@/components/onboarding/TourOverlay';
 import { SHOW_RELEASE_NOTES_EVENT } from '@/components/onboarding/ReleaseNotesModal';
 import { CustomPanelEditorModal } from '@/components/custom-panels';
 import { AssistSheet } from '@/components/assist/AssistSheet';
+import { DevToolsSheet } from '@/components/devtools/DevToolsSheet';
 import { AddWidgetModal } from '@/components/layout/AddWidgetModal';
 import { ThemeControlsModal } from '@/components/layout/ThemeControlsModal';
 import { cn } from '@/lib/utils';
 import { pageColor, pageIcon, sortPages } from './page-icon';
 import { useI18n } from '@/i18n';
 
-type Dialog = 'settings' | 'panels' | 'gallery' | 'assist' | null;
+type Dialog = 'settings' | 'panels' | 'gallery' | 'assist' | 'devtools' | null;
 
 /**
  * Lanceur d'apps : une feuille qui recouvre l'écran, les pages en favoris à
@@ -116,6 +117,11 @@ export function Launcher({ open, onClose }: { open: boolean; onClose: () => void
                       {t('layout.shell.customPanels')}
                     </LauncherItem>
                   )}
+                  {isAdmin && (
+                    <LauncherItem Icon={Wrench} color='var(--ds-app-tv)' onClick={run(() => setDialog('devtools'))}>
+                      {t('layout.shell.devTools')}
+                    </LauncherItem>
+                  )}
                   <LauncherItem
                     Icon={Compass}
                     color='var(--ds-good)'
@@ -138,6 +144,7 @@ export function Launcher({ open, onClose }: { open: boolean; onClose: () => void
       </AnimatePresence>
 
       <AssistSheet open={dialog === 'assist'} onClose={() => setDialog(null)} />
+      {isAdmin && <DevToolsSheet open={dialog === 'devtools'} onClose={() => setDialog(null)} />}
       <ThemeControlsModal open={dialog === 'settings'} onClose={() => setDialog(null)} />
       <AnimatePresence>{dialog === 'gallery' && <AddWidgetModal onClose={() => setDialog(null)} />}</AnimatePresence>
       <AnimatePresence>{dialog === 'panels' && <CustomPanelEditorModal onClose={() => setDialog(null)} />}</AnimatePresence>

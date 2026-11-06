@@ -1,4 +1,5 @@
 import { useNow } from '@/hooks/useNow';
+import { LauncherButton, UserBadge } from '@/components/shell/TopBar';
 import { useWeatherNow } from '@/hooks/useWeatherNow';
 import { PagerArrows } from '@/components/ds/PagerArrows';
 import { useFormats } from '@/hooks/useFormats';
@@ -14,22 +15,37 @@ const SHADOW = '[text-shadow:0_2px_12px_rgba(0,0,0,0.35)]';
  * `clock` : grande horloge en bas à gauche, météo et date au-dessus.
  * `photo` : cadre photo — l'heure discrète en haut à droite, la photo d'abord.
  * Les flèches font défiler les photos ; ⋮ ouvre l'édition de la veille.
+ * `onLauncher` : le bouton des apps en haut à gauche, comme sur l'accueil ;
+ * en cadre photo, la pastille de l'utilisateur rejoint l'heure.
  */
 export function ScreensaverClock({
   layout,
   onPrev,
   onNext,
   onMore,
+  onLauncher,
 }: {
   layout: ClockLayout;
   onPrev?: () => void;
   onNext?: () => void;
   onMore?: () => void;
+  onLauncher?: () => void;
 }) {
   const { t } = useI18n();
   const { formatTime, formatDate } = useFormats();
   const now = useNow();
   const { temperature, Icon } = useWeatherNow();
+
+  const launcher = onLauncher && (
+    <LauncherButton
+      onClick={e => {
+        e.stopPropagation();
+        onLauncher();
+      }}
+      className='absolute left-6 top-6 z-[201] sm:left-10'
+    />
+  );
+  const badge = onLauncher && <UserBadge className='text-[var(--ds-ink)] [text-shadow:none]' />;
 
   const arrows = (onPrev || onMore) && (
     // Les gestes de la veille s'arrêtent aux boutons : un appui ne la quitte pas.
@@ -62,7 +78,9 @@ export function ScreensaverClock({
             </span>
           )}
           <time className='text-6xl font-semibold leading-none tracking-[-1px] tabular-nums'>{formatTime(now)}</time>
+          {badge}
         </div>
+        {launcher}
         {arrows && <div className='absolute bottom-14 left-12 z-[201]'>{arrows}</div>}
       </>
     );
@@ -87,6 +105,7 @@ export function ScreensaverClock({
         </time>
         {arrows && <div className='mt-[34px]'>{arrows}</div>}
       </div>
+      {launcher}
     </>
   );
 }

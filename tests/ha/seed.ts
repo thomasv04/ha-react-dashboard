@@ -1,5 +1,6 @@
 /** Données partagées par l'amorçage et les tests dans HA. */
 import { readFileSync } from 'node:fs';
+import type { Page } from '@playwright/test';
 
 export const AUTH_FILE = 'test-results/ha-auth.json';
 export const DASHBOARD = '/react-dashboard';
@@ -10,6 +11,8 @@ export const USER = { name: 'E2E', username: 'e2e', password: 'e2e-password-not-
 
 /** Entités de l'intégration `demo`. */
 export const LIGHT = 'light.bed_light';
+/** Alarme manuelle de `demo`, code 1234. */
+export const ALARM = 'alarm_control_panel.security';
 
 const tile = (id: string, type: string, w: number, h: number) => ({ id, type, w, h });
 
@@ -28,6 +31,7 @@ export const SEED = {
             tile('cover-kitchen', 'cover', 3, 2),
             tile('thermostat-hvac', 'thermostat', 3, 3),
             tile('sensor-outside', 'sensor', 3, 2),
+            tile('alarm-security', 'alarm', 3, 5),
           ],
         },
       ],
@@ -40,6 +44,7 @@ export const SEED = {
       'cover-kitchen': { type: 'cover', entityId: 'cover.kitchen_window', name: 'Fenêtre cuisine' },
       'thermostat-hvac': { type: 'thermostat', entityId: 'climate.hvac', minTemp: 7, maxTemp: 35 },
       'sensor-outside': { type: 'sensor', entityId: 'sensor.outside_temperature', name: 'Dehors' },
+      'alarm-security': { type: 'alarm', entityId: ALARM, name: 'Alarme' },
     },
   },
 };
@@ -49,4 +54,18 @@ export function accessToken(): string {
   const state = JSON.parse(readFileSync(AUTH_FILE, 'utf8'));
   const tokens = state.origins[0].localStorage.find((e: { name: string }) => e.name === 'hassTokens');
   return JSON.parse(tokens.value).access_token;
+}
+
+/**
+ * Installation neuve : la lecture de la configuration répond ce que répond
+ * l'intégration tant que rien n'est enregistré. L'écriture, elle, passe.
+ */
+export async function freshInstall(page: Page) {
+  await page.route(`**${CONFIG_API}`, async route => {
+    if (route.request().method() !== 'GET') return route.fallback();
+    // La vraie réponse, pour son `X-Config-Revision` : sans elle, l'écriture
+    // partirait d'une révision 0 et le serveur la refuserait (409).
+    const response = await route.fetch();
+    await route.fulfill({ response, json: { message: 'No config yet', layout: [] } });
+  });
 }

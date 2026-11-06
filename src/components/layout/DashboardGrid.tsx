@@ -1,6 +1,7 @@
 import { useDashboardLayout, useEditMode, type GridWidget, type LayoutPanel } from '@/context/DashboardLayoutContext';
 import { useState, useEffect, useLayoutEffect, useRef, createContext, useContext, memo, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
+import { useHass } from '@hakit/core';
 import { motion } from 'framer-motion';
 import { GripVertical, Minus, Pencil, Plus, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
@@ -785,9 +786,12 @@ function PanelSection({
                 }}
               >
                 {panel.widgets.map(widget => {
-                  if (map) return <MiniTile key={widget.id} widget={widget} cols={cols} />;
                   const Component = WIDGET_COMPONENTS[widget.type];
+                  // Un type que ce bundle ne connaît pas (`rooms` de la 3.x, ou un
+                  // widget plus récent) : gardé dans la configuration, mais tu,
+                  // ici comme dans la carte — elle l'affichait sous son nom brut.
                   if (!Component) return null;
+                  if (map) return <MiniTile key={widget.id} widget={widget} cols={cols} />;
                   return (
                     <GridItem key={widget.id} id={widget.id} widget={widget}>
                       <Component />
@@ -1035,6 +1039,25 @@ function StateStyled({
   return <WidgetConfigOverride configs={merged}>{children}</WidgetConfigOverride>;
 }
 
+/**
+ * Voile d'une tuile dont l'entité est `unavailable`. Une seule règle pour les
+ * trente types de card : la card reste dessous, atténuée, et le voile dit
+ * pourquoi. Il laisse passer les appuis — la fiche explique la panne.
+ */
+function UnavailableVeil() {
+  const { t } = useI18n();
+  return (
+    <div
+      data-unavailable
+      className='pointer-events-none absolute inset-0 z-[5] flex items-center justify-center rounded-[var(--ds-radius-lg)] bg-[color-mix(in_srgb,var(--ds-ground)_72%,transparent)]'
+    >
+      <span className='rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)] px-3 py-1.5 text-sm font-semibold text-[var(--ds-ink)]'>
+        {t('common.unavailable')}
+      </span>
+    </div>
+  );
+}
+
 /** Ce qui, dans une card, agit par lui-même : un appui dessus n'ouvre pas la fiche. */
 const CARD_CONTROLS = 'button, a, input, select, textarea, [role="slider"], [role="switch"]';
 
@@ -1166,11 +1189,16 @@ export function GridItem({
   );
   const watched = useEntities(watchedIds);
   const states = useMemo(() => Object.fromEntries(watchedIds.map(eid => [eid, watched[eid]?.state])), [watchedIds, watched]);
+  // L'entité principale perdue par Home Assistant : la card affichait son
+  // dernier état comme si de rien n'était (« Éteint », « 0° »). Un booléen et
+  // non l'entité : la tuile ne se re-rend qu'au passage à `unavailable`.
+  const mainEntityId = typeof conditionalConfig?.entityId === 'string' ? conditionalConfig.entityId : '';
+  const unavailable = useHass(s => !!mainEntityId && s.entities?.[mainEntityId]?.state === 'unavailable');
 
   const visible = useMemo(() => isVisible(visibility, breakpoint, states), [visibility, breakpoint, states]);
   const styleOverride = useMemo(() => matchStateStyle(stateStyles, breakpoint, states), [stateStyles, breakpoint, states]);
 
-  const config = getWidgetConfig(id) as CardActionsConfig | undefined;
+  const config = conditionalConfig as CardActionsConfig | undefined;
   // Un geste reste inerte si rien n'est configuré *et* que la card n'a pas de
   // fiche : inutile de rendre le curseur cliquable pour rien.
   const hasTap = hasMoreInfo || (config?.tapAction && config.tapAction.action !== 'default');
@@ -1237,6 +1265,7 @@ export function GridItem({
               {children}
             </MemoChildren>
           </WidgetErrorBoundary>
+          {unavailable && !isEditMode && <UnavailableVeil />}
         </StateStyled>
       </WidgetIdCtx.Provider>
       {isEditMode && <GridItemOverlay label={label} widget={widget} onDragStart={startDrag} onResizeStart={startResize} />}

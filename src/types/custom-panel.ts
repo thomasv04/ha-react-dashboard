@@ -78,6 +78,12 @@ export interface CustomPanel {
    * le panneau — tout éteindre, lancer une scène — plutôt que dans le panneau.
    */
   headerButtons?: InlineButton[];
+  /**
+   * Pastille d'état dans le menu de gauche, comme le « 68° » de l'Echo Show :
+   * une température s'affiche à la place de l'icône, un appareil allumé
+   * allume l'icône. Absente : l'icône seule.
+   */
+  railEntity?: string;
 }
 
 /** Barre du bas : panneaux épinglés, dans l'ordre, et libellés sous les icônes. */

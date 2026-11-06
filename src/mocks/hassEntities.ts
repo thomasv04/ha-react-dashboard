@@ -25,13 +25,13 @@ export const MOCK_ENTITIES: Record<string, MockEntityState> = {
   }),
 
   // Weather
-  'weather.menneville': entity('weather.menneville', 'partly-cloudy', {
+  'weather.menneville': entity('weather.menneville', 'partlycloudy', {
     temperature: 12,
     humidity: 53,
     wind_speed: 18,
     wind_speed_unit: 'km/h',
     forecast: [
-      { datetime: new Date().toISOString(), condition: 'partly-cloudy', temperature: 14, templow: 8 },
+      { datetime: new Date().toISOString(), condition: 'partlycloudy', temperature: 14, templow: 8 },
       { datetime: new Date(Date.now() + 86400000).toISOString(), condition: 'sunny', temperature: 17, templow: 9 },
       { datetime: new Date(Date.now() + 172800000).toISOString(), condition: 'cloudy', temperature: 13, templow: 7 },
       { datetime: new Date(Date.now() + 259200000).toISOString(), condition: 'rainy', temperature: 11, templow: 6 },
@@ -149,13 +149,13 @@ export const MOCK_ENTITIES: Record<string, MockEntityState> = {
 
   // ─── Aliases for default widget configs (fallback entity IDs) ──────────────
   'alarm_control_panel.home_alarm': entity('alarm_control_panel.home_alarm', 'disarmed', {}),
-  'weather.home': entity('weather.home', 'partly-cloudy', {
+  'weather.home': entity('weather.home', 'partlycloudy', {
     temperature: 12,
     humidity: 53,
     wind_speed: 18,
     wind_speed_unit: 'km/h',
     forecast: [
-      { datetime: new Date().toISOString(), condition: 'partly-cloudy', temperature: 14, templow: 8 },
+      { datetime: new Date().toISOString(), condition: 'partlycloudy', temperature: 14, templow: 8 },
       { datetime: new Date(Date.now() + 86400000).toISOString(), condition: 'sunny', temperature: 17, templow: 9 },
       { datetime: new Date(Date.now() + 172800000).toISOString(), condition: 'cloudy', temperature: 13, templow: 7 },
       { datetime: new Date(Date.now() + 259200000).toISOString(), condition: 'rainy', temperature: 11, templow: 6 },

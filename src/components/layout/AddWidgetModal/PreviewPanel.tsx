@@ -1,4 +1,4 @@
-import { Component, useEffect, useState, useMemo, type ReactNode } from 'react';
+import { useEffect, useState, useMemo, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, MousePointerClick, ArrowLeft, Search, Check } from 'lucide-react';
 import { useHass } from '@hakit/core';
@@ -13,6 +13,7 @@ import { WIDGET_COMPONENTS } from '@/widgets';
 import { type WidgetMeta, getPreviewDims } from './widget-meta';
 import { previewConfig } from './preview-config';
 import { friendlyName } from '@/lib/ha-service';
+import { WidgetErrorBoundary } from '@/components/ui/WidgetErrorBoundary';
 
 // ── Mock HA wrapper ──────────────────────────────────────────────────────────
 // Temporarily merges mock entities into the Zustand store so widget previews
@@ -28,25 +29,6 @@ function MockHassWrapper({ children }: { children: ReactNode }) {
     };
   }, []);
   return <>{children}</>;
-}
-
-// ── Error boundary ────────────────────────────────────────────────────────────
-
-class PreviewErrorBoundary extends Component<{ children: ReactNode }, { error: boolean }> {
-  state = { error: false };
-  static getDerivedStateFromError() {
-    return { error: true };
-  }
-  render() {
-    if (this.state.error) {
-      return (
-        <div className='h-full flex items-center justify-center'>
-          <span className='text-[var(--ds-ink-muted)] text-[11px]'>Preview unavailable</span>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
 }
 
 // ── Entity picker step ────────────────────────────────────────────────────────
@@ -260,9 +242,9 @@ export function PreviewPanel({
                         <MockHassWrapper>
                           <WidgetConfigOverride configs={previewConfigs!}>
                             <WidgetIdProvider id={meta.type}>
-                              <PreviewErrorBoundary>
+                              <WidgetErrorBoundary label={t(meta.label)}>
                                 <Component />
-                              </PreviewErrorBoundary>
+                              </WidgetErrorBoundary>
                             </WidgetIdProvider>
                           </WidgetConfigOverride>
                         </MockHassWrapper>

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useHass } from '@hakit/core';
 import { useToast } from '@/context/ToastContext';
-import { callHAService } from '@/lib/ha-service';
+import { HA_EVENT_TYPES, toastFromEvent, type HAToastEvent } from '@/lib/ha-events';
 
 /**
  * Subscribes to the custom HA event `ha_dashboard_toast` over the existing
@@ -22,24 +22,6 @@ import { callHAService } from '@/lib/ha-service';
  *               entity_id: input_boolean.show_camera_sonnette
  *           - label: "Ignorer"
  */
-
-interface HAToastAction {
-  label: string;
-  /** Full service name e.g. "light.turn_on" or domain+service split */
-  service?: string;
-  service_data?: Record<string, unknown>;
-  variant?: 'default' | 'primary' | 'danger';
-}
-
-interface HAToastEvent {
-  title: string;
-  description?: string;
-  persistent?: boolean;
-  duration_ms?: number;
-  /** Sound preset: 'notification' | 'alert' | 'success' | 'warning', URL, or false to mute */
-  sound?: string | false;
-  actions?: HAToastAction[];
-}
 
 export function useHAToast() {
   const connection = useHass(s => s.connection);
@@ -66,28 +48,8 @@ export function useHAToast() {
 
     connection
       .subscribeEvents((event: { data: HAToastEvent }) => {
-        const { title, description, persistent, duration_ms, sound, actions } = event.data;
-
-        addToastRef.current({
-          title,
-          description,
-          persistent: persistent ?? false,
-          durationMs: duration_ms ?? 5000,
-          sound: sound === undefined ? 'notification' : sound,
-          actions: actions?.map(a => ({
-            label: a.label,
-            variant: a.variant ?? 'default',
-            onClick: () => {
-              if (a.service) {
-                const parts = a.service.split('.');
-                if (parts.length === 2) {
-                  callHAService(helpersRef.current, parts[0], parts[1], {}, a.service_data);
-                }
-              }
-            },
-          })),
-        });
-      }, 'ha_dashboard_toast')
+        addToastRef.current(toastFromEvent(event.data, helpersRef.current));
+      }, HA_EVENT_TYPES.toast)
       .then(unsub => {
         const unsubscribe = unsub as unknown as () => void;
         if (cancelled) {

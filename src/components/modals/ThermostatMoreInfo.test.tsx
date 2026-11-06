@@ -45,6 +45,8 @@ beforeEach(() => {
       fan_mode: 'auto',
       swing_modes: ['off', 'both'],
       swing_mode: 'off',
+      preset_modes: ['none', 'away', 'comfort', 'sleep', 'manuel'],
+      preset_mode: 'comfort',
     },
   };
 });
@@ -73,6 +75,19 @@ describe('ThermostatMoreInfo (#84)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Fan' }));
     expect(callService).toHaveBeenLastCalledWith(
       expect.objectContaining({ service: 'set_hvac_mode', serviceData: { hvac_mode: 'fan_only' } })
+    );
+  });
+
+  it('propose les préréglages, traduits, et applique celui qu’on touche', () => {
+    render(<ThermostatMoreInfo entityId='climate.hvac' widgetId='w1' />);
+
+    expect(screen.getByText('Preset')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Comfort' })).toHaveAttribute('aria-pressed', 'true');
+    // Un préréglage propre à une intégration s'affiche tel quel.
+    expect(screen.getByRole('button', { name: 'manuel' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Sleep' }));
+    expect(callService).toHaveBeenLastCalledWith(
+      expect.objectContaining({ service: 'set_preset_mode', serviceData: { preset_mode: 'sleep' } })
     );
   });
 });

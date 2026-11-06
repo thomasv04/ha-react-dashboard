@@ -230,7 +230,12 @@
     "showInRail": "Show in the left menu",
     "showInRailDesc": "A menu button opens the modal in one tap.",
     "widgetRowsLess": "Shorter",
-    "widgetRowsMore": "Taller"
+    "widgetRowsMore": "Taller",
+    "railEntity": "Status badge",
+    "railEntityDesc": "A temperature shows in the menu instead of the icon; a device that is on lights the icon up.",
+    "domainPlaceholder": "domain",
+    "servicePlaceholder": "service",
+    "buttonLabelPlaceholder": "e.g. Open all"
   },
   "wallPanel": {
     "subtitle": "Screensaver with widgets",
@@ -273,7 +278,7 @@
       "photos": "Swipe to change photo",
       "photosDesc": "Left or right",
       "quickPanel": "Quick menu panel",
-      "quickPanelDesc": "Opened by swiping up. Empty = gesture disabled",
+      "quickPanelDesc": "Opened by swiping up on the screensaver, and by the handle at the top of the home screen. Empty = off",
       "notifications": "Home Assistant notifications",
       "notificationsDesc": "Opened by swiping down — ha_dashboard_notification event",
       "hints": "Show edge hints on start",
@@ -319,7 +324,9 @@
       "show": "View screensaver",
       "hint": "The preview follows every setting. Changes are saved automatically.",
       "plan": "Floor plan"
-    }
+    },
+    "showTopBar": "Launcher and top bar",
+    "showTopBarDesc": "The apps button top left and, in photo frame, the user next to the time, as on the home screen."
   },
   "panelNoneCreated": "No panel yet — create one from the edit mode.",
   "duplicateWidget": "Duplicate widget",
@@ -590,7 +597,8 @@
     "widgetGallery": "Widget gallery",
     "assist": "Assist",
     "railModals": "Menu modals",
-    "manageModals": "Manage modals"
+    "manageModals": "Manage modals",
+    "devTools": "Developer tools"
   },
   "panel": {
     "untitled": "Untitled panel",

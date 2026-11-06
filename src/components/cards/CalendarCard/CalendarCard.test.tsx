@@ -14,8 +14,10 @@ vi.mock('@/hooks/useServiceResponse', () => ({
 vi.mock('@/context/WidgetConfigContext', () => ({ useWidgetConfig: () => ({ getWidgetConfig: () => config }) }));
 vi.mock('@/components/layout/DashboardGrid', () => ({ useWidgetId: () => 'calendar-1' }));
 vi.mock('@/hooks/useFormats', () => ({
-  useFormats: () => ({ formatDate: (d: Date) => d.toISOString().slice(0, 10), formatTime: () => '10:00' }),
+  useFormats: () => ({ formatDate: (d: Date) => d.toISOString().slice(0, 10), formatTime: () => '10:00', locale: 'fr-FR' }),
 }));
+const size = vi.hoisted(() => ({ current: { w: 'md', h: 'normal', compact: false, squat: false } }));
+vi.mock('@/hooks/useWidgetSize', () => ({ useWidgetSize: () => size.current }));
 
 let responses: Record<string, { events: Array<{ start: string; end: string; summary: string }> }> | null = null;
 
@@ -25,6 +27,7 @@ import { CalendarCard } from './CalendarCard';
 
 beforeEach(() => {
   vi.clearAllMocks();
+  size.current = { w: 'md', h: 'normal', compact: false, squat: false };
   config = {};
   responses = null;
 });
@@ -69,5 +72,25 @@ describe('CalendarCard', () => {
     render(<CalendarCard />);
 
     expect(serviceResponse).toHaveBeenCalledWith(expect.objectContaining({ entityId: ['calendar.perso'] }));
+  });
+
+  it('pose la grande date à côté des évènements, sur une card assez large', () => {
+    config = { entityIds: ['calendar.perso'], showDate: true };
+    responses = { 'calendar.perso': { events: [event('Dîner chez les Martin', '2026-08-19T18:00:00')] } };
+    size.current = { w: 'lg', h: 'normal', compact: false, squat: false };
+
+    render(<CalendarCard />);
+
+    expect(screen.getByTestId('calendar-big-date')).toHaveTextContent(String(new Date().getDate()));
+    expect(screen.getByText('Dîner chez les Martin')).toBeInTheDocument();
+  });
+
+  it('garde la liste seule quand la card est trop étroite pour la date', () => {
+    config = { entityIds: ['calendar.perso'], showDate: true };
+    responses = { 'calendar.perso': { events: [] } };
+
+    render(<CalendarCard />);
+
+    expect(screen.queryByTestId('calendar-big-date')).toBeNull();
   });
 });

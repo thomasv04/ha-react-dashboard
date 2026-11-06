@@ -7,6 +7,7 @@ import { MoreInfoHeader } from './MoreInfoHeader';
 import { HistoryGraph } from '@/components/charts/HistoryGraph';
 import { useI18n } from '@/i18n';
 import { friendlyName } from '@/lib/ha-service';
+import { conditionLabel } from '@/lib/weather';
 
 interface ForecastEntry {
   datetime: string;
@@ -64,8 +65,8 @@ export default function WeatherMoreInfo({ entityId }: { entityId: string; widget
   const dewPoint = entity.attributes.dew_point as number | undefined;
   const precipitation = entity.attributes.precipitation as number | undefined;
   const color = temp != null ? tempColor(temp) : '#60a5fa';
-  const conditionKey = `widgets.weather.conditions.${entity.state}`;
-  const conditionLabel = t(conditionKey) !== conditionKey ? t(conditionKey) : entity.state.replace(/_/g, ' ');
+
+  const condition = conditionLabel(t, entity.state);
   const days = tArray('widgets.weather.days');
 
   const details = [
@@ -79,7 +80,7 @@ export default function WeatherMoreInfo({ entityId }: { entityId: string; widget
 
   return (
     <div className='p-6'>
-      <MoreInfoHeader icon={Cloud} name={friendlyName(entity) ?? entityId} state={conditionLabel} stateColor={color} />
+      <MoreInfoHeader icon={Cloud} name={friendlyName(entity) ?? entityId} state={condition} stateColor={color} />
 
       {/* Temperature */}
       {temp != null && (

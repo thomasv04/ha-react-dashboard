@@ -106,7 +106,9 @@
   "layout_section": {
     "display": "Display",
     "kiosk": "Fullscreen",
-    "kioskDesc": "Hides the Home Assistant header and sidebar. Applies to this device only."
+    "kioskDesc": "Hides the Home Assistant header and sidebar. Applies to this device only.",
+    "showUser": "Show the user",
+    "showUserDesc": "The signed-in person’s badge, top right. Specific to this device."
   },
   "regional": "Regional",
   "regional_section": {

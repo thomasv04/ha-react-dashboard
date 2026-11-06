@@ -37,7 +37,6 @@ export default function CoverMoreInfo({ entityId, widgetId }: { entityId: string
   const { getWidgetConfig } = useWidgetConfig();
   const config = getWidgetConfig<CoverCardConfig>(widgetId);
   const showInfoPanel = config?.showInfoPanel !== false;
-  const [historyHours, setHistoryHours] = useState(24);
   const [dragPosition, setDragPosition] = useState<number | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const entity = useSafeEntity(entityId);
@@ -92,7 +91,6 @@ export default function CoverMoreInfo({ entityId, widgetId }: { entityId: string
                 ],
               },
               { type: 'timeline', entityId },
-              { type: 'history', historyHours, onHistoryHoursChange: setHistoryHours },
               { type: 'attributes', entityId },
               { type: 'entityId', entityIds: [entityId] },
             ] as SidebarModule[]

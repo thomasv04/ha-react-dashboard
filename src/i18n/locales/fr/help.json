@@ -34,16 +34,20 @@
     "gestures": {
       "title": "Balayer l'écran de veille",
       "body": "Changer de photo, ouvrir un menu rapide ou le tiroir de notifications, sans quitter l'écran de veille."
+    },
+    "onboarding": {
+      "title": "Revoir l'accueil",
+      "body": "Les écrans de bienvenue, et une nouvelle page construite à partir de vos pièces."
     }
   },
   "events": {
-    "intro": "Le dashboard écoute trois événements personnalisés sur le WebSocket de Home Assistant. N'importe quelle automatisation, script ou l'onglet Outils de développement > Événements peut les émettre — tous les dashboards ouverts réagissent en même temps.",
-    "modalDesc": "Une modale centrée : titre, contenu markdown, et des boutons qui appellent un service.",
+    "intro": "Le dashboard écoute trois événements personnalisés sur le WebSocket de Home Assistant. N'importe quelle automatisation, script ou l'onglet Outils de développement > Événements peut les émettre — tous les dashboards ouverts réagissent en même temps. Pour essayer vos propres valeurs : lanceur > Outils de développement.",
+    "modalDesc": "Une modale centrée : titre, contenu texte ou HTML, et des boutons qui appellent un service.",
     "toastDesc": "Une notification discrète dans le coin, qui s'efface seule sauf si on la rend persistante.",
     "preview": "Aperçu",
     "copied": "Copié",
     "demoModalTitle": "Aperçu de la modale",
-    "demoModalBody": "Voilà ce qu'afficherait une automatisation émettant `ha_dashboard_modal`.",
+    "demoModalBody": "Voilà ce qu'afficherait une automatisation émettant l'événement ha_dashboard_modal.",
     "demoToastTitle": "Aperçu du toast",
     "demoToastBody": "Déclenché localement — aucun événement Home Assistant impliqué.",
     "tip": "Dans Outils de développement > Événements, le type et les données sont deux champs séparés : bascule sur « Outils de dév. » ci-dessus pour obtenir la bonne forme. Coller le bloc « action: » entier ne déclenche rien.",
@@ -72,5 +76,91 @@
       "body": "Quitte l'écran de veille. Un balayage ne le quitte jamais, même s'il se termine par un appui."
     },
     "config": "Chaque geste s'active ou se coupe séparément dans WallPanel > Gestes, avec le panneau à ouvrir vers le haut."
+  },
+  "devtools": {
+    "title": "Outils de développement",
+    "subtitle": "Essayez les événements que le dashboard écoute.",
+    "kind": "Événement",
+    "kinds": {
+      "modal": "Modale",
+      "toast": "Toast",
+      "notification": "Notification"
+    },
+    "sampleTitle": "Le courrier est arrivé",
+    "sampleText": "La boîte aux lettres vient de s'ouvrir.",
+    "id": "Identifiant (même id = remplace)",
+    "fieldTitle": "Titre",
+    "text": "Texte",
+    "width": "Largeur",
+    "widths": {
+      "sm": "Étroite",
+      "md": "Moyenne",
+      "lg": "Large",
+      "full": "Pleine"
+    },
+    "level": "Niveau",
+    "levels": {
+      "info": "Info",
+      "success": "Succès",
+      "warning": "Alerte",
+      "error": "Erreur"
+    },
+    "duration": "Durée : {value} s",
+    "html": "Contenu HTML",
+    "htmlDesc": "Le texte est lu comme du HTML, assaini avant affichage.",
+    "locked": "Bloquante",
+    "lockedDesc": "Ni Échap ni un appui à côté ne la ferment : il faut choisir un bouton.",
+    "persistent": "Persistant",
+    "persistentDesc": "Reste affiché jusqu'à ce qu'on le ferme.",
+    "action": "Bouton (facultatif)",
+    "actionLabel": "Libellé",
+    "actionService": "Service appelé",
+    "actionEntity": "Entité visée",
+    "preview": "Aperçu ici",
+    "send": "Envoyer partout",
+    "sent": "Envoyé : tous les dashboards ouverts l'ont reçu.",
+    "failed": "Envoi refusé par Home Assistant : {value}",
+    "notificationHint": "La notification arrive dans le tiroir : balayez l'écran de veille vers le bas pour la voir."
+  },
+  "onboarding": {
+    "label": "Accueil",
+    "next": "Continuer",
+    "back": "Retour",
+    "skip": "Passer",
+    "welcome": {
+      "title": "Bienvenue",
+      "titleNamed": "Bienvenue, {value}",
+      "body": "Votre maison sur un écran : lumières, volets, chauffage, musique et caméras, à portée de doigt. En deux minutes, on prépare votre première page à partir de vos pièces Home Assistant.",
+      "start": "Commencer"
+    },
+    "look": {
+      "title": "Langue et apparence",
+      "body": "Modifiables à tout moment dans les Paramètres.",
+      "language": "Langue",
+      "theme": "Thème",
+      "dark": "Sombre",
+      "darkDesc": "Reposant, idéal pour une tablette murale allumée en permanence.",
+      "light": "Clair",
+      "lightDesc": "Lumineux, lisible dans une pièce bien éclairée.",
+      "auto": "Automatique",
+      "autoDesc": "Clair le jour, sombre la nuit, au rythme du soleil."
+    },
+    "rooms": {
+      "title": "Vos pièces",
+      "body": "Chaque pièce cochée reçoit une tuile, et ses lumières, volets, chauffage et lecteurs un panneau à part. Les pièces sans appareil pilotable sont décochées.",
+      "none": "Aucune pièce n'est déclarée dans Home Assistant. On prépare une page d'accueil simple ; vous ajouterez vos appareils ensuite.",
+      "panelTitle": "Pièces",
+      "newPage": "Ma maison",
+      "empty": "Partir d'une page vide",
+      "create": "Créer ma page ({value} pièces)",
+      "creating": "Création…",
+      "nothing": "Rien à piloter"
+    },
+    "ready": {
+      "title": "C'est prêt",
+      "body": "Votre page est en place. Tout se réarrange ensuite : le crayon en haut ouvre l'édition, le lanceur donne accès aux Paramètres et à l'Aide.",
+      "tour": "Faire la visite",
+      "explore": "Découvrir seul"
+    }
   }
 }

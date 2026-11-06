@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useHass } from '@hakit/core';
 import type { Connection } from 'home-assistant-js-websocket';
+import { haBaseUrl } from '@/lib/ha-url';
 
 interface BrowseMediaItem {
   media_content_id: string;
@@ -8,27 +9,6 @@ interface BrowseMediaItem {
   can_play: boolean;
   can_expand: boolean;
   children?: BrowseMediaItem[] | null;
-}
-
-/**
- * Derives the HA HTTP base URL (e.g. "http://homeassistant.local:8123") from
- * the WebSocket URL stored on the connection object.
- * Falls back to VITE_HA_URL env var, then empty string.
- */
-function haBaseUrl(connection: Connection): string {
-  const wsUrl = (connection as unknown as { socket?: { url?: string } }).socket?.url;
-  if (wsUrl) {
-    try {
-      // wss://host:port/api/websocket  ->  https://host:port
-      // ws://host:port/api/websocket   ->  http://host:port
-      const u = new URL(wsUrl);
-      const protocol = u.protocol === 'wss:' ? 'https:' : 'http:';
-      return `${protocol}//${u.host}`;
-    } catch {
-      // fall through to env var
-    }
-  }
-  return ((import.meta.env.VITE_HA_URL as string | undefined) ?? '').replace(/\/$/, '');
 }
 
 /**
@@ -57,7 +37,8 @@ async function tryResolve(connection: Connection, id: string, baseUrl: string): 
  *  - Falls back to [] on any error
  */
 export async function resolveMediaSourceId(connection: Connection, id: string): Promise<string[]> {
-  const baseUrl = haBaseUrl(connection);
+  const wsUrl = (connection as unknown as { socket?: { url?: string } }).socket?.url;
+  const baseUrl = haBaseUrl(wsUrl, import.meta.env.VITE_HA_URL as string | undefined);
 
   // First try resolving directly (file-level ID)
   const direct = await tryResolve(connection, id, baseUrl);

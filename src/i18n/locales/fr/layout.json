@@ -230,7 +230,12 @@
     "showInRail": "Afficher dans le menu de gauche",
     "showInRailDesc": "Un bouton du menu ouvre la modale d’un appui.",
     "widgetRowsLess": "Moins haute",
-    "widgetRowsMore": "Plus haute"
+    "widgetRowsMore": "Plus haute",
+    "railEntity": "Pastille d’état",
+    "railEntityDesc": "Une température s’affiche dans le menu à la place de l’icône ; un appareil allumé allume l’icône.",
+    "domainPlaceholder": "domaine",
+    "servicePlaceholder": "service",
+    "buttonLabelPlaceholder": "ex. : Tout ouvrir"
   },
   "wallPanel": {
     "subtitle": "Écran de veille avec widgets",
@@ -273,7 +278,7 @@
       "photos": "Balayer pour changer de photo",
       "photosDesc": "Vers la gauche ou la droite",
       "quickPanel": "Panneau du menu rapide",
-      "quickPanelDesc": "Ouvert par un balayage vers le haut. Vide = geste désactivé",
+      "quickPanelDesc": "Ouvert par un balayage vers le haut sur la veille, et par la poignée en haut de l’accueil. Vide = désactivé",
       "notifications": "Notifications Home Assistant",
       "notificationsDesc": "Ouvertes par un balayage vers le bas — événement ha_dashboard_notification",
       "hints": "Afficher les poignées au démarrage",
@@ -319,7 +324,9 @@
       "show": "Voir la veille",
       "hint": "L'aperçu suit chaque réglage. Les modifications sont enregistrées automatiquement.",
       "plan": "Plan"
-    }
+    },
+    "showTopBar": "Lanceur et barre du haut",
+    "showTopBarDesc": "Le bouton des apps en haut à gauche, et en cadre photo l’utilisateur à côté de l’heure, comme sur l’accueil."
   },
   "panelNoneCreated": "Aucun panneau pour l'instant — créez-en un depuis le mode édition.",
   "duplicateWidget": "Dupliquer le widget",
@@ -590,7 +597,8 @@
     "widgetGallery": "Galerie de widgets",
     "assist": "Assist",
     "railModals": "Modales du menu",
-    "manageModals": "Gérer les modales"
+    "manageModals": "Gérer les modales",
+    "devTools": "Outils de développement"
   },
   "panel": {
     "untitled": "Panneau sans titre",

@@ -1,17 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useRef } from 'react';
+import { useNow } from '@/hooks/useNow';
+import { useWidgetSize } from '@/hooks/useWidgetSize';
+import { cn } from '@/lib/utils';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useI18n } from '@/i18n';
 import { useFormats } from '@/hooks/useFormats';
 import type { GreetingCardConfig } from '@/types/widget-configs';
-
-/** Clé i18n de la salutation correspondant à l'heure. */
-function greetingKey(h: number): string {
-  if (h >= 18) return 'widgets.greeting.goodEvening';
-  if (h >= 12) return 'widgets.greeting.goodAfternoon';
-  if (h >= 5) return 'widgets.greeting.goodMorning';
-  return 'widgets.greeting.goodNight';
-}
+import { greetingKey } from '@/lib/greeting';
 
 /** Full-width header bar: greeting on the left, big clock on the right. */
 export function GreetingCard() {
@@ -24,12 +20,7 @@ export function GreetingCard() {
   // régionaux, plutôt qu'un `fr-FR` figé.
   const locale = config?.locale;
 
-  const [now, setNow] = useState(new Date());
-
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
+  const now = useNow(true);
 
   const hm = locale ? now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }) : formats.formatTime(now);
   const sec = String(now.getSeconds()).padStart(2, '0');
@@ -55,27 +46,45 @@ export function GreetingCard() {
   );
 }
 
-/** Compact inline clock + date used in the top header row. */
+/**
+ * Horloge et date, alignées à droite. Une colonne (96 px) ne tient que
+ * l'heure : à sa taille par défaut, la card rognait « 11:12 » en « 1:12 » et
+ * faisait déborder secondes et date (#81). Les blocs secondaires s'effacent
+ * donc avec la largeur, plutôt que de sortir de la case.
+ */
 export function ClockWidget() {
-  const [now, setNow] = useState(new Date());
   const formats = useFormats();
-
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
+  const ref = useRef<HTMLDivElement>(null);
+  const { w } = useWidgetSize(ref);
+  const narrow = w === 'xs';
+  const showDate = w !== 'xs' && w !== 'sm';
+  // Sans les secondes (une colonne), une horloge à la minute suffit.
+  const now = useNow(!narrow);
 
   const hm = formats.formatTime(now);
   const sec = String(now.getSeconds()).padStart(2, '0');
   const date = formats.formatDate(now, 'long');
 
   return (
-    <div className='flex flex-col items-end shrink-0'>
+    <div ref={ref} className='flex h-full w-full min-w-0 flex-col items-end justify-center overflow-hidden'>
       <div className='flex items-baseline gap-1 tabular-nums'>
-        <span className='text-4xl font-light leading-none tracking-tight text-[var(--ds-ink)]'>{hm}</span>
-        <span className='text-base font-light leading-none text-[var(--ds-ink-muted)]'>{sec}</span>
+        <span
+          data-testid='clock-time'
+          className={cn('font-light leading-none tracking-tight text-[var(--ds-ink)]', narrow ? 'text-2xl' : 'text-4xl')}
+        >
+          {hm}
+        </span>
+        {!narrow && (
+          <span data-testid='clock-seconds' className='text-base font-light leading-none text-[var(--ds-ink-muted)]'>
+            {sec}
+          </span>
+        )}
       </div>
-      <div className='mt-0.5 text-sm font-medium capitalize text-[var(--ds-ink-muted)]'>{date}</div>
+      {showDate && (
+        <div data-testid='clock-date' className='mt-0.5 truncate text-sm font-medium capitalize text-[var(--ds-ink-muted)]'>
+          {date}
+        </div>
+      )}
     </div>
   );
 }

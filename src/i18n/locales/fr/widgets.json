@@ -101,7 +101,8 @@
       "fanMode": "Ventilation",
       "swingMode": "Oscillation",
       "action": "Action",
-      "targetTemp": "Température cible"
+      "targetTemp": "Température cible",
+      "presetMode": "Préréglage"
     },
     "fanModes": {
       "on": "Marche",
@@ -131,6 +132,16 @@
       "fan": "Ventile",
       "preheating": "Préchauffe",
       "defrosting": "Dégivre"
+    },
+    "presetModes": {
+      "none": "Aucun",
+      "eco": "Éco",
+      "away": "Absent",
+      "boost": "Boost",
+      "comfort": "Confort",
+      "home": "Maison",
+      "sleep": "Nuit",
+      "activity": "Activité"
     }
   },
   "light": {
@@ -329,7 +340,8 @@
     "position": "Progression",
     "nothingPlaying": "Aucune lecture en cours",
     "album": "Album",
-    "unknownTitle": "Titre inconnu"
+    "unknownTitle": "Titre inconnu",
+    "library": "À écouter"
   },
   "person": {
     "label": "Personnes",
@@ -404,7 +416,8 @@
           "vacation": "Vacances"
         }
       }
-    }
+    },
+    "intrusion": "Intrusion"
   },
   "camera": {
     "label": "Caméra",
@@ -1105,6 +1118,9 @@
       },
       "max": {
         "label": "Nombre d'évènements"
+      },
+      "showDate": {
+        "label": "Grande date à côté"
       }
     },
     "moreInfo": {
@@ -1223,6 +1239,59 @@
       },
       "glowSize": {
         "label": "Taille du halo (% de la largeur du plan)"
+      }
+    }
+  },
+  "welcome": {
+    "label": "Bienvenue",
+    "description": "Une salutation à votre nom et les routines à lancer d’un geste.",
+    "routine": "Routine",
+    "start": "Lancer",
+    "wish": {
+      "morning": "Belle journée !",
+      "afternoon": "Bel après-midi !",
+      "evening": "Bonne soirée !",
+      "night": "Douce nuit !"
+    },
+    "fields": {
+      "routines": {
+        "label": "Routines (scripts, scènes)"
+      }
+    }
+  },
+  "camera_events": {
+    "label": "Événements caméra",
+    "description": "Les derniers événements Frigate : compteurs, vignettes, et la caméra en plein écran.",
+    "title": "Événements caméra",
+    "empty": "Aucun événement ces {hours} dernières heures",
+    "error": "Frigate injoignable",
+    "errorHint": "Installez l’intégration Frigate dans Home Assistant, et vérifiez l’identifiant d’instance.",
+    "all": "Tous",
+    "live": "Direct",
+    "back": "Retour",
+    "labels": {
+      "person": "Personne",
+      "car": "Voiture",
+      "package": "Colis",
+      "dog": "Chien",
+      "cat": "Chat",
+      "bird": "Oiseau",
+      "bicycle": "Vélo",
+      "motorcycle": "Moto",
+      "animal": "Animal"
+    },
+    "fields": {
+      "name": {
+        "label": "Nom affiché"
+      },
+      "cameras": {
+        "label": "Caméras Frigate (noms séparés par des virgules, vide = toutes)"
+      },
+      "instanceId": {
+        "label": "Instance Frigate"
+      },
+      "hours": {
+        "label": "Fenêtre (heures)"
       }
     }
   }

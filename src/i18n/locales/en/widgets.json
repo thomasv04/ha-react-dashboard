@@ -101,7 +101,8 @@
       "fanMode": "Fan",
       "swingMode": "Swing",
       "action": "Action",
-      "targetTemp": "Target temperature"
+      "targetTemp": "Target temperature",
+      "presetMode": "Preset"
     },
     "fanModes": {
       "on": "On",
@@ -131,6 +132,16 @@
       "fan": "Fan",
       "preheating": "Preheating",
       "defrosting": "Defrosting"
+    },
+    "presetModes": {
+      "none": "None",
+      "eco": "Eco",
+      "away": "Away",
+      "boost": "Boost",
+      "comfort": "Comfort",
+      "home": "Home",
+      "sleep": "Sleep",
+      "activity": "Activity"
     }
   },
   "light": {
@@ -329,7 +340,8 @@
     "position": "Progress",
     "nothingPlaying": "Nothing playing",
     "album": "Album",
-    "unknownTitle": "Unknown title"
+    "unknownTitle": "Unknown title",
+    "library": "Listen next"
   },
   "person": {
     "label": "People",
@@ -404,7 +416,8 @@
           "vacation": "Holiday"
         }
       }
-    }
+    },
+    "intrusion": "Intrusion"
   },
   "camera": {
     "label": "Camera",
@@ -1105,6 +1118,9 @@
       },
       "max": {
         "label": "Number of events"
+      },
+      "showDate": {
+        "label": "Big date alongside"
       }
     },
     "moreInfo": {
@@ -1223,6 +1239,59 @@
       },
       "glowSize": {
         "label": "Glow size (% of floorplan width)"
+      }
+    }
+  },
+  "welcome": {
+    "label": "Welcome",
+    "description": "A greeting with your name and routines to start in one tap.",
+    "routine": "Routine",
+    "start": "Start",
+    "wish": {
+      "morning": "Have a great day!",
+      "afternoon": "Enjoy your afternoon!",
+      "evening": "Have a nice evening!",
+      "night": "Sleep well!"
+    },
+    "fields": {
+      "routines": {
+        "label": "Routines (scripts, scenes)"
+      }
+    }
+  },
+  "camera_events": {
+    "label": "Camera events",
+    "description": "Latest Frigate events: counters, thumbnails, and the camera full screen.",
+    "title": "Camera events",
+    "empty": "No events in the last {hours} hours",
+    "error": "Frigate unreachable",
+    "errorHint": "Install the Frigate integration in Home Assistant, and check the instance id.",
+    "all": "All",
+    "live": "Live",
+    "back": "Back",
+    "labels": {
+      "person": "Person",
+      "car": "Car",
+      "package": "Package",
+      "dog": "Dog",
+      "cat": "Cat",
+      "bird": "Bird",
+      "bicycle": "Bicycle",
+      "motorcycle": "Motorcycle",
+      "animal": "Animal"
+    },
+    "fields": {
+      "name": {
+        "label": "Display name"
+      },
+      "cameras": {
+        "label": "Frigate cameras (comma-separated names, empty = all)"
+      },
+      "instanceId": {
+        "label": "Frigate instance"
+      },
+      "hours": {
+        "label": "Window (hours)"
       }
     }
   }

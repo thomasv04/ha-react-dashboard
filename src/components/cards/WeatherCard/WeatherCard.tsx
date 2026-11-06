@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { Sun } from 'lucide-react';
-import { conditionIcon } from '@/lib/weather';
+import { conditionIcon, conditionLabel } from '@/lib/weather';
 import { useWeather, useHass } from '@hakit/core';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
@@ -64,8 +64,8 @@ function WeatherCardInner({ entityId, config }: { entityId: string; config: Weat
   const pressure = weather.attributes.pressure as number | undefined;
   const forecastDays = weather.forecast?.forecast ?? [];
   const days = tArray('widgets.weather.days');
-  const conditionKey = `widgets.weather.conditions.${weather.state}`;
-  const label = t(conditionKey) !== conditionKey ? t(conditionKey) : weather.state.replace(/_/g, ' ');
+
+  const label = conditionLabel(t, weather.state);
   const tempText = temp !== undefined ? `${temp.toLocaleString(language, { maximumFractionDigits: 1 })}°` : '—';
 
   const todayHigh = forecastDays[0]?.temperature;

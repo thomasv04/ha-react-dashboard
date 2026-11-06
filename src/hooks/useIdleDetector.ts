@@ -5,7 +5,7 @@ interface UseIdleDetectorOptions {
   idleTime: number;
   enabled: boolean;
   onIdle: () => void;
-  onActive: () => void;
+  onActive?: () => void;
 }
 
 /**
@@ -16,19 +16,25 @@ interface UseIdleDetectorOptions {
 export function useIdleDetector({ idleTime, enabled, onIdle, onActive }: UseIdleDetectorOptions) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isIdleRef = useRef(false);
+  // Les rappels changent à chaque rendu de l'appelant (fonctions en ligne) : en
+  // dépendre réabonnait les six écouteurs et relançait le minuteur à chaque fois.
+  const callbacks = useRef({ onIdle, onActive });
+  useEffect(() => {
+    callbacks.current = { onIdle, onActive };
+  });
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     if (isIdleRef.current) {
       isIdleRef.current = false;
-      onActive();
+      callbacks.current.onActive?.();
     }
     if (!enabled || idleTime <= 0) return;
     timerRef.current = setTimeout(() => {
       isIdleRef.current = true;
-      onIdle();
+      callbacks.current.onIdle();
     }, idleTime * 1000);
-  }, [enabled, idleTime, onIdle, onActive]);
+  }, [enabled, idleTime]);
 
   useEffect(() => {
     if (!enabled || idleTime <= 0) return;

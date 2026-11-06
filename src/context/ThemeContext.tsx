@@ -87,12 +87,15 @@ export interface BehaviourSettings {
    * murale. La sécurité réelle, c'est `adminWrites` côté serveur.
    */
   editPin: string;
+  /** Pastille de l'utilisateur connecté, en haut à droite. Une tablette partagée s'en passe. */
+  showUser: boolean;
 }
 
 const DEFAULT_BEHAVIOUR_SETTINGS: BehaviourSettings = {
   returnHomeAfter: 0,
   doNotDisturb: false,
   editPin: '',
+  showUser: true,
 };
 
 const DEFAULT_SOUND_SETTINGS: SoundSettings = {
@@ -223,7 +226,8 @@ function loadSettings(): {
 }
 
 export function ThemeContextProvider({ children }: { children: ReactNode }) {
-  const saved = loadSettings();
+  // Lu une fois : à chaque rendu, c'était une lecture et un `JSON.parse` du localStorage pour rien.
+  const [saved] = useState(loadSettings);
   const [themeId, setThemeId] = useState<ThemeId>(saved.themeId);
   const [perfSettings, setPerfSettingsState] = useState<PerfSettings>(saved.perfSettings);
   const [autoTheme, setAutoThemeState] = useState<AutoThemeConfig>(saved.autoTheme);
@@ -293,22 +297,10 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     root.classList.toggle('perf-no-shadows', perfSettings.disableShadows);
   }, [perfSettings]);
 
-  // Persistance
+  // Persistance : le même instantané que celui synchronisé avec le serveur.
   useEffect(() => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        v: SETTINGS_VERSION,
-        themeId,
-        perfSettings,
-        autoTheme,
-        soundSettings,
-        regionalSettings,
-        behaviourSettings,
-        importedTheme,
-      })
-    );
-  }, [themeId, perfSettings, autoTheme, soundSettings, regionalSettings, behaviourSettings, importedTheme]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(syncedSettings));
+  }, [syncedSettings]);
 
   const setTheme = useCallback((requested: ThemeId) => {
     // Un import de configuration peut encore porter un thème retiré en 4.0.
@@ -316,48 +308,26 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     setThemeId(id);
   }, []);
 
-  const setPerfSettings = useCallback((s: PerfSettings) => setPerfSettingsState(s), []);
-  const setAutoTheme = useCallback((cfg: AutoThemeConfig) => setAutoThemeState(cfg), []);
-  const setSoundSettings = useCallback((s: SoundSettings) => setSoundSettingsState(s), []);
-  const setRegionalSettings = useCallback((s: RegionalSettings) => setRegionalSettingsState(s), []);
-  const setBehaviourSettings = useCallback((s: BehaviourSettings) => setBehaviourSettingsState(s), []);
-  const setImportedTheme = useCallback((t: ImportedTheme | null) => setImportedThemeState(t), []);
-
+  // Les setters de `useState` sont déjà stables : passés tels quels.
   const value = useMemo(
     () => ({
       themeId,
       tokens,
       setTheme,
       perfSettings,
-      setPerfSettings,
+      setPerfSettings: setPerfSettingsState,
       autoTheme,
-      setAutoTheme,
+      setAutoTheme: setAutoThemeState,
       soundSettings,
-      setSoundSettings,
+      setSoundSettings: setSoundSettingsState,
       regionalSettings,
-      setRegionalSettings,
+      setRegionalSettings: setRegionalSettingsState,
       behaviourSettings,
-      setBehaviourSettings,
+      setBehaviourSettings: setBehaviourSettingsState,
       importedTheme,
-      setImportedTheme,
+      setImportedTheme: setImportedThemeState,
     }),
-    [
-      themeId,
-      tokens,
-      perfSettings,
-      autoTheme,
-      soundSettings,
-      regionalSettings,
-      behaviourSettings,
-      importedTheme,
-      setTheme,
-      setPerfSettings,
-      setAutoTheme,
-      setSoundSettings,
-      setRegionalSettings,
-      setBehaviourSettings,
-      setImportedTheme,
-    ]
+    [themeId, tokens, perfSettings, autoTheme, soundSettings, regionalSettings, behaviourSettings, importedTheme, setTheme]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

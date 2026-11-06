@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react';
-import { useElementBox } from '@/hooks/useWidgetSize';
+import { useRef } from 'react';
+import { useWidgetSize } from '@/hooks/useWidgetSize';
+import { formatPower } from '@/components/cards/EnergyFlowCard/format-power';
 import { normalizePackState } from '@/lib/battery-state';
 import { BatteryCharging, House, Sun, Zap } from 'lucide-react';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
@@ -10,12 +11,10 @@ import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 
 /** Puissance lisible : « 320 W », « 2,4 kW ». `null` si le capteur n'a pas de valeur. */
-function formatPower(raw: string | undefined, locale: string): { value: string; unit: string } | null {
+function sensorPower(raw: string | undefined, locale: string): { value: string; unit: string } | null {
   const watts = Number(raw);
   if (raw == null || raw === '' || !Number.isFinite(watts)) return null;
-  return Math.abs(watts) >= 1000
-    ? { value: (watts / 1000).toLocaleString(locale, { maximumFractionDigits: 1 }), unit: 'kW' }
-    : { value: Math.round(watts).toLocaleString(locale), unit: 'W' };
+  return formatPower(watts, locale);
 }
 
 const asText = (p: { value: string; unit: string } | null) => (p ? `${p.value} ${p.unit}` : '—');
@@ -37,18 +36,16 @@ export function EnergyCard() {
   const solarProd = useSafeEntity(config?.solarProductionEntity ?? 'sensor.solar_production');
 
   const cardRef = useRef<HTMLDivElement>(null);
-  const [cardH, setCardH] = useState(999);
-  // Mesure en boîte de bordure : les seuils sont exprimés en rangées de grille
-  // (80 / 176 / 272 px).
-  useElementBox(cardRef, (_w, height) => setCardH(height));
+  // Les seuils sont des rangées de grille : une, puis deux.
+  const size = useWidgetSize(cardRef);
 
   if (!batteryLevel) return null;
 
   const state = normalizePackState(packState?.state ?? 'idle');
   const level = Math.min(100, Math.max(0, Number(batteryLevel.state) || 0));
-  const solar = formatPower(solarProd?.state, language);
-  const home = formatPower(homeOutput?.state, language);
-  const grid = formatPower(gridInput?.state, language);
+  const solar = sensorPower(solarProd?.state, language);
+  const home = sensorPower(homeOutput?.state, language);
+  const grid = sensorPower(gridInput?.state, language);
 
   const stateLabel =
     state === 'charging'
@@ -58,8 +55,8 @@ export function EnergyCard() {
         : t('widgets.energy.standby');
   const name = config?.name ?? t('widgets.energy.defaultName');
 
-  const isRow = cardH < 120; // 1 rangée : tout sur une ligne
-  const isTight = cardH < 220; // 2 rangées : pas de grand chiffre
+  const isRow = size.squat; // 1 rangée : tout sur une ligne
+  const isTight = size.squat || size.h === 'short'; // 2 rangées : pas de grand chiffre
 
   // La batterie se lit à sa couleur : verte chargée, orange à mi-course, rouge presque vide.
   const batteryFill = level > 60 ? 'var(--ds-good)' : level > 25 ? 'var(--ds-heat)' : 'var(--ds-alert)';

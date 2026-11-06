@@ -75,6 +75,9 @@ function mockCalendarEvents(entityId: string) {
 const mockConnection = {
   // Aucun évènement ne circule : on rend un désabonnement inerte.
   subscribeEvents: async (_callback: unknown, _eventType?: string) => () => {},
+  // La connexion ne se coupe jamais : ni `disconnected`, ni `ready`, à écouter.
+  addEventListener: (_event: string, _listener: () => void) => {},
+  removeEventListener: (_event: string, _listener: () => void) => {},
   sendMessagePromise: async (msg: { type?: string; service?: string; domain?: string; target?: { entity_id?: string[] } }) => {
     if (msg.type === 'call_service' && msg.domain === 'calendar' && msg.service === 'get_events') {
       const response: Record<string, { events: unknown[] }> = {};

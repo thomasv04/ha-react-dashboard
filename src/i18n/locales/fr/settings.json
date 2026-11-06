@@ -106,7 +106,9 @@
   "layout_section": {
     "display": "Affichage",
     "kiosk": "Plein écran",
-    "kioskDesc": "Masque l'en-tête et la barre latérale de Home Assistant. Réglage propre à cet appareil."
+    "kioskDesc": "Masque l'en-tête et la barre latérale de Home Assistant. Réglage propre à cet appareil.",
+    "showUser": "Afficher l’utilisateur",
+    "showUserDesc": "La pastille de la personne connectée, en haut à droite. Réglage propre à cet appareil."
   },
   "regional": "Régional",
   "regional_section": {

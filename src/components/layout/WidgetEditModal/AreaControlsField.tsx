@@ -74,13 +74,10 @@ export function AreaControlsField({
         onChange={e => onChange({ area: e.target.value, controls: [] })}
         aria-label={label}
         className={cn(INPUT, 'cursor-pointer px-3')}
-        style={{ colorScheme: 'dark' }}
       >
-        <option value='' className='bg-[#0c1028]'>
-          {t('layout.areaControls.none')}
-        </option>
+        <option value=''>{t('layout.areaControls.none')}</option>
         {areas.map(a => (
-          <option key={a.area_id} value={a.area_id} className='bg-[#0c1028]'>
+          <option key={a.area_id} value={a.area_id}>
             {a.name}
           </option>
         ))}
