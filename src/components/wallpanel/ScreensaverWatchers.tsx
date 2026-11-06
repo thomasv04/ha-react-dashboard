@@ -12,7 +12,6 @@ export function IdleWatcher() {
     idleTime: config.idle_time,
     enabled: enabled && !isActive,
     onIdle: activate,
-    onActive: () => {},
   });
   return null;
 }

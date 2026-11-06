@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, Radio } from 'lucide-react';
 import { useHass } from '@hakit/core';
@@ -7,7 +7,7 @@ import { useHaUrl } from '@/hooks/useHaUrl';
 import { useFormats } from '@/hooks/useFormats';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
-import { frigateMedia, type FrigateEvent } from '@/lib/frigate';
+import { frigateLabel, frigateMedia, type FrigateEvent } from '@/lib/frigate';
 
 /**
  * Une caméra en plein écran, comme la maquette « Caméra — chronologie » : le
@@ -26,8 +26,8 @@ export function EventViewer({ events, initialId, onClose }: { events: FrigateEve
   const cameraEntity = `camera.${selected?.camera}`;
   const hasLive = useHass(s => !!s.entities?.[cameraEntity]);
   // La chronologie ne montre que la caméra de l'événement, comme sur l'Echo.
-  const sameCamera = useMemo(() => events.filter(e => e.camera === selected?.camera), [events, selected?.camera]);
-  const labels = useMemo(() => [...new Set(sameCamera.map(e => e.label))], [sameCamera]);
+  const sameCamera = events.filter(e => e.camera === selected?.camera);
+  const labels = [...new Set(sameCamera.map(e => e.label))];
   const shown = label ? sameCamera.filter(e => e.label === label) : sameCamera;
 
   useEffect(() => {
@@ -37,11 +37,7 @@ export function EventViewer({ events, initialId, onClose }: { events: FrigateEve
   }, [onClose]);
 
   if (!selected) return null;
-  const labelText = (l: string) => {
-    const key = `widgets.camera_events.labels.${l}`;
-    const text = t(key);
-    return text === key ? l : text;
-  };
+  const labelText = (l: string) => frigateLabel(t, l);
 
   return createPortal(
     <div role='dialog' aria-modal='true' aria-label={selected.camera} className='fixed inset-0 z-[90] bg-black text-white'>

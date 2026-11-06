@@ -1,3 +1,5 @@
+import { translateOr } from '@/i18n/translate-or';
+
 /**
  * Événements Frigate, lus par l'intégration Frigate de Home Assistant :
  * `frigate/events/get` au WebSocket, vignettes et clips par son proxy.
@@ -12,7 +14,6 @@ export interface FrigateEvent {
   start_time: number;
   end_time?: number | null;
   has_clip?: boolean;
-  has_snapshot?: boolean;
 }
 
 /**
@@ -22,6 +23,9 @@ export interface FrigateEvent {
  */
 export const frigateMedia = (id: string, kind: 'thumbnail.jpg' | 'snapshot.jpg' | 'clip.mp4') =>
   `/api/frigate/notifications/${encodeURIComponent(id)}/${kind}`;
+
+/** L'étiquette traduite (« Personne »), ou telle quelle si elle est inconnue. */
+export const frigateLabel = (t: (key: string) => string, label: string) => translateOr(t, `widgets.camera_events.labels.${label}`, label);
 
 /** Les étiquettes qui ont un compteur, dans l'ordre de l'Echo Show : personnes, puis colis, puis le reste. */
 const COUNTED = ['person', 'package', 'car', 'animal', 'dog', 'cat'];

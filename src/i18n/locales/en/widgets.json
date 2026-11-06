@@ -417,9 +417,7 @@
         }
       }
     },
-    "intrusion": "Intrusion",
-    "since": "{time} ago",
-    "justNow": "just now"
+    "intrusion": "Intrusion"
   },
   "camera": {
     "label": "Camera",
@@ -1268,8 +1266,6 @@
     "empty": "No events in the last {hours} hours",
     "error": "Frigate unreachable",
     "errorHint": "Install the Frigate integration in Home Assistant, and check the instance id.",
-    "since": "{time} ago",
-    "justNow": "just now",
     "all": "All",
     "live": "Live",
     "back": "Back",

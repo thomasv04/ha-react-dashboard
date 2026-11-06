@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useRef } from 'react';
+import { useNow } from '@/hooks/useNow';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { cn } from '@/lib/utils';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
@@ -19,12 +20,7 @@ export function GreetingCard() {
   // régionaux, plutôt qu'un `fr-FR` figé.
   const locale = config?.locale;
 
-  const [now, setNow] = useState(new Date());
-
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
+  const now = useNow(true);
 
   const hm = locale ? now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }) : formats.formatTime(now);
   const sec = String(now.getSeconds()).padStart(2, '0');
@@ -57,17 +53,13 @@ export function GreetingCard() {
  * donc avec la largeur, plutôt que de sortir de la case.
  */
 export function ClockWidget() {
-  const [now, setNow] = useState(new Date());
   const formats = useFormats();
   const ref = useRef<HTMLDivElement>(null);
   const { w } = useWidgetSize(ref);
   const narrow = w === 'xs';
   const showDate = w !== 'xs' && w !== 'sm';
-
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
+  // Sans les secondes (une colonne), une horloge à la minute suffit.
+  const now = useNow(!narrow);
 
   const hm = formats.formatTime(now);
   const sec = String(now.getSeconds()).padStart(2, '0');

@@ -1,6 +1,7 @@
 import { useDashboardLayout, useEditMode, type GridWidget, type LayoutPanel } from '@/context/DashboardLayoutContext';
 import { useState, useEffect, useLayoutEffect, useRef, createContext, useContext, memo, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
+import { useHass } from '@hakit/core';
 import { motion } from 'framer-motion';
 import { GripVertical, Minus, Pencil, Plus, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
@@ -1179,21 +1180,22 @@ export function GridItem({
   const visibility = conditionalConfig?.visibility;
   const stateStyles = conditionalConfig?.stateStyles;
 
-  // L'entité principale aussi : quand Home Assistant la perd, la card
-  // affichait son dernier état comme si de rien n'était (« Éteint », « 0° »).
-  const mainEntityId = typeof conditionalConfig?.entityId === 'string' ? conditionalConfig.entityId : '';
   const watchedIds = useMemo(
-    () => [...new Set([...visibilityEntityIds(visibility), ...stateStyleEntityIds(stateStyles), ...(mainEntityId ? [mainEntityId] : [])])],
-    [visibility, stateStyles, mainEntityId]
+    () => [...new Set([...visibilityEntityIds(visibility), ...stateStyleEntityIds(stateStyles)])],
+    [visibility, stateStyles]
   );
   const watched = useEntities(watchedIds);
   const states = useMemo(() => Object.fromEntries(watchedIds.map(eid => [eid, watched[eid]?.state])), [watchedIds, watched]);
-  const unavailable = !!mainEntityId && states[mainEntityId] === 'unavailable';
+  // L'entité principale perdue par Home Assistant : la card affichait son
+  // dernier état comme si de rien n'était (« Éteint », « 0° »). Un booléen et
+  // non l'entité : la tuile ne se re-rend qu'au passage à `unavailable`.
+  const mainEntityId = typeof conditionalConfig?.entityId === 'string' ? conditionalConfig.entityId : '';
+  const unavailable = useHass(s => !!mainEntityId && s.entities?.[mainEntityId]?.state === 'unavailable');
 
   const visible = useMemo(() => isVisible(visibility, breakpoint, states), [visibility, breakpoint, states]);
   const styleOverride = useMemo(() => matchStateStyle(stateStyles, breakpoint, states), [stateStyles, breakpoint, states]);
 
-  const config = getWidgetConfig(id) as CardActionsConfig | undefined;
+  const config = conditionalConfig as CardActionsConfig | undefined;
   // Un geste reste inerte si rien n'est configuré *et* que la card n'a pas de
   // fiche : inutile de rendre le curseur cliquable pour rien.
   const hasTap = hasMoreInfo || (config?.tapAction && config.tapAction.action !== 'default');

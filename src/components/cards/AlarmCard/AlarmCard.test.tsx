@@ -135,7 +135,7 @@ test('déclenchée, la card dit ce qui l’a déclenchée et offre le pavé comp
   render(<AlarmCard />);
 
   expect(screen.getByText('widgets.alarm.intrusion')).toBeDefined();
-  expect(screen.getByText('Porte-fenêtre salon · widgets.alarm.justNow')).toBeDefined();
+  expect(screen.getByText('Porte-fenêtre salon · widgets.sensor.justNow')).toBeDefined();
   // Le pavé est dans la card, et complet : le 0 et la validation n'y manquent pas.
   for (const k of ['1', '2', '3', '4']) fireEvent.click(screen.getByRole('button', { name: k }));
   expect(screen.getByRole('button', { name: '0' })).toBeDefined();

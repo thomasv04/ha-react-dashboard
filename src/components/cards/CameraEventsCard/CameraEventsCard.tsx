@@ -5,11 +5,12 @@ import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useFrigateEvents } from '@/hooks/useFrigateEvents';
-import { JUST_NOW, useRelativeTime } from '@/hooks/useRelativeTime';
+import { JUST_NOW, relativeTime } from '@/hooks/useRelativeTime';
+import { useNow } from '@/hooks/useNow';
 import { useHaUrl } from '@/hooks/useHaUrl';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
-import { countByLabel, frigateMedia, type FrigateEvent } from '@/lib/frigate';
+import { countByLabel, frigateLabel, frigateMedia, type FrigateEvent } from '@/lib/frigate';
 import type { CameraEventsCardConfig } from '@/types/widget-configs';
 import { EventViewer } from './EventViewer';
 
@@ -22,12 +23,11 @@ const LABEL_ICONS: Record<string, LucideIcon> = {
   animal: PawPrint,
 };
 
-function EventTile({ event, onOpen }: { event: FrigateEvent; onOpen: () => void }) {
+/** `now` vient de la card : une seule horloge pour toutes les vignettes. */
+function EventTile({ event, now, onOpen }: { event: FrigateEvent; now: number; onOpen: () => void }) {
   const { t } = useI18n();
   const resolve = useHaUrl();
-  const since = useRelativeTime(new Date(event.start_time * 1000).toISOString());
-  const labelKey = `widgets.camera_events.labels.${event.label}`;
-  const label = t(labelKey) === labelKey ? event.label : t(labelKey);
+  const since = relativeTime(event.start_time * 1000, now);
   return (
     <button
       onClick={onOpen}
@@ -35,9 +35,9 @@ function EventTile({ event, onOpen }: { event: FrigateEvent; onOpen: () => void 
     >
       <img src={resolve(frigateMedia(event.id, 'thumbnail.jpg'))} alt='' className='absolute inset-0 size-full object-cover' />
       <span className='absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-2.5 text-white'>
-        <span className='block truncate text-[15px] font-bold'>{label}</span>
+        <span className='block truncate text-[15px] font-bold'>{frigateLabel(t, event.label)}</span>
         <span className='block truncate text-xs opacity-90'>
-          {event.camera} · {since === JUST_NOW ? t('widgets.camera_events.justNow') : t('widgets.camera_events.since', { time: since })}
+          {event.camera} · {since === JUST_NOW ? t('widgets.sensor.justNow') : t('widgets.sensor.updatedAgo', { value: since })}
         </span>
       </span>
     </button>
@@ -57,15 +57,9 @@ export function CameraEventsCard() {
   const cardRef = useRef<HTMLDivElement>(null);
   const size = useWidgetSize(cardRef);
   const hours = config?.hours ?? 12;
-  const { events, status } = useFrigateEvents({
-    instanceId: config?.instanceId || 'frigate',
-    cameras: (config?.cameras ?? '')
-      .split(',')
-      .map(c => c.trim())
-      .filter(Boolean),
-    hours,
-  });
+  const { events, status } = useFrigateEvents({ instanceId: config?.instanceId || 'frigate', cameras: config?.cameras ?? '', hours });
   const [openId, setOpenId] = useState<string | null>(null);
+  const now = useNow().getTime();
 
   const counts = countByLabel(events).slice(0, 4);
   const columns = size.w === 'xl' ? 3 : size.w === 'xs' || size.w === 'sm' ? 1 : 2;
@@ -96,16 +90,15 @@ export function CameraEventsCard() {
       ) : events.length === 0 ? (
         <CardPlaceholder icon={Cctv} text={t('widgets.camera_events.empty', { hours })} compact={size.compact} />
       ) : (
-        <>
-          {!size.squat && (
+        !size.squat && (
+          <>
             <div className='flex shrink-0 flex-wrap gap-2'>
               {counts.map(([label, n]) => {
                 const Icon = LABEL_ICONS[label] ?? Cctv;
-                const key = `widgets.camera_events.labels.${label}`;
                 return (
                   <span
                     key={label}
-                    title={t(key) === key ? label : t(key)}
+                    title={frigateLabel(t, label)}
                     className='flex h-10 items-center gap-2 rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)] px-4 text-[15px] font-bold tabular-nums'
                   >
                     <Icon size={18} aria-hidden='true' className='text-[var(--ds-accent)]' />
@@ -114,18 +107,16 @@ export function CameraEventsCard() {
                 );
               })}
             </div>
-          )}
-          {!size.squat && (
             <div
               className='grid min-h-0 flex-1 content-start gap-2.5 overflow-y-auto'
               style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`, scrollbarWidth: 'none' }}
             >
               {events.slice(0, 12).map(e => (
-                <EventTile key={e.id} event={e} onOpen={() => setOpenId(e.id)} />
+                <EventTile key={e.id} event={e} now={now} onOpen={() => setOpenId(e.id)} />
               ))}
             </div>
-          )}
-        </>
+          </>
+        )
       )}
 
       {openId && <EventViewer events={events} initialId={openId} onClose={() => setOpenId(null)} />}

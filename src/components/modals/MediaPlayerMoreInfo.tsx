@@ -60,23 +60,20 @@ export default function MediaPlayerMoreInfo({ entityId, widgetId }: { entityId: 
   const resolveUrl = useHaUrl();
   const playFeedback = useSoundFeedback();
   const { formatTime } = useFormats();
-  const clock = useNow();
-  // La bibliothèque du lecteur : la rangée « À écouter », comme sur l'Echo Show.
-  const features0 = entity?.attributes.supported_features;
-  const library = useMediaBrowse(entityId, !!entity && supportsMedia(features0, 'BROWSE_MEDIA') && supportsMedia(features0, 'PLAY_MEDIA'));
 
   const state = entity?.state ?? 'unavailable';
   const attrs = (entity?.attributes ?? {}) as Record<string, unknown>;
   const isPlaying = state === 'playing';
   const isOff = isMediaOff(state);
+  const features = attrs.supported_features;
+  const can = (f: Parameters<typeof supportsMedia>[1]) => supportsMedia(features, f);
 
-  // Horloge : la progression avance chaque seconde pendant la lecture.
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (!isPlaying) return;
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, [isPlaying]);
+  // La bibliothèque du lecteur : la rangée « À écouter », comme sur l'Echo Show.
+  const library = useMediaBrowse(entityId, !!entity && can('BROWSE_MEDIA') && can('PLAY_MEDIA'));
+  // Une seule horloge : l'heure de l'en-tête, et la progression qui avance
+  // chaque seconde pendant la lecture.
+  const clock = useNow(isPlaying);
+  const now = clock.getTime();
 
   const haVolume = typeof attrs.volume_level === 'number' ? attrs.volume_level : 0;
   const [localVolume, setLocalVolume] = useState<number | null>(null);
@@ -90,9 +87,6 @@ export default function MediaPlayerMoreInfo({ entityId, widgetId }: { entityId: 
   const sendSeek = useDebouncedCallback((s: number) => call('media_seek', { seek_position: s }), 250);
 
   if (!entity) return <div className='p-12 text-center text-[var(--ds-ink-muted)]'>{t('common.entityNotFound')}</div>;
-
-  const features = attrs.supported_features;
-  const can = (f: Parameters<typeof supportsMedia>[1]) => supportsMedia(features, f);
 
   const name = config?.name ?? friendlyName(entity) ?? entityId;
   const title = typeof attrs.media_title === 'string' ? attrs.media_title : undefined;

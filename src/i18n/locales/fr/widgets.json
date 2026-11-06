@@ -417,9 +417,7 @@
         }
       }
     },
-    "intrusion": "Intrusion",
-    "since": "il y a {time}",
-    "justNow": "à l’instant"
+    "intrusion": "Intrusion"
   },
   "camera": {
     "label": "Caméra",
@@ -1268,8 +1266,6 @@
     "empty": "Aucun événement ces {hours} dernières heures",
     "error": "Frigate injoignable",
     "errorHint": "Installez l’intégration Frigate dans Home Assistant, et vérifiez l’identifiant d’instance.",
-    "since": "il y a {time}",
-    "justNow": "à l’instant",
     "all": "Tous",
     "live": "Direct",
     "back": "Retour",

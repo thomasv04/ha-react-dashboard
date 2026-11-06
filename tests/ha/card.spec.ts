@@ -76,7 +76,7 @@ test('une alarme déclenchée se désarme au pavé de la card', async ({ page, r
     data: { state: 'triggered', attributes: { friendly_name: 'Security' } },
   });
   await expect(tile.getByText('Intrusion')).toBeVisible();
-  await expect(tile).toContainText('à l’instant');
+  await expect(tile).toContainText("à l'instant");
   await page.screenshot({ path: 'test-results/alarm-triggered.png' });
 
   for (const k of ['1', '2', '3', '4']) await tile.getByRole('button', { name: k, exact: true }).click();
