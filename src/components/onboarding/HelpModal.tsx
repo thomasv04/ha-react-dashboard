@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Compass, Hand, LayoutGrid, Layers, Map as MapIcon, Palette, Play, Radio, Sparkles, ChevronRight } from 'lucide-react';
+import { Compass, Hand, LayoutGrid, Layers, Map as MapIcon, Palette, Play, Radio, Rocket, Sparkles, ChevronRight } from 'lucide-react';
 import { Sheet } from '@/components/ds/Sheet';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
@@ -7,6 +7,8 @@ import { startTour, type TourId } from './TourOverlay';
 import { showReleaseNotes } from './ReleaseNotesModal';
 import { EventsDoc } from './EventsDoc';
 import { GesturesDoc } from './GesturesDoc';
+import { START_ONBOARDING_EVENT } from './Onboarding';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 const TOUR_SECTIONS: { id: TourId; Icon: typeof Compass }[] = [
   { id: 'basics', Icon: Compass },
@@ -71,6 +73,7 @@ function DocSection({ id, Icon, color, children }: { id: string; Icon: typeof Ra
 /** Aide : une feuille sur le côté, comme Assist — les visites guidées et la doc. */
 export function HelpModal({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
+  const isAdmin = useIsAdmin();
 
   const launch = (id: TourId) => {
     // Fermer d'abord : le projecteur de la visite éclairerait sinon le dos de
@@ -109,6 +112,22 @@ export function HelpModal({ onClose }: { onClose: () => void }) {
         <DocSection id='events' Icon={Radio} color='var(--ds-app-music)'>
           <EventsDoc />
         </DocSection>
+
+        {/* ── Accueil, relancé : il ajoute une page, rien d'autre ── */}
+        {isAdmin && (
+          <button
+            onClick={() => {
+              onClose();
+              window.dispatchEvent(new Event(START_ONBOARDING_EVENT));
+            }}
+            data-testid='help-onboarding'
+            className={cn(ROW, 'flex items-center gap-4 text-left')}
+          >
+            <AppIcon Icon={Rocket} color='var(--ds-tile-on)' />
+            <RowText id='onboarding' />
+            <ChevronRight size={20} className='shrink-0 text-[var(--ds-ink-muted)]' />
+          </button>
+        )}
 
         {/* ── Nouveautés ── */}
         <button

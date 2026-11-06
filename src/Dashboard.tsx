@@ -2,7 +2,7 @@ import { PanelProvider } from '@/context/PanelContext';
 import { CustomPanelProvider } from '@/context/CustomPanelContext';
 import { DashboardLayoutProvider, useDashboardLayout, useEditMode } from '@/context/DashboardLayoutContext';
 import { WidgetConfigProvider } from '@/context/WidgetConfigContext';
-import { PageProvider } from '@/context/PageContext';
+import { PageProvider, type Page } from '@/context/PageContext';
 import { MoreInfoProvider } from '@/context/MoreInfoContext';
 import { PanelOverlay } from '@/components/layout/Panel';
 import { DashboardGrid } from '@/components/layout/DashboardGrid';
@@ -28,6 +28,9 @@ import { ActivePanel } from '@/components/dashboard/ActivePanel';
 import { DashboardEmptyState } from '@/components/dashboard/DashboardEmptyState';
 import { cn } from '@/lib/utils';
 import { TourHost } from '@/components/onboarding/TourOverlay';
+import { hasDoneOnboarding, Onboarding, START_ONBOARDING_EVENT, type StarterResult } from '@/components/onboarding/Onboarding';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { useI18n } from '@/i18n';
 import { ReleaseNotesHost } from '@/components/onboarding/ReleaseNotesModal';
 import { WidgetErrorBoundary } from '@/components/ui/WidgetErrorBoundary';
 import { QuickBar } from '@/components/dashboard/QuickBar';
@@ -184,17 +187,72 @@ function DashboardContent() {
 }
 
 function Dashboard() {
-  const { isLoading, pages, allLayouts, allWidgetConfigs, wallPanelConfig, wallPanelLayout, wallPanelWidgetConfigs, customPanels, dock } =
-    useDashboardConfig();
+  const {
+    isLoading,
+    status,
+    error,
+    saveConfig,
+    pages,
+    allLayouts,
+    allWidgetConfigs,
+    wallPanelConfig,
+    wallPanelLayout,
+    wallPanelWidgetConfigs,
+    customPanels,
+    dock,
+  } = useDashboardConfig();
+  const { t } = useI18n();
+  const isAdmin = useIsAdmin();
   // Échappatoire : passer outre l'attente et afficher le dashboard tel qu'il
   // peut l'être (cache ou valeurs par défaut). Le chargement continue derrière.
   const [skipped, setSkipped] = useState(false);
+  // `again` : relancé depuis l'aide ; `closed` : terminé ou passé dans cette session.
+  const [onboarding, setOnboarding] = useState<'again' | 'closed' | null>(null);
+
+  useEffect(() => {
+    const open = () => setOnboarding('again');
+    window.addEventListener(START_ONBOARDING_EVENT, open);
+    return () => window.removeEventListener(START_ONBOARDING_EVENT, open);
+  }, []);
+
+  // Installation neuve : le serveur a répondu qu'il n'avait aucune
+  // configuration — pas une panne, d'où `!error`. Seul un administrateur
+  // peut enregistrer la page construite.
+  const fresh = status === 'defaults' && !error;
+  const showOnboarding = onboarding === 'again' || (fresh && isAdmin && onboarding === null && !hasDoneOnboarding());
+
+  /**
+   * Enregistre la page construite par l'accueil. Sur une installation neuve
+   * elle devient l'accueil ; relancée plus tard, elle s'ajoute aux pages
+   * existantes sans rien toucher d'autre.
+   */
+  const createStarter = ({ layout, widgetConfigs }: StarterResult) => {
+    const id = fresh ? 'home' : `starter-${Date.now().toString(36)}`;
+    const page: Page = {
+      id,
+      label: fresh ? t('dashboard.pages.home') : t('help.onboarding.rooms.newPage'),
+      icon: 'Home',
+      type: 'grid',
+      order: fresh ? 0 : pages.length,
+    };
+    return saveConfig({
+      version: 2,
+      pages: fresh ? [page] : [...pages, page],
+      layouts: { ...allLayouts, [id]: layout },
+      widgetConfigs: { ...allWidgetConfigs, [id]: widgetConfigs },
+      ...(wallPanelConfig && { wallPanel: { config: wallPanelConfig, layout: wallPanelLayout, widgetConfigs: wallPanelWidgetConfigs } }),
+      customPanels,
+      dock,
+    });
+  };
 
   // `isLoading` n'est vrai que sans cache **et** sans réponse serveur : au
   // rechargement, le dashboard se peint immédiatement depuis le cache local.
   if (isLoading && !skipped) {
     return <LoadingScreen stage='config' onSkip={() => setSkipped(true)} />;
   }
+
+  if (showOnboarding) return <Onboarding onCreate={createStarter} onClose={() => setOnboarding('closed')} />;
 
   return (
     <PageProvider initialPages={pages}>

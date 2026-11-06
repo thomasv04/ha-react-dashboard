@@ -5,8 +5,10 @@
   "addWidget": "Ajouter un widget",
   "noWidgets": "Aucun widget sur cette page",
   "emptyState": {
-    "title": "Votre tableau de bord est prêt",
-    "subtitle": "Personnalisez votre espace en ajoutant vos premiers widgets."
+    "title": "Cette page attend ses tuiles",
+    "subtitle": "Ajoutez vos widgets un par un, ou laissez le dashboard construire une page à partir de vos pièces Home Assistant.",
+    "fromRooms": "Construire depuis mes pièces",
+    "viewer": "Un administrateur peut y ajouter des tuiles depuis le mode édition."
   },
   "loading": "Chargement de la configuration...",
   "pages": {

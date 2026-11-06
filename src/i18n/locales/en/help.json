@@ -34,6 +34,10 @@
     "gestures": {
       "title": "Swipe the screensaver",
       "body": "Change photo, open a quick menu or the notification drawer, without leaving the screensaver."
+    },
+    "onboarding": {
+      "title": "Replay the welcome",
+      "body": "The welcome screens, and a new page built from your rooms."
     }
   },
   "events": {
@@ -117,5 +121,46 @@
     "sent": "Sent: every open dashboard received it.",
     "failed": "Home Assistant refused the event: {value}",
     "notificationHint": "The notification lands in the drawer: swipe the screensaver down to see it."
+  },
+  "onboarding": {
+    "label": "Welcome",
+    "next": "Continue",
+    "back": "Back",
+    "skip": "Skip",
+    "welcome": {
+      "title": "Welcome",
+      "titleNamed": "Welcome, {value}",
+      "body": "Your home on one screen: lights, blinds, heating, music and cameras, at your fingertips. In two minutes we'll build your first page from your Home Assistant rooms.",
+      "start": "Get started"
+    },
+    "look": {
+      "title": "Language and look",
+      "body": "You can change these any time in Settings.",
+      "language": "Language",
+      "theme": "Theme",
+      "dark": "Dark",
+      "darkDesc": "Easy on the eyes, ideal for an always-on wall tablet.",
+      "light": "Light",
+      "lightDesc": "Bright and readable in a well-lit room.",
+      "auto": "Automatic",
+      "autoDesc": "Light by day, dark by night, following the sun."
+    },
+    "rooms": {
+      "title": "Your rooms",
+      "body": "Each ticked room gets a tile, and its lights, blinds, heating and players get a panel of their own. Rooms with nothing to control are unticked.",
+      "none": "No rooms are set up in Home Assistant. We'll prepare a simple home page; you can add your devices afterwards.",
+      "panelTitle": "Rooms",
+      "newPage": "My home",
+      "empty": "Start from an empty page",
+      "create": "Create my page ({value} rooms)",
+      "creating": "Creating…",
+      "nothing": "Nothing to control"
+    },
+    "ready": {
+      "title": "All set",
+      "body": "Your page is ready. Everything can be rearranged: the pencil at the top opens editing, the launcher leads to Settings and Help.",
+      "tour": "Take the tour",
+      "explore": "Explore on my own"
+    }
   }
 }
