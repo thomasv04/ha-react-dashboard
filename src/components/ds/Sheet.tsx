@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { DURATION_FAST } from '@/lib/motion-tokens';
+import { registerSheet } from '@/lib/sheet-open';
 
 /**
  * Feuille superposée sur le côté droit : le réglage détaillé d'un appareil
@@ -25,6 +26,9 @@ export function Sheet({
   closeLabel: string;
   children: ReactNode;
 }) {
+  // Les toasts se rangent à gauche tant que la feuille est ouverte.
+  useEffect(() => (open ? registerSheet() : undefined), [open]);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();

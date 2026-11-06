@@ -51,7 +51,7 @@ function relativeTime(iso: string | undefined, language: string): string {
   return format.format(Math.round(delta / DAY), 'day');
 }
 
-function NotificationCard({ item, onDismiss }: { item: DashboardNotification; onDismiss: () => void }) {
+export function NotificationCard({ item, onDismiss }: { item: DashboardNotification; onDismiss: () => void }) {
   const { language, t } = useI18n();
   const helpers = useHass(s => s.helpers);
   const levelName = item.level ?? 'info';

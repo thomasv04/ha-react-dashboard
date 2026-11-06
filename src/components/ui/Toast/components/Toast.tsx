@@ -1,8 +1,10 @@
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useToast, type Toast, type ToastAction } from '@/context/ToastContext';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
+import { useSheetOpen } from '@/lib/sheet-open';
 
 // ── Single toast card ─────────────────────────────────────────────────────────
 
@@ -87,11 +89,25 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
 // ── Toast container ───────────────────────────────────────────────────────────
 
 export { ToastCard };
+/**
+ * Dans `document.body`, comme les modales et les feuilles : en mode carte,
+ * l'arbre vit dans une shadow root à l'hôte isolé (`isolation: isolate`), et un
+ * toast posé là passait **derrière** toute feuille portée dans le `body`.
+ * Au-dessus de tout (`z-[300]`, les modales sont à 200) ; à gauche d'une feuille
+ * latérale ouverte, pour ne pas la recouvrir — sur téléphone, où elle prend tout
+ * l'écran, il reste par-dessus.
+ */
 export function ToastContainer() {
   const { toasts, removeToast } = useToast();
+  const sheetOpen = useSheetOpen();
 
-  return (
-    <div className='fixed top-4 right-4 z-[100] flex flex-col gap-2 items-end pointer-events-none'>
+  return createPortal(
+    <div
+      className={cn(
+        'pointer-events-none fixed right-4 top-4 z-[300] flex flex-col items-end gap-2 transition-[right]',
+        sheetOpen && 'sm:right-[calc(min(440px,calc(100vw-32px))+32px)]'
+      )}
+    >
       <AnimatePresence mode='popLayout'>
         {toasts.map(toast => (
           <div key={toast.id} className='pointer-events-auto w-full max-w-md'>
@@ -99,6 +115,7 @@ export function ToastContainer() {
           </div>
         ))}
       </AnimatePresence>
-    </div>
+    </div>,
+    document.body
   );
 }
