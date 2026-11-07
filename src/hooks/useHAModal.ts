@@ -28,6 +28,8 @@ export function useHAModal() {
 
     connection
       .subscribeEvents((event: { data: HAModalEvent }) => {
+        // Une modale du dashboard : `useHAPanel` s'en charge, sous les contextes des modales.
+        if (event.data?.panel) return;
         openModalRef.current(modalFromEvent(event.data, helpersRef.current));
       }, HA_EVENT_TYPES.modal)
       .then(unsub => {

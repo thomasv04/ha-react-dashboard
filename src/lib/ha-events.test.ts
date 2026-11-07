@@ -1,7 +1,26 @@
 import { describe, it, expect, vi } from 'vitest';
-import { asText, modalFromEvent, toastFromEvent, applyNotificationEvent } from './ha-events';
+import { asText, findPanel, modalFromEvent, toastFromEvent, applyNotificationEvent } from './ha-events';
 
 const helpers = { callService: vi.fn() };
+
+describe('findPanel', () => {
+  const panels = [
+    { id: 'a1', name: 'Volets' },
+    { id: 'b2', name: 'Sonnette' },
+  ];
+
+  it("trouve la modale par sa référence d'éditeur, son id ou son nom", () => {
+    expect(findPanel('custom:b2', panels)?.name).toBe('Sonnette');
+    expect(findPanel('b2', panels)?.name).toBe('Sonnette');
+    expect(findPanel(' sonnette ', panels)?.id).toBe('b2');
+  });
+
+  it('ne trouve rien pour une modale inconnue ou une référence vide', () => {
+    expect(findPanel('Portail', panels)).toBeUndefined();
+    expect(findPanel('', panels)).toBeUndefined();
+    expect(findPanel(undefined, panels)).toBeUndefined();
+  });
+});
 
 describe('asText', () => {
   it('écrit en texte ce que HA rend en valeur native', () => {

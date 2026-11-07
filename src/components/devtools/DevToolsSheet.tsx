@@ -14,6 +14,8 @@ import { useToast } from '@/context/ToastContext';
 import { useNotifications } from '@/context/NotificationContext';
 import { NotificationCard } from '@/components/wallpanel/NotificationSheet';
 import { useIconCatalog } from '@/lib/lucide-icon-map';
+import { PanelSelectField } from '@/components/layout/WidgetEditModal/PanelSelectField';
+import { useOpenPanelFromEvent } from '@/hooks/useHAPanel';
 import {
   applyNotificationEvent,
   HA_EVENT_TYPES,
@@ -59,6 +61,7 @@ export function DevToolsSheet({ open, onClose }: { open: boolean; onClose: () =>
   const { addToast } = useToast();
   const { notifications, notify, dismiss, dismissAll } = useNotifications();
   const { soundSettings } = useTheme();
+  const openPanelFromEvent = useOpenPanelFromEvent();
   // Les icônes hors du noyau arrivent avec le catalogue, chargé à la demande.
   useIconCatalog();
 
@@ -78,10 +81,16 @@ export function DevToolsSheet({ open, onClose }: { open: boolean; onClose: () =>
   const data = buildEventData(kind, form);
   const canSend = canSendEvent(kind, form);
   const dismissing = kind === 'notification' && form.dismiss;
+  /** Modale : ouvrir une modale du dashboard plutôt qu'en composer une. */
+  const panelMode = kind === 'modal' && !!form.panel;
 
   /** Ce qu'afficherait l'événement, sur cet écran seulement — mêmes fonctions que les abonnements. */
   const preview = () => {
-    if (kind === 'modal') openModal(modalFromEvent(data as HAModalEvent, helpers));
+    if (panelMode) {
+      // La feuille des modales passe sous celle-ci : on la ferme pour voir.
+      onClose();
+      openPanelFromEvent(data as HAModalEvent);
+    } else if (kind === 'modal') openModal(modalFromEvent(data as HAModalEvent, helpers));
     else if (kind === 'toast') addToast(toastFromEvent(data as unknown as HAToastEvent, helpers));
     else applyNotificationEvent(data as HANotificationEvent, { notify, dismiss, dismissAll });
   };
@@ -140,19 +149,29 @@ export function DevToolsSheet({ open, onClose }: { open: boolean; onClose: () =>
                   <input className={INPUT} value={form.id} onChange={e => set({ id: e.target.value })} placeholder='update-2.3.0' />
                 </Field>
               )}
-              <Field label={t('help.devtools.fieldTitle')}>
-                <input className={INPUT} value={form.title} onChange={e => set({ title: e.target.value })} />
-              </Field>
-              <Field label={t(kind === 'toast' ? 'help.devtools.description' : 'help.devtools.text')}>
-                <textarea
-                  rows={3}
-                  className={cn(INPUT, 'h-auto py-3 leading-relaxed')}
-                  value={form.text}
-                  onChange={e => set({ text: e.target.value })}
-                />
-              </Field>
+              {kind === 'modal' && (
+                <div className='flex flex-col gap-1.5'>
+                  <PanelSelectField label={t('help.devtools.panel')} value={form.panel} onChange={panel => set({ panel })} />
+                  <span className='text-[15px] leading-relaxed text-[var(--ds-ink-muted)]'>{t('help.devtools.panelDesc')}</span>
+                </div>
+              )}
+              {!panelMode && (
+                <>
+                  <Field label={t('help.devtools.fieldTitle')}>
+                    <input className={INPUT} value={form.title} onChange={e => set({ title: e.target.value })} />
+                  </Field>
+                  <Field label={t(kind === 'toast' ? 'help.devtools.description' : 'help.devtools.text')}>
+                    <textarea
+                      rows={3}
+                      className={cn(INPUT, 'h-auto py-3 leading-relaxed')}
+                      value={form.text}
+                      onChange={e => set({ text: e.target.value })}
+                    />
+                  </Field>
+                </>
+              )}
 
-              {kind !== 'toast' && (
+              {kind !== 'toast' && !panelMode && (
                 <Field group label={t('help.devtools.contentType')}>
                   <Segmented<ContentType>
                     label={t('help.devtools.contentType')}
@@ -168,7 +187,7 @@ export function DevToolsSheet({ open, onClose }: { open: boolean; onClose: () =>
 
               {kind === 'modal' && (
                 <>
-                  {form.width !== 'screen' && (
+                  {form.width !== 'screen' && !panelMode && (
                     <Field group label={t('help.devtools.width')}>
                       <Segmented
                         label={t('help.devtools.width')}
@@ -223,7 +242,7 @@ export function DevToolsSheet({ open, onClose }: { open: boolean; onClose: () =>
               )}
             </section>
 
-            {kind === 'modal' && (
+            {kind === 'modal' && !panelMode && (
               <>
                 <PerfToggle
                   checked={form.width === 'screen'}
@@ -287,7 +306,9 @@ export function DevToolsSheet({ open, onClose }: { open: boolean; onClose: () =>
               </section>
             )}
 
-            <ActionsEditor actions={form.actions} onChange={actions => set({ actions })} withKeep={kind === 'notification'} />
+            {!panelMode && (
+              <ActionsEditor actions={form.actions} onChange={actions => set({ actions })} withKeep={kind === 'notification'} />
+            )}
           </>
         )}
 

@@ -21,7 +21,11 @@ const MODAL_YAML = `action:
           service: hassio.addon_update
           service_data:
             addon: ha-react-dashboard
-        - label: "Plus tard"`;
+        - label: "Plus tard"
+
+# Ouvrir une de vos modales (la caméra de la sonnette…) à la place :
+#   event_data: { panel: "Sonnette", duration_ms: 30000 }
+#   panel : son nom, ou la référence custom:… de son éditeur`;
 
 const TOAST_YAML = `action:
   - event: ha_dashboard_toast

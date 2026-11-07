@@ -34,6 +34,20 @@ export interface HAModalEvent {
   /** Se ferme seule après ce délai, même bloquante. Absent : reste affichée. */
   duration_ms?: number;
   actions?: HAEventAction[];
+  /**
+   * Ouvre une modale du dashboard à la place : `custom:<id>` (la référence de
+   * son éditeur), l'id seul, ou son nom. Seuls `duration_ms` et `sound`
+   * comptent alors.
+   */
+  panel?: string;
+}
+
+/** La modale du dashboard que désigne `panel` : référence `custom:<id>`, id, ou nom (casse ignorée). */
+export function findPanel<P extends { id: string; name: string }>(ref: unknown, panels: P[]): P | undefined {
+  const r = asText(ref)?.trim();
+  if (!r) return undefined;
+  const id = r.replace(/^custom:/, '');
+  return panels.find(p => p.id === id) ?? panels.find(p => p.name.trim().toLowerCase() === r.toLowerCase());
 }
 
 export interface HAToastEvent {

@@ -310,6 +310,10 @@ action:
           service: hassio.addon_update
           service_data: { addon: ha-react-dashboard }
         - label: "Plus tard"
+# Ouvrir une modale du dashboard (avec ses cards, la caméra de la sonnette…) :
+#   event_data: { panel: "Sonnette", duration_ms: 30000 }
+# `panel` : nom, id ou référence `custom:<id>` ; seuls duration_ms et sound comptent.
+# Lève l'écran de veille ; une modale introuvable affiche un toast qui le dit.
 ```
 
 Points à savoir :
@@ -342,7 +346,8 @@ Points à savoir :
 
 Où ça vit : `src/lib/ha-events.ts` (types + traduction événement → affichage,
 partagée par les abonnements `useHAToast` / `useHANotification` / `useHAModal` et
-par l'aperçu), `src/components/devtools/` (le bac à sable),
+par l'aperçu ; `panel` passe par `useHAPanel`, monté dans `Dashboard` sous les
+contextes des modales), `src/components/devtools/` (le bac à sable),
 `src/components/onboarding/EventsDoc.tsx` (la doc de l'Aide). **Ajouter un champ à
 un événement** : le typer dans `ha-events.ts`, le gérer dans `modalFromEvent` /
 `toastFromEvent` / `applyNotificationEvent`, l'ajouter au formulaire

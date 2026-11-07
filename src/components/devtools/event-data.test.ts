@@ -24,6 +24,12 @@ describe('buildEventData — modale', () => {
     expect(buildEventData('modal', form({ title: 'T' })).duration_ms).toBeUndefined();
   });
 
+  it("une modale du dashboard n'emporte que panel, durée et son — et s'envoie sans titre", () => {
+    const f = form({ title: '', text: '', panel: 'custom:b2', modalDurationMs: 30000, width: 'screen', sound: 'muted' });
+    expect(buildEventData('modal', f)).toEqual({ panel: 'custom:b2', duration_ms: 30000, sound: false });
+    expect(canSendEvent('modal', f)).toBe(true);
+  });
+
   it('distingue le son coupé (false), une adresse et le son par défaut', () => {
     expect(buildEventData('modal', form({ title: 'T', sound: 'muted' })).sound).toBe(false);
     expect(buildEventData('modal', form({ title: 'T', sound: 'url', soundUrl: ' /local/a.mp3 ' })).sound).toBe('/local/a.mp3');

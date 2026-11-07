@@ -32,6 +32,8 @@ export interface EventForm {
   durationMs: number;
   /** Modale : fermeture automatique, en ms. 0 : reste affichée. */
   modalDurationMs: number;
+  /** Modale : ouvrir cette modale du dashboard (`custom:<id>`) au lieu d'en composer une. */
+  panel: string;
   persistent: boolean;
   /** `default` : laisser le son par défaut ; `muted` : `sound: false` ; `url` : `soundUrl` ; sinon un préréglage. */
   sound: string;
@@ -54,6 +56,7 @@ export const DEFAULT_FORM: EventForm = {
   dismissible: true,
   durationMs: 5000,
   modalDurationMs: 0,
+  panel: '',
   persistent: false,
   sound: 'default',
   soundUrl: '',
@@ -79,7 +82,8 @@ export const invalidActions = (f: EventForm): number[] => f.actions.flatMap((a, 
 
 /** Peut-on envoyer ? Un retrait n'a besoin de rien ; le reste, d'un texte. */
 export const canSendEvent = (kind: EventKind, f: EventForm): boolean =>
-  invalidActions(f).length === 0 && (kind === 'notification' && f.dismiss ? true : !!(f.title.trim() || f.text.trim()));
+  invalidActions(f).length === 0 &&
+  ((kind === 'notification' && f.dismiss) || (kind === 'modal' && !!f.panel) || !!(f.title.trim() || f.text.trim()));
 
 const soundValue = (f: EventForm): string | false | undefined =>
   f.sound === 'default' ? undefined : f.sound === 'muted' ? false : f.sound === 'url' ? f.soundUrl.trim() || undefined : f.sound;
@@ -105,38 +109,42 @@ export function buildEventData(kind: EventKind, f: EventForm): Record<string, un
   const actions = f.actions.filter(a => a.label.trim()).map(a => actionData(kind, a));
   const contentType = f.contentType === 'plain' ? undefined : f.contentType;
 
+  const duration = f.modalDurationMs > 0 ? f.modalDurationMs : undefined;
   const data: Record<string, unknown> =
-    kind === 'modal'
-      ? {
-          title: f.title,
-          content: f.text,
-          content_type: contentType,
-          width: f.width === 'md' ? undefined : f.width,
-          dismissible: f.dismissible ? undefined : false,
-          duration_ms: f.modalDurationMs > 0 ? f.modalDurationMs : undefined,
-          sound: soundValue(f),
-          actions,
-        }
-      : kind === 'toast'
+    kind === 'modal' && f.panel
+      ? // Une modale du dashboard : le reste de la fenêtre ne s'applique pas.
+        { panel: f.panel, duration_ms: duration, sound: soundValue(f) }
+      : kind === 'modal'
         ? {
             title: f.title,
-            description: f.text,
-            duration_ms: f.durationMs === 5000 ? undefined : f.durationMs,
-            persistent: f.persistent || undefined,
+            content: f.text,
+            content_type: contentType,
+            width: f.width === 'md' ? undefined : f.width,
+            dismissible: f.dismissible ? undefined : false,
+            duration_ms: duration,
             sound: soundValue(f),
             actions,
           }
-        : f.dismiss
-          ? { id: f.id.trim(), dismiss: true }
-          : {
-              id: f.id.trim(),
+        : kind === 'toast'
+          ? {
               title: f.title,
-              message: f.text,
-              content_type: contentType,
-              level: f.level === 'info' ? undefined : f.level,
-              icon: f.icon.trim(),
+              description: f.text,
+              duration_ms: f.durationMs === 5000 ? undefined : f.durationMs,
+              persistent: f.persistent || undefined,
+              sound: soundValue(f),
               actions,
-            };
+            }
+          : f.dismiss
+            ? { id: f.id.trim(), dismiss: true }
+            : {
+                id: f.id.trim(),
+                title: f.title,
+                message: f.text,
+                content_type: contentType,
+                level: f.level === 'info' ? undefined : f.level,
+                icon: f.icon.trim(),
+                actions,
+              };
 
   // `false` reste : `sound: false` coupe le son. Seuls l'absent, le vide et la liste vide s'en vont.
   return Object.fromEntries(
