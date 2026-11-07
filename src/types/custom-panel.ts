@@ -86,6 +86,12 @@ export interface CustomPanel {
    * allume l'icône. Absente : l'icône seule.
    */
   railEntity?: string;
+  /**
+   * Nombre de colonnes de la grille au plus large : chaque bloc en prend une.
+   * Absent : autant de colonnes de 220 px que la largeur en tient, une card
+   * en occupant deux.
+   */
+  columns?: number;
 }
 
 /** Barre du bas : panneaux épinglés, dans l'ordre, et libellés sous les icônes. */

@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { modalEnter, modalScrim } from '@/lib/motion-variants';
+import { modalEnter, modalScrim, topSheet } from '@/lib/motion-variants';
 import { X } from 'lucide-react';
 import { useModal, type Modal, type ModalAction } from '@/context/ModalContext';
 import { cn } from '@/lib/utils';
@@ -46,7 +46,8 @@ function ModalCard({ modal, onClose }: ModalCardProps) {
     md: 'max-w-md',
     lg: 'max-w-2xl',
     full: 'max-w-[90vw]',
-  }[modal.width ?? 'md'];
+  }[modal.width === 'screen' ? 'md' : (modal.width ?? 'md')];
+  const screen = modal.width === 'screen';
 
   const variantClass: Record<NonNullable<ModalAction['variant']>, string> = {
     default: 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)]',
@@ -103,6 +104,85 @@ function ModalCard({ modal, onClose }: ModalCardProps) {
     return () => modalElement.removeEventListener('keydown', handleTabKey as EventListener);
   }, []);
 
+  const closeButton = modal.dismissible && (
+    <button
+      ref={firstFocusableRef}
+      onClick={onClose}
+      className='ml-auto flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'
+      aria-label={t('common.close')}
+    >
+      <X size={18} />
+    </button>
+  );
+
+  const actions = modal.actions && modal.actions.length > 0 && (
+    <div className='flex flex-wrap gap-2 justify-end'>
+      {modal.actions.map((action, i) => (
+        <button
+          key={i}
+          onClick={() => {
+            action.onClick();
+            // Une action ferme toujours sa fenêtre : `dismissible: false`
+            // la garde ouverte jusque-là, rien d'autre.
+            onClose();
+          }}
+          className={cn('h-12 rounded-full px-6 text-base font-semibold', variantClass[action.variant ?? 'default'])}
+        >
+          {action.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  // Plein écran : la feuille des modales du dashboard (`Panel`) — poignée et
+  // titre centrés, croix en haut à droite, contenu dans un panneau.
+  if (screen) {
+    return (
+      <motion.div
+        ref={modalRef}
+        variants={topSheet}
+        initial='hidden'
+        animate='visible'
+        exit='exit'
+        role='dialog'
+        aria-modal='true'
+        aria-labelledby={modal.title ? 'modal-title' : undefined}
+        className='fixed inset-0 z-[200] flex flex-col bg-[var(--ds-ground)] text-[var(--ds-ink)]'
+      >
+        <div aria-hidden='true' className='mx-auto mt-4 h-[5px] w-20 shrink-0 rounded-full bg-[var(--ds-ink-muted)]' />
+        {modal.title && (
+          <h2 id='modal-title' className='shrink-0 truncate px-20 pt-5 text-center text-2xl font-semibold sm:px-56'>
+            {modal.title}
+          </h2>
+        )}
+        <div className='absolute right-6 top-6 flex items-center gap-2'>
+          {/* Le temps qui reste avant la fermeture, comme sur une modale du dashboard. */}
+          {modal.durationMs && (
+            <div className='h-1.5 w-16 overflow-hidden rounded-full bg-[var(--ds-surface-3)]'>
+              <motion.div
+                initial={{ width: '100%' }}
+                animate={{ width: '0%' }}
+                transition={{ duration: modal.durationMs / 1000, ease: 'linear' }}
+                className='h-full rounded-full bg-[var(--ds-ink-muted)]'
+              />
+            </div>
+          )}
+          {closeButton}
+        </div>
+        <div className='min-h-0 flex-1 overflow-y-auto px-4 pb-8 pt-6 sm:px-10'>
+          <div className='mx-auto max-w-[1200px] rounded-[var(--ds-radius-xl)] bg-[var(--ds-surface-1)] p-[22px]'>
+            {modal.content && (
+              <div className={cn(actions && 'mb-6')}>
+                <ModalContentRenderer content={modal.content} />
+              </div>
+            )}
+            {actions}
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       variants={modalScrim}
@@ -136,16 +216,7 @@ function ModalCard({ modal, onClose }: ModalCardProps) {
               {modal.title}
             </h2>
           )}
-          {modal.dismissible && (
-            <button
-              ref={firstFocusableRef}
-              onClick={onClose}
-              className='ml-auto flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'
-              aria-label={t('common.close')}
-            >
-              <X size={18} />
-            </button>
-          )}
+          {closeButton}
         </div>
 
         {/* Content */}
@@ -155,25 +226,7 @@ function ModalCard({ modal, onClose }: ModalCardProps) {
           </div>
         )}
 
-        {/* Actions */}
-        {modal.actions && modal.actions.length > 0 && (
-          <div className='flex flex-wrap gap-2 justify-end'>
-            {modal.actions.map((action, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  action.onClick();
-                  // Une action ferme toujours sa fenêtre : `dismissible: false`
-                  // la garde ouverte jusque-là, rien d'autre.
-                  onClose();
-                }}
-                className={cn('h-12 rounded-full px-6 text-base font-semibold', variantClass[action.variant ?? 'default'])}
-              >
-                {action.label}
-              </button>
-            ))}
-          </div>
-        )}
+        {actions}
       </motion.div>
     </motion.div>
   );

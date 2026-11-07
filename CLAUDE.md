@@ -300,8 +300,9 @@ action:
       title: "Mise à jour disponible"
       content: "Une nouvelle version est prête."
       content_type: plain # plain | html (assaini) | markdown (affiché brut)
-      width: md # sm | md | lg | full
+      width: md # sm | md | lg | full | screen (plein écran, sans marge)
       dismissible: false # pas d'Échap ni de clic extérieur : il faut choisir un bouton
+      duration_ms: 30000 # se ferme seule après ce délai, même bloquante ; absent : reste
       sound: notification # ou false
       actions:
         - label: "Installer"
@@ -309,6 +310,10 @@ action:
           service: hassio.addon_update
           service_data: { addon: ha-react-dashboard }
         - label: "Plus tard"
+# Ouvrir une modale du dashboard (avec ses cards, la caméra de la sonnette…) :
+#   event_data: { panel: "Sonnette", duration_ms: 30000 }
+# `panel` : nom, id ou référence `custom:<id>` ; seuls duration_ms et sound comptent.
+# Lève l'écran de veille ; une modale introuvable affiche un toast qui le dit.
 ```
 
 Points à savoir :
@@ -329,7 +334,7 @@ Points à savoir :
 - Un bouton appelle un service **sans cible** : l'entité va dans `service_data`
   (`entity_id`), pas dans un champ `target`. `service` doit être `domaine.service`.
 - Un bouton de modale ou de toast ferme toujours sa fenêtre ; `dismissible: false`
-  la garde ouverte jusque-là, rien d'autre.
+  la garde ouverte jusque-là, ou jusqu'à la fin de `duration_ms`.
 - Le HTML est assaini (`RichText`), le markdown **n'est pas rendu** : il s'affiche
   tel quel. Ne pas promettre de mise en forme markdown.
 - Dans *Outils de développement > Événements* de HA, le **type** et les
@@ -341,7 +346,8 @@ Points à savoir :
 
 Où ça vit : `src/lib/ha-events.ts` (types + traduction événement → affichage,
 partagée par les abonnements `useHAToast` / `useHANotification` / `useHAModal` et
-par l'aperçu), `src/components/devtools/` (le bac à sable),
+par l'aperçu ; `panel` passe par `useHAPanel`, monté dans `Dashboard` sous les
+contextes des modales), `src/components/devtools/` (le bac à sable),
 `src/components/onboarding/EventsDoc.tsx` (la doc de l'Aide). **Ajouter un champ à
 un événement** : le typer dans `ha-events.ts`, le gérer dans `modalFromEvent` /
 `toastFromEvent` / `applyNotificationEvent`, l'ajouter au formulaire

@@ -233,6 +233,9 @@
     "widgetRowsMore": "Taller",
     "railEntity": "Status badge",
     "railEntityDesc": "A temperature shows in the menu instead of the icon; a device that is on lights the icon up.",
+    "columns": "Columns",
+    "columnsAuto": "Auto",
+    "columnsDesc": "Maximum number of cards per row. Auto: based on the width, a card taking two columns. A narrow screen shows fewer.",
     "domainPlaceholder": "domain",
     "servicePlaceholder": "service",
     "buttonLabelPlaceholder": "e.g. Open all"

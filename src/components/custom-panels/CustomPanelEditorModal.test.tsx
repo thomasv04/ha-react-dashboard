@@ -70,6 +70,16 @@ describe('CustomPanelEditorModal', () => {
     expect(setDock).toHaveBeenCalledWith({ panels: ['p1'], labels: true });
   });
 
+  // Trois cards dans une grille auto laissaient une colonne vide à droite.
+  it('enregistre le nombre de colonnes choisi', async () => {
+    render(<CustomPanelEditorModal onClose={onClose} />);
+
+    await userEvent.click(screen.getByRole('radio', { name: '3' }));
+    expect(document.querySelector('[style*="grid-template-columns"]')).not.toBeNull();
+    await userEvent.click(screen.getByText('layout.customPanel.saveAndClose'));
+    expect(saveConfig).toHaveBeenCalledWith(expect.objectContaining({ customPanels: [{ ...PANEL, columns: 3 }] }));
+  });
+
   it("ferme sans rien demander quand rien n'a bougé", async () => {
     render(<CustomPanelEditorModal onClose={onClose} />);
     await userEvent.click(screen.getByLabelText('common.close'));

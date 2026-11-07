@@ -18,6 +18,7 @@ import { AnimatePresence, LayoutGroup } from 'framer-motion';
 
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 import { usePageRouting } from '@/hooks/usePageRouting';
+import { useHAPanel } from '@/hooks/useHAPanel';
 import { WallPanelProvider, useScreensaverPlan, useWallPanel } from '@/context/WallPanelContext';
 import { WallPanelOverlay } from '@/components/wallpanel/WallPanelOverlay';
 import { IdleWatcher, ScreensaverEntityWatcher } from '@/components/wallpanel/ScreensaverWatchers';
@@ -93,6 +94,7 @@ function DashboardContent() {
   const { layout } = useDashboardLayout();
   const { currentPage } = usePages();
   usePageRouting();
+  useHAPanel();
   const widgets = layoutWidgets(layout);
   const { isEditMode } = useEditMode();
   // Sans panneau ni édition, il n'y a rien à dessiner : l'écran d'accueil vide s'en charge.

@@ -10,6 +10,15 @@ import type { CameraStreamMode } from '@/types/widget-types';
 
 export type StreamProtocol = 'HLS' | 'MJPEG' | null;
 
+/**
+ * `@hakit/core` écrit `?token=${access_token}` sans vérifier qu'il existe : une
+ * caméra indisponible (ou pas encore chargée) n'en a pas, d'où une requête
+ * `token=undefined` refusée en 403. Sans jeton, pas d'URL.
+ */
+function mjpegUrlOf(cam: { attributes?: { access_token?: unknown }; mjpeg: { url?: string } }): string {
+  return cam.attributes?.access_token ? (cam.mjpeg.url ?? '') : '';
+}
+
 interface CameraFeedProps {
   entityId: string;
   className?: string;
@@ -39,7 +48,7 @@ const MjpegFeed = memo(function MjpegFeed({ entityId, className, posterEntity, o
   // ou écran éteint coûte des centaines de Mo par heure pour rien.
   const active = useStreamActive(holderRef);
 
-  const mjpegUrl = cam.mjpeg.url;
+  const mjpegUrl = mjpegUrlOf(cam);
   // `?.` : `poster` n'est peuplé que si l'option est active côté `useCamera`.
   // L'image fixe est un confort, son absence ne doit pas casser le flux.
   // L'entité choisie en config prime sur le poster de la caméra elle-même.
@@ -175,7 +184,7 @@ const HlsFeed = memo(function HlsFeed({ entityId, className, posterEntity, onPro
   const active = useStreamActive(holderRef);
 
   const streamUrl = cam.stream.url;
-  const mjpegUrl = cam.mjpeg.url;
+  const mjpegUrl = mjpegUrlOf(cam);
   const posterUrl = useEntityPicture(posterEntity);
 
   /**

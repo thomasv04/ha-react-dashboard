@@ -46,6 +46,7 @@ describe('CameraFeed', () => {
 
   it('affiche un flux MJPEG quand shouldRenderMJPEG est true', () => {
     mockUseCamera.mockReturnValue({
+      attributes: { access_token: 'abc' },
       stream: { url: undefined, loading: false, error: undefined },
       mjpeg: { url: 'https://ha/api/camera_proxy_stream/camera.kitchen?token=abc', shouldRenderMJPEG: true },
       poster: { url: undefined },
@@ -56,6 +57,17 @@ describe('CameraFeed', () => {
     expect(img).toBeInTheDocument();
     expect(img).toHaveAttribute('src', 'https://ha/api/camera_proxy_stream/camera.kitchen?token=abc');
     expect(onProtocol).toHaveBeenCalledWith('MJPEG');
+  });
+
+  it('ne demande pas de flux MJPEG sans jeton (sinon `token=undefined`, 403)', () => {
+    mockUseCamera.mockReturnValue({
+      attributes: {},
+      stream: { url: undefined, loading: false, error: undefined },
+      mjpeg: { url: '/api/camera_proxy_stream/camera.kitchen?token=undefined', shouldRenderMJPEG: true },
+      poster: { url: undefined },
+    });
+    const { container } = render(<CameraFeed entityId='camera.kitchen' />);
+    expect(container.querySelector('img')).not.toBeInTheDocument();
   });
 
   it('affiche une icône si aucune source disponible', () => {
@@ -110,6 +122,7 @@ describe('HLS — cible de l’observateur de visibilité', () => {
     // n'existe pas à ce moment, l'IntersectionObserver se pose sur `null` et
     // n'est jamais recréé : hls.js ne s'attache plus et la caméra reste grise.
     mockUseCamera.mockReturnValue({
+      attributes: { access_token: 'abc' },
       stream: { url: undefined, loading: true, error: undefined },
       mjpeg: { url: 'https://ha/api/camera_proxy_stream/camera.front_door?token=abc' },
       poster: { url: undefined },

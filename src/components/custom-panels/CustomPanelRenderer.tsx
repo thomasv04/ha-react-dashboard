@@ -64,11 +64,17 @@ const BLOCK_SPAN: Partial<Record<CustomBlock['type'], string>> = {
  */
 export function CustomPanelBlocks({ panel }: { panel: CustomPanel }) {
   const { t } = useI18n();
+  const n = panel.columns;
 
   return (
-    <div className='@container grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3'>
+    <div
+      className='@container grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3'
+      // `n` colonnes au plus, jamais plus étroites que 220 px : sur un écran
+      // étroit, la grille en perd plutôt que d'écraser les cards (gap-3 = 12 px).
+      style={n ? { gridTemplateColumns: `repeat(auto-fill, minmax(max(220px, calc((100% - ${(n - 1) * 12}px) / ${n})), 1fr))` } : undefined}
+    >
       {panel.blocks.map(block => (
-        <div key={block.id} className={BLOCK_SPAN[block.type]}>
+        <div key={block.id} className={n && block.type === 'widget' ? undefined : BLOCK_SPAN[block.type]}>
           <SafeBlock block={block} card />
         </div>
       ))}

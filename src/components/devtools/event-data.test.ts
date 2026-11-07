@@ -15,6 +15,21 @@ describe('buildEventData — modale', () => {
     ).toEqual({ title: 'T', content: 'x', content_type: 'markdown', width: 'full', dismissible: false, sound: 'chime' });
   });
 
+  it('plein écran et durée : écrits seulement quand ils sont choisis', () => {
+    expect(buildEventData('modal', form({ title: 'Sonnette', width: 'screen', modalDurationMs: 30000 }))).toEqual({
+      title: 'Sonnette',
+      width: 'screen',
+      duration_ms: 30000,
+    });
+    expect(buildEventData('modal', form({ title: 'T' })).duration_ms).toBeUndefined();
+  });
+
+  it("une modale du dashboard n'emporte que panel, durée et son — et s'envoie sans titre", () => {
+    const f = form({ title: '', text: '', panel: 'custom:b2', modalDurationMs: 30000, width: 'screen', sound: 'muted' });
+    expect(buildEventData('modal', f)).toEqual({ panel: 'custom:b2', duration_ms: 30000, sound: false });
+    expect(canSendEvent('modal', f)).toBe(true);
+  });
+
   it('distingue le son coupé (false), une adresse et le son par défaut', () => {
     expect(buildEventData('modal', form({ title: 'T', sound: 'muted' })).sound).toBe(false);
     expect(buildEventData('modal', form({ title: 'T', sound: 'url', soundUrl: ' /local/a.mp3 ' })).sound).toBe('/local/a.mp3');
