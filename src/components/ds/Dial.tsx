@@ -139,6 +139,8 @@ export function Dial<T extends string>({
   // Cadre du cadran, lu au début du geste : le relire à chaque mouvement
   // forçait un calcul de mise en page par image pendant tout le glisser.
   const rectRef = useRef<DOMRect | null>(null);
+  // Un doigt posé sur l'anneau hors du curseur : la valeur visée, réglée au lâcher.
+  const tapRef = useRef<{ x: number; y: number; v: number } | null>(null);
 
   const pointValue = (e: PointerEvent) => {
     const rect = rectRef.current ?? ringRef.current!.getBoundingClientRect();
@@ -148,18 +150,28 @@ export function Dial<T extends string>({
   // Le glisser appartient au cadran : sans `stopPropagation`, la case de la
   // grille lancerait son appui long et ouvrirait la fiche. Les boutons (modes,
   // flèches) gardent leurs appuis.
+  // Au doigt, seul le curseur se fait glisser : ailleurs, l'anneau laisse la page
+  // défiler (le navigateur fige `touch-action` dès l'appui, impossible de trancher
+  // après) et un simple toucher y vise une valeur.
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     ownsGestureRef.current = false;
+    tapRef.current = null;
     if (e.button !== 0 || (e.target as Element).closest('button')) return;
     rectRef.current = ringRef.current!.getBoundingClientRect();
     const v = pointValue(e);
     if (v === null) return (rectRef.current = null);
     ownsGestureRef.current = true;
     e.stopPropagation();
-    e.currentTarget.setPointerCapture(e.pointerId);
     startRef.current = value;
-    dragRef.current = v;
-    onDrag?.(v);
+    const onKnob = !!(e.target as Element).closest('[data-dial-knob]');
+    if (!onKnob && e.pointerType !== 'mouse') {
+      tapRef.current = { x: e.clientX, y: e.clientY, v };
+      return;
+    }
+    e.currentTarget.setPointerCapture(e.pointerId);
+    // Saisi par le curseur, la consigne ne saute pas vers le bord de la poignée.
+    dragRef.current = onKnob ? value : v;
+    if (!onKnob) onDrag?.(v);
   };
   const onPointerMove = (e: PointerEvent) => {
     if (dragRef.current === null) return;
@@ -169,6 +181,14 @@ export function Dial<T extends string>({
     onDrag?.(v);
   };
   const onPointerUp = (e: PointerEvent) => {
+    const tap = tapRef.current;
+    tapRef.current = null;
+    if (tap) {
+      e.stopPropagation();
+      // Un doigt qui a glissé sans faire défiler (bout de page) ne règle rien.
+      if (Math.hypot(e.clientX - tap.x, e.clientY - tap.y) < 10 && tap.v !== value) onChange(tap.v);
+      return;
+    }
     if (dragRef.current === null) return;
     e.stopPropagation();
     const v = dragRef.current;
@@ -194,10 +214,11 @@ export function Dial<T extends string>({
       onPointerCancel={() => {
         dragRef.current = null;
         rectRef.current = null;
+        tapRef.current = null;
       }}
       // Le `click` de fin de réglage ne doit pas remonter jusqu'à la case, qui ouvrirait la fiche.
       onClick={e => ownsGestureRef.current && e.stopPropagation()}
-      className='@container relative w-full touch-none select-none'
+      className='@container relative w-full select-none'
     >
       <div ref={ringRef} className='relative mx-auto aspect-square w-[80%]'>
         <svg viewBox='0 0 200 200' className='size-full' aria-hidden='true'>
@@ -247,6 +268,14 @@ export function Dial<T extends string>({
             )}
           </div>
         )}
+
+        {/* La poignée du curseur, plus large que lui : le seul endroit qui retient le doigt. */}
+        <div
+          data-dial-knob
+          aria-hidden='true'
+          className='absolute size-[max(48px,22%)] -translate-x-1/2 -translate-y-1/2 touch-none'
+          style={{ left: `${geometry.knob.x / 2}%`, top: `${geometry.knob.y / 2}%` }}
+        />
       </div>
 
       <button

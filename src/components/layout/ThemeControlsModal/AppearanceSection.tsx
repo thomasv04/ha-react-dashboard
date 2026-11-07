@@ -6,6 +6,7 @@ import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { SwitchTrack } from '@/components/ds/Switch';
 import { DEFAULT_ILLUMINANCE_THRESHOLD } from '@/hooks/useAutoTheme';
 import { HAThemeImport } from './HAThemeImport';
+import { ColorSwatches } from '@/components/layout/ColorSwatches';
 import { FIELD_LABEL, SECTION_HEADING, SETTINGS_CARD } from './typography';
 import { cn } from '@/lib/utils';
 
@@ -25,6 +26,19 @@ function ThemePreview({ tokens }: { tokens: ThemeTokens }) {
       <span className='absolute left-6 top-14 h-1.5 w-12 rounded' style={{ background: tokens.textPrimary }} />
       <span className='absolute left-6 top-[72px] h-1.5 w-16 rounded' style={{ background: tokens.textMuted }} />
     </span>
+  );
+}
+
+function AccentPicker() {
+  const { t } = useI18n();
+  const { accentColor, setAccentColor } = useTheme();
+  return (
+    <section className={SETTINGS_CARD}>
+      <h3 className={SECTION_HEADING}>{t('settings.appearance_section.accent')}</h3>
+      <p className='mt-1 mb-4 text-[15px] text-[var(--ds-ink-muted)]'>{t('settings.appearance_section.accentDesc')}</p>
+      {/* « Par défaut » montre le bleu du thème, même quand une autre couleur a pris la place de l'accent. */}
+      <ColorSwatches value={accentColor} onChange={setAccentColor} label={t('settings.appearance_section.accent')} defaultColor='#3b74e8' />
+    </section>
   );
 }
 
@@ -69,6 +83,8 @@ export function AppearanceSection() {
           })}
         </div>
       </section>
+
+      <AccentPicker />
 
       {/* Thème repris de Home Assistant */}
       <HAThemeImport />

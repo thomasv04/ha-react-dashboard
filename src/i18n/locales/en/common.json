@@ -1,4 +1,6 @@
 {
+  "defaultColor": "Default",
+  "otherColor": "Other color",
   "on": "On",
   "off": "Off",
   "active": "Active",

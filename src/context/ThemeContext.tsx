@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { THEMES, HA_THEME_ID, themeTokens, normalizeThemeId, type ThemeId, type ThemeTokens } from '@/config/themes';
 import { useSettingsSync } from '@/hooks/useSettingsSync';
+import { accentVars, ACCENT_VAR_NAMES } from '@/lib/accent';
 
 export interface AutoThemeConfig {
   enabled: boolean;
@@ -106,6 +107,9 @@ interface ThemeContextValue {
   themeId: ThemeId;
   tokens: ThemeTokens;
   setTheme: (id: ThemeId) => void;
+  /** Couleur primaire `#rrggbb` qui remplace le bleu d'accent. Vide = celle du thème. */
+  accentColor: string;
+  setAccentColor: (c: string) => void;
   /** Performance settings */
   perfSettings: PerfSettings;
   setPerfSettings: (s: PerfSettings) => void;
@@ -180,6 +184,7 @@ function withKnownThemes(cfg: AutoThemeConfig): AutoThemeConfig {
 
 function loadSettings(): {
   themeId: ThemeId;
+  accentColor: string;
   perfSettings: PerfSettings;
   autoTheme: AutoThemeConfig;
   soundSettings: SoundSettings;
@@ -193,6 +198,7 @@ function loadSettings(): {
       const parsed = JSON.parse(stored) as {
         v?: number;
         themeId?: ThemeId;
+        accentColor?: string;
         perfSettings?: Partial<PerfSettings>;
         autoTheme?: Partial<AutoThemeConfig>;
         soundSettings?: Partial<SoundSettings>;
@@ -203,6 +209,7 @@ function loadSettings(): {
       const themeId = normalizeThemeId(parsed.themeId);
       return {
         themeId,
+        accentColor: parsed.accentColor ?? '',
         perfSettings: { ...DEFAULT_PERF_SETTINGS, ...(parsed.perfSettings ?? {}) },
         autoTheme: withKnownThemes({ ...DEFAULT_AUTO_THEME, ...(parsed.autoTheme ?? {}) }),
         soundSettings: { ...DEFAULT_SOUND_SETTINGS, ...(parsed.soundSettings ?? {}) },
@@ -216,6 +223,7 @@ function loadSettings(): {
   }
   return {
     themeId: 'dark',
+    accentColor: '',
     perfSettings: DEFAULT_PERF_SETTINGS,
     autoTheme: DEFAULT_AUTO_THEME,
     soundSettings: DEFAULT_SOUND_SETTINGS,
@@ -229,6 +237,7 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
   // Lu une fois : à chaque rendu, c'était une lecture et un `JSON.parse` du localStorage pour rien.
   const [saved] = useState(loadSettings);
   const [themeId, setThemeId] = useState<ThemeId>(saved.themeId);
+  const [accentColor, setAccentColor] = useState(saved.accentColor);
   const [perfSettings, setPerfSettingsState] = useState<PerfSettings>(saved.perfSettings);
   const [autoTheme, setAutoThemeState] = useState<AutoThemeConfig>(saved.autoTheme);
   const [soundSettings, setSoundSettingsState] = useState<SoundSettings>(saved.soundSettings);
@@ -246,6 +255,7 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     () => ({
       v: SETTINGS_VERSION,
       themeId,
+      accentColor,
       perfSettings,
       autoTheme,
       soundSettings,
@@ -253,13 +263,14 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
       behaviourSettings,
       importedTheme,
     }),
-    [themeId, perfSettings, autoTheme, soundSettings, regionalSettings, behaviourSettings, importedTheme]
+    [themeId, accentColor, perfSettings, autoTheme, soundSettings, regionalSettings, behaviourSettings, importedTheme]
   );
   const handleRemoteUpdate = useCallback((remote: typeof syncedSettings) => {
     if (remote.themeId) {
       const id = normalizeThemeId(remote.themeId);
       setThemeId(id);
     }
+    if (remote.accentColor !== undefined) setAccentColor(remote.accentColor);
     if (remote.perfSettings) setPerfSettingsState({ ...DEFAULT_PERF_SETTINGS, ...remote.perfSettings });
     if (remote.autoTheme) setAutoThemeState(withKnownThemes({ ...DEFAULT_AUTO_THEME, ...remote.autoTheme }));
     if (remote.soundSettings) setSoundSettingsState({ ...DEFAULT_SOUND_SETTINGS, ...remote.soundSettings });
@@ -278,7 +289,7 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--dash-text-primary', tokens.textPrimary);
     root.style.setProperty('--dash-text-secondary', tokens.textSecondary);
     root.style.setProperty('--dash-text-muted', tokens.textMuted);
-    root.style.setProperty('--dash-accent', tokens.accent);
+    root.style.setProperty('--dash-accent', accentVars(accentColor)?.['--ds-user-accent'] ?? tokens.accent);
     root.style.setProperty('--dash-border', tokens.border);
     root.style.setProperty('--dash-status-success', tokens.statusSuccess);
     root.style.setProperty('--dash-status-warning', tokens.statusWarning);
@@ -288,7 +299,18 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     // `theme-light-surface` : les barres de défilement claires (index.css).
     root.classList.toggle('theme-light-surface', !!tokens.light);
     root.dataset.theme = tokens.light ? 'light' : 'dark';
-  }, [tokens]);
+  }, [tokens, accentColor]);
+
+  // Couleur primaire : les `--ds-user-*` et la classe qui les branche sur les jetons (index.css).
+  useEffect(() => {
+    const root = document.documentElement;
+    const vars = accentVars(accentColor);
+    for (const name of ACCENT_VAR_NAMES) {
+      if (vars) root.style.setProperty(name, vars[name]);
+      else root.style.removeProperty(name);
+    }
+    root.classList.toggle('theme-custom-accent', !!vars);
+  }, [accentColor]);
 
   // Performance CSS classes on <html>
   useEffect(() => {
@@ -314,6 +336,8 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
       themeId,
       tokens,
       setTheme,
+      accentColor,
+      setAccentColor,
       perfSettings,
       setPerfSettings: setPerfSettingsState,
       autoTheme,
@@ -327,7 +351,7 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
       importedTheme,
       setImportedTheme: setImportedThemeState,
     }),
-    [themeId, tokens, perfSettings, autoTheme, soundSettings, regionalSettings, behaviourSettings, importedTheme, setTheme]
+    [themeId, tokens, accentColor, perfSettings, autoTheme, soundSettings, regionalSettings, behaviourSettings, importedTheme, setTheme]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

@@ -35,7 +35,7 @@ function LevelIcon({ level, className }: { level: Level; className?: string }) {
 
 const ACTION_VARIANTS = {
   default: 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)]',
-  primary: 'bg-[var(--ds-accent)] text-white',
+  primary: 'bg-[var(--ds-accent)] text-[var(--ds-accent-ink)]',
   danger: 'bg-[var(--ds-alert)] text-white',
 } as const;
 

@@ -505,7 +505,7 @@
   },
   "tempo": {
     "label": "Tempo EDF",
-    "description": "Couleur du jour Tempo RTE et heures pleines/creuses.",
+    "description": "Couleur du jour Tempo ou jour EJP, et heures pleines/creuses.",
     "offPeak": "Heures creuses",
     "peak": "Heures pleines",
     "tomorrow": "Demain",
@@ -519,10 +519,10 @@
     },
     "fields": {
       "currentColorEntity": {
-        "label": "Couleur actuelle"
+        "label": "Jour actuel (couleur ou EJP)"
       },
       "nextColorEntity": {
-        "label": "Prochaine couleur"
+        "label": "Lendemain (couleur ou EJP)"
       },
       "offPeakEntity": {
         "label": "Heures creuses"
@@ -534,11 +534,24 @@
         "label": "Jours blanc restants"
       },
       "remainingRedEntity": {
-        "label": "Jours rouge restants"
+        "label": "Jours rouges (ou EJP) restants"
+      },
+      "mode": {
+        "label": "Tarif",
+        "options": {
+          "tempo": "Tempo",
+          "ejp": "EJP"
+        }
       }
     },
     "today": "Aujourd’hui",
-    "days": "{value} j"
+    "days": "{value} j",
+    "ejp": {
+      "label": "EJP EDF",
+      "ejp": "Jour EJP",
+      "normal": "Normal",
+      "remaining": "{value} jours EJP restants"
+    }
   },
   "shortcuts": {
     "label": "Raccourcis",

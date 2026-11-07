@@ -9,6 +9,7 @@ import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useWallPanel } from '@/context/WallPanelContext';
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 import { IconPicker } from '@/components/layout/WidgetPickers';
+import { ColorSwatches } from '@/components/layout/ColorSwatches';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { SwitchTrack } from '@/components/ds/Switch';
 import { resolveIcon } from '@/lib/lucide-icon-map';
@@ -230,6 +231,13 @@ function PanelEditor({
           <IconPicker value={panel.icon ?? ''} onChange={v => onChange({ ...panel, icon: v || undefined })} label='' />
         </div>
       </div>
+
+      <ColorSwatches
+        label={t('layout.shell.tabColor')}
+        value={panel.color ?? ''}
+        onChange={c => onChange({ ...panel, color: c || undefined })}
+        defaultColor='var(--ds-app-music)'
+      />
 
       <button
         role='switch'
@@ -504,7 +512,7 @@ export function CustomPanelEditorModal({ onClose }: { onClose: () => void }) {
                   active && 'bg-[var(--ds-surface-3)]'
                 )}
               >
-                <AppIcon color='var(--ds-app-music)'>
+                <AppIcon color={panel.color || 'var(--ds-app-music)'}>
                   <Icon size={22} />
                 </AppIcon>
                 <span className='truncate'>{panel.name}</span>

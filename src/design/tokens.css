@@ -8,6 +8,7 @@
   --ds-ink: #eef1f5;
   --ds-ink-muted: #aab4c3;
   --ds-accent: #3b74e8;
+  --ds-accent-ink: #ffffff;
   --ds-tile-on: #1f6fb8;
   --ds-tile-on-ink: #ffffff;
   --ds-tile-on-muted: #d6e6f7;
@@ -41,6 +42,7 @@
   --ds-ink: #1b2230;
   --ds-ink-muted: #4a5568;
   --ds-accent: #2456d6;
+  --ds-accent-ink: #ffffff;
   --ds-tile-on: #1d5fd6;
   --ds-tile-on-ink: #ffffff;
   --ds-tile-on-muted: #e3ecfb;

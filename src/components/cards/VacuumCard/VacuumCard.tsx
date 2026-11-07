@@ -207,7 +207,7 @@ function RoomSelect({ rooms, selectedRooms, sequentialMode, onToggle, onToggleSe
         className={cn(
           'flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-[var(--ds-radius-pill)] text-[15px] font-semibold',
           selectedRooms.length > 0
-            ? 'bg-[var(--ds-accent)] text-white'
+            ? 'bg-[var(--ds-accent)] text-[var(--ds-accent-ink)]'
             : 'cursor-not-allowed bg-[var(--ds-surface-3)] text-[var(--ds-ink-muted)]'
         )}
       >

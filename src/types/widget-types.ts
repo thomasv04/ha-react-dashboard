@@ -115,6 +115,8 @@ export interface EnergyFlowCardConfig {
 // ── Tempo EDF ─────────────────────────────────────────────────────────────────
 export interface TempoCardConfig {
   type: 'tempo';
+  /** Tarif suivi. `ejp` : jours de pointe mobile, `remainingRedEntity` compte les jours EJP restants. Défaut `tempo`. */
+  mode?: 'tempo' | 'ejp';
   currentColorEntity: string;
   nextColorEntity: string;
   offPeakEntity: string;

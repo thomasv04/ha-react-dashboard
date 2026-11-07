@@ -1,14 +1,29 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { Check, ChevronDown, ChevronUp, Home, Layers, LayoutGrid, Map as MapIcon, Plus, Settings, X, type LucideIcon } from 'lucide-react';
-import { usePages } from '@/context/PageContext';
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Home,
+  Layers,
+  LayoutGrid,
+  Map as MapIcon,
+  Palette,
+  Plus,
+  Settings,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
+import { usePages, type Page } from '@/context/PageContext';
+import { IconPicker } from '@/components/layout/WidgetPickers';
+import { ColorSwatches } from '@/components/layout/ColorSwatches';
 import { CustomPanelEditorModal } from '@/components/custom-panels';
 import { useEditMode } from '@/context/DashboardLayoutContext';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { usePanel, type PanelId } from '@/context/PanelContext';
 import { resolveIcon, useIconCatalog } from '@/lib/lucide-icon-map';
 import { cn } from '@/lib/utils';
-import { pageColor, pageIcon, sortPages } from './page-icon';
+import { pageColor, pageIcon, sortPages, tabStyle } from './page-icon';
 import { useI18n } from '@/i18n';
 import { useHass } from '@hakit/core';
 import type { CustomPanel } from '@/types/custom-panel';
@@ -28,13 +43,16 @@ export function NavRail() {
   // demande : sans cet abonnement elles resteraient sur leur icône de repli.
   useIconCatalog();
   const { t } = useI18n();
-  const { pages, currentPageId, setCurrentPage, addPage, deletePage, reorderPages } = usePages();
+  const { pages, currentPageId, setCurrentPage, addPage, deletePage, reorderPages, updatePage } = usePages();
   const { isEditMode } = useEditMode();
   const { panels, dock, setDock } = useCustomPanels();
   const { activePanel, openPanel, closePanel } = usePanel();
   const [modalsMenu, setModalsMenu] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const menuOpen = modalsMenu && isEditMode;
+  // L'onglet dont on choisit la couleur et l'icône ; seulement la page ouverte, en mode édition.
+  const [stylingId, setStylingId] = useState<string | null>(null);
+  const styling = isEditMode && stylingId === currentPageId ? pages.find(p => p.id === stylingId) : undefined;
 
   // Hauteur du milieu de l'entrée ouverte, mesurée dans le `<nav>` : suit le
   // défilement de la pilule et l'ajout de pages.
@@ -134,8 +152,8 @@ export function NavRail() {
                   aria-label={page.label}
                   aria-current={isActive ? 'page' : undefined}
                   // Une pastille de couleur par page, comme les apps du lanceur ; la page ouverte est cerclée.
-                  style={{ background: pageColor(index + 1) }}
-                  className={cn(RAIL_BUTTON, 'text-white', isActive && 'outline-[3px] outline-offset-2 outline-[var(--ds-ink)]')}
+                  style={tabStyle(page.color, pageColor(index + 1))}
+                  className={cn(RAIL_BUTTON, isActive && 'outline-[3px] outline-offset-2 outline-[var(--ds-ink)]')}
                 >
                   <Icon size={22} />
                 </button>
@@ -149,6 +167,11 @@ export function NavRail() {
                     {index < others.length - 1 && (
                       <RailAction label={t('layout.shell.movePageDown')} onClick={() => movePage(page.id, 1)} Icon={ChevronDown} />
                     )}
+                    <RailAction
+                      label={t('layout.shell.customizeTab')}
+                      onClick={() => setStylingId(id => (id === page.id ? null : page.id))}
+                      Icon={Palette}
+                    />
                     {page.id !== 'home' && (
                       <RailAction label={t('layout.shell.deletePage')} onClick={() => deletePage(page.id)} Icon={X} danger />
                     )}
@@ -215,6 +238,15 @@ export function NavRail() {
           )}
         </div>
 
+        {styling && (
+          <TabStyleEditor
+            page={styling}
+            defaultColor={pageColor(others.indexOf(styling) + 1)}
+            onChange={updates => updatePage(styling.id, updates)}
+            onClose={() => setStylingId(null)}
+          />
+        )}
+
         {/* Hors de la pilule, qui défile : elle rognerait la liste. Alignée sur
             le bas du rail, où se trouve le bouton qui l'ouvre. */}
         {menuOpen && (
@@ -237,7 +269,10 @@ export function NavRail() {
                     onClick={() => togglePin(panel.id)}
                     className='flex min-h-[56px] items-center gap-3 rounded-2xl px-2 text-left font-semibold hover:bg-[var(--ds-surface-2)]'
                   >
-                    <span className='flex size-10 shrink-0 items-center justify-center rounded-[var(--ds-radius-sm)] bg-[var(--ds-app-music)] text-white'>
+                    <span
+                      className='flex size-10 shrink-0 items-center justify-center rounded-[var(--ds-radius-sm)]'
+                      style={tabStyle(panel.color, 'var(--ds-app-music)')}
+                    >
                       <Icon size={20} />
                     </span>
                     <span className='min-w-0 flex-1 truncate'>{panel.name}</span>
@@ -283,8 +318,8 @@ function PinnedModal({ panel, active, onClick }: { panel: CustomPanel; active: b
       aria-label={status.text ? `${panel.name} · ${status.text}` : panel.name}
       aria-pressed={active}
       data-rail-on={status.on || undefined}
-      style={{ background: status.on ? 'var(--ds-tile-on)' : 'var(--ds-app-music)' }}
-      className={cn(RAIL_BUTTON, 'text-white', active && 'outline-[3px] outline-offset-2 outline-[var(--ds-ink)]')}
+      style={status.on ? { background: 'var(--ds-tile-on)', color: 'var(--ds-tile-on-ink)' } : tabStyle(panel.color, 'var(--ds-app-music)')}
+      className={cn(RAIL_BUTTON, active && 'outline-[3px] outline-offset-2 outline-[var(--ds-ink)]')}
     >
       {status.text ? (
         <span className='text-[15px] font-bold tabular-nums'>{status.text}</span>
@@ -294,6 +329,46 @@ function PinnedModal({ panel, active, onClick }: { panel: CustomPanel; active: b
         <Icon size={22} />
       )}
     </button>
+  );
+}
+
+/** Couleur et icône d'un onglet de page, à droite du rail. */
+function TabStyleEditor({
+  page,
+  defaultColor,
+  onChange,
+  onClose,
+}: {
+  page: Page;
+  defaultColor: string;
+  onChange: (u: Partial<Page>) => void;
+  onClose: () => void;
+}) {
+  const { t } = useI18n();
+  return (
+    <>
+      <div className='fixed inset-0' onClick={onClose} />
+      <div
+        role='dialog'
+        aria-label={t('layout.shell.customizeTab')}
+        className='absolute top-0 left-full ml-4 flex w-[400px] flex-col gap-4 rounded-[var(--ds-radius-xl)] bg-[var(--ds-surface-1)] p-4 text-[var(--ds-ink)] shadow-[var(--ds-shadow-sheet)] max-sm:top-auto max-sm:bottom-full max-sm:left-1/2 max-sm:mb-3 max-sm:ml-0 max-sm:w-[calc(100vw-32px)] max-sm:-translate-x-1/2'
+      >
+        <div className='flex items-center justify-between gap-3'>
+          <p className='truncate text-[17px] font-semibold'>{page.label}</p>
+          <RailAction label={t('common.close')} onClick={onClose} Icon={X} />
+        </div>
+        <IconPicker label={t('layout.shell.tabIcon')} value={page.icon ?? ''} onChange={v => onChange({ icon: v || undefined })} />
+        <div className='flex flex-col gap-2'>
+          <span className='text-sm font-semibold text-[var(--ds-ink-muted)]'>{t('layout.shell.tabColor')}</span>
+          <ColorSwatches
+            label={t('layout.shell.tabColor')}
+            value={page.color ?? ''}
+            onChange={c => onChange({ color: c || undefined })}
+            defaultColor={defaultColor}
+          />
+        </div>
+      </div>
+    </>
   );
 }
 

@@ -127,7 +127,7 @@ export const Feuille: Story = {
     const [brightness, setBrightness] = useState(35);
     return (
       <>
-        <button onClick={() => setOpen(true)} className='rounded-full bg-[var(--ds-accent)] px-5 py-3 text-white'>
+        <button onClick={() => setOpen(true)} className='rounded-full bg-[var(--ds-accent)] px-5 py-3 text-[var(--ds-accent-ink)]'>
           Ouvrir la feuille
         </button>
         <Sheet open={open} onClose={() => setOpen(false)} title='Lumières chambre' subtitle='2 allumées' closeLabel='Fermer'>

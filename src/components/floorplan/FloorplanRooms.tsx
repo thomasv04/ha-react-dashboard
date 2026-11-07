@@ -50,7 +50,10 @@ export function RoomNamePopover({
         <button type='button' onClick={onCancel} className='px-3 py-1.5 rounded-[var(--ds-radius-sm)] text-xs text-[var(--ds-ink-muted)]'>
           {t('common.cancel')}
         </button>
-        <button type='submit' className='px-3 py-1.5 rounded-[var(--ds-radius-sm)] text-xs font-medium bg-[var(--ds-accent)] text-white'>
+        <button
+          type='submit'
+          className='px-3 py-1.5 rounded-[var(--ds-radius-sm)] text-xs font-medium bg-[var(--ds-accent)] text-[var(--ds-accent-ink)]'
+        >
           {t('common.add')}
         </button>
       </div>

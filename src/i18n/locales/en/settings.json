@@ -6,6 +6,8 @@
   "language": "Language",
   "footer": "HA Dashboard",
   "appearance_section": {
+    "accent": "Primary color",
+    "accentDesc": "Replaces the blue accent everywhere: buttons, active tiles, sliders.",
     "theme": "Theme",
     "imageUrl": "URL",
     "imageFile": "File",

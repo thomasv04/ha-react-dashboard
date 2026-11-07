@@ -1,4 +1,6 @@
 {
+  "defaultColor": "Par défaut",
+  "otherColor": "Autre couleur",
   "on": "Allumé",
   "off": "Éteint",
   "active": "Actif",

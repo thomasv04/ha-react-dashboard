@@ -55,7 +55,7 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
       <div className='absolute right-2 top-2 z-10 flex items-center gap-1.5'>
         <button
           onClick={() => setEditingWidgetId(id)}
-          className={cn(ROUND, 'bg-[var(--ds-accent)] text-white')}
+          className={cn(ROUND, 'bg-[var(--ds-accent)] text-[var(--ds-accent-ink)]')}
           title={t('layout.configureWidget')}
           aria-label={t('layout.configureWidget')}
         >
@@ -91,7 +91,7 @@ export function GridItemOverlay({ label, widget, onDragStart, onResizeStart }: G
         <div className='flex shrink-0 items-center gap-1.5' onPointerDown={keep}>
           <button
             onClick={() => setEditingWidgetId(id)}
-            className={cn(ROUND, 'bg-[var(--ds-accent)]')}
+            className={cn(ROUND, 'bg-[var(--ds-accent)] text-[var(--ds-accent-ink)]')}
             title={t('layout.configureWidget')}
             aria-label={t('layout.configureWidget')}
           >

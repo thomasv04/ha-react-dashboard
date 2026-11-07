@@ -6,6 +6,8 @@
   "language": "Langue",
   "footer": "HA Dashboard",
   "appearance_section": {
+    "accent": "Couleur primaire",
+    "accentDesc": "Remplace le bleu d'accent partout : boutons, tuiles allumées, curseurs.",
     "theme": "Thème",
     "imageUrl": "URL",
     "imageFile": "Fichier",

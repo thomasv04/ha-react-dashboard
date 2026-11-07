@@ -130,7 +130,7 @@ export function LoadingScreen({ stage, onSkip, onRetry }: LoadingScreenProps) {
             {onRetry && (
               <button
                 onClick={onRetry}
-                className='w-full h-11 rounded-[var(--ds-radius-lg)] bg-[var(--ds-accent)] text-sm font-semibold text-white active:scale-[0.98] transition-transform'
+                className='w-full h-11 rounded-[var(--ds-radius-lg)] bg-[var(--ds-accent)] text-sm font-semibold text-[var(--ds-accent-ink)] active:scale-[0.98] transition-transform'
               >
                 {t('dashboard.boot.retry')}
               </button>

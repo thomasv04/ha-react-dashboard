@@ -131,7 +131,7 @@ export function TodoCard() {
                         aria-hidden='true'
                         className={cn(
                           'flex size-6 shrink-0 items-center justify-center rounded-full',
-                          done ? 'bg-[var(--ds-accent)] text-white' : 'border-2 border-[var(--ds-ink-muted)]'
+                          done ? 'bg-[var(--ds-accent)] text-[var(--ds-accent-ink)]' : 'border-2 border-[var(--ds-ink-muted)]'
                         )}
                       >
                         {done && <Check size={14} strokeWidth={3} />}
@@ -166,7 +166,7 @@ export function TodoCard() {
             type='submit'
             aria-label={t('widgets.todo.add')}
             title={t('widgets.todo.add')}
-            className='flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--ds-accent)] text-white'
+            className='flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--ds-accent)] text-[var(--ds-accent-ink)]'
           >
             <Plus size={20} />
           </button>

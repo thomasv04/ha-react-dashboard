@@ -69,6 +69,8 @@ export interface CustomPanel {
   id: string;
   name: string;
   icon?: string;
+  /** Pastille de la modale épinglée dans le rail, `#rrggbb`. Absente : le violet des modales. */
+  color?: string;
   blocks: CustomBlock[];
   /**
    * Boutons posés dans l'en-tête de la feuille, à côté de la fermeture.
