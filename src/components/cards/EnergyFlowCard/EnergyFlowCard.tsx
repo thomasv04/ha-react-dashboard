@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { Sun, House, Zap, BatteryCharging } from 'lucide-react';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useI18n } from '@/i18n';
@@ -125,6 +126,7 @@ export function EnergyFlowCard() {
   const { t } = useI18n();
   const { locale } = useFormats();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<EnergyFlowCardConfig>(widgetId || 'energy_flow');
   const cardRef = useRef<HTMLDivElement>(null);
@@ -201,7 +203,7 @@ export function EnergyFlowCard() {
         size.h === 'short' ? 'p-3' : 'p-[var(--ds-space-4)]'
       )}
     >
-      {config?.name && <div className='mb-1 shrink-0 truncate text-[17px] font-semibold'>{config.name}</div>}
+      {!hideTitle && config?.name && <div className='mb-1 shrink-0 truncate text-[17px] font-semibold'>{config.name}</div>}
 
       <svg viewBox={`0 0 ${VB.w} ${VB.h}`} className='w-full flex-1 min-h-0' preserveAspectRatio='xMidYMid meet'>
         {/* Liens — le sens de circulation traduit l'état réel de l'installation */}

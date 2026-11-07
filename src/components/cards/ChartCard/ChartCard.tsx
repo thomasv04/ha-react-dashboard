@@ -4,6 +4,7 @@ import { useEntityHistory } from '@/hooks/useEntityHistory';
 import { HistoryGraph } from '@/components/charts/HistoryGraph';
 import { BinaryTimeline } from '@/components/charts/BinaryTimeline';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useWidgetSize, type WidgetHeightClass } from '@/hooks/useWidgetSize';
 import { useI18n } from '@/i18n';
@@ -21,6 +22,7 @@ const GRAPH_HEIGHT: Record<WidgetHeightClass, number> = { squat: 44, short: 96, 
 export function ChartCard() {
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<ChartCardConfig>(widgetId || 'chart');
   const cardRef = useRef<HTMLDivElement>(null);
@@ -59,7 +61,7 @@ export function ChartCard() {
     >
       {/* En-tête : sur une seule rangée, la valeur passe à côté du titre */}
       <div className='flex shrink-0 items-baseline justify-between gap-3'>
-        <span className='truncate text-[17px] font-semibold'>{name}</span>
+        {!hideTitle && <span className='truncate text-[17px] font-semibold'>{name}</span>}
         <span className={cn('shrink-0 font-light tracking-tight tabular-nums', size.squat ? 'text-xl' : 'text-3xl')}>
           {entity.state}
           {unit && <span className='ml-1 text-sm text-[var(--ds-ink-muted)]'>{unit}</span>}

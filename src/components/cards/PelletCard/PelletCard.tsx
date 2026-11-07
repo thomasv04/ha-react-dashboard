@@ -3,6 +3,7 @@ import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { climateRange, snapTemp } from '@/lib/climate';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { PelletCardConfig } from '@/types/widget-configs';
 import { friendlyName } from '@/lib/ha-service';
@@ -18,6 +19,7 @@ export function PelletCard() {
   // `useWidgetConfig` renvoie le contexte, pas la config : c'est
   // `getWidgetConfig(id)` qui donne celle du widget.
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const config = getWidgetConfig<PelletCardConfig>(widgetId || 'pellet');
   const entityId = config?.entityId ?? 'climate.pellet_stove';
   const pellet = useSafeEntity(entityId);
@@ -71,7 +73,7 @@ export function PelletCard() {
           className={cn('mt-0.5 shrink-0', isOn ? 'text-[var(--ds-heat)]' : 'text-[var(--ds-ink-muted)]')}
         />
         <div className='min-w-0 flex-1'>
-          <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>
+          {!hideTitle && <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>}
           <div className={cn('truncate text-sm', isOn ? 'text-[var(--ds-heat-ink)]' : 'text-[var(--ds-ink-muted)]')}>
             {isOn ? t('widgets.pellet.on') : t('widgets.pellet.off')}
           </div>

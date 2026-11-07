@@ -69,6 +69,7 @@
   "livePreview": "Live preview",
   "noPreviewAvailable": "No preview available",
   "noBackground": "No background (the card sits on the panel)",
+  "hideTitle": "Hide the title",
   "cancel": "Cancel",
   "apply": "Apply",
   "chooseEntity": "Choose an entity",

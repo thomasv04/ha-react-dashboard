@@ -4,6 +4,7 @@ import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useHass } from '@hakit/core';
 import { useServiceResponse } from '@/hooks/useServiceResponse';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useI18n } from '@/i18n';
@@ -34,6 +35,7 @@ export function CalendarCard() {
   const { t } = useI18n();
   const formats = useFormats();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<CalendarCardConfig>(widgetId || 'calendar');
   const cardRef = useRef<HTMLDivElement>(null);
@@ -152,7 +154,7 @@ export function CalendarCard() {
       {/* En-tête */}
       <div className='flex shrink-0 items-center gap-3'>
         <CalendarDays size={22} aria-hidden='true' className='shrink-0 text-[var(--ds-app-calendar)]' />
-        <span className='truncate text-[17px] font-semibold'>{name}</span>
+        {!hideTitle && <span className='truncate text-[17px] font-semibold'>{name}</span>}
       </div>
 
       {/* Liste */}

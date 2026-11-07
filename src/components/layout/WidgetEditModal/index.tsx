@@ -86,6 +86,7 @@ export function WidgetEditModal() {
   if (!editingWidgetId || !draft || !fields) return null;
 
   const noBackground = (draft as CardAppearanceConfig).noBackground === true;
+  const hideTitle = (draft as CardAppearanceConfig).hideTitle === true;
 
   // `config.type` couvre aussi `rooms`, qui n'a pas de widget enregistré :
   // l'accès est volontairement tolérant, le rendu gère déjà le cas absent.
@@ -367,6 +368,19 @@ export function WidgetEditModal() {
               >
                 <span className='text-base font-semibold'>{t('layout.noBackground')}</span>
                 <SwitchTrack on={noBackground} />
+              </button>
+            </div>
+          )}
+          {activeTab === 'config' && (
+            <div className={FIELD_CARD}>
+              <button
+                role='switch'
+                aria-checked={hideTitle}
+                onClick={() => updateField('hideTitle', !hideTitle)}
+                className='flex w-full items-center justify-between gap-4 text-left'
+              >
+                <span className='text-base font-semibold'>{t('layout.hideTitle')}</span>
+                <SwitchTrack on={hideTitle} />
               </button>
             </div>
           )}

@@ -5,6 +5,7 @@ import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { CoverCardConfig } from '@/types/widget-configs';
 import { cn } from '@/lib/utils';
@@ -24,6 +25,7 @@ const ROUND_BUTTON =
 export function CoverCard() {
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<CoverCardConfig>(widgetId || 'cover');
   const entityId = config?.entityId ?? 'cover.living_room';
@@ -86,7 +88,7 @@ export function CoverCard() {
     return (
       <div ref={cardRef} className='h-full'>
         <DeviceTile
-          name={name}
+          name={hideTitle ? '' : name}
           state={stateWithPosition}
           icon={Blinds}
           active={isOpen}
@@ -103,7 +105,7 @@ export function CoverCard() {
       className='flex h-full select-none flex-col gap-3 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] p-[var(--ds-space-4)] text-[var(--ds-ink)]'
     >
       <div className='min-w-0'>
-        <span className='block truncate text-[17px] font-semibold leading-tight'>{name}</span>
+        {!hideTitle && <span className='block truncate text-[17px] font-semibold leading-tight'>{name}</span>}
         <span className={cn('block truncate text-sm', isOpen ? 'text-[var(--ds-accent)]' : 'text-[var(--ds-ink-muted)]')}>
           {stateWithPosition}
         </span>

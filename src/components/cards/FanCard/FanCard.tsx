@@ -4,6 +4,7 @@ import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
@@ -22,6 +23,7 @@ const FEATURE_OSCILLATE = 2;
 export function FanCard() {
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<FanCardConfig>(widgetId || 'fan');
   const entityId = config?.entityId ?? '';
@@ -79,7 +81,7 @@ export function FanCard() {
 
   return (
     <div ref={cardRef} className='h-full'>
-      <DeviceTile name={name} state={stateLabel} icon={Fan} active={isOn} onToggle={handleToggle} layout={size.squat ? 'row' : 'stack'}>
+      <DeviceTile name={hideTitle ? '' : name} state={stateLabel} icon={Fan} active={isOn} onToggle={handleToggle} layout={size.squat ? 'row' : 'stack'}>
         {showControls && supportsSpeed && (
           <PillSlider
             value={percentage}

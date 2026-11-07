@@ -6,6 +6,7 @@ import { useHass } from '@hakit/core';
 import { callHAService, friendlyName } from '@/lib/ha-service';
 import { useSafeEntity, type SafeEntityState } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { AlarmCardConfig, ArmMode } from '@/types/widget-types';
 import { cn } from '@/lib/utils';
@@ -421,6 +422,7 @@ export function AlarmModeModal({
 export function AlarmCard() {
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<AlarmCardConfig>(widgetId || 'alarm');
   const entityId = config?.entityId ?? '';
@@ -501,7 +503,7 @@ export function AlarmCard() {
         </motion.button>
 
         <div className={cn('min-w-0', isRow ? 'flex-1' : 'order-1')}>
-          <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>
+          {!hideTitle && <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>}
           <div
             className={cn(
               'truncate text-sm',

@@ -5,6 +5,7 @@ import { normalizePackState } from '@/lib/battery-state';
 import { BatteryCharging, House, Sun, Zap } from 'lucide-react';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { EnergyCardConfig } from '@/types/widget-configs';
 import { useI18n } from '@/i18n';
@@ -26,6 +27,7 @@ const asText = (p: { value: string; unit: string } | null) => (p ? `${p.value} $
 export function EnergyCard() {
   const { t, language } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<EnergyCardConfig>(widgetId || 'energy');
 
@@ -85,7 +87,7 @@ export function EnergyCard() {
     >
       <div className={cn('flex min-w-0 items-start justify-between gap-3', isRow && 'shrink-0')}>
         <div className='min-w-0'>
-          <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>
+          {!hideTitle && <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>}
           <div className='truncate text-sm text-[var(--ds-ink-muted)]'>
             {isRow ? `${t('widgets.energy.solar')} ${asText(solar)}` : stateLabel}
           </div>

@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useI18n } from '@/i18n';
@@ -60,6 +61,7 @@ function AnalogFace({ date, size }: { date: Date; size: number }) {
 export function ClockCard() {
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<ClockCardConfig>(widgetId || 'clock');
   const cardRef = useRef<HTMLDivElement>(null);
@@ -121,7 +123,7 @@ export function ClockCard() {
 
   const digital = (
     <div className={cn('min-w-0', sideBySide ? 'text-left' : 'text-center')}>
-      {config?.name && <div className='mb-0.5 truncate text-sm font-semibold text-[var(--ds-ink-muted)]'>{config.name}</div>}
+      {!hideTitle && config?.name && <div className='mb-0.5 truncate text-sm font-semibold text-[var(--ds-ink-muted)]'>{config.name}</div>}
       <div
         className={cn(
           'truncate font-light leading-none tracking-tight tabular-nums text-[var(--ds-ink)]',

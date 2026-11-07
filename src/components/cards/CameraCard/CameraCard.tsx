@@ -6,6 +6,7 @@ import { CameraFeed } from '@/components/ui/CameraFeed/components/CameraFeed';
 import type { StreamProtocol } from '@/components/ui/CameraFeed/components/CameraFeed';
 import { cn } from '@/lib/utils';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { CameraCardConfig } from '@/types/widget-configs';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
@@ -22,6 +23,7 @@ interface Cam {
 export function CameraCard() {
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<CameraCardConfig>(widgetId || 'camera');
   const cameras: Cam[] = config?.cameras ?? [];
@@ -131,7 +133,7 @@ export function CameraCard() {
         {/* Nom en haut à gauche, sur l'image, comme les vignettes de la maquette */}
         <div className='pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 bg-gradient-to-b from-black/60 to-transparent px-3.5 pb-6 pt-3 text-white'>
           <div className='min-w-0'>
-            <div className='truncate text-[17px] font-semibold'>{current.name}</div>
+            {!hideTitle && <div className='truncate text-[17px] font-semibold'>{current.name}</div>}
             {sinceEvent && (
               <div className='truncate text-sm font-medium text-white/80'>
                 {sinceEvent === JUST_NOW ? t('widgets.sensor.justNow') : t('widgets.sensor.updatedAgo', { value: sinceEvent })}

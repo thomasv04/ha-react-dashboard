@@ -6,4 +6,6 @@ export interface CardAppearanceConfig {
    * que les cards se partagent — aucune n'a besoin de le connaître.
    */
   noBackground?: boolean;
+  /** Sans titre : la card ne montre plus son nom, la place revient au contenu. */
+  hideTitle?: boolean;
 }

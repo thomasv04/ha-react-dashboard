@@ -3,6 +3,7 @@ import { usePanel, type PanelId } from '@/context/PanelContext';
 import { useEntities } from '@/hooks/useEntities';
 import { useI18n } from '@/i18n';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { ShortcutsCardConfig } from '@/types/widget-configs';
 import { resolveIcon, isCustomIcon, getCustomIconUrl, useIconCatalog } from '@/lib/lucide-icon-map';
@@ -53,6 +54,7 @@ export function ShortcutsCard() {
   const { openPanel } = usePanel();
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<ShortcutsCardConfig>(widgetId || 'shortcuts');
   const shortcuts = resolveShortcuts(config);
@@ -62,7 +64,7 @@ export function ShortcutsCard() {
 
   return (
     <div className='flex h-full flex-col gap-3 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] p-[var(--ds-space-4)] text-[var(--ds-ink)]'>
-      <div className='shrink-0 text-[17px] font-semibold'>{t('widgets.shortcuts.header')}</div>
+      {!hideTitle && <div className='shrink-0 text-[17px] font-semibold'>{t('widgets.shortcuts.header')}</div>}
       {shortcuts.length === 0 && <p className='text-sm text-[var(--ds-ink-muted)]'>{t('widgets.shortcuts.empty')}</p>}
       <div className='grid min-h-0 flex-1 auto-rows-fr grid-cols-2 gap-2.5'>
         {shortcuts.map((s, i) => {
