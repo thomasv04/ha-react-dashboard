@@ -79,7 +79,12 @@ export function Launcher({ open, onClose }: { open: boolean; onClose: () => void
                 {sorted.map((page, index) => {
                   const Icon = pageIcon(page);
                   return (
-                    <LauncherItem key={page.id} Icon={Icon} color={page.color || pageColor(index)} onClick={run(() => setCurrentPage(page.id))}>
+                    <LauncherItem
+                      key={page.id}
+                      Icon={Icon}
+                      color={page.color || pageColor(index)}
+                      onClick={run(() => setCurrentPage(page.id))}
+                    >
                       {page.label}
                     </LauncherItem>
                   );

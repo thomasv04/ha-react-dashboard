@@ -1,6 +1,19 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { Check, ChevronDown, ChevronUp, Home, Layers, LayoutGrid, Map as MapIcon, Palette, Plus, Settings, X, type LucideIcon } from 'lucide-react';
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Home,
+  Layers,
+  LayoutGrid,
+  Map as MapIcon,
+  Palette,
+  Plus,
+  Settings,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 import { usePages, type Page } from '@/context/PageContext';
 import { IconPicker } from '@/components/layout/WidgetPickers';
 import { ColorSwatches } from '@/components/layout/ColorSwatches';
@@ -305,11 +318,7 @@ function PinnedModal({ panel, active, onClick }: { panel: CustomPanel; active: b
       aria-label={status.text ? `${panel.name} · ${status.text}` : panel.name}
       aria-pressed={active}
       data-rail-on={status.on || undefined}
-      style={
-        status.on
-          ? { background: 'var(--ds-tile-on)', color: 'var(--ds-tile-on-ink)' }
-          : tabStyle(panel.color, 'var(--ds-app-music)')
-      }
+      style={status.on ? { background: 'var(--ds-tile-on)', color: 'var(--ds-tile-on-ink)' } : tabStyle(panel.color, 'var(--ds-app-music)')}
       className={cn(RAIL_BUTTON, active && 'outline-[3px] outline-offset-2 outline-[var(--ds-ink)]')}
     >
       {status.text ? (

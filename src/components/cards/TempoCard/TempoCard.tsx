@@ -67,10 +67,10 @@ export function TempoCard() {
   const remaining = ejp
     ? []
     : [
-    { key: 'Bleu', label: t('widgets.tempo.blue'), state: blue?.state },
-    { key: 'Blanc', label: t('widgets.tempo.white'), state: white?.state },
-    { key: 'Rouge', label: t('widgets.tempo.red'), state: red?.state },
-  ].filter(r => r.state != null);
+        { key: 'Bleu', label: t('widgets.tempo.blue'), state: blue?.state },
+        { key: 'Blanc', label: t('widgets.tempo.white'), state: white?.state },
+        { key: 'Rouge', label: t('widgets.tempo.red'), state: red?.state },
+      ].filter(r => r.state != null);
 
   /** Ce qu'affiche la tuile d'un jour : le texte et ses couleurs. */
   const show = (state: string | undefined) => {
@@ -124,11 +124,7 @@ export function TempoCard() {
 
       <div className='grid min-h-0 flex-1 grid-cols-2 gap-2.5'>
         {days.map(d => (
-          <div
-            key={d.label}
-            className='flex min-h-[64px] flex-col justify-between rounded-[var(--ds-radius-lg)] p-3'
-            style={d.style}
-          >
+          <div key={d.label} className='flex min-h-[64px] flex-col justify-between rounded-[var(--ds-radius-lg)] p-3' style={d.style}>
             <span className='text-sm opacity-80'>{d.label}</span>
             <span className={cn('font-semibold leading-tight', size.h === 'short' ? 'text-xl' : 'text-[28px]')}>{d.text}</span>
           </div>

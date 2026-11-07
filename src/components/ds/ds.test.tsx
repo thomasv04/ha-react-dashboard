@@ -55,7 +55,15 @@ describe('Dial', () => {
     const onChange = vi.fn();
     const onDrag = vi.fn();
     const { container } = render(
-      <Dial value={20} min={15} max={25} onChange={onChange} onDrag={onDrag} display='20°' labels={{ decrease: 'Baisser', increase: 'Monter' }} />
+      <Dial
+        value={20}
+        min={15}
+        max={25}
+        onChange={onChange}
+        onDrag={onDrag}
+        display='20°'
+        labels={{ decrease: 'Baisser', increase: 'Monter' }}
+      />
     );
     const ring = container.querySelector('svg')!.parentElement!;
     const knob = container.querySelector('[data-dial-knob]')!;
