@@ -233,6 +233,9 @@
     "widgetRowsMore": "Plus haute",
     "railEntity": "Pastille d’état",
     "railEntityDesc": "Une température s’affiche dans le menu à la place de l’icône ; un appareil allumé allume l’icône.",
+    "columns": "Colonnes",
+    "columnsAuto": "Auto",
+    "columnsDesc": "Nombre de cards par rangée au plus. Auto : selon la largeur, une card prenant deux colonnes. Un écran étroit en affiche moins.",
     "domainPlaceholder": "domaine",
     "servicePlaceholder": "service",
     "buttonLabelPlaceholder": "ex. : Tout ouvrir"

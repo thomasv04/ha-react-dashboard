@@ -12,6 +12,7 @@ import { IconPicker } from '@/components/layout/WidgetPickers';
 import { ColorSwatches } from '@/components/layout/ColorSwatches';
 import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { SwitchTrack } from '@/components/ds/Switch';
+import { Segmented } from '@/components/layout/ThemeControlsModal/controls';
 import { resolveIcon } from '@/lib/lucide-icon-map';
 import { CustomPanelBlocks } from './CustomPanelRenderer';
 import { cn } from '@/lib/utils';
@@ -238,6 +239,17 @@ function PanelEditor({
         onChange={c => onChange({ ...panel, color: c || undefined })}
         defaultColor='var(--ds-app-music)'
       />
+
+      <div className={cn(ROW, 'flex flex-col gap-2 p-4')}>
+        <span className='text-[17px] font-semibold'>{t('layout.customPanel.columns')}</span>
+        <Segmented
+          label={t('layout.customPanel.columns')}
+          value={panel.columns ?? 0}
+          onChange={n => onChange({ ...panel, columns: n || undefined })}
+          options={[0, 1, 2, 3, 4].map(n => ({ value: n, label: n ? String(n) : t('layout.customPanel.columnsAuto') }))}
+        />
+        <span className='text-sm text-[var(--ds-ink-muted)]'>{t('layout.customPanel.columnsDesc')}</span>
+      </div>
 
       <button
         role='switch'
