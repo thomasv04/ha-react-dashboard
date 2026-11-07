@@ -27,9 +27,11 @@ export interface EventForm {
   title: string;
   text: string;
   contentType: ContentType;
-  width: 'sm' | 'md' | 'lg' | 'full';
+  width: 'sm' | 'md' | 'lg' | 'full' | 'screen';
   dismissible: boolean;
   durationMs: number;
+  /** Modale : fermeture automatique, en ms. 0 : reste affichée. */
+  modalDurationMs: number;
   persistent: boolean;
   /** `default` : laisser le son par défaut ; `muted` : `sound: false` ; `url` : `soundUrl` ; sinon un préréglage. */
   sound: string;
@@ -51,6 +53,7 @@ export const DEFAULT_FORM: EventForm = {
   width: 'md',
   dismissible: true,
   durationMs: 5000,
+  modalDurationMs: 0,
   persistent: false,
   sound: 'default',
   soundUrl: '',
@@ -110,6 +113,7 @@ export function buildEventData(kind: EventKind, f: EventForm): Record<string, un
           content_type: contentType,
           width: f.width === 'md' ? undefined : f.width,
           dismissible: f.dismissible ? undefined : false,
+          duration_ms: f.modalDurationMs > 0 ? f.modalDurationMs : undefined,
           sound: soundValue(f),
           actions,
         }

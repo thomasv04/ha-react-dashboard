@@ -300,8 +300,9 @@ action:
       title: "Mise à jour disponible"
       content: "Une nouvelle version est prête."
       content_type: plain # plain | html (assaini) | markdown (affiché brut)
-      width: md # sm | md | lg | full
+      width: md # sm | md | lg | full | screen (plein écran, sans marge)
       dismissible: false # pas d'Échap ni de clic extérieur : il faut choisir un bouton
+      duration_ms: 30000 # se ferme seule après ce délai, même bloquante ; absent : reste
       sound: notification # ou false
       actions:
         - label: "Installer"
@@ -329,7 +330,7 @@ Points à savoir :
 - Un bouton appelle un service **sans cible** : l'entité va dans `service_data`
   (`entity_id`), pas dans un champ `target`. `service` doit être `domaine.service`.
 - Un bouton de modale ou de toast ferme toujours sa fenêtre ; `dismissible: false`
-  la garde ouverte jusque-là, rien d'autre.
+  la garde ouverte jusque-là, ou jusqu'à la fin de `duration_ms`.
 - Le HTML est assaini (`RichText`), le markdown **n'est pas rendu** : il s'affiche
   tel quel. Ne pas promettre de mise en forme markdown.
 - Dans *Outils de développement > Événements* de HA, le **type** et les

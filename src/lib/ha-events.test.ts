@@ -31,6 +31,13 @@ describe('événements portant des valeurs natives (templates {{ … }})', () =>
     expect(modalFromEvent({ title: 'Seul', content: '' }, helpers).content).toBeUndefined();
   });
 
+  it("une durée de modale venue d'un modèle en texte compte ; absente, nulle ou illisible, la modale reste", () => {
+    expect(modalFromEvent({ duration_ms: '30000' as unknown as number }, helpers).durationMs).toBe(30000);
+    expect(modalFromEvent({}, helpers).durationMs).toBeUndefined();
+    expect(modalFromEvent({ duration_ms: 0 }, helpers).durationMs).toBeUndefined();
+    expect(modalFromEvent({ duration_ms: 'bientôt' as unknown as number }, helpers).durationMs).toBeUndefined();
+  });
+
   it('un toast garde un titre texte, même pour un nombre ou une valeur absente', () => {
     expect(toastFromEvent({ title: 42 as unknown as string }, helpers).title).toBe('42');
     expect(toastFromEvent({ title: undefined as unknown as string }, helpers).title).toBe('');

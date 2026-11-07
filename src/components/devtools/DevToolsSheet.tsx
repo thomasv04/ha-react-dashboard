@@ -167,14 +167,30 @@ export function DevToolsSheet({ open, onClose }: { open: boolean; onClose: () =>
               )}
 
               {kind === 'modal' && (
-                <Field group label={t('help.devtools.width')}>
-                  <Segmented
-                    label={t('help.devtools.width')}
-                    value={form.width}
-                    onChange={width => set({ width })}
-                    options={(['sm', 'md', 'lg', 'full'] as const).map(w => ({ value: w, label: t(`help.devtools.widths.${w}`) }))}
-                  />
-                </Field>
+                <>
+                  {form.width !== 'screen' && (
+                    <Field group label={t('help.devtools.width')}>
+                      <Segmented
+                        label={t('help.devtools.width')}
+                        value={form.width}
+                        onChange={width => set({ width })}
+                        options={(['sm', 'md', 'lg', 'full'] as const).map(w => ({ value: w, label: t(`help.devtools.widths.${w}`) }))}
+                      />
+                    </Field>
+                  )}
+                  <Field group label={t('help.devtools.modalDurationMs')}>
+                    <input
+                      type='number'
+                      min={0}
+                      step={1000}
+                      aria-label={t('help.devtools.modalDurationMs')}
+                      className={INPUT}
+                      value={form.modalDurationMs}
+                      onChange={e => set({ modalDurationMs: Math.max(0, Number(e.target.value)) })}
+                    />
+                    <span className='text-[15px] leading-relaxed text-[var(--ds-ink-muted)]'>{t('help.devtools.modalDurationDesc')}</span>
+                  </Field>
+                </>
               )}
               {kind === 'notification' && (
                 <>
@@ -209,6 +225,12 @@ export function DevToolsSheet({ open, onClose }: { open: boolean; onClose: () =>
 
             {kind === 'modal' && (
               <>
+                <PerfToggle
+                  checked={form.width === 'screen'}
+                  onChange={on => set({ width: on ? 'screen' : 'md' })}
+                  label={t('help.devtools.fullscreen')}
+                  description={t('help.devtools.fullscreenDesc')}
+                />
                 <PerfToggle
                   checked={!form.dismissible}
                   onChange={locked => set({ dismissible: !locked })}

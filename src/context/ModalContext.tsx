@@ -14,12 +14,14 @@ export interface Modal {
   id: string;
   title?: string;
   content?: ModalContent;
-  /** Modal width preset */
-  width?: 'sm' | 'md' | 'lg' | 'full';
+  /** Modal width preset — `screen` : tout l'écran. */
+  width?: 'sm' | 'md' | 'lg' | 'full' | 'screen';
   /** Sound to play when modal opens */
   sound?: SoundPreset | string | false;
   /** Can be dismissed via ESC or backdrop click — otherwise it stays until one of its actions. */
   dismissible?: boolean;
+  /** Se ferme seule après ce délai (ms), même bloquante. Absent : reste ouverte. */
+  durationMs?: number;
   actions?: ModalAction[];
 }
 
@@ -39,25 +41,30 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     setModals(prev => prev.filter(m => m.id !== id));
   }, []);
 
-  const openModal = useCallback((modal: Omit<Modal, 'id'>): string => {
-    const id = `modal-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const full: Modal = {
-      width: 'md',
-      dismissible: true,
-      sound: 'notification',
-      ...modal,
-      id,
-    };
+  const openModal = useCallback(
+    (modal: Omit<Modal, 'id'>): string => {
+      const id = `modal-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const full: Modal = {
+        width: 'md',
+        dismissible: true,
+        sound: 'notification',
+        ...modal,
+        id,
+      };
 
-    setModals(prev => [...prev, full]);
+      setModals(prev => [...prev, full]);
+      // Déjà fermée d'ici là : `closeModal` ne trouve rien et ne fait rien.
+      if (full.durationMs) setTimeout(() => closeModal(id), full.durationMs);
 
-    // Play sound if specified
-    if (full.sound !== false && full.sound && isSoundEnabled()) {
-      playSound(full.sound);
-    }
+      // Play sound if specified
+      if (full.sound !== false && full.sound && isSoundEnabled()) {
+        playSound(full.sound);
+      }
 
-    return id;
-  }, []);
+      return id;
+    },
+    [closeModal]
+  );
 
   const clearAll = useCallback(() => setModals([]), []);
 

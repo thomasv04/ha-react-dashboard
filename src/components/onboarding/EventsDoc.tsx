@@ -12,8 +12,9 @@ const MODAL_YAML = `action:
       title: "Mise à jour disponible"
       content: "Une nouvelle version est prête à être installée."
       content_type: plain        # plain | html (assaini) | markdown (brut)
-      width: md                  # sm | md | lg | full
+      width: md                  # sm | md | lg | full | screen (plein écran)
       dismissible: false         # reste jusqu'à une action : ni Échap ni clic extérieur
+      duration_ms: 30000         # se ferme seule après 30 s ; absent : reste affichée
       actions:
         - label: "Installer"
           variant: primary

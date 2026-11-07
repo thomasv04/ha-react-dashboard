@@ -27,9 +27,12 @@ export interface HAModalEvent {
   title?: string;
   content?: string;
   content_type?: 'markdown' | 'html' | 'plain';
-  width?: 'sm' | 'md' | 'lg' | 'full';
+  /** `screen` : tout l'écran, sans marge ni coins. */
+  width?: 'sm' | 'md' | 'lg' | 'full' | 'screen';
   sound?: string | false;
   dismissible?: boolean;
+  /** Se ferme seule après ce délai, même bloquante. Absent : reste affichée. */
+  duration_ms?: number;
   actions?: HAEventAction[];
 }
 
@@ -89,12 +92,15 @@ function eventActions(actions: HAEventAction[] | undefined, helpers: Helpers): M
 export function modalFromEvent(data: HAModalEvent, helpers: Helpers): Omit<Modal, 'id'> {
   const { content_type, width, sound, dismissible, actions } = data;
   const content = asText(data.content);
+  // Un modèle `{{ … }}` peut rendre la durée en texte.
+  const durationMs = Number(data.duration_ms);
   return {
     title: asText(data.title),
     content: content && content_type && content_type !== 'plain' ? { type: content_type, value: content } : content,
     width: width ?? 'md',
     sound: sound === undefined ? 'notification' : sound,
     dismissible: dismissible ?? true,
+    durationMs: durationMs > 0 ? durationMs : undefined,
     actions: eventActions(actions, helpers),
   };
 }

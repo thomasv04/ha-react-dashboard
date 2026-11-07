@@ -127,4 +127,29 @@ describe('Modal', () => {
 
     await waitFor(() => expect(screen.queryByText('Non-dismissible Modal')).not.toBeInTheDocument());
   });
+
+  // La sonnette : affichée 30 s, puis l'écran revient seul, sans que personne touche.
+  it('closes by itself after durationMs, even a blocking one', async () => {
+    function TestTimed() {
+      const { openModal } = useModal();
+      return (
+        <div>
+          <button onClick={() => openModal({ title: 'Ding dong', dismissible: false, durationMs: 50 })}>OpenTimed</button>
+          <ModalContainer />
+        </div>
+      );
+    }
+
+    render(
+      <ThemeContextProvider>
+        <ModalProvider>
+          <TestTimed />
+        </ModalProvider>
+      </ThemeContextProvider>
+    );
+
+    fireEvent.click(screen.getByText('OpenTimed'));
+    await waitFor(() => expect(screen.getByText('Ding dong')).toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText('Ding dong')).not.toBeInTheDocument());
+  });
 });
