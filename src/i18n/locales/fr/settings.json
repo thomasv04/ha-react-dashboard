@@ -8,8 +8,6 @@
   "appearance_section": {
     "accent": "Couleur primaire",
     "accentDesc": "Remplace le bleu d'accent partout : boutons, tuiles allumées, curseurs.",
-    "accentDefault": "Par défaut",
-    "accentCustom": "Autre couleur",
     "theme": "Thème",
     "imageUrl": "URL",
     "imageFile": "Fichier",

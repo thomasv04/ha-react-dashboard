@@ -1,6 +1,7 @@
 import { LayoutGrid, Map as MapIcon, Music, Settings, type LucideIcon } from 'lucide-react';
 import type { Page, PageType } from '@/context/PageContext';
 import { resolveIcon } from '@/lib/lucide-icon-map';
+import { readableInk } from '@/lib/accent';
 
 const DEFAULT_ICONS: Record<PageType, LucideIcon> = {
   grid: LayoutGrid,
@@ -18,3 +19,9 @@ export const sortPages = (pages: Page[]): Page[] => [...pages].sort((a, b) => a.
 /** Couleurs des pastilles de pages, reprises des apps du lanceur — la page `index` prend la sienne. */
 const APP_COLORS = ['var(--ds-app-home)', 'var(--ds-app-music)', 'var(--ds-app-tv)', 'var(--ds-app-photo)', 'var(--ds-app-calendar)'];
 export const pageColor = (index: number) => APP_COLORS[index % APP_COLORS.length];
+
+/** Fond et encre d'une pastille d'onglet : la couleur choisie, sinon `fallback` sous une icône blanche. */
+export const tabStyle = (color: string | undefined, fallback: string) => ({
+  background: color || fallback,
+  color: (color && readableInk(color)) || '#ffffff',
+});

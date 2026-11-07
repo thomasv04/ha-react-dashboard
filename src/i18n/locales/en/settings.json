@@ -8,8 +8,6 @@
   "appearance_section": {
     "accent": "Primary color",
     "accentDesc": "Replaces the blue accent everywhere: buttons, active tiles, sliders.",
-    "accentDefault": "Default",
-    "accentCustom": "Other color",
     "theme": "Theme",
     "imageUrl": "URL",
     "imageFile": "File",

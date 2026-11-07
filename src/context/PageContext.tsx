@@ -65,6 +65,8 @@ export interface Page {
   id: string;
   label: string;
   icon?: string; // nom d'icône lucide
+  /** Pastille de l'onglet dans le rail, `#rrggbb`. Absente : la couleur tournante du rail. */
+  color?: string;
   type: PageType;
   /** Ordre d'affichage dans les onglets */
   order: number;

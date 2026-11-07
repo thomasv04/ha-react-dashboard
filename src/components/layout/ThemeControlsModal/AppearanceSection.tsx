@@ -6,6 +6,7 @@ import { EntityPicker } from '@/components/layout/WidgetEditModal/EntityPicker';
 import { SwitchTrack } from '@/components/ds/Switch';
 import { DEFAULT_ILLUMINANCE_THRESHOLD } from '@/hooks/useAutoTheme';
 import { HAThemeImport } from './HAThemeImport';
+import { ColorSwatches } from '@/components/layout/ColorSwatches';
 import { FIELD_LABEL, SECTION_HEADING, SETTINGS_CARD } from './typography';
 import { cn } from '@/lib/utils';
 
@@ -28,55 +29,15 @@ function ThemePreview({ tokens }: { tokens: ThemeTokens }) {
   );
 }
 
-/** Couleurs proposées d'un toucher ; le champ natif couvre le reste. */
-const ACCENT_PRESETS = ['#7a5cf0', '#c04fd6', '#e8466b', '#f07b2e', '#e0b03a', '#2f9e5c', '#14a3a3'];
-
 function AccentPicker() {
   const { t } = useI18n();
   const { accentColor, setAccentColor } = useTheme();
-  const swatch = (on: boolean) =>
-    cn('flex size-11 items-center justify-center rounded-full', on && 'outline-[3px] outline-offset-2 outline-[var(--ds-ink)]');
-
   return (
     <section className={SETTINGS_CARD}>
       <h3 className={SECTION_HEADING}>{t('settings.appearance_section.accent')}</h3>
       <p className='mt-1 mb-4 text-[15px] text-[var(--ds-ink-muted)]'>{t('settings.appearance_section.accentDesc')}</p>
-      <div role='radiogroup' aria-label={t('settings.appearance_section.accent')} className='flex flex-wrap items-center gap-3'>
-        <button
-          role='radio'
-          aria-checked={!accentColor}
-          onClick={() => setAccentColor('')}
-          className='flex h-11 items-center gap-2 rounded-full bg-[var(--ds-surface-3)] pr-4 pl-1.5 text-[15px] font-semibold'
-        >
-          {/* Le bleu du thème, même quand une autre couleur a pris la place de l'accent. */}
-          <span className={swatch(!accentColor)} style={{ background: '#3b74e8', width: 32, height: 32 }} />
-          {t('settings.appearance_section.accentDefault')}
-        </button>
-        {ACCENT_PRESETS.map(c => (
-          <button
-            key={c}
-            role='radio'
-            aria-checked={accentColor === c}
-            aria-label={c}
-            onClick={() => setAccentColor(c)}
-            className={swatch(accentColor === c)}
-            style={{ background: c }}
-          />
-        ))}
-        <label
-          className={swatch(!!accentColor && !ACCENT_PRESETS.includes(accentColor))}
-          title={t('settings.appearance_section.accentCustom')}
-          style={{ background: 'conic-gradient(#e8466b, #f6cf72, #3ecf7a, #14a3a3, #3b74e8, #c04fd6, #e8466b)' }}
-        >
-          <input
-            type='color'
-            aria-label={t('settings.appearance_section.accentCustom')}
-            value={accentColor || '#3b74e8'}
-            onChange={e => setAccentColor(e.target.value)}
-            className='size-0 opacity-0'
-          />
-        </label>
-      </div>
+      {/* « Par défaut » montre le bleu du thème, même quand une autre couleur a pris la place de l'accent. */}
+      <ColorSwatches value={accentColor} onChange={setAccentColor} label={t('settings.appearance_section.accent')} defaultColor='#3b74e8' />
     </section>
   );
 }

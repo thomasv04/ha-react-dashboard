@@ -40,6 +40,12 @@ const contrast = (a: RGB, b: RGB) => {
 /** Blanc ou encre foncée : celui qui se lit le mieux sur `bg`. */
 const inkOn = (bg: RGB): RGB => (contrast(bg, WHITE) >= contrast(bg, DARK_INK) ? WHITE : DARK_INK);
 
+/** Blanc ou encre foncée pour du texte posé sur `hex` ; `undefined` si `hex` n'est pas `#rrggbb`. */
+export function readableInk(hex: string): string | undefined {
+  const c = parse(hex);
+  return c ? toHex(inkOn(c)) : undefined;
+}
+
 /** Les variables à poser pour `hex`, ou `null` si ce n'est pas une couleur `#rrggbb`. */
 export function accentVars(hex: string): Record<string, string> | null {
   const accent = parse(hex);
