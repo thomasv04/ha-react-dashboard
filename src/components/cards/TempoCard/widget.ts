@@ -46,6 +46,15 @@ export default defineWidget({
   ],
 
   fields: [
+    {
+      key: 'mode',
+      label: 'widgets.tempo.fields.mode.label',
+      fieldType: 'select',
+      options: [
+        { value: 'tempo', label: 'widgets.tempo.fields.mode.options.tempo' },
+        { value: 'ejp', label: 'widgets.tempo.fields.mode.options.ejp' },
+      ],
+    },
     { key: 'currentColorEntity', label: 'widgets.tempo.fields.currentColorEntity.label', fieldType: 'entity', domain: 'sensor' },
     { key: 'nextColorEntity', label: 'widgets.tempo.fields.nextColorEntity.label', fieldType: 'entity', domain: 'sensor' },
     { key: 'offPeakEntity', label: 'widgets.tempo.fields.offPeakEntity.label', fieldType: 'entity', domain: 'binary_sensor' },
@@ -55,6 +64,7 @@ export default defineWidget({
   ],
 
   defaults: {
+    mode: 'tempo',
     currentColorEntity: 'sensor.tempo_current_color',
     nextColorEntity: 'sensor.tempo_next_color',
     offPeakEntity: 'binary_sensor.tempo_off_peak',

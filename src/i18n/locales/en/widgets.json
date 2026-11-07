@@ -505,7 +505,7 @@
   },
   "tempo": {
     "label": "Tempo EDF",
-    "description": "EDF Tempo day color and off-peak/peak hours.",
+    "description": "Tempo day color or EJP day, and off-peak/peak hours.",
     "offPeak": "Off-peak hours",
     "peak": "Peak hours",
     "tomorrow": "Tomorrow",
@@ -519,10 +519,10 @@
     },
     "fields": {
       "currentColorEntity": {
-        "label": "Current colour"
+        "label": "Today (color or EJP)"
       },
       "nextColorEntity": {
-        "label": "Next colour"
+        "label": "Tomorrow (color or EJP)"
       },
       "offPeakEntity": {
         "label": "Off-peak hours"
@@ -534,11 +534,24 @@
         "label": "White days remaining"
       },
       "remainingRedEntity": {
-        "label": "Red days remaining"
+        "label": "Red (or EJP) days left"
+      },
+      "mode": {
+        "label": "Tariff",
+        "options": {
+          "tempo": "Tempo",
+          "ejp": "EJP"
+        }
       }
     },
     "today": "Today",
-    "days": "{value} d"
+    "days": "{value} d",
+    "ejp": {
+      "label": "EDF EJP",
+      "ejp": "EJP day",
+      "normal": "Normal",
+      "remaining": "{value} EJP days left"
+    }
   },
   "shortcuts": {
     "label": "Shortcuts",

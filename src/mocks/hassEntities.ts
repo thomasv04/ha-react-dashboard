@@ -57,6 +57,11 @@ export const MOCK_ENTITIES: Record<string, MockEntityState> = {
   'sensor.rte_tempo_cycle_jours_restants_blanc': entity('sensor.rte_tempo_cycle_jours_restants_blanc', '20', {}),
   'sensor.rte_tempo_cycle_jours_restants_rouge': entity('sensor.rte_tempo_cycle_jours_restants_rouge', '0', {}),
 
+  // EJP : de quoi essayer le mode EJP du widget Tempo.
+  'sensor.ejp_aujourdhui': entity('sensor.ejp_aujourdhui', 'EJP', {}),
+  'sensor.ejp_demain': entity('sensor.ejp_demain', 'Non EJP', {}),
+  'sensor.ejp_jours_restants': entity('sensor.ejp_jours_restants', '17', {}),
+
   // Room temperatures
   'sensor.temperature_chambre_temperature': entity('sensor.temperature_chambre_temperature', '20.4', { unit_of_measurement: '°C' }),
   'sensor.temperature_chambre_humidity': entity('sensor.temperature_chambre_humidity', '55', {

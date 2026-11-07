@@ -19,6 +19,18 @@ function dayStyle(color: TempoColor): { background: string; color: string } {
 }
 
 /**
+ * État d'un capteur EJP → jour de pointe, jour normal, ou `null` si illisible.
+ * Les intégrations écrivent « EJP », « Non EJP », « Jour normal », `on`/`off`… :
+ * la négation passe en premier, « Non EJP » contient « EJP ».
+ */
+function ejpDay(state: string | undefined): 'ejp' | 'normal' | null {
+  const s = state?.trim().toLowerCase() ?? '';
+  if (/^(off|false|0|no)$/.test(s) || /(^|\s)(non|pas|normal)(\s|$|')/.test(s)) return 'normal';
+  if (/^(on|true|1|oui|yes|rouge|red)$/.test(s) || s.includes('ejp')) return 'ejp';
+  return null;
+}
+
+/**
  * Tempo EDF : aujourd'hui et demain en grandes tuiles pleines, à la couleur du
  * jour, puis les jours restants de chaque couleur en pastilles.
  */
@@ -40,18 +52,38 @@ export function TempoCard() {
 
   if (!current) return null;
 
-  const period = hc?.state === 'on' ? t('widgets.tempo.offPeak') : t('widgets.tempo.peak');
+  const ejp = config?.mode === 'ejp';
+  // EJP : pas d'heures creuses ni de jours blancs ; le sous-titre donne les jours de pointe restants.
+  const title = ejp ? t('widgets.tempo.ejp.label') : t('widgets.tempo.label');
+  const period = ejp
+    ? red?.state != null
+      ? t('widgets.tempo.ejp.remaining', { value: red.state })
+      : ''
+    : hc?.state === 'on'
+      ? t('widgets.tempo.offPeak')
+      : t('widgets.tempo.peak');
   // `key` reste la couleur canonique renvoyée par HA : le style compare une
   // valeur stable, pas le libellé traduit.
-  const remaining = [
+  const remaining = ejp
+    ? []
+    : [
     { key: 'Bleu', label: t('widgets.tempo.blue'), state: blue?.state },
     { key: 'Blanc', label: t('widgets.tempo.white'), state: white?.state },
     { key: 'Rouge', label: t('widgets.tempo.red'), state: red?.state },
   ].filter(r => r.state != null);
 
+  /** Ce qu'affiche la tuile d'un jour : le texte et ses couleurs. */
+  const show = (state: string | undefined) => {
+    if (!ejp) return { text: state ?? '—', style: dayStyle(state ?? '') };
+    const kind = ejpDay(state);
+    return {
+      text: kind ? t(`widgets.tempo.ejp.${kind}`) : (state ?? '—'),
+      style: dayStyle(kind === 'ejp' ? 'Rouge' : ''),
+    };
+  };
   const days = [
-    { label: t('widgets.tempo.today'), color: current.state },
-    { label: t('widgets.tempo.tomorrow'), color: next?.state ?? '—' },
+    { label: t('widgets.tempo.today'), ...show(current.state) },
+    { label: t('widgets.tempo.tomorrow'), ...show(next?.state) },
   ];
 
   // Une rangée : les deux jours en pastilles, sans les jours restants.
@@ -62,17 +94,17 @@ export function TempoCard() {
         className='flex h-full items-center gap-3 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] px-4 text-[var(--ds-ink)]'
       >
         <div className='min-w-0 shrink'>
-          <div className='truncate text-[17px] font-semibold leading-tight'>{t('widgets.tempo.label')}</div>
-          <div className='truncate text-sm text-[var(--ds-ink-muted)]'>{period}</div>
+          <div className='truncate text-[17px] font-semibold leading-tight'>{title}</div>
+          {period && <div className='truncate text-sm text-[var(--ds-ink-muted)]'>{period}</div>}
         </div>
         <div className='ml-auto flex gap-2'>
           {days.map(d => (
             <span
               key={d.label}
               className='flex h-11 items-center rounded-[var(--ds-radius-pill)] px-4 text-sm font-semibold'
-              style={dayStyle(d.color)}
+              style={d.style}
             >
-              {d.color}
+              {d.text}
             </span>
           ))}
         </div>
@@ -86,8 +118,8 @@ export function TempoCard() {
       className='flex h-full flex-col gap-3 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] p-[var(--ds-space-4)] text-[var(--ds-ink)]'
     >
       <div className='min-w-0'>
-        <div className='truncate text-[17px] font-semibold leading-tight'>{t('widgets.tempo.label')}</div>
-        <div className='truncate text-sm text-[var(--ds-ink-muted)]'>{period}</div>
+        <div className='truncate text-[17px] font-semibold leading-tight'>{title}</div>
+        {period && <div className='truncate text-sm text-[var(--ds-ink-muted)]'>{period}</div>}
       </div>
 
       <div className='grid min-h-0 flex-1 grid-cols-2 gap-2.5'>
@@ -95,10 +127,10 @@ export function TempoCard() {
           <div
             key={d.label}
             className='flex min-h-[64px] flex-col justify-between rounded-[var(--ds-radius-lg)] p-3'
-            style={dayStyle(d.color)}
+            style={d.style}
           >
             <span className='text-sm opacity-80'>{d.label}</span>
-            <span className={cn('font-semibold leading-tight', size.h === 'short' ? 'text-xl' : 'text-[28px]')}>{d.color}</span>
+            <span className={cn('font-semibold leading-tight', size.h === 'short' ? 'text-xl' : 'text-[28px]')}>{d.text}</span>
           </div>
         ))}
       </div>
