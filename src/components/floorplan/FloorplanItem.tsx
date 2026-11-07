@@ -208,7 +208,7 @@ export function FloorplanItem({
             <div
               onPointerDown={e => startGesture(e, resizePos)}
               title={t('layout.floorplan.resize')}
-              className='absolute -right-2 -bottom-2 w-4 h-4 rounded-full bg-[var(--ds-accent)] border-2 border-[var(--ds-surface-3)] cursor-se-resize touch-none shadow text-white'
+              className='absolute -right-2 -bottom-2 w-4 h-4 rounded-full bg-[var(--ds-accent)] border-2 border-[var(--ds-surface-3)] cursor-se-resize touch-none shadow text-[var(--ds-accent-ink)]'
             />
           )}
         </>

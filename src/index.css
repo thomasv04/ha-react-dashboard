@@ -431,6 +431,25 @@ select option {
   [class~='text-[11px]'] { font-size: 12px; }
 }
 
+/* ── Couleur primaire choisie (Paramètres > Apparence) ───────────────────── */
+/* `ThemeContext` pose les `--ds-user-*` sur <html> (lib/accent.ts). Classe
+   doublée : passe devant `:root` et `[data-theme='light']` de tokens.css, y
+   compris sur le conteneur recopié dans la shadow root du mode carte. */
+
+.theme-custom-accent.theme-custom-accent {
+  --ds-accent: var(--ds-user-accent);
+  --ds-accent-ink: var(--ds-user-accent-ink);
+  --ds-tile-on: var(--ds-user-tile-on);
+  --ds-tile-on-ink: var(--ds-user-tile-on-ink);
+  --ds-tile-on-muted: var(--ds-user-tile-on-muted);
+  --ds-app-home: var(--ds-user-accent);
+}
+
+.theme-custom-accent.theme-custom-accent:not([data-theme='light']) {
+  --ds-sheet: var(--ds-user-sheet);
+  --ds-sheet-section: var(--ds-user-sheet-section);
+}
+
 /* ── Focus visibility (keyboard / HA remote navigation) ──────────────────── */
 
 :where(button, a, [role='button'], input, select, textarea):focus-visible {

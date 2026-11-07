@@ -68,7 +68,7 @@ const PRESETS: Record<string, (state: string, t: Translate) => PillVisual> = {
   tempo: (state, t) => ({
     icon: <Sun size={18} />,
     label: t('activityBar.tempo', { value: state }),
-    color: state === 'Rouge' ? 'var(--ds-alert)' : state === 'Blanc' ? 'var(--ds-ink)' : 'var(--ds-accent)',
+    color: state === 'Rouge' ? 'var(--ds-alert)' : state === 'Blanc' ? 'var(--ds-ink)' : '#3b74e8', // bleu Tempo, pas l'accent
     hideOnMobile: true,
   }),
   temp: (state, t) => ({

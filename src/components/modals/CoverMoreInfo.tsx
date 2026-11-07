@@ -142,12 +142,12 @@ export default function CoverMoreInfo({ entityId, widgetId }: { entityId: string
             className={`absolute top-0 left-0 right-0${dragPosition === null ? ' transition-all duration-500' : ''}`}
             style={{
               height: `${shownClosedPct}%`,
-              background: 'linear-gradient(180deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05))',
+              background: 'linear-gradient(180deg, color-mix(in srgb, var(--ds-accent) 15%, transparent), color-mix(in srgb, var(--ds-accent) 5%, transparent))',
             }}
           >
             {/* Slats */}
             {Array.from({ length: shownSlatCount }, (_, i) => (
-              <div key={i} className='border-b border-blue-400/20' style={{ height: `${100 / Math.max(shownSlatCount, 1)}%` }} />
+              <div key={i} className='border-b border-[color-mix(in_srgb,var(--ds-accent)_20%,transparent)]' style={{ height: `${100 / Math.max(shownSlatCount, 1)}%` }} />
             ))}
           </div>
         </div>

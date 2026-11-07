@@ -13,7 +13,8 @@ type TempoColor = 'Bleu' | 'Blanc' | 'Rouge' | string;
 function dayStyle(color: TempoColor): { background: string; color: string } {
   if (color === 'Rouge') return { background: 'var(--ds-alert)', color: '#ffffff' };
   if (color === 'Blanc') return { background: '#eef1f5', color: '#1b2230' };
-  if (color === 'Bleu') return { background: 'var(--ds-accent)', color: '#ffffff' };
+  // Le bleu d'EDF, pas l'accent : une couleur primaire rouge ferait passer un jour Bleu pour un jour Rouge.
+  if (color === 'Bleu') return { background: '#3b74e8', color: '#ffffff' };
   return { background: 'var(--ds-surface-3)', color: 'var(--ds-ink)' };
 }
 

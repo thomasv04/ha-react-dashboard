@@ -34,7 +34,7 @@ export function ButtonBlockRenderer({ block, card = false }: { block: ButtonBloc
       whileTap={{ scale: 0.95 }}
       onClick={call}
       className={`flex h-[52px] w-full items-center justify-center gap-2 rounded-[var(--ds-radius-pill)] text-[15px] font-semibold ${
-        isPrimary ? 'bg-[var(--ds-accent)] text-white' : 'bg-[var(--ds-sheet-section)] text-[var(--ds-ink)]'
+        isPrimary ? 'bg-[var(--ds-accent)] text-[var(--ds-accent-ink)]' : 'bg-[var(--ds-sheet-section)] text-[var(--ds-ink)]'
       }`}
     >
       {/* eslint-disable-next-line react-hooks/static-components */}

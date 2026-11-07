@@ -37,7 +37,7 @@ export function InlineButtonRenderer({ btn, compact = false, tile = false }: { b
       // la fermeture — elle se serre au lieu de prendre toute la largeur.
       className={`flex min-w-0 items-center justify-center gap-2 rounded-[var(--ds-radius-pill)] font-semibold ${
         compact ? 'h-11 px-4 text-sm' : 'h-[52px] flex-1 text-[15px]'
-      } ${isPrimary ? 'bg-[var(--ds-accent)] text-white' : 'bg-[var(--ds-sheet-section)] text-[var(--ds-ink)]'}`}
+      } ${isPrimary ? 'bg-[var(--ds-accent)] text-[var(--ds-accent-ink)]' : 'bg-[var(--ds-sheet-section)] text-[var(--ds-ink)]'}`}
     >
       {/* eslint-disable-next-line react-hooks/static-components */}
       {Icon && <Icon size={compact ? 18 : 20} className='flex-shrink-0' />}

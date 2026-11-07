@@ -85,7 +85,7 @@ export function SettingsPanel({
                 aria-hidden
                 className={cn(
                   'absolute top-0.5 right-1 min-w-4 px-1 rounded-full text-[9px] leading-[14px] font-semibold tabular-nums',
-                  tab === id ? 'bg-[var(--ds-accent)] text-white' : 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)]'
+                  tab === id ? 'bg-[var(--ds-accent)] text-[var(--ds-accent-ink)]' : 'bg-[var(--ds-surface-3)] text-[var(--ds-ink)]'
                 )}
               >
                 {badge}

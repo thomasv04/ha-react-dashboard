@@ -468,7 +468,7 @@ export function OpeningPopover({
         <button
           onClick={onSave}
           disabled={!link.entityId || !kind}
-          className='ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--ds-radius-sm)] text-xs font-medium bg-[var(--ds-accent)] text-white disabled:opacity-40'
+          className='ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--ds-radius-sm)] text-xs font-medium bg-[var(--ds-accent)] text-[var(--ds-accent-ink)] disabled:opacity-40'
         >
           <Link2 size={12} /> {t('layout.floorplan.openingLink')}
         </button>

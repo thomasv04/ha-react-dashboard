@@ -1107,7 +1107,7 @@ export function FloorplanView() {
   const addPopover = adding && (
     // Remonté à chaque point : le sélecteur ne s'ouvre seul qu'au montage.
     <div key={`${adding.x}:${adding.y}`}>
-      {dot(adding, 'bg-[var(--ds-accent)] ring-[var(--ds-accent)] text-white')}
+      {dot(adding, 'bg-[var(--ds-accent)] ring-[var(--ds-accent)] text-[var(--ds-accent-ink)]')}
       <DraftPopover
         title={t(lampArmed ? 'layout.floorplan.lampHere' : 'layout.floorplan.addHere')}
         onCancel={() => setAdding(null)}

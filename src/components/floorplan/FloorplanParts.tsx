@@ -55,7 +55,7 @@ export function PartPopover({
         <button
           onClick={onAdd}
           disabled={!part.entityId}
-          className='ml-auto px-3 py-1.5 rounded-[var(--ds-radius-sm)] text-xs font-medium bg-[var(--ds-accent)] text-white disabled:opacity-40'
+          className='ml-auto px-3 py-1.5 rounded-[var(--ds-radius-sm)] text-xs font-medium bg-[var(--ds-accent)] text-[var(--ds-accent-ink)] disabled:opacity-40'
         >
           {t('common.add')}
         </button>

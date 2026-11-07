@@ -56,7 +56,7 @@ export function AssistSheet({ open, onClose }: { open: boolean; onClose: () => v
         <div role='log' aria-live='polite' className='flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto'>
           {messages.length === 0 ? (
             <div className='my-auto flex flex-col items-center gap-4 text-center'>
-              <span className='flex size-14 items-center justify-center rounded-full bg-[var(--ds-accent)] text-white'>
+              <span className='flex size-14 items-center justify-center rounded-full bg-[var(--ds-accent)] text-[var(--ds-accent-ink)]'>
                 <Sparkles size={26} aria-hidden='true' />
               </span>
               <div>
@@ -112,7 +112,7 @@ export function AssistSheet({ open, onClose }: { open: boolean; onClose: () => v
             disabled={!draft.trim() || pending}
             aria-label={t('layout.assist.send')}
             title={t('layout.assist.send')}
-            className='flex size-12 shrink-0 items-center justify-center rounded-full bg-[var(--ds-accent)] text-white disabled:opacity-40'
+            className='flex size-12 shrink-0 items-center justify-center rounded-full bg-[var(--ds-accent)] text-[var(--ds-accent-ink)] disabled:opacity-40'
           >
             <ArrowUp size={20} aria-hidden='true' />
           </button>

@@ -73,7 +73,7 @@ export function LauncherButton({
       title={label}
       aria-label={label}
       className={cn(
-        'pointer-events-auto flex size-[60px] items-center justify-center rounded-[var(--ds-radius-md)] bg-[var(--ds-accent)] text-white active:scale-95 transition-transform',
+        'pointer-events-auto flex size-[60px] items-center justify-center rounded-[var(--ds-radius-md)] bg-[var(--ds-accent)] text-[var(--ds-accent-ink)] active:scale-95 transition-transform',
         className
       )}
     >

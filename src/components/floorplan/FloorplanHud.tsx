@@ -231,7 +231,7 @@ export function LockBadge({ entityId, entity, at }: { entityId: string; entity?:
                 callHAService(helpers, 'lock', locked ? 'unlock' : 'lock', { entity_id: entityId });
                 setAsking(false);
               }}
-              className='flex h-11 items-center justify-center gap-2 rounded-[var(--ds-radius-pill)] bg-[var(--ds-accent)] text-[15px] font-semibold text-white'
+              className='flex h-11 items-center justify-center gap-2 rounded-[var(--ds-radius-pill)] bg-[var(--ds-accent)] text-[15px] font-semibold text-[var(--ds-accent-ink)]'
             >
               {locked ? <LockOpen size={18} /> : <Lock size={18} />}
               {t(locked ? 'layout.floorplan.lockUnlock' : 'layout.floorplan.lockLock')}
