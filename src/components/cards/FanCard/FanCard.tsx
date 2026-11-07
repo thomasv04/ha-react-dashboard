@@ -81,7 +81,14 @@ export function FanCard() {
 
   return (
     <div ref={cardRef} className='h-full'>
-      <DeviceTile name={hideTitle ? '' : name} state={stateLabel} icon={Fan} active={isOn} onToggle={handleToggle} layout={size.squat ? 'row' : 'stack'}>
+      <DeviceTile
+        name={hideTitle ? '' : name}
+        state={stateLabel}
+        icon={Fan}
+        active={isOn}
+        onToggle={handleToggle}
+        layout={size.squat ? 'row' : 'stack'}
+      >
         {showControls && supportsSpeed && (
           <PillSlider
             value={percentage}

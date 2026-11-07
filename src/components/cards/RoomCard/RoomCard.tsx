@@ -210,7 +210,9 @@ export function RoomCard() {
           <IconComp size={24} aria-hidden='true' className='mt-1 shrink-0 text-[var(--ds-accent)]' />
         ) : null}
         <div className='min-w-0 flex-1'>
-          {!hideTitle && <div className={cn('truncate leading-tight text-[var(--ds-accent)]', embedded ? 'text-xl' : 'text-[28px]')}>{label}</div>}
+          {!hideTitle && (
+            <div className={cn('truncate leading-tight text-[var(--ds-accent)]', embedded ? 'text-xl' : 'text-[28px]')}>{label}</div>
+          )}
           {facts.length > 0 && <div className='truncate text-sm text-[var(--ds-ink-muted)]'>{facts.join(' · ')}</div>}
         </div>
         {panelId && (
