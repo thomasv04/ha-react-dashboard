@@ -1,6 +1,6 @@
 import { Music } from 'lucide-react';
 import { defineWidget, type WidgetDefaults } from '@/widgets/define-widget';
-import type { WidgetConfig } from '@/types/widget-configs';
+import type { MediaPlayerCardConfig } from '@/types/widget-configs';
 
 /** Manifeste du widget « media_player » — migré des registres historiques (2.2.0). */
 export default defineWidget({
@@ -72,5 +72,5 @@ export default defineWidget({
   defaults: {
     entityId: 'media_player.salon',
     disposition: 'horizontal',
-  } satisfies WidgetDefaults<WidgetConfig>,
+  } satisfies WidgetDefaults<MediaPlayerCardConfig>,
 });

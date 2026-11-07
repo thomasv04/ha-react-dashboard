@@ -1,6 +1,6 @@
 import { Video } from 'lucide-react';
 import { defineWidget, type WidgetDefaults } from '@/widgets/define-widget';
-import type { WidgetConfig } from '@/types/widget-configs';
+import type { CameraCardConfig } from '@/types/widget-configs';
 
 /** Manifeste du widget « camera » — migré des registres historiques (2.2.0). */
 export default defineWidget({
@@ -79,5 +79,5 @@ export default defineWidget({
     ],
     selectorEntity: 'input_select.camera_selector',
     streamMode: 'auto',
-  } satisfies WidgetDefaults<WidgetConfig>,
+  } satisfies WidgetDefaults<CameraCardConfig>,
 });

@@ -1,6 +1,6 @@
 import { Activity } from 'lucide-react';
 import { defineWidget, type WidgetDefaults } from '@/widgets/define-widget';
-import type { WidgetConfig } from '@/types/widget-configs';
+import type { ActivityBarConfig } from '@/types/widget-configs';
 
 /** Manifeste du widget « activity » — migré des registres historiques (2.2.0). */
 export default defineWidget({
@@ -92,5 +92,5 @@ export default defineWidget({
       { id: 'temp', entityId: 'sensor.bedroom_temperature', label: 'Chambre', template: '{state}°C' },
     ],
     persons: [],
-  } satisfies WidgetDefaults<WidgetConfig>,
+  } satisfies WidgetDefaults<ActivityBarConfig>,
 });

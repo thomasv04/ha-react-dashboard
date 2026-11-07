@@ -153,6 +153,19 @@ le générateur écrit aussi : l'interface de configuration dans
 `src/types/widget-types.ts`. L'union `GridWidget['type']`, elle, se dérive des
 manifestes enregistrés.
 
+Cette interface étend `WidgetConfigBase`, le cœur commun à toutes les cards
+(actions tap/appui long, visibilité, styles d'état, sans fond, sans titre) que
+la tuile et l'éditeur appliquent à tous les widgets ; elle n'ajoute que ses
+champs propres. Un réglage valable pour tous les widgets va dans
+`WidgetConfigBase` (via une des interfaces `src/types/card-*.ts`), pas dans
+chaque config. Dans le manifeste, annoter `defaults` avec la config **du
+widget** (`WidgetDefaults<DoorbellCardConfig>`) : `WidgetDefaults<WidgetConfig>`
+ne vérifie que le cœur commun.
+
+Le titre d'une card s'affiche sous `{!hideTitle && …}`, avec
+`const hideTitle = useHideTitle()` (`@/hooks/useHideTitle`) : l'utilisateur peut
+le masquer depuis l'éditeur.
+
 ### Où vit une tuile
 
 Une page est une suite de panneaux, chacun avec ses tuiles dans l'ordre (pas de

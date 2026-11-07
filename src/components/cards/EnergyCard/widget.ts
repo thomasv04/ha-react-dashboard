@@ -1,6 +1,6 @@
 import { Zap } from 'lucide-react';
 import { defineWidget, type WidgetDefaults } from '@/widgets/define-widget';
-import type { WidgetConfig } from '@/types/widget-configs';
+import type { EnergyCardConfig } from '@/types/widget-configs';
 
 /** Manifeste du widget « energy » — migré des registres historiques (2.2.0). */
 export default defineWidget({
@@ -60,5 +60,5 @@ export default defineWidget({
     gridInputPowerEntity: 'sensor.grid_power',
     homeOutputPowerEntity: 'sensor.home_power',
     solarProductionEntity: 'sensor.solar_production',
-  } satisfies WidgetDefaults<WidgetConfig>,
+  } satisfies WidgetDefaults<EnergyCardConfig>,
 });

@@ -5,7 +5,7 @@ import { X } from 'lucide-react';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useDashboardLayout } from '@/context/DashboardLayoutContext';
 import { findWidget } from '@/lib/panel-grid';
-import type { WidgetConfig } from '@/types/widget-configs';
+import type { WidgetConfig, WidgetConfigBase } from '@/types/widget-configs';
 import { WIDGET_FIELD_DEFS, WIDGET_META } from '@/widgets';
 import { EntityListField } from './EntityListField';
 import { WIDGET_LABELS } from '@/components/layout/DashboardGrid';
@@ -32,7 +32,6 @@ import { VisibilityTab } from './VisibilityTab';
 import { SwitchTrack } from '@/components/ds/Switch';
 import { TilePreview } from './TilePreview';
 import { useI18n } from '@/i18n';
-import type { CardAppearanceConfig } from '@/types/card-appearance';
 import { FIELD_CARD } from './ui';
 
 type Tab = 'config' | 'widgets' | 'advanced' | 'layout' | 'sound' | 'actions' | 'visibility';
@@ -85,8 +84,8 @@ export function WidgetEditModal() {
 
   if (!editingWidgetId || !draft || !fields) return null;
 
-  const noBackground = (draft as CardAppearanceConfig).noBackground === true;
-  const hideTitle = (draft as CardAppearanceConfig).hideTitle === true;
+  const noBackground = (draft as WidgetConfigBase).noBackground === true;
+  const hideTitle = (draft as WidgetConfigBase).hideTitle === true;
 
   // `config.type` couvre aussi `rooms`, qui n'a pas de widget enregistré :
   // l'accès est volontairement tolérant, le rendu gère déjà le cas absent.

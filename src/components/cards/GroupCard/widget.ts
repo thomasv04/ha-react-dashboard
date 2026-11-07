@@ -1,6 +1,6 @@
 import { Layers } from 'lucide-react';
 import { defineWidget, type WidgetDefaults } from '@/widgets/define-widget';
-import type { WidgetConfig } from '@/types/widget-configs';
+import type { GroupCardConfig } from '@/types/widget-configs';
 
 /** Manifeste du widget « group » — migré des registres historiques (2.2.0). */
 export default defineWidget({
@@ -63,5 +63,5 @@ export default defineWidget({
     title: '',
     columns: 2,
     children: [],
-  } satisfies WidgetDefaults<WidgetConfig>,
+  } satisfies WidgetDefaults<GroupCardConfig>,
 });

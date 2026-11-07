@@ -40,7 +40,6 @@ import { lightColor } from '@/lib/floorplan';
 import { resolveIcon, isCustomIcon, getCustomIconUrl, useIconCatalog } from '@/lib/lucide-icon-map';
 import { cn } from '@/lib/utils';
 import type { ChipCardConfig } from '@/types/widget-configs';
-import type { CardActionsConfig } from '@/types/card-actions';
 
 // Importées nommément : passer par des noms résolus à l'exécution ferait
 // télécharger tout le catalogue lucide pour une dizaine d'icônes.
@@ -99,9 +98,7 @@ export function ChipCard() {
   useIconCatalog();
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
-  // Les actions sont communes à toutes les cards : elles ne figurent pas dans
-  // l'interface propre à chacune.
-  const config = getWidgetConfig<ChipCardConfig>(widgetId || 'chip') as (ChipCardConfig & CardActionsConfig) | undefined;
+  const config = getWidgetConfig<ChipCardConfig>(widgetId || 'chip');
   const entityId = config?.entityId ?? '';
 
   const entity = useSafeEntity(entityId);
