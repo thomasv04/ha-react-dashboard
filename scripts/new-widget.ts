@@ -225,7 +225,7 @@ async function main() {
   insertBefore(
     'src/types/widget-types.ts',
     'export type WidgetConfig =',
-    `export interface ${name}Config {\n  type: '${type}';\n  entityId?: string;\n  name?: string;\n}\n\n`
+    `export interface ${name}Config extends WidgetConfigBase {\n  type: '${type}';\n  entityId?: string;\n  name?: string;\n}\n\n`
   );
   // La fin de l'union plutôt que son dernier membre, qui change avec les
   // widgets : `RoomsGridConfig` a disparu avec le type `rooms` de la 3.x.

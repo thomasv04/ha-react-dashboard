@@ -4,6 +4,7 @@ import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { LightCardConfig } from '@/types/widget-configs';
 import { cn } from '@/lib/utils';
@@ -52,6 +53,7 @@ const COLOR_WHEEL = 'conic-gradient(#ef4444, #f59e0b, #eab308, #22c55e, #06b6d4,
 export function LightCard() {
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<LightCardConfig>(widgetId || 'light');
   const entityId = config?.entityId ?? 'light.salon';
@@ -207,7 +209,7 @@ export function LightCard() {
     return (
       <div ref={cardRef} className='h-full'>
         <DeviceTile
-          name={name}
+          name={hideTitle ? '' : name}
           state={stateLabel}
           icon={Icon}
           active={isOn}
@@ -231,7 +233,7 @@ export function LightCard() {
     >
       <div className='flex w-full items-start gap-1'>
         <button onClick={handleToggle} aria-pressed={isOn} className='min-w-0 flex-1 text-left'>
-          <span className='block truncate text-[17px] font-semibold leading-tight'>{name}</span>
+          {!hideTitle && <span className='block truncate text-[17px] font-semibold leading-tight'>{name}</span>}
           <span className={cn('block truncate text-sm', isOn ? 'text-[var(--ds-accent)]' : 'text-[var(--ds-ink-muted)]')}>
             {stateLabel}
           </span>

@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react';
 import { BatteryLow, BatteryFull } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useI18n } from '@/i18n';
@@ -58,6 +59,7 @@ function levelColor(level: number, threshold: number): string {
 export function BatteriesCard() {
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<BatteriesCardConfig>(widgetId || 'batteries');
   const cardRef = useRef<HTMLDivElement>(null);
@@ -95,7 +97,7 @@ export function BatteriesCard() {
           <BatteryFull size={22} aria-hidden='true' className='shrink-0 text-[var(--ds-good)]' />
         )}
         <div className='min-w-0'>
-          <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>
+          {!hideTitle && <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>}
           <div className={cn('truncate text-sm', lowCount > 0 ? 'text-[var(--ds-alert)]' : 'text-[var(--ds-ink-muted)]')}>
             {t('widgets.batteries.lowCount', { count: lowCount, threshold })}
           </div>

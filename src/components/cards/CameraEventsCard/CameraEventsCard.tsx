@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Car, Cctv, Package, PawPrint, User, type LucideIcon } from 'lucide-react';
 import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useFrigateEvents } from '@/hooks/useFrigateEvents';
@@ -52,6 +53,7 @@ function EventTile({ event, now, onOpen }: { event: FrigateEvent; now: number; o
 export function CameraEventsCard() {
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<CameraEventsCardConfig>(widgetId || 'camera_events');
   const cardRef = useRef<HTMLDivElement>(null);
@@ -74,7 +76,7 @@ export function CameraEventsCard() {
     >
       <div className='flex shrink-0 items-center gap-3'>
         <Cctv size={22} aria-hidden='true' className='shrink-0 text-[var(--ds-accent)]' />
-        <span className='truncate text-[17px] font-semibold'>{config?.name || t('widgets.camera_events.title')}</span>
+        {!hideTitle && <span className='truncate text-[17px] font-semibold'>{config?.name || t('widgets.camera_events.title')}</span>}
       </div>
 
       {status === 'error' && events.length === 0 ? (

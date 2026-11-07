@@ -2,6 +2,7 @@ import { Workflow } from 'lucide-react';
 import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useHass, type HassStore } from '@hakit/core';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { cn } from '@/lib/utils';
@@ -75,6 +76,7 @@ function AutomationRow({
 export function AutomationListCard() {
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<AutomationListCardConfig>(widgetId || 'automation_list');
   // Sélecteur ciblé : `useHass()` sans sélecteur s'abonne à tout le store et
@@ -99,7 +101,7 @@ export function AutomationListCard() {
     <div className='flex h-full flex-col gap-3 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] p-[var(--ds-space-4)] text-[var(--ds-ink)]'>
       {/* En-tête avec le compteur d'actives */}
       <div className='min-w-0 shrink-0'>
-        <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>
+        {!hideTitle && <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>}
         <div className='text-sm tabular-nums text-[var(--ds-ink-muted)]'>
           {t('widgets.automation_list.activeCount', { count: activeCount, total: items.length })}
         </div>

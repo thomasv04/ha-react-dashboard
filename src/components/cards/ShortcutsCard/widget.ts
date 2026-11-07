@@ -1,6 +1,6 @@
 import { Grip } from 'lucide-react';
 import { defineWidget, type WidgetDefaults } from '@/widgets/define-widget';
-import type { WidgetConfig } from '@/types/widget-configs';
+import type { ShortcutsCardConfig } from '@/types/widget-configs';
 
 /** Manifeste du widget « shortcuts » — migré des registres historiques (2.2.0). */
 export default defineWidget({
@@ -64,5 +64,5 @@ export default defineWidget({
   defaults: {
     // Vide : les raccourcis pointent vers des panneaux que l'utilisateur crée.
     shortcuts: [],
-  } satisfies WidgetDefaults<WidgetConfig>,
+  } satisfies WidgetDefaults<ShortcutsCardConfig>,
 });

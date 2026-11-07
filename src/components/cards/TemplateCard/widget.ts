@@ -1,6 +1,6 @@
 import { Code2 } from 'lucide-react';
 import { defineWidget, type WidgetDefaults } from '@/widgets/define-widget';
-import type { WidgetConfig } from '@/types/widget-configs';
+import type { TemplateCardConfig } from '@/types/widget-configs';
 
 /** Manifeste du widget « template » — migré des registres historiques (2.2.0). */
 export default defineWidget({
@@ -60,5 +60,5 @@ export default defineWidget({
     secondaryInfo: "{{ states('sensor.bedroom_temperature') }}°C",
     icon: 'mdi:home',
     iconColor: 'blue',
-  } satisfies WidgetDefaults<WidgetConfig>,
+  } satisfies WidgetDefaults<TemplateCardConfig>,
 });

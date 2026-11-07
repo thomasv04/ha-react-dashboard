@@ -31,14 +31,12 @@ import { AddWidgetModal } from './AddWidgetModal';
 import { WidgetErrorBoundary } from '@/components/ui/WidgetErrorBoundary';
 import { useMoreInfo } from '@/context/MoreInfoContext';
 import { useWidgetConfig, WidgetConfigOverride } from '@/context/WidgetConfigContext';
-import type { WidgetConfigs } from '@/types/widget-configs';
+import type { WidgetConfig, WidgetConfigs } from '@/types/widget-configs';
 import { MORE_INFO_WIDGET_TYPES } from '@/components/modals/more-info-registry';
 import { useLongPress } from '@/hooks/useLongPress';
 import { useCardActions } from '@/hooks/useCardActions';
-import type { CardActionsConfig } from '@/types/card-actions';
-import { isVisible, visibilityEntityIds, type CardVisibilityConfig } from '@/types/card-visibility';
-import { matchStateStyle, stateStyleEntityIds, type CardStateStylesConfig } from '@/types/card-state-styles';
-import type { CardAppearanceConfig } from '@/types/card-appearance';
+import { isVisible, visibilityEntityIds } from '@/types/card-visibility';
+import { matchStateStyle, stateStyleEntityIds } from '@/types/card-state-styles';
 import { useEntities } from '@/hooks/useEntities';
 import { useI18n } from '@/i18n';
 import { clamp, cn } from '@/lib/utils';
@@ -1164,7 +1162,7 @@ export function GridItem({
 
   const makeHandler = useCallback(
     (which: 'tapAction' | 'holdAction') => (rect: DOMRect) => {
-      const config = getWidgetConfig(id) as (Record<string, unknown> & CardActionsConfig) | undefined;
+      const config = getWidgetConfig(id) as (Record<string, unknown> & WidgetConfig) | undefined;
       const entityId = typeof config?.entityId === 'string' ? config.entityId : '';
       // `false` = action non prise en charge (`default`, ou `more-info` qui a
       // besoin du cadre de la card pour s'animer).
@@ -1178,8 +1176,7 @@ export function GridItem({
   //
   // Un seul abonnement pour les deux : ce sont le plus souvent les mêmes
   // entités, et deux abonnements doubleraient les rendus sans rien apporter.
-  const conditionalConfig = getWidgetConfig(id) as
-    (Record<string, unknown> & CardVisibilityConfig & CardStateStylesConfig & CardAppearanceConfig) | undefined;
+  const conditionalConfig = getWidgetConfig(id) as (Record<string, unknown> & WidgetConfig) | undefined;
   const visibility = conditionalConfig?.visibility;
   const stateStyles = conditionalConfig?.stateStyles;
 
@@ -1198,7 +1195,7 @@ export function GridItem({
   const visible = useMemo(() => isVisible(visibility, breakpoint, states), [visibility, breakpoint, states]);
   const styleOverride = useMemo(() => matchStateStyle(stateStyles, breakpoint, states), [stateStyles, breakpoint, states]);
 
-  const config = conditionalConfig as CardActionsConfig | undefined;
+  const config = conditionalConfig;
   // Un geste reste inerte si rien n'est configuré *et* que la card n'a pas de
   // fiche : inutile de rendre le curseur cliquable pour rien.
   const hasTap = hasMoreInfo || (config?.tapAction && config.tapAction.action !== 'default');

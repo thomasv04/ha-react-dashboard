@@ -4,6 +4,7 @@ import { Sun } from 'lucide-react';
 import { conditionIcon, conditionLabel } from '@/lib/weather';
 import { useWeather, useHass } from '@hakit/core';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { WeatherCardConfig } from '@/types/widget-configs';
 import type { WeatherCondition } from '@/types/widget-types';
@@ -54,6 +55,7 @@ const CHIP =
   'inline-flex h-9 max-w-full items-center truncate whitespace-nowrap rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)] px-3.5 text-sm font-semibold';
 
 function WeatherCardInner({ entityId, config }: { entityId: string; config: WeatherCardConfig | null }) {
+  const hideTitle = useHideTitle();
   const { t, tArray, language } = useI18n();
   const weather = useWeather(entityId as never, { type: 'daily' });
 
@@ -105,7 +107,7 @@ function WeatherCardInner({ entityId, config }: { entityId: string; config: Weat
         ref={cardRef}
         className='flex h-full flex-col justify-center gap-1 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] px-[var(--ds-space-4)] text-[var(--ds-ink)]'
       >
-        {config?.name && <div className='truncate text-[15px] font-semibold'>{config.name}</div>}
+        {!hideTitle && config?.name && <div className='truncate text-[15px] font-semibold'>{config.name}</div>}
         <div className='flex items-center gap-3'>
           <ConditionIcon condition={weather.state} size={36} customIcons={config?.customIcons} />
           <span className='shrink-0 text-5xl font-light leading-none tracking-[-2px]'>{tempText}</span>
@@ -125,7 +127,7 @@ function WeatherCardInner({ entityId, config }: { entityId: string; config: Weat
       ref={cardRef}
       className='flex h-full flex-col gap-3 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] p-[var(--ds-space-4)] text-[var(--ds-ink)]'
     >
-      {config?.name && <div className='truncate text-[15px] font-semibold'>{config.name}</div>}
+      {!hideTitle && config?.name && <div className='truncate text-[15px] font-semibold'>{config.name}</div>}
       <div className='flex items-start justify-between gap-3'>
         <div className='min-w-0'>
           <div className={`font-light leading-none ${tempClass}`}>{tempText}</div>

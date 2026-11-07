@@ -1,6 +1,6 @@
 import { Thermometer } from 'lucide-react';
 import { defineWidget, type WidgetDefaults } from '@/widgets/define-widget';
-import type { WidgetConfig } from '@/types/widget-configs';
+import type { ThermostatCardConfig } from '@/types/widget-configs';
 
 /** Manifeste du widget « thermostat » — migré des registres historiques (2.2.0). */
 export default defineWidget({
@@ -64,5 +64,5 @@ export default defineWidget({
     entityId: 'climate.living_room',
     minTemp: 10,
     maxTemp: 30,
-  } satisfies WidgetDefaults<WidgetConfig>,
+  } satisfies WidgetDefaults<ThermostatCardConfig>,
 });

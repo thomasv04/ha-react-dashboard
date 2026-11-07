@@ -3,6 +3,7 @@ import { Lock, LockOpen, TriangleAlert, DoorOpen } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
@@ -24,6 +25,7 @@ const CONFIRM_MS = 4000;
 export function LockCard() {
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<LockCardConfig>(widgetId || 'lock');
   const entityId = config?.entityId ?? '';
@@ -124,7 +126,7 @@ export function LockCard() {
         )}
       >
         <div className='min-w-0'>
-          <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>
+          {!hideTitle && <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>}
           <div className={cn('truncate text-sm', secured ? 'text-[var(--ds-tile-on-muted)]' : 'text-[var(--ds-ink-muted)]')}>{label}</div>
         </div>
         <div className='flex min-h-0 flex-1 flex-col items-center justify-center gap-8'>
@@ -160,7 +162,7 @@ export function LockCard() {
   return (
     <div ref={cardRef} className='h-full'>
       <DeviceTile
-        name={name}
+        name={hideTitle ? '' : name}
         state={label}
         icon={StateIcon}
         active={secured}

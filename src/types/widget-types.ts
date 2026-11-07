@@ -5,6 +5,18 @@
  */
 
 import type { SoundPreset } from '@/lib/sounds';
+import type { CardActionsConfig } from './card-actions';
+import type { CardAppearanceConfig } from './card-appearance';
+import type { CardStateStylesConfig } from './card-state-styles';
+import type { CardVisibilityConfig } from './card-visibility';
+
+/**
+ * Le cœur commun à toutes les cards : actions tap/appui long, visibilité
+ * conditionnelle, styles d'état et apparence (sans fond, sans titre). La tuile
+ * (`GridItem`) et l'éditeur les appliquent à tous les widgets ; chaque config
+ * l'étend et ajoute ses propres champs.
+ */
+export interface WidgetConfigBase extends CardActionsConfig, CardVisibilityConfig, CardStateStylesConfig, CardAppearanceConfig {}
 
 /** Optional sound overrides — per-action map of custom sound presets */
 export interface WidgetSoundOverrides {
@@ -29,7 +41,7 @@ export interface ActivityPill {
   service?: string;
 }
 
-export interface ActivityBarConfig {
+export interface ActivityBarConfig extends WidgetConfigBase {
   type: 'activity';
   pills: ActivityPill[];
   persons?: PersonEntry[];
@@ -50,7 +62,7 @@ export interface CameraEntry {
 
 export type CameraStreamMode = 'auto' | 'mjpeg' | 'hls';
 
-export interface CameraCardConfig extends WidgetSoundOverrides {
+export interface CameraCardConfig extends WidgetConfigBase, WidgetSoundOverrides {
   type: 'camera';
   cameras: CameraEntry[];
   selectorEntity?: string; // input_select for remembering selection
@@ -77,7 +89,7 @@ export type WeatherCondition =
   | 'windy'
   | 'windy-variant';
 
-export interface WeatherCardConfig {
+export interface WeatherCardConfig extends WidgetConfigBase {
   type: 'weather';
   entityId: string; // weather.xxx
   /** Ville affichée au-dessus de la température (« Paris, FR »). Absente : rien. */
@@ -88,7 +100,7 @@ export interface WeatherCardConfig {
 }
 
 // ── Energy ────────────────────────────────────────────────────────────────────
-export interface EnergyCardConfig {
+export interface EnergyCardConfig extends WidgetConfigBase {
   type: 'energy';
   name?: string;
   batteryLevelEntity: string;
@@ -100,7 +112,7 @@ export interface EnergyCardConfig {
 }
 
 // ── Energy flow ───────────────────────────────────────────────────────────────
-export interface EnergyFlowCardConfig {
+export interface EnergyFlowCardConfig extends WidgetConfigBase {
   type: 'energy_flow';
   name?: string;
   solarProductionEntity: string;
@@ -113,7 +125,7 @@ export interface EnergyFlowCardConfig {
 }
 
 // ── Tempo EDF ─────────────────────────────────────────────────────────────────
-export interface TempoCardConfig {
+export interface TempoCardConfig extends WidgetConfigBase {
   type: 'tempo';
   /** Tarif suivi. `ejp` : jours de pointe mobile, `remainingRedEntity` compte les jours EJP restants. Défaut `tempo`. */
   mode?: 'tempo' | 'ejp';
@@ -126,7 +138,7 @@ export interface TempoCardConfig {
 }
 
 // ── Thermostat ────────────────────────────────────────────────────────────────
-export interface ThermostatCardConfig extends WidgetSoundOverrides {
+export interface ThermostatCardConfig extends WidgetConfigBase, WidgetSoundOverrides {
   type: 'thermostat';
   entityId: string; // climate.xxx
   /** Nom affiché (sinon friendly_name) */
@@ -174,13 +186,13 @@ export interface ShortcutEntry {
   statusEntity?: string; // optional entity for status display
 }
 
-export interface ShortcutsCardConfig {
+export interface ShortcutsCardConfig extends WidgetConfigBase {
   type: 'shortcuts';
   shortcuts: ShortcutEntry[];
 }
 
 // ── Greeting / Clock ──────────────────────────────────────────────────────────
-export interface GreetingCardConfig {
+export interface GreetingCardConfig extends WidgetConfigBase {
   type: 'greeting';
   locale?: string;
 }
@@ -188,7 +200,7 @@ export interface GreetingCardConfig {
 // ── Sensor ────────────────────────────────────────────────────────────────────
 export type SensorVariant = 'default' | 'gauge' | 'sparkline' | 'bar';
 
-export interface SensorCardConfig extends WidgetSoundOverrides {
+export interface SensorCardConfig extends WidgetConfigBase, WidgetSoundOverrides {
   type: 'sensor';
   entityId: string;
   name?: string;
@@ -205,7 +217,7 @@ export interface SensorCardConfig extends WidgetSoundOverrides {
 }
 
 // ── Light ─────────────────────────────────────────────────────────────────────
-export interface LightCardConfig extends WidgetSoundOverrides {
+export interface LightCardConfig extends WidgetConfigBase, WidgetSoundOverrides {
   type: 'light';
   entityId: string; // light.xxx ou light.group_xxx
   name?: string; // Nom affiché (sinon friendly_name)
@@ -229,14 +241,14 @@ export interface PersonEntry {
   name?: string; // Nom custom (sinon friendly_name)
 }
 
-export interface PersonStatusConfig {
+export interface PersonStatusConfig extends WidgetConfigBase {
   type: 'person';
   persons: PersonEntry[];
   showInfoPanel?: boolean;
 }
 
 // ── Cover (volets/stores) ─────────────────────────────────────────────────────
-export interface CoverCardConfig extends WidgetSoundOverrides {
+export interface CoverCardConfig extends WidgetConfigBase, WidgetSoundOverrides {
   type: 'cover';
   entityId: string; // cover.living_room
   name?: string; // Nom custom
@@ -247,7 +259,7 @@ export interface CoverCardConfig extends WidgetSoundOverrides {
 }
 
 // ── Automation ───────────────────────────────────────────────────────────────
-export interface AutomationCardConfig extends WidgetSoundOverrides {
+export interface AutomationCardConfig extends WidgetConfigBase, WidgetSoundOverrides {
   type: 'automation';
   /** Entity ID de l'automatisation (domain: automation) */
   entityId: string;
@@ -270,7 +282,7 @@ export interface AutomationItem {
   icon?: string;
 }
 
-export interface AutomationListCardConfig extends WidgetSoundOverrides {
+export interface AutomationListCardConfig extends WidgetConfigBase, WidgetSoundOverrides {
   type: 'automation_list';
   /** Titre de la card */
   name?: string;
@@ -279,7 +291,7 @@ export interface AutomationListCardConfig extends WidgetSoundOverrides {
 }
 
 // ── Button ────────────────────────────────────────────────────────────────────
-export interface ButtonCardConfig extends WidgetSoundOverrides {
+export interface ButtonCardConfig extends WidgetConfigBase, WidgetSoundOverrides {
   type: 'button';
   /** Label displayed on the button */
   label: string;
@@ -306,7 +318,7 @@ export interface ButtonCardConfig extends WidgetSoundOverrides {
 // ── Alarm ─────────────────────────────────────────────────────────────────────
 export type ArmMode = 'disarm' | 'home' | 'away' | 'night' | 'vacation';
 
-export interface AlarmCardConfig {
+export interface AlarmCardConfig extends WidgetConfigBase {
   type: 'alarm';
   entityId: string; // alarm_control_panel.xxx
   name?: string;
@@ -336,7 +348,7 @@ export interface VacuumSelectEntity {
   label?: string;
 }
 
-export interface VacuumCardConfig extends WidgetSoundOverrides {
+export interface VacuumCardConfig extends WidgetConfigBase, WidgetSoundOverrides {
   type: 'vacuum';
   entityId: string; // vacuum.xxx
   name?: string;
@@ -347,7 +359,7 @@ export interface VacuumCardConfig extends WidgetSoundOverrides {
 }
 
 // ── Media Player ──────────────────────────────────────────────────────────────
-export interface MediaPlayerCardConfig extends WidgetSoundOverrides {
+export interface MediaPlayerCardConfig extends WidgetConfigBase, WidgetSoundOverrides {
   type: 'media_player';
   entityId: string; // media_player.xxx
   name?: string;
@@ -358,7 +370,7 @@ export interface MediaPlayerCardConfig extends WidgetSoundOverrides {
 }
 
 // ── Template (Mushroom-style) ─────────────────────────────────────────────────
-export interface TemplateCardConfig {
+export interface TemplateCardConfig extends WidgetConfigBase {
   type: 'template';
   entityId?: string; // Entité contextuelle (optionnelle)
   primaryInfo: string; // Template Nunjucks — info principale
@@ -370,7 +382,7 @@ export interface TemplateCardConfig {
 }
 
 // ── Pellet stove ─────────────────────────────────────────────────────────────
-export interface PelletCardConfig {
+export interface PelletCardConfig extends WidgetConfigBase {
   type: 'pellet';
   entityId: string; // climate.xxx
   name?: string;
@@ -409,7 +421,7 @@ type WidgetType =
   | 'room'
   | 'group';
 
-export interface GroupCardConfig extends WidgetSoundOverrides {
+export interface GroupCardConfig extends WidgetConfigBase, WidgetSoundOverrides {
   type: 'group';
   /** Optional title shown at the top */
   title?: string;
@@ -422,7 +434,7 @@ export interface GroupCardConfig extends WidgetSoundOverrides {
 }
 
 // ── Room (standalone) ─────────────────────────────────────────────────────────
-export interface RoomCardConfig extends WidgetSoundOverrides {
+export interface RoomCardConfig extends WidgetConfigBase, WidgetSoundOverrides {
   type: 'room';
   label: string;
   icon: string;
@@ -444,7 +456,7 @@ export interface RoomCardConfig extends WidgetSoundOverrides {
 /** Rendu du graphique : courbe pour du numérique, frise pour du binaire */
 export type ChartVariant = 'line' | 'timeline';
 
-export interface ChartCardConfig {
+export interface ChartCardConfig extends WidgetConfigBase {
   type: 'chart';
   entityId?: string;
   name?: string;
@@ -454,7 +466,7 @@ export interface ChartCardConfig {
   color?: string;
 }
 
-export interface BatteriesCardConfig {
+export interface BatteriesCardConfig extends WidgetConfigBase {
   type: 'batteries';
   name?: string;
   /** Seuil d'alerte, en % */
@@ -465,7 +477,7 @@ export interface BatteriesCardConfig {
   exclude?: string[];
 }
 
-export interface LockCardConfig {
+export interface LockCardConfig extends WidgetConfigBase {
   type: 'lock';
   entityId?: string;
   name?: string;
@@ -473,7 +485,7 @@ export interface LockCardConfig {
   confirmUnlock?: boolean;
 }
 
-export interface CalendarCardConfig {
+export interface CalendarCardConfig extends WidgetConfigBase {
   type: 'calendar';
   /** Agendas agrégés dans la card */
   entityIds?: string[];
@@ -492,7 +504,7 @@ export interface CalendarCardConfig {
   showDate?: boolean;
 }
 
-export interface TodoCardConfig {
+export interface TodoCardConfig extends WidgetConfigBase {
   type: 'todo';
   entityId?: string;
   name?: string;
@@ -502,7 +514,7 @@ export interface TodoCardConfig {
   allowAdd?: boolean;
 }
 
-export interface FanCardConfig {
+export interface FanCardConfig extends WidgetConfigBase {
   type: 'fan';
   entityId?: string;
   name?: string;
@@ -511,7 +523,7 @@ export interface FanCardConfig {
   showInfoPanel?: boolean;
 }
 
-export interface ClockCardConfig {
+export interface ClockCardConfig extends WidgetConfigBase {
   type: 'clock';
   name?: string;
   /** `date` : la grande date de l'Echo Show (« JEU. OCT. 29 ») à la place de l'heure */
@@ -524,7 +536,7 @@ export interface ClockCardConfig {
   hour12?: boolean;
 }
 
-export interface ChipCardConfig {
+export interface ChipCardConfig extends WidgetConfigBase {
   type: 'chip';
   entityId?: string;
   /** Affiché devant l'état s'il est renseigné — sinon la pastille ne montre que l'état */
@@ -536,13 +548,13 @@ export interface ChipCardConfig {
   glowSize?: number;
 }
 
-export interface WelcomeCardConfig {
+export interface WelcomeCardConfig extends WidgetConfigBase {
   type: 'welcome';
   /** Scripts ou scènes proposés sous la salutation, avec un bouton « Lancer ». */
   routines?: string[];
 }
 
-export interface CameraEventsCardConfig {
+export interface CameraEventsCardConfig extends WidgetConfigBase {
   type: 'camera_events';
   name?: string;
   /** Identifiant de l'instance dans l'intégration Frigate. Défaut `frigate`. */

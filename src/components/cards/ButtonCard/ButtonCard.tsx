@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Play, Check, AlertTriangle, X } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { ButtonCardConfig } from '@/types/widget-configs';
 import { cn } from '@/lib/utils';
@@ -15,6 +16,7 @@ type FeedbackState = 'idle' | 'confirming' | 'running' | 'success' | 'error';
 export function ButtonCard() {
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<ButtonCardConfig>(widgetId || 'button');
   const helpers = useHass(s => s.helpers);
@@ -102,6 +104,7 @@ export function ButtonCard() {
         onClick={handlePress}
         disabled={feedback === 'running'}
         aria-busy={feedback === 'running'}
+        aria-label={hideTitle ? label : undefined}
       >
         <span className='flex size-14 shrink-0 items-center justify-center rounded-full text-white' style={{ background: pebble }}>
           {feedback === 'running' ? (
@@ -121,15 +124,18 @@ export function ButtonCard() {
           )}
         </span>
         <span className='flex min-w-0 flex-col items-center'>
-          <span
-            className={cn(
-              'max-w-full truncate text-center text-[17px] font-semibold leading-tight',
-              feedback === 'success' && 'text-[var(--ds-good)]',
-              feedback === 'error' && 'text-[var(--ds-alert)]'
-            )}
-          >
-            {feedback === 'success' ? t('widgets.button.done') : feedback === 'error' ? t('widgets.button.error') : label}
-          </span>
+          {/* Titre masqué : le retour « fait » / « erreur » reste affiché. */}
+          {(!hideTitle || feedback === 'success' || feedback === 'error') && (
+            <span
+              className={cn(
+                'max-w-full truncate text-center text-[17px] font-semibold leading-tight',
+                feedback === 'success' && 'text-[var(--ds-good)]',
+                feedback === 'error' && 'text-[var(--ds-alert)]'
+              )}
+            >
+              {feedback === 'success' ? t('widgets.button.done') : feedback === 'error' ? t('widgets.button.error') : label}
+            </span>
+          )}
           {subtitle && feedback === 'idle' && <span className='max-w-full truncate text-sm text-[var(--ds-ink-muted)]'>{subtitle}</span>}
         </span>
       </button>

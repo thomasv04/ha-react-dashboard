@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { SensorCardConfig } from '@/types/widget-configs';
 import { cn, clamp } from '@/lib/utils';
@@ -51,6 +52,7 @@ function getThresholdColor(value: number, thresholds?: { value: number; color: s
 export function SensorCard() {
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<SensorCardConfig>(widgetId || 'sensor');
   const entityId = config?.entityId ?? 'sensor.bedroom_temperature';
@@ -161,7 +163,7 @@ export function SensorCard() {
         <div className={cn('flex min-w-0 items-center gap-3', widgetSize.squat && 'flex-1')}>
           {icon}
           <div className='min-w-0'>
-            <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>
+            {!hideTitle && <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>}
             {widgetSize.squat || isToggleable || domain === 'binary_sensor' ? (
               <div className={cn('truncate text-sm', lit ? 'text-[var(--ds-tile-on-muted)]' : 'text-[var(--ds-ink-muted)]')}>
                 {displayState}

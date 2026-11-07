@@ -1,6 +1,6 @@
 import { ArrowUpDown } from 'lucide-react';
 import { defineWidget, type WidgetDefaults } from '@/widgets/define-widget';
-import type { WidgetConfig } from '@/types/widget-configs';
+import type { CoverCardConfig } from '@/types/widget-configs';
 
 /** Manifeste du widget « cover » — migré des registres historiques (2.2.0). */
 export default defineWidget({
@@ -56,5 +56,5 @@ export default defineWidget({
   defaults: {
     entityId: 'cover.living_room',
     name: 'Volet Salon',
-  } satisfies WidgetDefaults<WidgetConfig>,
+  } satisfies WidgetDefaults<CoverCardConfig>,
 });

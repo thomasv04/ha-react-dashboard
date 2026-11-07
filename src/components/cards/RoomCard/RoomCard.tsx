@@ -4,6 +4,7 @@ import { useHass } from '@hakit/core';
 import { usePanel, type PanelId } from '@/context/PanelContext';
 import { useEntities } from '@/hooks/useEntities';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { RoomCardConfig, RoomControl } from '@/types/widget-configs';
 import { resolveIcon, isCustomIcon, getCustomIconUrl } from '@/lib/lucide-icon-map';
@@ -141,6 +142,7 @@ export function RoomCard() {
   const { language } = useI18n();
   const embedded = useGroupEmbedded();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<RoomCardConfig>(widgetId || 'room');
   const { openPanel } = usePanel();
@@ -208,7 +210,9 @@ export function RoomCard() {
           <IconComp size={24} aria-hidden='true' className='mt-1 shrink-0 text-[var(--ds-accent)]' />
         ) : null}
         <div className='min-w-0 flex-1'>
-          <div className={cn('truncate leading-tight text-[var(--ds-accent)]', embedded ? 'text-xl' : 'text-[28px]')}>{label}</div>
+          {!hideTitle && (
+            <div className={cn('truncate leading-tight text-[var(--ds-accent)]', embedded ? 'text-xl' : 'text-[28px]')}>{label}</div>
+          )}
           {facts.length > 0 && <div className='truncate text-sm text-[var(--ds-ink-muted)]'>{facts.join(' · ')}</div>}
         </div>
         {panelId && (

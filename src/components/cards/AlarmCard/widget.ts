@@ -1,6 +1,6 @@
 import { Shield } from 'lucide-react';
 import { defineWidget, type WidgetDefaults } from '@/widgets/define-widget';
-import type { WidgetConfig } from '@/types/widget-configs';
+import type { AlarmCardConfig } from '@/types/widget-configs';
 
 /** Manifeste du widget « alarm » — migré des registres historiques (2.2.0). */
 export default defineWidget({
@@ -67,5 +67,5 @@ export default defineWidget({
   defaults: {
     entityId: 'alarm_control_panel.home_alarm',
     requireCode: true,
-  } satisfies WidgetDefaults<WidgetConfig>,
+  } satisfies WidgetDefaults<AlarmCardConfig>,
 });

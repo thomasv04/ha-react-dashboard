@@ -1,6 +1,6 @@
 import { Activity } from 'lucide-react';
 import { defineWidget, type WidgetDefaults } from '@/widgets/define-widget';
-import type { WidgetConfig } from '@/types/widget-configs';
+import type { TempoCardConfig } from '@/types/widget-configs';
 
 /** Manifeste du widget « tempo » — migré des registres historiques (2.2.0). */
 export default defineWidget({
@@ -71,5 +71,5 @@ export default defineWidget({
     remainingBlueEntity: 'sensor.tempo_remaining_blue',
     remainingWhiteEntity: 'sensor.tempo_remaining_white',
     remainingRedEntity: 'sensor.tempo_remaining_red',
-  } satisfies WidgetDefaults<WidgetConfig>,
+  } satisfies WidgetDefaults<TempoCardConfig>,
 });

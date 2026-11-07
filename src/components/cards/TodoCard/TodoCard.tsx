@@ -5,6 +5,7 @@ import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useServiceResponse } from '@/hooks/useServiceResponse';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
@@ -28,6 +29,7 @@ type ItemsResponse = { items?: TodoItem[] };
 export function TodoCard() {
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<TodoCardConfig>(widgetId || 'todo');
   const cardRef = useRef<HTMLDivElement>(null);
@@ -101,7 +103,7 @@ export function TodoCard() {
       <div className='flex shrink-0 items-center gap-3'>
         <ListChecks size={22} aria-hidden='true' className='shrink-0 text-[var(--ds-accent)]' />
         <div className='min-w-0'>
-          <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>
+          {!hideTitle && <div className='truncate text-[17px] font-semibold leading-tight'>{name}</div>}
           <div className='truncate text-sm text-[var(--ds-ink-muted)]'>{t('widgets.todo.remaining', { count: remaining })}</div>
         </div>
       </div>

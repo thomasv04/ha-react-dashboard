@@ -4,6 +4,7 @@ import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { cn } from '@/lib/utils';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { TempoCardConfig } from '@/types/widget-configs';
 
@@ -37,6 +38,7 @@ function ejpDay(state: string | undefined): 'ejp' | 'normal' | null {
 export function TempoCard() {
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<TempoCardConfig>(widgetId || 'tempo');
   const cardRef = useRef<HTMLDivElement>(null);
@@ -94,7 +96,7 @@ export function TempoCard() {
         className='flex h-full items-center gap-3 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] px-4 text-[var(--ds-ink)]'
       >
         <div className='min-w-0 shrink'>
-          <div className='truncate text-[17px] font-semibold leading-tight'>{title}</div>
+          {!hideTitle && <div className='truncate text-[17px] font-semibold leading-tight'>{title}</div>}
           {period && <div className='truncate text-sm text-[var(--ds-ink-muted)]'>{period}</div>}
         </div>
         <div className='ml-auto flex gap-2'>
@@ -118,7 +120,7 @@ export function TempoCard() {
       className='flex h-full flex-col gap-3 overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] p-[var(--ds-space-4)] text-[var(--ds-ink)]'
     >
       <div className='min-w-0'>
-        <div className='truncate text-[17px] font-semibold leading-tight'>{title}</div>
+        {!hideTitle && <div className='truncate text-[17px] font-semibold leading-tight'>{title}</div>}
         {period && <div className='truncate text-sm text-[var(--ds-ink-muted)]'>{period}</div>}
       </div>
 

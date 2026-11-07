@@ -2,6 +2,7 @@ import { createContext, useContext } from 'react';
 import { motion } from 'framer-motion';
 import { DURATION_FAST } from '@/lib/motion-tokens';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId, WidgetIdProvider } from '@/components/layout/DashboardGrid';
 import { WIDGET_COMPONENTS } from '@/widgets';
 import type { GroupCardConfig, GroupChild } from '@/types/widget-configs';
@@ -33,6 +34,7 @@ function GroupChildRenderer({ child }: { child: GroupChild }) {
 export function GroupCard() {
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<GroupCardConfig>(widgetId || 'group');
 
@@ -46,7 +48,7 @@ export function GroupCard() {
   return (
     <div className='flex h-full flex-col overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-1)] text-[var(--ds-ink)]'>
       {/* Header */}
-      {title && (
+      {!hideTitle && title && (
         <div className='shrink-0 px-4 pb-2 pt-3.5'>
           <span className='text-[17px] font-semibold'>{title}</span>
         </div>

@@ -56,7 +56,7 @@ export function DeviceTile({
         )}
       >
         <span className='min-w-0'>
-          <span className='block truncate text-[17px] font-semibold leading-tight'>{name}</span>
+          {name && <span className='block truncate text-[17px] font-semibold leading-tight'>{name}</span>}
           {state && (
             <span className={cn('block truncate text-sm', active ? 'text-[var(--ds-tile-on-muted)]' : 'text-[var(--ds-ink-muted)]')}>
               {state}

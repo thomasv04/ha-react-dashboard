@@ -69,6 +69,7 @@
   "livePreview": "Aperçu en direct",
   "noPreviewAvailable": "Pas d'aperçu disponible",
   "noBackground": "Sans fond (la card repose sur le panneau)",
+  "hideTitle": "Masquer le titre",
   "cancel": "Annuler",
   "apply": "Appliquer",
   "chooseEntity": "Choisir une entité",

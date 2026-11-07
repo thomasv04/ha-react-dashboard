@@ -1,6 +1,6 @@
 import { Cloud } from 'lucide-react';
 import { defineWidget, type WidgetDefaults } from '@/widgets/define-widget';
-import type { WidgetConfig } from '@/types/widget-configs';
+import type { WeatherCardConfig } from '@/types/widget-configs';
 
 /** Manifeste du widget « weather » — migré des registres historiques (2.2.0). */
 export default defineWidget({
@@ -62,5 +62,5 @@ export default defineWidget({
 
   defaults: {
     entityId: 'weather.home',
-  } satisfies WidgetDefaults<WidgetConfig>,
+  } satisfies WidgetDefaults<WeatherCardConfig>,
 });

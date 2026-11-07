@@ -3,6 +3,7 @@ import { Flame, Power, Snowflake } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { ThermostatCardConfig } from '@/types/widget-configs';
 import { useI18n } from '@/i18n';
@@ -26,6 +27,7 @@ function formatTemp(value: number, locale: string): string {
 export function ThermostatCard() {
   const { t, language } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<ThermostatCardConfig>(widgetId || 'thermostat');
   const entityId = config?.entityId ?? 'climate.living_room';
@@ -80,7 +82,7 @@ export function ThermostatCard() {
 
   return (
     <div className='flex h-full select-none flex-col overflow-hidden rounded-[var(--ds-radius-lg)] bg-[var(--ds-surface-2)] px-[var(--ds-space-4)] pb-2 pt-[var(--ds-space-4)] text-[var(--ds-ink)]'>
-      <span className='truncate text-[17px] font-medium'>{name}</span>
+      {!hideTitle && <span className='truncate text-[17px] font-medium'>{name}</span>}
       {/* Le cadran est un cercle dans une bande un peu plus large que haute (les flèches sont dans les marges). */}
       <div className='flex min-h-0 flex-1 items-center justify-center' style={{ containerType: 'size' }}>
         <div style={{ width: 'min(100cqw, 125cqh)' }}>

@@ -5,6 +5,7 @@ import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useRelativeTime, JUST_NOW } from '@/hooks/useRelativeTime';
 import { useHass } from '@hakit/core';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { cn } from '@/lib/utils';
@@ -19,6 +20,7 @@ import { SwitchTrack } from '@/components/ds/Switch';
 export function AutomationCard() {
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
+  const hideTitle = useHideTitle();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<AutomationCardConfig>(widgetId || 'automation');
   const entityId = config?.entityId ?? 'automation.example';
@@ -88,7 +90,7 @@ export function AutomationCard() {
           />
         )}
         <span className='flex min-w-0 flex-1 flex-col'>
-          <span className='truncate text-[17px] font-semibold leading-tight'>{name}</span>
+          {!hideTitle && <span className='truncate text-[17px] font-semibold leading-tight'>{name}</span>}
           <span className='flex min-w-0 items-center gap-1.5 text-sm text-[var(--ds-ink-muted)]'>
             {size.compact ? (
               <span className='truncate'>{isOn ? t('widgets.automation.active') : t('widgets.automation.inactive')}</span>
