@@ -26,7 +26,7 @@ describe('previewConfig()', () => {
     for (const meta of WIDGET_META) {
       if (meta.entityDomain) domains.add(meta.entityDomain);
       for (const f of WIDGET_FIELD_DEFS[meta.type] ?? []) {
-        if (f.fieldType === 'entity' && f.domain) domains.add(f.domain);
+        if (f.fieldType === 'entity' && f.domain) f.domain.split(',').forEach(d => domains.add(d));
       }
     }
     const ids = Object.keys(MOCK_ENTITIES);

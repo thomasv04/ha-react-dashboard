@@ -351,7 +351,7 @@ export function WidgetEditModal() {
         <div className='min-h-0 flex-1 space-y-3 overflow-y-auto px-6 pb-3'>
           {activeTab === 'config' &&
             fields
-              .filter(f => f.fieldType !== 'weather-icons')
+              .filter(f => f.fieldType !== 'weather-icons' && (f.showIf?.(draft) ?? true))
               .map(field => (
                 <div key={field.key} className={FIELD_CARD}>
                   {renderField(field)}

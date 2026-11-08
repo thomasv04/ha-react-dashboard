@@ -7,7 +7,8 @@ const MOCK_IDS = Object.keys(MOCK_ENTITIES);
 /** Entités d'exemple du domaine demandé, dans l'ordre où elles sont déclarées. */
 function mockIds(domain: string | undefined, limit: number): string[] {
   if (!domain) return [];
-  return MOCK_IDS.filter(id => id.startsWith(`${domain}.`)).slice(0, limit);
+  const prefixes = domain.split(',').map(d => `${d}.`);
+  return MOCK_IDS.filter(id => prefixes.some(p => id.startsWith(p))).slice(0, limit);
 }
 
 const isEmpty = (v: unknown) => v == null || v === '' || (Array.isArray(v) && v.length === 0);

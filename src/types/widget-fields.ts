@@ -23,4 +23,6 @@ export interface WidgetFieldDef {
   itemFields?: WidgetFieldDef[];
   /** For select / multiselect fields: available options */
   options?: { value: string; label: string; icon?: string }[];
+  /** Affiche le champ seulement si la config en cours d'édition le permet. */
+  showIf?: (config: Record<string, unknown>) => boolean;
 }

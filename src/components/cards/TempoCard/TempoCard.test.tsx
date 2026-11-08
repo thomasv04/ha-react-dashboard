@@ -13,6 +13,7 @@ vi.mock('@hakit/core', () => ({
 }));
 
 import { TempoCard } from './TempoCard';
+import manifest from './widget';
 
 test('renders TempoCard without error', () => {
   const { container } = render(<TempoCard />);
@@ -36,4 +37,11 @@ test.each([
   const tiles = screen.getAllByText(/^widgets\.tempo\.(today|tomorrow)$/).map(el => el.nextElementSibling?.textContent);
   expect(tiles).toEqual([shownToday, shownTomorrow]);
   expect(screen.getByText('widgets.tempo.ejp.remaining')).toBeDefined();
+});
+
+test('éditeur : en EJP, ni heures creuses ni jours bleus/blancs ; le jour accepte un binary_sensor', () => {
+  const shown = (mode: string) => manifest.fields.filter(f => !('showIf' in f) || f.showIf({ mode })).map(f => f.key);
+  expect(shown('ejp')).toEqual(['mode', 'currentColorEntity', 'nextColorEntity', 'remainingRedEntity']);
+  expect(shown('tempo')).toHaveLength(7);
+  expect(manifest.fields.find(f => f.key === 'currentColorEntity')?.domain).toContain('binary_sensor');
 });
