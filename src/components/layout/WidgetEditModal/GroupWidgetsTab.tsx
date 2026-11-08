@@ -272,14 +272,16 @@ function ChildRow({ child, onRemove }: { child: GroupChild; onRemove: () => void
             <div className='px-4 pb-4 pt-1'>
               {/* Simple fields in 2-col grid, complex ones full width */}
               <div className='grid grid-cols-2 gap-x-3 gap-y-4'>
-                {fields.map(field => {
-                  const isWide = WIDE_FIELD_TYPES.includes(field.fieldType);
-                  return (
-                    <div key={field.key} className={isWide ? 'col-span-2' : 'col-span-1'}>
-                      <ChildFieldRenderer field={field} draft={draft} onPatch={patch} />
-                    </div>
-                  );
-                })}
+                {fields
+                  .filter(f => f.showIf?.(draft) ?? true)
+                  .map(field => {
+                    const isWide = WIDE_FIELD_TYPES.includes(field.fieldType);
+                    return (
+                      <div key={field.key} className={isWide ? 'col-span-2' : 'col-span-1'}>
+                        <ChildFieldRenderer field={field} draft={draft} onPatch={patch} />
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           </motion.div>

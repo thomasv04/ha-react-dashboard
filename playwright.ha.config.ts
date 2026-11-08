@@ -17,6 +17,10 @@ export default defineConfig({
     reducedMotion: 'reduce',
     locale: 'fr-FR',
     timezoneId: 'Europe/Paris',
+    // Le service worker de HA reprend les requêtes après un rechargement, et
+    // `page.route` ne voit pas celles d'un service worker : `freshInstall`
+    // laissait alors passer la vraie config (captures de l'accueil instables).
+    serviceWorkers: 'block',
   },
   projects: [
     // Onboarding, intégration, jeton : un HA neuf n'a rien de tout ça.

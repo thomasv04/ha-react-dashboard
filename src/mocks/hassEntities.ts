@@ -61,6 +61,9 @@ export const MOCK_ENTITIES: Record<string, MockEntityState> = {
   'sensor.ejp_aujourdhui': entity('sensor.ejp_aujourdhui', 'EJP', {}),
   'sensor.ejp_demain': entity('sensor.ejp_demain', 'Non EJP', {}),
   'sensor.ejp_jours_restants': entity('sensor.ejp_jours_restants', '17', {}),
+  // EJP en binary_sensor (on = jour EJP), comme certaines intégrations l'exposent.
+  'binary_sensor.ejp_aujourd_hui_stable': entity('binary_sensor.ejp_aujourd_hui_stable', 'off', {}),
+  'binary_sensor.ejp_demain_stable': entity('binary_sensor.ejp_demain_stable', 'off', {}),
 
   // Room temperatures
   'sensor.temperature_chambre_temperature': entity('sensor.temperature_chambre_temperature', '20.4', { unit_of_measurement: '°C' }),
