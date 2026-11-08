@@ -135,6 +135,10 @@ export interface TempoCardConfig extends WidgetConfigBase {
   remainingBlueEntity: string;
   remainingWhiteEntity: string;
   remainingRedEntity: string;
+  /** EJP : mois de la saison (`'1'`…`'12'`) où demain reste « en attente » avant l'annonce. Défaut nov.–mars. */
+  ejpMonths?: string[];
+  /** EJP : heure d'annonce du lendemain ; avant, demain non EJP s'affiche « en attente ». Défaut 14. */
+  ejpAnnounceHour?: number;
 }
 
 // ── Thermostat ────────────────────────────────────────────────────────────────

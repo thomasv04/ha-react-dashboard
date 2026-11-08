@@ -4,6 +4,8 @@ import type { TempoCardConfig } from '@/types/widget-configs';
 
 /** EJP : ni heures creuses, ni jours bleus ou blancs. */
 const tempoOnly = (c: Record<string, unknown>) => c.mode !== 'ejp';
+const ejpOnly = (c: Record<string, unknown>) => c.mode === 'ejp';
+const MONTHS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
 
 /** Manifeste du widget « tempo » — migré des registres historiques (2.2.0). */
 export default defineWidget({
@@ -88,6 +90,14 @@ export default defineWidget({
       showIf: tempoOnly,
     },
     { key: 'remainingRedEntity', label: 'widgets.tempo.fields.remainingRedEntity.label', fieldType: 'entity', domain: 'sensor' },
+    {
+      key: 'ejpMonths',
+      label: 'widgets.tempo.fields.ejpMonths.label',
+      fieldType: 'multiselect',
+      options: MONTHS.map(m => ({ value: m, label: `widgets.tempo.fields.ejpMonths.options.${m}` })),
+      showIf: ejpOnly,
+    },
+    { key: 'ejpAnnounceHour', label: 'widgets.tempo.fields.ejpAnnounceHour.label', fieldType: 'number', showIf: ejpOnly },
   ],
 
   defaults: {
@@ -98,5 +108,7 @@ export default defineWidget({
     remainingBlueEntity: 'sensor.tempo_remaining_blue',
     remainingWhiteEntity: 'sensor.tempo_remaining_white',
     remainingRedEntity: 'sensor.tempo_remaining_red',
+    ejpMonths: ['11', '12', '1', '2', '3'],
+    ejpAnnounceHour: 14,
   } satisfies WidgetDefaults<TempoCardConfig>,
 });

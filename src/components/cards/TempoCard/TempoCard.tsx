@@ -5,6 +5,7 @@ import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { cn } from '@/lib/utils';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useHideTitle } from '@/hooks/useHideTitle';
+import { useNow } from '@/hooks/useNow';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
 import type { TempoCardConfig } from '@/types/widget-configs';
 
@@ -31,6 +32,19 @@ function ejpDay(state: string | undefined): 'ejp' | 'normal' | null {
   return null;
 }
 
+/** Saison EJP par défaut : du 1er novembre au 31 mars. */
+const EJP_SEASON = ['11', '12', '1', '2', '3'];
+
+/**
+ * Demain n'est pas encore annoncé : avant l'heure d'annonce, si demain tombe
+ * dans la saison et qu'il reste des jours EJP à placer. Un compteur absent ne
+ * bloque pas.
+ */
+export function ejpPending(now: Date, months: string[], announceHour: number, remaining: string | undefined): boolean {
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  return now.getHours() < announceHour && months.includes(String(tomorrow.getMonth() + 1)) && !(Number(remaining) <= 0);
+}
+
 /**
  * Tempo EDF : aujourd'hui et demain en grandes tuiles pleines, à la couleur du
  * jour, puis les jours restants de chaque couleur en pastilles.
@@ -44,6 +58,7 @@ export function TempoCard() {
   const cardRef = useRef<HTMLDivElement>(null);
   // Avant tout retour anticipé : les hooks doivent partir à chaque rendu.
   const size = useWidgetSize(cardRef);
+  const now = useNow();
 
   const current = useSafeEntity(config?.currentColorEntity ?? 'sensor.tempo_current_color');
   const next = useSafeEntity(config?.nextColorEntity ?? 'sensor.tempo_next_color');
@@ -75,9 +90,13 @@ export function TempoCard() {
       ].filter(r => r.state != null);
 
   /** Ce qu'affiche la tuile d'un jour : le texte et ses couleurs. */
-  const show = (state: string | undefined) => {
+  const show = (state: string | undefined, isTomorrow = false) => {
     if (!ejp) return { text: state ?? '—', style: dayStyle(state ?? '') };
     const kind = ejpDay(state);
+    const announceHour = Number(config?.ejpAnnounceHour ?? 14);
+    if (isTomorrow && kind !== 'ejp' && ejpPending(now, config?.ejpMonths ?? EJP_SEASON, announceHour, red?.state)) {
+      return { text: t('widgets.tempo.ejp.pending'), style: dayStyle('') };
+    }
     return {
       text: kind ? t(`widgets.tempo.ejp.${kind}`) : (state ?? '—'),
       style: dayStyle(kind === 'ejp' ? 'Rouge' : ''),
@@ -85,7 +104,7 @@ export function TempoCard() {
   };
   const days = [
     { label: t('widgets.tempo.today'), ...show(current.state) },
-    { label: t('widgets.tempo.tomorrow'), ...show(next?.state) },
+    { label: t('widgets.tempo.tomorrow'), ...show(next?.state, true) },
   ];
 
   // Une rangée : les deux jours en pastilles, sans les jours restants.
