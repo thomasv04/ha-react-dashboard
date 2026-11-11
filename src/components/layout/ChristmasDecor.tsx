@@ -167,7 +167,7 @@ export function PanelGarland() {
   if (!c) return null;
   return (
     <>
-      {c.snowCaps && <span aria-hidden='true' className={cn('xmas-snowcap', c.drawnSnow && 'xmas-drawn')} />}
+      {c.snowCaps && <span aria-hidden='true' className='xmas-snowcap' />}
       {c.garlands && (
         <svg aria-hidden='true' className={cn('xmas-garland', c.twinkle && 'xmas-twinkle')}>
           {/* Le fil, torsadé : un trait sombre, un trait plus clair en pointillé par-dessus. */}
