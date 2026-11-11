@@ -539,3 +539,40 @@ select option {
   right: -31px;
   background: 0 0 / 100% 100% url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 18' preserveAspectRatio='none'><defs><linearGradient id='g' x2='0' y2='1'><stop offset='0' stop-color='%23fff'/><stop offset='.75' stop-color='%23fff'/><stop offset='1' stop-color='%23d5e2f2'/></linearGradient></defs><path fill='url(%23g)' transform='translate(24 0) scale(-1 1)' d='M24 7C18 4 12 6 7 9C4 10.5 2 11 0 12L24 12Z'/></svg>");
 }
+
+/* Étoiles pendues à un fil, qui se balancent depuis leur point d'attache. */
+.xmas-star {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateX(-50%);
+  transform-origin: 50% 0;
+  animation: xmas-sway 4s ease-in-out infinite alternate;
+}
+.xmas-star-string {
+  width: 1px;
+  background: rgb(255 255 255 / 0.28);
+}
+.xmas-star-shape {
+  margin-top: -2px;
+  fill: #ffe9a8;
+  stroke: #ffe9a8;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 3px rgb(255 214 110 / 0.6));
+}
+.xmas-star-glow {
+  fill: #ffd35c;
+  stroke: #ffd35c;
+  filter: drop-shadow(0 0 10px rgb(255 200 80 / 0.85));
+}
+@keyframes xmas-sway {
+  from {
+    transform: translateX(-50%) rotate(-4deg);
+  }
+  to {
+    transform: translateX(-50%) rotate(4deg);
+  }
+}

@@ -5,7 +5,8 @@ import { cn } from '@/lib/utils';
 /**
  * Le décor de Noël : la neige qui tombe sur tout l'écran (`ChristmasSnow`,
  * monté une fois dans le shell) et la guirlande lumineuse qui fait le tour de
- * chaque panneau (`PanelGarland`, montée dans chaque panneau).
+ * chaque panneau (`PanelGarland`, montée dans chaque panneau), et les étoiles
+ * pendues en haut de l'écran (`ChristmasStars`, dans le shell).
  */
 
 // ponytail: la saison est évaluée au rendu ; une tablette qui tourne sans
@@ -24,6 +25,44 @@ export function ChristmasSnow() {
   if (!c?.snow || perfSettings.reduceAnimations) return null;
   // Sur un thème clair, des flocons blancs ne se verraient pas.
   return <Snow count={FLAKES[c.snowAmount]} color={tokens.light ? '#9fb3cc' : '#ffffff'} />;
+}
+
+/** Position (% de la largeur), longueur du fil, taille : fixes, pour ne pas bouger d'un rendu à l'autre. */
+const STARS = [
+  { x: 3, len: 150, size: 18 },
+  { x: 11, len: 60, size: 12 },
+  { x: 19, len: 210, size: 22 },
+  { x: 28, len: 110, size: 14 },
+  { x: 37, len: 40, size: 10 },
+  { x: 46, len: 170, size: 34, glow: true },
+  { x: 55, len: 80, size: 12 },
+  { x: 64, len: 230, size: 16 },
+  { x: 90, len: 190, size: 20 },
+  { x: 97, len: 120, size: 13 },
+];
+
+/** Une étoile aux branches arrondies (le trait de même couleur les adoucit). */
+const STAR_PATH = 'M12 2.5l2.8 6.4 6.9.6-5.2 4.6 1.6 6.8L12 17.3l-6.1 3.6 1.6-6.8-5.2-4.6 6.9-.6z';
+
+export function ChristmasStars() {
+  const c = useChristmas();
+  if (!c?.stars) return null;
+  return (
+    <div aria-hidden='true' className='pointer-events-none fixed inset-x-0 top-0 z-[65]'>
+      {STARS.map((s, i) => (
+        <span
+          key={s.x}
+          className='xmas-star'
+          style={{ left: `${s.x}%`, animationDelay: `${i * -0.7}s`, animationDuration: `${3.5 + (i % 3)}s` }}
+        >
+          <span className='xmas-star-string' style={{ height: s.len }} />
+          <svg width={s.size} height={s.size} viewBox='0 0 24 24' className={cn('xmas-star-shape', s.glow && 'xmas-star-glow')}>
+            <path d={STAR_PATH} />
+          </svg>
+        </span>
+      ))}
+    </div>
+  );
 }
 
 interface Flake {

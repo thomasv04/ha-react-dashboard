@@ -101,7 +101,7 @@ const DEFAULT_BEHAVIOUR_SETTINGS: BehaviourSettings = {
 
 /** Décor de Noël : neige qui tombe, guirlandes lumineuses autour des panneaux. */
 export interface ChristmasSettings {
-  /** `season` : du 1er décembre au 6 janvier, sans y penser. */
+  /** `season` : du 1er novembre au 6 janvier, sans y penser. */
   mode: 'off' | 'on' | 'season';
   snow: boolean;
   snowAmount: 'light' | 'normal' | 'heavy';
@@ -110,6 +110,8 @@ export interface ChristmasSettings {
   twinkle: boolean;
   /** Un liseré de neige posé sur le haut de chaque panneau. */
   snowCaps: boolean;
+  /** Des étoiles pendues à des fils en haut de l'écran. */
+  stars: boolean;
 }
 
 export const DEFAULT_CHRISTMAS_SETTINGS: ChristmasSettings = {
@@ -119,11 +121,12 @@ export const DEFAULT_CHRISTMAS_SETTINGS: ChristmasSettings = {
   garlands: true,
   twinkle: true,
   snowCaps: true,
+  stars: true,
 };
 
-/** Du 1er décembre au 6 janvier (l'Épiphanie) inclus. */
+/** Du 1er novembre au 6 janvier (l'Épiphanie) inclus. */
 export function isChristmasSeason(d: Date): boolean {
-  return d.getMonth() === 11 || (d.getMonth() === 0 && d.getDate() <= 6);
+  return d.getMonth() >= 10 || (d.getMonth() === 0 && d.getDate() <= 6);
 }
 
 const DEFAULT_SOUND_SETTINGS: SoundSettings = {

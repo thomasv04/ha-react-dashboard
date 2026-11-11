@@ -62,7 +62,7 @@
     "modeOff": "Désactivé",
     "modeSeason": "Pendant les fêtes",
     "modeOn": "Toujours",
-    "modeSeasonDesc": "« Pendant les fêtes » : s'allume seul du 1er décembre au 6 janvier.",
+    "modeSeasonDesc": "« Pendant les fêtes » : s'allume seul du 1er novembre au 6 janvier.",
     "snow": "Neige",
     "snowDesc": "Des flocons tombent sur tout l'écran, écran de veille compris.",
     "snowPerf": "Coupée tant que « Désactiver les animations » est actif (Performances).",
@@ -75,7 +75,9 @@
     "twinkle": "Ampoules clignotantes",
     "twinkleDesc": "Les ampoules s'allument et s'éteignent doucement, couleur par couleur.",
     "snowCaps": "Neige sur les panneaux",
-    "snowCapsDesc": "Un liseré de neige posé sur le haut de chaque panneau."
+    "snowCapsDesc": "Un liseré de neige posé sur le haut de chaque panneau.",
+    "stars": "Étoiles suspendues",
+    "starsDesc": "Des étoiles pendues à des fils se balancent en haut de l'écran."
   },
   "system": "Système",
   "system_section": {

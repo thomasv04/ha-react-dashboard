@@ -76,6 +76,12 @@ export function ChristmasSection() {
             label={t('settings.christmas_section.snowCaps')}
             description={t('settings.christmas_section.snowCapsDesc')}
           />
+          <PerfToggle
+            checked={c.stars}
+            onChange={stars => set({ stars })}
+            label={t('settings.christmas_section.stars')}
+            description={t('settings.christmas_section.starsDesc')}
+          />
         </>
       )}
     </div>

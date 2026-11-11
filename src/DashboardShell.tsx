@@ -9,7 +9,7 @@ import { I18nProvider } from '@/i18n';
 import { ToastContainer } from '@/components/ui/Toast/components/Toast';
 import { ModalContainer } from '@/components/ui/Modal/components/Modal';
 import { BackgroundLayer } from '@/components/layout/BackgroundLayer';
-import { ChristmasSnow } from '@/components/layout/ChristmasDecor';
+import { ChristmasSnow, ChristmasStars } from '@/components/layout/ChristmasDecor';
 import { LoadingScreen } from '@/components/layout/LoadingScreen';
 import { HAThrottlePatch } from '@/components/HAThrottlePatch';
 import { ConnectionBanner } from '@/components/shell/ConnectionBanner';
@@ -79,6 +79,7 @@ export function DashboardShell({ hassUrl, hassToken, children }: { hassUrl: stri
             </ToastProvider>
           </MotionConfigBridge>
         </HassConnect>
+        <ChristmasStars />
         <ChristmasSnow />
       </ThemeContextProvider>
     </I18nProvider>
