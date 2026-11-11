@@ -1,5 +1,5 @@
 import { useState, type MutableRefObject } from 'react';
-import { Palette, Zap, Languages, Server, LayoutGrid, Volume2, Globe, Monitor, X, type LucideIcon } from 'lucide-react';
+import { Palette, Zap, Languages, Server, LayoutGrid, Volume2, Globe, Monitor, TreePine, X, type LucideIcon } from 'lucide-react';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { WallPanelSettings } from '@/components/wallpanel/WallPanelSettings';
 import { AppearanceSection } from './AppearanceSection';
@@ -8,11 +8,12 @@ import { LanguageSection } from './LanguageSection';
 import { SystemSection } from './SystemSection';
 import { LayoutSection } from './LayoutSection';
 import { SoundSection } from './SoundSection';
+import { ChristmasSection } from './ChristmasSection';
 import { RegionalSection } from './RegionalSection';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 
-type SettingsSection = 'appearance' | 'wallpanel' | 'layout' | 'performance' | 'sound' | 'regional' | 'language' | 'system';
+type SettingsSection = 'appearance' | 'wallpanel' | 'layout' | 'performance' | 'sound' | 'christmas' | 'regional' | 'language' | 'system';
 
 /** Couleur de la pastille de chaque section, comme celles du lanceur. */
 const SECTION_COLORS: Record<SettingsSection, string> = {
@@ -21,6 +22,7 @@ const SECTION_COLORS: Record<SettingsSection, string> = {
   layout: '#2b9fb0',
   performance: '#ee8a2c',
   sound: '#e8466b',
+  christmas: '#c0392b',
   regional: '#2fb38a',
   language: '#8e5cf0',
   system: '#4a5a78',
@@ -44,6 +46,7 @@ export function SettingsContent({ onClose, guard }: { onClose: () => void; guard
     { id: 'layout' as const, label: t('settings.layout'), Icon: LayoutGrid },
     { id: 'performance', label: t('settings.performance'), Icon: Zap },
     { id: 'sound', label: t('settings.sound'), Icon: Volume2 },
+    { id: 'christmas', label: t('settings.christmas'), Icon: TreePine },
     { id: 'regional', label: t('settings.regional'), Icon: Globe },
     { id: 'language', label: t('settings.language'), Icon: Languages },
     { id: 'system', label: t('settings.system'), Icon: Server },
@@ -107,6 +110,7 @@ export function SettingsContent({ onClose, guard }: { onClose: () => void; guard
           {section === 'layout' && <LayoutSection />}
           {section === 'performance' && <PerformanceSection />}
           {section === 'sound' && <SoundSection />}
+          {section === 'christmas' && <ChristmasSection />}
           {section === 'regional' && <RegionalSection />}
           {section === 'language' && <LanguageSection />}
           {section === 'system' && <SystemSection />}

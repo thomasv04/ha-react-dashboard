@@ -99,6 +99,36 @@ const DEFAULT_BEHAVIOUR_SETTINGS: BehaviourSettings = {
   showUser: true,
 };
 
+/** Décor de Noël : neige qui tombe, guirlandes lumineuses autour des panneaux. */
+export interface ChristmasSettings {
+  /** `season` : du 1er novembre au 6 janvier, sans y penser. */
+  mode: 'off' | 'on' | 'season';
+  snow: boolean;
+  snowAmount: 'light' | 'normal' | 'heavy';
+  garlands: boolean;
+  /** Les ampoules des guirlandes clignotent. */
+  twinkle: boolean;
+  /** Un liseré de neige posé sur le haut de chaque panneau. */
+  snowCaps: boolean;
+  /** Des étoiles pendues à des fils en haut de l'écran. */
+  stars: boolean;
+}
+
+export const DEFAULT_CHRISTMAS_SETTINGS: ChristmasSettings = {
+  mode: 'off',
+  snow: true,
+  snowAmount: 'normal',
+  garlands: true,
+  twinkle: true,
+  snowCaps: true,
+  stars: true,
+};
+
+/** Du 1er novembre au 6 janvier (l'Épiphanie) inclus. */
+export function isChristmasSeason(d: Date): boolean {
+  return d.getMonth() >= 10 || (d.getMonth() === 0 && d.getDate() <= 6);
+}
+
 const DEFAULT_SOUND_SETTINGS: SoundSettings = {
   enabled: false,
 };
@@ -125,6 +155,9 @@ interface ThemeContextValue {
   /** Comportements propres à l'appareil (retour accueil, ne pas déranger, PIN) */
   behaviourSettings: BehaviourSettings;
   setBehaviourSettings: (s: BehaviourSettings) => void;
+  /** Décor de Noël */
+  christmasSettings: ChristmasSettings;
+  setChristmasSettings: (s: ChristmasSettings) => void;
   /** Thème importé de Home Assistant, `null` si aucun */
   importedTheme: ImportedTheme | null;
   setImportedTheme: (t: ImportedTheme | null) => void;
@@ -190,6 +223,7 @@ function loadSettings(): {
   soundSettings: SoundSettings;
   regionalSettings: RegionalSettings;
   behaviourSettings: BehaviourSettings;
+  christmasSettings: ChristmasSettings;
   importedTheme: ImportedTheme | null;
 } {
   try {
@@ -204,6 +238,7 @@ function loadSettings(): {
         soundSettings?: Partial<SoundSettings>;
         regionalSettings?: Partial<RegionalSettings>;
         behaviourSettings?: Partial<BehaviourSettings>;
+        christmasSettings?: Partial<ChristmasSettings>;
         importedTheme?: ImportedTheme | null;
       };
       const themeId = normalizeThemeId(parsed.themeId);
@@ -215,6 +250,7 @@ function loadSettings(): {
         soundSettings: { ...DEFAULT_SOUND_SETTINGS, ...(parsed.soundSettings ?? {}) },
         regionalSettings: { ...DEFAULT_REGIONAL_SETTINGS, ...(parsed.regionalSettings ?? {}) },
         behaviourSettings: { ...DEFAULT_BEHAVIOUR_SETTINGS, ...(parsed.behaviourSettings ?? {}) },
+        christmasSettings: { ...DEFAULT_CHRISTMAS_SETTINGS, ...(parsed.christmasSettings ?? {}) },
         importedTheme: parsed.importedTheme ?? null,
       };
     }
@@ -229,6 +265,7 @@ function loadSettings(): {
     soundSettings: DEFAULT_SOUND_SETTINGS,
     regionalSettings: DEFAULT_REGIONAL_SETTINGS,
     behaviourSettings: DEFAULT_BEHAVIOUR_SETTINGS,
+    christmasSettings: DEFAULT_CHRISTMAS_SETTINGS,
     importedTheme: null,
   };
 }
@@ -243,6 +280,7 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
   const [soundSettings, setSoundSettingsState] = useState<SoundSettings>(saved.soundSettings);
   const [regionalSettings, setRegionalSettingsState] = useState<RegionalSettings>(saved.regionalSettings);
   const [behaviourSettings, setBehaviourSettingsState] = useState<BehaviourSettings>(saved.behaviourSettings);
+  const [christmasSettings, setChristmasSettingsState] = useState<ChristmasSettings>(saved.christmasSettings);
   const [importedTheme, setImportedThemeState] = useState<ImportedTheme | null>(saved.importedTheme);
 
   // Le thème importé de Home Assistant n'a pas d'entrée dans `THEMES` : ses
@@ -261,9 +299,10 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
       soundSettings,
       regionalSettings,
       behaviourSettings,
+      christmasSettings,
       importedTheme,
     }),
-    [themeId, accentColor, perfSettings, autoTheme, soundSettings, regionalSettings, behaviourSettings, importedTheme]
+    [themeId, accentColor, perfSettings, autoTheme, soundSettings, regionalSettings, behaviourSettings, christmasSettings, importedTheme]
   );
   const handleRemoteUpdate = useCallback((remote: typeof syncedSettings) => {
     if (remote.themeId) {
@@ -276,6 +315,7 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     if (remote.soundSettings) setSoundSettingsState({ ...DEFAULT_SOUND_SETTINGS, ...remote.soundSettings });
     if (remote.regionalSettings) setRegionalSettingsState({ ...DEFAULT_REGIONAL_SETTINGS, ...remote.regionalSettings });
     if (remote.behaviourSettings) setBehaviourSettingsState({ ...DEFAULT_BEHAVIOUR_SETTINGS, ...remote.behaviourSettings });
+    if (remote.christmasSettings) setChristmasSettingsState({ ...DEFAULT_CHRISTMAS_SETTINGS, ...remote.christmasSettings });
     if (remote.importedTheme !== undefined) setImportedThemeState(remote.importedTheme);
   }, []);
   useSettingsSync(syncedSettings, handleRemoteUpdate);
@@ -348,10 +388,24 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
       setRegionalSettings: setRegionalSettingsState,
       behaviourSettings,
       setBehaviourSettings: setBehaviourSettingsState,
+      christmasSettings,
+      setChristmasSettings: setChristmasSettingsState,
       importedTheme,
       setImportedTheme: setImportedThemeState,
     }),
-    [themeId, tokens, accentColor, perfSettings, autoTheme, soundSettings, regionalSettings, behaviourSettings, importedTheme, setTheme]
+    [
+      themeId,
+      tokens,
+      accentColor,
+      perfSettings,
+      autoTheme,
+      soundSettings,
+      regionalSettings,
+      behaviourSettings,
+      christmasSettings,
+      importedTheme,
+      setTheme,
+    ]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

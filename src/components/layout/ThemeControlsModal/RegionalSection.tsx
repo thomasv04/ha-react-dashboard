@@ -173,6 +173,7 @@ function BroadcastButton() {
             soundSettings: theme.soundSettings,
             regionalSettings: theme.regionalSettings,
             behaviourSettings: theme.behaviourSettings,
+            christmasSettings: theme.christmasSettings,
           },
         }),
       });

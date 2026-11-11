@@ -41,6 +41,7 @@ import { useEntities } from '@/hooks/useEntities';
 import { useI18n } from '@/i18n';
 import { clamp, cn } from '@/lib/utils';
 import { AnimatePresence } from 'framer-motion';
+import { PanelGarland } from './ChristmasDecor';
 
 export type Breakpoint = 'lg' | 'md' | 'sm';
 
@@ -708,6 +709,7 @@ function PanelSection({
             panelDrag?.id === panel.id && 'opacity-40'
           )}
         >
+          <PanelGarland />
           {/* Rien ne se touche dans un panneau effacé — mais on peut y déposer une tuile. */}
           {dimmed && <span aria-hidden='true' className='absolute inset-0 z-10 rounded-[30px]' />}
           {dropZone && (
