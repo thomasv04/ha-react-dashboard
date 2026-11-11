@@ -138,7 +138,8 @@ function Snow({ count, color }: { count: number; color: string }) {
     };
   }, [count, color]);
 
-  return <canvas ref={ref} aria-hidden='true' className='pointer-events-none fixed inset-0 z-[70] h-full w-full' />;
+  // Au-dessus de l'écran de veille (z-[200]), sous la barre d'édition de celui-ci (z-[210]).
+  return <canvas ref={ref} aria-hidden='true' className='pointer-events-none fixed inset-0 z-[205] h-full w-full' />;
 }
 
 /** Rouge, or, vert, bleu : l'ordre des ampoules le long du fil. */
