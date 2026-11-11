@@ -73,7 +73,6 @@ interface Flake {
   phase: number;
   drift: number;
   a: number;
-  star: boolean;
 }
 
 function Snow({ count, color }: { count: number; color: string }) {
@@ -97,7 +96,9 @@ function Snow({ count, color }: { count: number; color: string }) {
     window.addEventListener('resize', resize);
 
     const spawn = (anywhere: boolean): Flake => {
-      const r = 1 + Math.random() ** 2 * 3.5;
+      // Des points ronds et francs, comme dans une illustration : beaucoup de
+      // petits, quelques gros — les gros, plus proches, tombent plus vite.
+      const r = 1.2 + Math.random() ** 3 * 6;
       return {
         x: Math.random() * w,
         y: anywhere ? Math.random() * h : -12,
@@ -105,9 +106,7 @@ function Snow({ count, color }: { count: number; color: string }) {
         vy: 0.35 + r * 0.25,
         phase: Math.random() * Math.PI * 2,
         drift: 0.3 + Math.random() * 0.7,
-        a: 0.45 + Math.random() * 0.5,
-        // Les plus gros sont dessinés en étoile à six branches.
-        star: r > 3.6,
+        a: 0.8 + Math.random() * 0.2,
       };
     };
     const flakes = Array.from({ length: count }, () => spawn(true));
@@ -119,29 +118,15 @@ function Snow({ count, color }: { count: number; color: string }) {
       last = now;
       ctx.clearRect(0, 0, w, h);
       ctx.fillStyle = color;
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1.4;
-      ctx.lineCap = 'round';
       for (const f of flakes) {
         f.y += f.vy * dt;
         f.phase += 0.012 * dt;
         f.x += Math.sin(f.phase) * f.drift * dt;
         if (f.y > h + 12) Object.assign(f, spawn(false));
         ctx.globalAlpha = f.a;
-        if (f.star) {
-          const s = f.r * 1.9;
-          ctx.beginPath();
-          for (let i = 0; i < 3; i++) {
-            const ang = f.phase + (i * Math.PI) / 3;
-            ctx.moveTo(f.x - Math.cos(ang) * s, f.y - Math.sin(ang) * s);
-            ctx.lineTo(f.x + Math.cos(ang) * s, f.y + Math.sin(ang) * s);
-          }
-          ctx.stroke();
-        } else {
-          ctx.beginPath();
-          ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
-          ctx.fill();
-        }
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+        ctx.fill();
       }
       // requestAnimationFrame se met en pause tout seul quand l'onglet est caché.
       raf = requestAnimationFrame(tick);
