@@ -48,7 +48,8 @@ export function ChristmasStars() {
   const c = useChristmas();
   if (!c?.stars) return null;
   return (
-    <div aria-hidden='true' className='pointer-events-none fixed inset-x-0 top-0 z-[65]'>
+    // Comme la neige, au-dessus de l'écran de veille (z-[200]) ; sous elle, pour que les flocons passent devant.
+    <div aria-hidden='true' className='pointer-events-none fixed inset-x-0 top-0 z-[204]'>
       {STARS.map((s, i) => (
         <span
           key={s.x}
