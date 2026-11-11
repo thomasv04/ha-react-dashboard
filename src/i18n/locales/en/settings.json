@@ -55,6 +55,28 @@
     "enabled": "Sound feedback",
     "enabledDesc": "Plays a tone when you tap a card or change a setting."
   },
+  "christmas": "Christmas",
+  "christmas_section": {
+    "intro": "Dress the dashboard up for the holidays: falling snow, light garlands around panels, snow resting on top. Each effect can be turned off on its own.",
+    "mode": "Christmas decor",
+    "modeOff": "Off",
+    "modeSeason": "During the holidays",
+    "modeOn": "Always",
+    "modeSeasonDesc": "“During the holidays”: turns itself on from December 1st to January 6th.",
+    "snow": "Snow",
+    "snowDesc": "Snowflakes fall across the whole screen, screensaver included.",
+    "snowPerf": "Off while “Disable animations” is on (Performance).",
+    "snowAmount": "Amount of snow",
+    "snowLight": "Light",
+    "snowNormal": "Normal",
+    "snowHeavy": "Blizzard",
+    "garlands": "Garlands",
+    "garlandsDesc": "A string of light bulbs runs around each panel.",
+    "twinkle": "Twinkling bulbs",
+    "twinkleDesc": "Bulbs fade in and out gently, one colour at a time.",
+    "snowCaps": "Snow on panels",
+    "snowCapsDesc": "A rim of snow resting on top of each panel."
+  },
   "system": "System",
   "system_section": {
     "ingressTitle": "Direct access URL",

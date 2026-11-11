@@ -55,6 +55,28 @@
     "enabled": "Retour sonore",
     "enabledDesc": "Joue une tonalité lorsque vous appuyez sur une carte ou modifiez un réglage."
   },
+  "christmas": "Noël",
+  "christmas_section": {
+    "intro": "Habille le dashboard pour les fêtes : neige qui tombe, guirlandes lumineuses autour des panneaux, neige posée dessus. Chaque effet se coupe à part.",
+    "mode": "Décor de Noël",
+    "modeOff": "Désactivé",
+    "modeSeason": "Pendant les fêtes",
+    "modeOn": "Toujours",
+    "modeSeasonDesc": "« Pendant les fêtes » : s'allume seul du 1er décembre au 6 janvier.",
+    "snow": "Neige",
+    "snowDesc": "Des flocons tombent sur tout l'écran, écran de veille compris.",
+    "snowPerf": "Coupée tant que « Désactiver les animations » est actif (Performances).",
+    "snowAmount": "Quantité de neige",
+    "snowLight": "Légère",
+    "snowNormal": "Normale",
+    "snowHeavy": "Tempête",
+    "garlands": "Guirlandes",
+    "garlandsDesc": "Une guirlande d'ampoules fait le tour de chaque panneau.",
+    "twinkle": "Ampoules clignotantes",
+    "twinkleDesc": "Les ampoules s'allument et s'éteignent doucement, couleur par couleur.",
+    "snowCaps": "Neige sur les panneaux",
+    "snowCapsDesc": "Un liseré de neige posé sur le haut de chaque panneau."
+  },
   "system": "Système",
   "system_section": {
     "ingressTitle": "URL d'accès direct",

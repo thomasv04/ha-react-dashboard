@@ -1,0 +1,162 @@
+import { useEffect, useRef } from 'react';
+import { isChristmasSeason, useTheme, type ChristmasSettings } from '@/context/ThemeContext';
+import { cn } from '@/lib/utils';
+
+/**
+ * Le décor de Noël : la neige qui tombe sur tout l'écran (`ChristmasSnow`,
+ * monté une fois dans le shell) et la guirlande lumineuse qui fait le tour de
+ * chaque panneau (`PanelGarland`, montée dans chaque panneau).
+ */
+
+// ponytail: la saison est évaluée au rendu ; une tablette qui tourne sans
+// re-rendu du 30 novembre au 1er décembre attend le prochain rendu pour s'allumer.
+function useChristmas(): ChristmasSettings | null {
+  const { christmasSettings: c } = useTheme();
+  const active = c.mode === 'on' || (c.mode === 'season' && isChristmasSeason(new Date()));
+  return active ? c : null;
+}
+
+const FLAKES: Record<ChristmasSettings['snowAmount'], number> = { light: 45, normal: 100, heavy: 200 };
+
+export function ChristmasSnow() {
+  const c = useChristmas();
+  const { perfSettings, tokens } = useTheme();
+  if (!c?.snow || perfSettings.reduceAnimations) return null;
+  // Sur un thème clair, des flocons blancs ne se verraient pas.
+  return <Snow count={FLAKES[c.snowAmount]} color={tokens.light ? '#9fb3cc' : '#ffffff'} />;
+}
+
+interface Flake {
+  x: number;
+  y: number;
+  r: number;
+  vy: number;
+  phase: number;
+  drift: number;
+  a: number;
+  star: boolean;
+}
+
+function Snow({ count, color }: { count: number; color: string }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = ref.current!;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let w = 0;
+    let h = 0;
+    const resize = () => {
+      w = window.innerWidth;
+      h = window.innerHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const spawn = (anywhere: boolean): Flake => {
+      const r = 1 + Math.random() ** 2 * 3.5;
+      return {
+        x: Math.random() * w,
+        y: anywhere ? Math.random() * h : -12,
+        r,
+        vy: 0.35 + r * 0.25,
+        phase: Math.random() * Math.PI * 2,
+        drift: 0.3 + Math.random() * 0.7,
+        a: 0.45 + Math.random() * 0.5,
+        // Les plus gros sont dessinés en étoile à six branches.
+        star: r > 3.6,
+      };
+    };
+    const flakes = Array.from({ length: count }, () => spawn(true));
+
+    let raf = 0;
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = Math.min((now - last) / 16.7, 3);
+      last = now;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = color;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.4;
+      ctx.lineCap = 'round';
+      for (const f of flakes) {
+        f.y += f.vy * dt;
+        f.phase += 0.012 * dt;
+        f.x += Math.sin(f.phase) * f.drift * dt;
+        if (f.y > h + 12) Object.assign(f, spawn(false));
+        ctx.globalAlpha = f.a;
+        if (f.star) {
+          const s = f.r * 1.9;
+          ctx.beginPath();
+          for (let i = 0; i < 3; i++) {
+            const ang = f.phase + (i * Math.PI) / 3;
+            ctx.moveTo(f.x - Math.cos(ang) * s, f.y - Math.sin(ang) * s);
+            ctx.lineTo(f.x + Math.cos(ang) * s, f.y + Math.sin(ang) * s);
+          }
+          ctx.stroke();
+        } else {
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      // requestAnimationFrame se met en pause tout seul quand l'onglet est caché.
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', resize);
+    };
+  }, [count, color]);
+
+  return <canvas ref={ref} aria-hidden='true' className='pointer-events-none fixed inset-0 z-[70] h-full w-full' />;
+}
+
+/** Rouge, or, vert, bleu : l'ordre des ampoules le long du fil. */
+const BULBS = ['#ff4d4d', '#ffc94a', '#4cd07d', '#4aa8ff'];
+/** Écart entre deux ampoules, en px le long du contour. */
+const STEP = 32;
+
+/** La guirlande autour d'un panneau, et la neige posée dessus. Le panneau doit être `relative`. */
+export function PanelGarland() {
+  const c = useChristmas();
+  if (!c) return null;
+  return (
+    <>
+      {c.snowCaps && <span aria-hidden='true' className='xmas-snowcap' />}
+      {c.garlands && (
+        <svg aria-hidden='true' className={cn('xmas-garland', c.twinkle && 'xmas-twinkle')}>
+          {/* Le fil, torsadé : un trait sombre, un trait plus clair en pointillé par-dessus. */}
+          <rect width='100%' height='100%' rx='27' className='xmas-cord' />
+          <rect width='100%' height='100%' rx='27' className='xmas-cord-twist' />
+          {BULBS.map((color, i) => (
+            <g key={color} className='xmas-bulb' style={{ stroke: color, animationDelay: `${i * -0.45}s` }}>
+              <rect
+                width='100%'
+                height='100%'
+                rx='27'
+                strokeWidth='14'
+                strokeOpacity='0.22'
+                strokeDasharray={`0 ${STEP * BULBS.length}`}
+                strokeDashoffset={-i * STEP}
+              />
+              <rect
+                width='100%'
+                height='100%'
+                rx='27'
+                strokeWidth='9'
+                strokeDasharray={`0 ${STEP * BULBS.length}`}
+                strokeDashoffset={-i * STEP}
+              />
+            </g>
+          ))}
+        </svg>
+      )}
+    </>
+  );
+}
