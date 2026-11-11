@@ -76,6 +76,14 @@ export function ChristmasSection() {
             label={t('settings.christmas_section.snowCaps')}
             description={t('settings.christmas_section.snowCapsDesc')}
           />
+          {c.snowCaps && (
+            <PerfToggle
+              checked={c.drawnSnow}
+              onChange={drawnSnow => set({ drawnSnow })}
+              label={t('settings.christmas_section.drawnSnow')}
+              description={t('settings.christmas_section.drawnSnowDesc')}
+            />
+          )}
           <PerfToggle
             checked={c.stars}
             onChange={stars => set({ stars })}

@@ -76,6 +76,8 @@
     "twinkleDesc": "Bulbs fade in and out gently, one colour at a time.",
     "snowCaps": "Snow on panels",
     "snowCapsDesc": "A rim of snow resting on top of each panel.",
+    "drawnSnow": "Hand-drawn snow",
+    "drawnSnowDesc": "Ink outline, hatching and paper grain, like an illustration.",
     "stars": "Hanging stars",
     "starsDesc": "Stars on strings sway gently at the top of the screen."
   },

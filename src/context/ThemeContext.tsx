@@ -110,6 +110,8 @@ export interface ChristmasSettings {
   twinkle: boolean;
   /** Un liseré de neige posé sur le haut de chaque panneau. */
   snowCaps: boolean;
+  /** Neige posée façon illustration : contour à l'encre, hachures, grain. */
+  drawnSnow: boolean;
   /** Des étoiles pendues à des fils en haut de l'écran. */
   stars: boolean;
 }
@@ -121,6 +123,7 @@ export const DEFAULT_CHRISTMAS_SETTINGS: ChristmasSettings = {
   garlands: true,
   twinkle: true,
   snowCaps: true,
+  drawnSnow: true,
   stars: true,
 };
 
