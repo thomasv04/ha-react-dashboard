@@ -6,7 +6,8 @@ vi.mock('@/lib/api-base', () => ({ apiFetch: (path: string, init?: RequestInit) 
 
 import { MusicSection } from './MusicSection';
 
-const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
 describe('MusicSection', () => {
   beforeEach(() => apiFetch.mockReset());
@@ -41,5 +42,21 @@ describe('MusicSection', () => {
     fireEvent.change(screen.getByLabelText('settings.music_section.token'), { target: { value: 'faux' } });
     fireEvent.click(screen.getByRole('button', { name: 'settings.music_section.save' }));
     expect(await screen.findByText('settings.music_section.result.auth')).toBeInTheDocument();
+  });
+
+  it('dit quand l’add-on ne connaît pas encore ce réglage, au lieu d’accuser Music Assistant', async () => {
+    // Un add-on d'avant cette section : sa page de repli au lieu de JSON.
+    apiFetch.mockResolvedValueOnce(new Response('<!doctype html>', { status: 200, headers: { 'Content-Type': 'text/html' } }));
+    render(<MusicSection />);
+    expect(await screen.findByText('settings.music_section.result.outdated')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'settings.music_section.save' })).toBeDisabled();
+  });
+
+  it('en carte (HACS), dit que l’intégration Music Assistant connecte déjà, sans formulaire', async () => {
+    apiFetch.mockResolvedValueOnce(json({ configured: true, url: '', source: 'integration' }));
+    render(<MusicSection />);
+    expect(await screen.findByText('settings.music_section.integrationHint')).toBeInTheDocument();
+    expect(screen.getByText('settings.music_section.source.integration')).toBeInTheDocument();
+    expect(screen.queryByLabelText('settings.music_section.token')).not.toBeInTheDocument();
   });
 });

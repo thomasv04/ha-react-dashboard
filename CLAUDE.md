@@ -368,6 +368,26 @@ un événement** : le typer dans `ha-events.ts`, le gérer dans `modalFromEvent`
 
 ## Server API
 
+### En production : HACS, donc l'intégration Python (MANDATORY)
+
+En prod, le dashboard est installé **par HACS**, en carte / panneau Lovelace :
+l'API est servie par l'intégration Python `custom_components/ha_react_dashboard`
+(`api.py`, sous `/api/ha_react_dashboard/`), **pas** par le serveur Express de
+l'add-on (`server/`), qui n'est pas installé. `src/lib/api-base.ts` choisit la
+base selon le contexte (ingress add-on, carte, dev).
+
+- Toute route ajoutée dans `server/routes/` doit avoir son **équivalent dans
+  l'intégration Python**, au même contrat (chemins, corps, codes d'erreur), avec
+  ses tests dans `tests/python/`. Sinon la fonction marche en dev et pas chez
+  l'utilisateur.
+- Une fonction qui dépend d'une autre intégration HA (Music Assistant…) passe
+  côté Python par la connexion de cette intégration (`entry.runtime_data`),
+  sans jeton à saisir.
+- Le serveur de dev (`npm run dev` + `server/`) ne reproduit pas ce contexte :
+  vérifier aussi dans HA.
+
+### Routes
+
 - `GET/PUT /api/config` — dashboard layout (2 MB limit)
 - `GET/PUT /api/settings/current?device_id=` — per-device settings
 - `GET/PUT /api/translations/overrides` — user translation overrides
