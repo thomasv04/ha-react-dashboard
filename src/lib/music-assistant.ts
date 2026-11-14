@@ -159,3 +159,14 @@ export function shiftVolumes(volumes: number[], target: number): number[] {
   const delta = target / 100 - volumes.reduce((a, b) => a + b, 0) / (volumes.length || 1);
   return volumes.map(v => Math.round(Math.min(1, Math.max(0, v + delta)) * 100) / 100);
 }
+
+/**
+ * Où retombe un titre de la file glissé de `dy` pixels : un nombre de places
+ * (négatif = plus tôt), arrondi à la ligne la plus proche (76 px dans la
+ * maquette) et borné à la liste.
+ */
+export function queueDragShift(dy: number, from: number, count: number, row = 76): number {
+  // `|| 0` : un petit glisser vers le haut s'arrondit à -0, qu'on rend comme « pas bougé ».
+  const shift = Math.round(dy / row) || 0;
+  return Math.max(-from, Math.min(count - 1 - from, shift));
+}

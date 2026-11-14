@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useHass } from '@hakit/core';
 import { callHAService } from '@/lib/ha-service';
+import { apiFetch } from '@/lib/api-base';
 import { pickMassPlayer, rememberedPlayer } from '@/lib/music-assistant';
 import type { BrowseNode, MassEnqueue, MassLibraryResponse, MassMediaType, MassOrder, MassSearchResponse } from '@/lib/music-assistant';
 
@@ -139,4 +140,62 @@ export function massPlay(
     { entity_id: entityId },
     { media_id: item.uri, ...(item.media_type && { media_type: item.media_type }), enqueue }
   );
+}
+
+/** Un titre de la file complète, tel que l'add-on le rend (`/api/music/queue`). */
+export interface FullQueueItem {
+  queue_item_id: string;
+  name: string;
+  artists: string[];
+  duration: number | null;
+  image: string | null;
+}
+
+/**
+ * La file d'attente complète, par l'add-on du dashboard qui interroge Music
+ * Assistant (HA n'en donne que le titre en cours et le suivant). `null` tant
+ * que rien n'est arrivé, ou quand l'add-on n'a pas de jeton MA : l'écran garde
+ * alors la file réduite. `revision` relance la lecture (titre suivant, ajout).
+ */
+export function useMassQueueItems(queueId: string | undefined, revision: string) {
+  const [items, setItems] = useState<FullQueueItem[] | null>(null);
+  const [nonce, setNonce] = useState(0);
+  const refresh = useCallback(() => setNonce(n => n + 1), []);
+
+  useEffect(() => {
+    if (!queueId) return;
+    let alive = true;
+    (async () => {
+      try {
+        const res = await apiFetch(`/api/music/queue/${encodeURIComponent(queueId)}?limit=300`);
+        const data = res.ok ? await res.json() : null;
+        if (alive) setItems(Array.isArray(data) ? data : null);
+      } catch {
+        if (alive) setItems(null);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [queueId, revision, nonce]);
+
+  return { items, refresh, setItems };
+}
+
+/** Déplace, retire ou lance un titre de la file complète. */
+export async function massQueueCommand(
+  queueId: string,
+  action: 'move' | 'delete' | 'play',
+  body: { queue_item_id?: string; pos_shift?: number; index?: number }
+): Promise<boolean> {
+  try {
+    const res = await apiFetch(`/api/music/queue/${encodeURIComponent(queueId)}/${action}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }

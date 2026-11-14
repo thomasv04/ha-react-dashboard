@@ -3,12 +3,14 @@ import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useNow } from '@/hooks/useNow';
 import { useServiceResponse } from '@/hooks/useServiceResponse';
+import { massQueueCommand, useMassQueueItems, type FullQueueItem } from '@/hooks/useMusicAssistant';
 import { callHAService, friendlyName } from '@/lib/ha-service';
 import { formatMediaTime, interpolatePosition } from '@/lib/media-player';
 import { artistLine, type MassItem } from '@/lib/music-assistant';
 import { useI18n } from '@/i18n';
 import { MusicCover } from './MusicCover';
 import { EmptyState, RowsSkeleton } from './MusicItems';
+import { MusicQueueList } from './MusicQueueList';
 
 /** Un titre de la file, tel que `music_assistant.get_queue` le décrit. */
 interface QueueItem {
@@ -19,6 +21,7 @@ interface QueueItem {
 
 /** Réponse de `music_assistant.get_queue` : HA ne donne que le titre en cours, le suivant, et le compte. */
 interface QueueResponse {
+  queue_id: string;
   items: number;
   current_index: number | null;
   current_item: QueueItem | null;
@@ -28,10 +31,13 @@ interface QueueResponse {
 const text = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
 
 /**
- * La file d'attente (maquette « File d'attente »), réduite à ce que HA expose :
- * le titre en cours à gauche, le suivant à droite, le nombre de titres à venir
- * et « Vider la file ». La liste complète, son ordre et le retrait d'un titre
- * ne passent que par l'API de Music Assistant lui-même, hors de portée ici.
+ * La file d'attente (maquette « File d'attente ») : le titre en cours à gauche,
+ * les titres à suivre à droite, et « Vider la file ».
+ *
+ * La liste complète — la glisser, retirer un titre, en lancer un — vient de
+ * l'add-on du dashboard, qui interroge Music Assistant avec son jeton. Sans
+ * jeton configuré, l'écran se contente de ce que HA expose : le titre suivant
+ * et le nombre de titres à venir.
  */
 export function MusicQueue({ player }: { player: string }) {
   const { t } = useI18n();
@@ -48,6 +54,10 @@ export function MusicQueue({ player }: { player: string }) {
     revision: `${entity?.state}|${text(attrs.media_title) ?? ''}`,
   });
   const queue = data?.[player];
+  const full = useMassQueueItems(queue?.queue_id, `${queue?.items}|${queue?.current_index}|${text(attrs.media_title) ?? ''}`);
+  // Les titres après celui en cours ; MA compte la file depuis le début.
+  const start = (queue?.current_index ?? -1) + 1;
+  const after = full.items?.slice(start) ?? null;
 
   const current = queue?.current_item;
   const title = current?.media_item?.name ?? current?.name ?? text(attrs.media_title);
@@ -55,7 +65,15 @@ export function MusicQueue({ player }: { player: string }) {
   const cover = current?.media_item?.image ?? text(attrs.entity_picture);
   const duration = typeof attrs.media_duration === 'number' ? attrs.media_duration : 0;
   const position = interpolatePosition(attrs, playing, now);
-  const upcoming = queue ? Math.max(0, queue.items - ((queue.current_index ?? -1) + 1)) : 0;
+  const upcoming = after?.length ?? (queue ? Math.max(0, queue.items - start) : 0);
+  const minutes = after ? Math.round(after.reduce((sum, i) => sum + (i.duration ?? 0), 0) / 60) : 0;
+
+  /** Agit sur la file complète, met la liste à jour tout de suite, puis relit MA. */
+  const command = (action: 'move' | 'delete' | 'play', body: Parameters<typeof massQueueCommand>[2], optimistic?: FullQueueItem[]) => {
+    if (!queue) return;
+    if (optimistic) full.setItems([...(full.items ?? []).slice(0, start), ...optimistic]);
+    void massQueueCommand(queue.queue_id, action, body).then(full.refresh);
+  };
   const next = queue?.next_item;
 
   if (error) return <EmptyState icon={ListX} title={t('widgets.music.error')} hint={error} />;
@@ -95,6 +113,7 @@ export function MusicQueue({ player }: { player: string }) {
           <h3 className='text-[24px] font-semibold'>{t('widgets.music.upNext')}</h3>
           <span className='text-[17px] text-[var(--music-dim)]'>
             {t(`widgets.music.trackCount_${upcoming === 1 ? 'one' : 'other'}`, { count: upcoming })}
+            {minutes > 0 && ` · ${t('widgets.music.minutes', { count: minutes })}`}
           </span>
           <button
             type='button'
@@ -106,7 +125,29 @@ export function MusicQueue({ player }: { player: string }) {
             {t('widgets.music.clearQueue')}
           </button>
         </div>
-        {next ? (
+        {after ? (
+          after.length > 0 ? (
+            <MusicQueueList
+              items={after}
+              onPlay={(_, position) => command('play', { index: start + position })}
+              onMove={(item, shift) => {
+                const from = after.indexOf(item);
+                const next = after.filter(i => i !== item);
+                next.splice(from + shift, 0, item);
+                command('move', { queue_item_id: item.queue_item_id, pos_shift: shift }, next);
+              }}
+              onRemove={item =>
+                command(
+                  'delete',
+                  { queue_item_id: item.queue_item_id },
+                  after.filter(i => i !== item)
+                )
+              }
+            />
+          ) : (
+            <p className='mt-4 text-[17px] text-[var(--ds-ink-muted)]'>{t('widgets.music.queueEnds')}</p>
+          )
+        ) : next ? (
           <div className='mt-1.5 flex h-[76px] items-center gap-3.5 rounded-[18px] px-2'>
             <MusicCover image={next.media_item?.image} name={next.name} type='track' small className='w-14 rounded-[12px]' />
             <span className='min-w-0 flex-1'>
@@ -122,7 +163,7 @@ export function MusicQueue({ player }: { player: string }) {
         ) : (
           <p className='mt-4 text-[17px] text-[var(--ds-ink-muted)]'>{t('widgets.music.queueEnds')}</p>
         )}
-        {upcoming > 1 && (
+        {!after && upcoming > 1 && (
           <p className='mt-4 px-2 text-[17px] text-[var(--ds-ink-muted)]'>
             {t(`widgets.music.queueMore_${upcoming - 1 === 1 ? 'one' : 'other'}`, { count: upcoming - 1 })}
           </p>

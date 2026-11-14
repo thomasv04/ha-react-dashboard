@@ -476,7 +476,10 @@
     "queueMore_one": "Et 1 autre titre ensuite — la liste complète est dans Music Assistant.",
     "queueMore_other": "Et {count} autres titres ensuite — la liste complète est dans Music Assistant.",
     "fixedGroupHint": "Groupe défini dans Music Assistant : ses enceintes se choisissent là-bas.",
-    "youMayLike": "Vous aimerez aussi"
+    "youMayLike": "Vous aimerez aussi",
+    "reorder": "Déplacer {name}",
+    "removeFromQueue": "Retirer {name} de la file",
+    "minutes": "{count} min"
   },
   "person": {
     "label": "Personnes",

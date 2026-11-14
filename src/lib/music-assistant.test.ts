@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   artistLine,
   groupVolume,
+  queueDragShift,
   isMassPlayer,
   monogram,
   monogramHue,
@@ -77,5 +78,13 @@ describe('music-assistant', () => {
     expect(shiftVolumes([0.95, 0.5], 82)).toEqual([1, 0.6]);
     expect(shiftVolumes([0.1, 0.4], 0)).toEqual([0, 0.15]);
     expect(groupVolume([])).toBe(0);
+  });
+
+  it('arrondit un glisser à la ligne la plus proche, sans sortir de la file', () => {
+    expect(queueDragShift(80, 2, 10)).toBe(1);
+    expect(queueDragShift(-30, 2, 10)).toBe(0);
+    expect(queueDragShift(-200, 2, 10)).toBe(-2);
+    expect(queueDragShift(-1000, 2, 10)).toBe(-2);
+    expect(queueDragShift(1000, 2, 10)).toBe(7);
   });
 });

@@ -35,7 +35,14 @@ watchdog: 'http://[HOST]:[PORT:8099]/api/health'
 panel_admin: true
 
 # Optional long-lived token; if empty run.sh falls back to $SUPERVISOR_TOKEN
+# music_assistant_token : jeton créé dans Music Assistant (Paramètres > profil >
+# jetons d'accès), pour la file d'attente complète. Il reste dans l'add-on.
+# music_assistant_url : vide = MA sur l'hôte (http://172.30.32.1:8095).
 options:
   ha_token: ''
+  music_assistant_token: ''
+  music_assistant_url: ''
 schema:
   ha_token: str?
+  music_assistant_token: password?
+  music_assistant_url: url?
