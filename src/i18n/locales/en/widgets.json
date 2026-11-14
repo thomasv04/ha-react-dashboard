@@ -32,7 +32,15 @@
       "windy": "Windy",
       "windy-variant": "Very windy"
     },
-    "days": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "days": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ],
     "dispositions": {
       "horizontal": {
         "label": "Horizontal",
@@ -324,6 +332,13 @@
           "vertical": "Vertical (large cover)",
           "compact": "Compact (1 row)"
         }
+      },
+      "source": {
+        "label": "Player",
+        "options": {
+          "entity": "A chosen player",
+          "music_assistant": "Automatic — the Music Assistant speaker that is playing"
+        }
       }
     },
     "previous": "Previous track",
@@ -344,7 +359,127 @@
     "nothingPlaying": "Nothing playing",
     "album": "Album",
     "unknownTitle": "Unknown title",
-    "library": "Listen next"
+    "library": "Listen next",
+    "openLibrary": "Library"
+  },
+  "music": {
+    "title": "Music",
+    "typesLabel": "Content type",
+    "tabs": {
+      "album": "Albums",
+      "artist": "Artists",
+      "playlist": "Playlists",
+      "track": "Tracks",
+      "radio": "Radios"
+    },
+    "types": {
+      "playlist": "Playlist",
+      "radio": "Radio"
+    },
+    "favorites": "Favorites",
+    "favorite": "Favorite",
+    "sort": "Sort",
+    "order": {
+      "last_played_desc": "Recently played",
+      "sort_name": "A → Z",
+      "timestamp_added_desc": "Recently added"
+    },
+    "recent": "Recently played",
+    "empty": {
+      "album": "No albums yet",
+      "artist": "No artists yet",
+      "playlist": "No playlists yet",
+      "track": "No tracks yet",
+      "radio": "No radios yet"
+    },
+    "emptyHint": "Your library is empty. Add a music source in Music Assistant, then refresh.",
+    "noFavorites": "No favorites in this category",
+    "refresh": "Refresh",
+    "error": "Music Assistant is not responding",
+    "back": "Back",
+    "play": "Play",
+    "shuffle": "Shuffle",
+    "addToQueue": "Add to queue",
+    "trackTitle": "Title",
+    "noTracks": "No tracks",
+    "trackCount_one": "{count} track",
+    "trackCount_other": "{count} tracks",
+    "albumCount_one": "{count} album",
+    "albumCount_other": "{count} albums",
+    "search": "Search",
+    "searchPlaceholder": {
+      "album": "Search an album",
+      "artist": "Search an artist",
+      "playlist": "Search a playlist",
+      "track": "Search a track",
+      "radio": "Search a radio"
+    },
+    "searchResults": "Results",
+    "closeSearch": "Close search",
+    "clearSearch": "Clear search",
+    "all": "All",
+    "seeAll": "See all",
+    "noResults": "No results for “{query}”",
+    "noResultsHint": "Check the spelling, or search for an artist or an album.",
+    "more": "More actions",
+    "playNow": "Play now",
+    "playNext": "Play next",
+    "playOn": "Play on…",
+    "choosePlayer": "Choose speaker",
+    "playerPlaying": "Playing · {title}",
+    "playerPlayingShort": "Playing",
+    "playerAvailable": "Available",
+    "playerOffline": "Offline",
+    "closeApp": "Close Music",
+    "loadingLibrary": "Loading the library…",
+    "searchAll": "Search all music",
+    "removeFavorites": "Remove the Favorites filter",
+    "searchEverywhere": "Search all music",
+    "noMatch": {
+      "album": "No album matches. Check the spelling, or search all music.",
+      "artist": "No artist matches. Check the spelling, or search all music.",
+      "playlist": "No playlist matches. Check the spelling, or search all music.",
+      "track": "No track matches. Check the spelling, or search all music.",
+      "radio": "No radio matches. Check the spelling, or search all music."
+    },
+    "noMatchFavorites": {
+      "album": "None of your favorite albums match. Check the spelling or remove the Favorites filter.",
+      "artist": "None of your favorite artists match. Check the spelling or remove the Favorites filter.",
+      "playlist": "None of your favorite playlists match. Check the spelling or remove the Favorites filter.",
+      "track": "None of your favorite tracks match. Check the spelling or remove the Favorites filter.",
+      "radio": "None of your favorite radios match. Check the spelling or remove the Favorites filter."
+    },
+    "openPlayer": "Open the player",
+    "live": "Live",
+    "speakers": "Speakers",
+    "speakersToGroup": "Speakers to group",
+    "groupSpeakers": "Group several speakers…",
+    "leader": "Group leader",
+    "leaderPlaying": "Playing · group leader",
+    "inGroup": "In the group",
+    "inactive": "Idle",
+    "currentGroup": "Current group",
+    "groupSize": "{count} speakers, same music",
+    "groupAlone": "Check other speakers to group them.",
+    "groupVolume": "Group volume",
+    "groupVolumeHint": "Sets the speakers together, keeping the gap between them.",
+    "done": "Done",
+    "ungroupAll": "Ungroup all",
+    "volumeOf": "Volume — {name}",
+    "queue": "Queue",
+    "nowPlaying": "Now playing",
+    "upNext": "Up next",
+    "clearQueue": "Clear queue",
+    "queueEmpty": "The queue is empty",
+    "queueEmptyHint": "Play an album, a playlist or a track: it will show up here.",
+    "queueEnds": "Nothing after this track.",
+    "queueMore_one": "And 1 more track after it — the full list is in Music Assistant.",
+    "queueMore_other": "And {count} more tracks after it — the full list is in Music Assistant.",
+    "fixedGroupHint": "Group defined in Music Assistant: its speakers are chosen there.",
+    "youMayLike": "You may also like",
+    "reorder": "Move {name}",
+    "removeFromQueue": "Remove {name} from the queue",
+    "minutes": "{count} min"
   },
   "person": {
     "label": "People",

@@ -17,10 +17,15 @@ export const MORE_INFO_COMPONENTS: Record<
   template: lazy(() => import('./TemplateMoreInfo')),
   calendar: lazy(() => import('./CalendarMoreInfo')),
   media_player: lazy(() => import('./MediaPlayerMoreInfo')),
+  // L'appli Musique (Music Assistant) : ouverte depuis le lecteur ou le lanceur, jamais par un domaine.
+  music: lazy(() => import('@/components/music/MusicApp')),
 };
 
 /** Fiches qui occupent tout l'écran au lieu de la feuille latérale. */
-export const MORE_INFO_FULLSCREEN = new Set(['calendar', 'media_player']);
+export const MORE_INFO_FULLSCREEN = new Set(['calendar', 'media_player', 'music']);
+
+/** Applis plein écran : bord à bord, sans croix — elles portent leur propre bouton de fermeture. */
+export const MORE_INFO_APPS = new Set(['music', 'media_player']);
 
 export const MORE_INFO_WIDGET_TYPES = Object.keys(MORE_INFO_COMPONENTS);
 

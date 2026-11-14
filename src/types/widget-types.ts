@@ -366,6 +366,11 @@ export interface VacuumCardConfig extends WidgetConfigBase, WidgetSoundOverrides
 export interface MediaPlayerCardConfig extends WidgetConfigBase, WidgetSoundOverrides {
   type: 'media_player';
   entityId: string; // media_player.xxx
+  /**
+   * `music_assistant` : pas de lecteur fixé, la card suit l'enceinte Music
+   * Assistant qui joue (sinon la dernière choisie). `entity` par défaut.
+   */
+  source?: 'entity' | 'music_assistant';
   name?: string;
   /** Layout variant: 'horizontal' (default), 'vertical', 'compact' */
   disposition?: 'horizontal' | 'vertical' | 'compact';

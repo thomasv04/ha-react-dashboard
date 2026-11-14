@@ -32,7 +32,15 @@
       "windy": "Venteux",
       "windy-variant": "Très venteux"
     },
-    "days": ["dim", "lun", "mar", "mer", "jeu", "ven", "sam"],
+    "days": [
+      "dim",
+      "lun",
+      "mar",
+      "mer",
+      "jeu",
+      "ven",
+      "sam"
+    ],
     "dispositions": {
       "horizontal": {
         "label": "Horizontale",
@@ -324,6 +332,13 @@
           "vertical": "Verticale (cover en grand)",
           "compact": "Compacte (1 ligne)"
         }
+      },
+      "source": {
+        "label": "Lecteur",
+        "options": {
+          "entity": "Un lecteur choisi",
+          "music_assistant": "Automatique — l'enceinte Music Assistant qui joue"
+        }
       }
     },
     "previous": "Morceau précédent",
@@ -344,7 +359,127 @@
     "nothingPlaying": "Aucune lecture en cours",
     "album": "Album",
     "unknownTitle": "Titre inconnu",
-    "library": "À écouter"
+    "library": "À écouter",
+    "openLibrary": "Bibliothèque"
+  },
+  "music": {
+    "title": "Musique",
+    "typesLabel": "Type de contenu",
+    "tabs": {
+      "album": "Albums",
+      "artist": "Artistes",
+      "playlist": "Playlists",
+      "track": "Titres",
+      "radio": "Radios"
+    },
+    "types": {
+      "playlist": "Playlist",
+      "radio": "Radio"
+    },
+    "favorites": "Favoris",
+    "favorite": "Favori",
+    "sort": "Trier",
+    "order": {
+      "last_played_desc": "Écoutés récemment",
+      "sort_name": "A → Z",
+      "timestamp_added_desc": "Ajoutés récemment"
+    },
+    "recent": "Écoutés récemment",
+    "empty": {
+      "album": "Aucun album pour le moment",
+      "artist": "Aucun artiste pour le moment",
+      "playlist": "Aucune playlist pour le moment",
+      "track": "Aucun titre pour le moment",
+      "radio": "Aucune radio pour le moment"
+    },
+    "emptyHint": "Votre bibliothèque est vide. Ajoutez une source musicale dans Music Assistant, puis actualisez.",
+    "noFavorites": "Aucun favori dans cette catégorie",
+    "refresh": "Actualiser",
+    "error": "Music Assistant ne répond pas",
+    "back": "Retour",
+    "play": "Lire",
+    "shuffle": "Aléatoire",
+    "addToQueue": "Ajouter à la file",
+    "trackTitle": "Titre",
+    "noTracks": "Aucun titre",
+    "trackCount_one": "{count} titre",
+    "trackCount_other": "{count} titres",
+    "albumCount_one": "{count} album",
+    "albumCount_other": "{count} albums",
+    "search": "Rechercher",
+    "searchPlaceholder": {
+      "album": "Rechercher un album",
+      "artist": "Rechercher un artiste",
+      "playlist": "Rechercher une playlist",
+      "track": "Rechercher un titre",
+      "radio": "Rechercher une radio"
+    },
+    "searchResults": "Résultats",
+    "closeSearch": "Fermer la recherche",
+    "clearSearch": "Effacer la recherche",
+    "all": "Tout",
+    "seeAll": "Voir tout",
+    "noResults": "Aucun résultat pour « {query} »",
+    "noResultsHint": "Vérifiez l'orthographe, ou cherchez un artiste ou un album.",
+    "more": "Plus d'actions",
+    "playNow": "Lire maintenant",
+    "playNext": "Lire ensuite",
+    "playOn": "Lire sur…",
+    "choosePlayer": "Choisir l'enceinte",
+    "playerPlaying": "En lecture · {title}",
+    "playerPlayingShort": "En lecture",
+    "playerAvailable": "Disponible",
+    "playerOffline": "Hors ligne",
+    "closeApp": "Fermer Musique",
+    "loadingLibrary": "Chargement de la bibliothèque…",
+    "searchAll": "Rechercher dans toute la musique",
+    "removeFavorites": "Retirer le filtre Favoris",
+    "searchEverywhere": "Chercher dans toute la musique",
+    "noMatch": {
+      "album": "Aucun album ne correspond. Vérifiez l'orthographe, ou cherchez dans toute la musique.",
+      "artist": "Aucun artiste ne correspond. Vérifiez l'orthographe, ou cherchez dans toute la musique.",
+      "playlist": "Aucune playlist ne correspond. Vérifiez l'orthographe, ou cherchez dans toute la musique.",
+      "track": "Aucun titre ne correspond. Vérifiez l'orthographe, ou cherchez dans toute la musique.",
+      "radio": "Aucune radio ne correspond. Vérifiez l'orthographe, ou cherchez dans toute la musique."
+    },
+    "noMatchFavorites": {
+      "album": "Aucun de vos albums favoris ne correspond. Vérifiez l'orthographe ou retirez le filtre Favoris.",
+      "artist": "Aucun de vos artistes favoris ne correspond. Vérifiez l'orthographe ou retirez le filtre Favoris.",
+      "playlist": "Aucune de vos playlists favorites ne correspond. Vérifiez l'orthographe ou retirez le filtre Favoris.",
+      "track": "Aucun de vos titres favoris ne correspond. Vérifiez l'orthographe ou retirez le filtre Favoris.",
+      "radio": "Aucune de vos radios favorites ne correspond. Vérifiez l'orthographe ou retirez le filtre Favoris."
+    },
+    "openPlayer": "Ouvrir le lecteur",
+    "live": "En direct",
+    "speakers": "Enceintes",
+    "speakersToGroup": "Enceintes à grouper",
+    "groupSpeakers": "Grouper plusieurs enceintes…",
+    "leader": "Principale du groupe",
+    "leaderPlaying": "En lecture · principale du groupe",
+    "inGroup": "Dans le groupe",
+    "inactive": "Inactive",
+    "currentGroup": "Groupe en cours",
+    "groupSize": "{count} enceintes, même musique",
+    "groupAlone": "Cochez d'autres enceintes pour les grouper.",
+    "groupVolume": "Volume du groupe",
+    "groupVolumeHint": "Règle les enceintes ensemble, en gardant l'écart entre elles.",
+    "done": "Terminé",
+    "ungroupAll": "Dégrouper tout",
+    "volumeOf": "Volume — {name}",
+    "queue": "File d'attente",
+    "nowPlaying": "En cours",
+    "upNext": "À suivre",
+    "clearQueue": "Vider la file",
+    "queueEmpty": "La file est vide",
+    "queueEmptyHint": "Lancez un album, une playlist ou un titre : il apparaîtra ici.",
+    "queueEnds": "Rien après ce titre.",
+    "queueMore_one": "Et 1 autre titre ensuite — la liste complète est dans Music Assistant.",
+    "queueMore_other": "Et {count} autres titres ensuite — la liste complète est dans Music Assistant.",
+    "fixedGroupHint": "Groupe défini dans Music Assistant : ses enceintes se choisissent là-bas.",
+    "youMayLike": "Vous aimerez aussi",
+    "reorder": "Déplacer {name}",
+    "removeFromQueue": "Retirer {name} de la file",
+    "minutes": "{count} min"
   },
   "person": {
     "label": "Personnes",

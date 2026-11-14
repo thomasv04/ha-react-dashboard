@@ -203,6 +203,7 @@ export const MOCK_ENTITIES: Record<string, MockEntityState> = {
     media_title: 'Bohemian Rhapsody',
     media_artist: 'Queen',
     media_album_name: 'A Night at the Opera',
+    media_content_type: 'music',
     media_duration: 354,
     media_position: 168,
     entity_picture:

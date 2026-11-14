@@ -55,7 +55,22 @@ export default defineWidget({
   ],
 
   fields: [
-    { key: 'entityId', label: 'widgets.media_player.fields.entityId.label', fieldType: 'entity', domain: 'media_player' },
+    {
+      key: 'source',
+      label: 'widgets.media_player.fields.source.label',
+      fieldType: 'select',
+      options: [
+        { value: 'entity', label: 'widgets.media_player.fields.source.options.entity' },
+        { value: 'music_assistant', label: 'widgets.media_player.fields.source.options.music_assistant' },
+      ],
+    },
+    {
+      key: 'entityId',
+      label: 'widgets.media_player.fields.entityId.label',
+      fieldType: 'entity',
+      domain: 'media_player',
+      showIf: config => config.source !== 'music_assistant',
+    },
     { key: 'name', label: 'widgets.media_player.fields.name.label', fieldType: 'text' },
     {
       key: 'disposition',
