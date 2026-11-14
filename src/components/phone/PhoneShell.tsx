@@ -237,6 +237,11 @@ function PhoneTabBar({
   );
 }
 
+/**
+ * Un onglet. Le changement d'onglet s'anime comme la vidéo de référence : l'ancien se rétracte en
+ * rond pendant que le nouveau s'étire en pilule — le libellé se dévoile par sa largeur, en fondu, et
+ * les couleurs glissent de l'un à l'autre. Le libellé reste rendu : sa largeur est ce qui s'anime.
+ */
 function TabButton({ current, label, onClick, children }: { current: boolean; label: string; onClick: () => void; children: ReactNode }) {
   return (
     <button
@@ -245,14 +250,22 @@ function TabButton({ current, label, onClick, children }: { current: boolean; la
       aria-label={current ? undefined : label}
       title={label}
       className={cn(
-        'flex h-12 shrink-0 items-center justify-center rounded-full',
-        current
-          ? 'gap-2 bg-[var(--ds-tile-on)] pl-3.5 pr-[18px] text-[15px] font-semibold text-[var(--ds-tile-on-ink)]'
-          : 'w-12 text-[var(--ds-ink-muted)]'
+        'flex h-12 shrink-0 items-center rounded-full px-[13px] text-[15px] font-semibold',
+        'transition-[background-color,color,padding] duration-300 ease-out motion-reduce:transition-none',
+        current ? 'bg-[var(--ds-tile-on)] pl-3.5 pr-[18px] text-[var(--ds-tile-on-ink)]' : 'bg-transparent text-[var(--ds-ink-muted)]'
       )}
     >
       {children}
-      {current && <span className='whitespace-nowrap'>{label}</span>}
+      {/* Colonne de grille 0fr → 1fr : la largeur suit exactement celle du libellé, à l'aller comme au retour. */}
+      <span
+        aria-hidden={!current}
+        className={cn(
+          'grid transition-[grid-template-columns,opacity,margin] duration-300 ease-out motion-reduce:transition-none',
+          current ? 'ml-2 grid-cols-[1fr] opacity-100' : 'ml-0 grid-cols-[0fr] opacity-0'
+        )}
+      >
+        <span className='min-w-0 overflow-hidden whitespace-nowrap'>{label}</span>
+      </span>
     </button>
   );
 }
