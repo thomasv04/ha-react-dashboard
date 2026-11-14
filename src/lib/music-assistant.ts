@@ -73,6 +73,12 @@ export function artistLine(item: Pick<MassItem, 'artists'>): string {
   return (item.artists ?? []).map(a => a.name).join(', ');
 }
 
+/** La ligne sous un nom : « Playlist », « Radio », ou les artistes. */
+export function itemSubtitle(item: Pick<MassItem, 'media_type' | 'artists'>, t: (key: string) => string): string {
+  if (item.media_type === 'playlist' || item.media_type === 'radio') return t(`widgets.music.types.${item.media_type}`);
+  return artistLine(item);
+}
+
 /** Initiales d'un artiste sans photo : « Clara Voss » → « CV », « Sable » → « S ». */
 export function monogram(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);

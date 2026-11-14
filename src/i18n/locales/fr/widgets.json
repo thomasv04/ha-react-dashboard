@@ -398,7 +398,22 @@
     "trackCount_one": "{count} titre",
     "trackCount_other": "{count} titres",
     "albumCount_one": "{count} album",
-    "albumCount_other": "{count} albums"
+    "albumCount_other": "{count} albums",
+    "search": "Rechercher",
+    "searchPlaceholder": {
+      "album": "Rechercher un album",
+      "artist": "Rechercher un artiste",
+      "playlist": "Rechercher une playlist",
+      "track": "Rechercher un titre",
+      "radio": "Rechercher une radio"
+    },
+    "searchResults": "Résultats",
+    "closeSearch": "Fermer la recherche",
+    "clearSearch": "Effacer la recherche",
+    "all": "Tout",
+    "seeAll": "Voir tout",
+    "noResults": "Aucun résultat pour « {query} »",
+    "noResultsHint": "Vérifiez l'orthographe, ou cherchez un artiste ou un album."
   },
   "person": {
     "label": "Personnes",
