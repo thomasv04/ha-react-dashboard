@@ -32,7 +32,7 @@ const BROWSABLE = new Set<MassMediaType>(['album', 'playlist', 'artist']);
  * rien ne correspond, « Chercher dans toute la musique » ouvre la recherche
  * groupée par type.
  */
-export default function MusicApp({ entityId }: { entityId: string; widgetId: string }) {
+export default function MusicApp({ entityId, widgetId }: { entityId: string; widgetId: string }) {
   const { t } = useI18n();
   const helpers = useHass(s => s.helpers);
   const { formatTime } = useFormats();
@@ -50,7 +50,10 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
   const [actionItem, setActionItem] = useState<MassItem | null>(null);
   const [picking, setPicking] = useState(false);
   // Un écran par-dessus la bibliothèque : les enceintes et le groupe, ou la file d'attente.
-  const [screen, setScreen] = useState<'speakers' | 'queue' | null>(null);
+  // Le lecteur plein écran ouvre l'appli directement sur un écran : `music:queue`, `music:speakers`.
+  const [screen, setScreen] = useState<'speakers' | 'queue' | null>(
+    widgetId === 'music:queue' ? 'queue' : widgetId === 'music:speakers' ? 'speakers' : null
+  );
 
   const [tab, setTab] = useState<MassMediaType>('album');
   const [favorite, setFavorite] = useState(false);
@@ -97,11 +100,9 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
   return (
     <div
       ref={rootRef}
-      // Couleurs de la maquette absentes des jetons, posées une fois pour l'appli et ses fenêtres :
-      // surface surélevée (fenêtres, mini-lecteur), bouton posé dessus, bleu clair du titre en cours,
-      // reflet des squelettes, filet des listes, rose des favoris et du direct, et le gris de l'heure
-      // (ink-muted à 80 %, #8b95a5). Le bas laisse la place au mini-lecteur.
-      className='-mt-4 flex min-h-full flex-col bg-[var(--ds-ground)] px-10 pb-[150px] pt-8 leading-[normal] text-[var(--ds-ink)] [--music-dim:color-mix(in_srgb,var(--ds-ink-muted)_80%,var(--ds-ground))] [--music-highlight-soft:rgba(143,184,245,0.14)] [--music-highlight:#8fb8f5] [--music-line:#1a212b] [--music-love:#ff7b93] [--music-track:#1e3354] [--music-raised-2:#3a4352] [--music-raised:#2a3240] [--music-shine:#2c3544]'
+      // `music-theme` (index.css) : les couleurs de la maquette absentes des jetons. Le bas laisse la
+      // place au mini-lecteur.
+      className='music-theme -mt-4 flex min-h-full flex-col bg-[var(--ds-ground)] px-10 pb-[150px] pt-8 leading-[normal] text-[var(--ds-ink)]'
       data-testid='music-app'
     >
       {/* En-tête de la maquette : le carré du lanceur (il ferme l'appli) et le titre ; la recherche,
@@ -144,7 +145,7 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
         {!sub && (
           <label
             className={cn(
-              'flex h-[60px] min-w-0 items-center gap-3.5 rounded-[30px] bg-[var(--ds-surface-2)] pl-[22px] pr-2.5',
+              'flex h-[60px] min-w-0 items-center gap-3.5 rounded-[30px] bg-[var(--ds-surface-2)] pl-[22px] pr-2.5 focus-within:shadow-[inset_0_0_0_2px_var(--ds-tile-on)]',
               global ? 'flex-1' : 'ml-auto w-[520px] shrink'
             )}
           >
@@ -158,7 +159,8 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
               }}
               placeholder={t(global ? 'widgets.music.searchAll' : `widgets.music.searchPlaceholder.${tab}`)}
               aria-label={t('widgets.music.search')}
-              className='min-w-0 flex-1 bg-transparent text-[19px] outline-none placeholder:text-[var(--ds-ink-muted)] [&::-webkit-search-cancel-button]:hidden'
+              // Le focus se lit sur la pilule entière ; `!` passe devant la règle globale de focus (index.css, hors couche).
+              className='min-w-0 flex-1 bg-transparent text-[19px] outline-none! placeholder:text-[var(--ds-ink-muted)] [&::-webkit-search-cancel-button]:hidden'
             />
             {draft && (
               <button

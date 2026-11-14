@@ -468,7 +468,8 @@
     "queueEnds": "Nothing after this track.",
     "queueMore_one": "And 1 more track after it — the full list is in Music Assistant.",
     "queueMore_other": "And {count} more tracks after it — the full list is in Music Assistant.",
-    "fixedGroupHint": "Group defined in Music Assistant: its speakers are chosen there."
+    "fixedGroupHint": "Group defined in Music Assistant: its speakers are chosen there.",
+    "youMayLike": "You may also like"
   },
   "person": {
     "label": "People",

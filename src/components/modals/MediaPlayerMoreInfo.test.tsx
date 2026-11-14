@@ -149,9 +149,32 @@ describe('MediaPlayerMoreInfo', () => {
           }
     );
     render_();
-    const item = await screen.findByText('Best of 1978');
+    // Pochettes sans légende, comme la maquette : le nom est l'étiquette du bouton.
+    const item = await screen.findByRole('button', { name: 'Best of 1978' });
     expect(screen.getByText('widgets.media_player.library')).toBeInTheDocument();
     fireEvent.click(item);
     expect(lastCall()).toMatchObject({ service: 'play_media', serviceData: { media_content_id: 'album:1', media_content_type: 'album' } });
+  });
+
+  it('suit la maquette pour un lecteur Music Assistant', async () => {
+    entity!.attributes.mass_player_type = 'player';
+    connection.sendMessagePromise = vi.fn(async (msg: Record<string, unknown>) =>
+      msg.type === 'config/entity_registry/get'
+        ? { config_entry_id: 'entry1' }
+        : { response: { items: [{ media_type: 'album', uri: 'library://album/3', name: 'LOOM', artists: [] }] } }
+    );
+    render_();
+
+    // Le volume passe par l'écran des enceintes ; « Vous aimerez aussi » vient de la bibliothèque MA.
+    expect(screen.queryByLabelText('widgets.media_player.volume')).toBeNull();
+    fireEvent.click(await screen.findByRole('button', { name: 'LOOM' }));
+    expect(lastCall()).toMatchObject({
+      domain: 'music_assistant',
+      service: 'play_media',
+      serviceData: { media_id: 'library://album/3', media_type: 'album', enqueue: 'play' },
+    });
+    expect(screen.getByText('widgets.music.youMayLike')).toBeInTheDocument();
+    expect(screen.getByLabelText('widgets.music.choosePlayer')).toBeInTheDocument();
+    expect(screen.getByLabelText('widgets.music.queue')).toBeInTheDocument();
   });
 });

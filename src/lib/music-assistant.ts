@@ -10,7 +10,7 @@
 export type MassMediaType = 'artist' | 'album' | 'playlist' | 'track' | 'radio';
 
 /** Ordres de `music_assistant.get_library` repris par la bibliothèque. */
-export type MassOrder = 'last_played_desc' | 'sort_name' | 'timestamp_added_desc';
+export type MassOrder = 'last_played_desc' | 'sort_name' | 'timestamp_added_desc' | 'random';
 
 /** `enqueue` de `music_assistant.play_media`. */
 export type MassEnqueue = 'play' | 'next' | 'add';

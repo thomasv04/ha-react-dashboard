@@ -450,6 +450,24 @@ select option {
   --ds-sheet-section: var(--ds-user-sheet-section);
 }
 
+/* ── Appli Musique et lecteur : couleurs de la maquette hors jetons ───────── */
+/* Surface surélevée (fenêtres, mini-lecteur) et bouton posé dessus, bleu clair
+   du titre en cours, filet des listes, rose des favoris et du direct, piste des
+   curseurs, reflet des squelettes, et le gris de l'heure (ink-muted à 80 % sur
+   le fond, #8b95a5). Classe simple : valable aussi dans la shadow root. */
+
+.music-theme {
+  --music-raised: #2a3240;
+  --music-raised-2: #3a4352;
+  --music-highlight: #8fb8f5;
+  --music-highlight-soft: rgba(143, 184, 245, 0.14);
+  --music-line: #1a212b;
+  --music-love: #ff7b93;
+  --music-track: #1e3354;
+  --music-shine: #2c3544;
+  --music-dim: color-mix(in srgb, var(--ds-ink-muted) 80%, var(--ds-ground));
+}
+
 /* ── Squelettes de l'appli Musique (maquette « Bibliothèque — chargement ») ── */
 /* Le reflet glisse de droite à gauche sur la surface ; `--music-shine` est posée
    par la racine de l'appli. Classe simple : valable aussi dans la shadow root. */

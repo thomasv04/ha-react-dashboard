@@ -101,4 +101,12 @@ describe('MusicApp', () => {
     render(<MusicApp entityId='media_player.cast' widgetId='w' />);
     expect(await screen.findByText('widgets.music.error')).toBeInTheDocument();
   });
+
+  it("s'ouvre directement sur l'écran demandé par le lecteur", async () => {
+    fakeHa({});
+    render(<MusicApp entityId='media_player.salon_2' widgetId='music:speakers' />);
+    expect(await screen.findByTestId('music-speakers')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /widgets\.music\.back/ }));
+    expect(screen.queryByTestId('music-speakers')).not.toBeInTheDocument();
+  });
 });
