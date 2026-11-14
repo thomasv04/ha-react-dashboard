@@ -50,12 +50,12 @@ function ActionButton({
       type='button'
       onClick={onClick}
       className={cn(
-        'flex h-14 items-center justify-center gap-2.5 rounded-[28px] text-[19px] font-semibold',
+        'flex h-14 items-center justify-center gap-2.5 rounded-[28px] text-[19px] font-semibold max-sm:h-[52px] max-sm:gap-2 max-sm:text-base',
         primary ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'bg-[var(--ds-surface-3)]',
         wide && 'col-span-2'
       )}
     >
-      <Icon size={22} aria-hidden='true' className={cn(primary && 'fill-current')} />
+      <Icon size={22} aria-hidden='true' className={cn('max-sm:size-[18px]', primary && 'fill-current')} />
       {children}
     </button>
   );
@@ -66,6 +66,9 @@ function ActionButton({
  * « Détail album » : la pochette et les actions dans une colonne de 380 px,
  * le contenu à droite (les titres, ou les albums de l'artiste). Le contenu
  * vient de la navigation média du lecteur.
+ *
+ * Au téléphone (maquette « Détail album » du téléphone) : la pochette de
+ * 132 px à gauche du titre, les actions en dessous, puis les titres.
  */
 export function MusicDetail({
   entityId,
@@ -95,24 +98,31 @@ export function MusicDetail({
   };
 
   return (
-    <div className='mt-9 grid min-h-0 flex-1 gap-14 md:grid-cols-[380px_1fr]' data-testid='music-detail'>
-      <aside className='flex flex-col'>
+    <div className='mt-9 grid min-h-0 flex-1 gap-14 md:grid-cols-[380px_1fr] max-sm:mt-3 max-sm:gap-4' data-testid='music-detail'>
+      <aside className='flex flex-col max-sm:grid max-sm:grid-cols-[132px_minmax(0,1fr)] max-sm:items-end max-sm:gap-x-4'>
         <MusicCover
           image={item.image}
           name={item.name}
           type={item.media_type}
-          className={cn('shadow-[0_24px_60px_rgba(0,0,0,0.5)]', !isArtist && 'rounded-[28px]')}
+          className={cn(
+            'shadow-[0_24px_60px_rgba(0,0,0,0.5)] max-sm:shadow-[0_14px_30px_rgba(0,0,0,0.5)]',
+            !isArtist && 'rounded-[28px] max-sm:rounded-[20px]'
+          )}
         />
-        <h2 className='mt-6 text-[40px] font-bold leading-[45px]'>{item.name}</h2>
-        {!isArtist && artist && <p className='mt-2 truncate text-[24px] font-semibold text-[var(--music-highlight)]'>{artist}</p>}
-        {data && (
-          <p className='mt-1.5 text-[18px] text-[var(--ds-ink-muted)]'>
-            {t(`widgets.music.${isArtist ? 'albumCount' : 'trackCount'}_${children.length === 1 ? 'one' : 'other'}`, {
-              count: children.length,
-            })}
-          </p>
-        )}
-        <div className='mt-6 grid grid-cols-2 gap-3'>
+        <div className='min-w-0'>
+          <h2 className='mt-6 text-[40px] font-bold leading-[45px] max-sm:mt-0 max-sm:text-2xl max-sm:leading-tight'>{item.name}</h2>
+          {!isArtist && artist && (
+            <p className='mt-2 truncate text-[24px] font-semibold text-[var(--music-highlight)] max-sm:mt-1.5 max-sm:text-base'>{artist}</p>
+          )}
+          {data && (
+            <p className='mt-1.5 text-[18px] text-[var(--ds-ink-muted)] max-sm:mt-1 max-sm:text-sm'>
+              {t(`widgets.music.${isArtist ? 'albumCount' : 'trackCount'}_${children.length === 1 ? 'one' : 'other'}`, {
+                count: children.length,
+              })}
+            </p>
+          )}
+        </div>
+        <div className='mt-6 grid grid-cols-2 gap-3 max-sm:col-span-2 max-sm:mt-5 max-sm:gap-2'>
           <ActionButton primary icon={Play} onClick={() => play(item)}>
             {t('widgets.music.play')}
           </ActionButton>
@@ -136,7 +146,9 @@ export function MusicDetail({
           <RowsSkeleton />
         ) : isArtist ? (
           <>
-            <h3 className='mb-3.5 text-[22px] font-semibold'>{t('widgets.music.tabs.album')}</h3>
+            <h3 className='mb-3.5 text-[22px] font-semibold max-sm:mb-2.5 max-sm:text-xl max-sm:font-bold'>
+              {t('widgets.music.tabs.album')}
+            </h3>
             <ItemGrid items={children.map(child => albumOf(child, item))} onOpen={onOpen} onMore={onMore} />
           </>
         ) : children.length === 0 ? (
@@ -144,7 +156,7 @@ export function MusicDetail({
         ) : (
           <ol>
             {/* En-têtes de colonnes : le gris de l'heure, sans majuscules. */}
-            <li aria-hidden='true' className='flex h-10 items-center text-[15px] text-[var(--music-dim)]'>
+            <li aria-hidden='true' className='flex h-10 items-center text-[15px] text-[var(--music-dim)] max-sm:hidden'>
               <span className='w-16 text-center'>#</span>
               <span>{t('widgets.music.trackTitle')}</span>
             </li>
@@ -154,7 +166,10 @@ export function MusicDetail({
               return (
                 <li
                   key={child.media_content_id}
-                  className={cn('flex h-[76px] items-center rounded-[18px] pr-2', current && 'bg-[var(--music-highlight-soft)]')}
+                  className={cn(
+                    'flex h-[76px] items-center rounded-[18px] pr-2 max-sm:-mx-2 max-sm:h-[60px] max-sm:rounded-[14px] max-sm:pr-0',
+                    current && 'bg-[var(--music-highlight-soft)]'
+                  )}
                 >
                   <button
                     type='button'
@@ -162,15 +177,24 @@ export function MusicDetail({
                     aria-current={current || undefined}
                     className='flex h-full min-w-0 flex-1 items-center text-left'
                   >
-                    <span className='flex w-16 shrink-0 justify-center text-[20px] tabular-nums text-[var(--music-dim)]'>
-                      {current ? <AudioLines size={22} aria-hidden='true' className='text-[var(--music-highlight)]' /> : i + 1}
+                    <span className='flex w-16 shrink-0 justify-center text-[20px] tabular-nums text-[var(--music-dim)] max-sm:mr-3 max-sm:w-9 max-sm:text-base'>
+                      {current ? (
+                        <AudioLines size={22} aria-hidden='true' className='text-[var(--music-highlight)] max-sm:size-[18px]' />
+                      ) : (
+                        i + 1
+                      )}
                     </span>
                     <span className='min-w-0 flex-1'>
-                      <span className={cn('block truncate text-[21px] font-semibold', current && 'text-[var(--music-highlight)]')}>
+                      <span
+                        className={cn(
+                          'block truncate text-[21px] font-semibold max-sm:text-base',
+                          current && 'text-[var(--music-highlight)]'
+                        )}
+                      >
                         {track.title}
                       </span>
                       {item.media_type === 'playlist' && track.artist && (
-                        <span className='block truncate text-[16px] text-[var(--ds-ink-muted)]'>{track.artist}</span>
+                        <span className='block truncate text-[16px] text-[var(--ds-ink-muted)] max-sm:text-[13px]'>{track.artist}</span>
                       )}
                     </span>
                   </button>

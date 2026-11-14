@@ -34,7 +34,7 @@ export function Pill({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        'h-12 shrink-0 rounded-[24px] font-semibold',
+        'h-12 shrink-0 rounded-[24px] font-semibold max-sm:h-10 max-sm:px-4 max-sm:text-[15px]',
         soft ? 'px-5 text-[17px]' : 'px-[26px] text-[19px]',
         !active
           ? 'text-[var(--ds-ink-muted)]'

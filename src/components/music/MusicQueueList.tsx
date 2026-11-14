@@ -39,7 +39,7 @@ export function MusicQueueList({
             {target === index && <DropLine />}
             <div
               className={cn(
-                'flex h-[76px] items-center gap-3.5 rounded-[18px] px-2',
+                'flex h-[76px] items-center gap-3.5 rounded-[18px] px-2 max-sm:h-16 max-sm:gap-2.5 max-sm:px-0',
                 dragged && 'relative z-10 -mx-3 bg-[var(--music-raised-2)] px-5 shadow-[0_12px_30px_rgba(0,0,0,0.45)]'
               )}
               style={dragged ? { transform: `translateY(${drag.dy}px)` } : undefined}
@@ -48,7 +48,7 @@ export function MusicQueueList({
                 role='button'
                 tabIndex={0}
                 aria-label={t('widgets.music.reorder', { name: item.name })}
-                className='flex h-[52px] w-10 shrink-0 cursor-grab touch-none items-center justify-center text-[var(--music-dim)]'
+                className='flex h-[52px] w-10 shrink-0 cursor-grab touch-none items-center justify-center text-[var(--music-dim)] max-sm:w-8'
                 onPointerDown={e => {
                   e.currentTarget.setPointerCapture(e.pointerId);
                   setDrag({ index, startY: e.clientY, dy: 0 });
@@ -68,15 +68,23 @@ export function MusicQueueList({
                 <GripVertical size={22} aria-hidden='true' />
               </span>
               <button type='button' onClick={() => onPlay(item, index)} className='flex min-w-0 flex-1 items-center gap-3.5 text-left'>
-                <MusicCover image={item.image} name={item.name} type='track' small className='w-14 rounded-[12px]' />
+                <MusicCover
+                  image={item.image}
+                  name={item.name}
+                  type='track'
+                  small
+                  className='w-14 rounded-[12px] max-sm:w-11 max-sm:rounded-[10px]'
+                />
                 <span className='min-w-0 flex-1'>
-                  <span className='block truncate text-[20px] font-semibold'>{item.name}</span>
+                  <span className='block truncate text-[20px] font-semibold max-sm:text-base'>{item.name}</span>
                   {item.artists.length > 0 && (
-                    <span className='mt-0.5 block truncate text-[16px] text-[var(--ds-ink-muted)]'>{item.artists.join(', ')}</span>
+                    <span className='mt-0.5 block truncate text-[16px] text-[var(--ds-ink-muted)] max-sm:mt-0 max-sm:text-[13px]'>
+                      {item.artists.join(', ')}
+                    </span>
                   )}
                 </span>
                 {item.duration ? (
-                  <span className='w-14 shrink-0 text-right text-[17px] tabular-nums text-[var(--ds-ink-muted)]'>
+                  <span className='w-14 shrink-0 text-right text-[17px] tabular-nums text-[var(--ds-ink-muted)] max-sm:w-10 max-sm:text-sm'>
                     {formatMediaTime(item.duration)}
                   </span>
                 ) : null}
@@ -85,7 +93,7 @@ export function MusicQueueList({
                 type='button'
                 onClick={() => onRemove(item)}
                 aria-label={t('widgets.music.removeFromQueue', { name: item.name })}
-                className='flex size-[52px] shrink-0 items-center justify-center rounded-full text-[var(--ds-ink-muted)]'
+                className='flex size-[52px] shrink-0 items-center justify-center rounded-full text-[var(--ds-ink-muted)] max-sm:size-10'
               >
                 <X size={22} aria-hidden='true' />
               </button>
