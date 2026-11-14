@@ -1,7 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { Compass, Layers, LayoutGrid, MessageCircle, Settings, Sparkles, Wrench, type LucideIcon } from 'lucide-react';
+import { Compass, Layers, LayoutGrid, MessageCircle, Music, Settings, Sparkles, Wrench, type LucideIcon } from 'lucide-react';
+import { useHass } from '@hakit/core';
+import { useMoreInfo } from '@/context/MoreInfoContext';
+import { pickMassPlayer } from '@/lib/music-assistant';
 import { usePages } from '@/context/PageContext';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { usePanel } from '@/context/PanelContext';
@@ -32,6 +35,9 @@ export function Launcher({ open, onClose }: { open: boolean; onClose: () => void
   const { pages, setCurrentPage } = usePages();
   const { panels } = useCustomPanels();
   const { openPanel } = usePanel();
+  const { openMoreInfo } = useMoreInfo();
+  // L'appli Musique s'ouvre sur le lecteur Music Assistant qui joue ; sans MA, pas d'entrée.
+  const musicPlayer = useHass(s => pickMassPlayer(s.entities));
   const [dialog, setDialog] = useState<Dialog>(null);
 
   useEffect(() => {
@@ -106,6 +112,11 @@ export function Launcher({ open, onClose }: { open: boolean; onClose: () => void
                   ))}
                   {panels.length === 0 && <p className='py-4 text-[var(--ds-ink-muted)]'>{t('layout.shell.noPanels')}</p>}
 
+                  {musicPlayer && (
+                    <LauncherItem Icon={Music} color='var(--ds-app-music)' onClick={run(() => openMoreInfo('music', 'music', musicPlayer))}>
+                      {t('layout.shell.music')}
+                    </LauncherItem>
+                  )}
                   <LauncherItem Icon={MessageCircle} color='var(--ds-app-photo)' onClick={run(() => setDialog('assist'))}>
                     {t('layout.shell.assist')}
                   </LauncherItem>

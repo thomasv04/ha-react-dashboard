@@ -1,5 +1,19 @@
 import { useEffect, useState } from 'react';
-import { ListMusic, Music, Pause, Play, Repeat, Repeat1, Shuffle, SkipBack, SkipForward, Speaker, Volume2, VolumeX } from 'lucide-react';
+import {
+  Library,
+  ListMusic,
+  Music,
+  Pause,
+  Play,
+  Repeat,
+  Repeat1,
+  Shuffle,
+  SkipBack,
+  SkipForward,
+  Speaker,
+  Volume2,
+  VolumeX,
+} from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useMediaBrowse } from '@/hooks/useMediaBrowse';
@@ -9,8 +23,10 @@ import { useHaUrl } from '@/hooks/useHaUrl';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
+import { useMoreInfoOptional } from '@/context/MoreInfoContext';
 import { callHAService, friendlyName } from '@/lib/ha-service';
 import { formatMediaTime, interpolatePosition, isMediaOff, nextRepeat, supportsMedia } from '@/lib/media-player';
+import { isMassPlayer } from '@/lib/music-assistant';
 import { cn } from '@/lib/utils';
 import { PillSlider } from '@/components/ds/PillSlider';
 import { useI18n } from '@/i18n';
@@ -60,6 +76,7 @@ export default function MediaPlayerMoreInfo({ entityId, widgetId }: { entityId: 
   const resolveUrl = useHaUrl();
   const playFeedback = useSoundFeedback();
   const { formatTime } = useFormats();
+  const moreInfo = useMoreInfoOptional();
 
   const state = entity?.state ?? 'unavailable';
   const attrs = (entity?.attributes ?? {}) as Record<string, unknown>;
@@ -128,8 +145,21 @@ export default function MediaPlayerMoreInfo({ entityId, widgetId }: { entityId: 
 
       {/* Le lecteur à gauche, l'heure à droite — la croix de la fiche est tout à droite. */}
       <div className='mb-6 flex items-center justify-between gap-4 pr-16'>
-        <span className='truncate rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)] px-5 py-3 text-[17px] font-semibold'>
-          {name}
+        <span className='flex min-w-0 items-center gap-3'>
+          <span className='truncate rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)] px-5 py-3 text-[17px] font-semibold'>
+            {name}
+          </span>
+          {/* Un lecteur Music Assistant ouvre sa bibliothèque dans l'appli Musique. */}
+          {moreInfo && isMassPlayer(entity) && (
+            <button
+              type='button'
+              onClick={() => moreInfo.openMoreInfo(widgetId, 'music', entityId)}
+              className='flex h-12 shrink-0 items-center gap-2 rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-3)] px-5 text-[15px] font-semibold'
+            >
+              <Library size={18} aria-hidden='true' />
+              {t('widgets.media_player.openLibrary')}
+            </button>
+          )}
         </span>
         <time className='shrink-0 text-[40px] font-medium leading-none tabular-nums'>{formatTime(clock)}</time>
       </div>

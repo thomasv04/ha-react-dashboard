@@ -32,7 +32,15 @@
       "windy": "Venteux",
       "windy-variant": "Très venteux"
     },
-    "days": ["dim", "lun", "mar", "mer", "jeu", "ven", "sam"],
+    "days": [
+      "dim",
+      "lun",
+      "mar",
+      "mer",
+      "jeu",
+      "ven",
+      "sam"
+    ],
     "dispositions": {
       "horizontal": {
         "label": "Horizontale",
@@ -344,7 +352,43 @@
     "nothingPlaying": "Aucune lecture en cours",
     "album": "Album",
     "unknownTitle": "Titre inconnu",
-    "library": "À écouter"
+    "library": "À écouter",
+    "openLibrary": "Bibliothèque"
+  },
+  "music": {
+    "title": "Musique",
+    "typesLabel": "Type de contenu",
+    "tabs": {
+      "album": "Albums",
+      "artist": "Artistes",
+      "playlist": "Playlists",
+      "track": "Titres",
+      "radio": "Radios"
+    },
+    "types": {
+      "playlist": "Playlist",
+      "radio": "Radio"
+    },
+    "favorites": "Favoris",
+    "favorite": "Favori",
+    "sort": "Trier",
+    "order": {
+      "last_played_desc": "Écoutés récemment",
+      "sort_name": "A → Z",
+      "timestamp_added_desc": "Ajoutés récemment"
+    },
+    "recent": "Écoutés récemment",
+    "empty": {
+      "album": "Aucun album pour le moment",
+      "artist": "Aucun artiste pour le moment",
+      "playlist": "Aucune playlist pour le moment",
+      "track": "Aucun titre pour le moment",
+      "radio": "Aucune radio pour le moment"
+    },
+    "emptyHint": "Votre bibliothèque est vide. Ajoutez une source musicale dans Music Assistant, puis actualisez.",
+    "noFavorites": "Aucun favori dans cette catégorie",
+    "refresh": "Actualiser",
+    "error": "Music Assistant ne répond pas"
   },
   "person": {
     "label": "Personnes",

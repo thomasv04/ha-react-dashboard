@@ -22,7 +22,7 @@ describe('useMusicAssistant', () => {
   it("lit l'instance MA dans le registre d'entités", async () => {
     sendMessagePromise.mockResolvedValue({ config_entry_id: 'entry1', platform: 'music_assistant' });
     const { result } = renderHook(() => useMassEntryId('media_player.salon_2'));
-    await waitFor(() => expect(result.current).toBe('entry1'));
+    await waitFor(() => expect(result.current.entryId).toBe('entry1'));
     expect(sendMessagePromise).toHaveBeenCalledWith({ type: 'config/entity_registry/get', entity_id: 'media_player.salon_2' });
   });
 

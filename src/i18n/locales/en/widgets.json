@@ -32,7 +32,15 @@
       "windy": "Windy",
       "windy-variant": "Very windy"
     },
-    "days": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "days": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ],
     "dispositions": {
       "horizontal": {
         "label": "Horizontal",
@@ -344,7 +352,43 @@
     "nothingPlaying": "Nothing playing",
     "album": "Album",
     "unknownTitle": "Unknown title",
-    "library": "Listen next"
+    "library": "Listen next",
+    "openLibrary": "Library"
+  },
+  "music": {
+    "title": "Music",
+    "typesLabel": "Content type",
+    "tabs": {
+      "album": "Albums",
+      "artist": "Artists",
+      "playlist": "Playlists",
+      "track": "Tracks",
+      "radio": "Radios"
+    },
+    "types": {
+      "playlist": "Playlist",
+      "radio": "Radio"
+    },
+    "favorites": "Favorites",
+    "favorite": "Favorite",
+    "sort": "Sort",
+    "order": {
+      "last_played_desc": "Recently played",
+      "sort_name": "A → Z",
+      "timestamp_added_desc": "Recently added"
+    },
+    "recent": "Recently played",
+    "empty": {
+      "album": "No albums yet",
+      "artist": "No artists yet",
+      "playlist": "No playlists yet",
+      "track": "No tracks yet",
+      "radio": "No radios yet"
+    },
+    "emptyHint": "Your library is empty. Add a music source in Music Assistant, then refresh.",
+    "noFavorites": "No favorites in this category",
+    "refresh": "Refresh",
+    "error": "Music Assistant is not responding"
   },
   "person": {
     "label": "People",

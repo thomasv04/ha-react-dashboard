@@ -60,9 +60,9 @@ function unwrap<T>(q: QueryResult<{ response?: T }>): QueryResult<T> {
  * L'instance MA d'un lecteur : les services `music_assistant.*` la demandent
  * (`config_entry_id`), et c'est le registre d'entités qui la donne.
  */
-export function useMassEntryId(entityId: string | undefined): string | null {
+export function useMassEntryId(entityId: string | undefined): { entryId: string | null; error: string | null } {
   const q = useWsQuery<{ config_entry_id?: string | null }>(entityId ? { type: 'config/entity_registry/get', entity_id: entityId } : null);
-  return q.data?.config_entry_id ?? null;
+  return { entryId: q.data?.config_entry_id ?? null, error: q.error };
 }
 
 export interface LibraryQuery {

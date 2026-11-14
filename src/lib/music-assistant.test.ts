@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { artistLine, isMassPlayer, monogram, splitTrackTitle } from './music-assistant';
+import { artistLine, isMassPlayer, monogram, monogramHue, pickMassPlayer, splitTrackTitle } from './music-assistant';
 
 describe('music-assistant', () => {
   it('ne reconnaît que les lecteurs publiés par MA', () => {
@@ -34,5 +34,24 @@ describe('music-assistant', () => {
     expect(splitTrackTitle('AC - DC - Thunder', 'AC - DC')).toEqual({ artist: 'AC - DC', title: 'Thunder' });
     expect(splitTrackTitle('Sable - Nuit - version longue')).toEqual({ artist: 'Sable', title: 'Nuit - version longue' });
     expect(splitTrackTitle('Sans artiste')).toEqual({ artist: '', title: 'Sans artiste' });
+  });
+
+  it('ouvre le lecteur MA qui joue, sinon le premier disponible', () => {
+    const mass = (state: string) => ({ state, attributes: { mass_player_type: 'player' } });
+    expect(
+      pickMassPlayer({
+        'media_player.a': mass('idle'),
+        'media_player.b': mass('playing'),
+        'media_player.cast': { state: 'playing', attributes: {} },
+      })
+    ).toBe('media_player.b');
+    expect(pickMassPlayer({ 'media_player.z': mass('idle'), 'media_player.y': mass('unavailable') })).toBe('media_player.z');
+    expect(pickMassPlayer({})).toBeUndefined();
+  });
+
+  it('garde la même teinte pour un même nom', () => {
+    expect(monogramHue('Sable')).toBe(monogramHue('Sable'));
+    expect(monogramHue('Sable')).toBeGreaterThanOrEqual(0);
+    expect(monogramHue('Sable')).toBeLessThan(360);
   });
 });

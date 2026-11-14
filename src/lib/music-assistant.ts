@@ -98,3 +98,22 @@ export function splitTrackTitle(title: string, knownArtist?: string): { artist: 
   const i = title.indexOf(' - ');
   return i > 0 ? { artist: title.slice(0, i), title: title.slice(i + 3) } : { artist: '', title };
 }
+
+const PLAYER_RANK: Record<string, number> = { playing: 0, paused: 1 };
+
+/**
+ * Le lecteur MA que l'appli Musique ouvre par défaut : celui qui joue, sinon
+ * celui en pause, sinon le premier disponible.
+ */
+export function pickMassPlayer(entities: Record<string, { state: string; attributes?: Record<string, unknown> }>): string | undefined {
+  return Object.entries(entities)
+    .filter(([id, e]) => id.startsWith('media_player.') && isMassPlayer(e) && e.state !== 'unavailable')
+    .sort(([a, x], [b, y]) => (PLAYER_RANK[x.state] ?? 2) - (PLAYER_RANK[y.state] ?? 2) || a.localeCompare(b))[0]?.[0];
+}
+
+/** Teinte stable d'un monogramme, tirée du nom : chaque artiste garde sa couleur. */
+export function monogramHue(name: string): number {
+  let h = 0;
+  for (const c of name) h = (h * 31 + c.charCodeAt(0)) % 360;
+  return h;
+}
