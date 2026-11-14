@@ -379,6 +379,7 @@
     "favorites": "Favorites",
     "favorite": "Favorite",
     "sort": "Sort",
+    "sortBy": "Sort by",
     "order": {
       "last_played_desc": "Recently played",
       "sort_name": "A → Z",

@@ -6,8 +6,11 @@ import { MusicCover } from './MusicCover';
 
 /** Briques partagées par la bibliothèque, la recherche et les fiches de l'appli Musique. */
 
-/** La grille des pochettes de la maquette : colonnes de 169 px à 1600 px, 24 px entre elles, 28 entre les rangées. */
-const GRID = 'grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-x-6 gap-y-7';
+/**
+ * La grille des pochettes de la maquette : colonnes de 169 px à 1600 px, 24 px entre elles, 28 entre
+ * les rangées. Au téléphone, deux colonnes, 12 et 14 px.
+ */
+const GRID = 'grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-x-6 gap-y-7 max-sm:grid-cols-2 max-sm:gap-x-3 max-sm:gap-y-3.5';
 const GRID_CARDS = Array.from({ length: 16 }, (_, i) => i);
 const RECENT_CARDS = Array.from({ length: 5 }, (_, i) => i);
 const ROWS = Array.from({ length: 8 }, (_, i) => i);
@@ -75,12 +78,16 @@ export function ItemGrid({
                 onMore(item);
               })
             }
-            className='flex min-w-0 flex-col gap-2.5 text-left'
+            className='flex min-w-0 flex-col gap-2.5 text-left max-sm:gap-2'
           >
             <MusicCover image={item.image} name={item.name} type={item.media_type} favorite={item.favorite} />
             <span className={cn('min-w-0', isArtist && 'text-center')}>
-              <span className='block truncate text-[18px] font-semibold'>{item.name}</span>
-              {!isArtist && <span className='mt-0.5 block truncate text-[15px] text-[var(--ds-ink-muted)]'>{itemSubtitle(item, t)}</span>}
+              <span className='block truncate text-[18px] font-semibold max-sm:text-[15px]'>{item.name}</span>
+              {!isArtist && (
+                <span className='mt-0.5 block truncate text-[15px] text-[var(--ds-ink-muted)] max-sm:mt-0 max-sm:text-[13px]'>
+                  {itemSubtitle(item, t)}
+                </span>
+              )}
             </span>
           </button>
         );
@@ -103,19 +110,30 @@ export function TrackList({
   return (
     <ul className='grid gap-x-12 sm:grid-cols-2'>
       {items.map(item => (
-        <li key={item.uri} className='flex h-[73px] items-center gap-3.5 border-b border-[var(--music-line)]'>
-          <button type='button' onClick={() => onPlay(item)} className='flex min-w-0 flex-1 items-center gap-4 text-left'>
-            <MusicCover image={item.image} name={item.name} type='track' small className='w-14 rounded-[12px]' />
+        <li
+          key={item.uri}
+          className='flex h-[73px] items-center gap-3.5 border-b border-[var(--music-line)] max-sm:h-[60px] max-sm:gap-1 max-sm:border-0'
+        >
+          <button type='button' onClick={() => onPlay(item)} className='flex min-w-0 flex-1 items-center gap-4 text-left max-sm:gap-3'>
+            <MusicCover
+              image={item.image}
+              name={item.name}
+              type='track'
+              small
+              className='w-14 rounded-[12px] max-sm:w-11 max-sm:rounded-[10px]'
+            />
             <span className='min-w-0 flex-1'>
-              <span className='block truncate text-[20px] font-semibold'>{item.name}</span>
-              <span className='mt-0.5 block truncate text-[16px] text-[var(--ds-ink-muted)]'>{artistLine(item)}</span>
+              <span className='block truncate text-[20px] font-semibold max-sm:text-base'>{item.name}</span>
+              <span className='mt-0.5 block truncate text-[16px] text-[var(--ds-ink-muted)] max-sm:mt-0 max-sm:text-[13px]'>
+                {artistLine(item)}
+              </span>
             </span>
           </button>
           {item.favorite && (
             <Heart
               size={22}
               aria-label={t('widgets.music.favorite')}
-              className='shrink-0 fill-[var(--music-love)] text-[var(--music-love)]'
+              className='shrink-0 fill-[var(--music-love)] text-[var(--music-love)] max-sm:size-[18px]'
             />
           )}
           {onMore && <MoreButton label={item.name} onClick={() => onMore(item)} />}
@@ -133,9 +151,9 @@ export function MoreButton({ label, onClick }: { label: string; onClick: () => v
       type='button'
       onClick={onClick}
       aria-label={`${t('widgets.music.more')} — ${label}`}
-      className='flex size-[52px] shrink-0 items-center justify-center rounded-full text-[var(--ds-ink-muted)]'
+      className='flex size-[52px] shrink-0 items-center justify-center rounded-full text-[var(--ds-ink-muted)] max-sm:size-10'
     >
-      <MoreHorizontal size={24} aria-hidden='true' />
+      <MoreHorizontal size={24} aria-hidden='true' className='max-sm:size-5' />
     </button>
   );
 }
@@ -168,9 +186,9 @@ export function LibrarySkeleton({ recent, tracks }: { recent?: boolean; tracks?:
       {recent && (
         <div className='mb-[30px]'>
           <Bone className='h-[26px] w-[210px] rounded-[8px]' />
-          <div className='mt-3.5 grid grid-cols-5 gap-5'>
+          <div className='mt-3.5 grid grid-cols-5 gap-5 max-sm:-mr-4 max-sm:flex max-sm:gap-3 max-sm:overflow-hidden'>
             {RECENT_CARDS.map(i => (
-              <Bone key={i} className='h-[88px] rounded-[20px]' />
+              <Bone key={i} className='h-[88px] rounded-[20px] max-sm:h-[104px] max-sm:w-[104px] max-sm:shrink-0 max-sm:rounded-[16px]' />
             ))}
           </div>
         </div>
@@ -243,13 +261,13 @@ export function EmptyState({
   children?: React.ReactNode;
 }) {
   return (
-    <div className='flex flex-1 flex-col items-center justify-center pb-20 pt-[140px] text-center'>
-      <span className='flex size-28 items-center justify-center rounded-full bg-[var(--ds-surface-2)]'>
-        <Icon size={48} aria-hidden='true' />
+    <div className='flex flex-1 flex-col items-center justify-center pb-20 pt-[140px] text-center max-sm:px-2 max-sm:pb-8 max-sm:pt-12'>
+      <span className='flex size-28 items-center justify-center rounded-full bg-[var(--ds-surface-2)] max-sm:size-[88px]'>
+        <Icon size={48} aria-hidden='true' className='max-sm:size-9' />
       </span>
-      <p className='mt-6 text-[32px] font-semibold'>{title}</p>
-      {hint && <p className='mt-3 max-w-[560px] text-[20px] text-[var(--ds-ink-muted)]'>{hint}</p>}
-      {children && <div className='mt-[30px] flex gap-4'>{children}</div>}
+      <p className='mt-6 text-[32px] font-semibold max-sm:mt-5 max-sm:text-[22px] max-sm:font-bold'>{title}</p>
+      {hint && <p className='mt-3 max-w-[560px] text-[20px] text-[var(--ds-ink-muted)] max-sm:mt-2 max-sm:text-[15px]'>{hint}</p>}
+      {children && <div className='mt-[30px] flex gap-4 max-sm:mt-6 max-sm:w-full max-sm:flex-col max-sm:gap-3'>{children}</div>}
     </div>
   );
 }
@@ -271,7 +289,7 @@ export function EmptyAction({
       type='button'
       onClick={onClick}
       className={cn(
-        'flex h-[60px] items-center gap-2.5 rounded-[30px] px-7 text-[20px] font-semibold',
+        'flex h-[60px] items-center gap-2.5 rounded-[30px] px-7 text-[20px] font-semibold max-sm:h-[52px] max-sm:justify-center max-sm:px-5 max-sm:text-base',
         primary ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'bg-[var(--ds-surface-3)]'
       )}
     >

@@ -379,6 +379,7 @@
     "favorites": "Favoris",
     "favorite": "Favori",
     "sort": "Trier",
+    "sortBy": "Trier par",
     "order": {
       "last_played_desc": "Écoutés récemment",
       "sort_name": "A → Z",
