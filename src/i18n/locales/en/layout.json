@@ -706,7 +706,10 @@
     },
     "cameras": {
       "empty": "No camera in Home Assistant.",
-      "live": "Live"
+      "live": "Live",
+      "events": "Events",
+      "fullscreen": "Full screen",
+      "exitFullscreen": "Exit full screen"
     }
   }
 }

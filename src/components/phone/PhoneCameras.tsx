@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { useAreas, useHass } from '@hakit/core';
-import { useMoreInfo } from '@/context/MoreInfoContext';
 import { CameraFeed } from '@/components/ui/CameraFeed/components/CameraFeed';
 import { useHaUrl } from '@/hooks/useHaUrl';
 import { useNow } from '@/hooks/useNow';
@@ -9,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { Chip } from './PhoneRooms';
 import { PHONE_TOP } from './PhoneShell';
+import { PhoneCamera } from './PhoneCamera';
 
 /** Les caméras de Home Assistant, dans l'ordre de leur identifiant ; une caméra indisponible n'apparaît pas. */
 const cameraIds = (entities: Record<string, { state: string }>) =>
@@ -27,6 +27,7 @@ export function PhoneCameras() {
   const joined = useHass(s => cameraIds(s.entities));
   const areas = useAreas();
   const [floor, setFloor] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   const all = useMemo(() => (joined ? joined.split(',') : []), [joined]);
   const floorOf = useMemo(() => {
@@ -43,6 +44,8 @@ export function PhoneCameras() {
   const floors = [...new Map([...floorOf.values()].map(f => [f.id, f])).values()].sort((a, b) => a.level - b.level);
   const shown = floor ? all.filter(id => floorOf.get(id)?.id === floor) : all;
   const [first, ...others] = shown;
+
+  if (openId) return <PhoneCamera entityId={openId} onBack={() => setOpenId(null)} />;
 
   return (
     <div className={cn('flex flex-col gap-2.5 px-4 pb-[180px]', PHONE_TOP)}>
@@ -63,11 +66,11 @@ export function PhoneCameras() {
         <p className='py-10 text-center text-[15px] text-[var(--ds-ink-muted)]'>{t('layout.phone.cameras.empty')}</p>
       ) : (
         <div className='flex flex-col gap-2'>
-          <CameraTile entityId={first} live />
+          <CameraTile entityId={first} live onOpen={setOpenId} />
           {others.length > 0 && (
             <div className='grid grid-cols-2 gap-2'>
               {others.map(id => (
-                <CameraTile key={id} entityId={id} />
+                <CameraTile key={id} entityId={id} onOpen={setOpenId} />
               ))}
             </div>
           )}
@@ -78,9 +81,8 @@ export function PhoneCameras() {
 }
 
 /** Une caméra : le direct pour la première, une image rafraîchie toutes les 10 s pour les autres. */
-function CameraTile({ entityId, live = false }: { entityId: string; live?: boolean }) {
+function CameraTile({ entityId, live = false, onOpen }: { entityId: string; live?: boolean; onOpen: (id: string) => void }) {
   const { t } = useI18n();
-  const { openMoreInfo } = useMoreInfo();
   const resolveUrl = useHaUrl();
   const name = useHass(s => friendlyName(s.entities[entityId]) ?? entityId);
   const picture = useHass(s => s.entities[entityId]?.attributes?.entity_picture as string | undefined);
@@ -90,7 +92,7 @@ function CameraTile({ entityId, live = false }: { entityId: string; live?: boole
 
   return (
     <button
-      onClick={e => openMoreInfo(entityId, 'camera', entityId, e.currentTarget.getBoundingClientRect())}
+      onClick={() => onOpen(entityId)}
       aria-label={name}
       className={cn(
         'relative block overflow-hidden bg-[var(--ds-surface-3)] text-left text-white',
