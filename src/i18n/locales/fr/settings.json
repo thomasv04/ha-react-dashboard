@@ -168,5 +168,30 @@
     "broadcastDone": "Appliqué à {value} appareil(s).",
     "broadcastError": "Échec — réservé aux administrateurs."
   },
-  "wallpanel": "Écran de veille"
+  "wallpanel": "Écran de veille",
+  "music": "Musique",
+  "music_section": {
+    "intro": "La file d'attente complète de l'appli Musique — tous les titres, les déplacer, les retirer — passe par Music Assistant lui-même. Le dashboard s'y connecte avec un jeton, enregistré une fois pour tous les appareils ; il ne quitte jamais l'add-on.",
+    "connection": "Connexion à Music Assistant",
+    "notConfigured": "Non connecté : la file se limite au titre suivant",
+    "source": {
+      "settings": "Connecté",
+      "addon": "Connecté par les options de l'add-on",
+      "env": "Connecté par l'environnement"
+    },
+    "url": "Adresse de Music Assistant",
+    "urlHint": "Vide : Music Assistant sur la même machine que Home Assistant (l'add-on).",
+    "token": "Jeton d'accès",
+    "tokenKept": "Jeton enregistré — en saisir un autre pour le remplacer",
+    "tokenHint": "À créer dans Music Assistant : Paramètres › votre profil › Jetons d'accès.",
+    "save": "Tester et enregistrer",
+    "testing": "Test en cours…",
+    "forget": "Oublier le jeton",
+    "result": {
+      "saved": "Connecté : jeton enregistré pour tous les appareils.",
+      "auth": "Jeton refusé par Music Assistant.",
+      "unreachable": "Music Assistant ne répond pas à cette adresse.",
+      "invalid": "Adresse ou jeton mal formé."
+    }
+  }
 }

@@ -15,7 +15,8 @@ import { settingsRouter } from './routes/settings.js';
 import { uploadsRouter, pruneOrphanUploads } from './routes/uploads.js';
 import { translationsRouter } from './routes/translations.js';
 import { musicRouter } from './routes/music.js';
-import { createMassClient, massSettings } from './music.js';
+import { createMassManager } from './music.js';
+import { musicSettingsRouter } from './routes/musicSettings.js';
 import { haAuthMiddleware, adminWrites, writeGuard, haTokenGuard, initIngressTrust } from './haAuth.js';
 import { lookup } from 'dns/promises';
 
@@ -189,11 +190,12 @@ app.use('/api/uploads', adminWrites, uploadsRouter(db, UPLOADS_DIR));
 app.use('/api/translations', adminWrites, translationsRouter(db));
 
 // File d'attente complète de Music Assistant : le jeton MA reste dans l'add-on (voir music.js).
-const massConfig = massSettings();
-const massClient = massConfig ? createMassClient(massConfig) : null;
+// Ses réglages se saisissent dans les Paramètres, réservés aux administrateurs ; piloter la file, non.
+const massManager = createMassManager(db);
+app.use('/api/music/settings', adminWrites, musicSettingsRouter(massManager));
 app.use(
   '/api/music',
-  musicRouter(() => massClient)
+  musicRouter(() => massManager.getClient())
 );
 
 // ── System info ──────────────────────────────────────────────────────────────

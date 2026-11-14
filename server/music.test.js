@@ -4,7 +4,9 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { createMassClient, massSettings } from './music.js';
+import { createMassClient, createMassManager, massSettings } from './music.js';
+import { initDB } from './db.js';
+import { musicSettingsRouter } from './routes/musicSettings.js';
 import { musicRouter } from './routes/music.js';
 
 /**
@@ -83,14 +85,14 @@ describe('réglages Music Assistant', () => {
     const file = path.join(dir, 'options.json');
     fs.writeFileSync(file, JSON.stringify({ music_assistant_token: ' jeton ', music_assistant_url: '' }));
     process.env.SUPERVISOR_TOKEN = 'x';
-    expect(massSettings(file)).toEqual({ url: 'http://172.30.32.1:8095', token: 'jeton' });
+    expect(massSettings(file)).toEqual({ url: 'http://172.30.32.1:8095', token: 'jeton', source: 'addon' });
   });
 
   it("n'active rien sans jeton", () => {
     expect(massSettings(path.join(dir, 'absent.json'))).toBeNull();
     process.env.MA_URL = 'http://192.168.1.60:8095/';
     process.env.MA_TOKEN = 'dev';
-    expect(massSettings(path.join(dir, 'absent.json'))).toEqual({ url: 'http://192.168.1.60:8095', token: 'dev' });
+    expect(massSettings(path.join(dir, 'absent.json'))).toEqual({ url: 'http://192.168.1.60:8095', token: 'dev', source: 'env' });
   });
 });
 
@@ -164,5 +166,43 @@ describe('titres de la file', () => {
       toQueueItem({ queue_item_id: 'x2', name: 'A', image: { path: '/media/a.jpg', provider: 'filesystem', remotely_accessible: false } })
         .image
     ).toBeNull();
+  });
+});
+
+describe('réglages saisis dans les Paramètres', () => {
+  const absent = path.join(os.tmpdir(), 'pas-d-options.json');
+  const setup = () => {
+    const { FakeSocket } = fakeMass({ 'player_queues/all': [] });
+    const manager = createMassManager(initDB(':memory:'), { optionsPath: absent, WebSocketImpl: FakeSocket });
+    const app = express();
+    app.use(express.json());
+    app.use('/api/music/settings', musicSettingsRouter(manager));
+    return { manager, app };
+  };
+
+  it('teste le jeton avant de le garder, et ne le rend jamais', async () => {
+    const { manager, app } = setup();
+    expect((await request(app).get('/api/music/settings')).body).toMatchObject({ configured: false });
+
+    // Un jeton refusé par MA n'est pas gardé.
+    const bad = await request(app).put('/api/music/settings').send({ url: 'http://192.168.1.60:8095', token: 'faux' });
+    expect(bad.status).toBe(424);
+    expect(manager.getClient()).toBeNull();
+
+    const ok = await request(app).put('/api/music/settings').send({ url: 'http://192.168.1.60:8095/', token: 'bon-jeton' });
+    expect(ok.body).toEqual({ configured: true, url: 'http://192.168.1.60:8095', source: 'settings' });
+    expect(JSON.stringify(ok.body)).not.toContain('bon-jeton');
+    expect(manager.getClient()).not.toBeNull();
+
+    // Oublié : retour aux options de l'add-on (ici, aucune).
+    const cleared = await request(app).delete('/api/music/settings');
+    expect(cleared.body.configured).toBe(false);
+    expect(manager.getClient()).toBeNull();
+  });
+
+  it('refuse une adresse ou un jeton mal formés', async () => {
+    const { app } = setup();
+    await request(app).put('/api/music/settings').send({ url: 'file:///etc/passwd', token: 'x' }).expect(400);
+    await request(app).put('/api/music/settings').send({ url: '', token: '   ' }).expect(400);
   });
 });

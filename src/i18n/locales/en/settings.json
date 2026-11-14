@@ -168,5 +168,30 @@
     "broadcastDone": "Applied to {value} device(s).",
     "broadcastError": "Failed — administrators only."
   },
-  "wallpanel": "Screensaver"
+  "wallpanel": "Screensaver",
+  "music": "Music",
+  "music_section": {
+    "intro": "The full queue of the Music app — every track, moving and removing them — goes through Music Assistant itself. The dashboard connects with a token, saved once for every device; it never leaves the add-on.",
+    "connection": "Music Assistant connection",
+    "notConfigured": "Not connected: the queue only shows the next track",
+    "source": {
+      "settings": "Connected",
+      "addon": "Connected through the add-on options",
+      "env": "Connected through the environment"
+    },
+    "url": "Music Assistant address",
+    "urlHint": "Empty: Music Assistant on the same machine as Home Assistant (the add-on).",
+    "token": "Access token",
+    "tokenKept": "Token saved — type another one to replace it",
+    "tokenHint": "Create it in Music Assistant: Settings › your profile › Access tokens.",
+    "save": "Test and save",
+    "testing": "Testing…",
+    "forget": "Forget the token",
+    "result": {
+      "saved": "Connected: token saved for every device.",
+      "auth": "Token refused by Music Assistant.",
+      "unreachable": "Music Assistant does not answer at this address.",
+      "invalid": "Malformed address or token."
+    }
+  }
 }
