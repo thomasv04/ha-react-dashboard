@@ -4,7 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 const callService = vi.fn();
 const sendMessagePromise = vi.fn();
 // Référence stable, comme le vrai store.
-const hassState = { helpers: { callService }, connection: { sendMessagePromise } };
+const hassState = { helpers: { callService }, connection: { sendMessagePromise }, entities: {} };
 
 vi.mock('@hakit/core', () => ({
   useHass: (selector?: (s: unknown) => unknown) => (selector ? selector(hassState) : hassState),
@@ -59,7 +59,7 @@ describe('MusicApp', () => {
     render(<MusicApp entityId='media_player.salon_2' widgetId='w' />);
     fireEvent.click(screen.getByRole('button', { name: 'widgets.music.tabs.track' }));
 
-    const rows = await screen.findAllByRole('button', { name: /We Are Young/ });
+    const rows = await screen.findAllByRole('button', { name: /^We Are Young/ });
     fireEvent.click(rows.at(-1)!);
     expect(callService).toHaveBeenCalledWith(
       expect.objectContaining({

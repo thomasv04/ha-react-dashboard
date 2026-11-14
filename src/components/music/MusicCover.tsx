@@ -38,7 +38,7 @@ export function MusicCover({
     <span
       className={cn(
         'relative flex aspect-square w-full shrink-0 items-center justify-center overflow-hidden bg-[var(--ds-surface-3)]',
-        round ? 'rounded-full' : 'rounded-[var(--ds-radius-lg)]',
+        round ? 'rounded-full' : 'rounded-[18px]',
         className
       )}
       style={!src && round ? { background: `hsl(${monogramHue(name)} 32% 34%)` } : undefined}
@@ -50,9 +50,16 @@ export function MusicCover({
       ) : (
         <Icon size={small ? 18 : 32} aria-hidden='true' className='text-[var(--ds-ink-muted)]' />
       )}
+      {/* Le voile clair en biais des pochettes de la maquette. */}
+      {src && !round && (
+        <span
+          aria-hidden='true'
+          className='pointer-events-none absolute inset-0 bg-[linear-gradient(155deg,rgba(255,255,255,0.14),rgba(0,0,0,0.18))]'
+        />
+      )}
       {favorite && (
-        <span className='absolute bottom-1.5 right-1.5 flex size-6 items-center justify-center rounded-full bg-black/55'>
-          <Heart size={13} aria-hidden='true' className='fill-[#ff6b8b] text-[#ff6b8b]' />
+        <span className='absolute bottom-2.5 right-2.5 flex size-9 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--ds-ground)_66%,transparent)]'>
+          <Heart size={20} aria-hidden='true' className='fill-[#ff6b8b] text-[#ff6b8b]' />
         </span>
       )}
     </span>

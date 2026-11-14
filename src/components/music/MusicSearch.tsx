@@ -26,11 +26,13 @@ export function MusicSearch({
   query,
   onOpen,
   onPlay,
+  onMore,
 }: {
   entryId: string | null;
   query: string;
   onOpen: (item: MassItem) => void;
   onPlay: (item: MassItem) => void;
+  onMore: (item: MassItem) => void;
 }) {
   const { t } = useI18n();
   const [filter, setFilter] = useState<MassMediaType | 'all'>('all');
@@ -45,7 +47,7 @@ export function MusicSearch({
       <div
         role='group'
         aria-label={t('widgets.music.typesLabel')}
-        className='mb-6 flex w-fit rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-2)] p-1'
+        className='mb-8 mt-6 flex w-fit gap-1 rounded-[32px] bg-[var(--ds-surface-2)] p-1'
       >
         <Pill active={filter === 'all'} onClick={() => setFilter('all')}>
           {t('widgets.music.all')}
@@ -82,7 +84,11 @@ export function MusicSearch({
                   </button>
                 )}
               </div>
-              {type === 'track' ? <TrackList items={shown} onPlay={onPlay} /> : <ItemGrid items={shown} onOpen={onOpen} />}
+              {type === 'track' ? (
+                <TrackList items={shown} onPlay={onPlay} onMore={onMore} />
+              ) : (
+                <ItemGrid items={shown} onOpen={onOpen} onMore={onMore} />
+              )}
             </section>
           );
         })

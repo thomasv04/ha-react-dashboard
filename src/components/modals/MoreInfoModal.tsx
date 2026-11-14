@@ -5,7 +5,7 @@ import { useMoreInfo } from '@/context/MoreInfoContext';
 import { MoreInfoReadyContext } from '@/context/MoreInfoReadyContext';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
-import { MORE_INFO_COMPONENTS, MORE_INFO_FULLSCREEN } from './more-info-registry';
+import { MORE_INFO_APPS, MORE_INFO_COMPONENTS, MORE_INFO_FULLSCREEN } from './more-info-registry';
 
 /**
  * Le panneau d'appareil de l'Echo Show : une feuille qui glisse depuis la
@@ -41,9 +41,11 @@ export function MoreInfoModal() {
             aria-modal='true'
             className={cn(
               'absolute flex flex-col overflow-hidden rounded-[var(--ds-radius-2xl)] bg-[var(--ds-sheet)] text-[var(--ds-ink)] shadow-[var(--ds-shadow-sheet)]',
-              MORE_INFO_FULLSCREEN.has(state.widgetType)
-                ? 'inset-4 sm:inset-8'
-                : 'bottom-4 right-4 top-4 w-[min(calc(100vw-2rem),560px)] sm:bottom-10 sm:right-12 sm:top-10'
+              MORE_INFO_APPS.has(state.widgetType)
+                ? 'inset-0 rounded-none'
+                : MORE_INFO_FULLSCREEN.has(state.widgetType)
+                  ? 'inset-4 sm:inset-8'
+                  : 'bottom-4 right-4 top-4 w-[min(calc(100vw-2rem),560px)] sm:bottom-10 sm:right-12 sm:top-10'
             )}
             onClick={e => e.stopPropagation()}
             initial={{ x: '110%' }}
@@ -52,16 +54,24 @@ export function MoreInfoModal() {
             transition={{ type: 'spring', stiffness: 380, damping: 38 }}
             onAnimationComplete={() => setContentReady(true)}
           >
-            <button
-              onClick={closeMoreInfo}
-              aria-label={t('common.close')}
-              title={t('common.close')}
-              className='absolute right-6 top-6 z-10 flex size-11 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'
-            >
-              <X size={18} strokeWidth={2.5} />
-            </button>
+            {!MORE_INFO_APPS.has(state.widgetType) && (
+              <button
+                onClick={closeMoreInfo}
+                aria-label={t('common.close')}
+                title={t('common.close')}
+                className='absolute right-6 top-6 z-10 flex size-11 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'
+              >
+                <X size={18} strokeWidth={2.5} />
+              </button>
+            )}
 
-            <div className='flex-1 overflow-y-auto overflow-x-hidden pt-4' style={{ overscrollBehavior: 'contain' }}>
+            <div
+              className={cn(
+                'flex-1 overflow-y-auto overflow-x-hidden pt-4',
+                MORE_INFO_APPS.has(state.widgetType) && '[scrollbar-width:none]'
+              )}
+              style={{ overscrollBehavior: 'contain' }}
+            >
               <MoreInfoReadyContext.Provider value={contentReady}>
                 <Suspense
                   fallback={

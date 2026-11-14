@@ -413,7 +413,17 @@
     "all": "Tout",
     "seeAll": "Voir tout",
     "noResults": "Aucun résultat pour « {query} »",
-    "noResultsHint": "Vérifiez l'orthographe, ou cherchez un artiste ou un album."
+    "noResultsHint": "Vérifiez l'orthographe, ou cherchez un artiste ou un album.",
+    "more": "Plus d'actions",
+    "playNow": "Lire maintenant",
+    "playNext": "Lire ensuite",
+    "playOn": "Lire sur…",
+    "choosePlayer": "Choisir l'enceinte",
+    "playerPlaying": "En lecture · {title}",
+    "playerPlayingShort": "En lecture",
+    "playerAvailable": "Disponible",
+    "playerOffline": "Hors ligne",
+    "closeApp": "Fermer Musique"
   },
   "person": {
     "label": "Personnes",

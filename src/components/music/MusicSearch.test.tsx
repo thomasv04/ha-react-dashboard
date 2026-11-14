@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 
 const callService = vi.fn();
 const sendMessagePromise = vi.fn();
-const hassState = { helpers: { callService }, connection: { sendMessagePromise } };
+const hassState = { helpers: { callService }, connection: { sendMessagePromise }, entities: {} };
 
 vi.mock('@hakit/core', () => ({
   useHass: (selector?: (s: unknown) => unknown) => (selector ? selector(hassState) : hassState),
@@ -51,18 +51,18 @@ describe('Recherche de l’appli Musique', () => {
     expect(searchCalls()).toHaveLength(1);
     expect(searchCalls()[0].service_data).toMatchObject({ config_entry_id: 'entry1', name: 'imagine', library_only: true });
 
-    expect(screen.getByRole('button', { name: /Believer/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Believer/ })).toBeInTheDocument();
     // « Tout » : une rangée de pochettes, et de quoi voir le reste.
     expect(screen.getAllByRole('button', { name: /^Album \d+$/ })).toHaveLength(8);
     fireEvent.click(screen.getByRole('button', { name: 'widgets.music.seeAll' }));
     expect(screen.getAllByRole('button', { name: /^Album \d+$/ })).toHaveLength(10);
-    expect(screen.queryByRole('button', { name: /Believer/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Believer/ })).not.toBeInTheDocument();
   });
 
   it('revient à la bibliothèque quand on efface', async () => {
     await typeQuery('imagine');
     fireEvent.click(screen.getByRole('button', { name: 'widgets.music.clearSearch' }));
     expect(screen.getByRole('searchbox')).toHaveValue('');
-    expect(screen.queryByRole('button', { name: /Believer/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Believer/ })).not.toBeInTheDocument();
   });
 });

@@ -24,6 +24,9 @@ export const MORE_INFO_COMPONENTS: Record<
 /** Fiches qui occupent tout l'écran au lieu de la feuille latérale. */
 export const MORE_INFO_FULLSCREEN = new Set(['calendar', 'media_player', 'music']);
 
+/** Applis plein écran : bord à bord, sans croix — elles portent leur propre bouton de fermeture. */
+export const MORE_INFO_APPS = new Set(['music']);
+
 export const MORE_INFO_WIDGET_TYPES = Object.keys(MORE_INFO_COMPONENTS);
 
 /**

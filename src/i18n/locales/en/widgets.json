@@ -413,7 +413,17 @@
     "all": "All",
     "seeAll": "See all",
     "noResults": "No results for “{query}”",
-    "noResultsHint": "Check the spelling, or search for an artist or an album."
+    "noResultsHint": "Check the spelling, or search for an artist or an album.",
+    "more": "More actions",
+    "playNow": "Play now",
+    "playNext": "Play next",
+    "playOn": "Play on…",
+    "choosePlayer": "Choose speaker",
+    "playerPlaying": "Playing · {title}",
+    "playerPlayingShort": "Playing",
+    "playerAvailable": "Available",
+    "playerOffline": "Offline",
+    "closeApp": "Close Music"
   },
   "person": {
     "label": "People",

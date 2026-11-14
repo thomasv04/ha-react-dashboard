@@ -37,9 +37,9 @@ describe('MusicDetail', () => {
       title: 'Some Nights',
       children: [track('fun. - Some Nights', 't1'), track('fun. - We Are Young', 'library://track/148')],
     });
-    render(<MusicDetail entityId='media_player.salon_2' item={ALBUM} onOpen={vi.fn()} />);
+    render(<MusicDetail entityId='media_player.salon_2' item={ALBUM} onOpen={vi.fn()} onMore={vi.fn()} />);
 
-    const current = await screen.findByRole('button', { name: /We Are Young/ });
+    const current = await screen.findByRole('button', { name: 'We Are Young' });
     expect(current).toHaveAttribute('aria-current', 'true');
     expect(screen.getByRole('button', { name: /^1\s*Some Nights$/ })).not.toHaveAttribute('aria-current');
     expect(screen.getByText('widgets.music.trackCount_other')).toBeInTheDocument();
@@ -53,7 +53,7 @@ describe('MusicDetail', () => {
 
   it("lance l'album en aléatoire, ou l'ajoute à la file", async () => {
     sendMessagePromise.mockResolvedValue({ title: 'Some Nights', children: [] });
-    render(<MusicDetail entityId='media_player.salon_2' item={ALBUM} onOpen={vi.fn()} />);
+    render(<MusicDetail entityId='media_player.salon_2' item={ALBUM} onOpen={vi.fn()} onMore={vi.fn()} />);
     await screen.findByText('widgets.music.noTracks');
 
     fireEvent.click(screen.getByRole('button', { name: 'widgets.music.shuffle' }));
@@ -70,9 +70,9 @@ describe('MusicDetail', () => {
       children: [{ ...track('Imagine Dragons - Origins', 'library://album/10'), media_class: 'album' }],
     });
     const onOpen = vi.fn();
-    render(<MusicDetail entityId='media_player.salon_2' item={ARTIST} onOpen={onOpen} />);
+    render(<MusicDetail entityId='media_player.salon_2' item={ARTIST} onOpen={onOpen} onMore={vi.fn()} />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Origins' }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Origins/ }));
     expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ uri: 'library://album/10', name: 'Origins', media_type: 'album' }));
     // Pas d'aléatoire ni de file pour un artiste : seulement « Lire ».
     expect(screen.queryByRole('button', { name: 'widgets.music.shuffle' })).not.toBeInTheDocument();

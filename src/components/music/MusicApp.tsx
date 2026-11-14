@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, Heart, Music, Search, X } from 'lucide-react';
+import { ChevronLeft, Grip, Heart, Search, Speaker, X } from 'lucide-react';
 import { useHass } from '@hakit/core';
+import { useMoreInfoOptional } from '@/context/MoreInfoContext';
 import { useNow } from '@/hooks/useNow';
 import { useFormats } from '@/hooks/useFormats';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { massPlay, useMassEntryId, useMassLibrary } from '@/hooks/useMusicAssistant';
-import { itemSubtitle, type MassItem, type MassMediaType, type MassOrder } from '@/lib/music-assistant';
+import { itemSubtitle, type MassEnqueue, type MassItem, type MassMediaType, type MassOrder } from '@/lib/music-assistant';
+import { friendlyName } from '@/lib/ha-service';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { MusicCover } from './MusicCover';
+import { MusicActions, PlayerPicker } from './MusicActions';
 import { MusicDetail } from './MusicDetail';
 import { EmptyState, GridSkeleton, ItemGrid, Pill, TrackList } from './MusicItems';
 import { MusicSearch } from './MusicSearch';
@@ -26,8 +29,15 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
   const { t } = useI18n();
   const helpers = useHass(s => s.helpers);
   const { formatTime } = useFormats();
+  const moreInfo = useMoreInfoOptional();
   const clock = useNow();
-  const { entryId, error: entryError } = useMassEntryId(entityId);
+  // L'enceinte de l'appli : celle de l'ouverture, puis celle qu'on choisit.
+  const [player, setPlayer] = useState(entityId);
+  const playerName = useHass(s => friendlyName(s.entities[player]) ?? player);
+  const { entryId, error: entryError } = useMassEntryId(player);
+  // L'élément dont on a ouvert les actions, ou le choix de l'enceinte.
+  const [actionItem, setActionItem] = useState<MassItem | null>(null);
+  const [picking, setPicking] = useState(false);
 
   const [tab, setTab] = useState<MassMediaType>('album');
   const [favorite, setFavorite] = useState(false);
@@ -57,24 +67,33 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
   const error = entryError ?? library.error;
   const loading = !error && (!library.data || library.loading);
 
-  const play = (item: MassItem) => massPlay(helpers, entityId, item);
+  const play = (item: MassItem, enqueue: MassEnqueue = 'play', target = player) => massPlay(helpers, target, item, enqueue);
   const open = (item: MassItem) => (BROWSABLE.has(item.media_type) ? setStack(s => [...s, item]) : play(item));
+  const more = setActionItem;
   const back = stack.at(-2)?.name ?? (query ? t('widgets.music.searchResults') : t(`widgets.music.tabs.${tab}`));
   const subtitle = (item: MassItem) => itemSubtitle(item, t);
 
   return (
-    <div ref={rootRef} className='-mt-4 flex min-h-full flex-col px-6 pb-8 pt-6 sm:px-10' data-testid='music-app'>
-      {/* En-tête : l'appli à gauche, l'heure à droite — la croix de la fiche est tout à droite. */}
-      <header className='mb-5 flex items-center justify-between gap-4 pr-16'>
+    <div
+      ref={rootRef}
+      // Couleurs de la maquette absentes des jetons, posées une fois pour l'appli et ses fenêtres :
+      // surface surélevée (fenêtres, mini-lecteur), bouton posé dessus, bleu clair du titre en cours,
+      // et le gris de l'heure (ink-muted à 80 % sur le fond, #8b95a5).
+      className='-mt-4 flex min-h-full flex-col bg-[var(--ds-ground)] px-10 pb-10 pt-8 leading-[normal] text-[var(--ds-ink)] [--music-dim:color-mix(in_srgb,var(--ds-ink-muted)_80%,var(--ds-ground))] [--music-highlight-soft:rgba(143,184,245,0.14)] [--music-highlight:#8fb8f5] [--music-raised-2:#3a4352] [--music-raised:#2a3240]'
+      data-testid='music-app'
+    >
+      {/* En-tête de la maquette : le carré du lanceur (il ferme l'appli) et le titre ; la recherche,
+          l'enceinte et l'heure à droite. */}
+      <header className='flex h-[60px] shrink-0 items-center gap-5'>
         {detail ? (
           <button
             type='button'
             onClick={() => setStack(s => s.slice(0, -1))}
             aria-label={`${t('widgets.music.back')} — ${back}`}
-            className='flex items-center gap-3 text-[17px] font-semibold'
+            className='flex items-center gap-5 text-[24px] font-semibold text-[var(--ds-ink-muted)]'
           >
-            <span className='flex size-11 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'>
-              <ChevronLeft size={22} aria-hidden='true' />
+            <span className='flex size-[60px] items-center justify-center rounded-[18px] bg-[var(--ds-surface-2)] text-[var(--ds-ink)]'>
+              <ChevronLeft size={26} aria-hidden='true' />
             </span>
             {back}
           </button>
@@ -83,21 +102,31 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
             type='button'
             onClick={clearSearch}
             aria-label={t('widgets.music.closeSearch')}
-            className='flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'
+            className='flex size-[60px] shrink-0 items-center justify-center rounded-[18px] bg-[var(--ds-surface-2)]'
           >
-            <ChevronLeft size={22} aria-hidden='true' />
+            <ChevronLeft size={26} aria-hidden='true' />
           </button>
         ) : (
-          <h2 className='flex shrink-0 items-center gap-3 text-[26px] font-bold'>
-            <span className='flex size-11 items-center justify-center rounded-[var(--ds-radius-sm)] bg-[var(--ds-app-music)] text-white'>
-              <Music size={22} aria-hidden='true' />
-            </span>
-            {t('widgets.music.title')}
-          </h2>
+          <div className='flex shrink-0 items-center gap-5'>
+            <button
+              type='button'
+              onClick={moreInfo?.closeMoreInfo}
+              aria-label={t('widgets.music.closeApp')}
+              className='flex size-[60px] items-center justify-center rounded-[18px] bg-[var(--ds-accent)] text-[var(--ds-accent-ink)]'
+            >
+              <Grip size={28} aria-hidden='true' />
+            </button>
+            <h2 className='text-[38px] font-semibold leading-none'>{t('widgets.music.title')}</h2>
+          </div>
         )}
         {!detail && (
-          <label className='flex h-12 min-w-0 max-w-xl flex-1 items-center gap-3 rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-2)] px-5'>
-            <Search size={18} aria-hidden='true' className='shrink-0 text-[var(--ds-ink-muted)]' />
+          <label
+            className={cn(
+              'flex h-[60px] min-w-0 items-center gap-3.5 rounded-[30px] bg-[var(--ds-surface-2)] pl-[22px] pr-2.5',
+              query ? 'flex-1' : 'ml-auto w-[520px] shrink'
+            )}
+          >
+            <Search size={24} aria-hidden='true' className='shrink-0 text-[var(--ds-ink-muted)]' />
             <input
               type='search'
               value={draft}
@@ -107,7 +136,7 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
               }}
               placeholder={t(`widgets.music.searchPlaceholder.${tab}`)}
               aria-label={t('widgets.music.search')}
-              className='min-w-0 flex-1 bg-transparent text-[16px] outline-none placeholder:text-[var(--ds-ink-muted)] [&::-webkit-search-cancel-button]:hidden'
+              className='min-w-0 flex-1 bg-transparent text-[19px] outline-none placeholder:text-[var(--ds-ink-muted)] [&::-webkit-search-cancel-button]:hidden'
             />
             {draft && (
               <button
@@ -121,48 +150,55 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
             )}
           </label>
         )}
-        <time className='shrink-0 text-[32px] font-medium leading-none tabular-nums'>{formatTime(clock)}</time>
+        {!detail && (
+          <button
+            type='button'
+            onClick={() => setPicking(true)}
+            aria-label={`${t('widgets.music.choosePlayer')} — ${playerName}`}
+            title={playerName}
+            className='flex size-[60px] shrink-0 items-center justify-center rounded-[18px] bg-[var(--ds-surface-2)]'
+          >
+            <Speaker size={26} aria-hidden='true' />
+          </button>
+        )}
+        <time className={cn('shrink-0 text-[38px] font-medium text-[var(--music-dim)]', detail && 'ml-auto')}>{formatTime(clock)}</time>
       </header>
 
       {detail ? (
-        <MusicDetail key={detail.uri} entityId={entityId} item={detail} onOpen={item => setStack(s => [...s, item])} />
+        <MusicDetail key={detail.uri} entityId={player} item={detail} onOpen={item => setStack(s => [...s, item])} onMore={more} />
       ) : query ? (
-        <MusicSearch entryId={entryId} query={query} onOpen={open} onPlay={play} />
+        <MusicSearch entryId={entryId} query={query} onOpen={open} onPlay={item => play(item)} onMore={more} />
       ) : (
         <>
-          <div className='mb-6 flex flex-wrap items-center justify-between gap-3'>
-            <div
-              role='group'
-              aria-label={t('widgets.music.typesLabel')}
-              className='flex rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-2)] p-1'
-            >
+          <div className='mb-8 mt-6 flex flex-wrap items-center justify-between gap-4'>
+            <div role='group' aria-label={t('widgets.music.typesLabel')} className='flex gap-1 rounded-[32px] bg-[var(--ds-surface-2)] p-1'>
               {TABS.map(type => (
                 <Pill key={type} active={tab === type} onClick={() => setTab(type)}>
                   {t(`widgets.music.tabs.${type}`)}
                 </Pill>
               ))}
             </div>
-            <div className='flex items-center gap-3'>
+            <div className='flex items-center gap-4'>
               <button
                 type='button'
                 onClick={() => setFavorite(f => !f)}
                 aria-pressed={favorite}
                 className={cn(
-                  'flex h-11 items-center gap-2 rounded-[var(--ds-radius-pill)] px-5 text-[15px] font-semibold',
-                  favorite ? 'bg-[var(--ds-accent)] text-[var(--ds-accent-ink)]' : 'bg-[var(--ds-surface-2)]'
+                  'flex h-14 items-center gap-2.5 rounded-[28px] px-6 text-[19px] font-semibold',
+                  favorite ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'bg-[var(--ds-surface-2)]'
                 )}
               >
-                <Heart size={16} aria-hidden='true' className={cn(favorite && 'fill-current')} />
+                <Heart size={22} aria-hidden='true' className={cn(favorite && 'fill-current')} />
                 {t('widgets.music.favorites')}
               </button>
+              <span className='text-base text-[var(--music-dim)]'>{t('widgets.music.sort')}</span>
               <div
                 role='group'
                 aria-label={t('widgets.music.sort')}
-                className='flex items-center rounded-[var(--ds-radius-pill)] bg-[var(--ds-surface-2)] p-1'
+                className='flex items-center gap-1 rounded-[32px] bg-[var(--ds-surface-2)] p-1'
               >
-                <span className='px-3 text-sm text-[var(--ds-ink-muted)]'>{t('widgets.music.sort')}</span>
                 {ORDERS.map(o => (
-                  <Pill key={o} active={order === o} onClick={() => setOrder(o)}>
+                  <Pill key={o} soft active={order === o} onClick={() => setOrder(o)}>
                     {t(`widgets.music.order.${o}`)}
                   </Pill>
                 ))}
@@ -183,26 +219,30 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
           ) : (
             <>
               {!favorite && (recent.data?.items.length ?? 0) > 0 && (
-                <section className='mb-7'>
-                  <h3 className='mb-3 text-[17px] font-semibold'>{t('widgets.music.recent')}</h3>
-                  <div className='grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-3'>
+                <section className='mb-[30px]'>
+                  <h3 className='mb-3.5 text-[22px] font-semibold'>{t('widgets.music.recent')}</h3>
+                  <div className='grid grid-cols-5 gap-5'>
                     {recent.data!.items.map(item => (
                       <button
                         key={item.uri}
                         type='button'
                         onClick={() => open(item)}
-                        className='flex h-16 min-w-0 items-center gap-3 overflow-hidden rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-2)] pr-3 text-left'
+                        onContextMenu={e => {
+                          e.preventDefault();
+                          more(item);
+                        }}
+                        className='flex h-[88px] min-w-0 items-center gap-4 overflow-hidden rounded-[20px] bg-[var(--ds-surface-2)] pr-4 text-left'
                       >
                         <MusicCover
                           image={item.image}
                           name={item.name}
                           type={item.media_type}
                           small
-                          className={cn('w-16 rounded-none', item.media_type === 'artist' && 'ml-2 w-12 rounded-full')}
+                          className={cn('w-[88px] rounded-none', item.media_type === 'artist' && 'ml-3 w-16 rounded-full')}
                         />
                         <span className='min-w-0'>
-                          <span className='block truncate text-[15px] font-semibold'>{item.name}</span>
-                          <span className='block truncate text-xs text-[var(--ds-ink-muted)]'>{subtitle(item)}</span>
+                          <span className='block truncate text-[19px] font-semibold'>{item.name}</span>
+                          <span className='mt-[3px] block truncate text-[15px] text-[var(--ds-ink-muted)]'>{subtitle(item)}</span>
                         </span>
                       </button>
                     ))}
@@ -211,13 +251,22 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
               )}
 
               <section>
-                <h3 className='mb-3 text-[17px] font-semibold'>{t(`widgets.music.tabs.${tab}`)}</h3>
-                {tab === 'track' ? <TrackList items={items} onPlay={play} /> : <ItemGrid items={items} onOpen={open} />}
+                <h3 className='mb-3.5 text-[22px] font-semibold'>{t(`widgets.music.tabs.${tab}`)}</h3>
+                {tab === 'track' ? (
+                  <TrackList items={items} onPlay={item => play(item)} onMore={more} />
+                ) : (
+                  <ItemGrid items={items} onOpen={open} onMore={more} />
+                )}
               </section>
             </>
           )}
         </>
       )}
+
+      {actionItem && (
+        <MusicActions item={actionItem} player={player} onPlay={play} onPlayerChange={setPlayer} onClose={() => setActionItem(null)} />
+      )}
+      {picking && <PlayerPicker current={player} onPick={setPlayer} onClose={() => setPicking(false)} />}
     </div>
   );
 }

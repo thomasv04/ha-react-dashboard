@@ -1,4 +1,4 @@
-import { Heart, Music, RefreshCw } from 'lucide-react';
+import { Heart, MoreHorizontal, Music, RefreshCw } from 'lucide-react';
 import { artistLine, itemSubtitle, type MassItem } from '@/lib/music-assistant';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
@@ -7,18 +7,34 @@ import { MusicCover } from './MusicCover';
 /** Briques partagées par la bibliothèque et la recherche de l'appli Musique. */
 
 const SKELETONS = Array.from({ length: 16 }, (_, i) => i);
-const GRID = 'grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))]';
+const GRID = 'grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))]';
 
 /** Pastille d'un groupe de choix (onglets, tri, filtres) : active = remplie. */
-export function Pill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+export function Pill({
+  active,
+  soft,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  /** Choix secondaire (tri) : l'actif s'éclaircit au lieu de passer au bleu. */
+  soft?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <button
       type='button'
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        'h-11 shrink-0 rounded-[var(--ds-radius-pill)] px-5 text-[15px] font-semibold',
-        active ? 'bg-[var(--ds-accent)] text-[var(--ds-accent-ink)]' : 'text-[var(--ds-ink-muted)]'
+        'h-12 shrink-0 rounded-[24px] font-semibold',
+        soft ? 'px-5 text-[17px]' : 'px-[26px] text-[19px]',
+        !active
+          ? 'text-[var(--ds-ink-muted)]'
+          : soft
+            ? 'bg-[var(--music-raised-2)] text-[var(--ds-ink)]'
+            : 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'
       )}
     >
       {children}
@@ -26,19 +42,42 @@ export function Pill({ active, onClick, children }: { active: boolean; onClick: 
   );
 }
 
-/** Pochettes en grille ; les artistes en rond, sans sous-titre. */
-export function ItemGrid({ items, onOpen }: { items: MassItem[]; onOpen: (item: MassItem) => void }) {
+/**
+ * Pochettes en grille ; un appui long ouvre les actions. Un appui long tactile
+ * déclenche `contextmenu` dans Chrome : pas de minuterie, ni de clic parasite.
+ */
+export function ItemGrid({
+  items,
+  onOpen,
+  onMore,
+}: {
+  items: MassItem[];
+  onOpen: (item: MassItem) => void;
+  onMore?: (item: MassItem) => void;
+}) {
   const { t } = useI18n();
   return (
-    <div className={cn(GRID, 'gap-x-5 gap-y-6')}>
+    <div className={cn(GRID, 'gap-6')}>
       {items.map(item => {
         const isArtist = item.media_type === 'artist';
         return (
-          <button key={item.uri} type='button' onClick={() => onOpen(item)} className='flex min-w-0 flex-col gap-2 text-left'>
+          <button
+            key={item.uri}
+            type='button'
+            onClick={() => onOpen(item)}
+            onContextMenu={
+              onMore &&
+              (e => {
+                e.preventDefault();
+                onMore(item);
+              })
+            }
+            className='flex min-w-0 flex-col gap-2.5 text-left'
+          >
             <MusicCover image={item.image} name={item.name} type={item.media_type} favorite={item.favorite} />
             <span className={cn('min-w-0', isArtist && 'text-center')}>
-              <span className='block truncate text-[15px] font-semibold'>{item.name}</span>
-              {!isArtist && <span className='block truncate text-xs text-[var(--ds-ink-muted)]'>{itemSubtitle(item, t)}</span>}
+              <span className='block truncate text-[18px] font-semibold'>{item.name}</span>
+              {!isArtist && <span className='mt-0.5 block truncate text-[15px] text-[var(--ds-ink-muted)]'>{itemSubtitle(item, t)}</span>}
             </span>
           </button>
         );
@@ -48,13 +87,21 @@ export function ItemGrid({ items, onOpen }: { items: MassItem[]; onOpen: (item: 
 }
 
 /** Titres sur deux colonnes : vignette, nom, artistes, cœur s'il est en favori. */
-export function TrackList({ items, onPlay }: { items: MassItem[]; onPlay: (item: MassItem) => void }) {
+export function TrackList({
+  items,
+  onPlay,
+  onMore,
+}: {
+  items: MassItem[];
+  onPlay: (item: MassItem) => void;
+  onMore?: (item: MassItem) => void;
+}) {
   const { t } = useI18n();
   return (
     <ul className='grid gap-x-8 sm:grid-cols-2'>
       {items.map(item => (
-        <li key={item.uri} className='border-b border-[var(--ds-surface-2)]'>
-          <button type='button' onClick={() => onPlay(item)} className='flex min-h-14 w-full items-center gap-3 py-1.5 text-left'>
+        <li key={item.uri} className='flex items-center border-b border-[var(--ds-surface-2)]'>
+          <button type='button' onClick={() => onPlay(item)} className='flex min-h-14 min-w-0 flex-1 items-center gap-3 py-1.5 text-left'>
             <MusicCover image={item.image} name={item.name} type='track' small className='w-11 rounded-[var(--ds-radius-sm)]' />
             <span className='min-w-0 flex-1'>
               <span className='block truncate text-[15px] font-semibold'>{item.name}</span>
@@ -64,9 +111,25 @@ export function TrackList({ items, onPlay }: { items: MassItem[]; onPlay: (item:
               <Heart size={15} aria-label={t('widgets.music.favorite')} className='shrink-0 fill-[#ff6b8b] text-[#ff6b8b]' />
             )}
           </button>
+          {onMore && <MoreButton label={item.name} onClick={() => onMore(item)} />}
         </li>
       ))}
     </ul>
+  );
+}
+
+/** Le « ⋯ » d'une ligne : les actions de cet élément. */
+export function MoreButton({ label, onClick }: { label: string; onClick: () => void }) {
+  const { t } = useI18n();
+  return (
+    <button
+      type='button'
+      onClick={onClick}
+      aria-label={`${t('widgets.music.more')} — ${label}`}
+      className='flex size-[52px] shrink-0 items-center justify-center rounded-full text-[var(--ds-ink-muted)]'
+    >
+      <MoreHorizontal size={24} aria-hidden='true' />
+    </button>
   );
 }
 
