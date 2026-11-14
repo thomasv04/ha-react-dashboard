@@ -25,6 +25,8 @@ export function musicSettingsRouter(manager) {
     if (typeof url !== 'string' || (url.trim() && !/^https?:\/\/[^\s/]+(:\d+)?\/?$/.test(url.trim()))) {
       return res.status(400).json({ error: 'invalid_url' });
     }
+    // Hors add-on, pas d'adresse par défaut : sans adresse, rien à joindre.
+    if (!url.trim() && !manager.status().url) return res.status(400).json({ error: 'missing_url' });
     try {
       // On ne garde qu'un jeton qui marche : sinon la file retomberait en silence sur la version réduite.
       await manager.test({ url, token: token.trim() });

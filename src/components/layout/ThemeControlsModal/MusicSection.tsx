@@ -12,7 +12,18 @@ interface MusicStatus {
   source: 'settings' | 'addon' | 'env' | null;
 }
 
-type Result = 'saved' | 'auth' | 'unreachable' | 'invalid' | null;
+type Result = 'saved' | 'auth' | 'unreachable' | 'invalid' | 'missingUrl' | 'outdated' | null;
+
+/**
+ * Le serveur du dashboard répond-il à ces routes ? Un add-on d'avant cette
+ * section renvoie 404, ou la page de l'appli (son repli pour toute adresse
+ * inconnue) au lieu de JSON.
+ */
+async function readJson(res: Response): Promise<{ ok: boolean; outdated: boolean; body: Record<string, unknown> }> {
+  const json = (res.headers.get('content-type') ?? '').includes('application/json');
+  const body = json ? await res.json().catch(() => ({})) : {};
+  return { ok: res.ok && json, outdated: res.status === 404 || !json, body };
+}
 
 /**
  * La connexion à Music Assistant, pour la file d'attente complète de l'appli
@@ -31,9 +42,12 @@ export function MusicSection() {
   useEffect(() => {
     let alive = true;
     apiFetch('/api/music/settings')
-      .then(res => (res.ok ? res.json() : null))
-      .then((s: MusicStatus | null) => {
-        if (!alive || !s) return;
+      .then(readJson)
+      .then(({ ok, outdated, body }) => {
+        if (!alive) return;
+        if (outdated) return setResult('outdated');
+        if (!ok) return;
+        const s = body as unknown as MusicStatus;
         setStatus(s);
         if (s.source === 'settings') setUrl(s.url);
       })
@@ -52,14 +66,25 @@ export function MusicSection() {
         headers: { 'Content-Type': 'application/json' },
         body: method === 'PUT' ? JSON.stringify({ url: url.trim(), token: token.trim() }) : undefined,
       });
-      const body = await res.json().catch(() => ({}));
-      if (res.ok) {
-        setStatus(body);
+      const { ok, outdated, body } = await readJson(res);
+      if (ok) {
+        setStatus(body as unknown as MusicStatus);
         setToken('');
         setResult(method === 'PUT' ? 'saved' : null);
         if (method === 'DELETE') setUrl('');
       } else {
-        setResult(body.error === 'auth' ? 'auth' : body.error?.startsWith?.('invalid') ? 'invalid' : 'unreachable');
+        const error = String(body.error ?? '');
+        setResult(
+          outdated
+            ? 'outdated'
+            : error === 'auth'
+              ? 'auth'
+              : error === 'missing_url'
+                ? 'missingUrl'
+                : error.startsWith('invalid')
+                  ? 'invalid'
+                  : 'unreachable'
+        );
       }
     } catch {
       setResult('unreachable');
@@ -102,7 +127,7 @@ export function MusicSection() {
             type='url'
             value={url}
             onChange={e => setUrl(e.target.value)}
-            placeholder={status?.url || 'http://192.168.1.10:8095'}
+            placeholder={status?.url || 'http://homeassistant.local:8095'}
             className={INPUT}
           />
           <span id='music-url-hint' className='text-sm text-[var(--ds-ink-muted)]'>
@@ -143,7 +168,12 @@ export function MusicSection() {
         )}
 
         <div className='flex flex-wrap gap-3'>
-          <button type='button' onClick={() => send('PUT')} disabled={busy || !token.trim()} className={BUTTON_PRIMARY}>
+          <button
+            type='button'
+            onClick={() => send('PUT')}
+            disabled={busy || !token.trim() || result === 'outdated'}
+            className={BUTTON_PRIMARY}
+          >
             {busy ? t('settings.music_section.testing') : t('settings.music_section.save')}
           </button>
           {status?.source === 'settings' && (

@@ -180,7 +180,7 @@
       "env": "Connecté par l'environnement"
     },
     "url": "Adresse de Music Assistant",
-    "urlHint": "Vide : Music Assistant sur la même machine que Home Assistant (l'add-on).",
+    "urlHint": "Le serveur Music Assistant et son port (souvent 8095), sans chemin — pas la page de Music Assistant dans Home Assistant. Vide : Music Assistant installé en add-on sur la même machine.",
     "token": "Jeton d'accès",
     "tokenKept": "Jeton enregistré — en saisir un autre pour le remplacer",
     "tokenHint": "À créer dans Music Assistant : Paramètres › votre profil › Jetons d'accès.",
@@ -191,7 +191,9 @@
       "saved": "Connecté : jeton enregistré pour tous les appareils.",
       "auth": "Jeton refusé par Music Assistant.",
       "unreachable": "Music Assistant ne répond pas à cette adresse.",
-      "invalid": "Adresse ou jeton mal formé."
+      "invalid": "Adresse mal formée : indiquez le serveur et son port, sans chemin (par exemple http://homeassistant.local:8095).",
+      "missingUrl": "Indiquez l'adresse du serveur Music Assistant (par exemple http://homeassistant.local:8095).",
+      "outdated": "Le serveur du dashboard ne connaît pas encore ce réglage : mettez à jour l'add-on HA React Dashboard."
     }
   }
 }

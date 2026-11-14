@@ -204,5 +204,13 @@ describe('réglages saisis dans les Paramètres', () => {
     const { app } = setup();
     await request(app).put('/api/music/settings').send({ url: 'file:///etc/passwd', token: 'x' }).expect(400);
     await request(app).put('/api/music/settings').send({ url: '', token: '   ' }).expect(400);
+    // Une page de Music Assistant dans HA (ingress) n'est pas le serveur : refusée.
+    await request(app)
+      .put('/api/music/settings')
+      .send({ url: 'http://homeassistant.local:8123/d5369777_music_assistant', token: 'x' })
+      .expect(400);
+    // Sans adresse et hors add-on, rien à joindre.
+    const missing = await request(app).put('/api/music/settings').send({ url: '', token: 'x' });
+    expect(missing.body.error).toBe('missing_url');
   });
 });
