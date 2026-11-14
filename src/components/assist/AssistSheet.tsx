@@ -95,7 +95,7 @@ export function AssistSheet({ open, onClose }: { open: boolean; onClose: () => v
             aria-label={t('layout.assist.inputLabel')}
             placeholder={t('layout.assist.placeholder')}
             autoComplete='off'
-            className='h-12 min-w-0 flex-1 rounded-[var(--ds-radius-pill)] bg-[var(--ds-sheet-section)] px-5 text-[15px] text-[var(--ds-ink)] outline-none placeholder:text-[var(--ds-ink-muted)] focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)]'
+            className='h-12 min-w-0 flex-1 rounded-[var(--ds-radius-pill)] bg-[var(--ds-sheet-section)] px-5 text-[15px] max-sm:h-[60px] max-sm:text-[17px] text-[var(--ds-ink)] outline-none placeholder:text-[var(--ds-ink-muted)] focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)]'
           />
           {/* Reconnaissance vocale : hors de ce lot — le bouton reste, désactivé. */}
           <button
