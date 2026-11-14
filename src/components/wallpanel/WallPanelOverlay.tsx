@@ -11,6 +11,8 @@ import { QuickPanelSheet } from './QuickPanelSheet';
 import { NotificationSheet } from './NotificationSheet';
 import { NotificationBadge } from './NotificationBadge';
 import { ScreensaverClock } from './ScreensaverClock';
+import { ScreensaverNowPlaying } from './ScreensaverNowPlaying';
+import { useMoreInfoOptional } from '@/context/MoreInfoContext';
 import { useI18n } from '@/i18n';
 import { useUser } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
@@ -67,6 +69,7 @@ export function WallPanelOverlay({ onOpenLauncher }: { onOpenLauncher: () => voi
   const { t } = useI18n();
   const user = useUser();
   const { isActive, deactivate, wallPanelLayout, config, isWallPanelEditMode, enterWallPanelEditMode } = useWallPanel();
+  const moreInfo = useMoreInfoOptional();
   const hasWidgets = layoutWidgets(wallPanelLayout).length > 0;
   // Fond sur une maquette : la page Plan, que la veille a ouverte dessous, se
   // voit au travers — ni voile noir, ni photos.
@@ -236,6 +239,16 @@ export function WallPanelOverlay({ onOpenLauncher }: { onOpenLauncher: () => voi
                 ⋮ ouvre l'édition, réservée aux administrateurs comme le crayon
                 du dashboard : sans ce garde, n'importe qui passant devant la
                 tablette murale pouvait éditer la disposition. */}
+            {/* ── Ce qui joue, en bas à droite ── */}
+            {!isWallPanelEditMode && !sheet && (
+              <ScreensaverNowPlaying
+                onOpen={entityId => {
+                  deactivate();
+                  moreInfo?.openMoreInfo(entityId, 'media_player', entityId);
+                }}
+              />
+            )}
+
             {!isWallPanelEditMode && !sheet && (
               <ScreensaverClock
                 layout={config.clock_layout ?? 'clock'}

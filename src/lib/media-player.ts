@@ -74,3 +74,26 @@ export function formatMediaTime(seconds: number): string {
 export function isMediaOff(state: string | undefined): boolean {
   return state === 'off' || state === 'unavailable' || state === 'standby' || state === 'unknown';
 }
+
+type PlayerEntity = { state: string; attributes?: Record<string, unknown> };
+
+/** De la musique, pas une vidéo : un lecteur Music Assistant, ou un contenu `music`. */
+function isMusic(e: PlayerEntity): boolean {
+  return typeof e.attributes?.mass_player_type === 'string' || e.attributes?.media_content_type === 'music';
+}
+
+/**
+ * Le lecteur que l'écran de veille montre : celui qui joue de la musique (un
+ * lecteur Music Assistant d'abord). `keep`, celui déjà montré, reste tant qu'il
+ * est en pause — sinon la pause ferait disparaître le bouton qui relance.
+ */
+export function pickPlayingMusic(entities: Record<string, PlayerEntity>, keep?: string): string | undefined {
+  const players = Object.entries(entities).filter(
+    ([id, e]) => id.startsWith('media_player.') && typeof e.attributes?.media_title === 'string' && isMusic(e)
+  );
+  const playing = players.filter(([, e]) => e.state === 'playing');
+  const mass = playing.find(([, e]) => typeof e.attributes?.mass_player_type === 'string');
+  const current = mass ?? playing[0];
+  if (current) return current[0];
+  return keep && players.some(([id, e]) => id === keep && e.state === 'paused') ? keep : undefined;
+}
