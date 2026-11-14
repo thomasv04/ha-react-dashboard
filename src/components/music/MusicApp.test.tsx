@@ -10,6 +10,8 @@ vi.mock('@hakit/core', () => ({
   useHass: (selector?: (s: unknown) => unknown) => (selector ? selector(hassState) : hassState),
 }));
 
+vi.mock('@/hooks/useSafeEntity', () => ({ useSafeEntity: () => null }));
+
 import MusicApp from './MusicApp';
 
 const LOOM = {
@@ -36,7 +38,7 @@ describe('MusicApp', () => {
     sendMessagePromise.mockReset();
   });
 
-  it("affiche la bibliothèque de l'instance du lecteur et lance un album", async () => {
+  it("ouvre la fiche d'un album, puis revient à la bibliothèque", async () => {
     fakeHa({ album: [LOOM] });
     render(<MusicApp entityId='media_player.salon_2' widgetId='w' />);
 
@@ -44,13 +46,27 @@ describe('MusicApp', () => {
     const covers = await screen.findAllByRole('button', { name: /LOOM/ });
     expect(libraryCalls()[0].service_data.config_entry_id).toBe('entry1');
 
-    fireEvent.click(covers[0]);
+    fireEvent.click(covers[1]);
+    expect(await screen.findByTestId('music-detail')).toBeInTheDocument();
+    expect(callService).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: /widgets\.music\.back/ }));
+    expect(screen.queryByTestId('music-detail')).not.toBeInTheDocument();
+  });
+
+  it("lance un titre d'un appui", async () => {
+    fakeHa({ track: [{ media_type: 'track', uri: 'library://track/148', name: 'We Are Young', artists: [] }] });
+    render(<MusicApp entityId='media_player.salon_2' widgetId='w' />);
+    fireEvent.click(screen.getByRole('button', { name: 'widgets.music.tabs.track' }));
+
+    const rows = await screen.findAllByRole('button', { name: /We Are Young/ });
+    fireEvent.click(rows.at(-1)!);
     expect(callService).toHaveBeenCalledWith(
       expect.objectContaining({
         domain: 'music_assistant',
         service: 'play_media',
         target: { entity_id: 'media_player.salon_2' },
-        serviceData: { media_id: 'library://album/3', media_type: 'album', enqueue: 'play' },
+        serviceData: { media_id: 'library://track/148', media_type: 'track', enqueue: 'play' },
       })
     );
   });

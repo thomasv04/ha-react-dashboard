@@ -388,7 +388,17 @@
     "emptyHint": "Your library is empty. Add a music source in Music Assistant, then refresh.",
     "noFavorites": "No favorites in this category",
     "refresh": "Refresh",
-    "error": "Music Assistant is not responding"
+    "error": "Music Assistant is not responding",
+    "back": "Back",
+    "play": "Play",
+    "shuffle": "Shuffle",
+    "addToQueue": "Add to queue",
+    "trackTitle": "Title",
+    "noTracks": "No tracks",
+    "trackCount_one": "{count} track",
+    "trackCount_other": "{count} tracks",
+    "albumCount_one": "{count} album",
+    "albumCount_other": "{count} albums"
   },
   "person": {
     "label": "People",

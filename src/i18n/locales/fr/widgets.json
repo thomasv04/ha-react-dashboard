@@ -388,7 +388,17 @@
     "emptyHint": "Votre bibliothèque est vide. Ajoutez une source musicale dans Music Assistant, puis actualisez.",
     "noFavorites": "Aucun favori dans cette catégorie",
     "refresh": "Actualiser",
-    "error": "Music Assistant ne répond pas"
+    "error": "Music Assistant ne répond pas",
+    "back": "Retour",
+    "play": "Lire",
+    "shuffle": "Aléatoire",
+    "addToQueue": "Ajouter à la file",
+    "trackTitle": "Titre",
+    "noTracks": "Aucun titre",
+    "trackCount_one": "{count} titre",
+    "trackCount_other": "{count} titres",
+    "albumCount_one": "{count} album",
+    "albumCount_other": "{count} albums"
   },
   "person": {
     "label": "Personnes",
