@@ -69,12 +69,14 @@ export interface LibraryQuery {
   mediaType: MassMediaType;
   orderBy?: MassOrder;
   favorite?: boolean;
+  /** Filtre sur le nom, dans ce type seulement. */
+  search?: string;
   limit?: number;
 }
 
 /** Une page de la bibliothèque (`music_assistant.get_library`). */
 export function useMassLibrary(entryId: string | null, query: LibraryQuery): QueryResult<MassLibraryResponse> {
-  const { mediaType, orderBy = 'last_played_desc', favorite, limit = 100 } = query;
+  const { mediaType, orderBy = 'last_played_desc', favorite, search, limit = 100 } = query;
   return unwrap(
     useWsQuery<{ response?: MassLibraryResponse }>(
       entryId
@@ -84,6 +86,7 @@ export function useMassLibrary(entryId: string | null, query: LibraryQuery): Que
             order_by: orderBy,
             limit,
             ...(favorite && { favorite: true }),
+            ...(search && { search }),
           })
         : null
     )

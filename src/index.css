@@ -450,6 +450,31 @@ select option {
   --ds-sheet-section: var(--ds-user-sheet-section);
 }
 
+/* ── Squelettes de l'appli Musique (maquette « Bibliothèque — chargement ») ── */
+/* Le reflet glisse de droite à gauche sur la surface ; `--music-shine` est posée
+   par la racine de l'appli. Classe simple : valable aussi dans la shadow root. */
+
+@keyframes music-shine {
+  from {
+    background-position: 100% 50%;
+  }
+  to {
+    background-position: 0% 50%;
+  }
+}
+
+.music-shine {
+  background-image: linear-gradient(100deg, var(--ds-surface-2) 30%, var(--music-shine, var(--ds-surface-3)) 50%, var(--ds-surface-2) 70%);
+  background-size: 300% 100%;
+  animation: music-shine 1.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .music-shine {
+    animation: none;
+  }
+}
+
 /* ── Focus visibility (keyboard / HA remote navigation) ──────────────────── */
 
 :where(button, a, [role='button'], input, select, textarea):focus-visible {

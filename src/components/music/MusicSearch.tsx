@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Search, TriangleAlert } from 'lucide-react';
 import { useMassSearch } from '@/hooks/useMusicAssistant';
 import type { MassItem, MassMediaType, MassSearchResponse } from '@/lib/music-assistant';
 import { useI18n } from '@/i18n';
-import { EmptyState, GridSkeleton, ItemGrid, Pill, TrackList } from './MusicItems';
+import { EmptyState, ItemGrid, LibrarySkeleton, Pill, TrackList } from './MusicItems';
 
 /** Ordre des groupes, et la clé de chacun dans la réponse de `music_assistant.search`. */
 const GROUPS: [MassMediaType, keyof MassSearchResponse][] = [
@@ -60,11 +60,11 @@ export function MusicSearch({
       </div>
 
       {error ? (
-        <EmptyState title={t('widgets.music.error')} hint={error} />
+        <EmptyState icon={TriangleAlert} title={t('widgets.music.error')} hint={error} />
       ) : loading || !data ? (
-        <GridSkeleton />
+        <LibrarySkeleton tracks={filter === 'track'} />
       ) : groups.length === 0 ? (
-        <EmptyState title={t('widgets.music.noResults', { query })} hint={t('widgets.music.noResultsHint')} />
+        <EmptyState icon={Search} title={t('widgets.music.noResults', { query })} hint={t('widgets.music.noResultsHint')} />
       ) : (
         groups.map(({ type, items }) => {
           const limit = filter === 'all' ? (PREVIEW[type] ?? PREVIEW_DEFAULT) : items.length;

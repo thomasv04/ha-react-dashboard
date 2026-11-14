@@ -7,9 +7,7 @@ import { artistLine, splitTrackTitle, type BrowseChild, type MassItem } from '@/
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { MusicCover } from './MusicCover';
-import { ItemGrid, MoreButton } from './MusicItems';
-
-const ROWS = Array.from({ length: 8 }, (_, i) => i);
+import { ItemGrid, MoreButton, RowsSkeleton } from './MusicItems';
 
 /** Un album listé sous un artiste, remis à la forme d'un élément de bibliothèque. */
 function albumOf(child: BrowseChild, artist: MassItem): MassItem {
@@ -135,11 +133,7 @@ export function MusicDetail({
         {error ? (
           <p className='py-10 text-center text-[var(--ds-ink-muted)]'>{t('widgets.music.error')}</p>
         ) : loading || !data ? (
-          <div aria-busy='true' aria-label={t('common.loading')} className='flex flex-col gap-1'>
-            {ROWS.map(i => (
-              <span key={i} className='h-[76px] animate-pulse rounded-[18px] bg-[var(--ds-surface-2)]' />
-            ))}
-          </div>
+          <RowsSkeleton />
         ) : isArtist ? (
           <>
             <h3 className='mb-3.5 text-[22px] font-semibold'>{t('widgets.music.tabs.album')}</h3>

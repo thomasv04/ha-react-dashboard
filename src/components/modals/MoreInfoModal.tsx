@@ -40,12 +40,12 @@ export function MoreInfoModal() {
             role='dialog'
             aria-modal='true'
             className={cn(
-              'absolute flex flex-col overflow-hidden rounded-[var(--ds-radius-2xl)] bg-[var(--ds-sheet)] text-[var(--ds-ink)] shadow-[var(--ds-shadow-sheet)]',
+              'absolute flex flex-col overflow-hidden text-[var(--ds-ink)] shadow-[var(--ds-shadow-sheet)]',
               MORE_INFO_APPS.has(state.widgetType)
-                ? 'inset-0 rounded-none'
+                ? 'inset-0 bg-[var(--ds-ground)]'
                 : MORE_INFO_FULLSCREEN.has(state.widgetType)
-                  ? 'inset-4 sm:inset-8'
-                  : 'bottom-4 right-4 top-4 w-[min(calc(100vw-2rem),560px)] sm:bottom-10 sm:right-12 sm:top-10'
+                  ? 'inset-4 rounded-[var(--ds-radius-2xl)] bg-[var(--ds-sheet)] sm:inset-8'
+                  : 'bottom-4 right-4 top-4 w-[min(calc(100vw-2rem),560px)] rounded-[var(--ds-radius-2xl)] bg-[var(--ds-sheet)] sm:bottom-10 sm:right-12 sm:top-10'
             )}
             onClick={e => e.stopPropagation()}
             initial={{ x: '110%' }}

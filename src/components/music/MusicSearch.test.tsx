@@ -21,17 +21,18 @@ const RESULTS = {
   radio: [],
 };
 
-const searchCalls = () => sendMessagePromise.mock.calls.map(c => c[0]).filter(m => m.service === 'search');
+const calls = (service: string) => sendMessagePromise.mock.calls.map(c => c[0]).filter(m => m.service === service);
 
 describe('Recherche de l’appli Musique', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     callService.mockClear();
     sendMessagePromise.mockReset();
-    sendMessagePromise.mockImplementation(async (msg: { type: string; service?: string }) => {
+    sendMessagePromise.mockImplementation(async (msg: { type: string; service?: string; service_data?: { search?: string } }) => {
       if (msg.type === 'config/entity_registry/get') return { config_entry_id: 'entry1' };
       if (msg.service === 'search') return { response: RESULTS };
-      return { response: { items: [] } };
+      // La bibliothèque filtrée ne trouve rien : c'est la recherche globale qui répondra.
+      return { response: { items: msg.service_data?.search ? [] : [album(99)] } };
     });
   });
 
@@ -46,11 +47,19 @@ describe('Recherche de l’appli Musique', () => {
     await act(async () => void vi.advanceTimersByTime(300));
   };
 
-  it('cherche à la pause de frappe, et groupe les résultats par type', async () => {
+  it("filtre l'onglet en cours à la pause de frappe", async () => {
     await typeQuery('imagine');
-    expect(searchCalls()).toHaveLength(1);
-    expect(searchCalls()[0].service_data).toMatchObject({ config_entry_id: 'entry1', name: 'imagine', library_only: true });
+    expect(calls('get_library').at(-1).service_data).toMatchObject({ media_type: 'album', search: 'imagine' });
+    expect(calls('search')).toHaveLength(0);
+    expect(screen.getByText('widgets.music.noResults')).toBeInTheDocument();
+  });
 
+  it('cherche dans toute la musique quand l’onglet ne trouve rien, groupé par type', async () => {
+    await typeQuery('imagine');
+    fireEvent.click(screen.getByRole('button', { name: 'widgets.music.searchEverywhere' }));
+    await act(async () => {});
+
+    expect(calls('search')[0].service_data).toMatchObject({ config_entry_id: 'entry1', name: 'imagine', library_only: true });
     expect(screen.getByRole('button', { name: /^Believer/ })).toBeInTheDocument();
     // « Tout » : une rangée de pochettes, et de quoi voir le reste.
     expect(screen.getAllByRole('button', { name: /^Album \d+$/ })).toHaveLength(8);
@@ -59,10 +68,11 @@ describe('Recherche de l’appli Musique', () => {
     expect(screen.queryByRole('button', { name: /^Believer/ })).not.toBeInTheDocument();
   });
 
-  it('revient à la bibliothèque quand on efface', async () => {
+  it('revient à toute la bibliothèque quand on efface', async () => {
     await typeQuery('imagine');
     fireEvent.click(screen.getByRole('button', { name: 'widgets.music.clearSearch' }));
+    await act(async () => {});
     expect(screen.getByRole('searchbox')).toHaveValue('');
-    expect(screen.queryByRole('button', { name: /^Believer/ })).not.toBeInTheDocument();
+    expect(calls('get_library').at(-1).service_data.search).toBeUndefined();
   });
 });

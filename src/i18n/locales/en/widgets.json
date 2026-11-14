@@ -423,7 +423,25 @@
     "playerPlayingShort": "Playing",
     "playerAvailable": "Available",
     "playerOffline": "Offline",
-    "closeApp": "Close Music"
+    "closeApp": "Close Music",
+    "loadingLibrary": "Loading the library…",
+    "searchAll": "Search all music",
+    "removeFavorites": "Remove the Favorites filter",
+    "searchEverywhere": "Search all music",
+    "noMatch": {
+      "album": "No album matches. Check the spelling, or search all music.",
+      "artist": "No artist matches. Check the spelling, or search all music.",
+      "playlist": "No playlist matches. Check the spelling, or search all music.",
+      "track": "No track matches. Check the spelling, or search all music.",
+      "radio": "No radio matches. Check the spelling, or search all music."
+    },
+    "noMatchFavorites": {
+      "album": "None of your favorite albums match. Check the spelling or remove the Favorites filter.",
+      "artist": "None of your favorite artists match. Check the spelling or remove the Favorites filter.",
+      "playlist": "None of your favorite playlists match. Check the spelling or remove the Favorites filter.",
+      "track": "None of your favorite tracks match. Check the spelling or remove the Favorites filter.",
+      "radio": "None of your favorite radios match. Check the spelling or remove the Favorites filter."
+    }
   },
   "person": {
     "label": "People",

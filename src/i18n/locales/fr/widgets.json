@@ -423,7 +423,25 @@
     "playerPlayingShort": "En lecture",
     "playerAvailable": "Disponible",
     "playerOffline": "Hors ligne",
-    "closeApp": "Fermer Musique"
+    "closeApp": "Fermer Musique",
+    "loadingLibrary": "Chargement de la bibliothèque…",
+    "searchAll": "Rechercher dans toute la musique",
+    "removeFavorites": "Retirer le filtre Favoris",
+    "searchEverywhere": "Chercher dans toute la musique",
+    "noMatch": {
+      "album": "Aucun album ne correspond. Vérifiez l'orthographe, ou cherchez dans toute la musique.",
+      "artist": "Aucun artiste ne correspond. Vérifiez l'orthographe, ou cherchez dans toute la musique.",
+      "playlist": "Aucune playlist ne correspond. Vérifiez l'orthographe, ou cherchez dans toute la musique.",
+      "track": "Aucun titre ne correspond. Vérifiez l'orthographe, ou cherchez dans toute la musique.",
+      "radio": "Aucune radio ne correspond. Vérifiez l'orthographe, ou cherchez dans toute la musique."
+    },
+    "noMatchFavorites": {
+      "album": "Aucun de vos albums favoris ne correspond. Vérifiez l'orthographe ou retirez le filtre Favoris.",
+      "artist": "Aucun de vos artistes favoris ne correspond. Vérifiez l'orthographe ou retirez le filtre Favoris.",
+      "playlist": "Aucune de vos playlists favorites ne correspond. Vérifiez l'orthographe ou retirez le filtre Favoris.",
+      "track": "Aucun de vos titres favoris ne correspond. Vérifiez l'orthographe ou retirez le filtre Favoris.",
+      "radio": "Aucune de vos radios favorites ne correspond. Vérifiez l'orthographe ou retirez le filtre Favoris."
+    }
   },
   "person": {
     "label": "Personnes",
