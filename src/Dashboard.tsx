@@ -40,6 +40,8 @@ import { usePages } from '@/context/PageContext';
 import { usePanel } from '@/context/PanelContext';
 import { useMoreInfo } from '@/context/MoreInfoContext';
 import { layoutWidgets } from '@/lib/panel-grid';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { PhoneShell } from '@/components/phone/PhoneShell';
 
 // La page plan ne se télécharge qu'à sa première visite : sans plan, rien à payer.
 const FloorplanView = lazy(() => import('@/components/floorplan/FloorplanView').then(m => ({ default: m.FloorplanView })));
@@ -102,50 +104,58 @@ function DashboardContent() {
   const isFloorplan = currentPage?.type === 'floorplan';
   const [launcherOpen, setLauncherOpen] = useState(false);
   const closeLauncher = useCallback(() => setLauncherOpen(false), []);
+  // Téléphone : une appli à onglets à part (maquette « Téléphone »), sans édition.
+  const phone = useIsMobile();
 
   return (
     <LayoutGroup>
       <div className='min-h-screen w-full overflow-x-hidden text-[var(--ds-ink)]'>
-        <TopBar launcherOpen={launcherOpen} onToggleLauncher={() => setLauncherOpen(open => !open)} />
-        <NavRail />
-        <Launcher open={launcherOpen} onClose={closeLauncher} />
+        {phone ? (
+          <PhoneShell />
+        ) : (
+          <>
+            <TopBar launcherOpen={launcherOpen} onToggleLauncher={() => setLauncherOpen(open => !open)} />
+            <NavRail />
+            <Launcher open={launcherOpen} onClose={closeLauncher} />
 
-        {/* Sous la barre du haut et à droite du rail ; sur téléphone le rail
+            {/* Sous la barre du haut et à droite du rail ; sur téléphone le rail
             passe en bas. Page plan : tout l'écran restant, le plan se lit
             d'un coup d'œil, sans défiler. */}
-        <div
-          className={cn(
-            'pt-[112px] pl-3 pr-3 sm:pl-[124px] sm:pr-6',
-            isFloorplan ? 'h-dvh flex flex-col pb-24 sm:pb-6' : 'pb-28 sm:pb-6 md:flex md:h-dvh md:flex-col'
-          )}
-        >
-          {/* Pastilles d'état de la page — n'occupent aucune place si vides */}
-          <PageBadges />
-
-          {isFloorplan ? (
-            // Un chunk du plan qui ne se charge pas — réseau coupé, ancien index
-            // gardé en cache après une mise à jour — n'emporte que le plan.
-            <WidgetErrorBoundary messageKey='common.panelUnavailable'>
-              <Suspense fallback={null}>
-                <FloorplanView />
-              </Suspense>
-            </WidgetErrorBoundary>
-          ) : (
-            <>
-              {/* À partir de `md`, le plateau prend tout l'écran restant : ce sont les panneaux qui défilent, pas la page. */}
-              {hasBoard && (
-                <div className='relative md:min-h-0 md:flex-1'>
-                  <DashboardGrid />
-                </div>
+            <div
+              className={cn(
+                'pt-[112px] pl-3 pr-3 sm:pl-[124px] sm:pr-6',
+                isFloorplan ? 'h-dvh flex flex-col pb-24 sm:pb-6' : 'pb-28 sm:pb-6 md:flex md:h-dvh md:flex-col'
               )}
+            >
+              {/* Pastilles d'état de la page — n'occupent aucune place si vides */}
+              <PageBadges />
 
-              {widgets.length === 0 && <DashboardEmptyState />}
-            </>
-          )}
-        </div>
+              {isFloorplan ? (
+                // Un chunk du plan qui ne se charge pas — réseau coupé, ancien index
+                // gardé en cache après une mise à jour — n'emporte que le plan.
+                <WidgetErrorBoundary messageKey='common.panelUnavailable'>
+                  <Suspense fallback={null}>
+                    <FloorplanView />
+                  </Suspense>
+                </WidgetErrorBoundary>
+              ) : (
+                <>
+                  {/* À partir de `md`, le plateau prend tout l'écran restant : ce sont les panneaux qui défilent, pas la page. */}
+                  {hasBoard && (
+                    <div className='relative md:min-h-0 md:flex-1'>
+                      <DashboardGrid />
+                    </div>
+                  )}
 
-        {/* Bouton d'édition admin, dans la barre du haut */}
-        <EditButton />
+                  {widgets.length === 0 && <DashboardEmptyState />}
+                </>
+              )}
+            </div>
+
+            {/* Bouton d'édition admin, dans la barre du haut */}
+            <EditButton />
+          </>
+        )}
 
         {/* Widget edit modal */}
         <AnimatePresence>
@@ -178,8 +188,8 @@ function DashboardContent() {
           <QuickBar />
         </AnimatePresence>
 
-        {/* Visite guidée — au premier lancement, puis à la demande */}
-        <TourHost />
+        {/* Visite guidée — au premier lancement, puis à la demande. Elle montre le rail et la barre de la tablette. */}
+        {!phone && <TourHost />}
 
         {/* Nouveautés — après une mise à jour, puis à la demande */}
         <ReleaseNotesHost />

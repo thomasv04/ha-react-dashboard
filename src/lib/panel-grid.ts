@@ -10,6 +10,15 @@ export const GRID_COL = 96;
 export const GRID_ROW = 80;
 export const GRID_GAP = 16;
 
+/**
+ * Trame d'un téléphone (maquette « Téléphone ») : quatre colonnes fluides,
+ * environ 80 px sur 390 px de large — la colonne de la tablette, un peu
+ * réduite. Une tuile de 2 colonnes y prend une demi-largeur, comme les cards
+ * côte à côte de la maquette ; au-delà de 4, toute la largeur.
+ */
+export const PHONE_COLS = 4;
+export const PHONE_GAP = 10;
+
 /** Largeur d'un panneau, en colonnes de la trame. */
 export const PANEL_COLS_MIN = 2;
 export const PANEL_COLS_MAX = 12;

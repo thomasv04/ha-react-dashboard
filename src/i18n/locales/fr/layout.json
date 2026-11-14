@@ -680,5 +680,33 @@
       "attribute": "Attribut",
       "hasValue": "A une valeur ?"
     }
+  },
+  "phone": {
+    "menu": "Menu",
+    "navigation": "Navigation principale",
+    "back": "Retour",
+    "tabs": {
+      "home": "Maison",
+      "rooms": "Pièces",
+      "plan": "Plan",
+      "cameras": "Caméras",
+      "music": "Musique"
+    },
+    "rooms": {
+      "all": "Toutes",
+      "empty": "Aucune pièce dans Home Assistant. Créez des zones (Paramètres > Zones) pour les voir ici.",
+      "off": "Éteinte",
+      "lightOn": "1 lumière allumée",
+      "lightsOn": "{count} lumières allumées",
+      "noDevices": "Aucun appareil pilotable dans cette pièce.",
+      "lastOn": "{name} allumé {ago}",
+      "justNow": "à l’instant",
+      "minutesAgo": "il y a {count} min",
+      "hoursAgo": "il y a {count} h"
+    },
+    "cameras": {
+      "empty": "Aucune caméra dans Home Assistant.",
+      "live": "Direct"
+    }
   }
 }
