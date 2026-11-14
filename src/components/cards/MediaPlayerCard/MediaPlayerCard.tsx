@@ -13,6 +13,7 @@ import { friendlyName } from '@/lib/ha-service';
 import { PillSlider } from '@/components/ds/PillSlider';
 import { useHaUrl } from '@/hooks/useHaUrl';
 import { isMediaOff } from '@/lib/media-player';
+import { useAutoMassPlayer } from '@/hooks/useMusicAssistant';
 
 interface PlayerProps {
   name: string;
@@ -169,7 +170,10 @@ export function MediaPlayerCard() {
   const { getWidgetConfig } = useWidgetConfig();
   const widgetId = useWidgetId();
   const config = getWidgetConfig<MediaPlayerCardConfig>(widgetId || 'media_player');
-  const entityId = config?.entityId ?? 'media_player.unknown';
+  // En automatique, la card suit l'enceinte Music Assistant qui joue.
+  const auto = config?.source === 'music_assistant';
+  const autoId = useAutoMassPlayer(auto);
+  const entityId = (auto ? autoId : config?.entityId) ?? 'media_player.unknown';
 
   const entity = useSafeEntity(entityId);
   const helpers = useHass(s => s.helpers);
@@ -211,7 +215,8 @@ export function MediaPlayerCard() {
   const position = (attrs.media_position as number | undefined) ?? 0;
   const duration = (attrs.media_duration as number | undefined) ?? 0;
   const volume = localVolume ?? haVolume;
-  const name = config?.name ?? friendlyName({ attributes: attrs }) ?? entityId;
+  // En automatique, le nom est celui de l'enceinte du moment : un nom fixé mentirait dès qu'elle change.
+  const name = (auto ? undefined : config?.name) ?? friendlyName({ attributes: attrs }) ?? entityId;
 
   const handleToggle = () => {
     helpers.callService({ domain: 'media_player', service: 'media_play_pause', target: { entity_id: entityId } });

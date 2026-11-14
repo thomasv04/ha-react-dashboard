@@ -332,6 +332,13 @@
           "vertical": "Verticale (cover en grand)",
           "compact": "Compacte (1 ligne)"
         }
+      },
+      "source": {
+        "label": "Lecteur",
+        "options": {
+          "entity": "Un lecteur choisi",
+          "music_assistant": "Automatique — l'enceinte Music Assistant qui joue"
+        }
       }
     },
     "previous": "Morceau précédent",

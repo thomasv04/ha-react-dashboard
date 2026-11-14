@@ -17,7 +17,7 @@ import {
 import { useHass } from '@hakit/core';
 import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useMediaBrowse } from '@/hooks/useMediaBrowse';
-import { massPlay, useMassEntryId, useMassLibrary } from '@/hooks/useMusicAssistant';
+import { massPlay, useAutoMassPlayer, useMassEntryId, useMassLibrary } from '@/hooks/useMusicAssistant';
 import { useNow } from '@/hooks/useNow';
 import { useFormats } from '@/hooks/useFormats';
 import { useHaUrl } from '@/hooks/useHaUrl';
@@ -80,10 +80,14 @@ function RoundButton({
  * télé, un Chromecast) gardent sous les commandes leur volume et leurs sources,
  * que la maquette ne couvre pas.
  */
-export default function MediaPlayerMoreInfo({ entityId, widgetId }: { entityId: string; widgetId: string }) {
+export default function MediaPlayerMoreInfo({ entityId: givenId, widgetId }: { entityId: string; widgetId: string }) {
   const { t } = useI18n();
   const { getWidgetConfig } = useWidgetConfig();
   const config = getWidgetConfig<MediaPlayerCardConfig>(widgetId);
+  // Ouvert depuis une card en automatique : le lecteur suit l'enceinte Music Assistant qui joue.
+  const auto = config?.source === 'music_assistant';
+  const autoId = useAutoMassPlayer(auto);
+  const entityId = (auto ? autoId : undefined) ?? givenId;
   const entity = useSafeEntity(entityId);
   const helpers = useHass(s => s.helpers);
   const moreInfo = useMoreInfoOptional();
@@ -124,7 +128,7 @@ export default function MediaPlayerMoreInfo({ entityId, widgetId }: { entityId: 
 
   if (!entity) return <div className='p-12 text-center text-[var(--ds-ink-muted)]'>{t('common.entityNotFound')}</div>;
 
-  const name = config?.name ?? friendlyName(entity) ?? entityId;
+  const name = (auto ? undefined : config?.name) ?? friendlyName(entity) ?? entityId;
   const title = typeof attrs.media_title === 'string' ? attrs.media_title : undefined;
   const artist = typeof attrs.media_artist === 'string' ? attrs.media_artist : undefined;
   const album = typeof attrs.media_album_name === 'string' ? attrs.media_album_name : undefined;

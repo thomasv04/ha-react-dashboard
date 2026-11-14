@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useHass } from '@hakit/core';
 import { callHAService } from '@/lib/ha-service';
+import { pickMassPlayer, rememberedPlayer } from '@/lib/music-assistant';
 import type { BrowseNode, MassEnqueue, MassLibraryResponse, MassMediaType, MassOrder, MassSearchResponse } from '@/lib/music-assistant';
 
 export interface QueryResult<T> {
@@ -114,6 +115,14 @@ export function useMassBrowse(entityId: string | undefined, uri: string | null):
       ? { type: 'media_player/browse_media', entity_id: entityId, media_content_id: uri, media_content_type: 'music_assistant' }
       : null
   );
+}
+
+/**
+ * L'enceinte d'une card en mode automatique : celle de Music Assistant qui
+ * joue, sinon la dernière choisie sur l'appareil. `false` = rien à résoudre.
+ */
+export function useAutoMassPlayer(enabled: boolean): string | undefined {
+  return useHass(s => (enabled ? pickMassPlayer(s.entities, rememberedPlayer()) : undefined));
 }
 
 /** Lance un élément MA sur un lecteur — tout de suite, ensuite, ou en fin de file. */

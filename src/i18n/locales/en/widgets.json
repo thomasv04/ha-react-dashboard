@@ -332,6 +332,13 @@
           "vertical": "Vertical (large cover)",
           "compact": "Compact (1 row)"
         }
+      },
+      "source": {
+        "label": "Player",
+        "options": {
+          "entity": "A chosen player",
+          "music_assistant": "Automatic — the Music Assistant speaker that is playing"
+        }
       }
     },
     "previous": "Previous track",
