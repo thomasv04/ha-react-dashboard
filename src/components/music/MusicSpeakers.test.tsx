@@ -71,6 +71,21 @@ describe('MusicSpeakers', () => {
     expect(volumes).toEqual({ 'media_player.salon_2': 0.55, 'media_player.cuisine': 0.45 });
   });
 
+  it('montre un groupe défini dans MA sans le laisser changer', () => {
+    hassState.entities['media_player.maison_2'] = {
+      state: 'idle',
+      attributes: { friendly_name: 'Maison', mass_player_type: 'group', group_members: ['media_player.salon_2', 'media_player.bureau'] },
+    } as never;
+    render(<MusicSpeakers player='media_player.maison_2' onDone={vi.fn()} />);
+    expect(screen.getByText('Maison, Salon, Bureau')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Bureau' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'widgets.music.ungroupAll' })).toBeDisabled();
+    hassState.entities['media_player.maison_2'] = {
+      state: 'off',
+      attributes: { friendly_name: 'Maison', mass_player_type: 'group' },
+    } as never;
+  });
+
   it('dégroupe tout, puis revient', () => {
     const onDone = vi.fn();
     render(<MusicSpeakers player='media_player.salon_2' onDone={onDone} />);

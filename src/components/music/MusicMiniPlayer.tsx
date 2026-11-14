@@ -38,8 +38,9 @@ export function MusicMiniPlayer({ entityId }: { entityId: string }) {
   const duration = typeof attrs.media_duration === 'number' ? attrs.media_duration : 0;
   const live = duration <= 0;
   const progress = live ? 0 : Math.min(1, interpolatePosition(attrs, playing, now) / duration);
-  // Un groupe MA liste ses enceintes : « Salon + 2 ».
-  const members = Array.isArray(attrs.group_members) ? attrs.group_members.length : 0;
+  // Une enceinte qui en a joint d'autres : « Salon + 2 ». Un groupe défini dans MA (« Maison ») se
+  // nomme déjà lui-même.
+  const members = attrs.mass_player_type !== 'group' && Array.isArray(attrs.group_members) ? attrs.group_members.length : 0;
   const name = friendlyName(entity) ?? entityId;
   const speaker = members > 1 ? `${name} + ${members - 1}` : name;
   const canNext = !live && supportsMedia(attrs.supported_features, 'NEXT_TRACK');

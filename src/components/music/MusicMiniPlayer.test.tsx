@@ -60,6 +60,16 @@ describe('MusicMiniPlayer', () => {
     expect(screen.getByText('Salon + 2')).toBeInTheDocument();
   });
 
+  it('garde le nom d’un groupe défini dans Music Assistant', () => {
+    entity = playing({
+      friendly_name: 'Maison',
+      mass_player_type: 'group',
+      group_members: ['media_player.salon_2', 'media_player.cuisine'],
+    });
+    render(<MusicMiniPlayer entityId='media_player.maison_2' />);
+    expect(screen.getByText('Maison')).toBeInTheDocument();
+  });
+
   it('disparaît quand rien n’est chargé', () => {
     entity = { state: 'idle', attributes: { friendly_name: 'Salon' } };
     const { container } = render(<MusicMiniPlayer entityId='media_player.salon_2' />);

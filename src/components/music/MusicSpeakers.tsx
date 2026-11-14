@@ -31,8 +31,10 @@ export function MusicSpeakers({ player, onDone }: { player: string; onDone: () =
   const helpers = useHass(s => s.helpers);
   const entities = useHass(s => s.entities) as Record<string, Entity>;
 
+  // Un groupe défini dans MA (« Maison ») a ses membres fixés là-bas : on les montre, sans les changer.
+  const fixed = entities[player]?.attributes?.mass_player_type === 'group';
   // HA liste le meneur en premier : si l'enceinte de l'appli suit un autre groupe, c'est lui qui mène.
-  const leader = membersOf(entities[player])[0] ?? player;
+  const leader = fixed ? player : (membersOf(entities[player])[0] ?? player);
   const group = [leader, ...membersOf(entities[leader]).filter(id => id !== leader)];
   const speakers = Object.entries(entities)
     .filter(([id, e]) => id.startsWith('media_player.') && e.attributes?.mass_player_type === 'player')
@@ -85,7 +87,7 @@ export function MusicSpeakers({ player, onDone }: { player: string; onDone: () =
                   aria-checked={checked}
                   aria-label={name}
                   onClick={() => toggle(id)}
-                  disabled={offline || id === leader}
+                  disabled={offline || id === leader || fixed}
                   className={cn(
                     'flex size-11 shrink-0 items-center justify-center rounded-[14px]',
                     checked
@@ -143,7 +145,11 @@ export function MusicSpeakers({ player, onDone }: { player: string; onDone: () =
           />
           <span className='w-10 text-right text-[28px] font-semibold tabular-nums'>{groupVolume(groupVolumes)}</span>
         </div>
-        {group.length > 1 && <p className='mt-3.5 text-[16px] text-[var(--ds-ink-muted)]'>{t('widgets.music.groupVolumeHint')}</p>}
+        {group.length > 1 && (
+          <p className='mt-3.5 text-[16px] text-[var(--ds-ink-muted)]'>
+            {t(fixed ? 'widgets.music.fixedGroupHint' : 'widgets.music.groupVolumeHint')}
+          </p>
+        )}
         <div className='mt-8 flex flex-col gap-3'>
           <button
             type='button'
@@ -155,7 +161,7 @@ export function MusicSpeakers({ player, onDone }: { player: string; onDone: () =
           <button
             type='button'
             onClick={ungroupAll}
-            disabled={group.length < 2}
+            disabled={group.length < 2 || fixed}
             className='flex h-16 items-center justify-center rounded-[32px] bg-[var(--ds-surface-3)] text-[20px] font-semibold disabled:opacity-40'
           >
             {t('widgets.music.ungroupAll')}

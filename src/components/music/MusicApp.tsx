@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, Grip, Heart, Music, RefreshCw, Search, Speaker, TriangleAlert, X } from 'lucide-react';
+import { ChevronLeft, Grip, Heart, ListMusic, Music, RefreshCw, Search, Speaker, TriangleAlert, X } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useMoreInfoOptional } from '@/context/MoreInfoContext';
 import { useNow } from '@/hooks/useNow';
@@ -16,6 +16,7 @@ import { MusicDetail } from './MusicDetail';
 import { MusicMiniPlayer } from './MusicMiniPlayer';
 import { EmptyAction, EmptyState, ItemGrid, LibrarySkeleton, Pill, TrackList } from './MusicItems';
 import { MusicSearch } from './MusicSearch';
+import { MusicQueue } from './MusicQueue';
 import { MusicSpeakers } from './MusicSpeakers';
 
 const TABS: MassMediaType[] = ['album', 'artist', 'playlist', 'track', 'radio'];
@@ -48,8 +49,8 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
   // L'élément dont on a ouvert les actions, ou le choix de l'enceinte.
   const [actionItem, setActionItem] = useState<MassItem | null>(null);
   const [picking, setPicking] = useState(false);
-  // L'écran des enceintes et du groupe, par-dessus la bibliothèque.
-  const [speakers, setSpeakers] = useState(false);
+  // Un écran par-dessus la bibliothèque : les enceintes et le groupe, ou la file d'attente.
+  const [screen, setScreen] = useState<'speakers' | 'queue' | null>(null);
 
   const [tab, setTab] = useState<MassMediaType>('album');
   const [favorite, setFavorite] = useState(false);
@@ -69,14 +70,14 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
   // Les fiches ouvertes, la dernière au-dessus : artiste → album → retour à l'artiste.
   const [stack, setStack] = useState<MassItem[]>([]);
   const detail = stack.at(-1);
-  // Un écran secondaire (fiche, enceintes) : retour à gauche, ni recherche ni enceinte dans l'en-tête.
-  const sub = speakers || !!detail;
+  // Un écran secondaire (fiche, enceintes, file) : retour à gauche, ni recherche ni enceinte dans l'en-tête.
+  const sub = !!screen || !!detail;
   // Une fiche s'ouvre en haut, pas au défilement de la grille qu'on quitte.
   const rootRef = useRef<HTMLDivElement>(null);
   // Accolades : scrollIntoView peut renvoyer une promesse, que React prendrait pour un nettoyage.
   useEffect(() => {
     rootRef.current?.scrollIntoView?.({ block: 'start' });
-  }, [detail, speakers]);
+  }, [detail, screen]);
 
   const showRecent = !favorite && !query;
   const recent = useMassLibrary(showRecent ? entryId : null, { mediaType: tab, orderBy: 'last_played_desc', limit: 5 });
@@ -88,8 +89,8 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
   const play = (item: MassItem, enqueue: MassEnqueue = 'play', target = player) => massPlay(helpers, target, item, enqueue);
   const open = (item: MassItem) => (BROWSABLE.has(item.media_type) ? setStack(s => [...s, item]) : play(item));
   const more = setActionItem;
-  const back = speakers
-    ? t('widgets.music.speakers')
+  const back = screen
+    ? t(`widgets.music.${screen}`)
     : (stack.at(-2)?.name ?? (global ? t('widgets.music.searchResults') : t(`widgets.music.tabs.${tab}`)));
   const subtitle = (item: MassItem) => itemSubtitle(item, t);
 
@@ -109,7 +110,7 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
         {sub ? (
           <button
             type='button'
-            onClick={() => (speakers ? setSpeakers(false) : setStack(s => s.slice(0, -1)))}
+            onClick={() => (screen ? setScreen(null) : setStack(s => s.slice(0, -1)))}
             aria-label={`${t('widgets.music.back')} — ${back}`}
             className='flex items-center gap-5 text-[24px] font-semibold text-[var(--ds-ink-muted)]'
           >
@@ -182,11 +183,23 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
             <Speaker size={26} aria-hidden='true' />
           </button>
         )}
+        {!sub && !global && (
+          <button
+            type='button'
+            onClick={() => setScreen('queue')}
+            aria-label={t('widgets.music.queue')}
+            className='flex size-[60px] shrink-0 items-center justify-center rounded-[18px] bg-[var(--ds-surface-2)]'
+          >
+            <ListMusic size={26} aria-hidden='true' />
+          </button>
+        )}
         <time className={cn('shrink-0 text-[38px] font-medium text-[var(--music-dim)]', sub && 'ml-auto')}>{formatTime(clock)}</time>
       </header>
 
-      {speakers ? (
-        <MusicSpeakers player={player} onDone={() => setSpeakers(false)} />
+      {screen === 'speakers' ? (
+        <MusicSpeakers player={player} onDone={() => setScreen(null)} />
+      ) : screen === 'queue' ? (
+        <MusicQueue player={player} />
       ) : detail ? (
         <MusicDetail key={detail.uri} entityId={player} item={detail} onOpen={item => setStack(s => [...s, item])} onMore={more} />
       ) : global ? (
@@ -313,11 +326,13 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
           player={player}
           onPlay={play}
           onPlayerChange={setPlayer}
-          onGroup={() => setSpeakers(true)}
+          onGroup={() => setScreen('speakers')}
           onClose={() => setActionItem(null)}
         />
       )}
-      {picking && <PlayerPicker current={player} onPick={setPlayer} onGroup={() => setSpeakers(true)} onClose={() => setPicking(false)} />}
+      {picking && (
+        <PlayerPicker current={player} onPick={setPlayer} onGroup={() => setScreen('speakers')} onClose={() => setPicking(false)} />
+      )}
     </div>
   );
 }

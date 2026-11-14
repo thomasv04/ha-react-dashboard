@@ -458,7 +458,17 @@
     "groupVolumeHint": "Sets the speakers together, keeping the gap between them.",
     "done": "Done",
     "ungroupAll": "Ungroup all",
-    "volumeOf": "Volume — {name}"
+    "volumeOf": "Volume — {name}",
+    "queue": "Queue",
+    "nowPlaying": "Now playing",
+    "upNext": "Up next",
+    "clearQueue": "Clear queue",
+    "queueEmpty": "The queue is empty",
+    "queueEmptyHint": "Play an album, a playlist or a track: it will show up here.",
+    "queueEnds": "Nothing after this track.",
+    "queueMore_one": "And 1 more track after it — the full list is in Music Assistant.",
+    "queueMore_other": "And {count} more tracks after it — the full list is in Music Assistant.",
+    "fixedGroupHint": "Group defined in Music Assistant: its speakers are chosen there."
   },
   "person": {
     "label": "People",

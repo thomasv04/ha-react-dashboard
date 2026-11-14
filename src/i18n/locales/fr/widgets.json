@@ -458,7 +458,17 @@
     "groupVolumeHint": "Règle les enceintes ensemble, en gardant l'écart entre elles.",
     "done": "Terminé",
     "ungroupAll": "Dégrouper tout",
-    "volumeOf": "Volume — {name}"
+    "volumeOf": "Volume — {name}",
+    "queue": "File d'attente",
+    "nowPlaying": "En cours",
+    "upNext": "À suivre",
+    "clearQueue": "Vider la file",
+    "queueEmpty": "La file est vide",
+    "queueEmptyHint": "Lancez un album, une playlist ou un titre : il apparaîtra ici.",
+    "queueEnds": "Rien après ce titre.",
+    "queueMore_one": "Et 1 autre titre ensuite — la liste complète est dans Music Assistant.",
+    "queueMore_other": "Et {count} autres titres ensuite — la liste complète est dans Music Assistant.",
+    "fixedGroupHint": "Groupe défini dans Music Assistant : ses enceintes se choisissent là-bas."
   },
   "person": {
     "label": "Personnes",
