@@ -51,4 +51,12 @@ describe('MusicSection', () => {
     expect(await screen.findByText('settings.music_section.result.outdated')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'settings.music_section.save' })).toBeDisabled();
   });
+
+  it('en carte (HACS), dit que l’intégration Music Assistant connecte déjà, sans formulaire', async () => {
+    apiFetch.mockResolvedValueOnce(json({ configured: true, url: '', source: 'integration' }));
+    render(<MusicSection />);
+    expect(await screen.findByText('settings.music_section.integrationHint')).toBeInTheDocument();
+    expect(screen.getByText('settings.music_section.source.integration')).toBeInTheDocument();
+    expect(screen.queryByLabelText('settings.music_section.token')).not.toBeInTheDocument();
+  });
 });

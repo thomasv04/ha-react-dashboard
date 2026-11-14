@@ -177,7 +177,8 @@
     "source": {
       "settings": "Connected",
       "addon": "Connected through the add-on options",
-      "env": "Connected through the environment"
+      "env": "Connected through the environment",
+      "integration": "Connected through the Home Assistant Music Assistant integration"
     },
     "url": "Music Assistant address",
     "urlHint": "The Music Assistant server and its port (usually 8095), no path — not the Music Assistant page inside Home Assistant. Empty: Music Assistant installed as an add-on on the same machine.",
@@ -194,6 +195,7 @@
       "invalid": "Malformed address: give the server and its port, no path (for example http://homeassistant.local:8095).",
       "missingUrl": "Give the address of the Music Assistant server (for example http://homeassistant.local:8095).",
       "outdated": "The dashboard server does not know this setting yet: update the HA React Dashboard add-on."
-    }
+    },
+    "integrationHint": "Nothing to enter: the dashboard goes through the Home Assistant Music Assistant integration, already connected. The full queue is available."
   }
 }

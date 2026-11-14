@@ -9,7 +9,8 @@ import { FIELD_LABEL, SECTION_HEADING, SETTINGS_CARD } from './typography';
 interface MusicStatus {
   configured: boolean;
   url: string;
-  source: 'settings' | 'addon' | 'env' | null;
+  /** `integration` : en carte (HACS), la connexion de l'intégration Music Assistant de HA — rien à saisir. */
+  source: 'settings' | 'addon' | 'env' | 'integration' | null;
 }
 
 type Result = 'saved' | 'auth' | 'unreachable' | 'invalid' | 'missingUrl' | 'outdated' | null;
@@ -117,71 +118,77 @@ export function MusicSection() {
           )}
         </div>
 
-        <div className='flex flex-col gap-2'>
-          <label htmlFor='music-url' className={FIELD_LABEL}>
-            {t('settings.music_section.url')}
-          </label>
-          <input
-            id='music-url'
-            aria-describedby='music-url-hint'
-            type='url'
-            value={url}
-            onChange={e => setUrl(e.target.value)}
-            placeholder={status?.url || 'http://homeassistant.local:8095'}
-            className={INPUT}
-          />
-          <span id='music-url-hint' className='text-sm text-[var(--ds-ink-muted)]'>
-            {t('settings.music_section.urlHint')}
-          </span>
-        </div>
+        {status?.source === 'integration' ? (
+          <p className='text-[15px] text-[var(--ds-ink-muted)]'>{t('settings.music_section.integrationHint')}</p>
+        ) : (
+          <>
+            <div className='flex flex-col gap-2'>
+              <label htmlFor='music-url' className={FIELD_LABEL}>
+                {t('settings.music_section.url')}
+              </label>
+              <input
+                id='music-url'
+                aria-describedby='music-url-hint'
+                type='url'
+                value={url}
+                onChange={e => setUrl(e.target.value)}
+                placeholder={status?.url || 'http://homeassistant.local:8095'}
+                className={INPUT}
+              />
+              <span id='music-url-hint' className='text-sm text-[var(--ds-ink-muted)]'>
+                {t('settings.music_section.urlHint')}
+              </span>
+            </div>
 
-        <div className='flex flex-col gap-2'>
-          <label htmlFor='music-token' className={FIELD_LABEL}>
-            {t('settings.music_section.token')}
-          </label>
-          <input
-            id='music-token'
-            aria-describedby='music-token-hint'
-            type='password'
-            autoComplete='off'
-            value={token}
-            onChange={e => setToken(e.target.value)}
-            placeholder={status?.configured ? t('settings.music_section.tokenKept') : ''}
-            className={INPUT}
-          />
-          <span id='music-token-hint' className='text-sm text-[var(--ds-ink-muted)]'>
-            {t('settings.music_section.tokenHint')}
-          </span>
-        </div>
+            <div className='flex flex-col gap-2'>
+              <label htmlFor='music-token' className={FIELD_LABEL}>
+                {t('settings.music_section.token')}
+              </label>
+              <input
+                id='music-token'
+                aria-describedby='music-token-hint'
+                type='password'
+                autoComplete='off'
+                value={token}
+                onChange={e => setToken(e.target.value)}
+                placeholder={status?.configured ? t('settings.music_section.tokenKept') : ''}
+                className={INPUT}
+              />
+              <span id='music-token-hint' className='text-sm text-[var(--ds-ink-muted)]'>
+                {t('settings.music_section.tokenHint')}
+              </span>
+            </div>
 
-        {result && (
-          <p
-            role='status'
-            className={cn(
-              'flex items-center gap-2 text-[15px] font-semibold',
-              result === 'saved' ? 'text-[var(--ds-good)]' : 'text-[var(--ds-alert)]'
+            {result && (
+              <p
+                role='status'
+                className={cn(
+                  'flex items-center gap-2 text-[15px] font-semibold',
+                  result === 'saved' ? 'text-[var(--ds-good)]' : 'text-[var(--ds-alert)]'
+                )}
+              >
+                {result === 'saved' ? <CheckCircle2 size={18} aria-hidden='true' /> : <TriangleAlert size={18} aria-hidden='true' />}
+                {t(`settings.music_section.result.${result}`)}
+              </p>
             )}
-          >
-            {result === 'saved' ? <CheckCircle2 size={18} aria-hidden='true' /> : <TriangleAlert size={18} aria-hidden='true' />}
-            {t(`settings.music_section.result.${result}`)}
-          </p>
-        )}
 
-        <div className='flex flex-wrap gap-3'>
-          <button
-            type='button'
-            onClick={() => send('PUT')}
-            disabled={busy || !token.trim() || result === 'outdated'}
-            className={BUTTON_PRIMARY}
-          >
-            {busy ? t('settings.music_section.testing') : t('settings.music_section.save')}
-          </button>
-          {status?.source === 'settings' && (
-            <button type='button' onClick={() => send('DELETE')} disabled={busy} className={BUTTON_SECONDARY}>
-              {t('settings.music_section.forget')}
-            </button>
-          )}
-        </div>
+            <div className='flex flex-wrap gap-3'>
+              <button
+                type='button'
+                onClick={() => send('PUT')}
+                disabled={busy || !token.trim() || result === 'outdated'}
+                className={BUTTON_PRIMARY}
+              >
+                {busy ? t('settings.music_section.testing') : t('settings.music_section.save')}
+              </button>
+              {status?.source === 'settings' && (
+                <button type='button' onClick={() => send('DELETE')} disabled={busy} className={BUTTON_SECONDARY}>
+                  {t('settings.music_section.forget')}
+                </button>
+              )}
+            </div>
+          </>
+        )}
       </section>
     </div>
   );

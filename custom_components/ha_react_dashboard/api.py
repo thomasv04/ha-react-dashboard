@@ -30,6 +30,7 @@ from .const import (
     MODEL_TYPES,
     UPLOAD_DIR,
 )
+from .music import async_register_music_views
 from .store import DashboardStore
 
 BASE = f"/api/{DOMAIN}"
@@ -594,3 +595,5 @@ def async_register_views(hass: HomeAssistant, store: DashboardStore) -> None:
         IconFileView,
     ):
         hass.http.register_view(view(hass, store))
+    # La file complète de Music Assistant, par la connexion de son intégration HA.
+    async_register_music_views(hass)
