@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { artistLine, isMassPlayer, monogram, monogramHue, pickMassPlayer, splitTrackTitle } from './music-assistant';
+import {
+  artistLine,
+  groupVolume,
+  isMassPlayer,
+  monogram,
+  monogramHue,
+  pickMassPlayer,
+  shiftVolumes,
+  splitTrackTitle,
+} from './music-assistant';
 
 describe('music-assistant', () => {
   it('ne reconnaît que les lecteurs publiés par MA', () => {
@@ -47,11 +56,26 @@ describe('music-assistant', () => {
     ).toBe('media_player.b');
     expect(pickMassPlayer({ 'media_player.z': mass('idle'), 'media_player.y': mass('unavailable') })).toBe('media_player.z');
     expect(pickMassPlayer({})).toBeUndefined();
+    // La dernière enceinte choisie passe avant une enceinte en pause, pas avant celle qui joue.
+    const idle = { 'media_player.a': mass('paused'), 'media_player.salon': mass('idle') };
+    expect(pickMassPlayer(idle, 'media_player.salon')).toBe('media_player.salon');
+    expect(pickMassPlayer({ ...idle, 'media_player.b': mass('playing') }, 'media_player.salon')).toBe('media_player.b');
+    expect(pickMassPlayer(idle, 'media_player.disparu')).toBe('media_player.a');
   });
 
   it('garde la même teinte pour un même nom', () => {
     expect(monogramHue('Sable')).toBe(monogramHue('Sable'));
     expect(monogramHue('Sable')).toBeGreaterThanOrEqual(0);
     expect(monogramHue('Sable')).toBeLessThan(360);
+  });
+
+  it("règle un groupe en gardant l'écart entre ses enceintes", () => {
+    expect(groupVolume([0.45, 0.3, 0.2])).toBe(32);
+    // +10 % pour toutes : l'écart de 25 points entre la plus forte et la plus faible reste.
+    expect(shiftVolumes([0.45, 0.3, 0.2], 42)).toEqual([0.55, 0.4, 0.3]);
+    // En butée, une enceinte s'arrête à 0 ou 100 % ; les autres suivent.
+    expect(shiftVolumes([0.95, 0.5], 82)).toEqual([1, 0.6]);
+    expect(shiftVolumes([0.1, 0.4], 0)).toEqual([0, 0.15]);
+    expect(groupVolume([])).toBe(0);
   });
 });

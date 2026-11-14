@@ -4,7 +4,7 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { Compass, Layers, LayoutGrid, MessageCircle, Music, Settings, Sparkles, Wrench, type LucideIcon } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { useMoreInfo } from '@/context/MoreInfoContext';
-import { pickMassPlayer } from '@/lib/music-assistant';
+import { pickMassPlayer, rememberedPlayer } from '@/lib/music-assistant';
 import { usePages } from '@/context/PageContext';
 import { useCustomPanels } from '@/context/CustomPanelContext';
 import { usePanel } from '@/context/PanelContext';
@@ -37,7 +37,7 @@ export function Launcher({ open, onClose }: { open: boolean; onClose: () => void
   const { openPanel } = usePanel();
   const { openMoreInfo } = useMoreInfo();
   // L'appli Musique s'ouvre sur le lecteur Music Assistant qui joue ; sans MA, pas d'entrée.
-  const musicPlayer = useHass(s => pickMassPlayer(s.entities));
+  const musicPlayer = useHass(s => pickMassPlayer(s.entities, rememberedPlayer()));
   const [dialog, setDialog] = useState<Dialog>(null);
 
   useEffect(() => {

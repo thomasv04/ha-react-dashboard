@@ -443,7 +443,22 @@
       "radio": "Aucune de vos radios favorites ne correspond. Vérifiez l'orthographe ou retirez le filtre Favoris."
     },
     "openPlayer": "Ouvrir le lecteur",
-    "live": "En direct"
+    "live": "En direct",
+    "speakers": "Enceintes",
+    "speakersToGroup": "Enceintes à grouper",
+    "groupSpeakers": "Grouper plusieurs enceintes…",
+    "leader": "Principale du groupe",
+    "leaderPlaying": "En lecture · principale du groupe",
+    "inGroup": "Dans le groupe",
+    "inactive": "Inactive",
+    "currentGroup": "Groupe en cours",
+    "groupSize": "{count} enceintes, même musique",
+    "groupAlone": "Cochez d'autres enceintes pour les grouper.",
+    "groupVolume": "Volume du groupe",
+    "groupVolumeHint": "Règle les enceintes ensemble, en gardant l'écart entre elles.",
+    "done": "Terminé",
+    "ungroupAll": "Dégrouper tout",
+    "volumeOf": "Volume — {name}"
   },
   "person": {
     "label": "Personnes",

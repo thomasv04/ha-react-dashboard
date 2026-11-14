@@ -443,7 +443,22 @@
       "radio": "None of your favorite radios match. Check the spelling or remove the Favorites filter."
     },
     "openPlayer": "Open the player",
-    "live": "Live"
+    "live": "Live",
+    "speakers": "Speakers",
+    "speakersToGroup": "Speakers to group",
+    "groupSpeakers": "Group several speakers…",
+    "leader": "Group leader",
+    "leaderPlaying": "Playing · group leader",
+    "inGroup": "In the group",
+    "inactive": "Idle",
+    "currentGroup": "Current group",
+    "groupSize": "{count} speakers, same music",
+    "groupAlone": "Check other speakers to group them.",
+    "groupVolume": "Group volume",
+    "groupVolumeHint": "Sets the speakers together, keeping the gap between them.",
+    "done": "Done",
+    "ungroupAll": "Ungroup all",
+    "volumeOf": "Volume — {name}"
   },
   "person": {
     "label": "People",

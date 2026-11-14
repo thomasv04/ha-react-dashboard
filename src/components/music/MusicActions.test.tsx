@@ -28,7 +28,16 @@ const setup = () => {
   const onPlay = vi.fn();
   const onPlayerChange = vi.fn();
   const onClose = vi.fn();
-  render(<MusicActions item={ALBUM} player='media_player.salon_2' onPlay={onPlay} onPlayerChange={onPlayerChange} onClose={onClose} />);
+  render(
+    <MusicActions
+      item={ALBUM}
+      player='media_player.salon_2'
+      onPlay={onPlay}
+      onPlayerChange={onPlayerChange}
+      onGroup={vi.fn()}
+      onClose={onClose}
+    />
+  );
   return { onPlay, onPlayerChange, onClose };
 };
 

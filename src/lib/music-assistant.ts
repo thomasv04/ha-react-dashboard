@@ -105,16 +105,38 @@ export function splitTrackTitle(title: string, knownArtist?: string): { artist: 
   return i > 0 ? { artist: title.slice(0, i), title: title.slice(i + 3) } : { artist: '', title };
 }
 
-const PLAYER_RANK: Record<string, number> = { playing: 0, paused: 1 };
-
 /**
  * Le lecteur MA que l'appli Musique ouvre par défaut : celui qui joue, sinon
- * celui en pause, sinon le premier disponible.
+ * le dernier choisi sur cet appareil, sinon celui en pause, sinon le premier
+ * disponible.
  */
-export function pickMassPlayer(entities: Record<string, { state: string; attributes?: Record<string, unknown> }>): string | undefined {
+export function pickMassPlayer(
+  entities: Record<string, { state: string; attributes?: Record<string, unknown> }>,
+  preferred?: string | null
+): string | undefined {
+  const rank = (id: string, state: string) => (state === 'playing' ? 0 : id === preferred ? 1 : state === 'paused' ? 2 : 3);
   return Object.entries(entities)
     .filter(([id, e]) => id.startsWith('media_player.') && isMassPlayer(e) && e.state !== 'unavailable')
-    .sort(([a, x], [b, y]) => (PLAYER_RANK[x.state] ?? 2) - (PLAYER_RANK[y.state] ?? 2) || a.localeCompare(b))[0]?.[0];
+    .sort(([a, x], [b, y]) => rank(a, x.state) - rank(b, y.state) || a.localeCompare(b))[0]?.[0];
+}
+
+const PLAYER_KEY = 'ha-dashboard-music-player';
+
+/** La dernière enceinte choisie dans l'appli, propre à cet appareil (stockage local, peut manquer). */
+export function rememberedPlayer(): string | null {
+  try {
+    return localStorage.getItem(PLAYER_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function rememberPlayer(entityId: string) {
+  try {
+    localStorage.setItem(PLAYER_KEY, entityId);
+  } catch {
+    // navigation privée, stockage bloqué : l'appli retombera sur le choix par défaut
+  }
 }
 
 /** Teinte stable d'un monogramme, tirée du nom : chaque artiste garde sa couleur. */
@@ -122,4 +144,18 @@ export function monogramHue(name: string): number {
   let h = 0;
   for (const c of name) h = (h * 31 + c.charCodeAt(0)) % 360;
   return h;
+}
+
+/**
+ * Le volume d'un groupe : la moyenne de ses enceintes, en %. Le changer
+ * décale chacune d'autant, sans écraser l'écart entre elles (maquette
+ * « Enceintes — choix et groupe ») ; une enceinte en butée y reste.
+ */
+export function groupVolume(volumes: number[]): number {
+  return volumes.length ? Math.round((volumes.reduce((a, b) => a + b, 0) / volumes.length) * 100) : 0;
+}
+
+export function shiftVolumes(volumes: number[], target: number): number[] {
+  const delta = target / 100 - volumes.reduce((a, b) => a + b, 0) / (volumes.length || 1);
+  return volumes.map(v => Math.round(Math.min(1, Math.max(0, v + delta)) * 100) / 100);
 }

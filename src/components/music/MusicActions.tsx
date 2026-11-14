@@ -97,7 +97,7 @@ function ActionRow({
 }
 
 /** Les lecteurs Music Assistant, avec leur état ; un lecteur hors ligne ne se choisit pas. */
-function PlayerList({ current, onPick }: { current: string; onPick: (entityId: string) => void }) {
+function PlayerList({ current, onPick, onGroup }: { current: string; onPick: (entityId: string) => void; onGroup: () => void }) {
   const { t } = useI18n();
   const entities = useHass(s => s.entities) as Record<string, { state: string; attributes?: Record<string, unknown> }>;
   const players = Object.entries(entities)
@@ -140,12 +140,30 @@ function PlayerList({ current, onPick }: { current: string; onPick: (entityId: s
           </button>
         );
       })}
+      <div className='mx-4 my-1 h-px shrink-0 bg-[var(--music-raised-2)]' />
+      <ActionRow
+        icon={Speaker}
+        onClick={onGroup}
+        end={<ChevronRight size={22} aria-hidden='true' className='text-[var(--ds-ink-muted)]' />}
+      >
+        {t('widgets.music.groupSpeakers')}
+      </ActionRow>
     </div>
   );
 }
 
 /** Choisir l'enceinte de l'appli, sans rien lancer. */
-export function PlayerPicker({ current, onPick, onClose }: { current: string; onPick: (entityId: string) => void; onClose: () => void }) {
+export function PlayerPicker({
+  current,
+  onPick,
+  onGroup,
+  onClose,
+}: {
+  current: string;
+  onPick: (entityId: string) => void;
+  onGroup: () => void;
+  onClose: () => void;
+}) {
   const { t } = useI18n();
   return (
     <MusicDialog label={t('widgets.music.choosePlayer')} onClose={onClose}>
@@ -155,6 +173,10 @@ export function PlayerPicker({ current, onPick, onClose }: { current: string; on
         onPick={id => {
           onPick(id);
           onClose();
+        }}
+        onGroup={() => {
+          onClose();
+          onGroup();
         }}
       />
     </MusicDialog>
@@ -172,12 +194,14 @@ export function MusicActions({
   player,
   onPlay,
   onPlayerChange,
+  onGroup,
   onClose,
 }: {
   item: MassItem;
   player: string;
   onPlay: (item: MassItem, enqueue: MassEnqueue, target: string) => void;
   onPlayerChange: (entityId: string) => void;
+  onGroup: () => void;
   onClose: () => void;
 }) {
   const { t } = useI18n();
@@ -235,6 +259,10 @@ export function MusicActions({
             onPick={id => {
               onPlayerChange(id);
               run('play', id);
+            }}
+            onGroup={() => {
+              onClose();
+              onGroup();
             }}
           />
         </>

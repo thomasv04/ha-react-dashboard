@@ -6,7 +6,7 @@ import { useNow } from '@/hooks/useNow';
 import { useFormats } from '@/hooks/useFormats';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { massPlay, useMassEntryId, useMassLibrary } from '@/hooks/useMusicAssistant';
-import { itemSubtitle, type MassEnqueue, type MassItem, type MassMediaType, type MassOrder } from '@/lib/music-assistant';
+import { itemSubtitle, rememberPlayer, type MassEnqueue, type MassItem, type MassMediaType, type MassOrder } from '@/lib/music-assistant';
 import { friendlyName } from '@/lib/ha-service';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
@@ -16,6 +16,7 @@ import { MusicDetail } from './MusicDetail';
 import { MusicMiniPlayer } from './MusicMiniPlayer';
 import { EmptyAction, EmptyState, ItemGrid, LibrarySkeleton, Pill, TrackList } from './MusicItems';
 import { MusicSearch } from './MusicSearch';
+import { MusicSpeakers } from './MusicSpeakers';
 
 const TABS: MassMediaType[] = ['album', 'artist', 'playlist', 'track', 'radio'];
 const ORDERS: MassOrder[] = ['last_played_desc', 'sort_name', 'timestamp_added_desc'];
@@ -37,12 +38,18 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
   const moreInfo = useMoreInfoOptional();
   const clock = useNow();
   // L'enceinte de l'appli : celle de l'ouverture, puis celle qu'on choisit.
-  const [player, setPlayer] = useState(entityId);
+  const [player, setPlayerState] = useState(entityId);
+  const setPlayer = (id: string) => {
+    setPlayerState(id);
+    rememberPlayer(id);
+  };
   const playerName = useHass(s => friendlyName(s.entities[player]) ?? player);
   const { entryId, error: entryError } = useMassEntryId(player);
   // L'élément dont on a ouvert les actions, ou le choix de l'enceinte.
   const [actionItem, setActionItem] = useState<MassItem | null>(null);
   const [picking, setPicking] = useState(false);
+  // L'écran des enceintes et du groupe, par-dessus la bibliothèque.
+  const [speakers, setSpeakers] = useState(false);
 
   const [tab, setTab] = useState<MassMediaType>('album');
   const [favorite, setFavorite] = useState(false);
@@ -62,12 +69,14 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
   // Les fiches ouvertes, la dernière au-dessus : artiste → album → retour à l'artiste.
   const [stack, setStack] = useState<MassItem[]>([]);
   const detail = stack.at(-1);
+  // Un écran secondaire (fiche, enceintes) : retour à gauche, ni recherche ni enceinte dans l'en-tête.
+  const sub = speakers || !!detail;
   // Une fiche s'ouvre en haut, pas au défilement de la grille qu'on quitte.
   const rootRef = useRef<HTMLDivElement>(null);
   // Accolades : scrollIntoView peut renvoyer une promesse, que React prendrait pour un nettoyage.
   useEffect(() => {
     rootRef.current?.scrollIntoView?.({ block: 'start' });
-  }, [detail]);
+  }, [detail, speakers]);
 
   const showRecent = !favorite && !query;
   const recent = useMassLibrary(showRecent ? entryId : null, { mediaType: tab, orderBy: 'last_played_desc', limit: 5 });
@@ -79,7 +88,9 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
   const play = (item: MassItem, enqueue: MassEnqueue = 'play', target = player) => massPlay(helpers, target, item, enqueue);
   const open = (item: MassItem) => (BROWSABLE.has(item.media_type) ? setStack(s => [...s, item]) : play(item));
   const more = setActionItem;
-  const back = stack.at(-2)?.name ?? (global ? t('widgets.music.searchResults') : t(`widgets.music.tabs.${tab}`));
+  const back = speakers
+    ? t('widgets.music.speakers')
+    : (stack.at(-2)?.name ?? (global ? t('widgets.music.searchResults') : t(`widgets.music.tabs.${tab}`)));
   const subtitle = (item: MassItem) => itemSubtitle(item, t);
 
   return (
@@ -89,16 +100,16 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
       // surface surélevée (fenêtres, mini-lecteur), bouton posé dessus, bleu clair du titre en cours,
       // reflet des squelettes, filet des listes, rose des favoris et du direct, et le gris de l'heure
       // (ink-muted à 80 %, #8b95a5). Le bas laisse la place au mini-lecteur.
-      className='-mt-4 flex min-h-full flex-col bg-[var(--ds-ground)] px-10 pb-[150px] pt-8 leading-[normal] text-[var(--ds-ink)] [--music-dim:color-mix(in_srgb,var(--ds-ink-muted)_80%,var(--ds-ground))] [--music-highlight-soft:rgba(143,184,245,0.14)] [--music-highlight:#8fb8f5] [--music-line:#1a212b] [--music-love:#ff7b93] [--music-raised-2:#3a4352] [--music-raised:#2a3240] [--music-shine:#2c3544]'
+      className='-mt-4 flex min-h-full flex-col bg-[var(--ds-ground)] px-10 pb-[150px] pt-8 leading-[normal] text-[var(--ds-ink)] [--music-dim:color-mix(in_srgb,var(--ds-ink-muted)_80%,var(--ds-ground))] [--music-highlight-soft:rgba(143,184,245,0.14)] [--music-highlight:#8fb8f5] [--music-line:#1a212b] [--music-love:#ff7b93] [--music-track:#1e3354] [--music-raised-2:#3a4352] [--music-raised:#2a3240] [--music-shine:#2c3544]'
       data-testid='music-app'
     >
       {/* En-tête de la maquette : le carré du lanceur (il ferme l'appli) et le titre ; la recherche,
           l'enceinte et l'heure à droite. */}
       <header className='flex h-[60px] shrink-0 items-center gap-5'>
-        {detail ? (
+        {sub ? (
           <button
             type='button'
-            onClick={() => setStack(s => s.slice(0, -1))}
+            onClick={() => (speakers ? setSpeakers(false) : setStack(s => s.slice(0, -1)))}
             aria-label={`${t('widgets.music.back')} — ${back}`}
             className='flex items-center gap-5 text-[24px] font-semibold text-[var(--ds-ink-muted)]'
           >
@@ -129,7 +140,7 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
             <h2 className='text-[38px] font-semibold leading-none'>{t('widgets.music.title')}</h2>
           </div>
         )}
-        {!detail && (
+        {!sub && (
           <label
             className={cn(
               'flex h-[60px] min-w-0 items-center gap-3.5 rounded-[30px] bg-[var(--ds-surface-2)] pl-[22px] pr-2.5',
@@ -160,7 +171,7 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
             )}
           </label>
         )}
-        {!detail && !global && (
+        {!sub && !global && (
           <button
             type='button'
             onClick={() => setPicking(true)}
@@ -171,10 +182,12 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
             <Speaker size={26} aria-hidden='true' />
           </button>
         )}
-        <time className={cn('shrink-0 text-[38px] font-medium text-[var(--music-dim)]', detail && 'ml-auto')}>{formatTime(clock)}</time>
+        <time className={cn('shrink-0 text-[38px] font-medium text-[var(--music-dim)]', sub && 'ml-auto')}>{formatTime(clock)}</time>
       </header>
 
-      {detail ? (
+      {speakers ? (
+        <MusicSpeakers player={player} onDone={() => setSpeakers(false)} />
+      ) : detail ? (
         <MusicDetail key={detail.uri} entityId={player} item={detail} onOpen={item => setStack(s => [...s, item])} onMore={more} />
       ) : global ? (
         <MusicSearch entryId={entryId} query={query} onOpen={open} onPlay={item => play(item)} onMore={more} />
@@ -295,9 +308,16 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
       <MusicMiniPlayer entityId={player} />
 
       {actionItem && (
-        <MusicActions item={actionItem} player={player} onPlay={play} onPlayerChange={setPlayer} onClose={() => setActionItem(null)} />
+        <MusicActions
+          item={actionItem}
+          player={player}
+          onPlay={play}
+          onPlayerChange={setPlayer}
+          onGroup={() => setSpeakers(true)}
+          onClose={() => setActionItem(null)}
+        />
       )}
-      {picking && <PlayerPicker current={player} onPick={setPlayer} onClose={() => setPicking(false)} />}
+      {picking && <PlayerPicker current={player} onPick={setPlayer} onGroup={() => setSpeakers(true)} onClose={() => setPicking(false)} />}
     </div>
   );
 }
