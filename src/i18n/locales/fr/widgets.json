@@ -441,7 +441,9 @@
       "playlist": "Aucune de vos playlists favorites ne correspond. Vérifiez l'orthographe ou retirez le filtre Favoris.",
       "track": "Aucun de vos titres favoris ne correspond. Vérifiez l'orthographe ou retirez le filtre Favoris.",
       "radio": "Aucune de vos radios favorites ne correspond. Vérifiez l'orthographe ou retirez le filtre Favoris."
-    }
+    },
+    "openPlayer": "Ouvrir le lecteur",
+    "live": "En direct"
   },
   "person": {
     "label": "Personnes",

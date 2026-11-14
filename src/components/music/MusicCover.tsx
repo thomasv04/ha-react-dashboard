@@ -59,7 +59,7 @@ export function MusicCover({
       )}
       {favorite && (
         <span className='absolute bottom-2.5 right-2.5 flex size-9 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--ds-ground)_66%,transparent)]'>
-          <Heart size={20} aria-hidden='true' className='fill-[#ff6b8b] text-[#ff6b8b]' />
+          <Heart size={20} aria-hidden='true' className='fill-[var(--music-love)] text-[var(--music-love)]' />
         </span>
       )}
     </span>

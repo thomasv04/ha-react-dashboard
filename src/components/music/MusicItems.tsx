@@ -111,7 +111,13 @@ export function TrackList({
               <span className='mt-0.5 block truncate text-[16px] text-[var(--ds-ink-muted)]'>{artistLine(item)}</span>
             </span>
           </button>
-          {item.favorite && <Heart size={22} aria-label={t('widgets.music.favorite')} className='shrink-0 fill-[#ff6b8b] text-[#ff6b8b]' />}
+          {item.favorite && (
+            <Heart
+              size={22}
+              aria-label={t('widgets.music.favorite')}
+              className='shrink-0 fill-[var(--music-love)] text-[var(--music-love)]'
+            />
+          )}
           {onMore && <MoreButton label={item.name} onClick={() => onMore(item)} />}
         </li>
       ))}

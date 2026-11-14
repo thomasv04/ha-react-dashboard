@@ -441,7 +441,9 @@
       "playlist": "None of your favorite playlists match. Check the spelling or remove the Favorites filter.",
       "track": "None of your favorite tracks match. Check the spelling or remove the Favorites filter.",
       "radio": "None of your favorite radios match. Check the spelling or remove the Favorites filter."
-    }
+    },
+    "openPlayer": "Open the player",
+    "live": "Live"
   },
   "person": {
     "label": "People",

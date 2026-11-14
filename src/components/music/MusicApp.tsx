@@ -13,6 +13,7 @@ import { useI18n } from '@/i18n';
 import { MusicCover } from './MusicCover';
 import { MusicActions, PlayerPicker } from './MusicActions';
 import { MusicDetail } from './MusicDetail';
+import { MusicMiniPlayer } from './MusicMiniPlayer';
 import { EmptyAction, EmptyState, ItemGrid, LibrarySkeleton, Pill, TrackList } from './MusicItems';
 import { MusicSearch } from './MusicSearch';
 
@@ -86,8 +87,9 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
       ref={rootRef}
       // Couleurs de la maquette absentes des jetons, posées une fois pour l'appli et ses fenêtres :
       // surface surélevée (fenêtres, mini-lecteur), bouton posé dessus, bleu clair du titre en cours,
-      // reflet des squelettes, filet des listes, et le gris de l'heure (ink-muted à 80 %, #8b95a5).
-      className='-mt-4 flex min-h-full flex-col bg-[var(--ds-ground)] px-10 pb-10 pt-8 leading-[normal] text-[var(--ds-ink)] [--music-dim:color-mix(in_srgb,var(--ds-ink-muted)_80%,var(--ds-ground))] [--music-highlight-soft:rgba(143,184,245,0.14)] [--music-highlight:#8fb8f5] [--music-line:#1a212b] [--music-raised-2:#3a4352] [--music-raised:#2a3240] [--music-shine:#2c3544]'
+      // reflet des squelettes, filet des listes, rose des favoris et du direct, et le gris de l'heure
+      // (ink-muted à 80 %, #8b95a5). Le bas laisse la place au mini-lecteur.
+      className='-mt-4 flex min-h-full flex-col bg-[var(--ds-ground)] px-10 pb-[150px] pt-8 leading-[normal] text-[var(--ds-ink)] [--music-dim:color-mix(in_srgb,var(--ds-ink-muted)_80%,var(--ds-ground))] [--music-highlight-soft:rgba(143,184,245,0.14)] [--music-highlight:#8fb8f5] [--music-line:#1a212b] [--music-love:#ff7b93] [--music-raised-2:#3a4352] [--music-raised:#2a3240] [--music-shine:#2c3544]'
       data-testid='music-app'
     >
       {/* En-tête de la maquette : le carré du lanceur (il ferme l'appli) et le titre ; la recherche,
@@ -289,6 +291,8 @@ export default function MusicApp({ entityId }: { entityId: string; widgetId: str
           )}
         </>
       )}
+
+      <MusicMiniPlayer entityId={player} />
 
       {actionItem && (
         <MusicActions item={actionItem} player={player} onPlay={play} onPlayerChange={setPlayer} onClose={() => setActionItem(null)} />
