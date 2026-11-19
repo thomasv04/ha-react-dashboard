@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  ChevronDown,
   ListMusic,
   Monitor,
   Music,
@@ -23,6 +24,7 @@ import { useFormats } from '@/hooks/useFormats';
 import { useHaUrl } from '@/hooks/useHaUrl';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
+import { useIsPhone } from '@/hooks/useIsMobile';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useMoreInfoOptional } from '@/context/MoreInfoContext';
 import { callHAService, friendlyName } from '@/lib/ha-service';
@@ -60,8 +62,10 @@ function RoundButton({
       title={label}
       className={cn(
         'flex shrink-0 items-center justify-center rounded-full text-white transition-colors disabled:opacity-40',
-        big ? 'size-[72px]' : 'size-14',
-        active ? 'bg-[var(--ds-tile-on)]' : big ? 'bg-white/[0.28]' : 'bg-white/[0.14]'
+        big ? 'size-[72px] phone:size-[76px]' : 'size-14 phone:size-12',
+        active ? 'bg-[var(--ds-tile-on)]' : big ? 'bg-white/[0.28]' : 'bg-white/[0.14]',
+        // Téléphone (maquette « Lecteur ») : les petits boutons sans fond, le grand en blanc plein.
+        !active && (big ? 'phone:bg-white phone:text-[var(--ds-ground)]' : 'phone:bg-transparent')
       )}
     >
       {children}
@@ -79,6 +83,10 @@ function RoundButton({
  * et le volume se règle dans l'écran des enceintes. Les autres lecteurs (une
  * télé, un Chromecast) gardent sous les commandes leur volume et leurs sources,
  * que la maquette ne couvre pas.
+ *
+ * Au téléphone (maquette « Lecteur » du téléphone) : réduire et « Lecture sur »
+ * en tête, la pochette en grand, le titre à gauche, les commandes sans fond
+ * autour du bouton blanc, le volume, puis l'enceinte et la file en pastilles.
  */
 export default function MediaPlayerMoreInfo({ entityId: givenId, widgetId }: { entityId: string; widgetId: string }) {
   const { t } = useI18n();
@@ -95,6 +103,7 @@ export default function MediaPlayerMoreInfo({ entityId: givenId, widgetId }: { e
   const playFeedback = useSoundFeedback();
   const { formatTime } = useFormats();
   const [picking, setPicking] = useState(false);
+  const phone = useIsPhone();
 
   const state = entity?.state ?? 'unavailable';
   const attrs = (entity?.attributes ?? {}) as Record<string, unknown>;
@@ -168,7 +177,7 @@ export default function MediaPlayerMoreInfo({ entityId: givenId, widgetId }: { e
 
   return (
     <div
-      className='music-theme relative isolate -mt-4 flex min-h-full flex-col overflow-hidden pb-10 leading-[normal] text-white'
+      className='music-theme relative isolate -mt-4 flex min-h-full flex-col overflow-hidden pb-10 leading-[normal] text-white phone:pb-[calc(env(safe-area-inset-bottom)+16px)]'
       data-testid='media-player-more-info'
     >
       {/* Fond : la pochette, floutée et assombrie ; sans pochette, le dégradé de la maquette. */}
@@ -190,54 +199,92 @@ export default function MediaPlayerMoreInfo({ entityId: givenId, widgetId }: { e
         />
       )}
 
-      {/* La poignée du haut : la toucher ferme le lecteur. */}
-      <button
-        type='button'
-        onClick={moreInfo?.closeMoreInfo}
-        aria-label={t('common.close')}
-        className='absolute left-1/2 top-2 flex h-8 w-[130px] -translate-x-1/2 items-start justify-center pt-2.5'
-      >
-        <span className='h-1.5 w-[90px] rounded-[3px] bg-[var(--music-highlight)]' />
-      </button>
-
-      <header className='flex items-start justify-between pl-14 pr-16 pt-11'>
-        {mass ? (
+      {phone ? (
+        <header className='flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+16px)]'>
           <button
             type='button'
-            onClick={() => openMusic()}
-            className='h-[52px] rounded-[26px] bg-white/[0.14] px-[22px] text-[19px] font-semibold'
+            onClick={moreInfo?.closeMoreInfo}
+            aria-label={t('widgets.music.collapse')}
+            title={t('widgets.music.collapse')}
+            className='flex size-11 items-center justify-center rounded-full bg-white/[0.14]'
           >
-            {t('widgets.music.title')}
+            <ChevronDown size={22} aria-hidden='true' />
           </button>
-        ) : (
-          <span className='flex h-[52px] items-center rounded-[26px] bg-white/[0.14] px-[22px] text-[19px] font-semibold'>{name}</span>
-        )}
-        <time className='text-[44px] font-medium'>{formatTime(clock)}</time>
-      </header>
+          <button
+            type='button'
+            onClick={() => mass && setPicking(true)}
+            disabled={!mass}
+            className='flex min-w-0 flex-col items-center leading-tight'
+          >
+            <span className='text-xs text-white/80'>{t('widgets.music.playingOn')}</span>
+            <span className='max-w-[60vw] truncate text-base font-semibold'>{speaker}</span>
+          </button>
+          {mass ? (
+            <button
+              type='button'
+              onClick={() => openMusic()}
+              aria-label={t('widgets.music.title')}
+              title={t('widgets.music.title')}
+              className='flex size-11 items-center justify-center rounded-full bg-white/[0.14]'
+            >
+              <Music size={20} aria-hidden='true' />
+            </button>
+          ) : (
+            <span aria-hidden='true' className='size-11' />
+          )}
+        </header>
+      ) : (
+        <>
+          {/* La poignée du haut : la toucher ferme le lecteur. */}
+          <button
+            type='button'
+            onClick={moreInfo?.closeMoreInfo}
+            aria-label={t('common.close')}
+            className='absolute left-1/2 top-2 flex h-8 w-[130px] -translate-x-1/2 items-start justify-center pt-2.5'
+          >
+            <span className='h-1.5 w-[90px] rounded-[3px] bg-[var(--music-highlight)]' />
+          </button>
 
-      <div className='mt-11 flex flex-col items-center px-14 text-center'>
-        <div className='flex size-[300px] items-center justify-center overflow-hidden rounded-[28px] bg-white/10 shadow-[0_24px_60px_rgba(0,0,0,0.4)]'>
+          <header className='flex items-start justify-between pl-14 pr-16 pt-11'>
+            {mass ? (
+              <button
+                type='button'
+                onClick={() => openMusic()}
+                className='h-[52px] rounded-[26px] bg-white/[0.14] px-[22px] text-[19px] font-semibold'
+              >
+                {t('widgets.music.title')}
+              </button>
+            ) : (
+              <span className='flex h-[52px] items-center rounded-[26px] bg-white/[0.14] px-[22px] text-[19px] font-semibold'>{name}</span>
+            )}
+            <time className='text-[44px] font-medium'>{formatTime(clock)}</time>
+          </header>
+        </>
+      )}
+
+      <div className='mt-11 flex flex-col items-center px-14 text-center phone:mt-5 phone:items-stretch phone:px-8 phone:text-left'>
+        <div className='flex size-[300px] items-center justify-center overflow-hidden rounded-[28px] bg-white/10 shadow-[0_24px_60px_rgba(0,0,0,0.4)] phone:aspect-square phone:size-auto phone:w-full phone:rounded-[24px] phone:shadow-[0_24px_60px_rgba(0,0,0,0.45)]'>
           {cover ? (
             <img src={cover} alt='' data-testid='media-cover' className='size-full object-cover' />
           ) : (
             <Music size={72} aria-hidden='true' className='text-white/60' />
           )}
         </div>
-        <h2 className='mt-8 max-w-full truncate text-[34px] font-medium'>
+        <h2 className='mt-8 max-w-full truncate text-[34px] font-medium phone:mt-5 phone:text-2xl phone:font-bold'>
           {isOff ? t('widgets.media_player.off') : title || t('widgets.media_player.nothingPlaying')}
         </h2>
         {!isOff && (artist || album) && (
-          <p className='mt-2.5 max-w-full truncate text-[20px] text-white/[0.84]'>
+          <p className='mt-2.5 max-w-full truncate text-[20px] text-white/[0.84] phone:mt-0.5 phone:text-[17px]'>
             {artist && <span>{artist}</span>}
             {artist && album && ' · '}
             {album && <span>{album}</span>}
           </p>
         )}
-        <p className='mt-2.5 text-[16px] text-white/[0.76]'>{speaker}</p>
+        <p className='mt-2.5 text-[16px] text-white/[0.76] phone:hidden'>{speaker}</p>
       </div>
 
       {/* Progression : un trait sur toute la largeur ; un curseur natif invisible le rend réglable. */}
-      <div className={cn('mt-[74px] px-14', (isOff || duration <= 0) && 'invisible')}>
+      <div className={cn('mt-[74px] px-14 phone:mt-6 phone:px-8', (isOff || duration <= 0) && 'invisible')}>
         <div className='relative h-1.5 rounded-[3px] bg-white/25'>
           <div
             className='h-full rounded-[3px] bg-white'
@@ -259,22 +306,22 @@ export default function MediaPlayerMoreInfo({ entityId: givenId, widgetId }: { e
             className='absolute -inset-y-4 inset-x-0 h-auto w-full cursor-pointer opacity-0'
           />
         </div>
-        <div className='mt-2.5 flex justify-between text-[15px] tabular-nums text-white/[0.84]'>
+        <div className='mt-2.5 flex justify-between text-[15px] tabular-nums text-white/[0.84] phone:mt-2 phone:text-sm'>
           <span>{formatMediaTime(position)}</span>
           <span>{formatMediaTime(duration)}</span>
         </div>
       </div>
 
       {/* Commandes : l'enceinte à gauche, la file à droite (Music Assistant), le reste au centre. */}
-      <div className='mt-[26px] flex h-[72px] items-center px-14'>
-        <div className='w-14 shrink-0'>
+      <div className='mt-[26px] flex h-[72px] items-center px-14 phone:mt-4 phone:h-[76px] phone:px-6'>
+        <div className='w-14 shrink-0 phone:hidden'>
           {mass && (
             <RoundButton label={t('widgets.music.choosePlayer')} onClick={() => setPicking(true)}>
               <Monitor size={22} aria-hidden='true' />
             </RoundButton>
           )}
         </div>
-        <div className='flex flex-1 items-center justify-center gap-[18px]'>
+        <div className='flex flex-1 items-center justify-center gap-[18px] phone:justify-between phone:gap-0'>
           {can('SHUFFLE_SET') && (
             <RoundButton
               label={t('widgets.media_player.shuffle')}
@@ -296,7 +343,7 @@ export default function MediaPlayerMoreInfo({ entityId: givenId, widgetId }: { e
             }}
           >
             {isPlaying ? (
-              <Pause size={28} strokeWidth={2.5} aria-hidden='true' />
+              <Pause size={28} strokeWidth={phone ? 3 : 2.5} aria-hidden='true' />
             ) : (
               <Play size={28} aria-hidden='true' className='ml-0.5 fill-current' />
             )}
@@ -310,7 +357,7 @@ export default function MediaPlayerMoreInfo({ entityId: givenId, widgetId }: { e
             </RoundButton>
           )}
         </div>
-        <div className='w-14 shrink-0'>
+        <div className='w-14 shrink-0 phone:hidden'>
           {mass && (
             <RoundButton label={t('widgets.music.queue')} onClick={() => openMusic('queue')}>
               <ListMusic size={22} aria-hidden='true' />
@@ -320,11 +367,12 @@ export default function MediaPlayerMoreInfo({ entityId: givenId, widgetId }: { e
       </div>
 
       {/* Hors Music Assistant : le volume et la sortie, que la maquette musique ne prévoit pas. */}
-      {!mass && (can('VOLUME_SET') || (can('SELECT_SOURCE') && sources.length > 0)) && (
-        <div className='mt-8 flex flex-col gap-5 px-14'>
+      {/* Au téléphone, la maquette garde le volume, même sur Music Assistant. */}
+      {(!mass || phone) && (can('VOLUME_SET') || (!mass && can('SELECT_SOURCE') && sources.length > 0)) && (
+        <div className='mt-8 flex flex-col gap-5 px-14 phone:mt-4 phone:px-8'>
           {can('VOLUME_SET') && (
             <div className='flex items-center gap-3'>
-              {can('VOLUME_MUTE') && (
+              {can('VOLUME_MUTE') && !phone && (
                 <RoundButton
                   label={muted ? t('widgets.media_player.unmute') : t('widgets.media_player.mute')}
                   active={muted}
@@ -342,12 +390,14 @@ export default function MediaPlayerMoreInfo({ entityId: givenId, widgetId }: { e
                 label={t('widgets.media_player.volume')}
                 valueText={`${Math.round(volume * 100)} %`}
                 icon={muted ? VolumeX : Volume2}
-                track='rgba(255,255,255,0.14)'
-                className='h-14 flex-1'
+                track={phone ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.14)'}
+                // Téléphone : blanc plein, comme la maquette « Lecteur ».
+                {...(phone && { fill: '#ffffff', iconColor: 'var(--ds-ground)' })}
+                className='h-14 flex-1 phone:h-[46px]'
               />
             </div>
           )}
-          {can('SELECT_SOURCE') && sources.length > 0 && (
+          {!mass && can('SELECT_SOURCE') && sources.length > 0 && (
             <div className='flex flex-wrap items-center gap-2' role='group' aria-label={t('widgets.media_player.source')}>
               <Speaker size={18} aria-hidden='true' className='mr-1 text-white/75' />
               {sources.map(s => (
@@ -369,7 +419,28 @@ export default function MediaPlayerMoreInfo({ entityId: givenId, widgetId }: { e
         </div>
       )}
 
-      {row.length > 0 && (
+      {phone && mass && (
+        <div className='mt-auto flex gap-2.5 px-4 pt-5'>
+          <button
+            type='button'
+            onClick={() => setPicking(true)}
+            className='flex h-12 min-w-0 flex-1 items-center justify-center gap-2.5 rounded-full bg-white/[0.14] text-[15px] font-semibold'
+          >
+            <Speaker size={18} aria-hidden='true' className='shrink-0' />
+            <span className='truncate'>{speaker}</span>
+          </button>
+          <button
+            type='button'
+            onClick={() => openMusic('queue')}
+            className='flex h-12 flex-1 items-center justify-center gap-2.5 rounded-full bg-white/[0.14] text-[15px] font-semibold'
+          >
+            <ListMusic size={18} aria-hidden='true' />
+            {t('widgets.music.queue')}
+          </button>
+        </div>
+      )}
+
+      {!phone && row.length > 0 && (
         <section className='mt-9 pl-14'>
           <h3 className='mb-3.5 text-[19px] font-medium text-white/90'>
             {mass ? t('widgets.music.youMayLike') : t('widgets.media_player.library')}

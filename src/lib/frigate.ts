@@ -1,3 +1,4 @@
+import { Car, Cctv, Package, PawPrint, User, type LucideIcon } from 'lucide-react';
 import { translateOr } from '@/i18n/translate-or';
 
 /**
@@ -23,6 +24,18 @@ export interface FrigateEvent {
  */
 export const frigateMedia = (id: string, kind: 'thumbnail.jpg' | 'snapshot.jpg' | 'clip.mp4') =>
   `/api/frigate/notifications/${encodeURIComponent(id)}/${kind}`;
+
+const LABEL_ICONS: Record<string, LucideIcon> = {
+  person: User,
+  package: Package,
+  car: Car,
+  dog: PawPrint,
+  cat: PawPrint,
+  animal: PawPrint,
+};
+
+/** L'icône d'une étiquette ; une caméra pour celles qui n'en ont pas. */
+export const frigateIcon = (label: string): LucideIcon => LABEL_ICONS[label] ?? Cctv;
 
 /** L'étiquette traduite (« Personne »), ou telle quelle si elle est inconnue. */
 export const frigateLabel = (t: (key: string) => string, label: string) => translateOr(t, `widgets.camera_events.labels.${label}`, label);

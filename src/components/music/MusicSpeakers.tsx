@@ -72,15 +72,20 @@ export function MusicSpeakers({ player, onDone }: { player: string; onDone: () =
   };
 
   return (
-    <div className='mt-9 grid items-start gap-10 lg:grid-cols-[1fr_500px]' data-testid='music-speakers'>
+    <div className='mt-9 grid items-start gap-10 lg:grid-cols-[1fr_500px] phone:mt-4 phone:gap-5' data-testid='music-speakers'>
       <section className='min-w-0'>
-        <h3 className='mb-3.5 text-[22px] font-semibold'>{t('widgets.music.speakersToGroup')}</h3>
-        <ul className='flex flex-col gap-3'>
+        <h3 className='mb-3.5 text-[22px] font-semibold phone:mb-2.5 phone:text-lg phone:font-bold'>
+          {t('widgets.music.speakersToGroup')}
+        </h3>
+        <ul className='flex flex-col gap-3 phone:gap-2'>
           {speakers.map(({ id, e, name }) => {
             const offline = e.state === 'unavailable';
             const checked = group.includes(id);
             return (
-              <li key={id} className='flex h-[92px] items-center gap-5 rounded-[24px] bg-[var(--ds-surface-2)] px-6'>
+              <li
+                key={id}
+                className='flex h-[92px] items-center gap-5 rounded-[24px] bg-[var(--ds-surface-2)] px-6 phone:h-auto phone:flex-wrap phone:gap-x-3 phone:gap-y-2.5 phone:rounded-[22px] phone:p-3.5'
+              >
                 <button
                   type='button'
                   role='checkbox'
@@ -89,7 +94,7 @@ export function MusicSpeakers({ player, onDone }: { player: string; onDone: () =
                   onClick={() => toggle(id)}
                   disabled={offline || id === leader || fixed}
                   className={cn(
-                    'flex size-11 shrink-0 items-center justify-center rounded-[14px]',
+                    'flex size-11 shrink-0 items-center justify-center rounded-[14px] phone:size-7 phone:rounded-[8px]',
                     checked
                       ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]'
                       : offline
@@ -97,11 +102,13 @@ export function MusicSpeakers({ player, onDone }: { player: string; onDone: () =
                         : 'shadow-[inset_0_0_0_2px_var(--music-dim)]'
                   )}
                 >
-                  {checked && <Check size={26} strokeWidth={3} aria-hidden='true' />}
+                  {checked && <Check size={26} strokeWidth={3} aria-hidden='true' className='phone:size-[18px]' />}
                 </button>
-                <span className='flex min-w-0 flex-1 flex-col gap-0.5'>
-                  <span className={cn('truncate text-[24px] font-semibold', offline && 'text-[var(--music-dim)]')}>{name}</span>
-                  <span className='truncate text-[17px] text-[var(--ds-ink-muted)]'>{status(id, e)}</span>
+                <span className='flex min-w-0 flex-1 flex-col gap-0.5 phone:basis-[calc(100%-40px)]'>
+                  <span className={cn('truncate text-[24px] font-semibold phone:text-[17px]', offline && 'text-[var(--music-dim)]')}>
+                    {name}
+                  </span>
+                  <span className='truncate text-[17px] text-[var(--ds-ink-muted)] phone:text-[13px]'>{status(id, e)}</span>
                 </span>
                 {!offline && (
                   <>
@@ -112,9 +119,11 @@ export function MusicSpeakers({ player, onDone }: { player: string; onDone: () =
                       valueText={`${Math.round(volume(id) * 100)} %`}
                       icon={Volume2}
                       track='var(--music-track)'
-                      className='h-12 w-[380px] shrink rounded-[24px]'
+                      className='h-12 w-[380px] shrink rounded-[24px] phone:h-11 phone:w-auto phone:min-w-0 phone:flex-1 phone:basis-[calc(100%-56px)]'
                     />
-                    <span className='w-12 shrink-0 text-right text-[20px] font-semibold tabular-nums'>{Math.round(volume(id) * 100)}</span>
+                    <span className='w-12 shrink-0 text-right text-[20px] font-semibold tabular-nums phone:w-10 phone:text-[17px]'>
+                      {Math.round(volume(id) * 100)}
+                    </span>
                   </>
                 )}
               </li>
@@ -123,14 +132,17 @@ export function MusicSpeakers({ player, onDone }: { player: string; onDone: () =
         </ul>
       </section>
 
-      <aside className='flex flex-col rounded-[32px] bg-[var(--ds-surface-2)] p-8'>
-        <span className='text-[16px] font-semibold uppercase text-[var(--ds-ink-muted)]'>{t('widgets.music.currentGroup')}</span>
-        <span className='mt-2.5 text-[30px] font-semibold'>{names.join(', ')}</span>
-        <span className='mt-2 text-[17px] text-[var(--ds-ink-muted)]'>
+      {/* Au téléphone, le groupe en cours passe en tête (maquette « Enceintes » du téléphone). */}
+      <aside className='flex flex-col rounded-[32px] bg-[var(--ds-surface-2)] p-8 phone:order-first phone:rounded-[22px] phone:p-4'>
+        <span className='text-[16px] font-semibold uppercase text-[var(--ds-ink-muted)] phone:text-xs'>
+          {t('widgets.music.currentGroup')}
+        </span>
+        <span className='mt-2.5 text-[30px] font-semibold phone:mt-1 phone:text-lg phone:font-bold'>{names.join(', ')}</span>
+        <span className='mt-2 text-[17px] text-[var(--ds-ink-muted)] phone:mt-0.5 phone:text-[13px]'>
           {group.length > 1 ? t('widgets.music.groupSize', { count: group.length }) : t('widgets.music.groupAlone')}
         </span>
-        <span className='mt-8 text-[20px] font-semibold'>{t('widgets.music.groupVolume')}</span>
-        <div className='mt-3.5 flex items-center gap-4'>
+        <span className='mt-8 text-[20px] font-semibold phone:mt-3 phone:text-[15px]'>{t('widgets.music.groupVolume')}</span>
+        <div className='mt-3.5 flex items-center gap-4 phone:mt-2 phone:gap-3'>
           <PillSlider
             value={groupVolume(groupVolumes)}
             onChange={v => {
@@ -141,20 +153,20 @@ export function MusicSpeakers({ player, onDone }: { player: string; onDone: () =
             valueText={`${groupVolume(groupVolumes)} %`}
             icon={Volume2}
             track='var(--music-track)'
-            className='h-[72px] flex-1 rounded-[36px]'
+            className='h-[72px] flex-1 rounded-[36px] phone:h-11 phone:rounded-[22px]'
           />
-          <span className='w-10 text-right text-[28px] font-semibold tabular-nums'>{groupVolume(groupVolumes)}</span>
+          <span className='w-10 text-right text-[28px] font-semibold tabular-nums phone:text-lg'>{groupVolume(groupVolumes)}</span>
         </div>
         {group.length > 1 && (
-          <p className='mt-3.5 text-[16px] text-[var(--ds-ink-muted)]'>
+          <p className='mt-3.5 text-[16px] text-[var(--ds-ink-muted)] phone:mt-2 phone:text-[13px]'>
             {t(fixed ? 'widgets.music.fixedGroupHint' : 'widgets.music.groupVolumeHint')}
           </p>
         )}
-        <div className='mt-8 flex flex-col gap-3'>
+        <div className='mt-8 flex flex-col gap-3 phone:mt-4 phone:flex-row-reverse phone:gap-2'>
           <button
             type='button'
             onClick={onDone}
-            className='flex h-16 items-center justify-center rounded-[32px] bg-[var(--ds-tile-on)] text-[20px] font-semibold text-[var(--ds-tile-on-ink)]'
+            className='flex h-16 items-center justify-center rounded-[32px] bg-[var(--ds-tile-on)] text-[20px] font-semibold text-[var(--ds-tile-on-ink)] phone:h-[52px] phone:flex-1 phone:text-base'
           >
             {t('widgets.music.done')}
           </button>
@@ -162,7 +174,7 @@ export function MusicSpeakers({ player, onDone }: { player: string; onDone: () =
             type='button'
             onClick={ungroupAll}
             disabled={group.length < 2 || fixed}
-            className='flex h-16 items-center justify-center rounded-[32px] bg-[var(--ds-surface-3)] text-[20px] font-semibold disabled:opacity-40'
+            className='flex h-16 items-center justify-center rounded-[32px] bg-[var(--ds-surface-3)] text-[20px] font-semibold disabled:opacity-40 phone:h-[52px] phone:flex-1 phone:text-base'
           >
             {t('widgets.music.ungroupAll')}
           </button>

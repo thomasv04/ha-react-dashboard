@@ -47,7 +47,7 @@ export function MusicSearch({
       <div
         role='group'
         aria-label={t('widgets.music.typesLabel')}
-        className='mb-8 mt-6 flex w-fit gap-1 rounded-[32px] bg-[var(--ds-surface-2)] p-1'
+        className='mb-8 mt-6 flex w-fit gap-1 rounded-[32px] bg-[var(--ds-surface-2)] p-1 phone:-mr-4 phone:mb-4 phone:mt-3 phone:w-auto phone:overflow-x-auto phone:scrollbar-none'
       >
         <Pill active={filter === 'all'} onClick={() => setFilter('all')}>
           {t('widgets.music.all')}
@@ -70,9 +70,9 @@ export function MusicSearch({
           const limit = filter === 'all' ? (PREVIEW[type] ?? PREVIEW_DEFAULT) : items.length;
           const shown = items.slice(0, limit);
           return (
-            <section key={type} className='mb-8'>
+            <section key={type} className='mb-8 phone:mb-5'>
               <div className='mb-3 flex items-center justify-between'>
-                <h3 className='text-[17px] font-semibold'>{t(`widgets.music.tabs.${type}`)}</h3>
+                <h3 className='text-[17px] font-semibold phone:text-lg phone:font-bold'>{t(`widgets.music.tabs.${type}`)}</h3>
                 {items.length > limit && (
                   <button
                     type='button'

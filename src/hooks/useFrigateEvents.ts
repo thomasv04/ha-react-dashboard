@@ -5,7 +5,7 @@ import { parseEvents, type FrigateEvent } from '@/lib/frigate';
 /** Une minute : un nouvel événement apparaît vite, sans harceler Frigate. */
 const REFRESH_MS = 60_000;
 /** Assez pour 12 vignettes et une chronologie par caméra. */
-const LIMIT = 50;
+const DEFAULT_LIMIT = 50;
 
 interface FrigateEventsState {
   events: FrigateEvent[];
@@ -27,10 +27,13 @@ export function useFrigateEvents({
   instanceId,
   cameras,
   hours,
+  limit = DEFAULT_LIMIT,
 }: {
   instanceId: string;
   cameras: string;
   hours: number;
+  /** Nombre d'événements au plus : une journée d'une maison animée en compte des centaines. */
+  limit?: number;
 }): FrigateEventsState {
   const connection = useHass(s => s.connection);
   const [state, setState] = useState<FrigateEventsState>({ events: [], status: 'loading' });
@@ -52,8 +55,10 @@ export function useFrigateEvents({
           instance_id: instanceId,
           ...(names.length > 0 && { cameras: names }),
           after: Math.floor(Date.now() / 1000) - hours * 3600,
-          limit: LIMIT,
-          decode_json: true,
+          limit,
+          // Pas de `decode_json` : des versions de l'intégration ne le connaissent pas et refusent
+          // alors toute la demande (« not a valid option »). La réponse arrive en texte JSON, que
+          // `parseEvents` lit.
         });
         const events = parseEvents(raw);
         // Rien de neuf à la minute : la card et ses vignettes ne se re-rendent pas.
@@ -68,7 +73,7 @@ export function useFrigateEvents({
       alive = false;
       clearInterval(timer);
     };
-  }, [connection, instanceId, cameras, hours]);
+  }, [connection, instanceId, cameras, hours, limit]);
 
   return state;
 }

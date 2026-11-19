@@ -379,6 +379,7 @@
     "favorites": "Favoris",
     "favorite": "Favori",
     "sort": "Trier",
+    "sortBy": "Trier par",
     "order": {
       "last_played_desc": "Écoutés récemment",
       "sort_name": "A → Z",
@@ -479,7 +480,9 @@
     "youMayLike": "Vous aimerez aussi",
     "reorder": "Déplacer {name}",
     "removeFromQueue": "Retirer {name} de la file",
-    "minutes": "{count} min"
+    "minutes": "{count} min",
+    "collapse": "Réduire le lecteur",
+    "playingOn": "Lecture sur"
   },
   "person": {
     "label": "Personnes",

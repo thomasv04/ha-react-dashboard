@@ -17,6 +17,10 @@ const text = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
  * lecteur plein écran. Rien à montrer (lecteur éteint, rien de chargé) : pas de
  * barre.
  *
+ * Sur un téléphone (maquette « Mini-lecteur — états » du téléphone), elle
+ * est plus basse, posée au-dessus de la barre d'onglets, et l'enceinte passe
+ * dans la seconde ligne.
+ *
  * Une radio n'a pas de durée : « En direct » remplace la progression, et le
  * titre suivant est grisé.
  */
@@ -51,52 +55,61 @@ export function MusicMiniPlayer({ entityId }: { entityId: string }) {
       {/* Le fondu sous la barre : la grille s'efface au lieu de passer dessous en net. */}
       <div
         aria-hidden='true'
-        className='pointer-events-none fixed inset-x-0 bottom-0 z-10 h-[190px] bg-[linear-gradient(color-mix(in_srgb,var(--ds-ground)_0%,transparent),var(--ds-ground)_72%)]'
+        className='pointer-events-none fixed inset-x-0 bottom-0 z-10 h-[190px] phone:h-[220px] bg-[linear-gradient(color-mix(in_srgb,var(--ds-ground)_0%,transparent),var(--ds-ground)_72%)]'
       />
       <div
         data-testid='music-mini-player'
-        className='fixed inset-x-10 bottom-7 z-20 flex h-24 items-center overflow-hidden rounded-[28px] bg-[var(--music-raised)] shadow-[0_18px_50px_rgba(0,0,0,0.55),inset_0_0_0_1px_rgba(255,255,255,0.07)]'
+        className='fixed inset-x-10 bottom-7 z-20 flex h-24 items-center overflow-hidden rounded-[28px] phone:inset-x-2 phone:bottom-[calc(env(safe-area-inset-bottom)+100px)] phone:h-16 phone:rounded-[20px] bg-[var(--music-raised)] shadow-[0_18px_50px_rgba(0,0,0,0.55),inset_0_0_0_1px_rgba(255,255,255,0.07)]'
       >
         <button
           type='button'
           onClick={() => moreInfo?.openMoreInfo(entityId, 'media_player', entityId)}
           aria-label={t('widgets.music.openPlayer')}
-          className='flex h-full min-w-0 flex-1 items-center gap-[18px] pl-3 pr-5 text-left'
+          className='flex h-full min-w-0 flex-1 items-center gap-[18px] pl-3 pr-5 text-left phone:gap-3 phone:pl-2 phone:pr-1'
         >
-          <span className='flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-[16px] bg-[var(--ds-surface-3)]'>
+          <span className='flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-[16px] bg-[var(--ds-surface-3)] phone:size-12 phone:rounded-[12px]'>
             {cover ? (
               <img src={cover} alt='' className='size-full object-cover' />
             ) : (
               <Music size={30} strokeWidth={1.8} aria-hidden='true' className='text-[var(--ds-ink-muted)]' />
             )}
           </span>
-          <span className='flex min-w-0 flex-1 flex-col gap-[3px]'>
-            <span className='truncate text-[21px] font-semibold'>{title}</span>
+          <span className='flex min-w-0 flex-1 flex-col gap-[3px] phone:gap-0.5'>
+            <span className='truncate text-[21px] font-semibold phone:text-[15px]'>{title}</span>
+            {/* Téléphone : l'enceinte et l'artiste sur une ligne. */}
+            <span className='flex min-w-0 items-center gap-1.5 text-[13px] text-[var(--ds-ink-muted)] tablet:hidden'>
+              {live ? (
+                <span aria-hidden='true' className='size-2 shrink-0 rounded-full bg-[var(--music-love)]' />
+              ) : (
+                <Speaker size={12} aria-hidden='true' className='shrink-0' />
+              )}
+              <span className='truncate'>{[speaker, live ? t('widgets.music.live') : artist].filter(Boolean).join(' · ')}</span>
+            </span>
             {live ? (
-              <span className='flex items-center gap-2 text-[16px] text-[var(--ds-ink-muted)]'>
+              <span className='flex items-center gap-2 text-[16px] text-[var(--ds-ink-muted)] phone:hidden'>
                 <span aria-hidden='true' className='size-2.5 rounded-full bg-[var(--music-love)]' />
                 {t('widgets.music.live')}
               </span>
             ) : (
-              artist && <span className='truncate text-[16px] text-[var(--ds-ink-muted)]'>{artist}</span>
+              artist && <span className='truncate text-[16px] text-[var(--ds-ink-muted)] phone:hidden'>{artist}</span>
             )}
           </span>
-          <span className='flex h-11 shrink-0 items-center gap-2.5 rounded-[22px] bg-[var(--music-raised-2)] px-[18px] text-[17px] font-semibold'>
+          <span className='flex h-11 shrink-0 items-center gap-2.5 rounded-[22px] bg-[var(--music-raised-2)] px-[18px] text-[17px] font-semibold phone:hidden'>
             <Speaker size={20} aria-hidden='true' />
             {speaker}
           </span>
         </button>
-        <div className='flex shrink-0 items-center gap-3.5 pr-6'>
+        <div className='flex shrink-0 items-center gap-3.5 pr-6 phone:gap-2 phone:pr-2.5'>
           <button
             type='button'
             onClick={() => call('media_play_pause')}
             aria-label={t(playing ? 'widgets.media_player.pause' : 'widgets.media_player.play')}
-            className='flex size-16 items-center justify-center rounded-full bg-[var(--ds-ink)] text-[var(--ds-ground)]'
+            className='flex size-16 items-center justify-center rounded-full bg-[var(--ds-ink)] text-[var(--ds-ground)] phone:size-11'
           >
             {playing ? (
-              <Pause size={28} strokeWidth={3.4} aria-hidden='true' />
+              <Pause size={28} strokeWidth={3.4} aria-hidden='true' className='phone:size-5' />
             ) : (
-              <Play size={28} aria-hidden='true' className='ml-0.5 fill-current' />
+              <Play size={28} aria-hidden='true' className='ml-0.5 fill-current phone:size-5' />
             )}
           </button>
           <button
@@ -104,13 +117,16 @@ export function MusicMiniPlayer({ entityId }: { entityId: string }) {
             onClick={() => call('media_next_track')}
             disabled={!canNext}
             aria-label={t('widgets.media_player.next')}
-            className={cn('flex size-14 items-center justify-center rounded-full bg-[var(--music-raised-2)]', !canNext && 'opacity-[0.38]')}
+            className={cn(
+              'flex size-14 items-center justify-center rounded-full bg-[var(--music-raised-2)] phone:size-10',
+              !canNext && 'opacity-[0.38]'
+            )}
           >
-            <SkipForward size={22} aria-hidden='true' className='fill-current' />
+            <SkipForward size={22} aria-hidden='true' className='fill-current phone:size-4' />
           </button>
         </div>
         {!live && (
-          <div aria-hidden='true' className='absolute inset-x-0 bottom-0 h-1 bg-white/[0.14]'>
+          <div aria-hidden='true' className='absolute inset-x-0 bottom-0 h-1 bg-white/[0.14] phone:h-[3px]'>
             <div className='h-full bg-[var(--music-highlight)]' style={{ width: `${progress * 100}%` }} />
           </div>
         )}

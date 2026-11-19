@@ -254,6 +254,33 @@ Règles :
   HA, `document.documentElement.className` doit se retrouver sur le `div` enfant
   de `ha-react-dashboard-panel`.
 
+## Téléphone — une appli à onglets (MANDATORY)
+
+Sur un téléphone, `Dashboard` rend `PhoneShell` (`src/components/phone/`) à la
+place de la barre du haut, du rail et du lanceur : onglets Maison / Pièces /
+Plan / Caméras / Musique, mini-lecteur au-dessus. Maquettes : planches
+« Téléphone » de `HA Dashboard v2 (2).html`.
+
+- **« Téléphone » = largeur < 640 px *ou* hauteur < 500 px** : couché pour le
+  plein écran d'une caméra, il dépasse 640 px de large et ne doit pas basculer
+  sur l'interface tablette. En JS, `useIsPhone()` (`@/hooks/useIsMobile`) ; en
+  CSS, les variantes `phone:` et `tablet:` (`index.css`). **Jamais** `max-sm:`
+  ou `sm:hidden` pour du « téléphone » : la largeur seule rate le paysage.
+- Pas d'édition sur un téléphone : elle se fait sur la tablette.
+- Maison montre la page d'accueil (ou celle de la pilule) sur la trame fluide
+  `PHONE_COLS` (4 colonnes) ; Pièces se déduit des zones HA
+  (`room-layout.ts`) ; Caméras et l'écran d'une caméra lisent Frigate
+  (`camera-timeline.ts` pour la frise).
+- Caméras : celles choisies dans Paramètres → Disposition (`phoneCameras`,
+  par appareil), sinon les caméras Frigate (`src/lib/phone-cameras.ts`). Une
+  caméra Frigate se reconnaît à ses attributs `camera_name` et `client_id`,
+  jamais à son `entity_id`. Lâcher la frise lit l'enregistrement continu par le
+  proxy VOD de l'intégration (adresse signée par `auth/sign_path`) : pas de
+  CORS depuis `localhost`, donc à vérifier servi par HA.
+- Les feuilles (`ds/Sheet`), les fiches d'appareil, les Paramètres et
+  l'appli Musique ont leur version téléphone dans leur propre composant.
+- Vérifier en 390 × 844 **et** en 844 × 390 ; `tests/dashboard/phone.spec.ts`.
+
 ## Événements Home Assistant — toast, notification, modale (depuis une automatisation)
 
 Le dashboard écoute trois événements sur le WebSocket de HA. N'importe quelle

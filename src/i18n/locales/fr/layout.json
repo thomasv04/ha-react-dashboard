@@ -680,5 +680,48 @@
       "attribute": "Attribut",
       "hasValue": "A une valeur ?"
     }
+  },
+  "phone": {
+    "menu": "Menu",
+    "navigation": "Navigation principale",
+    "back": "Retour",
+    "tabs": {
+      "home": "Maison",
+      "rooms": "Pièces",
+      "plan": "Plan",
+      "cameras": "Caméras",
+      "music": "Musique"
+    },
+    "rooms": {
+      "all": "Toutes",
+      "empty": "Aucune pièce dans Home Assistant. Créez des zones (Paramètres > Zones) pour les voir ici.",
+      "off": "Éteinte",
+      "lightOn": "1 lumière allumée",
+      "lightsOn": "{count} lumières allumées",
+      "noDevices": "Aucun appareil pilotable dans cette pièce.",
+      "lastOn": "{name} allumé {ago}",
+      "justNow": "à l’instant",
+      "minutesAgo": "il y a {count} min",
+      "hoursAgo": "il y a {count} h"
+    },
+    "cameras": {
+      "empty": "Aucune caméra dans Home Assistant.",
+      "live": "Direct",
+      "events": "Événements",
+      "fullscreen": "Plein écran",
+      "exitFullscreen": "Quitter le plein écran",
+      "today": "Aujourd’hui",
+      "yesterday": "Hier",
+      "previous": "Événement précédent",
+      "next": "Événement suivant",
+      "timeline": "Chronologie",
+      "settingsTitle": "Caméras du téléphone",
+      "settingsAuto": "Automatique : les caméras Frigate. Cochez celles à montrer dans l’onglet Caméras ; la première passe en direct, en grand. Réglage propre à cet appareil.",
+      "settingsChosen": "L’onglet Caméras montre celles-ci, dans cet ordre ; la première passe en direct, en grand. Réglage propre à cet appareil.",
+      "settingsReset": "Revenir au choix automatique",
+      "moveUp": "Monter {name}",
+      "recording": "Enregistrement",
+      "noRecording": "Impossible de lire l’enregistrement à cette heure."
+    }
   }
 }

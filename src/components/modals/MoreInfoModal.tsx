@@ -5,16 +5,19 @@ import { useMoreInfo } from '@/context/MoreInfoContext';
 import { MoreInfoReadyContext } from '@/context/MoreInfoReadyContext';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
+import { useIsPhone } from '@/hooks/useIsMobile';
 import { MORE_INFO_APPS, MORE_INFO_COMPONENTS, MORE_INFO_FULLSCREEN } from './more-info-registry';
 
 /**
  * Le panneau d'appareil de l'Echo Show : une feuille qui glisse depuis la
- * droite, haute comme l'écran, le reste de la page visible à côté.
+ * droite, haute comme l'écran, le reste de la page visible à côté. Au
+ * téléphone, tout l'écran, sur le fond de l'appli comme les feuilles.
  */
 export function MoreInfoModal() {
   const { t } = useI18n();
   const { state, closeMoreInfo } = useMoreInfo();
   const [contentReady, setContentReady] = useState(false);
+  const phone = useIsPhone();
 
   // Reset contentReady when modal closes
   useEffect(() => {
@@ -47,9 +50,11 @@ export function MoreInfoModal() {
               'absolute flex flex-col overflow-hidden text-[var(--ds-ink)] shadow-[var(--ds-shadow-sheet)]',
               app
                 ? 'inset-0 bg-[var(--ds-ground)]'
-                : MORE_INFO_FULLSCREEN.has(state.widgetType)
-                  ? 'inset-4 rounded-[var(--ds-radius-2xl)] bg-[var(--ds-sheet)] sm:inset-8'
-                  : 'bottom-4 right-4 top-4 w-[min(calc(100vw-2rem),560px)] rounded-[var(--ds-radius-2xl)] bg-[var(--ds-sheet)] sm:bottom-10 sm:right-12 sm:top-10'
+                : phone
+                  ? 'inset-0 bg-[var(--ds-ground)] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] [--ds-sheet-section:var(--ds-surface-2)]'
+                  : MORE_INFO_FULLSCREEN.has(state.widgetType)
+                    ? 'inset-4 rounded-[var(--ds-radius-2xl)] bg-[var(--ds-sheet)] sm:inset-8'
+                    : 'bottom-4 right-4 top-4 w-[min(calc(100vw-2rem),560px)] rounded-[var(--ds-radius-2xl)] bg-[var(--ds-sheet)] sm:bottom-10 sm:right-12 sm:top-10'
             )}
             onClick={e => e.stopPropagation()}
             initial={app ? { opacity: 0, scale: 0.985 } : { x: '110%' }}
@@ -63,7 +68,10 @@ export function MoreInfoModal() {
                 onClick={closeMoreInfo}
                 aria-label={t('common.close')}
                 title={t('common.close')}
-                className='absolute right-6 top-6 z-10 flex size-11 items-center justify-center rounded-full bg-[var(--ds-surface-3)]'
+                className={cn(
+                  'absolute z-10 flex size-11 items-center justify-center rounded-full bg-[var(--ds-surface-3)]',
+                  phone ? 'right-4 top-[calc(env(safe-area-inset-top)+16px)] bg-[var(--ds-surface-2)]' : 'right-6 top-6'
+                )}
               >
                 <X size={18} strokeWidth={2.5} />
               </button>

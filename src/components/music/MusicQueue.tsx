@@ -81,25 +81,36 @@ export function MusicQueue({ player }: { player: string }) {
   if (!title && !next) return <EmptyState icon={ListX} title={t('widgets.music.queueEmpty')} hint={t('widgets.music.queueEmptyHint')} />;
 
   return (
-    <div className='mt-9 grid items-start gap-14 md:grid-cols-[420px_1fr]' data-testid='music-queue'>
-      <section className='flex flex-col'>
-        <span className='text-[15px] font-semibold uppercase text-[var(--music-dim)]'>{t('widgets.music.nowPlaying')}</span>
-        <MusicCover image={cover} name={title ?? ''} type='track' className='mt-3 rounded-[28px]' />
-        <p className='mt-[22px] truncate text-[32px] font-bold'>{title}</p>
-        {artist && <p className='mt-1.5 truncate text-[22px] text-[var(--ds-ink-muted)]'>{artist}</p>}
-        <span className='mt-4 inline-flex h-11 w-fit items-center gap-2.5 rounded-[22px] bg-[var(--ds-surface-3)] px-[18px] text-[17px] font-semibold'>
+    <div className='mt-9 grid items-start gap-14 md:grid-cols-[420px_1fr] phone:mt-4 phone:gap-5' data-testid='music-queue'>
+      {/* Au téléphone (maquette « File d'attente » du téléphone) : le titre en cours tient dans une carte. */}
+      <section className='flex flex-col phone:grid phone:grid-cols-[52px_minmax(0,1fr)] phone:items-center phone:gap-x-3 phone:rounded-[20px] phone:bg-[var(--ds-surface-2)] phone:p-2.5'>
+        <span className='text-[15px] font-semibold uppercase text-[var(--music-dim)] phone:col-start-2 phone:text-xs phone:text-[var(--music-highlight)]'>
+          {t('widgets.music.nowPlaying')}
+        </span>
+        <MusicCover
+          image={cover}
+          name={title ?? ''}
+          type='track'
+          small
+          className='mt-3 rounded-[28px] phone:col-start-1 phone:row-span-3 phone:row-start-1 phone:mt-0 phone:rounded-[12px]'
+        />
+        <p className='mt-[22px] truncate text-[32px] font-bold phone:col-start-2 phone:mt-0 phone:text-[15px]'>{title}</p>
+        {artist && (
+          <p className='mt-1.5 truncate text-[22px] text-[var(--ds-ink-muted)] phone:col-start-2 phone:mt-0 phone:text-[13px]'>{artist}</p>
+        )}
+        <span className='mt-4 phone:hidden inline-flex h-11 w-fit items-center gap-2.5 rounded-[22px] bg-[var(--ds-surface-3)] px-[18px] text-[17px] font-semibold'>
           <Speaker size={20} aria-hidden='true' />
           {friendlyName(entity) ?? player}
         </span>
         {duration > 0 && (
           <>
-            <div aria-hidden='true' className='mt-6 h-1.5 overflow-hidden rounded-[3px] bg-white/20'>
+            <div aria-hidden='true' className='mt-6 h-1.5 overflow-hidden rounded-[3px] bg-white/20 phone:hidden'>
               <div
                 className='h-full rounded-[3px] bg-[var(--music-highlight)]'
                 style={{ width: `${Math.min(100, (position / duration) * 100)}%` }}
               />
             </div>
-            <div className='mt-2.5 flex justify-between text-[15px] tabular-nums text-[var(--ds-ink-muted)]'>
+            <div className='mt-2.5 flex justify-between text-[15px] tabular-nums text-[var(--ds-ink-muted)] phone:hidden'>
               <span>{formatMediaTime(position)}</span>
               <span>{formatMediaTime(duration)}</span>
             </div>
@@ -109,9 +120,9 @@ export function MusicQueue({ player }: { player: string }) {
 
       {/* Remontée de 8 px : l'en-tête de 56 px se centre sur l'étiquette « En cours ». */}
       <section className='-mt-2 min-w-0'>
-        <div className='flex h-14 items-center gap-3.5'>
-          <h3 className='text-[24px] font-semibold'>{t('widgets.music.upNext')}</h3>
-          <span className='text-[17px] text-[var(--music-dim)]'>
+        <div className='flex h-14 items-center gap-3.5 phone:h-11 phone:gap-2.5'>
+          <h3 className='text-[24px] font-semibold phone:text-lg phone:font-bold'>{t('widgets.music.upNext')}</h3>
+          <span className='text-[17px] text-[var(--music-dim)] phone:text-sm'>
             {t(`widgets.music.trackCount_${upcoming === 1 ? 'one' : 'other'}`, { count: upcoming })}
             {minutes > 0 && ` · ${t('widgets.music.minutes', { count: minutes })}`}
           </span>
@@ -119,7 +130,7 @@ export function MusicQueue({ player }: { player: string }) {
             type='button'
             onClick={() => callHAService(helpers, 'media_player', 'clear_playlist', { entity_id: player })}
             disabled={upcoming === 0}
-            className='ml-auto flex h-[52px] items-center gap-2.5 rounded-[26px] bg-[var(--ds-surface-3)] px-[22px] text-[18px] font-semibold disabled:opacity-40'
+            className='ml-auto flex h-[52px] items-center gap-2.5 rounded-[26px] bg-[var(--ds-surface-3)] px-[22px] text-[18px] font-semibold disabled:opacity-40 phone:h-10 phone:gap-1.5 phone:px-4 phone:text-[15px]'
           >
             <ListX size={20} aria-hidden='true' />
             {t('widgets.music.clearQueue')}

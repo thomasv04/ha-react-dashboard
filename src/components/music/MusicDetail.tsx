@@ -50,12 +50,12 @@ function ActionButton({
       type='button'
       onClick={onClick}
       className={cn(
-        'flex h-14 items-center justify-center gap-2.5 rounded-[28px] text-[19px] font-semibold',
+        'flex h-14 items-center justify-center gap-2.5 rounded-[28px] text-[19px] font-semibold phone:h-[52px] phone:gap-2 phone:text-base',
         primary ? 'bg-[var(--ds-tile-on)] text-[var(--ds-tile-on-ink)]' : 'bg-[var(--ds-surface-3)]',
         wide && 'col-span-2'
       )}
     >
-      <Icon size={22} aria-hidden='true' className={cn(primary && 'fill-current')} />
+      <Icon size={22} aria-hidden='true' className={cn('phone:size-[18px]', primary && 'fill-current')} />
       {children}
     </button>
   );
@@ -66,6 +66,9 @@ function ActionButton({
  * « Détail album » : la pochette et les actions dans une colonne de 380 px,
  * le contenu à droite (les titres, ou les albums de l'artiste). Le contenu
  * vient de la navigation média du lecteur.
+ *
+ * Au téléphone (maquette « Détail album » du téléphone) : la pochette de
+ * 132 px à gauche du titre, les actions en dessous, puis les titres.
  */
 export function MusicDetail({
   entityId,
@@ -95,24 +98,31 @@ export function MusicDetail({
   };
 
   return (
-    <div className='mt-9 grid min-h-0 flex-1 gap-14 md:grid-cols-[380px_1fr]' data-testid='music-detail'>
-      <aside className='flex flex-col'>
+    <div className='mt-9 grid min-h-0 flex-1 gap-14 md:grid-cols-[380px_1fr] phone:mt-3 phone:gap-4' data-testid='music-detail'>
+      <aside className='flex flex-col phone:grid phone:grid-cols-[132px_minmax(0,1fr)] phone:items-end phone:gap-x-4'>
         <MusicCover
           image={item.image}
           name={item.name}
           type={item.media_type}
-          className={cn('shadow-[0_24px_60px_rgba(0,0,0,0.5)]', !isArtist && 'rounded-[28px]')}
+          className={cn(
+            'shadow-[0_24px_60px_rgba(0,0,0,0.5)] phone:shadow-[0_14px_30px_rgba(0,0,0,0.5)]',
+            !isArtist && 'rounded-[28px] phone:rounded-[20px]'
+          )}
         />
-        <h2 className='mt-6 text-[40px] font-bold leading-[45px]'>{item.name}</h2>
-        {!isArtist && artist && <p className='mt-2 truncate text-[24px] font-semibold text-[var(--music-highlight)]'>{artist}</p>}
-        {data && (
-          <p className='mt-1.5 text-[18px] text-[var(--ds-ink-muted)]'>
-            {t(`widgets.music.${isArtist ? 'albumCount' : 'trackCount'}_${children.length === 1 ? 'one' : 'other'}`, {
-              count: children.length,
-            })}
-          </p>
-        )}
-        <div className='mt-6 grid grid-cols-2 gap-3'>
+        <div className='min-w-0'>
+          <h2 className='mt-6 text-[40px] font-bold leading-[45px] phone:mt-0 phone:text-2xl phone:leading-tight'>{item.name}</h2>
+          {!isArtist && artist && (
+            <p className='mt-2 truncate text-[24px] font-semibold text-[var(--music-highlight)] phone:mt-1.5 phone:text-base'>{artist}</p>
+          )}
+          {data && (
+            <p className='mt-1.5 text-[18px] text-[var(--ds-ink-muted)] phone:mt-1 phone:text-sm'>
+              {t(`widgets.music.${isArtist ? 'albumCount' : 'trackCount'}_${children.length === 1 ? 'one' : 'other'}`, {
+                count: children.length,
+              })}
+            </p>
+          )}
+        </div>
+        <div className='mt-6 grid grid-cols-2 gap-3 phone:col-span-2 phone:mt-5 phone:gap-2'>
           <ActionButton primary icon={Play} onClick={() => play(item)}>
             {t('widgets.music.play')}
           </ActionButton>
@@ -136,7 +146,7 @@ export function MusicDetail({
           <RowsSkeleton />
         ) : isArtist ? (
           <>
-            <h3 className='mb-3.5 text-[22px] font-semibold'>{t('widgets.music.tabs.album')}</h3>
+            <h3 className='mb-3.5 text-[22px] font-semibold phone:mb-2.5 phone:text-xl phone:font-bold'>{t('widgets.music.tabs.album')}</h3>
             <ItemGrid items={children.map(child => albumOf(child, item))} onOpen={onOpen} onMore={onMore} />
           </>
         ) : children.length === 0 ? (
@@ -144,7 +154,7 @@ export function MusicDetail({
         ) : (
           <ol>
             {/* En-têtes de colonnes : le gris de l'heure, sans majuscules. */}
-            <li aria-hidden='true' className='flex h-10 items-center text-[15px] text-[var(--music-dim)]'>
+            <li aria-hidden='true' className='flex h-10 items-center text-[15px] text-[var(--music-dim)] phone:hidden'>
               <span className='w-16 text-center'>#</span>
               <span>{t('widgets.music.trackTitle')}</span>
             </li>
@@ -154,7 +164,10 @@ export function MusicDetail({
               return (
                 <li
                   key={child.media_content_id}
-                  className={cn('flex h-[76px] items-center rounded-[18px] pr-2', current && 'bg-[var(--music-highlight-soft)]')}
+                  className={cn(
+                    'flex h-[76px] items-center rounded-[18px] pr-2 phone:-mx-2 phone:h-[60px] phone:rounded-[14px] phone:pr-0',
+                    current && 'bg-[var(--music-highlight-soft)]'
+                  )}
                 >
                   <button
                     type='button'
@@ -162,15 +175,24 @@ export function MusicDetail({
                     aria-current={current || undefined}
                     className='flex h-full min-w-0 flex-1 items-center text-left'
                   >
-                    <span className='flex w-16 shrink-0 justify-center text-[20px] tabular-nums text-[var(--music-dim)]'>
-                      {current ? <AudioLines size={22} aria-hidden='true' className='text-[var(--music-highlight)]' /> : i + 1}
+                    <span className='flex w-16 shrink-0 justify-center text-[20px] tabular-nums text-[var(--music-dim)] phone:mr-3 phone:w-9 phone:text-base'>
+                      {current ? (
+                        <AudioLines size={22} aria-hidden='true' className='text-[var(--music-highlight)] phone:size-[18px]' />
+                      ) : (
+                        i + 1
+                      )}
                     </span>
                     <span className='min-w-0 flex-1'>
-                      <span className={cn('block truncate text-[21px] font-semibold', current && 'text-[var(--music-highlight)]')}>
+                      <span
+                        className={cn(
+                          'block truncate text-[21px] font-semibold phone:text-base',
+                          current && 'text-[var(--music-highlight)]'
+                        )}
+                      >
                         {track.title}
                       </span>
                       {item.media_type === 'playlist' && track.artist && (
-                        <span className='block truncate text-[16px] text-[var(--ds-ink-muted)]'>{track.artist}</span>
+                        <span className='block truncate text-[16px] text-[var(--ds-ink-muted)] phone:text-[13px]'>{track.artist}</span>
                       )}
                     </span>
                   </button>

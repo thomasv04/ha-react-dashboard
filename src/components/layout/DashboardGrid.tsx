@@ -9,7 +9,7 @@ import { Sheet } from '@/components/ds/Sheet';
 import { SwitchTrack } from '@/components/ds/Switch';
 import { staggerGridContainer, staggerGridItem } from '@/lib/motion-variants';
 import { useLowPowerMotion } from '@/hooks/useLowPowerMotion';
-import { useIsMobile } from '@/hooks/useIsMobile';
+import { useIsMobile, useIsPhone } from '@/hooks/useIsMobile';
 import {
   EDIT_PANEL_EVENT,
   GRID_COL,
@@ -19,6 +19,8 @@ import {
   PANEL_COLS_MIN,
   PANEL_SHARE_MIN,
   PANEL_SHARE_MAX,
+  PHONE_COLS,
+  PHONE_GAP,
   weightForShare,
   colsThatFit,
   colsWidth,
@@ -302,7 +304,10 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
 
   // Sur l'écran, pas sur le plateau : les classes `md:` de la page décident du
   // même seuil, et les deux ne doivent jamais diverger.
-  const stacked = useIsMobile(STACK_BELOW);
+  // Téléphone : la trame fluide de la maquette, sans habillage de panneau — et toujours empilé,
+  // même couché, où il dépasse la largeur de `STACK_BELOW`.
+  const phone = useIsPhone();
+  const stacked = useIsMobile(STACK_BELOW) || phone;
 
   // La carte se réduit pour tenir en largeur — sans passer sous `MAP_MIN_SCALE` :
   // plus petit, les boutons d'un panneau ne se toucheraient plus.
@@ -567,12 +572,13 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
                       key={panel.id}
                       panel={panel}
                       // Empilés, les panneaux d'une colonne ont la largeur de sa tête.
-                      cols={Math.min(head.cols, fit)}
+                      cols={phone ? PHONE_COLS : Math.min(head.cols, fit)}
                       // Part de la hauteur de la colonne, hors panneau seul.
                       share={column.length > 1 ? Math.round(((panel.weight ?? 1) / total) * 100) : undefined}
                       // Poids des autres panneaux de la colonne : la part saisie à la main s'en déduit.
                       others={column.length > 1 ? total - (panel.weight ?? 1) : undefined}
                       stacked={stacked}
+                      phone={phone}
                       readonly={!!readonly}
                       mode={map ? 'map' : isEditMode && editPanelId === panel.id ? 'edit' : 'view'}
                       // En édition d'un panneau, les autres s'effacent : on voit où l'on travaille.
@@ -648,6 +654,7 @@ function PanelSection({
   share,
   others,
   stacked,
+  phone = false,
   readonly,
   mode,
   dimmed,
@@ -659,6 +666,8 @@ function PanelSection({
   share?: number;
   others?: number;
   stacked: boolean;
+  /** Téléphone : pas de fond ni de marge, le titre en tête de section, la trame fluide. */
+  phone?: boolean;
   readonly: boolean;
   /** `map` : la carte des panneaux, tuiles en vignettes ; `edit` : ses tuiles en édition. */
   mode: 'view' | 'map' | 'edit';
@@ -674,7 +683,8 @@ function PanelSection({
   const map = mode === 'map';
   const editing = mode === 'edit';
   const dropAtEnd = dropTarget?.panelId === panel.id && dropTarget.index >= panel.widgets.length;
-  const controls = isAdmin && !readonly;
+  // Pas d'édition au téléphone : elle se fait sur la tablette.
+  const controls = isAdmin && !readonly && !phone;
   const dropZone = panelDrag?.target?.panelId === panel.id ? panelDrag.target.zone : null;
 
   // Une barre de défilement cachée ne dit pas qu'il y a une suite : un fondu en bas le dit.
@@ -703,7 +713,8 @@ function PanelSection({
           data-panel-id={panel.id}
           style={stacked ? undefined : { flex: `${panel.weight ?? 1} 1 0%` }}
           className={cn(
-            'relative flex min-h-0 w-full flex-col rounded-[30px] bg-[var(--ds-surface-1)] text-[var(--ds-ink)] transition-opacity',
+            'relative flex min-h-0 w-full flex-col text-[var(--ds-ink)] transition-opacity',
+            !phone && 'rounded-[30px] bg-[var(--ds-surface-1)]',
             (map || editing) && 'outline-2 outline-dashed outline-[var(--ds-accent)]',
             dimmed && 'opacity-50',
             panelDrag?.id === panel.id && 'opacity-40'
@@ -720,9 +731,9 @@ function PanelSection({
           )}
 
           {/* La marge est ici et non sur le panneau : sa part de hauteur reste exacte. */}
-          <div className='flex min-h-0 flex-1 flex-col gap-3.5 p-[22px]'>
+          <div className={cn('flex min-h-0 flex-1 flex-col', phone ? 'gap-2' : 'gap-3.5 p-[22px]')}>
             {(panel.title || (controls && !editing)) && (
-              <div className='flex min-h-11 shrink-0 items-center gap-2'>
+              <div className={cn('flex shrink-0 items-center gap-2', !phone && 'min-h-11')}>
                 {map && controls && (
                   <button
                     onPointerDown={e => {
@@ -737,7 +748,13 @@ function PanelSection({
                     <GripVertical size={18} />
                   </button>
                 )}
-                <h2 className={cn('mx-1.5 min-w-0 flex-1 truncate text-xl font-semibold', !panel.title && 'text-[var(--ds-ink-muted)]')}>
+                <h2
+                  className={cn(
+                    'min-w-0 flex-1 truncate',
+                    phone ? 'text-lg font-bold' : 'mx-1.5 text-xl font-semibold',
+                    !panel.title && 'text-[var(--ds-ink-muted)]'
+                  )}
+                >
                   {panel.title || (map ? t('layout.panel.untitled') : '')}
                 </h2>
                 {/* ⚙ règle le panneau — dans la carte ; ✎ en range les tuiles. */}
@@ -776,13 +793,13 @@ function PanelSection({
                 )}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: `repeat(${cols}, ${GRID_COL}px)`,
+                  gridTemplateColumns: phone ? `repeat(${cols}, minmax(0, 1fr))` : `repeat(${cols}, ${GRID_COL}px)`,
                   gridAutoRows: `${GRID_ROW}px`,
                   // `dense` : une petite tuile comble le trou laissé par une grande.
                   gridAutoFlow: 'row dense',
-                  gap: GRID_GAP,
+                  gap: phone ? PHONE_GAP : GRID_GAP,
                   // Un panneau vide garde sa largeur : on voit où déposer.
-                  minWidth: colsWidth(cols),
+                  minWidth: phone ? undefined : colsWidth(cols),
                 }}
               >
                 {panel.widgets.map(widget => {

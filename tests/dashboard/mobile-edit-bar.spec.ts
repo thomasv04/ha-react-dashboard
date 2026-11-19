@@ -1,15 +1,18 @@
 /**
- * Mode édition sur mobile — la barre d'actions ne doit rien recouvrir.
+ * Mode édition sur écran étroit — la barre d'actions ne doit rien recouvrir.
  *
  * En 375 px, la barre partait vers la gauche sans limite : elle passait sous le
  * bouton Apparence (fixe en haut à gauche) et débordait de l'écran, si bien que
- * « Ajouter » sortait du champ.
+ * « Ajouter » sortait du champ. Depuis l'appli téléphone (`phone.spec.ts`),
+ * on n'édite plus sous 640 px : la barre se vérifie sur la plus étroite des
+ * tablettes, en portrait.
  *
  * Run with: npm run test:e2e:dashboard
  */
 import { test, expect, type Page } from './fixtures';
 
-test.use({ viewport: { width: 375, height: 812 } });
+const WIDTH = 640;
+test.use({ viewport: { width: WIDTH, height: 1000 } });
 
 type Box = { x: number; y: number; width: number; height: number };
 
@@ -30,7 +33,7 @@ async function enterEditMode(page: Page) {
   await expect(page.getByRole('button', { name: 'Abandonner les modifications' })).toBeVisible();
 }
 
-test.describe('Barre du mode édition en 375 px', () => {
+test.describe('Barre du mode édition en 640 px', () => {
   test('ne recouvre pas le bouton Apparence', async ({ page }) => {
     await enterEditMode(page);
 
@@ -50,7 +53,7 @@ test.describe('Barre du mode édition en 375 px', () => {
     for (const name of ['Ajouter un panneau', 'Enregistrer et terminer', 'Abandonner les modifications']) {
       const box = (await page.getByRole('button', { name }).first().boundingBox())!;
       expect(box.x, `« ${name} » déborde à gauche`).toBeGreaterThanOrEqual(0);
-      expect(box.x + box.width, `« ${name} » déborde à droite`).toBeLessThanOrEqual(375);
+      expect(box.x + box.width, `« ${name} » déborde à droite`).toBeLessThanOrEqual(WIDTH);
     }
 
     // Aucun défilement horizontal du document.

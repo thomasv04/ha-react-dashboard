@@ -5,6 +5,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Téléphone : étroit, ou couché (un téléphone en paysage dépasse 640 px de large, jamais 500 de
+   haut). Même requête que `PHONE_QUERY` (src/hooks/useIsMobile.ts) : les deux ne doivent jamais diverger. */
+@custom-variant phone (@media (max-width: 639px), (max-height: 499px));
+@custom-variant tablet (@media (min-width: 640px) and (min-height: 500px));
+
 /* shadcn/ui will append its CSS variables below this line after `npx shadcn init` */
 
 /* ── Performance modes ──────────────────────────────────────────────────────── */

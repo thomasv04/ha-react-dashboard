@@ -680,5 +680,48 @@
       "attribute": "Attribute",
       "hasValue": "Has a value?"
     }
+  },
+  "phone": {
+    "menu": "Menu",
+    "navigation": "Main navigation",
+    "back": "Back",
+    "tabs": {
+      "home": "Home",
+      "rooms": "Rooms",
+      "plan": "Map",
+      "cameras": "Cameras",
+      "music": "Music"
+    },
+    "rooms": {
+      "all": "All",
+      "empty": "No rooms in Home Assistant. Create areas (Settings > Areas) to see them here.",
+      "off": "Off",
+      "lightOn": "1 light on",
+      "lightsOn": "{count} lights on",
+      "noDevices": "No controllable device in this room.",
+      "lastOn": "{name} turned on {ago}",
+      "justNow": "just now",
+      "minutesAgo": "{count} min ago",
+      "hoursAgo": "{count} h ago"
+    },
+    "cameras": {
+      "empty": "No camera in Home Assistant.",
+      "live": "Live",
+      "events": "Events",
+      "fullscreen": "Full screen",
+      "exitFullscreen": "Exit full screen",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "previous": "Previous event",
+      "next": "Next event",
+      "timeline": "Timeline",
+      "settingsTitle": "Phone cameras",
+      "settingsAuto": "Automatic: the Frigate cameras. Tick the ones to show in the Cameras tab; the first one plays live, large. Setting for this device only.",
+      "settingsChosen": "The Cameras tab shows these, in this order; the first one plays live, large. Setting for this device only.",
+      "settingsReset": "Back to automatic",
+      "moveUp": "Move {name} up",
+      "recording": "Recording",
+      "noRecording": "Couldn’t play the recording at this time."
+    }
   }
 }
