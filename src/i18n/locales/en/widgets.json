@@ -480,7 +480,9 @@
     "youMayLike": "You may also like",
     "reorder": "Move {name}",
     "removeFromQueue": "Remove {name} from the queue",
-    "minutes": "{count} min"
+    "minutes": "{count} min",
+    "collapse": "Collapse player",
+    "playingOn": "Playing on"
   },
   "person": {
     "label": "People",
