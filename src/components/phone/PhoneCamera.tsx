@@ -111,56 +111,62 @@ export function PhoneCamera({
 
       <div
         ref={boxRef}
-        data-testid='phone-camera-view'
-        className={cn(
-          'relative overflow-hidden bg-black text-white',
-          full
-            ? // Paysage : tout l'écran ; en portrait (iPhone, verrou refusé), la vue tourne d'un quart de tour.
-              'fixed inset-0 z-[95] portrait:inset-auto portrait:left-0 portrait:top-0 portrait:h-[100vw] portrait:w-[100dvh] portrait:origin-top-left portrait:translate-x-[100vw] portrait:rotate-90'
-            : 'mt-2 aspect-video w-full'
-        )}
+        className={cn('overflow-hidden bg-black text-white', full ? 'fixed inset-0 z-[95]' : 'relative mt-2 aspect-video w-full')}
       >
-        <ZoomPan resetKey={selectedId} rotated={rotated}>
-          {!selected ? (
-            <CameraFeed entityId={entityId} className='size-full object-contain' />
-          ) : selected.has_clip ? (
-            <video
-              key={selected.id}
-              ref={videoRef}
-              src={resolve(frigateMedia(selected.id, 'clip.mp4'))}
-              autoPlay
-              muted
-              playsInline
-              onPlay={() => setPaused(false)}
-              onPause={() => setPaused(true)}
-              onTimeUpdate={e => setPosition(e.currentTarget.currentTime)}
-              className='size-full object-contain'
-            />
-          ) : (
-            <img src={resolve(frigateMedia(selected.id, 'snapshot.jpg'))} alt='' className='size-full object-contain' />
+        {/* La rotation vit sur ce calque et non sur le cadre : en vrai plein écran, le navigateur impose
+            `transform: none` à l'élément en plein écran. Paysage : tout l'écran ; portrait (iPhone, ou
+            verrou d'orientation refusé) : la vue tourne d'un quart de tour. */}
+        <div
+          data-testid='phone-camera-view'
+          className={cn(
+            'absolute',
+            full
+              ? 'inset-0 portrait:inset-auto portrait:left-0 portrait:top-0 portrait:h-[100vw] portrait:w-[100dvh] portrait:origin-top-left portrait:translate-x-[100vw] portrait:rotate-90'
+              : 'inset-0'
           )}
-        </ZoomPan>
-        <span className='pointer-events-none absolute left-4 top-3.5 flex h-7 items-center gap-1.5 rounded-full bg-[rgba(7,9,12,0.66)] px-2.5 text-[13px] font-semibold'>
-          {selected ? (
-            <>
-              {createElement(frigateIcon(selected.label), { size: 14, 'aria-hidden': true })}
-              {frigateLabel(t, selected.label)} · {formatTime(new Date((selected.start_time + position) * 1000), { seconds: true })}
-            </>
-          ) : (
-            <>
-              <span aria-hidden='true' className='size-2 rounded-full bg-[#ff7b93]' />
-              {t('layout.phone.cameras.live')}
-            </>
-          )}
-        </span>
-        <button
-          onClick={full ? exitFull : enterFull}
-          aria-label={fullLabel}
-          title={fullLabel}
-          className='absolute bottom-3 right-3 flex size-11 items-center justify-center rounded-full bg-[rgba(7,9,12,0.66)]'
         >
-          {full ? <Minimize size={20} aria-hidden='true' /> : <Maximize size={20} aria-hidden='true' />}
-        </button>
+          <ZoomPan resetKey={selectedId} rotated={rotated}>
+            {!selected ? (
+              <CameraFeed entityId={entityId} className='size-full object-contain' />
+            ) : selected.has_clip ? (
+              <video
+                key={selected.id}
+                ref={videoRef}
+                src={resolve(frigateMedia(selected.id, 'clip.mp4'))}
+                autoPlay
+                muted
+                playsInline
+                onPlay={() => setPaused(false)}
+                onPause={() => setPaused(true)}
+                onTimeUpdate={e => setPosition(e.currentTarget.currentTime)}
+                className='size-full object-contain'
+              />
+            ) : (
+              <img src={resolve(frigateMedia(selected.id, 'snapshot.jpg'))} alt='' className='size-full object-contain' />
+            )}
+          </ZoomPan>
+          <span className='pointer-events-none absolute left-4 top-3.5 flex h-7 items-center gap-1.5 rounded-full bg-[rgba(7,9,12,0.66)] px-2.5 text-[13px] font-semibold'>
+            {selected ? (
+              <>
+                {createElement(frigateIcon(selected.label), { size: 14, 'aria-hidden': true })}
+                {frigateLabel(t, selected.label)} · {formatTime(new Date((selected.start_time + position) * 1000), { seconds: true })}
+              </>
+            ) : (
+              <>
+                <span aria-hidden='true' className='size-2 rounded-full bg-[#ff7b93]' />
+                {t('layout.phone.cameras.live')}
+              </>
+            )}
+          </span>
+          <button
+            onClick={full ? exitFull : enterFull}
+            aria-label={fullLabel}
+            title={fullLabel}
+            className='absolute bottom-3 right-3 flex size-11 items-center justify-center rounded-full bg-[rgba(7,9,12,0.66)]'
+          >
+            {full ? <Minimize size={20} aria-hidden='true' /> : <Maximize size={20} aria-hidden='true' />}
+          </button>
+        </div>
       </div>
 
       <CameraTimeline events={events} now={now} selected={selected} position={position} onSelect={select} />

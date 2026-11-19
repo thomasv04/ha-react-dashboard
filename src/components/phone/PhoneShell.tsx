@@ -43,12 +43,15 @@ export function PhoneShell() {
   const { pages, setCurrentPage, currentPage } = usePages();
   const musicPlayer = useHass(s => pickMassPlayer(s.entities, rememberedPlayer()));
   const plan = sortPages(pages).find(p => p.type === 'floorplan');
-  const [tab, setTabState] = useState<PhoneTab>(() => (currentPage?.type === 'floorplan' ? 'plan' : 'home'));
+  const [tab, setTabState] = useState<PhoneTab>('home');
   const [menuOpen, setMenuOpen] = useState(false);
   const [assistOpen, setAssistOpen] = useState(false);
 
-  // Un onglet qui disparaît (plus de plan, plus de Music Assistant) ramène à la maison.
-  const active: PhoneTab = (tab === 'plan' && !plan) || (tab === 'music' && !musicPlayer) ? 'home' : tab;
+  // Le plan est une page : l'onglet suit la page affichée, quelle que soit la façon d'y arriver
+  // (lien `#maison`, retour du navigateur, écran de veille sur le plan). Un onglet qui disparaît
+  // (plus de Music Assistant) ramène à la maison.
+  const active: PhoneTab =
+    currentPage?.type === 'floorplan' ? 'plan' : tab === 'plan' || (tab === 'music' && !musicPlayer) ? 'home' : tab;
 
   const setTab = (next: PhoneTab) => {
     // Le plan est une page : y aller, c'est l'ouvrir ; en revenir, retrouver une page à tuiles.
