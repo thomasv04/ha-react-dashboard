@@ -6,6 +6,7 @@ import { PerfToggle } from './PerfToggle';
 import { SECTION_HEADING } from './typography';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
+import { PhoneCamerasField } from './PhoneCamerasField';
 
 /**
  * Plein écran — réglage **par appareil**, donc hors du thème partagé : la
@@ -45,6 +46,7 @@ export function LayoutSection() {
         label={t('settings.layout_section.showUser')}
         description={t('settings.layout_section.showUserDesc')}
       />
+      <PhoneCamerasField />
     </div>
   );
 }

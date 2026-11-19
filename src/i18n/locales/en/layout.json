@@ -714,7 +714,12 @@
       "yesterday": "Yesterday",
       "previous": "Previous event",
       "next": "Next event",
-      "timeline": "Timeline"
+      "timeline": "Timeline",
+      "settingsTitle": "Phone cameras",
+      "settingsAuto": "Automatic: the Frigate cameras. Tick the ones to show in the Cameras tab; the first one plays live, large. Setting for this device only.",
+      "settingsChosen": "The Cameras tab shows these, in this order; the first one plays live, large. Setting for this device only.",
+      "settingsReset": "Back to automatic",
+      "moveUp": "Move {name} up"
     }
   }
 }

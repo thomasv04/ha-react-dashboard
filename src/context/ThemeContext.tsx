@@ -90,6 +90,11 @@ export interface BehaviourSettings {
   editPin: string;
   /** Pastille de l'utilisateur connecté, en haut à droite. Une tablette partagée s'en passe. */
   showUser: boolean;
+  /**
+   * Caméras de l'onglet Caméras du téléphone, dans l'ordre. Vide = automatique : les caméras
+   * Frigate, sinon toutes (`shownCameras`).
+   */
+  phoneCameras: string[];
 }
 
 const DEFAULT_BEHAVIOUR_SETTINGS: BehaviourSettings = {
@@ -97,6 +102,7 @@ const DEFAULT_BEHAVIOUR_SETTINGS: BehaviourSettings = {
   doNotDisturb: false,
   editPin: '',
   showUser: true,
+  phoneCameras: [],
 };
 
 /** Décor de Noël : neige qui tombe, guirlandes lumineuses autour des panneaux. */

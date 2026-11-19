@@ -6,21 +6,13 @@ import { useHaUrl } from '@/hooks/useHaUrl';
 import { useNow } from '@/hooks/useNow';
 import { friendlyName } from '@/lib/ha-service';
 import type { FrigateEvent } from '@/lib/frigate';
+import { frigateOf, shownCameras } from '@/lib/phone-cameras';
+import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { Chip } from './PhoneRooms';
 import { PHONE_TOP } from './PhoneShell';
 import { CAMERA_HOURS, EventRow, PhoneCamera } from './PhoneCamera';
-
-/** Les caméras de Home Assistant, dans l'ordre de leur identifiant ; une caméra indisponible n'apparaît pas. */
-const cameraIds = (entities: Record<string, { state: string }>) =>
-  Object.keys(entities)
-    .filter(id => id.startsWith('camera.') && entities[id].state !== 'unavailable')
-    .sort()
-    .join(',');
-
-/** L'entité HA d'une caméra Frigate : l'intégration la nomme `camera.<nom Frigate>`. */
-const entityOf = (event: FrigateEvent) => `camera.${event.camera}`;
 
 /** Le filtre : toutes, un étage, ou la liste des événements de toutes les caméras. */
 type Filter = { kind: 'all' } | { kind: 'floor'; id: string } | { kind: 'events' };
@@ -30,14 +22,46 @@ type Filter = { kind: 'all' } | { kind: 'floor'; id: string } | { kind: 'events'
  * autres en vignettes rafraîchies, avec l'heure de leur dernier événement
  * Frigate. Les filtres : les étages des pièces où sont les caméras (s'il y en a
  * plusieurs), et « Événements » quand Frigate en a. Un appui ouvre la caméra.
+ *
+ * Les caméras montrées se choisissent dans les Paramètres (Disposition) ; à
+ * défaut, celles de Frigate. Un événement retrouve sa caméra par le nom Frigate
+ * que l'intégration pose sur l'entité (`camera_name`), pas par son identifiant.
  */
 export function PhoneCameras() {
   const { t } = useI18n();
-  const joined = useHass(s => cameraIds(s.entities));
+  const { behaviourSettings } = useTheme();
+  // En texte : une liste neuve à chaque mise à jour de HA relancerait tout l'onglet.
+  const joined = useHass(s => shownCameras(s.entities, behaviourSettings.phoneCameras).join(','));
+  // `entité=instance/caméra Frigate` pour chacune de ces caméras qui vient de Frigate.
+  const frigateJoined = useHass(s =>
+    (joined ? joined.split(',') : [])
+      .map(id => [id, frigateOf(s.entities[id])] as const)
+      .filter(([, f]) => f)
+      .map(([id, f]) => `${id}=${f!.instance}/${f!.camera}`)
+      .join(',')
+  );
+  const frigate = useMemo(
+    () => (frigateJoined ? frigateJoined.split(',') : []).map(pair => pair.split(/[=/]/) as [string, string, string]),
+    [frigateJoined]
+  );
+  // ponytail: une seule instance Frigate, celle de la première caméra ; plusieurs instances
+  // demanderaient une interrogation par instance.
+  const instance = frigate[0]?.[1];
   const areas = useAreas();
   const now = useNow().getTime();
-  // Une seule interrogation de Frigate pour l'onglet et l'écran d'une caméra.
-  const { events } = useFrigateEvents({ instanceId: 'frigate', cameras: '', hours: CAMERA_HOURS });
+  // Une seule interrogation de Frigate pour l'onglet et l'écran d'une caméra, limitée à ses caméras.
+  const { events: polled } = useFrigateEvents({
+    instanceId: instance ?? 'frigate',
+    cameras: frigate
+      .filter(([, i]) => i === instance)
+      .map(([, , c]) => c)
+      .join(','),
+    hours: CAMERA_HOURS,
+    limit: 300,
+  });
+  const events = instance ? polled : [];
+  const entityOfCamera = useMemo(() => new Map(frigate.map(([id, , camera]) => [camera, id])), [frigate]);
+  const entityOf = (event: FrigateEvent) => entityOfCamera.get(event.camera) ?? `camera.${event.camera}`;
   const [filter, setFilter] = useState<Filter>({ kind: 'all' });
   const [open, setOpen] = useState<{ id: string; eventId: string | null } | null>(null);
 

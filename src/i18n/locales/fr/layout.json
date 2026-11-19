@@ -714,7 +714,12 @@
       "yesterday": "Hier",
       "previous": "Événement précédent",
       "next": "Événement suivant",
-      "timeline": "Chronologie"
+      "timeline": "Chronologie",
+      "settingsTitle": "Caméras du téléphone",
+      "settingsAuto": "Automatique : les caméras Frigate. Cochez celles à montrer dans l’onglet Caméras ; la première passe en direct, en grand. Réglage propre à cet appareil.",
+      "settingsChosen": "L’onglet Caméras montre celles-ci, dans cet ordre ; la première passe en direct, en grand. Réglage propre à cet appareil.",
+      "settingsReset": "Revenir au choix automatique",
+      "moveUp": "Monter {name}"
     }
   }
 }
