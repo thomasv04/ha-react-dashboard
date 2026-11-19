@@ -271,6 +271,12 @@ Plan / Caméras / Musique, mini-lecteur au-dessus. Maquettes : planches
   `PHONE_COLS` (4 colonnes) ; Pièces se déduit des zones HA
   (`room-layout.ts`) ; Caméras et l'écran d'une caméra lisent Frigate
   (`camera-timeline.ts` pour la frise).
+- Caméras : celles choisies dans Paramètres → Disposition (`phoneCameras`,
+  par appareil), sinon les caméras Frigate (`src/lib/phone-cameras.ts`). Une
+  caméra Frigate se reconnaît à ses attributs `camera_name` et `client_id`,
+  jamais à son `entity_id`. Lâcher la frise lit l'enregistrement continu par le
+  proxy VOD de l'intégration (adresse signée par `auth/sign_path`) : pas de
+  CORS depuis `localhost`, donc à vérifier servi par HA.
 - Les feuilles (`ds/Sheet`), les fiches d'appareil, les Paramètres et
   l'appli Musique ont leur version téléphone dans leur propre composant.
 - Vérifier en 390 × 844 **et** en 844 × 390 ; `tests/dashboard/phone.spec.ts`.
