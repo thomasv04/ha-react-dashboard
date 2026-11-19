@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION_FAST } from '@/lib/motion-tokens';
 import { SettingsContent } from './SettingsContent';
 import { START_TOUR_EVENT } from '@/components/onboarding/TourOverlay';
+import { useIsPhone } from '@/hooks/useIsMobile';
+import { cn } from '@/lib/utils';
 
 /** Les réglages, en plein écran. Ils s'ouvrent depuis le lanceur d'apps. */
 export function ThemeControlsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -12,6 +14,7 @@ export function ThemeControlsModal({ open, onClose }: { open: boolean; onClose: 
    * ferme alors pas.
    */
   const guard = useRef<(() => boolean) | null>(null);
+  const phone = useIsPhone();
   const close = () => {
     if (!guard.current?.()) onClose();
   };
@@ -39,7 +42,11 @@ export function ThemeControlsModal({ open, onClose }: { open: boolean; onClose: 
           role='dialog'
           aria-modal='true'
           data-overlay
-          className='fixed inset-0 z-[61] bg-[var(--ds-sheet)] text-[var(--ds-ink)]'
+          className={cn(
+            'fixed inset-0 z-[61] text-[var(--ds-ink)]',
+            // Téléphone : le fond de l'appli et le gris des cards, comme le Menu.
+            phone ? 'bg-[var(--ds-ground)] [--ds-sheet-section:var(--ds-surface-2)]' : 'bg-[var(--ds-sheet)]'
+          )}
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.98 }}
