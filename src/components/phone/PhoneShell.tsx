@@ -50,8 +50,7 @@ export function PhoneShell() {
   // Le plan est une page : l'onglet suit la page affichée, quelle que soit la façon d'y arriver
   // (lien `#maison`, retour du navigateur, écran de veille sur le plan). Un onglet qui disparaît
   // (plus de Music Assistant) ramène à la maison.
-  const active: PhoneTab =
-    currentPage?.type === 'floorplan' ? 'plan' : tab === 'plan' || (tab === 'music' && !musicPlayer) ? 'home' : tab;
+  const active: PhoneTab = currentPage?.type === 'floorplan' ? 'plan' : tab === 'plan' || (tab === 'music' && !musicPlayer) ? 'home' : tab;
 
   const setTab = (next: PhoneTab) => {
     // Le plan est une page : y aller, c'est l'ouvrir ; en revenir, retrouver une page à tuiles.

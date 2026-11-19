@@ -1,5 +1,5 @@
 import { createElement, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { ChevronLeft, ChevronRight, Maximize, Minimize, Pause, Play, SkipBack, SkipForward } from 'lucide-react';
+import { ChevronLeft, ChevronRight, History, Maximize, Minimize, Pause, Play, SkipBack, SkipForward } from 'lucide-react';
 import { useHass } from '@hakit/core';
 import { CameraFeed } from '@/components/ui/CameraFeed/components/CameraFeed';
 import { useHaUrl } from '@/hooks/useHaUrl';
@@ -9,7 +9,7 @@ import { frigateIcon, frigateLabel, frigateMedia, type FrigateEvent } from '@/li
 import { friendlyName } from '@/lib/ha-service';
 import { clamp, cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
-import { buildTimeline, dayOf, timelineX } from './camera-timeline';
+import { buildTimeline, dayOf, timeAtX, timelineX } from './camera-timeline';
 import { PHONE_ROUND, PHONE_TOP } from './PhoneShell';
 
 /** Fenêtre de la frise et des événements, en heures. */
@@ -22,6 +22,9 @@ const HIGHLIGHT = '#8fb8f5';
  * pleine largeur, ou le clip de l'événement choisi ; une frise des dernières
  * heures avec « Direct » ; précédent, pause, suivant ; puis les événements.
  *
+ * Frise lâchée au doigt : l'enregistrement continu de Frigate se lit à l'heure
+ * passée sous la tête de lecture (proxy VOD de l'intégration, adresse signée).
+ *
  * L'image se zoome à deux doigts, et le bouton plein écran passe en paysage :
  * verrouillé sur Android, la vue tournée en CSS sur iPhone (pas d'API).
  */
@@ -29,9 +32,12 @@ export function PhoneCamera({
   entityId,
   events,
   initialEventId = null,
+  frigate,
   onBack,
 }: {
   entityId: string;
+  /** La caméra côté Frigate : sans elle, pas d'enregistrement à parcourir. */
+  frigate?: { camera: string; instance: string };
   /** Les événements de cette caméra, du plus récent au plus ancien. */
   events: FrigateEvent[];
   initialEventId?: string | null;
@@ -50,14 +56,30 @@ export function PhoneCamera({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [paused, setPaused] = useState(false);
   const [position, setPosition] = useState(0);
+  // L'enregistrement continu lu depuis cet instant (secondes) ; `null` hors enregistrement.
+  const [at, setAt] = useState<number | null>(null);
   const select = (id: string | null) => {
     setSelectedId(id);
+    setAt(null);
     setPosition(0);
     setPaused(false);
   };
-  // Précédent : plus ancien ; suivant : plus récent, puis le direct.
-  const older = selected ? events[index + 1] : events[0];
-  const newer = selected ? (index > 0 ? events[index - 1].id : null) : undefined;
+  // Lâchée à moins de 30 s de maintenant, la frise revient au direct.
+  const scrub = (time: number) => {
+    if (time * 1000 > now - 30_000) return select(null);
+    select(null);
+    setAt(time);
+  };
+  // Précédent : plus ancien ; suivant : plus récent, puis le direct. Depuis l'enregistrement : les
+  // événements de part et d'autre de l'heure lue.
+  const older = selected ? events[index + 1] : at !== null ? events.find(e => e.start_time < at) : events[0];
+  const newer = selected
+    ? index > 0
+      ? events[index - 1].id
+      : null
+    : at !== null
+      ? (events.filter(e => e.start_time > at).at(-1)?.id ?? null)
+      : undefined;
 
   const [full, setFull] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -74,8 +96,8 @@ export function PhoneCamera({
     setFull(false);
     if (document.fullscreenElement) void document.exitFullscreen?.().catch(() => {});
   };
-  // Plein écran en portrait : la vue est tournée, les gestes aussi. Suivi au pivotement du téléphone.
-  // Relu au pivotement du téléphone : le rendu suivant recalcule `rotated`.
+  // Plein écran en portrait : la vue est tournée, les gestes aussi. Relu au pivotement du téléphone :
+  // le rendu suivant recalcule `rotated`.
   const [, setTurns] = useState(0);
   useEffect(() => {
     if (!full) return;
@@ -125,8 +147,18 @@ export function PhoneCamera({
               : 'inset-0'
           )}
         >
-          <ZoomPan resetKey={selectedId} rotated={rotated}>
-            {!selected ? (
+          <ZoomPan resetKey={selectedId ?? at} rotated={rotated}>
+            {!selected && at !== null && frigate ? (
+              <RecordingVideo
+                key={at}
+                {...frigate}
+                start={at}
+                videoRef={videoRef}
+                onPlay={() => setPaused(false)}
+                onPause={() => setPaused(true)}
+                onTime={setPosition}
+              />
+            ) : !selected ? (
               <CameraFeed entityId={entityId} className='size-full object-contain' />
             ) : selected.has_clip ? (
               <video
@@ -146,7 +178,12 @@ export function PhoneCamera({
             )}
           </ZoomPan>
           <span className='pointer-events-none absolute left-4 top-3.5 flex h-7 items-center gap-1.5 rounded-full bg-[rgba(7,9,12,0.66)] px-2.5 text-[13px] font-semibold'>
-            {selected ? (
+            {!selected && at !== null ? (
+              <>
+                <History size={14} aria-hidden='true' />
+                {t('layout.phone.cameras.recording')} · {formatTime(new Date((at + position) * 1000), { seconds: true })}
+              </>
+            ) : selected ? (
               <>
                 {createElement(frigateIcon(selected.label), { size: 14, 'aria-hidden': true })}
                 {frigateLabel(t, selected.label)} · {formatTime(new Date((selected.start_time + position) * 1000), { seconds: true })}
@@ -169,7 +206,15 @@ export function PhoneCamera({
         </div>
       </div>
 
-      <CameraTimeline events={events} now={now} selected={selected} position={position} onSelect={select} />
+      <CameraTimeline
+        events={events}
+        now={now}
+        selected={selected}
+        at={at}
+        position={position}
+        onSelect={select}
+        onScrub={frigate ? scrub : undefined}
+      />
 
       <div className='mt-3.5 flex items-center justify-center gap-5'>
         <button
@@ -183,8 +228,8 @@ export function PhoneCamera({
         </button>
         <button
           onClick={togglePlay}
-          disabled={!selected?.has_clip}
-          aria-label={t(paused || !selected ? 'widgets.media_player.play' : 'widgets.media_player.pause')}
+          disabled={!selected?.has_clip && at === null}
+          aria-label={t(paused || (!selected && at === null) ? 'widgets.media_player.play' : 'widgets.media_player.pause')}
           className='flex size-16 items-center justify-center rounded-full bg-[var(--ds-ink)] text-[var(--ds-ground)] disabled:opacity-40'
         >
           {paused ? (
@@ -277,24 +322,53 @@ function CameraTimeline({
   events,
   now,
   selected,
+  at,
   position,
   onSelect,
+  onScrub,
 }: {
   events: FrigateEvent[];
   now: number;
   selected: FrigateEvent | undefined;
+  /** L'enregistrement lu depuis cet instant (secondes), hors événement. */
+  at: number | null;
   position: number;
   onSelect: (id: string | null) => void;
+  /** Frise lâchée au doigt : l'instant (secondes) passé sous sa tête de lecture. Absent sans Frigate. */
+  onScrub?: (time: number) => void;
 }) {
   const { t } = useI18n();
   const { formatTime } = useFormats();
   const scrollRef = useRef<HTMLDivElement>(null);
   const timeline = buildTimeline(events, now, CAMERA_HOURS);
-  const head = selected ? timelineX((selected.start_time + position) * 1000, now, CAMERA_HOURS) : timeline.width;
+  const head = selected
+    ? timelineX((selected.start_time + position) * 1000, now, CAMERA_HOURS)
+    : at !== null
+      ? timelineX((at + position) * 1000, now, CAMERA_HOURS)
+      : timeline.width;
+  // Un défilement qu'un doigt a commencé, et non le recentrage ci-dessous : lui seul déplace la lecture.
+  const touched = useRef(false);
+  const settle = useRef<number | undefined>(undefined);
+  useEffect(() => () => clearTimeout(settle.current), []);
+  const onScroll = () => {
+    if (!touched.current || !onScrub) return;
+    clearTimeout(settle.current);
+    // La frise est lâchée quand elle ne bouge plus depuis 400 ms (l'élan compris).
+    settle.current = window.setTimeout(() => {
+      const el = scrollRef.current;
+      if (!el) return;
+      touched.current = false;
+      onScrub(Math.floor(timeAtX(el.scrollLeft + el.clientWidth / 2, now, CAMERA_HOURS) / 1000));
+    }, 400);
+  };
+  const touch = () => {
+    touched.current = true;
+  };
 
   useLayoutEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
+    touched.current = false;
     el.scrollTo?.({ left: head - el.clientWidth / 2, behavior: 'smooth' });
     // Seulement au changement d'événement : pendant la lecture, la frise reste où le doigt l'a mise.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -307,7 +381,18 @@ function CameraTimeline({
         role='group'
         aria-label={t('layout.phone.cameras.timeline')}
         className='relative min-w-0 flex-1 overflow-x-auto scrollbar-none'
+        onPointerDown={touch}
+        onTouchStart={touch}
+        onWheel={touch}
+        onScroll={onScroll}
       >
+        {/* Au milieu, le repère de ce qu'on lira en lâchant la frise. */}
+        {onScrub && (
+          <span
+            aria-hidden='true'
+            className='pointer-events-none sticky left-1/2 top-0 z-10 float-left -ml-px h-1.5 w-0.5 rounded-b bg-[var(--ds-ink-muted)]'
+          />
+        )}
         {/* 40 px d'air à droite : la tête de lecture du direct ne colle pas à « Direct ». */}
         <div className='relative h-full' style={{ width: timeline.width + 40 }}>
           <div
@@ -319,7 +404,10 @@ function CameraTimeline({
             return (
               <button
                 key={b.id}
-                onClick={() => onSelect(b.id)}
+                onClick={() => {
+                  touched.current = false;
+                  onSelect(b.id);
+                }}
                 aria-label={frigateLabel(t, b.label)}
                 aria-pressed={current}
                 className={cn(
@@ -347,13 +435,95 @@ function CameraTimeline({
       </div>
       <button
         onClick={() => onSelect(null)}
-        aria-pressed={!selected}
+        aria-pressed={!selected && at === null}
         className='flex w-[76px] shrink-0 items-center justify-center border-l border-[var(--ds-surface-3)] text-[15px] font-bold'
-        style={!selected ? { color: HIGHLIGHT } : undefined}
+        style={!selected && at === null ? { color: HIGHLIGHT } : undefined}
       >
         {t('layout.phone.cameras.live')}
       </button>
     </div>
+  );
+}
+
+/**
+ * L'enregistrement continu de Frigate depuis `start` (secondes), une heure au
+ * plus : le proxy VOD de l'intégration, en HLS. Une `<video>` ne porte pas
+ * d'en-tête d'authentification : Home Assistant signe l'adresse, et Frigate
+ * ajoute la signature aux segments de la liste de lecture.
+ */
+function RecordingVideo({
+  instance,
+  camera,
+  start,
+  videoRef,
+  onPlay,
+  onPause,
+  onTime,
+}: {
+  instance: string;
+  camera: string;
+  start: number;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
+  onPlay: () => void;
+  onPause: () => void;
+  onTime: (seconds: number) => void;
+}) {
+  const { t } = useI18n();
+  const connection = useHass(s => s.connection);
+  const resolve = useHaUrl();
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !connection) return;
+    let cancelled = false;
+    let hls: { destroy: () => void } | null = null;
+    const end = Math.min(start + 3600, Math.floor(Date.now() / 1000));
+    const path = `/api/frigate/${instance}/vod/${camera}/start/${start}/end/${end}/index.m3u8`;
+    connection
+      .sendMessagePromise<{ path: string }>({ type: 'auth/sign_path', path, expires: 3600 })
+      .then(async ({ path: signed }) => {
+        const url = resolve(signed);
+        if (cancelled || !url) return;
+        // hls.js n'est chargé qu'à la demande, comme pour le direct.
+        const { default: Hls } = await import('hls.js');
+        if (cancelled) return;
+        if (Hls.isSupported()) {
+          const instanceHls = new Hls({ maxBufferLength: 20 });
+          instanceHls.on(Hls.Events.ERROR, (_event, data) => data.fatal && setFailed(true));
+          instanceHls.loadSource(url);
+          instanceHls.attachMedia(video);
+          hls = instanceHls;
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = url;
+        }
+      })
+      .catch(() => !cancelled && setFailed(true));
+    return () => {
+      cancelled = true;
+      hls?.destroy();
+    };
+  }, [connection, instance, camera, start, resolve, videoRef]);
+
+  return (
+    <>
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        playsInline
+        onPlay={onPlay}
+        onPause={onPause}
+        onTimeUpdate={e => onTime(e.currentTarget.currentTime)}
+        onError={() => setFailed(true)}
+        className='size-full object-contain'
+      />
+      {failed && (
+        <p className='absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-white/80'>
+          {t('layout.phone.cameras.noRecording')}
+        </p>
+      )}
+    </>
   );
 }
 

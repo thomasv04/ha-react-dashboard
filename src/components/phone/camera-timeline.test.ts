@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildTimeline, dayOf, MIN_BLOCK, PX_PER_MIN, timelineX } from './camera-timeline';
+import { buildTimeline, dayOf, MIN_BLOCK, PX_PER_MIN, timeAtX, timelineX } from './camera-timeline';
 
 const now = new Date(2026, 10, 19, 12, 7).getTime();
 const at = (h: number, m: number) => new Date(2026, 10, 19, h, m).getTime() / 1000;
@@ -24,6 +24,8 @@ describe('buildTimeline', () => {
     expect(t.marks).toHaveLength(12);
     expect(new Date(t.marks[0].at).getMinutes()).toBe(10);
     expect(timelineX(now, now, 1)).toBe(t.width);
+    // Ce qu'on lit sous la tête de lecture, une fois la frise lâchée.
+    expect(timeAtX(timelineX(at(11, 30) * 1000, now, 1), now, 1)).toBe(at(11, 30) * 1000);
   });
 });
 

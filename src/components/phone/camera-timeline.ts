@@ -39,6 +39,9 @@ export function buildTimeline(events: FrigateEvent[], now: number, hours: number
 /** Position, sur la frise, d'un instant (ms). */
 export const timelineX = (at: number, now: number, hours: number) => ((at - (now - hours * 3_600_000)) / 60_000) * PX_PER_MIN;
 
+/** L'instant (ms) à une position de la frise : l'inverse de `timelineX`. */
+export const timeAtX = (x: number, now: number, hours: number) => now - hours * 3_600_000 + (x / PX_PER_MIN) * 60_000;
+
 /** « Aujourd'hui », « Hier » ou rien : le jour d'un événement, à préfixer à son heure. */
 export function dayOf(at: number, now: number): 'today' | 'yesterday' | null {
   const day = (ms: number) => new Date(ms).setHours(0, 0, 0, 0);

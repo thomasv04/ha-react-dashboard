@@ -89,6 +89,9 @@ export function PhoneCameras() {
         entityId={open.id}
         events={events.filter(e => entityOf(e) === open.id)}
         initialEventId={open.eventId}
+        frigate={(([, instance, camera]) => (camera ? { instance, camera } : undefined))(
+          frigate.find(([id]) => id === open.id) ?? ['', '', '']
+        )}
         onBack={() => setOpen(null)}
       />
     );
