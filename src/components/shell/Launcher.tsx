@@ -15,7 +15,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useHass, useUser } from '@hakit/core';
-import { useIsMobile } from '@/hooks/useIsMobile';
+import { useIsPhone } from '@/hooks/useIsMobile';
 import { useMoreInfo } from '@/context/MoreInfoContext';
 import { pickMassPlayer, rememberedPlayer } from '@/lib/music-assistant';
 import { usePages } from '@/context/PageContext';
@@ -54,7 +54,7 @@ export function Launcher({ open, onClose }: { open: boolean; onClose: () => void
   const [dialog, setDialog] = useState<Dialog>(null);
   // Téléphone (maquette « Menu ») : un écran plein, une seule liste. Les pages ont la pilule,
   // Musique et Assist leurs boutons ; l'édition et la visite guidée restent sur la tablette.
-  const phone = useIsMobile();
+  const phone = useIsPhone();
 
   useEffect(() => {
     if (!open) return;

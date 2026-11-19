@@ -709,7 +709,12 @@
       "live": "Live",
       "events": "Events",
       "fullscreen": "Full screen",
-      "exitFullscreen": "Exit full screen"
+      "exitFullscreen": "Exit full screen",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "previous": "Previous event",
+      "next": "Next event",
+      "timeline": "Timeline"
     }
   }
 }

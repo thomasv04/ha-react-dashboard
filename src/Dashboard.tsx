@@ -40,7 +40,7 @@ import { usePages } from '@/context/PageContext';
 import { usePanel } from '@/context/PanelContext';
 import { useMoreInfo } from '@/context/MoreInfoContext';
 import { layoutWidgets } from '@/lib/panel-grid';
-import { useIsMobile } from '@/hooks/useIsMobile';
+import { useIsPhone } from '@/hooks/useIsMobile';
 import { PhoneShell } from '@/components/phone/PhoneShell';
 
 // La page plan ne se télécharge qu'à sa première visite : sans plan, rien à payer.
@@ -105,7 +105,7 @@ function DashboardContent() {
   const [launcherOpen, setLauncherOpen] = useState(false);
   const closeLauncher = useCallback(() => setLauncherOpen(false), []);
   // Téléphone : une appli à onglets à part (maquette « Téléphone »), sans édition.
-  const phone = useIsMobile();
+  const phone = useIsPhone();
 
   return (
     <LayoutGroup>

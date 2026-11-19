@@ -19,7 +19,7 @@ import { useMoreInfoOptional } from '@/context/MoreInfoContext';
 import { useNow } from '@/hooks/useNow';
 import { useFormats } from '@/hooks/useFormats';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
-import { useIsMobile } from '@/hooks/useIsMobile';
+import { useIsPhone } from '@/hooks/useIsMobile';
 import { massPlay, useMassEntryId, useMassLibrary } from '@/hooks/useMusicAssistant';
 import { itemSubtitle, rememberPlayer, type MassEnqueue, type MassItem, type MassMediaType, type MassOrder } from '@/lib/music-assistant';
 import { friendlyName } from '@/lib/ha-service';
@@ -54,7 +54,7 @@ export default function MusicApp({ entityId, widgetId }: { entityId: string; wid
   const moreInfo = useMoreInfoOptional();
   const clock = useNow();
   // Téléphone (maquettes « Bibliothèque » du téléphone) : l'appli est un onglet, pas une fenêtre.
-  const phone = useIsMobile();
+  const phone = useIsPhone();
   const [sorting, setSorting] = useState(false);
   // L'enceinte de l'appli : celle de l'ouverture, puis celle qu'on choisit.
   const [player, setPlayerState] = useState(entityId);
@@ -120,7 +120,7 @@ export default function MusicApp({ entityId, widgetId }: { entityId: string; wid
       ref={rootRef}
       // `music-theme` (index.css) : les couleurs de la maquette absentes des jetons. Le bas laisse la
       // place au mini-lecteur.
-      className='music-theme -mt-4 flex min-h-full flex-col bg-[var(--ds-ground)] px-10 pb-[150px] pt-8 leading-[normal] text-[var(--ds-ink)] max-sm:mt-0 max-sm:min-h-dvh max-sm:px-4 max-sm:pb-[200px] max-sm:pt-[calc(env(safe-area-inset-top)+16px)]'
+      className='music-theme -mt-4 flex min-h-full flex-col bg-[var(--ds-ground)] px-10 pb-[150px] pt-8 leading-[normal] text-[var(--ds-ink)] phone:mt-0 phone:min-h-dvh phone:px-4 phone:pb-[200px] phone:pt-[calc(env(safe-area-inset-top)+16px)]'
       data-testid='music-app'
     >
       {/* En-tête de la maquette : le carré du lanceur (il ferme l'appli) et le titre ; la recherche,
@@ -138,15 +138,15 @@ export default function MusicApp({ entityId, widgetId }: { entityId: string; wid
           onPick={() => setPicking(true)}
         />
       ) : (
-        <header className='flex h-[60px] shrink-0 items-center gap-5 max-sm:h-11 max-sm:gap-3'>
+        <header className='flex h-[60px] shrink-0 items-center gap-5 phone:h-11 phone:gap-3'>
           {sub ? (
             <button
               type='button'
               onClick={() => (screen ? setScreen(null) : setStack(s => s.slice(0, -1)))}
               aria-label={`${t('widgets.music.back')} — ${back}`}
-              className='flex min-w-0 items-center gap-5 text-[24px] font-semibold text-[var(--ds-ink-muted)] max-sm:gap-3 max-sm:text-lg max-sm:text-[var(--ds-ink)]'
+              className='flex min-w-0 items-center gap-5 text-[24px] font-semibold text-[var(--ds-ink-muted)] phone:gap-3 phone:text-lg phone:text-[var(--ds-ink)]'
             >
-              <span className='flex size-[60px] shrink-0 items-center justify-center rounded-[18px] bg-[var(--ds-surface-2)] text-[var(--ds-ink)] max-sm:size-11 max-sm:rounded-full'>
+              <span className='flex size-[60px] shrink-0 items-center justify-center rounded-[18px] bg-[var(--ds-surface-2)] text-[var(--ds-ink)] phone:size-11 phone:rounded-full'>
                 <ChevronLeft size={26} aria-hidden='true' />
               </span>
               <span className='truncate'>{back}</span>
@@ -156,7 +156,7 @@ export default function MusicApp({ entityId, widgetId }: { entityId: string; wid
               type='button'
               onClick={() => setGlobal(false)}
               aria-label={t('widgets.music.closeSearch')}
-              className='flex size-[60px] shrink-0 items-center justify-center rounded-[18px] bg-[var(--ds-surface-2)] max-sm:size-11 max-sm:rounded-full'
+              className='flex size-[60px] shrink-0 items-center justify-center rounded-[18px] bg-[var(--ds-surface-2)] phone:size-11 phone:rounded-full'
             >
               <ChevronLeft size={26} aria-hidden='true' />
             </button>
@@ -176,7 +176,7 @@ export default function MusicApp({ entityId, widgetId }: { entityId: string; wid
           {!sub && (
             <label
               className={cn(
-                'flex h-[60px] min-w-0 items-center gap-3.5 rounded-[30px] bg-[var(--ds-surface-2)] pl-[22px] pr-2.5 focus-within:shadow-[inset_0_0_0_2px_var(--ds-tile-on)] max-sm:h-11 max-sm:gap-2.5 max-sm:pl-4 max-sm:pr-1.5',
+                'flex h-[60px] min-w-0 items-center gap-3.5 rounded-[30px] bg-[var(--ds-surface-2)] pl-[22px] pr-2.5 focus-within:shadow-[inset_0_0_0_2px_var(--ds-tile-on)] phone:h-11 phone:gap-2.5 phone:pl-4 phone:pr-1.5',
                 global ? 'flex-1' : 'ml-auto w-[520px] shrink'
               )}
             >
@@ -191,7 +191,7 @@ export default function MusicApp({ entityId, widgetId }: { entityId: string; wid
                 placeholder={t(global ? 'widgets.music.searchAll' : `widgets.music.searchPlaceholder.${tab}`)}
                 aria-label={t('widgets.music.search')}
                 // Le focus se lit sur la pilule entière ; `!` passe devant la règle globale de focus (index.css, hors couche).
-                className='min-w-0 flex-1 bg-transparent text-[19px] max-sm:text-base outline-none! placeholder:text-[var(--ds-ink-muted)] [&::-webkit-search-cancel-button]:hidden'
+                className='min-w-0 flex-1 bg-transparent text-[19px] phone:text-base outline-none! placeholder:text-[var(--ds-ink-muted)] [&::-webkit-search-cancel-button]:hidden'
               />
               {draft && (
                 <button
@@ -363,8 +363,8 @@ export default function MusicApp({ entityId, widgetId }: { entityId: string; wid
           ) : (
             <>
               {showRecent && (recent.data?.items.length ?? 0) > 0 && (
-                <section className='mb-[30px] max-sm:mb-4'>
-                  <h3 className='mb-3.5 text-[22px] font-semibold max-sm:mb-2.5 max-sm:text-xl max-sm:font-bold'>
+                <section className='mb-[30px] phone:mb-4'>
+                  <h3 className='mb-3.5 text-[22px] font-semibold phone:mb-2.5 phone:text-xl phone:font-bold'>
                     {t('widgets.music.recent')}
                   </h3>
                   {phone ? (
@@ -420,7 +420,7 @@ export default function MusicApp({ entityId, widgetId }: { entityId: string; wid
               )}
 
               <section>
-                <h3 className='mb-3.5 text-[22px] font-semibold max-sm:sr-only'>{t(`widgets.music.tabs.${tab}`)}</h3>
+                <h3 className='mb-3.5 text-[22px] font-semibold phone:sr-only'>{t(`widgets.music.tabs.${tab}`)}</h3>
                 {tab === 'track' ? (
                   <TrackList items={items} onPlay={item => play(item)} onMore={more} />
                 ) : (

@@ -709,7 +709,12 @@
       "live": "Direct",
       "events": "Événements",
       "fullscreen": "Plein écran",
-      "exitFullscreen": "Quitter le plein écran"
+      "exitFullscreen": "Quitter le plein écran",
+      "today": "Aujourd’hui",
+      "yesterday": "Hier",
+      "previous": "Événement précédent",
+      "next": "Événement suivant",
+      "timeline": "Chronologie"
     }
   }
 }

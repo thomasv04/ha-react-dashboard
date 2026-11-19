@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Car, Cctv, Package, PawPrint, User, type LucideIcon } from 'lucide-react';
+import { Cctv } from 'lucide-react';
 import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useHideTitle } from '@/hooks/useHideTitle';
@@ -11,18 +11,9 @@ import { useNow } from '@/hooks/useNow';
 import { useHaUrl } from '@/hooks/useHaUrl';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
-import { countByLabel, frigateLabel, frigateMedia, type FrigateEvent } from '@/lib/frigate';
+import { countByLabel, frigateIcon, frigateLabel, frigateMedia, type FrigateEvent } from '@/lib/frigate';
 import type { CameraEventsCardConfig } from '@/types/widget-configs';
 import { EventViewer } from './EventViewer';
-
-const LABEL_ICONS: Record<string, LucideIcon> = {
-  person: User,
-  package: Package,
-  car: Car,
-  dog: PawPrint,
-  cat: PawPrint,
-  animal: PawPrint,
-};
 
 /** `now` vient de la card : une seule horloge pour toutes les vignettes. */
 function EventTile({ event, now, onOpen }: { event: FrigateEvent; now: number; onOpen: () => void }) {
@@ -96,7 +87,7 @@ export function CameraEventsCard() {
           <>
             <div className='flex shrink-0 flex-wrap gap-2'>
               {counts.map(([label, n]) => {
-                const Icon = LABEL_ICONS[label] ?? Cctv;
+                const Icon = frigateIcon(label);
                 return (
                   <span
                     key={label}

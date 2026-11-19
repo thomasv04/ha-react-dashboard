@@ -15,7 +15,7 @@ import { MusicCover } from './MusicCover';
 function MusicDialog({ label, onClose, children }: { label: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div
-      className='fixed inset-0 z-[70] flex items-center justify-center bg-[color-mix(in_srgb,var(--ds-ground)_76%,transparent)] p-4 max-sm:items-end max-sm:p-0'
+      className='fixed inset-0 z-[70] flex items-center justify-center bg-[color-mix(in_srgb,var(--ds-ground)_76%,transparent)] p-4 phone:items-end phone:p-0'
       onClick={onClose}
     >
       <div
@@ -23,9 +23,9 @@ function MusicDialog({ label, onClose, children }: { label: string; onClose: () 
         aria-modal='true'
         aria-label={label}
         onClick={e => e.stopPropagation()}
-        className='w-full max-w-[560px] overflow-hidden rounded-[32px] bg-[var(--music-raised)] shadow-[0_30px_80px_rgba(0,0,0,0.6)] max-sm:max-w-none max-sm:rounded-b-none max-sm:rounded-t-[28px] max-sm:pb-[env(safe-area-inset-bottom)]'
+        className='w-full max-w-[560px] overflow-hidden rounded-[32px] bg-[var(--music-raised)] shadow-[0_30px_80px_rgba(0,0,0,0.6)] phone:max-w-none phone:rounded-b-none phone:rounded-t-[28px] phone:pb-[env(safe-area-inset-bottom)]'
       >
-        <span aria-hidden='true' className='mx-auto mt-2.5 block h-1 w-10 rounded-full bg-white/25 sm:hidden' />
+        <span aria-hidden='true' className='mx-auto mt-2.5 block h-1 w-10 rounded-full bg-white/25 tablet:hidden' />
         {children}
       </div>
     </div>
@@ -38,7 +38,7 @@ function RoundButton({ label, onClick, icon: Icon }: { label: string; onClick: (
       type='button'
       onClick={onClick}
       aria-label={label}
-      className='flex size-[52px] shrink-0 items-center justify-center rounded-full bg-[var(--music-raised-2)] max-sm:size-11'
+      className='flex size-[52px] shrink-0 items-center justify-center rounded-full bg-[var(--music-raised-2)] phone:size-11'
     >
       <Icon size={20} aria-hidden='true' />
     </button>
@@ -64,16 +64,16 @@ function DialogHeader({
   const { t } = useI18n();
   return (
     <>
-      <div className='flex items-center gap-[18px] px-[22px] pb-[18px] pt-[22px] max-sm:gap-3 max-sm:px-4 max-sm:pb-3.5 max-sm:pt-3'>
+      <div className='flex items-center gap-[18px] px-[22px] pb-[18px] pt-[22px] phone:gap-3 phone:px-4 phone:pb-3.5 phone:pt-3'>
         {onBack && <RoundButton label={t('widgets.music.back')} onClick={onBack} icon={ChevronLeft} />}
         {children}
         <div className='min-w-0 flex-1'>
-          <p className={cn('truncate font-semibold max-sm:text-[17px]', big ? 'text-[26px]' : 'text-[24px]')}>{title}</p>
-          {subtitle && <p className='truncate text-[17px] text-[var(--ds-ink-muted)] max-sm:text-sm'>{subtitle}</p>}
+          <p className={cn('truncate font-semibold phone:text-[17px]', big ? 'text-[26px]' : 'text-[24px]')}>{title}</p>
+          {subtitle && <p className='truncate text-[17px] text-[var(--ds-ink-muted)] phone:text-sm'>{subtitle}</p>}
         </div>
         <RoundButton label={t('common.close')} onClick={onClose} icon={X} />
       </div>
-      <div className='mx-[22px] h-px bg-[var(--music-raised-2)] max-sm:mx-4' />
+      <div className='mx-[22px] h-px bg-[var(--music-raised-2)] phone:mx-4' />
     </>
   );
 }
@@ -93,10 +93,10 @@ function ActionRow({
     <button
       type='button'
       onClick={onClick}
-      className='flex h-[68px] w-full items-center gap-[18px] rounded-[18px] px-4 text-left max-sm:h-14 max-sm:gap-4'
+      className='flex h-[68px] w-full items-center gap-[18px] rounded-[18px] px-4 text-left phone:h-14 phone:gap-4'
     >
-      <Icon size={28} aria-hidden='true' className='shrink-0 max-sm:size-[22px]' />
-      <span className='min-w-0 flex-1 truncate text-[21px] font-medium max-sm:text-[17px]'>{children}</span>
+      <Icon size={28} aria-hidden='true' className='shrink-0 phone:size-[22px]' />
+      <span className='min-w-0 flex-1 truncate text-[21px] font-medium phone:text-[17px]'>{children}</span>
       {end}
     </button>
   );
@@ -135,12 +135,12 @@ function PlayerList({ current, onPick, onGroup }: { current: string; onPick: (en
               id === current && 'bg-[var(--music-highlight-soft)]'
             )}
           >
-            <span className='flex size-12 shrink-0 items-center justify-center rounded-full bg-[var(--music-raised-2)] max-sm:size-10'>
+            <span className='flex size-12 shrink-0 items-center justify-center rounded-full bg-[var(--music-raised-2)] phone:size-10'>
               <Speaker size={24} aria-hidden='true' />
             </span>
             <span className='min-w-0 flex-1'>
-              <span className='block truncate text-[21px] font-semibold max-sm:text-[17px]'>{name}</span>
-              <span className='mt-px block truncate text-[16px] text-[var(--ds-ink-muted)] max-sm:text-[13px]'>{status}</span>
+              <span className='block truncate text-[21px] font-semibold phone:text-[17px]'>{name}</span>
+              <span className='mt-px block truncate text-[16px] text-[var(--ds-ink-muted)] phone:text-[13px]'>{status}</span>
             </span>
             {e.state === 'playing' && <AudioLines size={24} aria-hidden='true' className='shrink-0 text-[var(--music-highlight)]' />}
           </button>
@@ -229,7 +229,7 @@ export function MusicActions({
               name={item.name}
               type={item.media_type}
               small
-              className='w-[76px] rounded-[16px] max-sm:w-[52px] max-sm:rounded-[12px]'
+              className='w-[76px] rounded-[16px] phone:w-[52px] phone:rounded-[12px]'
             />
           </DialogHeader>
           <div className='flex flex-col gap-0.5 px-3 pb-3.5 pt-2.5'>
@@ -247,7 +247,7 @@ export function MusicActions({
               icon={Speaker}
               onClick={() => setView('players')}
               end={
-                <span className='flex shrink-0 items-center gap-1.5 text-[18px] font-medium text-[var(--ds-ink-muted)] max-sm:text-[15px]'>
+                <span className='flex shrink-0 items-center gap-1.5 text-[18px] font-medium text-[var(--ds-ink-muted)] phone:text-[15px]'>
                   {playerName}
                   <ChevronRight size={22} aria-hidden='true' />
                 </span>

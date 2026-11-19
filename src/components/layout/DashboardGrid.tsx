@@ -9,7 +9,7 @@ import { Sheet } from '@/components/ds/Sheet';
 import { SwitchTrack } from '@/components/ds/Switch';
 import { staggerGridContainer, staggerGridItem } from '@/lib/motion-variants';
 import { useLowPowerMotion } from '@/hooks/useLowPowerMotion';
-import { useIsMobile } from '@/hooks/useIsMobile';
+import { useIsMobile, useIsPhone } from '@/hooks/useIsMobile';
 import {
   EDIT_PANEL_EVENT,
   GRID_COL,
@@ -304,9 +304,10 @@ export function DashboardGrid({ readonly, className }: { readonly?: boolean; cla
 
   // Sur l'écran, pas sur le plateau : les classes `md:` de la page décident du
   // même seuil, et les deux ne doivent jamais diverger.
-  const stacked = useIsMobile(STACK_BELOW);
-  // Téléphone : la trame fluide de la maquette, sans habillage de panneau.
-  const phone = useIsMobile();
+  // Téléphone : la trame fluide de la maquette, sans habillage de panneau — et toujours empilé,
+  // même couché, où il dépasse la largeur de `STACK_BELOW`.
+  const phone = useIsPhone();
+  const stacked = useIsMobile(STACK_BELOW) || phone;
 
   // La carte se réduit pour tenir en largeur — sans passer sous `MAP_MIN_SCALE` :
   // plus petit, les boutons d'un panneau ne se toucheraient plus.
