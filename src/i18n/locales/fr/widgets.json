@@ -861,6 +861,7 @@
     "neverTriggered": "Jamais déclenchée",
     "justTriggered": "à l'instant",
     "triggeredAgo": "il y a {value}",
+    "triggerTime": "Heure de déclenchement",
     "dispositions": {
       "horizontal": {
         "label": "Horizontale"
@@ -872,6 +873,12 @@
       },
       "name": {
         "label": "Nom affiché"
+      },
+      "subtitle": {
+        "label": "Sous-titre"
+      },
+      "timeEntityId": {
+        "label": "Heure de déclenchement (input_datetime)"
       },
       "icon": {
         "label": "Icône"

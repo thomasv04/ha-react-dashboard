@@ -221,6 +221,11 @@ export const MOCK_ENTITIES: Record<string, MockEntityState> = {
   'automation.lumieres_soiree': entity('automation.lumieres_soiree', 'on', { friendly_name: 'Lumières soirée' }),
   'automation.volets_matin': entity('automation.volets_matin', 'on', { friendly_name: 'Volets matin' }),
   'automation.alarme_nuit': entity('automation.alarme_nuit', 'off', { friendly_name: 'Alarme nuit' }),
+  'input_datetime.heure_chauffage_presentiel': entity('input_datetime.heure_chauffage_presentiel', '05:15:00', {
+    has_time: true,
+    has_date: false,
+    friendly_name: 'Heure chauffage présentiel',
+  }),
 
   // ─── Aliases matching default widget config entity IDs ─────────────────────
   // These ensure every widget renders in the AddWidgetModal preview even when

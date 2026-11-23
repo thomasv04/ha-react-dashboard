@@ -272,6 +272,10 @@ export interface AutomationCardConfig extends WidgetConfigBase, WidgetSoundOverr
   /** Icône Lucide personnalisée */
   icon?: string;
   showInfoPanel?: boolean;
+  /** Sous-titre fixe, à la place de « déclenchée il y a… » */
+  subtitle?: string;
+  /** `input_datetime` (heure seule) : affiche un réglage d'heure sous l'interrupteur */
+  timeEntityId?: string;
 }
 
 // ── Automation list ───────────────────────────────────────────────────────────
