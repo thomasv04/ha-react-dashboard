@@ -55,6 +55,8 @@ export default defineWidget({
   fields: [
     { key: 'entityId', label: 'widgets.automation.fields.entityId.label', fieldType: 'entity', domain: 'automation' },
     { key: 'name', label: 'widgets.automation.fields.name.label', fieldType: 'text' },
+    { key: 'subtitle', label: 'widgets.automation.fields.subtitle.label', fieldType: 'text' },
+    { key: 'timeEntityId', label: 'widgets.automation.fields.timeEntityId.label', fieldType: 'entity', domain: 'input_datetime' },
     { key: 'icon', label: 'widgets.automation.fields.icon.label', fieldType: 'icon' },
     { key: 'showInfoPanel', label: 'widgets.automation.fields.showInfoPanel.label', fieldType: 'boolean' },
   ],

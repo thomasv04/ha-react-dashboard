@@ -861,6 +861,7 @@
     "neverTriggered": "Never triggered",
     "justTriggered": "just now",
     "triggeredAgo": "{value} ago",
+    "triggerTime": "Trigger time",
     "dispositions": {
       "horizontal": {
         "label": "Horizontal"
@@ -872,6 +873,12 @@
       },
       "name": {
         "label": "Display name"
+      },
+      "subtitle": {
+        "label": "Subtitle"
+      },
+      "timeEntityId": {
+        "label": "Trigger time (input_datetime)"
       },
       "icon": {
         "label": "Icon"
