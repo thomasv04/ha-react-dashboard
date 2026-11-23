@@ -51,10 +51,10 @@ export function AutomationCard() {
   const lastTriggered = config?.subtitle
     ? config.subtitle
     : !relative
-    ? t('widgets.automation.neverTriggered')
-    : relative === JUST_NOW
-      ? t('widgets.automation.justTriggered')
-      : t('widgets.automation.triggeredAgo', { value: relative });
+      ? t('widgets.automation.neverTriggered')
+      : relative === JUST_NOW
+        ? t('widgets.automation.justTriggered')
+        : t('widgets.automation.triggeredAgo', { value: relative });
 
   const IconComponent = config?.icon && !isCustomIcon(config.icon) ? (resolveIcon(config.icon) ?? Workflow) : Workflow;
   const customIconUrl = config?.icon && isCustomIcon(config.icon) ? getCustomIconUrl(config.icon) : undefined;
@@ -94,10 +94,7 @@ export function AutomationCard() {
         )}
       >
         <span
-          className={cn(
-            'grid shrink-0 place-items-center',
-            showTime && 'size-12 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)]'
-          )}
+          className={cn('grid shrink-0 place-items-center', showTime && 'size-12 rounded-[var(--ds-radius-md)] bg-[var(--ds-surface-3)]')}
         >
           {customIconUrl ? (
             <img src={customIconUrl} alt='' className='size-6 shrink-0 object-contain' />
