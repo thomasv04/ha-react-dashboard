@@ -96,6 +96,7 @@ export function FanCard() {
             step={step}
             label={t('widgets.fan.speed')}
             valueText={`${Math.round(percentage)} %`}
+            bubble={v => `${Math.round(v)} %`}
             fill={isOn ? 'var(--ds-tile-on-ink)' : 'var(--ds-tile-on)'}
             track={isOn ? 'rgba(0, 0, 0, 0.22)' : 'var(--ds-surface-3)'}
             className='h-11'

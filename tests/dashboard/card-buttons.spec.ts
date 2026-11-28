@@ -32,7 +32,15 @@ test('une flèche du volet n’ouvre pas la fiche', async ({ page }) => {
   }
 });
 
-test('un appui ailleurs sur la card ouvre toujours la fiche', async ({ page }) => {
-  await page.locator(cover).getByText('Volet Cuisine').click();
+test('la fiche du volet s’ouvre au maintien, pas à l’appui', async ({ page }) => {
+  const title = page.locator(cover).getByText('Volet Cuisine');
+  await title.click();
+  await page.waitForTimeout(400);
+  await expect(page.getByTestId('more-info-modal')).toHaveCount(0);
+
+  await title.hover();
+  await page.mouse.down();
+  await page.waitForTimeout(700);
+  await page.mouse.up();
   await expect(page.getByTestId('more-info-modal')).toBeVisible({ timeout: 5000 });
 });

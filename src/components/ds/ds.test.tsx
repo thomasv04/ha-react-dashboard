@@ -109,6 +109,41 @@ describe('DeviceTile', () => {
     fireEvent.click(tile);
     expect(onToggle).toHaveBeenCalledOnce();
   });
+
+  it('en rangée : glisser règle la valeur sans basculer, un appui bascule toujours', () => {
+    const onToggle = vi.fn();
+    const onChange = vi.fn();
+    const onCommit = vi.fn();
+    render(
+      <DeviceTile
+        name='Lampe'
+        icon={Fan}
+        active
+        onToggle={onToggle}
+        layout='row'
+        drag={{ value: 50, onChange, onCommit, bubble: v => `${v} %`, offEdge: true }}
+      />
+    );
+    const tile = screen.getByRole('button', { name: /Lampe/ });
+    tile.getBoundingClientRect = () => ({ left: 0, width: 200, top: 0, height: 80 }) as DOMRect;
+
+    // Sous le seuil de 8 px : un appui.
+    fireEvent.pointerDown(tile, { button: 0, clientX: 100, clientY: 40 });
+    fireEvent.pointerMove(tile, { clientX: 105, clientY: 40 });
+    fireEvent.pointerUp(tile);
+    fireEvent.click(tile);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(onToggle).toHaveBeenCalledOnce();
+
+    fireEvent.pointerDown(tile, { button: 0, clientX: 100, clientY: 40 });
+    fireEvent.pointerMove(tile, { clientX: 150, clientY: 40 });
+    fireEvent.pointerMove(tile, { clientX: 1, clientY: 40 });
+    fireEvent.pointerUp(tile);
+    fireEvent.click(tile);
+    expect(onChange.mock.calls.map(c => c[0])).toEqual([75, 0]);
+    expect(onCommit).toHaveBeenCalledWith(0);
+    expect(onToggle).toHaveBeenCalledOnce();
+  });
 });
 
 describe('PillSlider', () => {

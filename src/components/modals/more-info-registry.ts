@@ -30,6 +30,15 @@ export const MORE_INFO_APPS = new Set(['music', 'media_player']);
 export const MORE_INFO_WIDGET_TYPES = Object.keys(MORE_INFO_COMPONENTS);
 
 /**
+ * Cards qui sont elles-mêmes un contrôle (bascule, curseur) : l'appui agit sur
+ * l'appareil, la fiche s'ouvre au maintien — sur la grille comme dans un panneau.
+ */
+export const MORE_INFO_ON_HOLD = new Set(['light', 'cover']);
+
+/** Ce qui, dans une card, agit par lui-même : un appui dessus n'ouvre pas la fiche. */
+export const CARD_CONTROLS = 'button, a, input, select, textarea, [role="slider"], [role="switch"]';
+
+/**
  * Domaines HA dont le nom diffère de la clé du registre. Les autres
  * (`light`, `cover`, `camera`, `person`, `automation`…) portent déjà le même.
  */

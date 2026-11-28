@@ -117,6 +117,7 @@ export function MusicSpeakers({ player, onDone }: { player: string; onDone: () =
                       onChange={v => setVolumes({ [id]: v / 100 })}
                       label={t('widgets.music.volumeOf', { name })}
                       valueText={`${Math.round(volume(id) * 100)} %`}
+                      bubble={v => `${v} %`}
                       icon={Volume2}
                       track='var(--music-track)'
                       className='h-12 w-[380px] shrink rounded-[24px] phone:h-11 phone:w-auto phone:min-w-0 phone:flex-1 phone:basis-[calc(100%-56px)]'
@@ -151,6 +152,7 @@ export function MusicSpeakers({ player, onDone }: { player: string; onDone: () =
             }}
             label={t('widgets.music.groupVolume')}
             valueText={`${groupVolume(groupVolumes)} %`}
+            bubble={v => `${v} %`}
             icon={Volume2}
             track='var(--music-track)'
             className='h-[72px] flex-1 rounded-[36px] phone:h-11 phone:rounded-[22px]'

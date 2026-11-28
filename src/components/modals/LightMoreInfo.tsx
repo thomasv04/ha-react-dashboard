@@ -81,6 +81,7 @@ export default function LightMoreInfo({ entityId, widgetId }: { entityId: string
             onChange={actions.brightness}
             label={t('widgets.light.brightness')}
             valueText={`${brightnessPct} %`}
+            bubble={v => `${v} %`}
             icon={Sun}
           />
         </SheetSection>

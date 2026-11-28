@@ -34,7 +34,7 @@ import { WidgetErrorBoundary } from '@/components/ui/WidgetErrorBoundary';
 import { useMoreInfo } from '@/context/MoreInfoContext';
 import { useWidgetConfig, WidgetConfigOverride } from '@/context/WidgetConfigContext';
 import type { WidgetConfig, WidgetConfigs } from '@/types/widget-configs';
-import { MORE_INFO_WIDGET_TYPES } from '@/components/modals/more-info-registry';
+import { CARD_CONTROLS, MORE_INFO_ON_HOLD, MORE_INFO_WIDGET_TYPES } from '@/components/modals/more-info-registry';
 import { useLongPress } from '@/hooks/useLongPress';
 import { useCardActions } from '@/hooks/useCardActions';
 import { isVisible, visibilityEntityIds } from '@/types/card-visibility';
@@ -1075,9 +1075,6 @@ function UnavailableVeil() {
   );
 }
 
-/** Ce qui, dans une card, agit par lui-même : un appui dessus n'ouvre pas la fiche. */
-const CARD_CONTROLS = 'button, a, input, select, textarea, [role="slider"], [role="switch"]';
-
 // Memoized widget content
 const MemoChildren = memo(function MemoChildren({
   children,
@@ -1093,13 +1090,22 @@ const MemoChildren = memo(function MemoChildren({
   dimmed?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const { handlers: longPressHandlers, moved } = useLongPress(() => {
+  const {
+    handlers: longPressHandlers,
+    moved,
+    held,
+  } = useLongPress(() => {
     if (onLongPress && ref.current) onLongPress(ref.current.getBoundingClientRect());
   }, 500);
   return (
     <div
       ref={ref}
       className={`h-full overflow-hidden${isEditMode ? ' pointer-events-none select-none' : ''}${onClick && !isEditMode ? ' cursor-pointer' : ''}`}
+      onClickCapture={e => {
+        // L'appui long a ouvert la fiche : le `click` du relâchement ne doit pas
+        // aussi basculer la lampe sous le doigt.
+        if (held.current) e.stopPropagation();
+      }}
       onClick={e => {
         // Un glissement (jauge de thermostat, curseur de luminosité) se termine
         // par un `click` sur la card : il ne doit pas ouvrir la fiche.
@@ -1217,7 +1223,8 @@ export function GridItem({
   const config = conditionalConfig;
   // Un geste reste inerte si rien n'est configuré *et* que la card n'a pas de
   // fiche : inutile de rendre le curseur cliquable pour rien.
-  const hasTap = hasMoreInfo || (config?.tapAction && config.tapAction.action !== 'default');
+  const hasTap =
+    (hasMoreInfo && !MORE_INFO_ON_HOLD.has(widget?.type ?? '')) || (config?.tapAction && config.tapAction.action !== 'default');
   const hasHold = hasMoreInfo || (config?.holdAction && config.holdAction.action !== 'default');
 
   const memoOnClick = useMemo(() => (!isEditMode && hasTap ? makeHandler('tapAction') : undefined), [isEditMode, hasTap, makeHandler]);

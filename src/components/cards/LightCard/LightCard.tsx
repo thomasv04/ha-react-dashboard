@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Lightbulb, MoreVertical } from 'lucide-react';
 import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
 import { useHass } from '@hakit/core';
@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
+import { useHeldValue } from '@/hooks/useHeldValue';
 import { resolveIcon, isCustomIcon } from '@/lib/lucide-icon-map';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { friendlyName } from '@/lib/ha-service';
@@ -68,20 +69,12 @@ export function LightCard() {
   const minMireds = (entity?.attributes.min_mireds as number | undefined) ?? 153;
   const maxMireds = (entity?.attributes.max_mireds as number | undefined) ?? 500;
 
-  const [localBrightness, setLocalBrightness] = useState<number | null>(null);
-  const [localColorTemp, setLocalColorTemp] = useState<number | null>(null); // 0-100 slider
-  const [localHue, setLocalHue] = useState<number | null>(null); // 0-360
+  // Valeurs posées au doigt, tenues 3 s après le dernier geste : la lampe
+  // remonte ses états intermédiaires pendant le glisser, la pilule ne saute pas.
+  const [currentBrightness, setLocalBrightness] = useHeldValue(haBrightness != null ? Math.round((haBrightness / 255) * 100) : 0);
+  const [colorTempSlider, setLocalColorTemp] = useHeldValue(haColorTemp != null ? miredsToSlider(haColorTemp, minMireds, maxMireds) : 50); // 0-100 slider
+  const [currentHue, setLocalHue] = useHeldValue(haRgb != null ? rgbToHsl(...haRgb)[0] : 0); // 0-360
   const [sheetOpen, setSheetOpen] = useState(false);
-
-  useEffect(() => {
-    setLocalBrightness(null);
-  }, [haBrightness]);
-  useEffect(() => {
-    setLocalColorTemp(null);
-  }, [haColorTemp]);
-  useEffect(() => {
-    setLocalHue(null);
-  }, [haRgb]);
 
   const sendBrightness = useDebouncedCallback((pct: number) => {
     helpers.callService({ domain: 'light', service: 'turn_on', target: { entity_id: entityId }, serviceData: { brightness_pct: pct } });
@@ -115,7 +108,6 @@ export function LightCard() {
 
   const isOn = entity.state === 'on';
   const name = config?.name ?? friendlyName(entity) ?? entityId;
-  const currentBrightness = localBrightness ?? (haBrightness != null ? Math.round((haBrightness / 255) * 100) : 0);
   const colorModes = entity.attributes.supported_color_modes as string[] | undefined;
   const isDimmable = colorModes ? colorModes.some(m => !['onoff'].includes(m)) : haBrightness !== undefined;
   const supportsColorTemp = colorModes?.some(m => ['color_temp', 'xy', 'hs', 'rgbw', 'rgbww'].includes(m)) ?? haColorTemp !== undefined;
@@ -125,9 +117,6 @@ export function LightCard() {
   const showBrightness = (config?.showBrightness ?? true) && isDimmable;
   const showColorTemp = (config?.showColorTemp ?? true) && supportsColorTemp;
   const showColor = (config?.showColor ?? true) && supportsColor;
-
-  const colorTempSlider = localColorTemp ?? (haColorTemp != null ? miredsToSlider(haColorTemp, minMireds, maxMireds) : 50);
-  const currentHue = localHue ?? (haRgb != null ? rgbToHsl(...haRgb)[0] : 0);
 
   // La pilule prend la couleur de la lampe quand elle en a une, sinon le blanc chaud.
   const lampColor = haRgb ? `rgb(${haRgb.join(', ')})` : 'var(--ds-warm-light)';
@@ -164,6 +153,7 @@ export function LightCard() {
             onChange={handleBrightness}
             label={t('widgets.light.brightness')}
             valueText={`${currentBrightness} %`}
+            bubble={pct => `${pct} %`}
             icon={Icon}
             fill={lampColor}
             iconColor='var(--ds-warm-light-ink)'
@@ -215,6 +205,12 @@ export function LightCard() {
           active={isOn}
           onToggle={handleToggle}
           layout={widgetSize.squat ? 'row' : 'stack'}
+          // Glisser sur la rangée règle la luminosité, envoyée en direct ; le bord gauche éteint.
+          drag={
+            showBrightness
+              ? { value: isOn ? currentBrightness : 0, onChange: handleBrightness, bubble: pct => `${pct} %`, offEdge: true }
+              : undefined
+          }
           onMore={hasColorSettings ? () => setSheetOpen(true) : undefined}
           moreLabel={t('widgets.light.color')}
         />
@@ -257,6 +253,7 @@ export function LightCard() {
         onChange={handleBrightness}
         label={t('widgets.light.brightness')}
         valueText={`${currentBrightness} %`}
+        bubble={pct => `${pct} %`}
         icon={Icon}
         fill={lampColor}
         iconColor='var(--ds-warm-light-ink)'
