@@ -1476,5 +1476,50 @@
         "label": "Fenêtre (heures)"
       }
     }
+  },
+  "cover_sections": {
+    "label": "Volets par section",
+    "description": "Volets groupés par pièce, avec tout ouvrir / tout fermer.",
+    "empty": "Ajoutez une section dans les réglages",
+    "allTitle": "Toute la maison",
+    "openAll": "Tout ouvrir",
+    "closeAll": "Tout fermer",
+    "openCount": "Ouverts : {open} sur {total}",
+    "allOpen": "Tous ouverts",
+    "allClosed": "Tous fermés",
+    "someOpen": "Ouverts : {open} sur {total}",
+    "openSection": "Ouvrir la section",
+    "closeSection": "Fermer la section",
+    "fields": {
+      "sections": {
+        "label": "Sections",
+        "item": {
+          "name": {
+            "label": "Titre (vide = nom de la zone)"
+          },
+          "area": {
+            "label": "Zone Home Assistant"
+          },
+          "covers": {
+            "label": "Volets (vide = ceux de la zone)"
+          }
+        }
+      },
+      "separator": {
+        "label": "Entre les sections",
+        "line": "Un trait",
+        "space": "De l'espace",
+        "none": "Rien"
+      },
+      "showAll": {
+        "label": "Bloc « Tout ouvrir / Tout fermer »"
+      },
+      "allTitle": {
+        "label": "Titre du bloc (vide = « Toute la maison »)"
+      },
+      "allCovers": {
+        "label": "Volets visés par « Tout ouvrir » (vide = tous ceux de la card)"
+      }
+    }
   }
 }

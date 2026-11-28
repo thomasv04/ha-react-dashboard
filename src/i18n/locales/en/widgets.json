@@ -1476,5 +1476,50 @@
         "label": "Window (hours)"
       }
     }
+  },
+  "cover_sections": {
+    "label": "Covers by section",
+    "description": "Covers grouped by room, with open all / close all.",
+    "empty": "Add a section in the settings",
+    "allTitle": "Whole house",
+    "openAll": "Open all",
+    "closeAll": "Close all",
+    "openCount": "{open} of {total} open",
+    "allOpen": "All open",
+    "allClosed": "All closed",
+    "someOpen": "{open} of {total} open",
+    "openSection": "Open section",
+    "closeSection": "Close section",
+    "fields": {
+      "sections": {
+        "label": "Sections",
+        "item": {
+          "name": {
+            "label": "Title (empty = area name)"
+          },
+          "area": {
+            "label": "Home Assistant area"
+          },
+          "covers": {
+            "label": "Covers (empty = the area's covers)"
+          }
+        }
+      },
+      "separator": {
+        "label": "Between sections",
+        "line": "A line",
+        "space": "Some space",
+        "none": "Nothing"
+      },
+      "showAll": {
+        "label": "“Open all / Close all” block"
+      },
+      "allTitle": {
+        "label": "Block title (empty = “Whole house”)"
+      },
+      "allCovers": {
+        "label": "Covers for “Open all” (empty = all of the card's covers)"
+      }
+    }
   }
 }
