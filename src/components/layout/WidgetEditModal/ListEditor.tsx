@@ -6,6 +6,7 @@ import { EntityPicker } from './EntityPicker';
 import { FieldInput } from './FieldInput';
 import { PanelSelectField } from './PanelSelectField';
 import { useI18n } from '@/i18n';
+import { useAreas } from '@hakit/core';
 
 export function ListEditor({
   items,
@@ -21,6 +22,7 @@ export function ListEditor({
   twoCol?: boolean;
 }) {
   const { t } = useI18n();
+  const areas = useAreas();
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
 
   const addItem = () => {
@@ -57,7 +59,11 @@ export function ListEditor({
       </div>
       <div className='space-y-1'>
         {items.map((item, idx) => {
-          const itemLabel = (item.label || item.name || item.id || `Item ${idx + 1}`) as string;
+          const itemLabel = (item.label ||
+            item.name ||
+            item.id ||
+            areas.find(a => a.area_id === item.area)?.name ||
+            `Item ${idx + 1}`) as string;
           const isExpanded = expandedIdx === idx;
           return (
             <div key={idx} className='rounded-[var(--ds-radius-sm)] border border-[var(--ds-surface-3)] overflow-hidden'>
@@ -163,6 +169,24 @@ export function ListEditor({
                             {field.options.map(opt => (
                               <option key={opt.value} value={opt.value}>
                                 {t(opt.label)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      );
+                    } else if (field.fieldType === 'area') {
+                      content = (
+                        <div>
+                          <label className='text-sm text-[var(--ds-ink-muted)] mb-1 block'>{t(field.label)}</label>
+                          <select
+                            value={(item[field.key] as string) ?? ''}
+                            onChange={e => updateItem(idx, field.key, e.target.value)}
+                            className='w-full px-3 py-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-surface-3)] text-sm text-[var(--ds-ink)] outline-none focus:outline-2 focus:outline-[var(--ds-accent)] cursor-pointer'
+                          >
+                            <option value=''>{t('layout.areaControls.none')}</option>
+                            {areas.map(a => (
+                              <option key={a.area_id} value={a.area_id}>
+                                {a.name}
                               </option>
                             ))}
                           </select>

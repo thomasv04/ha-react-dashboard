@@ -2,8 +2,6 @@ import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Blinds, ChevronUp, ChevronDown, Square } from 'lucide-react';
 import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
-import { useHass } from '@hakit/core';
-import { useSafeEntity } from '@/hooks/useSafeEntity';
 import { useWidgetConfig } from '@/context/WidgetConfigContext';
 import { useHideTitle } from '@/hooks/useHideTitle';
 import { useWidgetId } from '@/components/layout/DashboardGrid';
@@ -11,16 +9,12 @@ import type { CoverCardConfig } from '@/types/widget-configs';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
-import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useLowPowerMotion } from '@/hooks/useLowPowerMotion';
-import { useHeldValue } from '@/hooks/useHeldValue';
 import { coverArrowMotion } from '@/lib/cover-motion';
 import { friendlyName } from '@/lib/ha-service';
 import { DeviceTile } from '@/components/ds/DeviceTile';
 import { PillSlider } from '@/components/ds/PillSlider';
-
-const ROUND_BUTTON =
-  'flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--ds-surface-3)] text-[var(--ds-ink)] active:scale-95 transition-transform';
+import { ROUND_BUTTON, useCover } from './useCover';
 
 export function CoverCard() {
   const { t } = useI18n();
@@ -30,28 +24,10 @@ export function CoverCard() {
   const config = getWidgetConfig<CoverCardConfig>(widgetId || 'cover');
   const entityId = config?.entityId ?? 'cover.living_room';
 
-  const entity = useSafeEntity(entityId);
-  const helpers = useHass(s => s.helpers);
   const cardRef = useRef<HTMLDivElement>(null);
   const widgetSize = useWidgetSize(cardRef);
-  const playFeedback = useSoundFeedback();
   const motionAllowed = useLowPowerMotion();
-
-  const haPosition = entity?.attributes.current_position as number | undefined;
-  // Position posée au doigt, tenue 3 s après le dernier geste : le volet en
-  // marche ne fait pas sauter la pilule, et rien ne revient en arrière avant HA.
-  const [heldPosition, holdPosition] = useHeldValue(haPosition);
-
-  // Envoyée une seule fois, au relâchement.
-  const sendPosition = (position: number) => {
-    holdPosition(position);
-    helpers.callService({
-      domain: 'cover',
-      service: 'set_cover_position',
-      target: { entity_id: entityId },
-      serviceData: { position: Math.round(position) },
-    });
-  };
+  const { entity, state, position, supportsPosition, isOpen, stateWithPosition, holdPosition, sendPosition, call } = useCover(entityId);
 
   if (!entity) {
     return (
@@ -61,29 +37,7 @@ export function CoverCard() {
     );
   }
 
-  const call = (service: 'open_cover' | 'close_cover' | 'stop_cover' | 'toggle') => {
-    helpers.callService({ domain: 'cover', service, target: { entity_id: entityId } });
-    playFeedback(service === 'open_cover' ? 'door_open' : service === 'close_cover' ? 'door_close' : 'warning');
-  };
-
   const name = config?.name ?? friendlyName(entity) ?? entityId;
-  const state = entity.state;
-  const position = heldPosition ?? 0;
-  const isOpen = state === 'open' || position > 0;
-  const supportsPosition = haPosition !== undefined;
-
-  const stateLabel =
-    state === 'open'
-      ? t('widgets.cover.open')
-      : state === 'closed'
-        ? t('widgets.cover.closed')
-        : state === 'opening'
-          ? t('widgets.cover.opening')
-          : state === 'closing'
-            ? t('widgets.cover.closing')
-            : state;
-  const stateWithPosition =
-    supportsPosition && state === 'open' ? t('widgets.cover.percentOpen', { value: Math.round(position) }) : stateLabel;
 
   // Une rangée, ou volet sans position : une tuile simple, l'appui ouvre ou ferme.
   if (widgetSize.squat || !supportsPosition) {

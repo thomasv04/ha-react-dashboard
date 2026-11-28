@@ -1,0 +1,1 @@
+export { CoverSectionsCard } from './CoverSectionsCard';

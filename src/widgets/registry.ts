@@ -44,6 +44,7 @@ import tempo from '@/components/cards/TempoCard/widget';
 import chip from '@/components/cards/ChipCard/widget';
 import welcome from '@/components/cards/WelcomeCard/widget';
 import cameraEvents from '@/components/cards/CameraEventsCard/widget';
+import coverSections from '@/components/cards/CoverSectionsCard/widget';
 
 export const WIDGETS = [
   automation,
@@ -79,6 +80,7 @@ export const WIDGETS = [
   chip,
   welcome,
   cameraEvents,
+  coverSections,
 ] satisfies readonly WidgetDefinition[];
 
 /** Union des types de widgets déclarés par manifeste */

@@ -578,6 +578,25 @@ export interface CameraEventsCardConfig extends WidgetConfigBase {
   hours?: number;
 }
 
+/** Une section de la card « Volets par section » : une zone HA, ou des volets choisis (qui l'emportent). */
+export interface CoverSection {
+  name?: string;
+  area?: string;
+  covers?: string[];
+}
+
+export interface CoverSectionsCardConfig extends WidgetConfigBase {
+  type: 'cover_sections';
+  sections?: CoverSection[];
+  /** Entre deux sections : un trait, de l'espace, ou rien */
+  separator?: 'line' | 'space' | 'none';
+  /** Bloc « Tout ouvrir / Tout fermer » (défaut : affiché) */
+  showAll?: boolean;
+  allTitle?: string;
+  /** Volets visés par « Tout ouvrir / Tout fermer » ; vide = tous ceux de la card */
+  allCovers?: string[];
+}
+
 export type WidgetConfig =
   | ActivityBarConfig
   | CameraCardConfig
@@ -611,7 +630,8 @@ export type WidgetConfig =
   | ClockCardConfig
   | ChipCardConfig
   | WelcomeCardConfig
-  | CameraEventsCardConfig;
+  | CameraEventsCardConfig
+  | CoverSectionsCardConfig;
 
 /** Map of widget id → its config */
 export type WidgetConfigs = Record<string, WidgetConfig>;
