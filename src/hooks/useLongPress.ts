@@ -22,6 +22,7 @@ export function useLongPress(onLongPress: () => void, duration = 500) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const origin = useRef<{ x: number; y: number } | null>(null);
   const moved = useRef(false);
+  const held = useRef(false);
 
   const cancel = useCallback(() => {
     if (timer.current) {
@@ -34,12 +35,19 @@ export function useLongPress(onLongPress: () => void, duration = 500) {
     (e: React.PointerEvent) => {
       // Only primary pointer (finger or left mouse)
       if (e.button !== undefined && e.button !== 0) return;
+      held.current = false;
       // Un curseur se règle doigt posé, souvent sans dépasser le seuil de
       // glissement : l'appui long ouvrirait la fiche en plein réglage (#41).
-      if ((e.target as Element | undefined)?.closest('input, select, textarea')) return;
+      // Le geste compte comme un glissement : relâché hors du curseur, son
+      // `click` remonte à la card et ne doit pas l'ouvrir.
+      if ((e.target as Element | undefined)?.closest('input, select, textarea')) {
+        moved.current = true;
+        return;
+      }
       moved.current = false;
       origin.current = { x: e.clientX, y: e.clientY };
       timer.current = setTimeout(() => {
+        held.current = true;
         onLongPress();
         timer.current = null;
       }, duration);
@@ -70,7 +78,7 @@ export function useLongPress(onLongPress: () => void, duration = 500) {
     onPointerLeave: end,
   };
 
-  // `moved` reste vrai jusqu'au `pointerdown` suivant : le `click` qui suit un
-  // glissement peut donc être ignoré par l'appelant.
-  return { handlers, moved };
+  // `moved` et `held` restent vrais jusqu'au `pointerdown` suivant : le `click`
+  // qui suit un glissement ou un appui long peut donc être ignoré par l'appelant.
+  return { handlers, moved, held };
 }

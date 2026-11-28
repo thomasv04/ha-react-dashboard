@@ -100,6 +100,7 @@ function Volume({ volume, onVolume }: Pick<PlayerProps, 'volume' | 'onVolume'>) 
         onChange={v => onVolume(v / 100)}
         label={t('widgets.media_player.volume')}
         valueText={`${pct} %`}
+        bubble={v => `${v} %`}
         icon={Volume2}
         className='h-11'
       />

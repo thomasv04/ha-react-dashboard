@@ -389,6 +389,7 @@ export default function MediaPlayerMoreInfo({ entityId: givenId, widgetId }: { e
                 }}
                 label={t('widgets.media_player.volume')}
                 valueText={`${Math.round(volume * 100)} %`}
+                bubble={v => `${v} %`}
                 icon={muted ? VolumeX : Volume2}
                 track={phone ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.14)'}
                 // Téléphone : blanc plein, comme la maquette « Lecteur ».

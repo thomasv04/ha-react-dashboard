@@ -3,7 +3,8 @@ import { WIDGET_COMPONENTS } from '@/widgets';
 import { WidgetIdProvider } from '@/components/layout/DashboardGrid';
 import { WidgetConfigOverride } from '@/context/WidgetConfigContext';
 import { useMoreInfo } from '@/context/MoreInfoContext';
-import { MORE_INFO_WIDGET_TYPES } from '@/components/modals/more-info-registry';
+import { CARD_CONTROLS, MORE_INFO_ON_HOLD, MORE_INFO_WIDGET_TYPES } from '@/components/modals/more-info-registry';
+import { useLongPress } from '@/hooks/useLongPress';
 import type { WidgetBlock } from '@/types/custom-panel';
 import type { WidgetConfigs } from '@/types/widget-configs';
 
@@ -20,6 +21,9 @@ const ROW_HEIGHT = 80;
 export function WidgetBlockRenderer({ block }: { block: WidgetBlock }) {
   const { openMoreInfo } = useMoreInfo();
   const boxRef = useRef<HTMLDivElement>(null);
+  const entityId = (block.config as { entityId?: string } | undefined)?.entityId ?? '';
+  const open = () => openMoreInfo(block.id, block.widgetType, entityId, boxRef.current?.getBoundingClientRect() ?? null);
+  const { handlers: longPress, moved, held } = useLongPress(open);
   const Component = WIDGET_COMPONENTS[block.widgetType as keyof typeof WIDGET_COMPONENTS];
   // Type inconnu — build plus ancien que la config. Le bloc disparaît sans
   // casser le reste du panneau.
@@ -27,12 +31,11 @@ export function WidgetBlockRenderer({ block }: { block: WidgetBlock }) {
 
   const configs = { [block.id]: block.config } as unknown as WidgetConfigs;
 
-  // Sur la grille, c'est `GridItem` qui ouvre la fiche au clic. Dans un panneau
-  // il n'y a pas de `GridItem` : la même card y était inerte, alors qu'elle
-  // répond au clic deux écrans plus loin. On rebranche le geste ici.
-  const entityId = (block.config as { entityId?: string } | undefined)?.entityId ?? '';
+  // Sur la grille, c'est `GridItem` qui ouvre la fiche. Dans un panneau il n'y
+  // a pas de `GridItem` : on rebranche les mêmes gestes ici — appui long, et
+  // appui simple hors des contrôles de la card (bascule, curseur).
   const hasMoreInfo = MORE_INFO_WIDGET_TYPES.includes(block.widgetType);
-  const open = () => openMoreInfo(block.id, block.widgetType, entityId, boxRef.current?.getBoundingClientRect() ?? null);
+  const openOnTap = hasMoreInfo && !MORE_INFO_ON_HOLD.has(block.widgetType);
 
   return (
     <WidgetConfigOverride configs={configs}>
@@ -48,9 +51,16 @@ export function WidgetBlockRenderer({ block }: { block: WidgetBlock }) {
             ? {
                 role: 'button',
                 tabIndex: 0,
-                onClick: open,
+                ...longPress,
+                // L'appui long a ouvert la fiche : son relâchement ne bascule pas la lampe.
+                onClickCapture: (e: React.MouseEvent) => held.current && e.stopPropagation(),
+                onClick: (e: React.MouseEvent) => {
+                  if (!openOnTap || moved.current || (e.target as Element).closest(CARD_CONTROLS)) return;
+                  open();
+                },
                 onKeyDown: (e: React.KeyboardEvent) => {
-                  if (e.key !== 'Enter' && e.key !== ' ') return;
+                  // Entrée sur la bascule de la card : c'est elle qui agit.
+                  if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
                   e.preventDefault();
                   open();
                 },

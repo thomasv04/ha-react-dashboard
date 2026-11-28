@@ -127,6 +127,7 @@ export default function FanMoreInfo({ entityId, widgetId }: { entityId: string; 
             onChange={setPercentage}
             label={t('widgets.fan.speed')}
             valueText={`${Math.round(percentage)} %`}
+            bubble={v => `${Math.round(v)} %`}
             icon={Fan}
           />
         </div>

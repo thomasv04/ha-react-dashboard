@@ -72,4 +72,18 @@ test('ignore un appui sur un curseur, même maintenu (#41)', () => {
   act(() => void vi.advanceTimersByTime(600));
 
   expect(onLongPress).not.toHaveBeenCalled();
+  // Relâché hors du curseur, le `click` qui remonte à la card est à ignorer.
+  expect(result.current.moved.current).toBe(true);
+});
+
+test("marque l'appui long jusqu'au prochain appui", () => {
+  const { result } = renderHook(() => useLongPress(vi.fn(), 500));
+
+  act(() => result.current.handlers.onPointerDown(ptr(0, 0)));
+  act(() => void vi.advanceTimersByTime(500));
+  act(() => result.current.handlers.onPointerUp());
+  expect(result.current.held.current).toBe(true);
+
+  act(() => result.current.handlers.onPointerDown(ptr(0, 0)));
+  expect(result.current.held.current).toBe(false);
 });

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Blinds, ChevronUp, ChevronDown, Square } from 'lucide-react';
 import { CardPlaceholder } from '@/components/ui/CardPlaceholder';
@@ -13,7 +13,7 @@ import { useI18n } from '@/i18n';
 import { useWidgetSize } from '@/hooks/useWidgetSize';
 import { useSoundFeedback } from '@/hooks/useSoundFeedback';
 import { useLowPowerMotion } from '@/hooks/useLowPowerMotion';
-import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
+import { useHeldValue } from '@/hooks/useHeldValue';
 import { coverArrowMotion } from '@/lib/cover-motion';
 import { friendlyName } from '@/lib/ha-service';
 import { DeviceTile } from '@/components/ds/DeviceTile';
@@ -38,18 +38,20 @@ export function CoverCard() {
   const motionAllowed = useLowPowerMotion();
 
   const haPosition = entity?.attributes.current_position as number | undefined;
-  // Position suivie localement pendant le glisser, rendue à HA dès qu'il répond.
-  const [localPosition, setLocalPosition] = useState<number | null>(null);
-  useEffect(() => setLocalPosition(null), [haPosition]);
+  // Position posée au doigt, tenue 3 s après le dernier geste : le volet en
+  // marche ne fait pas sauter la pilule, et rien ne revient en arrière avant HA.
+  const [heldPosition, holdPosition] = useHeldValue(haPosition);
 
-  const sendPosition = useDebouncedCallback((position: number) => {
+  // Envoyée une seule fois, au relâchement.
+  const sendPosition = (position: number) => {
+    holdPosition(position);
     helpers.callService({
       domain: 'cover',
       service: 'set_cover_position',
       target: { entity_id: entityId },
       serviceData: { position: Math.round(position) },
     });
-  }, 250);
+  };
 
   if (!entity) {
     return (
@@ -66,7 +68,7 @@ export function CoverCard() {
 
   const name = config?.name ?? friendlyName(entity) ?? entityId;
   const state = entity.state;
-  const position = localPosition ?? haPosition ?? 0;
+  const position = heldPosition ?? 0;
   const isOpen = state === 'open' || position > 0;
   const supportsPosition = haPosition !== undefined;
 
@@ -116,10 +118,11 @@ export function CoverCard() {
         <PillSlider
           orientation='vertical'
           value={position}
-          onChange={value => {
-            setLocalPosition(value);
-            sendPosition(value);
-          }}
+          // Doigt posé : tenue jusqu'au relâchement, même immobile (sinon la pilule
+          // reviendrait sous le doigt et le relâchement enverrait l'ancienne position).
+          onChange={value => holdPosition(value, 60_000)}
+          onCommit={sendPosition}
+          bubble={value => t('widgets.cover.percentOpen', { value: Math.round(value) })}
           label={name}
           valueText={t('widgets.cover.percentOpen', { value: Math.round(position) })}
           icon={Blinds}

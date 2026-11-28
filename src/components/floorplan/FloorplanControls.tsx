@@ -222,6 +222,7 @@ export function LightPopover({
             onChange={actions.brightness}
             label={t('widgets.light.brightness')}
             valueText={`${s.brightnessPct} %`}
+            bubble={v => `${v} %`}
             icon={Sun}
           />
         )}
