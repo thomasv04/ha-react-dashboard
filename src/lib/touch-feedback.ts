@@ -55,6 +55,25 @@ export function valueStep(value: number, min: number, max: number): number {
 }
 
 /**
+ * Doigt à `x` sur une tuile (`left`, `width`) → valeur 0–100, comme la
+ * `LightTile` de Paddock. `inset` : marge inerte de chaque côté ; `step` : crans
+ * (volet : 5) ; `offEdge` (lumière) : à 1 % du bord gauche ou moins, 0 =
+ * éteinte, sinon au moins 1.
+ */
+export function tileValueAt(
+  x: number,
+  left: number,
+  width: number,
+  { inset = 0, step = 1, offEdge = false }: { inset?: number; step?: number; offEdge?: boolean } = {}
+): number {
+  const span = width - 2 * inset;
+  const ratio = span > 0 ? Math.min(Math.max((x - left - inset) / span, 0), 1) : 0;
+  if (offEdge && ratio <= 0.01) return 0;
+  const value = Math.round((ratio * 100) / step) * step;
+  return offEdge ? Math.max(1, value) : value;
+}
+
+/**
  * Coin haut-gauche de la bulle, `gap` px au-dessus de (x, y), gardé à `margin`
  * px des bords de l'écran (téléphone : une pilule collée au bord).
  */

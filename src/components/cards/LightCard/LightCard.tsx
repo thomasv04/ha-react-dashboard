@@ -205,6 +205,12 @@ export function LightCard() {
           active={isOn}
           onToggle={handleToggle}
           layout={widgetSize.squat ? 'row' : 'stack'}
+          // Glisser sur la rangée règle la luminosité, envoyée en direct ; le bord gauche éteint.
+          drag={
+            showBrightness
+              ? { value: isOn ? currentBrightness : 0, onChange: handleBrightness, bubble: pct => `${pct} %`, offEdge: true }
+              : undefined
+          }
           onMore={hasColorSettings ? () => setSheetOpen(true) : undefined}
           moreLabel={t('widgets.light.color')}
         />

@@ -96,6 +96,19 @@ export function CoverCard() {
           active={isOpen}
           onToggle={() => call('toggle')}
           layout={widgetSize.squat ? 'row' : 'stack'}
+          // Glisser sur la rangée règle la position par crans de 5 %, envoyée au relâchement.
+          drag={
+            supportsPosition
+              ? {
+                  value: position,
+                  onChange: value => holdPosition(value, 60_000),
+                  onCommit: sendPosition,
+                  bubble: value => t('widgets.cover.percentOpen', { value }),
+                  inset: 16,
+                  step: 5,
+                }
+              : undefined
+          }
         />
       </div>
     );
